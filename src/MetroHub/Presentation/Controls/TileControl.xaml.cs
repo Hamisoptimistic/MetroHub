@@ -106,7 +106,7 @@ public partial class TileControl : UserControl
         }
 
         // Quadratic proximity falloff
-        double factor = Math.Clamp(1.0 - (distance / 110.0), 0.0, 1.0);
+        double factor = Math.Clamp(1.0 - (distance / 160.0), 0.0, 1.0);
         double targetOpacity = factor * factor;
 
         RevealEdgeBorder.BeginAnimation(UIElement.OpacityProperty, null);

@@ -118,7 +118,7 @@
                 <Canvas x:Name="DropIndicatorCanvas" IsHitTestVisible="False">
                     <Border x:Name="DropSlotIndicator"
                             Visibility="Collapsed"
-                            CornerRadius="8"
+                            CornerRadius="2"
                             BorderThickness="1.5"
                             BorderBrush="#9060CDFF"
                             Background="#2560CDFF">

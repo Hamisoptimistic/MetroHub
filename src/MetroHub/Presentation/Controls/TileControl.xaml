@@ -15,13 +15,15 @@
     </UserControl.Resources>
 
     <Border x:Name="RootBorder"
-            CornerRadius="8"
+            CornerRadius="2"
             BorderThickness="1"
-            BorderBrush="#25FFFFFF"
+            BorderBrush="#22FFFFFF"
             Background="#1CFFFFFF"
             Width="{Binding SpanX, Converter={StaticResource SpanConverter}}"
             Height="{Binding SpanY, Converter={StaticResource SpanConverter}}"
-            RenderTransformOrigin="0.5,0.5">
+            RenderTransformOrigin="0.5,0.5"
+            SnapsToDevicePixels="True"
+            UseLayoutRounding="True">
 
         <Border.Style>
             <Style TargetType="Border">
@@ -58,13 +60,13 @@
         <Grid>
             <!-- Fluent Reveal Highlight: Surface Spotlight -->
             <Border x:Name="RevealFillBorder"
-                    CornerRadius="8"
+                    CornerRadius="2"
                     IsHitTestVisible="False"
                     Opacity="0">
                 <Border.Background>
-                    <RadialGradientBrush x:Name="RevealFillBrush" MappingMode="Absolute" RadiusX="130" RadiusY="130">
-                        <GradientStop Color="#30FFFFFF" Offset="0.0" />
-                        <GradientStop Color="#1260CDFF" Offset="0.45" />
+                    <RadialGradientBrush x:Name="RevealFillBrush" MappingMode="Absolute" RadiusX="200" RadiusY="200">
+                        <GradientStop Color="#35FFFFFF" Offset="0.0" />
+                        <GradientStop Color="#14FFFFFF" Offset="0.5" />
                         <GradientStop Color="#00000000" Offset="1.0" />
                     </RadialGradientBrush>
                 </Border.Background>
@@ -72,74 +74,88 @@
 
             <!-- Fluent Reveal Highlight: Edge Illumination -->
             <Border x:Name="RevealEdgeBorder"
-                    CornerRadius="8"
+                    CornerRadius="2"
                     BorderThickness="1.2"
                     IsHitTestVisible="False"
                     Opacity="0">
                 <Border.BorderBrush>
-                    <RadialGradientBrush x:Name="RevealEdgeBrush" MappingMode="Absolute" RadiusX="95" RadiusY="95">
-                        <GradientStop Color="#E6FFFFFF" Offset="0.0" />
-                        <GradientStop Color="#7060CDFF" Offset="0.5" />
+                    <RadialGradientBrush x:Name="RevealEdgeBrush" MappingMode="Absolute" RadiusX="160" RadiusY="160">
+                        <GradientStop Color="#FFFFFFFF" Offset="0.0" />
+                        <GradientStop Color="#60FFFFFF" Offset="0.5" />
                         <GradientStop Color="#00000000" Offset="1.0" />
                     </RadialGradientBrush>
                 </Border.BorderBrush>
             </Border>
 
-            <Grid Margin="10">
-            <!-- 1x1 Small Tile Layout -->
-            <Grid Visibility="{Binding IsSmall, Converter={StaticResource BoolToVis}}">
-                <Image Source="{Binding IconPath}"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       Width="32" Height="32"
-                       RenderOptions.BitmapScalingMode="HighQuality" />
-            </Grid>
+            <!-- Content Area: Free of outer constraint margin for exact pixel placement -->
+            <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
+                <!-- 1x1 Small Tile Layout (56x56) -->
+                <Grid Visibility="{Binding IsSmall, Converter={StaticResource BoolToVis}}">
+                    <Image Source="{Binding IconPath}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Width="28" Height="28"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
+                </Grid>
 
-            <!-- 2x2 Medium Tile Layout -->
-            <Grid Visibility="{Binding IsMedium, Converter={StaticResource BoolToVis}}">
-                <Image Source="{Binding IconPath}"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       Width="48" Height="48"
-                       RenderOptions.BitmapScalingMode="HighQuality" />
-                <TextBlock Text="{Binding Title}"
-                           VerticalAlignment="Bottom"
-                           HorizontalAlignment="Left"
-                           FontSize="11"
-                           FontWeight="Medium"
-                           Foreground="#E6FFFFFF"
-                           TextTrimming="CharacterEllipsis"
-                           MaxWidth="100" />
-            </Grid>
+                <!-- 2x2 Medium Tile Layout (120x120) -->
+                <Grid Visibility="{Binding IsMedium, Converter={StaticResource BoolToVis}}">
+                    <!-- Icon: Optical Center (balanced breathing room above bottom label) -->
+                    <Image Source="{Binding IconPath}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Width="44" Height="44"
+                           Margin="0,0,0,12"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
 
-            <!-- 4x2 Wide Tile Layout -->
-            <Grid Visibility="{Binding IsWide, Converter={StaticResource BoolToVis}}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <Image Grid.Column="0"
-                       Source="{Binding IconPath}"
-                       VerticalAlignment="Center"
-                       Width="52" Height="52"
-                       Margin="4,0,12,0"
-                       RenderOptions.BitmapScalingMode="HighQuality" />
-
-                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <!-- Label: Docked to bottom-left in authentic Segoe UI -->
                     <TextBlock Text="{Binding Title}"
-                               FontSize="14"
-                               FontWeight="SemiBold"
-                               Foreground="#FFFFFF"
-                               TextTrimming="CharacterEllipsis" />
-                    <TextBlock Text="{Binding TargetPath}"
+                               VerticalAlignment="Bottom"
+                               HorizontalAlignment="Left"
+                               Margin="8,0,8,6"
                                FontSize="11"
-                               Foreground="#80FFFFFF"
-                               Margin="0,2,0,0"
-                               TextTrimming="CharacterEllipsis" />
-                </StackPanel>
+                               FontFamily="Segoe UI, Inter, -apple-system, sans-serif"
+                               FontWeight="Normal"
+                               Foreground="#D8FFFFFF"
+                               TextTrimming="CharacterEllipsis"
+                               TextWrapping="NoWrap"
+                               MaxWidth="104" />
+                </Grid>
+
+                <!-- 4x2 Wide Tile Layout (248x120) -->
+                <Grid Visibility="{Binding IsWide, Converter={StaticResource BoolToVis}}"
+                      Margin="14,10,14,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Image Grid.Column="0"
+                           Source="{Binding IconPath}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"
+                           Width="46" Height="46"
+                           Margin="2,0,14,0"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
+
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Title}"
+                                   FontSize="13"
+                                   FontFamily="Segoe UI, Inter, -apple-system, sans-serif"
+                                   FontWeight="SemiBold"
+                                   Foreground="#FFFFFF"
+                                   TextTrimming="CharacterEllipsis"
+                                   TextWrapping="NoWrap" />
+                        <TextBlock Text="{Binding TargetPath}"
+                                   FontSize="10.5"
+                                   FontFamily="Segoe UI, Inter, -apple-system, sans-serif"
+                                   Foreground="#80FFFFFF"
+                                   Margin="0,3,0,0"
+                                   TextTrimming="CharacterEllipsis"
+                                   TextWrapping="NoWrap" />
+                    </StackPanel>
+                </Grid>
             </Grid>
         </Grid>
-    </Grid>
-</Border>
+    </Border>
 </UserControl>

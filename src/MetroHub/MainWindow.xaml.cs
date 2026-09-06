@@ -604,7 +604,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 double dy = Math.Max(0, Math.Max(tile.Y - mouseOnCanvas.Y, mouseOnCanvas.Y - bottom));
                 double distance = Math.Sqrt(dx * dx + dy * dy);
 
-                if (distance <= 110)
+                if (distance <= 160)
                 {
                     control.UpdateAmbientReveal(new Point(mouseOnCanvas.X - tile.X, mouseOnCanvas.Y - tile.Y), distance);
                 }
