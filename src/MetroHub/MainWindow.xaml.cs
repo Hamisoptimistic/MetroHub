@@ -76,9 +76,20 @@ public partial class MainWindow : BorderlessFluentWindow
         UpdateLayoutMetrics();
 
         GridPlacementService.SanitizeAndSnapAll(Tiles, GridPlacementService.MaxCols);
-        StorageService.SaveLayout(Tiles);
         TilesListBox.ItemsSource = Tiles;
         UpdateCanvasHeight();
+
+        if (BackdropToggleSwitch != null)
+        {
+            BackdropToggleSwitch.IsChecked = string.Equals(Settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    private void OnBackdropToggleClick(object sender, RoutedEventArgs e)
+    {
+        Settings.BackdropType = BackdropToggleSwitch.IsChecked == true ? "Acrylic" : "Mica";
+        StorageService.SaveSettings(Settings);
+        ApplyConfiguredBackdrop();
     }
 
     private void UpdateLayoutMetrics()
@@ -123,21 +134,55 @@ public partial class MainWindow : BorderlessFluentWindow
         _hudTimer.Start();
     }
 
+    public void ApplyConfiguredBackdrop()
+    {
+        IntPtr hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd == IntPtr.Zero) return;
+
+        Background = System.Windows.Media.Brushes.Transparent;
+        var hs = HwndSource.FromHwnd(hwnd);
+        if (hs?.CompositionTarget != null)
+        {
+            hs.CompositionTarget.BackgroundColor = System.Windows.Media.Colors.Transparent;
+        }
+
+        if (string.Equals(Settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase))
+        {
+            // Acrylic backdrop + Smoked Obsidian tint overlay
+            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW);
+            if (RootGrid != null)
+            {
+                RootGrid.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0x99, 0x0D, 0x0D, 0x11));
+            }
+        }
+        else if (string.Equals(Settings.BackdropType, "MicaAlt", StringComparison.OrdinalIgnoreCase))
+        {
+            // Mica Alt (Tabbed) variant
+            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TABBEDWINDOW);
+            if (RootGrid != null)
+            {
+                RootGrid.Background = System.Windows.Media.Brushes.Transparent;
+            }
+        }
+        else
+        {
+            // Default: Pure Windows 11 Mica backdrop
+            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
+            if (RootGrid != null)
+            {
+                RootGrid.Background = System.Windows.Media.Brushes.Transparent;
+            }
+        }
+    }
+
     private void OnSourceInitialized(object sender, EventArgs e)
     {
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
 
-        // Apply native Windows 11 hardware-accelerated Mica backdrop with border suppression
-        NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
-
-        // Crucial for Mica in WPF: set CompositionTarget background to Transparent
-        var hwndSource = HwndSource.FromHwnd(hwnd);
-        if (hwndSource?.CompositionTarget != null)
-        {
-            hwndSource.CompositionTarget.BackgroundColor = System.Windows.Media.Colors.Transparent;
-        }
+        ApplyConfiguredBackdrop();
 
         // Hook Win32 window messages for instant broadcast IPC wake
+        var hwndSource = HwndSource.FromHwnd(hwnd);
         hwndSource?.AddHook(WndProc);
 
         // Register the global hotkey
@@ -161,17 +206,11 @@ public partial class MainWindow : BorderlessFluentWindow
         {
             Dispatcher.InvokeAsync(async () =>
             {
-                Background = System.Windows.Media.Brushes.Transparent;
-                var hs = HwndSource.FromHwnd(hwnd);
-                if (hs?.CompositionTarget != null)
-                {
-                    hs.CompositionTarget.BackgroundColor = System.Windows.Media.Colors.Transparent;
-                }
-                NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
+                ApplyConfiguredBackdrop();
 
                 // Wait for Windows DWM wallpaper transition cross-fade to complete
                 await Task.Delay(400);
-                NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
+                ApplyConfiguredBackdrop();
             });
         }
         return IntPtr.Zero;
@@ -224,17 +263,11 @@ public partial class MainWindow : BorderlessFluentWindow
         WindowState = WindowState.Normal;
         Topmost = true;
 
-        Background = System.Windows.Media.Brushes.Transparent;
+        ApplyConfiguredBackdrop();
 
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd != IntPtr.Zero)
         {
-            var hs = HwndSource.FromHwnd(hwnd);
-            if (hs?.CompositionTarget != null)
-            {
-                hs.CompositionTarget.BackgroundColor = System.Windows.Media.Colors.Transparent;
-            }
-            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
             NativeMethods.ForceForeground(hwnd);
         }
 

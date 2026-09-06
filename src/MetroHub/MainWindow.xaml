@@ -16,7 +16,7 @@
         BorderThickness="0"
         BorderBrush="Transparent"
         AllowsTransparency="False"
-        ShowInTaskbar="True"
+        ShowInTaskbar="False"
         Topmost="True"
         PreviewKeyDown="OnWindowPreviewKeyDown"
         SourceInitialized="OnSourceInitialized"
@@ -48,6 +48,16 @@
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <!-- Backdrop Material Switch -->
+                <ui:ToggleSwitch x:Name="BackdropToggleSwitch"
+                                 OnContent="Acrylic Obsidian"
+                                 OffContent="Mica"
+                                 FontSize="11"
+                                 Foreground="#C0FFFFFF"
+                                 VerticalAlignment="Center"
+                                 Margin="0,0,16,0"
+                                 Click="OnBackdropToggleClick" />
+
                 <!-- Add Tile Button -->
                 <Button Content="+ Add Tile"
                         Height="34" Padding="14,0"

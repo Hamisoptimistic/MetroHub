@@ -31,6 +31,7 @@ public class BorderlessFluentWindow : FluentWindow
         BorderBrush = System.Windows.Media.Brushes.Transparent;
         Background = System.Windows.Media.Brushes.Transparent;
         ResizeMode = ResizeMode.NoResize;
+        ShowInTaskbar = false;
     }
 
     protected override void OnBackdropTypeChanged(WindowBackdropType oldValue, WindowBackdropType newValue)
