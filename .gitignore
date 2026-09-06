@@ -1,0 +1,14 @@
+# Build outputs
+bin/
+obj/
+dist/
+*.exe
+*.pdb
+
+# Visual Studio / Rider / VSCode
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.cache
