@@ -141,9 +141,10 @@ public partial class MainWindow : BorderlessFluentWindow
         {
             if (IsVisible)
             {
-                long bytes = Process.GetCurrentProcess().WorkingSet64;
+                // Measures purely MetroHub's internal app data and features, excluding external Windows/DirectX shared memory
+                long bytes = GC.GetTotalMemory(forceFullCollection: false);
                 double mb = Math.Round(bytes / (1024.0 * 1024.0), 1);
-                RamHudTextBlock.Text = $"RAM: {mb} MB";
+                RamHudTextBlock.Text = $"App RAM: {mb} MB";
             }
         };
         _hudTimer.Start();

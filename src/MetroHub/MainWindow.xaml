@@ -225,7 +225,7 @@
             <TextBlock x:Name="RamHudTextBlock"
                        HorizontalAlignment="Right"
                        VerticalAlignment="Center"
-                       Text="RAM: ~35 MB"
+                       Text="App RAM: ~15 MB"
                        FontSize="11"
                        Foreground="#90FFFFFF" />
         </Grid>
