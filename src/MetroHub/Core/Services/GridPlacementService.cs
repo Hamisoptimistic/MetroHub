@@ -6,23 +6,21 @@ public static class GridPlacementService
 {
     public const double GridStep = 64.0;
     public const double Gap = 8.0;
-    public const double BaseSideMargin = 32.0;
+    public const double OriginX = 48.0;
     public const double OriginY = 40.0;
+    public const double BaseSideMargin = 48.0;
 
-    public static double OriginX { get; set; } = 48.0;
     public static int MaxCols { get; set; } = 28;
 
     public static void UpdateMetrics(double viewportWidth)
     {
-        double available = Math.Max(320, viewportWidth - (2 * BaseSideMargin));
+        double available = Math.Max(320, viewportWidth - OriginX - BaseSideMargin);
         MaxCols = Math.Max(4, (int)Math.Floor((available + Gap) / GridStep));
-        double gridWidth = (MaxCols * GridStep) - Gap;
-        OriginX = Math.Round(Math.Max(BaseSideMargin, (viewportWidth - gridWidth) / 2.0));
     }
 
     public static int GetMaxCols(double viewportWidth)
     {
-        double available = Math.Max(320, viewportWidth - (2 * BaseSideMargin));
+        double available = Math.Max(320, viewportWidth - OriginX - BaseSideMargin);
         return Math.Max(4, (int)Math.Floor((available + Gap) / GridStep));
     }
 
@@ -164,6 +162,8 @@ public static class GridPlacementService
         // If dropped back where it started, simply re-snap
         if (targetCol == originalCol && targetRow == originalRow)
         {
+            draggedTile.Col = targetCol;
+            draggedTile.Row = targetRow;
             draggedTile.X = PixelXFromCol(targetCol);
             draggedTile.Y = PixelYFromRow(targetRow);
             modifiedTiles.Add(draggedTile);
@@ -175,6 +175,8 @@ public static class GridPlacementService
         if (overlapping.Count == 0)
         {
             // Case 1: Slot is completely free
+            draggedTile.Col = targetCol;
+            draggedTile.Row = targetRow;
             draggedTile.X = PixelXFromCol(targetCol);
             draggedTile.Y = PixelYFromRow(targetRow);
             modifiedTiles.Add(draggedTile);
@@ -188,11 +190,15 @@ public static class GridPlacementService
             int swapCol = GetCol(targetTile);
             int swapRow = GetRow(targetTile);
 
+            draggedTile.Col = swapCol;
+            draggedTile.Row = swapRow;
             draggedTile.X = PixelXFromCol(swapCol);
             draggedTile.Y = PixelYFromRow(swapRow);
             modifiedTiles.Add(draggedTile);
 
             // targetTile moves cleanly to draggedTile's original position!
+            targetTile.Col = originalCol;
+            targetTile.Row = originalRow;
             targetTile.X = PixelXFromCol(originalCol);
             targetTile.Y = PixelYFromRow(originalRow);
             modifiedTiles.Add(targetTile);
@@ -202,6 +208,8 @@ public static class GridPlacementService
 
         // Case 3: Multiple tiles or different size
         // Dragged tile claims the slot
+        draggedTile.Col = targetCol;
+        draggedTile.Row = targetRow;
         draggedTile.X = PixelXFromCol(targetCol);
         draggedTile.Y = PixelYFromRow(targetRow);
         modifiedTiles.Add(draggedTile);
@@ -216,6 +224,8 @@ public static class GridPlacementService
             int dRow = GetRow(displaced);
 
             var (newCol, newRow) = FindNearestAvailableSlot(dCol, dRow, displaced.SpanX, displaced.SpanY, lockedTiles, null, maxCols);
+            displaced.Col = newCol;
+            displaced.Row = newRow;
             displaced.X = PixelXFromCol(newCol);
             displaced.Y = PixelYFromRow(newRow);
             lockedTiles.Add(displaced);
@@ -236,6 +246,8 @@ public static class GridPlacementService
 
             var (freeCol, freeRow) = FindNearestAvailableSlot(col, row, tile.SpanX, tile.SpanY, placedTiles, null, maxCols);
 
+            tile.Col = freeCol;
+            tile.Row = freeRow;
             tile.X = PixelXFromCol(freeCol);
             tile.Y = PixelYFromRow(freeRow);
 

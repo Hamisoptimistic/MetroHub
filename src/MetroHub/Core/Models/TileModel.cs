@@ -28,6 +28,20 @@ public class TileModel : INotifyPropertyChanged
     private int _orderIndex = 0;
     private double _x = 0;
     private double _y = 0;
+    private int _col = 0;
+    private int _row = 0;
+
+    public int Col
+    {
+        get => _col;
+        set => SetField(ref _col, value);
+    }
+
+    public int Row
+    {
+        get => _row;
+        set => SetField(ref _row, value);
+    }
 
     public double X
     {

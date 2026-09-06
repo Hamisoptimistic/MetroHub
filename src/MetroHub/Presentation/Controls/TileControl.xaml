@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:conv="clr-namespace:MetroHub.Presentation.Converters"
              mc:Ignorable="d"
-             Margin="4"
+             Margin="0"
              Cursor="Hand"
              Focusable="False">
 

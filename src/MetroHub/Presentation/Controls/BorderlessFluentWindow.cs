@@ -29,17 +29,38 @@ public class BorderlessFluentWindow : FluentWindow
         WindowStyle = WindowStyle.None;
         BorderThickness = new Thickness(0);
         BorderBrush = System.Windows.Media.Brushes.Transparent;
+        Background = System.Windows.Media.Brushes.Transparent;
         ResizeMode = ResizeMode.NoResize;
+    }
+
+    protected override void OnBackdropTypeChanged(WindowBackdropType oldValue, WindowBackdropType newValue)
+    {
+        // Suppress WPF-UI's built-in backdrop manager which resets Background to solid #202020
+    }
+
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+        if (e.Property == BackgroundProperty && Background != System.Windows.Media.Brushes.Transparent)
+        {
+            SetCurrentValue(BackgroundProperty, System.Windows.Media.Brushes.Transparent);
+        }
     }
 
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
 
+        Background = System.Windows.Media.Brushes.Transparent;
+
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd != IntPtr.Zero)
         {
             var source = HwndSource.FromHwnd(hwnd);
+            if (source?.CompositionTarget != null)
+            {
+                source.CompositionTarget.BackgroundColor = System.Windows.Media.Colors.Transparent;
+            }
             source?.AddHook(HwndMessageHook);
         }
 

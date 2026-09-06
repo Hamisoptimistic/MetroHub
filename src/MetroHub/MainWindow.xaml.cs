@@ -127,7 +127,7 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
 
-        // Apply native Windows 11 hardware-accelerated Acrylic/Mica backdrop with border suppression
+        // Apply native Windows 11 hardware-accelerated Mica backdrop with border suppression
         NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
 
         // Crucial for Mica in WPF: set CompositionTarget background to Transparent
@@ -148,12 +148,31 @@ public partial class MainWindow : BorderlessFluentWindow
         SnapToWorkArea();
     }
 
+    private const int WM_SETTINGCHANGE = 0x001A;
+
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if ((uint)msg == NativeMethods.WM_SHOW_METROHUB)
         {
             Dispatcher.Invoke(ShowScreen);
             handled = true;
+        }
+        else if (msg == WM_SETTINGCHANGE)
+        {
+            Dispatcher.InvokeAsync(async () =>
+            {
+                Background = System.Windows.Media.Brushes.Transparent;
+                var hs = HwndSource.FromHwnd(hwnd);
+                if (hs?.CompositionTarget != null)
+                {
+                    hs.CompositionTarget.BackgroundColor = System.Windows.Media.Colors.Transparent;
+                }
+                NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
+
+                // Wait for Windows DWM wallpaper transition cross-fade to complete
+                await Task.Delay(400);
+                NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
+            });
         }
         return IntPtr.Zero;
     }
@@ -205,9 +224,16 @@ public partial class MainWindow : BorderlessFluentWindow
         WindowState = WindowState.Normal;
         Topmost = true;
 
+        Background = System.Windows.Media.Brushes.Transparent;
+
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd != IntPtr.Zero)
         {
+            var hs = HwndSource.FromHwnd(hwnd);
+            if (hs?.CompositionTarget != null)
+            {
+                hs.CompositionTarget.BackgroundColor = System.Windows.Media.Colors.Transparent;
+            }
             NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
             NativeMethods.ForceForeground(hwnd);
         }
