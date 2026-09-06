@@ -30,23 +30,96 @@ public partial class TileControl : UserControl
         remove => RemoveHandler(TileUnpinnedEvent, value);
     }
 
+    public static readonly List<TileControl> ActiveTiles = new();
+
     public TileControl()
     {
         InitializeComponent();
+        Loaded += (s, e) => { if (!ActiveTiles.Contains(this)) ActiveTiles.Add(this); };
+        Unloaded += (s, e) => { ActiveTiles.Remove(this); };
+
         MouseEnter += OnMouseEnter;
         MouseLeave += OnMouseLeave;
+        MouseMove += OnMouseMove;
+    }
+
+    private void OnMouseMove(object sender, MouseEventArgs e)
+    {
+        Point pos = e.GetPosition(RootBorder);
+        UpdateRevealPositions(pos);
     }
 
     private void OnMouseEnter(object sender, MouseEventArgs e)
     {
-        RootBorder.BorderBrush = new SolidColorBrush(Color.FromArgb(180, 255, 255, 255));
-        RootBorder.Background = new SolidColorBrush(Color.FromArgb(55, 255, 255, 255));
+        Point pos = e.GetPosition(RootBorder);
+        UpdateRevealPositions(pos);
+        AnimateRevealFill(1.0, 100);
+        RevealEdgeBorder.BeginAnimation(UIElement.OpacityProperty, null);
+        RevealEdgeBorder.Opacity = 1.0;
     }
 
     private void OnMouseLeave(object sender, MouseEventArgs e)
     {
-        RootBorder.BorderBrush = new SolidColorBrush(Color.FromArgb(51, 255, 255, 255));
-        RootBorder.Background = new SolidColorBrush(Color.FromArgb(32, 255, 255, 255));
+        AnimateRevealFill(0.0, 200);
+        var anim = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(220))
+        {
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+        };
+        RevealEdgeBorder?.BeginAnimation(UIElement.OpacityProperty, anim);
+    }
+
+    private void UpdateRevealPositions(Point pos)
+    {
+        if (RevealFillBrush != null)
+        {
+            RevealFillBrush.Center = pos;
+            RevealFillBrush.GradientOrigin = pos;
+        }
+        if (RevealEdgeBrush != null)
+        {
+            RevealEdgeBrush.Center = pos;
+            RevealEdgeBrush.GradientOrigin = pos;
+        }
+    }
+
+    private void AnimateRevealFill(double targetOpacity, int durationMs)
+    {
+        var anim = new DoubleAnimation(targetOpacity, TimeSpan.FromMilliseconds(durationMs))
+        {
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+        };
+        RevealFillBorder?.BeginAnimation(UIElement.OpacityProperty, anim);
+    }
+
+    public void UpdateAmbientReveal(Point mouseOnTile, double distance)
+    {
+        if (IsMouseOver)
+        {
+            RevealEdgeBorder.Opacity = 1.0;
+            return;
+        }
+
+        if (RevealEdgeBrush != null)
+        {
+            RevealEdgeBrush.Center = mouseOnTile;
+            RevealEdgeBrush.GradientOrigin = mouseOnTile;
+        }
+
+        // Quadratic proximity falloff
+        double factor = Math.Clamp(1.0 - (distance / 110.0), 0.0, 1.0);
+        double targetOpacity = factor * factor;
+
+        RevealEdgeBorder.BeginAnimation(UIElement.OpacityProperty, null);
+        RevealEdgeBorder.Opacity = targetOpacity;
+    }
+
+    public void ClearAmbientReveal()
+    {
+        if (!IsMouseOver && RevealEdgeBorder.Opacity > 0)
+        {
+            RevealEdgeBorder.BeginAnimation(UIElement.OpacityProperty, null);
+            RevealEdgeBorder.Opacity = 0.0;
+        }
     }
 
     public void LaunchTile()

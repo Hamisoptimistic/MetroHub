@@ -30,7 +30,8 @@
           RenderTransformOrigin="0.5, 0.5"
           PreviewMouseLeftButtonDown="OnCanvasPreviewMouseDown"
           PreviewMouseMove="OnCanvasPreviewMouseMove"
-          PreviewMouseLeftButtonUp="OnCanvasPreviewMouseUp">
+          PreviewMouseLeftButtonUp="OnCanvasPreviewMouseUp"
+          MouseLeave="OnCanvasMouseLeave">
         <Grid.RenderTransform>
             <TransformGroup>
                 <ScaleTransform x:Name="RootScale" ScaleX="1.0" ScaleY="1.0" />

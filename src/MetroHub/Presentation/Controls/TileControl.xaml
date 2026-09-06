@@ -17,8 +17,8 @@
     <Border x:Name="RootBorder"
             CornerRadius="8"
             BorderThickness="1"
-            BorderBrush="#33FFFFFF"
-            Background="#20FFFFFF"
+            BorderBrush="#25FFFFFF"
+            Background="#1CFFFFFF"
             Width="{Binding SpanX, Converter={StaticResource SpanConverter}}"
             Height="{Binding SpanY, Converter={StaticResource SpanConverter}}"
             RenderTransformOrigin="0.5,0.5">
@@ -55,7 +55,37 @@
             </ContextMenu>
         </Border.ContextMenu>
 
-        <Grid Margin="10">
+        <Grid>
+            <!-- Fluent Reveal Highlight: Surface Spotlight -->
+            <Border x:Name="RevealFillBorder"
+                    CornerRadius="8"
+                    IsHitTestVisible="False"
+                    Opacity="0">
+                <Border.Background>
+                    <RadialGradientBrush x:Name="RevealFillBrush" MappingMode="Absolute" RadiusX="130" RadiusY="130">
+                        <GradientStop Color="#30FFFFFF" Offset="0.0" />
+                        <GradientStop Color="#1260CDFF" Offset="0.45" />
+                        <GradientStop Color="#00000000" Offset="1.0" />
+                    </RadialGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <!-- Fluent Reveal Highlight: Edge Illumination -->
+            <Border x:Name="RevealEdgeBorder"
+                    CornerRadius="8"
+                    BorderThickness="1.2"
+                    IsHitTestVisible="False"
+                    Opacity="0">
+                <Border.BorderBrush>
+                    <RadialGradientBrush x:Name="RevealEdgeBrush" MappingMode="Absolute" RadiusX="95" RadiusY="95">
+                        <GradientStop Color="#E6FFFFFF" Offset="0.0" />
+                        <GradientStop Color="#7060CDFF" Offset="0.5" />
+                        <GradientStop Color="#00000000" Offset="1.0" />
+                    </RadialGradientBrush>
+                </Border.BorderBrush>
+            </Border>
+
+            <Grid Margin="10">
             <!-- 1x1 Small Tile Layout -->
             <Grid Visibility="{Binding IsSmall, Converter={StaticResource BoolToVis}}">
                 <Image Source="{Binding IconPath}"
@@ -110,5 +140,6 @@
                 </StackPanel>
             </Grid>
         </Grid>
-    </Border>
+    </Grid>
+</Border>
 </UserControl>

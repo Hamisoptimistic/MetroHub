@@ -444,6 +444,7 @@ public partial class MainWindow : BorderlessFluentWindow
             {
                 _isDragging = true;
                 _draggedTile.IsBeingDragged = true;
+                ClearAllAmbientReveals();
 
                 if (_draggedContainer != null)
                 {
@@ -457,6 +458,12 @@ public partial class MainWindow : BorderlessFluentWindow
 
                 RootGrid.CaptureMouse();
             }
+        }
+
+        if (!_isDragging && TilesListBox != null)
+        {
+            Point canvasMouse = e.GetPosition(TilesListBox);
+            UpdateAmbientReveal(canvasMouse);
         }
 
         if (_isDragging && _draggedTile != null)
@@ -574,6 +581,46 @@ public partial class MainWindow : BorderlessFluentWindow
                 }
             }
             return;
+        }
+    }
+
+    private void OnCanvasMouseLeave(object sender, MouseEventArgs e)
+    {
+        ClearAllAmbientReveals();
+    }
+
+    private void UpdateAmbientReveal(Point mouseOnCanvas)
+    {
+        if (Presentation.Controls.TileControl.ActiveTiles.Count == 0) return;
+
+        foreach (var control in Presentation.Controls.TileControl.ActiveTiles)
+        {
+            if (control.DataContext is TileModel tile)
+            {
+                double right = tile.X + tile.WidthPixels;
+                double bottom = tile.Y + tile.HeightPixels;
+
+                double dx = Math.Max(0, Math.Max(tile.X - mouseOnCanvas.X, mouseOnCanvas.X - right));
+                double dy = Math.Max(0, Math.Max(tile.Y - mouseOnCanvas.Y, mouseOnCanvas.Y - bottom));
+                double distance = Math.Sqrt(dx * dx + dy * dy);
+
+                if (distance <= 110)
+                {
+                    control.UpdateAmbientReveal(new Point(mouseOnCanvas.X - tile.X, mouseOnCanvas.Y - tile.Y), distance);
+                }
+                else
+                {
+                    control.ClearAmbientReveal();
+                }
+            }
+        }
+    }
+
+    private void ClearAllAmbientReveals()
+    {
+        foreach (var control in Presentation.Controls.TileControl.ActiveTiles)
+        {
+            control.ClearAmbientReveal();
         }
     }
 
