@@ -205,6 +205,12 @@ public static class NativeMethods
                 UseShellExecute = true
             };
 
+            if (path.StartsWith("shell:", StringComparison.OrdinalIgnoreCase))
+            {
+                psi.FileName = "explorer.exe";
+                psi.Arguments = $"\"{path}\"";
+            }
+
             if (runAsAdmin)
             {
                 psi.Verb = "runas";

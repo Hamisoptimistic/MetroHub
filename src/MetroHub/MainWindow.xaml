@@ -113,7 +113,55 @@
                       Background="Transparent"
                       Focusable="False">
 
-            <Grid x:Name="MainCanvasGrid">
+            <Grid x:Name="MainCanvasGrid"
+                  Background="Transparent"
+                  PreviewMouseRightButtonDown="OnCanvasPreviewMouseRightButtonDown">
+                <Grid.ContextMenu>
+                    <ContextMenu x:Name="CanvasContextMenu"
+                                 Opened="OnCanvasContextMenuOpened">
+                        <!-- Modular Catalogs: Apps -->
+                        <MenuItem x:Name="AppsMenuItem"
+                                  Header="Apps"
+                                  SubmenuOpened="OnAppsSubmenuOpened">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="Apps24" FontSize="16" />
+                            </MenuItem.Icon>
+                            <MenuItem.Resources>
+                                <Style TargetType="{x:Type ui:PassiveScrollViewer}">
+                                    <Setter Property="MaxHeight" Value="500" />
+                                    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+                                    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+                                </Style>
+                                <Style TargetType="{x:Type ScrollViewer}">
+                                    <Setter Property="MaxHeight" Value="500" />
+                                    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+                                    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+                                </Style>
+                            </MenuItem.Resources>
+                            <MenuItem Header="Loading applications..." IsEnabled="False" />
+                        </MenuItem>
+
+                        <Separator />
+
+                        <MenuItem Header="+ Add Custom Tile..." Click="OnAddTileClick">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="Add24" FontSize="16" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <MenuItem Header="Mica / Acrylic Toggle" Click="OnBackdropToggleClick">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="DarkTheme24" FontSize="16" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <MenuItem Header="Export Layout" Click="OnExportLayoutClick">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="Share24" FontSize="16" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </Grid.ContextMenu>
                 <!-- Drop Target Slot Indicator (snaps to grid in real-time beneath tiles) -->
                 <Canvas x:Name="DropIndicatorCanvas" IsHitTestVisible="False">
                     <Border x:Name="DropSlotIndicator"

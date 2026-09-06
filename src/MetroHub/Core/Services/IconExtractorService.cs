@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace MetroHub.Core.Services;
@@ -88,6 +89,187 @@ public static class IconExtractorService
     private const uint SHGFI_ICON = 0x000000100;
     private const uint SHGFI_LARGEICON = 0x000000000;
 
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern int SHGetKnownFolderPath(
+        [MarshalAs(UnmanagedType.LPStruct)] Guid rfid,
+        uint dwFlags,
+        IntPtr hToken,
+        out IntPtr ppszPath);
+
+    private static readonly Dictionary<string, string> KnownFolderMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "{6D809377-6AF0-444B-8957-A3773F02200E}", Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) },
+        { "{7C5A40EF-A0FB-4BFC-874A-C0F2E0B9FA8E}", Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86) },
+        { "{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}", Environment.GetFolderPath(Environment.SpecialFolder.System) },
+        { "{D65231B0-B2F1-4857-A4CE-A8E7C6EA7D27}", Environment.GetFolderPath(Environment.SpecialFolder.SystemX86) },
+        { "{F38BF404-1D43-42F2-9305-67DE0B28FC23}", Environment.GetFolderPath(Environment.SpecialFolder.Windows) },
+        { "{905e63b6-c1bf-494e-b29c-65b732d3d21a}", Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFiles) },
+        { "{DE974928-267F-4E40-A6DA-8C323A0DEC07}", Environment.GetFolderPath(Environment.SpecialFolder.CommonProgramFilesX86) },
+        { "{5E6C858F-0E22-4760-9AFE-EA3317B67173}", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) },
+        { "{A52BBA46-E9E1-435F-B3D9-28DAA648C0F6}", Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) },
+        { "{3EB685FD-984F-4E40-B0D2-E4531642D541}", Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) }
+    };
+
+    public static string ResolveKnownFolderGuid(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return path;
+
+        string stripped = path;
+        if (stripped.StartsWith("shell:AppsFolder\\", StringComparison.OrdinalIgnoreCase))
+        {
+            stripped = stripped.Substring("shell:AppsFolder\\".Length);
+        }
+
+        foreach (var kvp in KnownFolderMap)
+        {
+            if (stripped.StartsWith(kvp.Key, StringComparison.OrdinalIgnoreCase))
+            {
+                string remainder = stripped.Substring(kvp.Key.Length).TrimStart('\\', '/');
+                string resolved = Path.Combine(kvp.Value, remainder);
+                if (File.Exists(resolved) || Directory.Exists(resolved))
+                {
+                    return resolved;
+                }
+            }
+        }
+
+        if (stripped.StartsWith("{"))
+        {
+            int endBrace = stripped.IndexOf('}');
+            if (endBrace > 0)
+            {
+                string guidStr = stripped.Substring(1, endBrace - 1);
+                if (Guid.TryParse(guidStr, out Guid rfid))
+                {
+                    int hr = SHGetKnownFolderPath(rfid, 0, IntPtr.Zero, out IntPtr ppszPath);
+                    if (hr == 0 && ppszPath != IntPtr.Zero)
+                    {
+                        try
+                        {
+                            string? folderPath = Marshal.PtrToStringUni(ppszPath);
+                            if (!string.IsNullOrWhiteSpace(folderPath))
+                            {
+                                string remainder = stripped.Substring(endBrace + 1).TrimStart('\\', '/');
+                                string resolved = Path.Combine(folderPath, remainder);
+                                if (File.Exists(resolved) || Directory.Exists(resolved))
+                                {
+                                    return resolved;
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            Marshal.FreeCoTaskMem(ppszPath);
+                        }
+                    }
+                }
+            }
+        }
+
+        return path;
+    }
+
+    public static BitmapSource TrimTransparentPadding(BitmapSource source, double paddingPercent = 0.05)
+    {
+        if (source == null) return source;
+
+        try
+        {
+            int width = source.PixelWidth;
+            int height = source.PixelHeight;
+            if (width <= 16 || height <= 16) return source;
+
+            var formatted = new FormatConvertedBitmap(source, PixelFormats.Bgra32, null, 0);
+            int stride = width * 4;
+            byte[] pixels = new byte[height * stride];
+            formatted.CopyPixels(pixels, stride, 0);
+
+            // Step 1: Find solid content bounds (A >= 100) to ignore faint shell backplates, tiles, and drop shadows
+            int minX = width, minY = height, maxX = -1, maxY = -1;
+
+            for (int y = 0; y < height; y++)
+            {
+                int rowOffset = y * stride;
+                for (int x = 0; x < width; x++)
+                {
+                    byte alpha = pixels[rowOffset + (x * 4) + 3];
+                    if (alpha >= 100)
+                    {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            }
+
+            // Fallback: if no pixels with A >= 100 (e.g. translucent icon), check with A >= 30
+            if (maxX < minX || maxY < minY)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    int rowOffset = y * stride;
+                    for (int x = 0; x < width; x++)
+                    {
+                        byte alpha = pixels[rowOffset + (x * 4) + 3];
+                        if (alpha >= 30)
+                        {
+                            if (x < minX) minX = x;
+                            if (x > maxX) maxX = x;
+                            if (y < minY) minY = y;
+                            if (y > maxY) maxY = y;
+                        }
+                    }
+                }
+            }
+
+            // If completely empty, return original
+            if (maxX < minX || maxY < minY) return source;
+
+            // Expand slightly to preserve smooth anti-aliased edges around the solid core
+            minX = Math.Max(0, minX - 2);
+            minY = Math.Max(0, minY - 2);
+            maxX = Math.Min(width - 1, maxX + 2);
+            maxY = Math.Min(height - 1, maxY + 2);
+
+            int contentW = maxX - minX + 1;
+            int contentH = maxY - minY + 1;
+
+            // If the icon content already fills >= 80% of canvas, no need to crop
+            if (contentW >= width * 0.80 && contentH >= height * 0.80)
+            {
+                return source;
+            }
+
+            // Calculate centered square crop area with a subtle breathing padding
+            int maxDim = Math.Max(contentW, contentH);
+            int pad = Math.Max(1, (int)Math.Round(maxDim * paddingPercent));
+            int targetSize = maxDim + (pad * 2);
+
+            int centerX = minX + (contentW / 2);
+            int centerY = minY + (contentH / 2);
+
+            int cropX = Math.Max(0, centerX - (targetSize / 2));
+            int cropY = Math.Max(0, centerY - (targetSize / 2));
+
+            if (cropX + targetSize > width) cropX = Math.Max(0, width - targetSize);
+            if (cropY + targetSize > height) cropY = Math.Max(0, height - targetSize);
+
+            int finalW = Math.Min(targetSize, width - cropX);
+            int finalH = Math.Min(targetSize, height - cropY);
+
+            if (finalW <= 0 || finalH <= 0) return source;
+
+            var cropped = new CroppedBitmap(formatted, new Int32Rect(cropX, cropY, finalW, finalH));
+            cropped.Freeze();
+            return cropped;
+        }
+        catch
+        {
+            return source;
+        }
+    }
+
     static IconExtractorService()
     {
         try
@@ -107,19 +289,20 @@ public static class IconExtractorService
         try
         {
             string resolvedPath = ResolveShortcutTarget(filePath);
+            resolvedPath = ResolveKnownFolderGuid(resolvedPath);
             string modernPath = ResolveModernAppRedirect(resolvedPath);
             string keyPath = !string.IsNullOrWhiteSpace(modernPath) ? modernPath : (!string.IsNullOrWhiteSpace(resolvedPath) ? resolvedPath : filePath);
-            string hashName = $"{Math.Abs(keyPath.ToLowerInvariant().GetHashCode())}.png";
+            string hashName = $"v4_{Math.Abs(keyPath.ToLowerInvariant().GetHashCode())}.png";
             string cachedFilePath = Path.Combine(IconCacheDir, hashName);
 
-            // Fast header check: if already cached and high-res (>= 48px), return existing
+            // Fast header check: if already cached and high-res (>= 32px), return existing
             if (File.Exists(cachedFilePath))
             {
                 try
                 {
                     using var stream = new FileStream(cachedFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                     var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
-                    if (decoder.Frames.Count > 0 && decoder.Frames[0].PixelWidth >= 48)
+                    if (decoder.Frames.Count > 0 && decoder.Frames[0].PixelWidth >= 32)
                     {
                         return cachedFilePath;
                     }
@@ -131,6 +314,9 @@ public static class IconExtractorService
             BitmapSource? bs = ExtractBestQualityIcon(filePath, resolvedPath, modernPath);
             if (bs != null)
             {
+                // Auto-trim transparent borders and shell backplates so small icons fill the container bold and large
+                bs = TrimTransparentPadding(bs);
+
                 using (var fs = new FileStream(cachedFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
                 {
                     var encoder = new PngBitmapEncoder();
@@ -319,6 +505,14 @@ public static class IconExtractorService
 
     public static string ResolveShortcutTarget(string shortcutPath)
     {
+        if (string.IsNullOrWhiteSpace(shortcutPath)) return shortcutPath;
+
+        string kf = ResolveKnownFolderGuid(shortcutPath);
+        if (File.Exists(kf) || Directory.Exists(kf))
+        {
+            shortcutPath = kf;
+        }
+
         if (!shortcutPath.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
         {
             return shortcutPath;
@@ -333,13 +527,37 @@ public static class IconExtractorService
                 if (shell != null)
                 {
                     dynamic shortcut = shell.CreateShortcut(shortcutPath);
-                    string target = shortcut.TargetPath;
+                    string target = shortcut.TargetPath?.ToString() ?? string.Empty;
+                    string iconLoc = shortcut.IconLocation?.ToString() ?? string.Empty;
                     Marshal.FinalReleaseComObject(shortcut);
                     Marshal.FinalReleaseComObject(shell);
 
-                    if (!string.IsNullOrWhiteSpace(target) && (File.Exists(target) || Directory.Exists(target)))
+                    // Check IconLocation first (MSI advertised shortcuts store their high-res icon path here)
+                    if (!string.IsNullOrWhiteSpace(iconLoc))
                     {
-                        return target;
+                        string iconFile = iconLoc.Split(',')[0].Trim('\"', ' ');
+                        string resolvedIconFile = ResolveKnownFolderGuid(iconFile);
+                        if (File.Exists(resolvedIconFile))
+                        {
+                            return resolvedIconFile;
+                        }
+                        if (File.Exists(iconFile))
+                        {
+                            return iconFile;
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(target))
+                    {
+                        string resolvedTarget = ResolveKnownFolderGuid(target);
+                        if (File.Exists(resolvedTarget) || Directory.Exists(resolvedTarget))
+                        {
+                            return resolvedTarget;
+                        }
+                        if (File.Exists(target) || Directory.Exists(target))
+                        {
+                            return target;
+                        }
                     }
                 }
             }

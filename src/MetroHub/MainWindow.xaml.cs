@@ -8,11 +8,16 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using System.Windows.Data;
 using Microsoft.Win32;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
+using MetroHub.Core.Services.Catalog;
 using MetroHub.Presentation.Controls;
 using Wpf.Ui.Controls;
+using MenuItem = System.Windows.Controls.MenuItem;
+using ContextMenu = System.Windows.Controls.ContextMenu;
+using Image = System.Windows.Controls.Image;
 
 namespace MetroHub;
 
@@ -28,6 +33,11 @@ public partial class MainWindow : BorderlessFluentWindow
     private DispatcherTimer? _hudTimer;
     private bool _isClosingToExit = false;
 
+    private Point _canvasRightClickPoint;
+    private bool _isAppsLoaded = false;
+    private bool _isLoadingApps = false;
+    private DateTime _lastAppsRefreshTime = DateTime.MinValue;
+
     public MainWindow()
     {
         Current = this;
@@ -40,6 +50,9 @@ public partial class MainWindow : BorderlessFluentWindow
         Activated += OnWindowActivated;
         Deactivated += OnWindowDeactivated;
         SizeChanged += (s, e) => { UpdateLayoutMetrics(); UpdateCanvasHeight(); };
+
+        InstalledAppsService.AppsCatalogChanged += OnAppsCatalogChanged;
+        Task.Run(() => InstalledAppsService.GetInstalledApps(forceRefresh: false));
     }
 
     private DateTime _lastShownTime = DateTime.MinValue;
@@ -279,6 +292,7 @@ public partial class MainWindow : BorderlessFluentWindow
         UpdateLayoutMetrics();
 
         PlayEntranceAnimation();
+        TriggerBackgroundAppsCatalogRefresh();
     }
 
     public void HideScreen()
@@ -760,6 +774,227 @@ public partial class MainWindow : BorderlessFluentWindow
             UpdateCanvasHeight();
         }
     }
+
+    #region Canvas Context Menu & Modular Catalog Methods
+
+    private void OnCanvasPreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        DependencyObject? dep = e.OriginalSource as DependencyObject;
+        var tileControl = FindParent<Presentation.Controls.TileControl>(dep);
+        if (tileControl == null && TilesListBox != null)
+        {
+            _canvasRightClickPoint = e.GetPosition(TilesListBox);
+        }
+    }
+
+    private void OnCanvasContextMenuOpened(object sender, RoutedEventArgs e)
+    {
+        // Pre-heat apps catalog in background when context menu opens so hovering over "Apps" is instantaneous
+        if (!_isAppsLoaded && !_isLoadingApps)
+        {
+            _ = LoadAppsSubmenuAsync();
+        }
+    }
+
+    private async void OnAppsSubmenuOpened(object sender, RoutedEventArgs e)
+    {
+        await LoadAppsSubmenuAsync();
+    }
+
+    private async Task LoadAppsSubmenuAsync()
+    {
+        if (_isAppsLoaded || _isLoadingApps) return;
+        _isLoadingApps = true;
+
+        try
+        {
+            var provider = CatalogService.GetProvider("installed_apps");
+            if (provider != null)
+            {
+                var items = await provider.GetItemsAsync();
+
+                AppsMenuItem.Items.Clear();
+                foreach (var item in items)
+                {
+                    var menuItem = CreateCatalogMenuItem(item);
+                    AppsMenuItem.Items.Add(menuItem);
+                }
+                _isAppsLoaded = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AppsMenu] Error loading apps: {ex.Message}");
+        }
+        finally
+        {
+            _isLoadingApps = false;
+        }
+    }
+
+    private void OnAppsCatalogChanged(List<CatalogItemModel> freshApps)
+    {
+        Dispatcher.InvokeAsync(() =>
+        {
+            if (_isAppsLoaded && AppsMenuItem != null)
+            {
+                UpdateAppsMenuItems(freshApps);
+            }
+        }, DispatcherPriority.Background);
+    }
+
+    private void TriggerBackgroundAppsCatalogRefresh()
+    {
+        // Throttle COM enumeration queries to at most once every 10 seconds
+        if ((DateTime.UtcNow - _lastAppsRefreshTime).TotalSeconds < 10)
+        {
+            return;
+        }
+
+        _lastAppsRefreshTime = DateTime.UtcNow;
+
+        // Multi-threaded background execution (never blocks UI or animations)
+        Task.Run(async () =>
+        {
+            try
+            {
+                var provider = CatalogService.GetProvider("installed_apps");
+                if (provider == null) return;
+
+                var freshItems = await provider.GetItemsAsync(forceRefresh: true);
+
+                if (_isAppsLoaded)
+                {
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                        UpdateAppsMenuItems(freshItems);
+                    }, DispatcherPriority.Background);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[AppsCatalog] Background refresh error: {ex.Message}");
+            }
+        });
+    }
+
+    private void UpdateAppsMenuItems(IReadOnlyList<CatalogItemModel> freshItems)
+    {
+        if (AppsMenuItem == null) return;
+
+        bool hasChanged = AppsMenuItem.Items.Count != freshItems.Count;
+        if (!hasChanged)
+        {
+            for (int i = 0; i < freshItems.Count; i++)
+            {
+                if (AppsMenuItem.Items[i] is MenuItem mi && mi.DataContext is CatalogItemModel existing)
+                {
+                    if (!string.Equals(existing.TargetPath, freshItems[i].TargetPath, StringComparison.OrdinalIgnoreCase)
+                        || !string.Equals(existing.Name, freshItems[i].Name, StringComparison.Ordinal))
+                    {
+                        hasChanged = true;
+                        break;
+                    }
+                }
+                else
+                {
+                    hasChanged = true;
+                    break;
+                }
+            }
+        }
+
+        if (hasChanged)
+        {
+            AppsMenuItem.Items.Clear();
+            foreach (var item in freshItems)
+            {
+                AppsMenuItem.Items.Add(CreateCatalogMenuItem(item));
+            }
+        }
+    }
+
+    private MenuItem CreateCatalogMenuItem(CatalogItemModel item)
+    {
+        var menuItem = new MenuItem
+        {
+            Header = item.Name,
+            DataContext = item,
+            Cursor = Cursors.Hand
+        };
+
+        var img = new Image
+        {
+            Width = 18,
+            Height = 18,
+            SnapsToDevicePixels = true
+        };
+        RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
+
+        var binding = new Binding("Icon")
+        {
+            Source = item,
+            Mode = BindingMode.OneWay
+        };
+        img.SetBinding(Image.SourceProperty, binding);
+        menuItem.Icon = img;
+
+        menuItem.Click += (s, e) =>
+        {
+            PinCatalogItem(item, _canvasRightClickPoint);
+        };
+
+        return menuItem;
+    }
+
+    public void PinCatalogItem(CatalogItemModel item, Point? targetCanvasPosition = null)
+    {
+        if (item == null) return;
+
+        UpdateLayoutMetrics();
+        int maxCols = GridPlacementService.MaxCols;
+
+        Point clickPoint = targetCanvasPosition ?? new Point(GridPlacementService.OriginX, GridPlacementService.OriginY);
+
+        int col = GridPlacementService.ColFromPixel(clickPoint.X);
+        int row = GridPlacementService.RowFromPixel(clickPoint.Y);
+
+        int spanX = item.SpanX > 0 ? item.SpanX : 2;
+        int spanY = item.SpanY > 0 ? item.SpanY : 2;
+
+        int clampedCol = Math.Max(0, Math.Min(col, maxCols - spanX));
+        int clampedRow = Math.Max(0, row);
+
+        var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(
+            clampedCol,
+            clampedRow,
+            spanX,
+            spanY,
+            Tiles,
+            null,
+            maxCols);
+
+        string? iconPath = IconExtractorService.ExtractAndCacheIcon(item.TargetPath);
+
+        var tile = new TileModel
+        {
+            Title = item.Name,
+            TargetPath = item.TargetPath,
+            Arguments = item.Arguments,
+            IconPath = iconPath,
+            TileType = item.TileType,
+            SpanX = spanX,
+            SpanY = spanY,
+            X = GridPlacementService.PixelXFromCol(freeCol),
+            Y = GridPlacementService.PixelYFromRow(freeRow)
+        };
+
+        Tiles.Add(tile);
+        StorageService.SaveLayout(Tiles);
+        UpdateCanvasHeight();
+    }
+
+    #endregion
 
     private void OnExportLayoutClick(object sender, RoutedEventArgs e)
     {

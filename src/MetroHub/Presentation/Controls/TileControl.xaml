@@ -108,52 +108,42 @@
                            Margin="0,0,0,12"
                            RenderOptions.BitmapScalingMode="HighQuality" />
 
-                    <!-- Label: Docked to bottom-left in authentic Segoe UI -->
+                    <!-- Label: Docked to bottom-left in authentic Segoe UI Variable -->
                     <TextBlock Text="{Binding Title}"
                                VerticalAlignment="Bottom"
                                HorizontalAlignment="Left"
                                Margin="8,0,8,6"
-                               FontSize="11"
-                               FontFamily="Segoe UI, Inter, -apple-system, sans-serif"
-                               FontWeight="Normal"
-                               Foreground="#D8FFFFFF"
+                               FontSize="11.5"
+                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                               FontWeight="SemiBold"
+                               Foreground="#F0FFFFFF"
                                TextTrimming="CharacterEllipsis"
                                TextWrapping="NoWrap"
                                MaxWidth="104" />
                 </Grid>
 
                 <!-- 4x2 Wide Tile Layout (248x120) -->
-                <Grid Visibility="{Binding IsWide, Converter={StaticResource BoolToVis}}"
-                      Margin="14,10,14,8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-
-                    <Image Grid.Column="0"
-                           Source="{Binding IconPath}"
-                           VerticalAlignment="Center"
+                <Grid Visibility="{Binding IsWide, Converter={StaticResource BoolToVis}}">
+                    <!-- Icon: Centered in wide tile canvas -->
+                    <Image Source="{Binding IconPath}"
                            HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
                            Width="46" Height="46"
-                           Margin="2,0,14,0"
+                           Margin="0,0,0,12"
                            RenderOptions.BitmapScalingMode="HighQuality" />
 
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Title}"
-                                   FontSize="13"
-                                   FontFamily="Segoe UI, Inter, -apple-system, sans-serif"
-                                   FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
-                                   TextTrimming="CharacterEllipsis"
-                                   TextWrapping="NoWrap" />
-                        <TextBlock Text="{Binding TargetPath}"
-                                   FontSize="10.5"
-                                   FontFamily="Segoe UI, Inter, -apple-system, sans-serif"
-                                   Foreground="#80FFFFFF"
-                                   Margin="0,3,0,0"
-                                   TextTrimming="CharacterEllipsis"
-                                   TextWrapping="NoWrap" />
-                    </StackPanel>
+                    <!-- Label: Docked to bottom-left in authentic Segoe UI Variable -->
+                    <TextBlock Text="{Binding Title}"
+                               VerticalAlignment="Bottom"
+                               HorizontalAlignment="Left"
+                               Margin="8,0,8,6"
+                               FontSize="11.5"
+                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                               FontWeight="SemiBold"
+                               Foreground="#F0FFFFFF"
+                               TextTrimming="CharacterEllipsis"
+                               TextWrapping="NoWrap"
+                               MaxWidth="232" />
                 </Grid>
             </Grid>
         </Grid>

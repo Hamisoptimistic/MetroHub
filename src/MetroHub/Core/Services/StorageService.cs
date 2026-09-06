@@ -12,6 +12,7 @@ public class StorageService
 
     private static readonly string LayoutPath = Path.Combine(AppDataDir, "layout.json");
     private static readonly string SettingsPath = Path.Combine(AppDataDir, "settings.json");
+    private static readonly string AppsCachePath = Path.Combine(AppDataDir, "apps_cache.json");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -171,5 +172,30 @@ public class StorageService
         catch { }
 
         return null;
+    }
+
+    public static List<CatalogItemModel>? LoadAppsCache()
+    {
+        try
+        {
+            if (File.Exists(AppsCachePath))
+            {
+                string json = File.ReadAllText(AppsCachePath);
+                return JsonSerializer.Deserialize<List<CatalogItemModel>>(json, JsonOptions);
+            }
+        }
+        catch { }
+
+        return null;
+    }
+
+    public static void SaveAppsCache(IEnumerable<CatalogItemModel> apps)
+    {
+        try
+        {
+            string json = JsonSerializer.Serialize(apps, JsonOptions);
+            File.WriteAllText(AppsCachePath, json);
+        }
+        catch { }
     }
 }
