@@ -67,6 +67,24 @@ public class StorageService
                         SaveLayout(tiles);
                     }
 
+                    bool iconsRefreshed = false;
+                    foreach (var tile in tiles)
+                    {
+                        if (!string.IsNullOrWhiteSpace(tile.TargetPath))
+                        {
+                            string? highRes = IconExtractorService.ExtractAndCacheIcon(tile.TargetPath);
+                            if (!string.IsNullOrWhiteSpace(highRes) && tile.IconPath != highRes)
+                            {
+                                tile.IconPath = highRes;
+                                iconsRefreshed = true;
+                            }
+                        }
+                    }
+                    if (iconsRefreshed)
+                    {
+                        SaveLayout(tiles);
+                    }
+
                     return tiles;
                 }
             }
