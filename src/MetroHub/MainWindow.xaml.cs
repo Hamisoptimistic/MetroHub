@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Microsoft.Win32;
 using MetroHub.Core.Models;
@@ -43,6 +44,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private DateTime _lastShownTime = DateTime.MinValue;
     private bool _isFullyActivated = false;
+    private bool _isHiding = false;
 
     private void OnWindowActivated(object? sender, EventArgs e)
     {
@@ -62,7 +64,7 @@ public partial class MainWindow : BorderlessFluentWindow
             return;
         }
 
-        if (!IsDialogOpen && IsVisible)
+        if (!IsDialogOpen && IsVisible && !_isHiding)
         {
             HideScreen();
         }
@@ -244,7 +246,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void ToggleVisibility()
     {
-        if (IsVisible)
+        if (IsVisible && !_isHiding)
         {
             HideScreen();
         }
@@ -256,6 +258,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void ShowScreen()
     {
+        _isHiding = false;
         _lastShownTime = DateTime.UtcNow;
         _isFullyActivated = false;
         SnapToWorkArea();
@@ -274,14 +277,106 @@ public partial class MainWindow : BorderlessFluentWindow
         Activate();
         Focus();
         UpdateLayoutMetrics();
+
+        PlayEntranceAnimation();
     }
 
     public void HideScreen()
     {
+        if (_isHiding || !IsVisible) return;
+        _isHiding = true;
         _isFullyActivated = false;
-        Hide();
-        // Immediately trim physical memory down to ~10 MB on hide
-        NativeMethods.FlushMemory();
+
+        PlayExitAnimation(() =>
+        {
+            if (_isHiding)
+            {
+                Hide();
+                _isHiding = false;
+                NativeMethods.FlushMemory();
+            }
+        });
+    }
+
+    private void PlayEntranceAnimation()
+    {
+        if (RootGrid == null) return;
+
+        var cubicEase = new CubicEase { EasingMode = EasingMode.EaseOut };
+
+        // 1. Fluent Opacity Fade-In (0.0 -> 1.0)
+        var opacityAnim = new DoubleAnimation
+        {
+            From = RootGrid.Opacity < 0.1 ? 0.0 : RootGrid.Opacity,
+            To = 1.0,
+            Duration = TimeSpan.FromMilliseconds(180),
+            EasingFunction = cubicEase
+        };
+
+        // 2. Gentle upward rise (Y: 16 -> 0)
+        var translateAnim = new DoubleAnimation
+        {
+            From = RootTranslate != null ? (RootTranslate.Y > 0 ? RootTranslate.Y : 16.0) : 16.0,
+            To = 0.0,
+            Duration = TimeSpan.FromMilliseconds(200),
+            EasingFunction = cubicEase
+        };
+
+        // 3. Subtle scale lift (0.985 -> 1.0)
+        var scaleAnim = new DoubleAnimation
+        {
+            From = RootScale != null ? (RootScale.ScaleX < 1.0 ? RootScale.ScaleX : 0.985) : 0.985,
+            To = 1.0,
+            Duration = TimeSpan.FromMilliseconds(200),
+            EasingFunction = cubicEase
+        };
+
+        RootGrid.BeginAnimation(UIElement.OpacityProperty, opacityAnim);
+        RootTranslate?.BeginAnimation(TranslateTransform.YProperty, translateAnim);
+        RootScale?.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+        RootScale?.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+    }
+
+    private void PlayExitAnimation(Action onCompleted)
+    {
+        if (RootGrid == null)
+        {
+            onCompleted();
+            return;
+        }
+
+        var quadEase = new QuadraticEase { EasingMode = EasingMode.EaseIn };
+
+        // 1. Snappy Opacity Fade-Out (1.0 -> 0.0) in 110ms
+        var opacityAnim = new DoubleAnimation
+        {
+            To = 0.0,
+            Duration = TimeSpan.FromMilliseconds(110),
+            EasingFunction = quadEase
+        };
+
+        // 2. Subtle settle downwards (Y: 0 -> 12)
+        var translateAnim = new DoubleAnimation
+        {
+            To = 12.0,
+            Duration = TimeSpan.FromMilliseconds(110),
+            EasingFunction = quadEase
+        };
+
+        // 3. Subtle scale settle (1.0 -> 0.985)
+        var scaleAnim = new DoubleAnimation
+        {
+            To = 0.985,
+            Duration = TimeSpan.FromMilliseconds(110),
+            EasingFunction = quadEase
+        };
+
+        opacityAnim.Completed += (s, e) => onCompleted();
+
+        RootGrid.BeginAnimation(UIElement.OpacityProperty, opacityAnim);
+        RootTranslate?.BeginAnimation(TranslateTransform.YProperty, translateAnim);
+        RootScale?.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+        RootScale?.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
     }
 
     private void OnWindowPreviewKeyDown(object sender, KeyEventArgs e)

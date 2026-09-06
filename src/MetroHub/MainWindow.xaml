@@ -27,9 +27,16 @@
     <!-- WPF Transparent brush passes mouse hit-tests while remaining invisible so DWM Mica renders directly -->
     <Grid x:Name="RootGrid" 
           Background="Transparent"
+          RenderTransformOrigin="0.5, 0.5"
           PreviewMouseLeftButtonDown="OnCanvasPreviewMouseDown"
           PreviewMouseMove="OnCanvasPreviewMouseMove"
           PreviewMouseLeftButtonUp="OnCanvasPreviewMouseUp">
+        <Grid.RenderTransform>
+            <TransformGroup>
+                <ScaleTransform x:Name="RootScale" ScaleX="1.0" ScaleY="1.0" />
+                <TranslateTransform x:Name="RootTranslate" Y="0" />
+            </TransformGroup>
+        </Grid.RenderTransform>
         <Grid.RowDefinitions>
             <!-- Minimalist Top Bar -->
             <RowDefinition Height="64" />
