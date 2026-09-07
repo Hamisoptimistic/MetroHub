@@ -59,12 +59,12 @@
                 </MenuItem>
                 <MenuItem x:Name="GroupMenuItem" Header="Create Group from Tiles" Click="OnGroupTilesClick">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="FolderAdd24" FontSize="16" />
+                        <ui:SymbolIcon Symbol="FolderAdd24" FontSize="20" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem x:Name="AddToGroupMenuItem" Header="Add to Group">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="FolderArrowRight24" FontSize="16" />
+                        <ui:SymbolIcon Symbol="FolderArrowRight24" FontSize="20" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator x:Name="SingleAppSeparator" />

@@ -33,13 +33,13 @@
             <ContextMenu x:Name="HeaderContextMenu">
                 <MenuItem Header="Rename Group" Click="OnRenameClick">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="Edit24" FontSize="14" />
+                        <ui:SymbolIcon Symbol="Edit24" FontSize="18" />
                     </MenuItem.Icon>
                 </MenuItem>
 
                 <MenuItem Header="Header Color">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="Color24" FontSize="14" />
+                        <ui:SymbolIcon Symbol="Color24" FontSize="18" />
                     </MenuItem.Icon>
                     <MenuItem Header="Default White" Tag="#F0FFFFFF" Click="OnColorSelectClick">
                         <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#F0FFFFFF"/></MenuItem.Icon>
@@ -77,13 +77,13 @@
 
                 <MenuItem Header="Ungroup Tiles" Click="OnUngroupClick">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="SelectAllOn24" FontSize="14" />
+                        <ui:SymbolIcon Symbol="SelectAllOn24" FontSize="18" />
                     </MenuItem.Icon>
                 </MenuItem>
 
                 <MenuItem Header="Delete Group and Tiles" Click="OnDeleteGroupClick" Foreground="#FF6B6B">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="Delete24" FontSize="14" Foreground="#FF6B6B" />
+                        <ui:SymbolIcon Symbol="Delete24" FontSize="18" Foreground="#FF6B6B" />
                     </MenuItem.Icon>
                 </MenuItem>
             </ContextMenu>

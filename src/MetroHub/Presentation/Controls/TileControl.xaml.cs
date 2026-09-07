@@ -334,7 +334,7 @@ public partial class TileControl : UserControl
                 item.Icon = new Wpf.Ui.Controls.SymbolIcon
                 {
                     Symbol = Wpf.Ui.Controls.SymbolRegular.LockClosed24,
-                    FontSize = 16,
+                    FontSize = 20,
                     Foreground = redBrush
                 };
                 item.IsEnabled = false;
@@ -353,8 +353,8 @@ public partial class TileControl : UserControl
                         var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(group.HeaderColor);
                         var ellipse = new System.Windows.Shapes.Ellipse
                         {
-                            Width = 12,
-                            Height = 12,
+                            Width = 14,
+                            Height = 14,
                             Fill = new System.Windows.Media.SolidColorBrush(color)
                         };
                         item.Icon = ellipse;
@@ -364,7 +364,7 @@ public partial class TileControl : UserControl
                         item.Icon = new Wpf.Ui.Controls.SymbolIcon
                         {
                             Symbol = Wpf.Ui.Controls.SymbolRegular.Folder24,
-                            FontSize = 16
+                            FontSize = 20
                         };
                     }
                 }
@@ -373,7 +373,7 @@ public partial class TileControl : UserControl
                     item.Icon = new Wpf.Ui.Controls.SymbolIcon
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.Folder24,
-                        FontSize = 16
+                        FontSize = 20
                     };
                 }
 
