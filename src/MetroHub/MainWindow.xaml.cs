@@ -2572,6 +2572,11 @@ public partial class MainWindow : BorderlessFluentWindow
                 Tiles.Add(tile);
                 var mod = GridPlacementService.PlaceTileInGroup(
                     tile, slotCol, slotRow, slotCol, slotRow, targetGroup, Tiles);
+                var pushed = GridPlacementService.PushLowerGroupsDown(targetGroup, Groups, Tiles);
+                foreach (var pt in pushed)
+                {
+                    if (!mod.Contains(pt)) mod.Add(pt);
+                }
                 AnimateModifiedTiles(mod);
                 UpdateGroupHeaderPositions();
                 StorageService.SaveLayout(Tiles);
@@ -2867,6 +2872,11 @@ public partial class MainWindow : BorderlessFluentWindow
             Tiles.Add(groupTile);
             var mod = GridPlacementService.PlaceTileInGroup(
                 groupTile, pinSlotCol, pinSlotRow, pinSlotCol, pinSlotRow, targetGroup, Tiles);
+            var pushed = GridPlacementService.PushLowerGroupsDown(targetGroup, Groups, Tiles);
+            foreach (var pt in pushed)
+            {
+                if (!mod.Contains(pt)) mod.Add(pt);
+            }
             AnimateModifiedTiles(mod);
             UpdateGroupHeaderPositions();
             StorageService.SaveLayout(Tiles);

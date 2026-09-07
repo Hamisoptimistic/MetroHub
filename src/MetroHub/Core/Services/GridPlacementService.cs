@@ -1198,36 +1198,57 @@ public static class GridPlacementService
         // Push lower groups down if targetGroup expanded downwards
         if (groups != null)
         {
-            var targetBox = GetGroupBoundingBox(targetGroup, allTiles);
-            int groupBottom = targetBox.MaxRow;
-            var lowerGroups = groups
-                .Where(g => g.ColumnIndex == targetGroup.ColumnIndex && !ReferenceEquals(g, targetGroup) && g.Row >= targetGroup.Row)
-                .OrderBy(g => g.Row)
-                .ToList();
-
-            int currentBoundary = groupBottom + 1;
-            foreach (var lg in lowerGroups)
+            var pushedTiles = PushLowerGroupsDown(targetGroup, groups, allTiles);
+            foreach (var pt in pushedTiles)
             {
-                if (lg.Row < currentBoundary)
+                if (!modified.Contains(pt)) modified.Add(pt);
+            }
+        }
+
+        return modified;
+    }
+
+    /// <summary>
+    /// Pushes any groups located below targetGroup down if targetGroup expanded downwards.
+    /// Eliminates empty gaps between the bottom of targetGroup's tiles and the header of lower groups.
+    /// </summary>
+    public static List<TileModel> PushLowerGroupsDown(
+        TileGroupModel targetGroup,
+        IList<TileGroupModel>? groups,
+        IList<TileModel> allTiles)
+    {
+        var modified = new List<TileModel>();
+        if (groups == null || groups.Count == 0) return modified;
+
+        var targetBox = GetGroupBoundingBox(targetGroup, allTiles);
+        int groupBottom = targetBox.MaxRow;
+        var lowerGroups = groups
+            .Where(g => g.ColumnIndex == targetGroup.ColumnIndex && !ReferenceEquals(g, targetGroup) && g.Row >= targetGroup.Row)
+            .OrderBy(g => g.Row)
+            .ToList();
+
+        int currentBoundary = groupBottom;
+        foreach (var lg in lowerGroups)
+        {
+            if (lg.Row < currentBoundary)
+            {
+                int delta = currentBoundary - lg.Row;
+                lg.Row = currentBoundary;
+                lg.Y = PixelYFromRow(lg.Row) + 8;
+                var lgTiles = allTiles.Where(t => t.Group == lg.Id).ToList();
+                foreach (var t in lgTiles)
                 {
-                    int delta = currentBoundary - lg.Row;
-                    lg.Row = currentBoundary;
-                    lg.Y = PixelYFromRow(lg.Row) + 8;
-                    var lgTiles = allTiles.Where(t => t.Group == lg.Id).ToList();
-                    foreach (var t in lgTiles)
-                    {
-                        t.Row += delta;
-                        t.Y = PixelYFromRow(t.Row);
-                        if (!modified.Contains(t)) modified.Add(t);
-                    }
-                    var lgBox = GetGroupBoundingBox(lg, allTiles);
-                    currentBoundary = lgBox.MaxRow + 1;
+                    t.Row += delta;
+                    t.Y = PixelYFromRow(t.Row);
+                    if (!modified.Contains(t)) modified.Add(t);
                 }
-                else
-                {
-                    var lgBox = GetGroupBoundingBox(lg, allTiles);
-                    currentBoundary = Math.Max(currentBoundary, lgBox.MaxRow + 1);
-                }
+                var lgBox = GetGroupBoundingBox(lg, allTiles);
+                currentBoundary = lgBox.MaxRow;
+            }
+            else
+            {
+                var lgBox = GetGroupBoundingBox(lg, allTiles);
+                currentBoundary = Math.Max(currentBoundary, lgBox.MaxRow);
             }
         }
 
@@ -1243,7 +1264,7 @@ public static class GridPlacementService
         int columnIndex,
         IList<TileGroupModel> groups,
         IList<TileModel> allTiles,
-        int compactVerticalSpacing = 1)
+        int compactVerticalSpacing = 0)
     {
         var modifiedTiles = new List<TileModel>();
         int colStart = GetColumnStartCol(columnIndex);
@@ -1456,7 +1477,7 @@ public static class GridPlacementService
         int targetRow,
         IList<TileGroupModel> groups,
         IList<TileModel> allTiles,
-        int compactVerticalSpacing = 1)
+        int compactVerticalSpacing = 0)
     {
         var modifiedTiles = new List<TileModel>();
 
