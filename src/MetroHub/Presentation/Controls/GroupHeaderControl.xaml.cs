@@ -19,29 +19,55 @@ public partial class GroupHeaderControl : UserControl
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        if (DataContext is TileGroupModel group && group.IsEditing)
+        if (DataContext is TileGroupModel group)
         {
-            BeginEdit();
+            // Restore icon states from persisted model
+            UpdateLockIcon(group.IsLocked);
+            UpdateCollapseIcon(group.IsCollapsed);
+
+            if (group.IsEditing)
+            {
+                BeginEdit();
+            }
         }
     }
 
+    // ─────────────────────────────────────────────────────────
+    // Hover: fade action buttons in/out
+    // ─────────────────────────────────────────────────────────
+
     private void OnMouseEnter(object sender, MouseEventArgs e)
     {
-        if (DragHintIcon != null)
-        {
-            var anim = new DoubleAnimation(0.7, TimeSpan.FromMilliseconds(120));
-            DragHintIcon.BeginAnimation(UIElement.OpacityProperty, anim);
-        }
+        AnimateDragHint(0.7);
+        AnimateActionButtons(1.0);
     }
 
     private void OnMouseLeave(object sender, MouseEventArgs e)
     {
-        if (DragHintIcon != null)
-        {
-            var anim = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(120));
-            DragHintIcon.BeginAnimation(UIElement.OpacityProperty, anim);
-        }
+        AnimateDragHint(0.0);
+
+        // Keep buttons visible when group is locked (always-visible indicator)
+        bool keepVisible = DataContext is TileGroupModel g && g.IsLocked;
+        AnimateActionButtons(keepVisible ? 0.85 : 0.0);
     }
+
+    private void AnimateDragHint(double to)
+    {
+        if (DragHintIcon == null) return;
+        var anim = new DoubleAnimation(to, TimeSpan.FromMilliseconds(120));
+        DragHintIcon.BeginAnimation(UIElement.OpacityProperty, anim);
+    }
+
+    private void AnimateActionButtons(double to)
+    {
+        if (ActionButtonsPanel == null) return;
+        var anim = new DoubleAnimation(to, TimeSpan.FromMilliseconds(140));
+        ActionButtonsPanel.BeginAnimation(UIElement.OpacityProperty, anim);
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Title double-click → rename
+    // ─────────────────────────────────────────────────────────
 
     private void OnTitleMouseDown(object sender, MouseButtonEventArgs e)
     {
@@ -113,6 +139,10 @@ public partial class GroupHeaderControl : UserControl
         }
     }
 
+    // ─────────────────────────────────────────────────────────
+    // Drag initiation from header
+    // ─────────────────────────────────────────────────────────
+
     private void OnHeaderPreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
         if (EditTextBox.Visibility == Visibility.Visible) return;
@@ -145,6 +175,78 @@ public partial class GroupHeaderControl : UserControl
     {
         _isPotentialDrag = false;
     }
+
+    // ─────────────────────────────────────────────────────────
+    // Action buttons — stop header drag from firing
+    // ─────────────────────────────────────────────────────────
+
+    private void OnActionButtonMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        // Only stop header drag — do NOT set e.Handled=true (that kills the Button's Click event)
+        _isPotentialDrag = false;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Lock button
+    // ─────────────────────────────────────────────────────────
+
+    private void OnLockClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not TileGroupModel group) return;
+
+        group.IsLocked = !group.IsLocked;
+        UpdateLockIcon(group.IsLocked);
+
+        // If now locked, keep buttons visible at reduced opacity as a persistent indicator
+        AnimateActionButtons(group.IsLocked ? 0.85 : 0.0);
+
+        MainWindow.Current?.SaveGroupsAndLayout();
+        e.Handled = true;
+    }
+
+    private void UpdateLockIcon(bool isLocked)
+    {
+        if (LockIcon == null) return;
+        LockIcon.Symbol = isLocked
+            ? Wpf.Ui.Controls.SymbolRegular.LockClosed24
+            : Wpf.Ui.Controls.SymbolRegular.LockOpen24;
+        LockIcon.Foreground = isLocked
+            ? new System.Windows.Media.SolidColorBrush(
+                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#60CDFF"))
+            : new System.Windows.Media.SolidColorBrush(
+                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#A0FFFFFF"));
+
+        LockButton.ToolTip = isLocked ? "Unlock group" : "Lock group";
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Collapse button
+    // ─────────────────────────────────────────────────────────
+
+    private void OnCollapseClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not TileGroupModel group) return;
+
+        group.IsCollapsed = !group.IsCollapsed;
+        UpdateCollapseIcon(group.IsCollapsed);
+
+        MainWindow.Current?.AnimateGroupCollapse(group, group.IsCollapsed);
+        MainWindow.Current?.SaveGroupsAndLayout();
+        e.Handled = true;
+    }
+
+    private void UpdateCollapseIcon(bool isCollapsed)
+    {
+        if (CollapseIcon == null) return;
+        CollapseIcon.Symbol = isCollapsed
+            ? Wpf.Ui.Controls.SymbolRegular.ChevronUp24
+            : Wpf.Ui.Controls.SymbolRegular.ChevronDown24;
+        CollapseButton.ToolTip = isCollapsed ? "Expand group" : "Collapse group";
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Context menu handlers
+    // ─────────────────────────────────────────────────────────
 
     private void OnRenameClick(object sender, RoutedEventArgs e)
     {

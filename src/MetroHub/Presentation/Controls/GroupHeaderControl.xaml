@@ -9,7 +9,7 @@
              Cursor="Arrow">
 
     <Border x:Name="RootBorder"
-            Padding="6,4,12,4"
+            Padding="6,4,6,4"
             CornerRadius="4"
             Background="Transparent"
             PreviewMouseLeftButtonDown="OnHeaderPreviewMouseDown"
@@ -89,66 +89,161 @@
             </ContextMenu>
         </Border.ContextMenu>
 
-        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-            <!-- Normal Header Label View -->
-            <StackPanel x:Name="ViewPanel" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock x:Name="TitleTextBlock"
-                           Text="{Binding Title}"
-                           FontSize="15"
-                           FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                           FontWeight="SemiBold"
-                           Foreground="{Binding HeaderColor, TargetNullValue='#E8FFFFFF', FallbackValue='#E8FFFFFF'}"
-                           VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis"
-                           MaxWidth="320"
-                           MouseDown="OnTitleMouseDown" />
+        <!-- Root layout: name stretches left, action buttons on right -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-                <!-- Subtle drag / edit indicator on hover -->
-                <TextBlock x:Name="DragHintIcon"
-                           Text="::"
-                           FontSize="12"
-                           FontWeight="Bold"
-                           Foreground="#50FFFFFF"
-                           Margin="8,0,0,0"
-                           VerticalAlignment="Center"
-                           Opacity="0" />
+            <!-- Left: Name + drag hint -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Normal Header Label View -->
+                <StackPanel x:Name="ViewPanel" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="TitleTextBlock"
+                               Text="{Binding Title}"
+                               FontSize="15"
+                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                               FontWeight="SemiBold"
+                               Foreground="{Binding HeaderColor, TargetNullValue='#E8FFFFFF', FallbackValue='#E8FFFFFF'}"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"
+                               MaxWidth="220"
+                               MouseDown="OnTitleMouseDown" />
+
+                    <!-- Subtle drag / edit indicator on hover -->
+                    <TextBlock x:Name="DragHintIcon"
+                               Text="::"
+                               FontSize="12"
+                               FontWeight="Bold"
+                               Foreground="#50FFFFFF"
+                               Margin="8,0,0,0"
+                               VerticalAlignment="Center"
+                               Opacity="0" />
+                </StackPanel>
+
+                <!-- Inline Renaming TextBox: 100% Transparent & Borderless -->
+                <TextBox x:Name="EditTextBox"
+                         Visibility="Collapsed"
+                         FontSize="15"
+                         FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                         FontWeight="SemiBold"
+                         Foreground="{Binding HeaderColor, TargetNullValue='#FFFFFF', FallbackValue='#FFFFFF'}"
+                         CaretBrush="{Binding HeaderColor, TargetNullValue='#60CDFF', FallbackValue='#60CDFF'}"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         BorderBrush="Transparent"
+                         Padding="0"
+                         Margin="0"
+                         MinWidth="120"
+                         MaxWidth="220"
+                         VerticalAlignment="Center"
+                         KeyDown="OnEditKeyDown"
+                         LostFocus="OnEditLostFocus">
+                    <TextBox.Style>
+                        <Style TargetType="TextBox">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="BorderBrush" Value="Transparent"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="TextBox">
+                                        <Border Background="Transparent" BorderThickness="0" BorderBrush="Transparent">
+                                            <ScrollViewer x:Name="PART_ContentHost" Background="Transparent" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
             </StackPanel>
 
-            <!-- Inline Renaming TextBox: 100% Transparent & Borderless Fluent Style -->
-            <TextBox x:Name="EditTextBox"
-                     Visibility="Collapsed"
-                     FontSize="15"
-                     FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                     FontWeight="SemiBold"
-                     Foreground="{Binding HeaderColor, TargetNullValue='#FFFFFF', FallbackValue='#FFFFFF'}"
-                     CaretBrush="{Binding HeaderColor, TargetNullValue='#60CDFF', FallbackValue='#60CDFF'}"
-                     Background="Transparent"
-                     BorderThickness="0"
-                     BorderBrush="Transparent"
-                     Padding="0"
-                     Margin="0"
-                     MinWidth="120"
-                     MaxWidth="320"
-                     VerticalAlignment="Center"
-                     KeyDown="OnEditKeyDown"
-                     LostFocus="OnEditLostFocus">
-                <TextBox.Style>
-                    <Style TargetType="TextBox">
-                        <Setter Property="Background" Value="Transparent"/>
-                        <Setter Property="BorderThickness" Value="0"/>
-                        <Setter Property="BorderBrush" Value="Transparent"/>
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="TextBox">
-                                    <Border Background="Transparent" BorderThickness="0" BorderBrush="Transparent">
-                                        <ScrollViewer x:Name="PART_ContentHost" Background="Transparent" />
-                                    </Border>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </TextBox.Style>
-            </TextBox>
-        </StackPanel>
+            <!-- Right: Lock + Collapse icon buttons (fade in on hover) -->
+            <StackPanel Grid.Column="1"
+                        x:Name="ActionButtonsPanel"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="4,0,0,0"
+                        Opacity="0">
+
+                <!-- Lock / Unlock button -->
+                <Button x:Name="LockButton"
+                        Width="26" Height="26"
+                        Padding="0"
+                        Cursor="Hand"
+                        ToolTip="Lock group"
+                        Click="OnLockClick"
+                        PreviewMouseLeftButtonDown="OnActionButtonMouseDown">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bd"
+                                                Background="{TemplateBinding Background}"
+                                                CornerRadius="4"
+                                                Width="26" Height="26">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="#25FFFFFF"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="#40FFFFFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                    <ui:SymbolIcon x:Name="LockIcon" Symbol="LockOpen24" FontSize="13"
+                                   Foreground="#A0FFFFFF" />
+                </Button>
+
+                <!-- Collapse / Expand button -->
+                <Button x:Name="CollapseButton"
+                        Width="26" Height="26"
+                        Padding="0"
+                        Cursor="Hand"
+                        ToolTip="Collapse group"
+                        Margin="2,0,0,0"
+                        Click="OnCollapseClick"
+                        PreviewMouseLeftButtonDown="OnActionButtonMouseDown">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bd"
+                                                Background="{TemplateBinding Background}"
+                                                CornerRadius="4"
+                                                Width="26" Height="26">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="#25FFFFFF"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="#40FFFFFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                    <ui:SymbolIcon x:Name="CollapseIcon" Symbol="ChevronDown24" FontSize="13"
+                                   Foreground="#A0FFFFFF" />
+                </Button>
+            </StackPanel>
+        </Grid>
     </Border>
 </UserControl>

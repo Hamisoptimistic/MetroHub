@@ -15,6 +15,8 @@ public class TileGroupModel : INotifyPropertyChanged
     private double _y = 0;
     private bool _isEditing = false;
     private bool _isBeingDragged = false;
+    private bool _isCollapsed = false;
+    private bool _isLocked = false;
 
     public string Id
     {
@@ -70,6 +72,18 @@ public class TileGroupModel : INotifyPropertyChanged
     {
         get => _isBeingDragged;
         set => SetField(ref _isBeingDragged, value);
+    }
+
+    public bool IsCollapsed
+    {
+        get => _isCollapsed;
+        set => SetField(ref _isCollapsed, value);
+    }
+
+    public bool IsLocked
+    {
+        get => _isLocked;
+        set => SetField(ref _isLocked, value);
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

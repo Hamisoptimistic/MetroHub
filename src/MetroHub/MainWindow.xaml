@@ -80,19 +80,6 @@
                     </Button.Resources>
                 </Button>
 
-                <!-- Group Column Width Toggle Button -->
-                <Button x:Name="ColumnWidthToggleBtn"
-                        Content="Cols: 6"
-                        Height="34" Padding="10,0"
-                        FontSize="11" Foreground="#C0FFFFFF" Background="#1FFFFFFF"
-                        BorderThickness="1" BorderBrush="#2AFFFFFF"
-                        Cursor="Hand" Margin="0,0,10,0"
-                        ToolTip="Switch Group Column Block Width (6 or 8 units)"
-                        Click="OnToggleGroupColumnWidthClick">
-                    <Button.Resources>
-                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="7"/></Style>
-                    </Button.Resources>
-                </Button>
 
                 <!-- Export Layout Button -->
                 <Button Content="Export"
@@ -165,14 +152,6 @@
                             </MenuItem.Icon>
                         </MenuItem>
 
-                        <MenuItem Header="Group Column Width">
-                            <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="ColumnTriple24" FontSize="16" />
-                            </MenuItem.Icon>
-                            <MenuItem x:Name="ColWidth6MenuItem" Header="6 Units (Standard 384px)" Click="OnColWidth6Click" />
-                            <MenuItem x:Name="ColWidth8MenuItem" Header="8 Units (Wide 512px)" Click="OnColWidth8Click" />
-                        </MenuItem>
-
                         <MenuItem Header="Mica / Acrylic Toggle" Click="OnBackdropToggleClick">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="DarkTheme24" FontSize="16" />
@@ -216,36 +195,45 @@
                     <Border x:Name="GroupDropPerimeterBorder"
                             Visibility="Collapsed"
                             CornerRadius="8"
-                            BorderThickness="2"
+                            BorderThickness="1.5"
                             BorderBrush="#60CDFF"
-                            Background="#1260CDFF">
+                            Background="#1060CDFF"
+                            RenderTransformOrigin="0.5,0.5">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="GroupDropPerimeterTranslate" X="0" Y="0" />
+                        </Border.RenderTransform>
                         <Border.Effect>
                             <DropShadowEffect x:Name="GroupDropGlowEffect"
-                                              BlurRadius="24"
+                                              BlurRadius="20"
                                               ShadowDepth="0"
-                                              Opacity="0.75"
+                                              Opacity="0.65"
                                               Color="#60CDFF" />
                         </Border.Effect>
                     </Border>
 
-                    <!-- Sleek Floating Pill Badge -->
+                    <!-- WPF-UI Fluent Card Style Floating Badge -->
                     <Border x:Name="GroupDropFloatingBadge"
                             Visibility="Collapsed"
-                            CornerRadius="16"
-                            Background="#F01C1C1E"
+                            CornerRadius="6"
+                            Background="#F0202022"
                             BorderThickness="1"
-                            BorderBrush="#60CDFF"
-                            Padding="12,6">
+                            BorderBrush="#25FFFFFF"
+                            Padding="10,6,12,6">
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.5" Color="#000000" />
+                            <DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.45" Direction="270" Color="#000000" />
                         </Border.Effect>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock x:Name="GroupDropBadgePlus" Text="+" FontSize="13" FontWeight="Bold" Foreground="#60CDFF" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <ui:SymbolIcon x:Name="GroupDropBadgeIcon"
+                                           Symbol="Add24"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                           Margin="0,0,8,0"
+                                           VerticalAlignment="Center" />
                             <TextBlock x:Name="GroupDropBadgeText"
                                        Text="Add to Section"
                                        FontSize="12"
                                        FontWeight="SemiBold"
-                                       Foreground="#FFFFFF"
+                                       Foreground="#F5FFFFFF"
                                        FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
                                        VerticalAlignment="Center" />
                         </StackPanel>

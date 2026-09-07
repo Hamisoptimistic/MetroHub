@@ -578,12 +578,13 @@ public static class GridPlacementService
         int anchorOrigRow,
         int maxCols,
         IList<TileModel> allTiles,
-        Dictionary<TileModel, (int Col, int Row)>? origPositions = null)
+        Dictionary<TileModel, (int Col, int Row)>? origPositions = null,
+        bool isGroupCluster = false)
     {
         var modifiedTiles = new List<TileModel>();
         if (clusterTiles == null || clusterTiles.Count == 0) return modifiedTiles;
 
-        if (clusterTiles.Count == 1)
+        if (clusterTiles.Count == 1 && !isGroupCluster)
         {
             return PlaceAndResolveCollisions(clusterTiles[0], anchorTargetCol, anchorTargetRow, anchorOrigCol, anchorOrigRow, maxCols, allTiles);
         }
@@ -610,7 +611,9 @@ public static class GridPlacementService
         int minAllowedAnchorCol = -minRelCol;
         int maxAllowedAnchorCol = Math.Max(minAllowedAnchorCol, maxCols - maxRelCol);
         anchorTargetCol = Math.Clamp(anchorTargetCol, minAllowedAnchorCol, maxAllowedAnchorCol);
-        anchorTargetRow = Math.Max(-minRelRow, anchorTargetRow);
+
+        int minAllowedAnchorRow = isGroupCluster ? Math.Max(-minRelRow, 1 - minRelRow) : -minRelRow;
+        anchorTargetRow = Math.Max(minAllowedAnchorRow, anchorTargetRow);
 
         var clusterSet = new HashSet<TileModel>(clusterTiles);
 
@@ -636,6 +639,13 @@ public static class GridPlacementService
         var queue = new Queue<TileModel>();
         var inQueue = new HashSet<TileModel>();
 
+        int clusterMinCol = clusterTiles.Min(t => t.Col);
+        int clusterMaxCol = clusterTiles.Max(t => t.Col + t.SpanX);
+        int clusterMinRow = clusterTiles.Min(t => t.Row);
+        int clusterMaxRow = clusterTiles.Max(t => t.Row + t.SpanY);
+        int groupHeaderRow = clusterMinRow - 1;
+        int groupHeaderSpanX = clusterMaxCol - clusterMinCol;
+
         foreach (var obstacle in nonClusterTiles)
         {
             int obsCol = GetCol(obstacle);
@@ -646,6 +656,24 @@ public static class GridPlacementService
                 if (DoTilesOverlap(cTile.Col, cTile.Row, cTile.SpanX, cTile.SpanY, obsCol, obsRow, obstacle.SpanX, obstacle.SpanY))
                 {
                     int pushedRow = cTile.Row + cTile.SpanY;
+                    if (proposedPositions.TryGetValue(obstacle, out var curPos))
+                    {
+                        pushedRow = Math.Max(curPos.Row, pushedRow);
+                    }
+                    proposedPositions[obstacle] = (obsCol, pushedRow);
+                    if (!inQueue.Contains(obstacle))
+                    {
+                        inQueue.Add(obstacle);
+                        queue.Enqueue(obstacle);
+                    }
+                }
+            }
+
+            if (isGroupCluster)
+            {
+                if (DoTilesOverlap(clusterMinCol, groupHeaderRow, groupHeaderSpanX, 1, obsCol, obsRow, obstacle.SpanX, obstacle.SpanY))
+                {
+                    int pushedRow = clusterMaxRow;
                     if (proposedPositions.TryGetValue(obstacle, out var curPos))
                     {
                         pushedRow = Math.Max(curPos.Row, pushedRow);
@@ -679,6 +707,16 @@ public static class GridPlacementService
                         curRow = neededRow;
                         proposedPositions[current] = (curCol, curRow);
                     }
+                }
+            }
+
+            if (isGroupCluster && DoTilesOverlap(clusterMinCol, groupHeaderRow, groupHeaderSpanX, 1, curCol, curRow, current.SpanX, current.SpanY))
+            {
+                int neededRow = clusterMaxRow;
+                if (neededRow > curRow)
+                {
+                    curRow = neededRow;
+                    proposedPositions[current] = (curCol, curRow);
                 }
             }
 
