@@ -20,10 +20,33 @@ public class LayoutHistoryService
 
     public static string CaptureSnapshot(IEnumerable<TileModel> tiles, IEnumerable<TileGroupModel>? groups = null)
     {
+        var tileList = tiles.ToList();
+        List<TileGroupModel> groupList;
+
+        if (groups != null)
+        {
+            groupList = groups.ToList();
+        }
+        else
+        {
+            // Auto-discover groups from tiles if groups was omitted
+            groupList = tileList
+                .Where(t => !string.IsNullOrEmpty(t.Group))
+                .GroupBy(t => t.Group!)
+                .Select(g => new TileGroupModel
+                {
+                    Id = g.Key,
+                    Title = g.First().SectionHeader ?? "Group",
+                    Col = g.Min(t => t.Col),
+                    Row = Math.Max(0, g.Min(t => t.Row) - 1)
+                })
+                .ToList();
+        }
+
         var model = new LayoutSnapshotModel
         {
-            Tiles = tiles.ToList(),
-            Groups = groups?.ToList() ?? new List<TileGroupModel>()
+            Tiles = tileList,
+            Groups = groupList
         };
         return JsonSerializer.Serialize(model, JsonOptions);
     }

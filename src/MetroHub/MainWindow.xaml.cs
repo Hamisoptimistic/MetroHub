@@ -95,10 +95,9 @@ public partial class MainWindow : BorderlessFluentWindow
         EnsureGroupIndices();
         UpdateLayoutMetrics();
         bool anyCleaned = GridPlacementService.CleanEmptyGroups(Groups, Tiles);
-        var reflowed = GridPlacementService.ReflowAllGroups(Groups, Tiles);
         UpdateGroupHeaderPositions();
 
-        if (anyCleaned || reflowed.Count > 0)
+        if (anyCleaned)
         {
             SaveGroupsAndLayout();
         }
@@ -483,7 +482,7 @@ public partial class MainWindow : BorderlessFluentWindow
     private double _draggedGroupOffsetX;
     private double _draggedGroupOffsetY;
     private int _groupDragTargetColIndex;
-    private int _groupDragTargetOrderIndex;
+    private int _groupDragTargetRow;
 
     // Multi-tile Selection & Cluster Drag State
     private bool _isRubberBanding;
@@ -563,29 +562,34 @@ public partial class MainWindow : BorderlessFluentWindow
         var currentGroups = Groups.ToList();
         var currentGroupDict = currentGroups.ToDictionary(g => g.Id);
 
-        var groupsToRemove = currentGroups.Where(g => !targetGroupDict.ContainsKey(g.Id)).ToList();
-        foreach (var g in groupsToRemove)
+        // Defensive: If snapshot has no groups, but current layout has groups and tiles belong to groups, do NOT wipe groups!
+        bool shouldRestoreGroups = targetGroups.Count > 0 || !targetTiles.Any(t => !string.IsNullOrEmpty(t.Group));
+        if (shouldRestoreGroups)
         {
-            Groups.Remove(g);
-        }
+            var groupsToRemove = currentGroups.Where(g => !targetGroupDict.ContainsKey(g.Id)).ToList();
+            foreach (var g in groupsToRemove)
+            {
+                Groups.Remove(g);
+            }
 
-        var groupsToAdd = targetGroups.Where(g => !currentGroupDict.ContainsKey(g.Id)).ToList();
-        foreach (var g in groupsToAdd)
-        {
-            Groups.Add(g);
-        }
+            var groupsToAdd = targetGroups.Where(g => !currentGroupDict.ContainsKey(g.Id)).ToList();
+            foreach (var g in groupsToAdd)
+            {
+                Groups.Add(g);
+            }
 
-        foreach (var tg in targetGroups)
-        {
-            var existingG = Groups.FirstOrDefault(g => g.Id == tg.Id);
-            if (existingG == null) continue;
-            existingG.Title = tg.Title;
-            existingG.HeaderColor = tg.HeaderColor;
-            existingG.Col = tg.Col;
-            existingG.Row = tg.Row;
-            existingG.X = tg.X;
-            existingG.Y = tg.Y;
-            existingG.IsEditing = false;
+            foreach (var tg in targetGroups)
+            {
+                var existingG = Groups.FirstOrDefault(g => g.Id == tg.Id);
+                if (existingG == null) continue;
+                existingG.Title = tg.Title;
+                existingG.HeaderColor = tg.HeaderColor;
+                existingG.Col = tg.Col;
+                existingG.Row = tg.Row;
+                existingG.X = tg.X;
+                existingG.Y = tg.Y;
+                existingG.IsEditing = false;
+            }
         }
 
         // Apply coordinates, spans, and styles
@@ -688,7 +692,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
         if (tileControl != null && tileControl.DataContext is TileModel tile)
         {
-            _preDragLayoutSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles);
+            _preDragLayoutSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
             _isRubberBanding = false;
             _draggedTile = tile;
 
@@ -922,6 +926,13 @@ public partial class MainWindow : BorderlessFluentWindow
             double maxAllowedAnchorX = GridPlacementService.PixelXFromCol(maxCols) - _clusterRelBounds.MaxRelX;
             double minAllowedAnchorY = GridPlacementService.OriginY - _clusterRelBounds.MinRelY;
 
+            if (_isGroupDrag && _draggedGroupModel != null)
+            {
+                // Ensure group header never exceeds the top boundary
+                double minGroupAnchorY = GridPlacementService.OriginY + 8 - _draggedGroupOffsetY;
+                minAllowedAnchorY = Math.Max(minAllowedAnchorY, minGroupAnchorY);
+            }
+
             if (maxAllowedAnchorX < minAllowedAnchorX) maxAllowedAnchorX = minAllowedAnchorX;
 
             double clampedAnchorX = Math.Max(minAllowedAnchorX, Math.Min(rawAnchorX, maxAllowedAnchorX));
@@ -945,13 +956,13 @@ public partial class MainWindow : BorderlessFluentWindow
             }
 
             // Calculate snapped indicator position for the whole cluster or group
-            int minAllowedCol = -_clusterRelGridBounds.MinRelCol;
+            int minAllowedCol = Math.Max(0, -_clusterRelGridBounds.MinRelCol);
             int maxAllowedCol = Math.Max(minAllowedCol, maxCols - _clusterRelGridBounds.MaxRelCol);
-            int anchorCol = Math.Clamp(GridPlacementService.ColFromPixel(clampedAnchorX), minAllowedCol, maxAllowedCol);
+            int anchorCol = Math.Max(0, Math.Clamp(GridPlacementService.ColFromPixel(clampedAnchorX), minAllowedCol, maxAllowedCol));
 
             int minAllowedRow = _isGroupDrag
-                ? Math.Max(-_clusterRelGridBounds.MinRelRow, 1 - _clusterRelGridBounds.MinRelRow)
-                : -_clusterRelGridBounds.MinRelRow;
+                ? Math.Max(1, Math.Max(-_clusterRelGridBounds.MinRelRow, 1 - _clusterRelGridBounds.MinRelRow))
+                : Math.Max(0, -_clusterRelGridBounds.MinRelRow);
             int anchorRow = Math.Max(minAllowedRow, GridPlacementService.RowFromPixel(clampedAnchorY));
 
             double snappedAnchorX = GridPlacementService.PixelXFromCol(anchorCol);
@@ -967,7 +978,7 @@ public partial class MainWindow : BorderlessFluentWindow
             {
                 // Move the group header control in real-time right along with the moving tiles!
                 _draggedGroupModel.X = clampedAnchorX + _draggedGroupOffsetX;
-                _draggedGroupModel.Y = clampedAnchorY + _draggedGroupOffsetY;
+                _draggedGroupModel.Y = Math.Max(GridPlacementService.OriginY + 8, clampedAnchorY + _draggedGroupOffsetY);
 
                 var gContainer = GroupsListBox?.ItemContainerGenerator.ContainerFromItem(_draggedGroupModel) as ContentPresenter;
                 if (gContainer != null)
@@ -979,61 +990,22 @@ public partial class MainWindow : BorderlessFluentWindow
                 // Hide generic tile drop indicator during group drag
                 DropSlotIndicator.Visibility = Visibility.Collapsed;
 
-                int targetColIndex = GridPlacementService.GetColumnIndexFromCol(GridPlacementService.ColFromPixel(clampedAnchorX));
+                int targetColIndex = Math.Max(0, GridPlacementService.GetColumnIndexFromCol(GridPlacementService.ColFromPixel(clampedAnchorX)));
                 int colStartCol = GridPlacementService.GetColumnStartCol(targetColIndex);
                 double colLeft = GridPlacementService.PixelXFromCol(colStartCol);
                 double colWidth = GridPlacementService.GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
 
-                var otherGroupsInCol = Groups
-                    .Where(g => g.ColumnIndex == targetColIndex && !ReferenceEquals(g, _draggedGroupModel))
-                    .OrderBy(g => g.OrderIndex)
-                    .ToList();
-
-                int targetOrderIndex = 0;
-                double insertionY = GridPlacementService.PixelYFromRow(0);
-
-                if (otherGroupsInCol.Count == 0)
-                {
-                    targetOrderIndex = 0;
-                    insertionY = GridPlacementService.PixelYFromRow(0);
-                }
-                else
-                {
-                    bool found = false;
-                    for (int i = 0; i < otherGroupsInCol.Count; i++)
-                    {
-                        var og = otherGroupsInCol[i];
-                        var (minC, maxC, minR, maxR) = GridPlacementService.GetGroupBoundingBox(og, Tiles);
-                        double groupTopY = GridPlacementService.PixelYFromRow(minR);
-                        double groupBottomY = GridPlacementService.PixelYFromRow(maxR);
-                        double groupMidY = (groupTopY + groupBottomY) / 2.0;
-
-                        if (canvasMouse.Y < groupMidY)
-                        {
-                            targetOrderIndex = i;
-                            insertionY = groupTopY - 4;
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if (!found)
-                    {
-                        var lastOg = otherGroupsInCol.Last();
-                        var (_, _, _, lastMaxR) = GridPlacementService.GetGroupBoundingBox(lastOg, Tiles);
-                        targetOrderIndex = otherGroupsInCol.Count;
-                        insertionY = GridPlacementService.PixelYFromRow(lastMaxR) + 4;
-                    }
-                }
+                int targetRow = Math.Max(0, GridPlacementService.FindInsertionRow(targetColIndex, canvasMouse.Y, Groups, Tiles, _draggedGroupModel));
+                double insertionY = GridPlacementService.PixelYFromRow(targetRow) - 2;
 
                 _groupDragTargetColIndex = targetColIndex;
-                _groupDragTargetOrderIndex = targetOrderIndex;
+                _groupDragTargetRow = targetRow;
 
                 if (GroupInsertionLine != null)
                 {
                     GroupInsertionLine.Width = colWidth;
                     Canvas.SetLeft(GroupInsertionLine, colLeft);
-                    Canvas.SetTop(GroupInsertionLine, Math.Max(0, insertionY));
+                    Canvas.SetTop(GroupInsertionLine, Math.Max(GridPlacementService.OriginY + 6, insertionY));
                     GroupInsertionLine.Visibility = Visibility.Visible;
                 }
             }
@@ -1125,20 +1097,21 @@ public partial class MainWindow : BorderlessFluentWindow
                 {
                     var lockedG = Groups.First(g => g.ColumnIndex == _groupDragTargetColIndex && g.IsLocked);
                     FlashLockedGroupPerimeter(lockedG);
-                    var revertTiles = GridPlacementService.ReflowAllGroups(Groups, Tiles);
+                    var revertTiles = GridPlacementService.InsertGroupAndResolveCollisions(movedGroup, movedGroup.ColumnIndex, movedGroup.Row, Groups, Tiles);
                     AnimateModifiedTiles(revertTiles);
                 }
                 else
                 {
-                    var modified = GridPlacementService.ResolveGroupReorder(
+                    var modified = GridPlacementService.InsertGroupAndResolveCollisions(
                         movedGroup,
                         _groupDragTargetColIndex,
-                        _groupDragTargetOrderIndex,
+                        _groupDragTargetRow,
                         Groups,
                         Tiles);
 
                     AnimateModifiedTiles(modified);
                     UpdateGroupHeaderPositions();
+                    UpdateCanvasHeight();
                     SaveGroupsAndLayout();
                 }
 
@@ -1244,8 +1217,10 @@ public partial class MainWindow : BorderlessFluentWindow
                         }
 
                         CleanEmptyGroupsAndReflow();
-                        var mod = GridPlacementService.ReflowAllGroups(Groups, Tiles);
+                        var mod = GridPlacementService.InsertGroupAndResolveCollisions(targetGroup, targetGroup.ColumnIndex, targetGroup.Row, Groups, Tiles);
                         AnimateModifiedTiles(mod);
+                        UpdateGroupHeaderPositions();
+                        UpdateCanvasHeight();
                     }
                 }
                 else
@@ -1280,8 +1255,7 @@ public partial class MainWindow : BorderlessFluentWindow
                                 }
                             }
                             CleanEmptyGroupsAndReflow();
-                            var mod = GridPlacementService.ReflowAllGroups(Groups, Tiles);
-                            AnimateModifiedTiles(mod);
+                            UpdateGroupHeaderPositions();
                         }
                         else
                         {
@@ -1292,8 +1266,10 @@ public partial class MainWindow : BorderlessFluentWindow
                                 cTile.SectionHeader = overlappedGroup.Title;
                             }
                             CleanEmptyGroupsAndReflow();
-                            var mod = GridPlacementService.ReflowAllGroups(Groups, Tiles);
+                            var mod = GridPlacementService.InsertGroupAndResolveCollisions(overlappedGroup, overlappedGroup.ColumnIndex, overlappedGroup.Row, Groups, Tiles);
                             AnimateModifiedTiles(mod);
+                            UpdateGroupHeaderPositions();
+                            UpdateCanvasHeight();
                         }
                     }
                     else
@@ -1508,7 +1484,6 @@ public partial class MainWindow : BorderlessFluentWindow
         _draggedGroupModel = null;
 
         UpdateGroupHeaderPositions();
-        EnsureGroupsHaveHeaderSpace();
         ClearAllAmbientReveals();
 
         try { RootGrid.ReleaseMouseCapture(); } catch { }
@@ -1629,7 +1604,7 @@ public partial class MainWindow : BorderlessFluentWindow
             return;
         }
 
-        string preModify = LayoutHistoryService.CaptureSnapshot(Tiles);
+        string preModify = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
 
         // Capture previous spans for animation
         var oldSpans = targets.ToDictionary(t => t, t => (t.SpanX, t.SpanY));
@@ -1883,8 +1858,6 @@ public partial class MainWindow : BorderlessFluentWindow
         bool anyCleaned = GridPlacementService.CleanEmptyGroups(Groups, Tiles);
         if (anyCleaned)
         {
-            var modified = GridPlacementService.ReflowAllGroups(Groups, Tiles);
-            AnimateModifiedTiles(modified);
             UpdateGroupHeaderPositions();
             SaveGroupsAndLayout();
         }
@@ -2173,11 +2146,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void EnsureGroupsHaveHeaderSpace()
     {
-        var modified = GridPlacementService.ReflowAllGroups(Groups, Tiles);
-        if (modified.Count > 0)
-        {
-            AnimateModifiedTiles(modified);
-        }
         UpdateGroupHeaderPositions();
     }
 
@@ -2224,6 +2192,9 @@ public partial class MainWindow : BorderlessFluentWindow
         int minCol = targets.Min(t => GridPlacementService.ColFromPixel(t.X));
         int targetColIndex = GridPlacementService.GetColumnIndexFromCol(minCol);
         int targetColStart = GridPlacementService.GetColumnStartCol(targetColIndex);
+        
+        int minRow = targets.Min(t => GridPlacementService.RowFromPixel(t.Y));
+        int targetRow = Math.Max(0, minRow - 1);
 
         int nextOrder = Groups.Where(g => g.ColumnIndex == targetColIndex)
                               .Select(g => g.OrderIndex)
@@ -2248,7 +2219,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
         Groups.Add(group);
 
-        var modified = GridPlacementService.ReflowColumnGroups(targetColIndex, Groups, Tiles);
+        var modified = GridPlacementService.InsertGroupAndResolveCollisions(group, targetColIndex, targetRow, Groups, Tiles);
         AnimateModifiedTiles(modified);
         UpdateGroupHeaderPositions();
         SaveGroupsAndLayout();
@@ -2276,11 +2247,8 @@ public partial class MainWindow : BorderlessFluentWindow
             t.SectionHeader = null;
         }
 
-        int colIdx = group.ColumnIndex;
         Groups.Remove(group);
 
-        var modifiedTiles = GridPlacementService.ReflowColumnGroups(colIdx, Groups, Tiles);
-        AnimateModifiedTiles(modifiedTiles);
         UpdateGroupHeaderPositions();
         SaveGroupsAndLayout();
         UpdateExposedAddSlots();
@@ -2423,7 +2391,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
             if (dialog.ShowDialog() == true && dialog.FileNames.Length > 0)
             {
-                string preAdd = LayoutHistoryService.CaptureSnapshot(Tiles);
+                string preAdd = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
                 _historyService.PushState(preAdd);
 
                 foreach (string file in dialog.FileNames)
@@ -2444,7 +2412,7 @@ public partial class MainWindow : BorderlessFluentWindow
         {
             if (recordHistory)
             {
-                string preAdd = LayoutHistoryService.CaptureSnapshot(Tiles);
+                string preAdd = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
                 _historyService.PushState(preAdd);
             }
             string title = Path.GetFileNameWithoutExtension(filePath);
@@ -2458,9 +2426,48 @@ public partial class MainWindow : BorderlessFluentWindow
             int col = x > 0 ? GridPlacementService.ColFromPixel(x) : 0;
             int row = y > 0 ? GridPlacementService.RowFromPixel(y) : 0;
 
+            TileGroupModel? targetGroup = null;
+            if (x > 0 || y > 0)
+            {
+                foreach (var g in Groups)
+                {
+                    var (minC, maxC, minR, maxR) = GridPlacementService.GetGroupBoundingBox(g, Tiles);
+                    if (col >= minC && col < maxC && row >= minR && row <= maxR)
+                    {
+                        targetGroup = g;
+                        break;
+                    }
+                }
+            }
+
+            if (targetGroup != null)
+            {
+                var tile = new TileModel
+                {
+                    Title = title,
+                    TargetPath = filePath,
+                    IconPath = iconPath,
+                    TileType = TileType.App,
+                    SpanX = 2,
+                    SpanY = 2,
+                    Group = targetGroup.Id,
+                    SectionHeader = targetGroup.Title
+                };
+
+                Tiles.Add(tile);
+                var mod = GridPlacementService.InsertGroupAndResolveCollisions(targetGroup, targetGroup.ColumnIndex, targetGroup.Row, Groups, Tiles);
+                AnimateModifiedTiles(mod);
+                UpdateGroupHeaderPositions();
+                StorageService.SaveLayout(Tiles);
+                SaveGroupsAndLayout();
+                UpdateCanvasHeight();
+                UpdateExposedAddSlots();
+                return;
+            }
+
             var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(col, row, 2, 2, Tiles, null, maxCols);
 
-            var tile = new TileModel
+            var tileUngrouped = new TileModel
             {
                 Title = title,
                 TargetPath = filePath,
@@ -2472,7 +2479,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 Y = GridPlacementService.PixelYFromRow(freeRow)
             };
 
-            Tiles.Add(tile);
+            Tiles.Add(tileUngrouped);
             StorageService.SaveLayout(Tiles);
             UpdateCanvasHeight();
             UpdateExposedAddSlots();
@@ -2685,6 +2692,9 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         if (item == null) return;
 
+        string prePin = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
+        _historyService.PushState(prePin);
+
         UpdateLayoutMetrics();
         int maxCols = GridPlacementService.MaxCols;
 
@@ -2692,6 +2702,47 @@ public partial class MainWindow : BorderlessFluentWindow
 
         int col = GridPlacementService.ColFromPixel(clickPoint.X);
         int row = GridPlacementService.RowFromPixel(clickPoint.Y);
+
+        TileGroupModel? targetGroup = null;
+        if (targetCanvasPosition != null)
+        {
+            foreach (var g in Groups)
+            {
+                var (minC, maxC, minR, maxR) = GridPlacementService.GetGroupBoundingBox(g, Tiles);
+                if (col >= minC && col < maxC && row >= minR && row <= maxR)
+                {
+                    targetGroup = g;
+                    break;
+                }
+            }
+        }
+
+        if (targetGroup != null)
+        {
+            string? iconPathG = IconExtractorService.ExtractAndCacheIcon(item.TargetPath);
+            var groupTile = new TileModel
+            {
+                Title = item.Name,
+                TargetPath = item.TargetPath,
+                Arguments = item.Arguments,
+                IconPath = iconPathG,
+                TileType = item.TileType,
+                SpanX = Math.Min(item.SpanX > 0 ? item.SpanX : 2, 4),
+                SpanY = item.SpanY > 0 ? item.SpanY : 2,
+                Group = targetGroup.Id,
+                SectionHeader = targetGroup.Title
+            };
+
+            Tiles.Add(groupTile);
+            var mod = GridPlacementService.InsertGroupAndResolveCollisions(targetGroup, targetGroup.ColumnIndex, targetGroup.Row, Groups, Tiles);
+            AnimateModifiedTiles(mod);
+            UpdateGroupHeaderPositions();
+            StorageService.SaveLayout(Tiles);
+            SaveGroupsAndLayout();
+            UpdateCanvasHeight();
+            UpdateExposedAddSlots();
+            return;
+        }
 
         int spanX = item.SpanX > 0 ? item.SpanX : 2;
         int spanY = item.SpanY > 0 ? item.SpanY : 2;
@@ -2794,7 +2845,7 @@ public partial class MainWindow : BorderlessFluentWindow
             string[]? files = e.Data.GetData(DataFormats.FileDrop) as string[];
             if (files != null && files.Length > 0)
             {
-                string preDrop = LayoutHistoryService.CaptureSnapshot(Tiles);
+                string preDrop = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
                 _historyService.PushState(preDrop);
 
                 Point pos = e.GetPosition(TilesListBox);

@@ -72,6 +72,15 @@ public class StorageService
                     bool iconsRefreshed = false;
                     foreach (var tile in tiles)
                     {
+                        if (tile.Col < 0 || tile.Row < 0 || tile.Y < GridPlacementService.OriginY)
+                        {
+                            tile.Col = Math.Max(0, tile.Col);
+                            tile.Row = !string.IsNullOrEmpty(tile.Group) ? Math.Max(1, tile.Row) : Math.Max(0, tile.Row);
+                            tile.X = GridPlacementService.PixelXFromCol(tile.Col);
+                            tile.Y = GridPlacementService.PixelYFromRow(tile.Row);
+                            iconsRefreshed = true;
+                        }
+
                         if (!string.IsNullOrWhiteSpace(tile.TargetPath))
                         {
                             string? highRes = IconExtractorService.ExtractAndCacheIcon(tile.TargetPath);
@@ -119,7 +128,23 @@ public class StorageService
             {
                 string json = File.ReadAllText(GroupsPath);
                 var groups = JsonSerializer.Deserialize<ObservableCollection<TileGroupModel>>(json, JsonOptions);
-                if (groups != null) return groups;
+                if (groups != null)
+                {
+                    bool sanitized = false;
+                    foreach (var g in groups)
+                    {
+                        if (g.Col < 0 || g.Row < 0 || g.Y < GridPlacementService.OriginY + 8)
+                        {
+                            g.Col = Math.Max(0, g.Col);
+                            g.Row = Math.Max(0, g.Row);
+                            g.X = GridPlacementService.PixelXFromCol(g.Col);
+                            g.Y = GridPlacementService.PixelYFromRow(g.Row) + 8;
+                            sanitized = true;
+                        }
+                    }
+                    if (sanitized) SaveGroups(groups);
+                    return groups;
+                }
             }
         }
         catch { }
