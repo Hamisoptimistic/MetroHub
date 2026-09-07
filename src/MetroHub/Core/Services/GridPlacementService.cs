@@ -295,6 +295,20 @@ public static class GridPlacementService
             }
         }
 
+        // If any loose canvas tiles expanded downward or displaced other tiles, ensure they never crash into group headers below
+        if (groups != null && groups.Count > 0)
+        {
+            var looseTiles = allTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+            var pushedGroupTiles = PushGroupsDownFromLooseTiles(looseTiles, groups, allTiles);
+            foreach (var pt in pushedGroupTiles)
+            {
+                if (!modifiedTiles.Contains(pt))
+                {
+                    modifiedTiles.Add(pt);
+                }
+            }
+        }
+
         return modifiedTiles;
     }
 
@@ -1365,6 +1379,62 @@ public static class GridPlacementService
             foreach (var pt in pushedTiles)
             {
                 if (!modified.Contains(pt)) modified.Add(pt);
+            }
+        }
+
+        return modified;
+    }
+
+    /// <summary>
+    /// Checks all loose canvas tiles against all groups.
+    /// If any loose tile overlaps a group header or penetrates into a group's vertical footprint,
+    /// pushes the group (and all of its member tiles) downward, and cascades downward
+    /// to push any subsequent groups and loose canvas tiles down.
+    /// Returns all modified tiles.
+    /// </summary>
+    public static List<TileModel> PushGroupsDownFromLooseTiles(
+        IEnumerable<TileModel> looseTiles,
+        IList<TileGroupModel>? groups,
+        IList<TileModel> allTiles)
+    {
+        var modified = new List<TileModel>();
+        if (groups == null || groups.Count == 0 || looseTiles == null || allTiles == null) return modified;
+
+        var orderedGroups = groups.OrderBy(g => g.Row).ToList();
+
+        foreach (var g in orderedGroups)
+        {
+            int gColStart = g.Col >= 0 ? g.Col : GetColumnStartCol(g.ColumnIndex);
+            int gColEnd = gColStart + GroupColWidth;
+
+            var collidingLooseTiles = looseTiles
+                .Where(t => t.Col < gColEnd && (t.Col + t.SpanX) > gColStart && t.Row <= g.Row)
+                .Where(t => (t.Row + t.SpanY) > g.Row)
+                .ToList();
+
+            if (collidingLooseTiles.Count > 0)
+            {
+                int maxRequiredRow = collidingLooseTiles.Max(t => t.Row + t.SpanY);
+                if (maxRequiredRow > g.Row)
+                {
+                    int delta = maxRequiredRow - g.Row;
+                    g.Row = maxRequiredRow;
+                    g.Y = PixelYFromRow(g.Row) + 8;
+
+                    var gMembers = allTiles.Where(t => t.Group == g.Id).ToList();
+                    foreach (var m in gMembers)
+                    {
+                        m.Row += delta;
+                        m.Y = PixelYFromRow(m.Row);
+                        if (!modified.Contains(m)) modified.Add(m);
+                    }
+
+                    var cascadeTiles = PushLowerGroupsDown(g, groups, allTiles);
+                    foreach (var ct in cascadeTiles)
+                    {
+                        if (!modified.Contains(ct)) modified.Add(ct);
+                    }
+                }
             }
         }
 

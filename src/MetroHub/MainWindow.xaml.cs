@@ -1415,6 +1415,16 @@ public partial class MainWindow : BorderlessFluentWindow
                             _draggedTile, targetCol, targetRow, _dragOriginalCol, _dragOriginalRow, maxCols, Tiles);
                     }
 
+                    if (Groups != null && Groups.Count > 0)
+                    {
+                        var looseTiles = Tiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+                        var pushedGroupTiles = GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, Groups, Tiles);
+                        foreach (var pt in pushedGroupTiles)
+                        {
+                            if (!modifiedTiles.Contains(pt)) modifiedTiles.Add(pt);
+                        }
+                    }
+
                     AnimateModifiedTiles(modifiedTiles);
                     UpdateGroupHeaderPositions();
                     UpdateCanvasHeight();
