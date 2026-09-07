@@ -11,10 +11,14 @@ public partial class GroupHeaderControl : UserControl
     private Point _dragStartPoint;
     private bool _isPotentialDrag = false;
 
+    private TileGroupModel? _boundGroup;
+
     public GroupHeaderControl()
     {
         InitializeComponent();
         Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+        DataContextChanged += OnDataContextChanged;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -23,11 +27,47 @@ public partial class GroupHeaderControl : UserControl
         {
             // Restore icon states from persisted model
             UpdateLockIcon(group.IsLocked);
+            AnimateActionButtons(group.IsLocked ? 0.85 : 0.0);
 
             if (group.IsEditing)
             {
                 BeginEdit();
             }
+        }
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (_boundGroup != null)
+        {
+            _boundGroup.PropertyChanged -= OnGroupPropertyChanged;
+            _boundGroup = null;
+        }
+    }
+
+    private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (_boundGroup != null)
+        {
+            _boundGroup.PropertyChanged -= OnGroupPropertyChanged;
+            _boundGroup = null;
+        }
+
+        if (e.NewValue is TileGroupModel group)
+        {
+            _boundGroup = group;
+            _boundGroup.PropertyChanged += OnGroupPropertyChanged;
+            UpdateLockIcon(group.IsLocked);
+            AnimateActionButtons(group.IsLocked ? 0.85 : 0.0);
+        }
+    }
+
+    private void OnGroupPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (sender is TileGroupModel group && e.PropertyName == nameof(TileGroupModel.IsLocked))
+        {
+            UpdateLockIcon(group.IsLocked);
+            AnimateActionButtons(group.IsLocked ? 0.85 : 0.0);
         }
     }
 
@@ -99,12 +139,21 @@ public partial class GroupHeaderControl : UserControl
             newTitle = "Group";
         }
 
-        group.Title = newTitle;
+        if (group.Title != newTitle)
+        {
+            if (MainWindow.Current != null)
+            {
+                MainWindow.Current.RenameGroup(group, newTitle);
+            }
+            else
+            {
+                group.Title = newTitle;
+            }
+        }
+
         group.IsEditing = false;
         EditTextBox.Visibility = Visibility.Collapsed;
         ViewPanel.Visibility = Visibility.Visible;
-
-        MainWindow.Current?.SaveGroupsAndLayout();
     }
 
     private void CancelEdit()
@@ -193,13 +242,20 @@ public partial class GroupHeaderControl : UserControl
     {
         if (DataContext is not TileGroupModel group) return;
 
-        group.IsLocked = !group.IsLocked;
+        if (MainWindow.Current != null)
+        {
+            MainWindow.Current.ToggleGroupLock(group);
+        }
+        else
+        {
+            group.IsLocked = !group.IsLocked;
+        }
+
         UpdateLockIcon(group.IsLocked);
 
         // If now locked, keep buttons visible at reduced opacity as a persistent indicator
         AnimateActionButtons(group.IsLocked ? 0.85 : 0.0);
 
-        MainWindow.Current?.SaveGroupsAndLayout();
         e.Handled = true;
     }
 

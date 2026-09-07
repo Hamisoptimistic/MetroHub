@@ -597,6 +597,10 @@ public partial class MainWindow : BorderlessFluentWindow
                 existingG.X = tg.X;
                 existingG.Y = tg.Y;
                 existingG.IsEditing = false;
+                existingG.IsLocked = tg.IsLocked;
+                existingG.TintColor = tg.TintColor;
+                existingG.ColumnIndex = tg.ColumnIndex;
+                existingG.OrderIndex = tg.OrderIndex;
             }
         }
 
@@ -623,6 +627,7 @@ public partial class MainWindow : BorderlessFluentWindow
             existing.AccentColor = target.AccentColor;
             existing.Group = target.Group;
             existing.SectionHeader = target.SectionHeader;
+            existing.IsLocked = target.IsLocked;
 
             if (spanChanged)
             {
@@ -2804,6 +2809,25 @@ public partial class MainWindow : BorderlessFluentWindow
         SaveGroupsAndLayout();
         _historyService.PushState(pre);
     }
+
+    public void ToggleGroupLock(TileGroupModel group)
+    {
+        string pre = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
+        group.IsLocked = !group.IsLocked;
+        SaveGroupsAndLayout();
+        _historyService.PushState(pre);
+    }
+
+    public void RenameGroup(TileGroupModel group, string newTitle)
+    {
+        if (group.Title == newTitle) return;
+        string pre = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
+        group.Title = newTitle;
+        SaveGroupsAndLayout();
+        _historyService.PushState(pre);
+    }
+
+    public LayoutHistoryService HistoryService => _historyService;
 
     public void UngroupTiles(TileGroupModel group)
     {
