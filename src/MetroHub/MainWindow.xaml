@@ -219,6 +219,24 @@
                         </Border.Effect>
                     </Border>
 
+                    <!-- Thin 1x1 Red Glowing Border for 1x1 Gap Drop Warning Feedback -->
+                    <Border x:Name="GapDropWarningBorder"
+                            Visibility="Collapsed"
+                            Width="56" Height="56"
+                            CornerRadius="6"
+                            BorderThickness="1.5"
+                            BorderBrush="#FF4343"
+                            Background="#22FF4343"
+                            IsHitTestVisible="False">
+                        <Border.Effect>
+                            <DropShadowEffect x:Name="GapDropWarningGlow"
+                                              BlurRadius="16"
+                                              ShadowDepth="0"
+                                              Opacity="0.85"
+                                              Color="#FF4343" />
+                        </Border.Effect>
+                    </Border>
+
                     <!-- WPF-UI Fluent Card Style Floating Badge -->
                     <Border x:Name="GroupDropFloatingBadge"
                             Visibility="Collapsed"

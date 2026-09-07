@@ -109,6 +109,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
         TilesListBox.ItemsSource = Tiles;
         if (GroupsListBox != null) GroupsListBox.ItemsSource = Groups;
+        if (GroupTintBackplates != null) GroupTintBackplates.ItemsSource = Groups;
         UpdateCanvasHeight();
         UpdateExposedAddSlots();
 
@@ -972,6 +973,29 @@ public partial class MainWindow : BorderlessFluentWindow
                 : Math.Max(0, -_clusterRelGridBounds.MinRelRow);
             int anchorRow = Math.Max(minAllowedRow, GridPlacementService.RowFromPixel(clampedAnchorY));
 
+            // If loose tile is placed below a group in the same column, enforce 1x1 grid row separation below the group's member tiles
+            if (!_isGroupDrag && _hoveredTargetGroup == null)
+            {
+                int clusterMinCol = anchorCol + _clusterRelGridBounds.MinRelCol;
+                int clusterMaxCol = anchorCol + _clusterRelGridBounds.MaxRelCol;
+                foreach (var g in Groups)
+                {
+                    int gMinC = g.Col;
+                    int gMaxC = g.Col + GridPlacementService.GroupColWidth;
+                    // Check horizontal overlap with group's column track
+                    if (clusterMinCol < gMaxC && clusterMaxCol > gMinC)
+                    {
+                        var (minC, maxC, minR, maxR) = GridPlacementService.GetGroupBoundingBox(g, Tiles);
+                        // If any tile would sit on maxR - 1 (the row directly adjacent to group members), push anchorRow down by 1
+                        int clusterStartRow = anchorRow + _clusterRelGridBounds.MinRelRow;
+                        if (clusterStartRow < maxR && clusterStartRow >= maxR - 1)
+                        {
+                            anchorRow = maxR - _clusterRelGridBounds.MinRelRow;
+                        }
+                    }
+                }
+            }
+
             double snappedAnchorX = GridPlacementService.PixelXFromCol(anchorCol);
             double snappedAnchorY = GridPlacementService.PixelYFromRow(anchorRow);
 
@@ -1245,7 +1269,13 @@ public partial class MainWindow : BorderlessFluentWindow
                 else
                 {
                     // Dropped on canvas outside targetGroup
-                    // Decision 9: Loose tiles cannot occupy space inside a group's bounding box.
+                    // Canvas drops NEVER join any group! Keep or set as loose tiles.
+                    foreach (var cTile in _draggedCluster)
+                    {
+                        cTile.Group = null;
+                        cTile.SectionHeader = null;
+                    }
+
                     int dropCol = GridPlacementService.ColFromPixel(_draggedTile.X);
                     int dropRow = GridPlacementService.RowFromPixel(_draggedTile.Y);
 
@@ -1254,114 +1284,84 @@ public partial class MainWindow : BorderlessFluentWindow
 
                     var origDict = _dragClusterOriginals.ToDictionary(kvp => kvp.Key, kvp => (kvp.Value.Col, kvp.Value.Row));
 
-                    // Check if ANY tile in the cluster overlaps a group bounding box
-                    TileGroupModel? overlappedGroup = null;
+                    // Check if dropped on the 1x1 gap buffer (above, below, sideways) or inside any group area
+                    bool droppedOnGap = false;
+                    int flashCol = targetCol;
+                    int flashRow = targetRow;
+
                     foreach (var g in Groups)
                     {
-                        var (minC, maxC, minR, maxR) = GridPlacementService.GetGroupBoundingBox(g, Tiles);
-                        foreach (var cTile in _draggedCluster)
-                        {
-                            int relC = origDict.TryGetValue(cTile, out var pos) ? pos.Col - _dragOriginalCol : 0;
-                            int relR = origDict.TryGetValue(cTile, out pos) ? pos.Row - _dragOriginalRow : 0;
-                            int cTargetCol = Math.Max(0, Math.Min(targetCol + relC, maxCols - cTile.SpanX));
-                            int cTargetRow = Math.Max(0, targetRow + relR);
+                        var gMembers = Tiles.Where(t => t.Group == g.Id && !_draggedCluster.Contains(t)).ToList();
+                        if (gMembers.Count == 0) continue;
 
-                            if (GridPlacementService.DoTilesOverlap(cTargetCol, cTargetRow, cTile.SpanX, cTile.SpanY, minC, minR, maxC - minC, maxR - minR))
-                            {
-                                overlappedGroup = g;
-                                break;
-                            }
+                        int gMinC = g.Col;
+                        int gMaxC = g.Col + GridPlacementService.GroupColWidth;
+                        int gMinR = g.Row;
+                        int gMaxR = gMembers.Max(t => t.Row + t.SpanY);
+
+                        // Check bottom 1x1 gap: immediately below member tiles
+                        bool isBottomGap = (targetRow == gMaxR) && (targetCol < gMaxC && targetCol + _draggedTile.SpanX > gMinC);
+                        // Check inside group bounding box
+                        bool isInsideGroup = (targetCol < gMaxC && targetCol + _draggedTile.SpanX > gMinC && targetRow < gMaxR && targetRow + _draggedTile.SpanY > gMinR);
+                        // Check top 1x1 gap: immediately above group header
+                        bool isTopGap = (gMinR > 0 && targetRow + _draggedTile.SpanY - 1 == gMinR - 1) && (targetCol < gMaxC && targetCol + _draggedTile.SpanX > gMinC);
+                        // Check right sideways 1x1 gap (the gap column between columns)
+                        bool isRightGap = (targetCol == gMaxC) && (targetRow < gMaxR && targetRow + _draggedTile.SpanY > gMinR);
+                        // Check left sideways 1x1 gap
+                        bool isLeftGap = (gMinC > 0 && targetCol + _draggedTile.SpanX - 1 == gMinC - 1) && (targetRow < gMaxR && targetRow + _draggedTile.SpanY > gMinR);
+
+                        if (isBottomGap || isInsideGroup)
+                        {
+                            droppedOnGap = true;
+                            flashCol = targetCol;
+                            flashRow = targetRow;
+                            targetRow = gMaxR + 1; // place below the 1x1 gap on canvas
                         }
-                        if (overlappedGroup != null) break;
+                        else if (isRightGap)
+                        {
+                            droppedOnGap = true;
+                            flashCol = targetCol;
+                            flashRow = targetRow;
+                            targetCol = gMaxC + 1; // place in next column outside gap
+                        }
+                        else if (isLeftGap)
+                        {
+                            droppedOnGap = true;
+                            flashCol = targetCol;
+                            flashRow = targetRow;
+                            targetCol = Math.Max(0, gMinC - 1 - _draggedTile.SpanX);
+                        }
+                        else if (isTopGap)
+                        {
+                            droppedOnGap = true;
+                            flashCol = targetCol;
+                            flashRow = targetRow;
+                            targetRow = Math.Max(0, gMinR - 1 - _draggedTile.SpanY);
+                        }
                     }
 
-                    if (overlappedGroup != null)
+                    if (droppedOnGap)
                     {
-                        if (overlappedGroup.IsLocked)
-                        {
-                            FlashLockedGroupPerimeter(overlappedGroup);
-                            foreach (var cTile in _draggedCluster)
-                            {
-                                cTile.IsBeingDragged = false;
-                                if (_dragClusterOriginals.TryGetValue(cTile, out var orig))
-                                {
-                                    cTile.Col = orig.Col; cTile.Row = orig.Row; cTile.X = orig.X; cTile.Y = orig.Y;
-                                }
-                                else
-                                {
-                                    cTile.Col = _dragOriginalCol; cTile.Row = _dragOriginalRow;
-                                    cTile.X = GridPlacementService.PixelXFromCol(_dragOriginalCol);
-                                    cTile.Y = GridPlacementService.PixelYFromRow(_dragOriginalRow);
-                                }
-                                var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
-                                if (container != null)
-                                {
-                                    Canvas.SetLeft(container, cTile.X);
-                                    Canvas.SetTop(container, cTile.Y);
-                                    Panel.SetZIndex(container, 0);
-                                }
-                                var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
-                                control?.AnimateRelease();
-                            }
-                            CleanEmptyGroupsAndReflow();
-                            UpdateGroupHeaderPositions();
-                            if (_draggedContainer != null) { Panel.SetZIndex(_draggedContainer, 0); _draggedContainer = null; }
-                            _draggedTile = null;
-                            _draggedControl = null;
-                            _draggedCluster.Clear();
-                            ClearTileSelection();
-                            _preDragLayoutSnapshot = null;
-                            e.Handled = true;
-                            return;
-                        }
-                        else
-                        {
-                            // Join the overlapped group – place tile(s) at drop position preserving existing layout
-                            foreach (var cTile in _draggedCluster)
-                            {
-                                cTile.Group = overlappedGroup.Id;
-                                cTile.SectionHeader = overlappedGroup.Title;
-                            }
+                        FlashGapDropPerimeter(GridPlacementService.PixelXFromCol(flashCol), GridPlacementService.PixelYFromRow(flashRow), 56, 56);
+                    }
 
-                            CleanEmptyGroupsAndReflow();
+                    CleanEmptyGroupsAndReflow();
 
-                            var mod2 = GridPlacementService.PlaceTilesInGroup(
-                                _draggedCluster,
-                                overlappedGroup,
-                                Tiles,
-                                _draggedTile,
-                                dropCol,
-                                dropRow,
-                                Groups);
-
-                            AnimateModifiedTiles(mod2);
-                            UpdateGroupHeaderPositions();
-                            UpdateCanvasHeight();
-                        }
+                    List<TileModel> modifiedTiles;
+                    if (_draggedCluster.Count > 1)
+                    {
+                        modifiedTiles = GridPlacementService.PlaceClusterAndResolveCollisions(
+                            _draggedCluster, _draggedTile, targetCol, targetRow, _dragOriginalCol, _dragOriginalRow, maxCols, Tiles, origDict);
                     }
                     else
                     {
-                        // Genuine ungrouped placement
-                        foreach (var cTile in _draggedCluster)
-                        {
-                            cTile.Group = null;
-                            cTile.SectionHeader = null;
-                        }
-                        CleanEmptyGroupsAndReflow();
-
-                        List<TileModel> modifiedTiles;
-                        if (_draggedCluster.Count > 1)
-                        {
-                            modifiedTiles = GridPlacementService.PlaceClusterAndResolveCollisions(
-                                _draggedCluster, _draggedTile, targetCol, targetRow, _dragOriginalCol, _dragOriginalRow, maxCols, Tiles, origDict);
-                        }
-                        else
-                        {
-                            modifiedTiles = GridPlacementService.PlaceAndResolveCollisions(
-                                _draggedTile, targetCol, targetRow, _dragOriginalCol, _dragOriginalRow, maxCols, Tiles);
-                        }
-                        AnimateModifiedTiles(modifiedTiles);
+                        modifiedTiles = GridPlacementService.PlaceAndResolveCollisions(
+                            _draggedTile, targetCol, targetRow, _dragOriginalCol, _dragOriginalRow, maxCols, Tiles);
                     }
+
+                    AnimateModifiedTiles(modifiedTiles);
+                    UpdateGroupHeaderPositions();
+                    UpdateCanvasHeight();
                 }
 
                 foreach (var cTile in _draggedCluster)
@@ -1706,7 +1706,8 @@ public partial class MainWindow : BorderlessFluentWindow
             newSpanX,
             newSpanY,
             maxCols,
-            Tiles);
+            Tiles,
+            Groups);
 
         // Trigger resize animations across all resizing tile controls
         foreach (var t in targets)
@@ -1714,6 +1715,23 @@ public partial class MainWindow : BorderlessFluentWindow
             var (oldX, oldY) = oldSpans[t];
             var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, t));
             control?.AnimateResize(oldX, oldY, newSpanX, newSpanY);
+        }
+
+        // If any resized tiles belong to a group, push lower groups and ungrouped tiles down
+        var affectedGroups = targets
+            .Where(t => !string.IsNullOrEmpty(t.Group))
+            .Select(t => Groups.FirstOrDefault(g => g.Id == t.Group))
+            .Where(g => g != null)
+            .Distinct()
+            .ToList();
+
+        foreach (var ag in affectedGroups)
+        {
+            var pushed = GridPlacementService.PushLowerGroupsDown(ag!, Groups, Tiles);
+            foreach (var pt in pushed)
+            {
+                if (!modified.Contains(pt)) modified.Add(pt);
+            }
         }
 
         // Animate any displaced neighbor tiles (and self if clamped/shifted)
@@ -1948,6 +1966,30 @@ public partial class MainWindow : BorderlessFluentWindow
                     t.X = GridPlacementService.PixelXFromCol(t.Col);
                 }
             }
+
+            // Ensure loose tiles sitting below this group have the 1x1 grid row separation
+            var groupMembers = Tiles.Where(t => t.Group == group.Id).ToList();
+            if (groupMembers.Count > 0)
+            {
+                int gMaxRow = groupMembers.Max(t => t.Row + t.SpanY);
+                int gMinCol = group.Col;
+                int gMaxCol = group.Col + GridPlacementService.GroupColWidth;
+
+                var looseInCol = Tiles.Where(t => t.Group == null && t.Col < gMaxCol && (t.Col + t.SpanX) > gMinCol).ToList();
+                foreach (var lt in looseInCol)
+                {
+                    if (lt.Row <= gMaxRow)
+                    {
+                        int newRow = gMaxRow + 1;
+                        if (lt.Row != newRow)
+                        {
+                            lt.Row = newRow;
+                            lt.Y = GridPlacementService.PixelYFromRow(newRow);
+                            changed = true;
+                        }
+                    }
+                }
+            }
         }
 
         if (changed)
@@ -1983,8 +2025,8 @@ public partial class MainWindow : BorderlessFluentWindow
             double minY = group.Y;
             double maxY = members.Count > 0 ? members.Max(t => t.Y + t.HeightPixels) : group.Y + 120;
 
-            // Generous outer padding around group perimeter so moving past column limit keeps group active
-            Rect groupDetectRect = new Rect(minX - 16, minY - 10, blockWidth + 64, (maxY - minY) + 40);
+            // Strict group boundary so dragging onto outer 1x1 gaps leaves them as canvas
+            Rect groupDetectRect = new Rect(minX, minY, blockWidth, Math.Max(0, maxY - minY));
 
             // Check if mouse cursor OR center of the dragged cluster intersects the group bounds
             double clusterCenterX = anchorX + (_clusterRelBounds.MinRelX + _clusterRelBounds.MaxRelX) / 2.0;
@@ -2005,7 +2047,7 @@ public partial class MainWindow : BorderlessFluentWindow
                     visualMaxY = Math.Max(maxY, previewBottom);
                 }
 
-                bestGroupRect = new Rect(minX - 6, minY - 6, blockWidth + 12, (visualMaxY - minY) + 12);
+                bestGroupRect = new Rect(minX - 4, minY - 4, blockWidth + 8, Math.Max(0, (visualMaxY - minY) + 8));
                 break;
             }
         }
@@ -2189,6 +2231,40 @@ public partial class MainWindow : BorderlessFluentWindow
     }
 
     /// <summary>
+    /// Shows a glowing thin 1x1 red border when a user attempts to drop a tile
+    /// into the 1x1 gap buffer surrounding a group.
+    /// </summary>
+    private void FlashGapDropPerimeter(double pixelX, double pixelY, double width = 56, double height = 56)
+    {
+        if (GapDropWarningBorder == null) return;
+
+        Canvas.SetLeft(GapDropWarningBorder, pixelX);
+        Canvas.SetTop(GapDropWarningBorder, pixelY);
+        GapDropWarningBorder.Width = width;
+        GapDropWarningBorder.Height = height;
+
+        GapDropWarningBorder.Opacity = 1.0;
+        GapDropWarningBorder.Visibility = Visibility.Visible;
+
+        var fadeAnimation = new DoubleAnimation
+        {
+            From = 1.0,
+            To = 0.0,
+            Duration = TimeSpan.FromMilliseconds(700),
+            FillBehavior = FillBehavior.Stop,
+            EasingFunction = new System.Windows.Media.Animation.CubicEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+        };
+
+        fadeAnimation.Completed += (s, e) =>
+        {
+            GapDropWarningBorder.Visibility = Visibility.Collapsed;
+            GapDropWarningBorder.Opacity = 1.0;
+        };
+
+        GapDropWarningBorder.BeginAnimation(UIElement.OpacityProperty, fadeAnimation);
+    }
+
+    /// <summary>
     /// Migrates existing group layouts by reflowing all group member tiles into 4-column blocks.
     /// </summary>
     private void ReflowGroupsToFixedColumnWidth()
@@ -2266,14 +2342,21 @@ public partial class MainWindow : BorderlessFluentWindow
                 Canvas.SetTop(container, group.Y);
             }
 
-            // Update tint backplate bounding box
-            var (_, _, minR, maxR) = GridPlacementService.GetGroupBoundingBox(group, Tiles);
-            int rowSpan = Math.Max(0, maxR - (group.Row + 1));
-            if (rowSpan > 0)
+            // Update tint backplate bounding box (sized strictly to member tiles with 8px padding)
+            var members = Tiles.Where(t => t.Group == group.Id).ToList();
+            if (members.Count > 0)
             {
-                group.PlateX = GridPlacementService.PixelXFromCol(group.Col) - 8;
-                group.PlateY = GridPlacementService.PixelYFromRow(group.Row + 1) - 8;
-                group.PlateWidth = (GridPlacementService.GroupColWidth * GridPlacementService.GridStep) - GridPlacementService.Gap + 16;
+                int minMemberCol = members.Min(t => t.Col);
+                int maxMemberCol = members.Max(t => t.Col + t.SpanX);
+                int colSpan = Math.Max(1, maxMemberCol - minMemberCol);
+
+                int minMemberRow = members.Min(t => t.Row);
+                int maxMemberBottom = members.Max(t => t.Row + t.SpanY);
+                int rowSpan = Math.Max(1, maxMemberBottom - minMemberRow);
+
+                group.PlateX = GridPlacementService.PixelXFromCol(minMemberCol) - 8;
+                group.PlateY = GridPlacementService.PixelYFromRow(minMemberRow) - 8;
+                group.PlateWidth = (colSpan * GridPlacementService.GridStep) - GridPlacementService.Gap + 16;
                 group.PlateHeight = (rowSpan * GridPlacementService.GridStep) - GridPlacementService.Gap + 16;
             }
             else

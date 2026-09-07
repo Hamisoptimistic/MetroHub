@@ -44,8 +44,8 @@ public static class GridPlacementService
         return OriginY + (row * GridStep);
     }
 
-    public static int GetCol(TileModel tile) => ColFromPixel(tile.X);
-    public static int GetRow(TileModel tile) => RowFromPixel(tile.Y);
+    public static int GetCol(TileModel tile) => (tile.X > 0 || tile.Col == 0) ? ColFromPixel(tile.X) : tile.Col;
+    public static int GetRow(TileModel tile) => (tile.Y > 0 || tile.Row == 0) ? RowFromPixel(tile.Y) : tile.Row;
 
     public static bool DoTilesOverlap(int c1, int r1, int sx1, int sy1, int c2, int r2, int sx2, int sy2)
     {
@@ -154,17 +154,39 @@ public static class GridPlacementService
         int newSpanX,
         int newSpanY,
         int maxCols,
-        IList<TileModel> allTiles)
+        IList<TileModel> allTiles,
+        IList<TileGroupModel>? groups = null)
     {
         var modifiedTiles = new List<TileModel>();
         int col = GetCol(resizingTile);
         int row = GetRow(resizingTile);
 
-        // If expanding horizontally pushes beyond maxCols, clamp target column
-        if (col + newSpanX > maxCols)
+        int effectiveMinCol = 0;
+        int effectiveMaxCol = maxCols;
+        IList<TileModel> scopeTiles = allTiles;
+
+        if (!string.IsNullOrEmpty(resizingTile.Group))
         {
-            int overflow = (col + newSpanX) - maxCols;
-            col = Math.Max(0, col - overflow);
+            var group = groups?.FirstOrDefault(g => g.Id == resizingTile.Group);
+            int groupCol = group != null ? group.Col : GetColumnStartCol(GetColumnIndexFromCol(col));
+            effectiveMinCol = groupCol;
+            effectiveMaxCol = groupCol + GroupColWidth;
+            scopeTiles = allTiles.Where(t => t.Group == resizingTile.Group).ToList();
+        }
+        else
+        {
+            scopeTiles = allTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+        }
+
+        // If expanding horizontally pushes beyond the allowed column boundary, clamp/shift left
+        if (col + newSpanX > effectiveMaxCol)
+        {
+            int overflow = (col + newSpanX) - effectiveMaxCol;
+            col = Math.Max(effectiveMinCol, col - overflow);
+        }
+        else if (col < effectiveMinCol)
+        {
+            col = effectiveMinCol;
         }
 
         resizingTile.Col = col;
@@ -173,8 +195,8 @@ public static class GridPlacementService
         resizingTile.Y = PixelYFromRow(row);
         modifiedTiles.Add(resizingTile);
 
-        // Check for overlapping tiles
-        var overlapping = allTiles
+        // Check for overlapping tiles within scope
+        var overlapping = scopeTiles
             .Where(t => !ReferenceEquals(t, resizingTile))
             .Where(t => DoTilesOverlap(col, row, newSpanX, newSpanY, GetCol(t), GetRow(t), t.SpanX, t.SpanY))
             .ToList();
@@ -184,8 +206,8 @@ public static class GridPlacementService
             return modifiedTiles;
         }
 
-        // Tier 1: Try Rightward Push (Same Row)
-        if (TryPushRight(resizingTile, col, row, newSpanX, newSpanY, maxCols, allTiles, out var rightMoves))
+        // Tier 1: Try Rightward Push (Same Row, strictly within effectiveMaxCol)
+        if (TryPushRight(resizingTile, col, row, newSpanX, newSpanY, effectiveMaxCol, scopeTiles, out var rightMoves))
         {
             foreach (var kvp in rightMoves)
             {
@@ -197,9 +219,9 @@ public static class GridPlacementService
             return modifiedTiles;
         }
 
-        // Tier 2: Try Shift Left (Self Growth Leftward)
+        // Tier 2: Try Shift Left (Self Growth Leftward, strictly >= effectiveMinCol)
         int deltaSpanX = newSpanX - oldSpanX;
-        if (deltaSpanX > 0 && TryShiftLeft(resizingTile, col, row, newSpanX, newSpanY, deltaSpanX, maxCols, allTiles, out int leftCol))
+        if (deltaSpanX > 0 && TryShiftLeft(resizingTile, col, row, newSpanX, newSpanY, deltaSpanX, effectiveMinCol, scopeTiles, out int leftCol))
         {
             resizingTile.Col = leftCol;
             resizingTile.X = PixelXFromCol(leftCol);
@@ -208,7 +230,7 @@ public static class GridPlacementService
 
         // Tier 3: Column-Preserving Accordion Push Down
         var positions = new Dictionary<TileModel, (int Col, int Row)>();
-        CascadePushDown(resizingTile, col, row, newSpanX, newSpanY, allTiles, positions);
+        CascadePushDown(resizingTile, col, row, newSpanX, newSpanY, scopeTiles, positions);
 
         foreach (var kvp in positions)
         {
@@ -228,7 +250,8 @@ public static class GridPlacementService
         int newSpanX,
         int newSpanY,
         int maxCols,
-        IList<TileModel> allTiles)
+        IList<TileModel> allTiles,
+        IList<TileGroupModel>? groups = null)
     {
         var modifiedTiles = new List<TileModel>();
         if (resizingTiles == null || resizingTiles.Count == 0) return modifiedTiles;
@@ -259,7 +282,7 @@ public static class GridPlacementService
             int oldX = t.SpanX;
             int oldY = t.SpanY;
 
-            var displaced = ResolveResizeExpansion(t, oldX, oldY, newSpanX, newSpanY, maxCols, allTiles);
+            var displaced = ResolveResizeExpansion(t, oldX, oldY, newSpanX, newSpanY, maxCols, allTiles, groups);
             t.SpanX = newSpanX;
             t.SpanY = newSpanY;
 
@@ -367,13 +390,13 @@ public static class GridPlacementService
         int targetSpanX,
         int targetSpanY,
         int deltaCols,
-        int maxCols,
+        int minCol,
         IList<TileModel> allTiles,
         out int newCol)
     {
         newCol = currentCol;
         int candidateCol = currentCol - deltaCols;
-        if (candidateCol < 0) return false;
+        if (candidateCol < minCol) return false;
 
         var overlapping = allTiles
             .Where(t => !ReferenceEquals(t, mainTile))
@@ -814,7 +837,8 @@ public static class GridPlacementService
         var members = allTiles.Where(t => t.Group == group.Id).ToList();
         if (members.Count > 0)
         {
-            maxRow = Math.Max(maxRow, members.Max(t => t.Row + t.SpanY));
+            // Add 1x1 grid row separation below the group so tiles outside the group never touch the group's bottom edge/plate
+            maxRow = Math.Max(maxRow, members.Max(t => t.Row + t.SpanY) + 1);
         }
 
         return (minCol, maxCol, minRow, maxRow);
@@ -1220,8 +1244,8 @@ public static class GridPlacementService
     }
 
     /// <summary>
-    /// Pushes any groups located below targetGroup down if targetGroup expanded downwards.
-    /// Eliminates empty gaps between the bottom of targetGroup's tiles and the header of lower groups.
+    /// Pushes any groups or ungrouped canvas tiles located below targetGroup down if targetGroup expanded downwards.
+    /// Eliminates empty gaps and preserves the 1x1 grid row separation below the bottom of targetGroup's tiles.
     /// </summary>
     public static List<TileModel> PushLowerGroupsDown(
         TileGroupModel targetGroup,
@@ -1229,38 +1253,191 @@ public static class GridPlacementService
         IList<TileModel> allTiles)
     {
         var modified = new List<TileModel>();
-        if (groups == null || groups.Count == 0) return modified;
+        if (targetGroup == null || allTiles == null) return modified;
 
         var targetBox = GetGroupBoundingBox(targetGroup, allTiles);
-        int groupBottom = targetBox.MaxRow;
-        var lowerGroups = groups
-            .Where(g => g.ColumnIndex == targetGroup.ColumnIndex && !ReferenceEquals(g, targetGroup) && g.Row >= targetGroup.Row)
-            .OrderBy(g => g.Row)
-            .ToList();
+        int groupBottom = targetBox.MaxRow; // Already incorporates +1 row for 1x1 grid separation
+        int groupStartCol = targetGroup.Col;
+        int groupWidth = GroupColWidth;
+        int groupHeight = Math.Max(1, groupBottom - targetGroup.Row);
 
-        int currentBoundary = groupBottom;
-        foreach (var lg in lowerGroups)
+        var groupList = groups ?? new List<TileGroupModel>();
+
+        var proposedGroupPositions = new Dictionary<TileGroupModel, (int Col, int Row)>();
+        var proposedTilePositions = new Dictionary<TileModel, (int Col, int Row)>();
+
+        var groupQueue = new Queue<TileGroupModel>();
+        var tileQueue = new Queue<TileModel>();
+        var inGroupQueue = new HashSet<TileGroupModel>();
+        var inTileQueue = new HashSet<TileModel>();
+
+        // 1. Initial collisions with the expanded targetGroup bounding box (including the 1x1 gap)
+        foreach (var otherG in groupList)
         {
-            if (lg.Row < currentBoundary)
+            if (ReferenceEquals(otherG, targetGroup)) continue;
+            if (otherG.ColumnIndex != targetGroup.ColumnIndex || otherG.Row < targetGroup.Row) continue;
+
+            var (minC, maxC, minR, maxR) = GetGroupBoundingBox(otherG, allTiles);
+            if (DoTilesOverlap(groupStartCol, targetGroup.Row, groupWidth, groupHeight, minC, minR, maxC - minC, maxR - minR))
             {
-                int delta = currentBoundary - lg.Row;
-                lg.Row = currentBoundary;
-                lg.Y = PixelYFromRow(lg.Row) + 8;
-                var lgTiles = allTiles.Where(t => t.Group == lg.Id).ToList();
-                foreach (var t in lgTiles)
+                proposedGroupPositions[otherG] = (otherG.Col, groupBottom);
+                inGroupQueue.Add(otherG);
+                groupQueue.Enqueue(otherG);
+            }
+        }
+
+        foreach (var ut in allTiles.Where(t => t.Group == null))
+        {
+            if (ut.Col < groupStartCol + groupWidth && (ut.Col + ut.SpanX) > groupStartCol && ut.Row >= targetGroup.Row)
+            {
+                if (DoTilesOverlap(groupStartCol, targetGroup.Row, groupWidth, groupHeight, ut.Col, ut.Row, ut.SpanX, ut.SpanY))
                 {
-                    t.Row += delta;
-                    t.Y = PixelYFromRow(t.Row);
-                    if (!modified.Contains(t)) modified.Add(t);
+                    proposedTilePositions[ut] = (ut.Col, groupBottom);
+                    inTileQueue.Add(ut);
+                    tileQueue.Enqueue(ut);
                 }
-                var lgBox = GetGroupBoundingBox(lg, allTiles);
-                currentBoundary = lgBox.MaxRow;
             }
-            else
+        }
+
+        // 2. Cascade down for any displaced groups and tiles
+        while (groupQueue.Count > 0 || tileQueue.Count > 0)
+        {
+            if (groupQueue.Count > 0)
             {
-                var lgBox = GetGroupBoundingBox(lg, allTiles);
-                currentBoundary = Math.Max(currentBoundary, lgBox.MaxRow);
+                var curG = groupQueue.Dequeue();
+                inGroupQueue.Remove(curG);
+                var pos = proposedGroupPositions[curG];
+                var (_, _, _, curGMaxR) = GetGroupBoundingBox(curG, allTiles);
+                int curGHeight = Math.Max(1, curGMaxR - curG.Row);
+
+                foreach (var otherG in groupList)
+                {
+                    if (ReferenceEquals(otherG, targetGroup) || ReferenceEquals(otherG, curG)) continue;
+                    if (otherG.ColumnIndex != targetGroup.ColumnIndex || otherG.Row < curG.Row) continue;
+
+                    var oPos = proposedGroupPositions.TryGetValue(otherG, out var op) ? op : (otherG.Col, otherG.Row);
+                    var (_, _, _, otherGMaxR) = GetGroupBoundingBox(otherG, allTiles);
+                    int oHeight = Math.Max(1, otherGMaxR - otherG.Row);
+
+                    if (DoTilesOverlap(pos.Col, pos.Row, GroupColWidth, curGHeight, oPos.Col, oPos.Row, GroupColWidth, oHeight))
+                    {
+                        int neededRow = pos.Row + curGHeight;
+                        if (neededRow > oPos.Row)
+                        {
+                            proposedGroupPositions[otherG] = (oPos.Col, neededRow);
+                            if (!inGroupQueue.Contains(otherG))
+                            {
+                                inGroupQueue.Add(otherG);
+                                groupQueue.Enqueue(otherG);
+                            }
+                        }
+                    }
+                }
+
+                foreach (var ut in allTiles.Where(t => t.Group == null))
+                {
+                    if (ut.Col < groupStartCol + groupWidth && (ut.Col + ut.SpanX) > groupStartCol)
+                    {
+                        var oPos = proposedTilePositions.TryGetValue(ut, out var op) ? op : (ut.Col, ut.Row);
+                        if (DoTilesOverlap(pos.Col, pos.Row, GroupColWidth, curGHeight, oPos.Col, oPos.Row, ut.SpanX, ut.SpanY))
+                        {
+                            int neededRow = pos.Row + curGHeight;
+                            if (neededRow > oPos.Row)
+                            {
+                                proposedTilePositions[ut] = (oPos.Col, neededRow);
+                                if (!inTileQueue.Contains(ut))
+                                {
+                                    inTileQueue.Add(ut);
+                                    tileQueue.Enqueue(ut);
+                                }
+                            }
+                        }
+                    }
+                }
             }
+            else if (tileQueue.Count > 0)
+            {
+                var curT = tileQueue.Dequeue();
+                inTileQueue.Remove(curT);
+                var pos = proposedTilePositions[curT];
+
+                foreach (var otherT in allTiles.Where(t => t.Group == null))
+                {
+                    if (ReferenceEquals(otherT, curT)) continue;
+                    if (otherT.Col < groupStartCol + groupWidth && (otherT.Col + otherT.SpanX) > groupStartCol)
+                    {
+                        var oPos = proposedTilePositions.TryGetValue(otherT, out var op) ? op : (otherT.Col, otherT.Row);
+                        if (DoTilesOverlap(pos.Col, pos.Row, curT.SpanX, curT.SpanY, oPos.Col, oPos.Row, otherT.SpanX, otherT.SpanY))
+                        {
+                            int neededRow = pos.Row + curT.SpanY;
+                            if (neededRow > oPos.Row)
+                            {
+                                proposedTilePositions[otherT] = (oPos.Col, neededRow);
+                                if (!inTileQueue.Contains(otherT))
+                                {
+                                    inTileQueue.Add(otherT);
+                                    tileQueue.Enqueue(otherT);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                foreach (var otherG in groupList)
+                {
+                    if (ReferenceEquals(otherG, targetGroup)) continue;
+                    if (otherG.ColumnIndex != targetGroup.ColumnIndex || otherG.Row < curT.Row) continue;
+
+                    var oPos = proposedGroupPositions.TryGetValue(otherG, out var op) ? op : (otherG.Col, otherG.Row);
+                    var (_, _, _, otherGMaxR) = GetGroupBoundingBox(otherG, allTiles);
+                    int oHeight = Math.Max(1, otherGMaxR - otherG.Row);
+
+                    if (DoTilesOverlap(pos.Col, pos.Row, curT.SpanX, curT.SpanY, oPos.Col, oPos.Row, GroupColWidth, oHeight))
+                    {
+                        int neededRow = pos.Row + curT.SpanY;
+                        if (neededRow > oPos.Row)
+                        {
+                            proposedGroupPositions[otherG] = (oPos.Col, neededRow);
+                            if (!inGroupQueue.Contains(otherG))
+                            {
+                                inGroupQueue.Add(otherG);
+                                groupQueue.Enqueue(otherG);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Apply proposed positions
+        foreach (var kvp in proposedGroupPositions)
+        {
+            var g = kvp.Key;
+            int newGRow = kvp.Value.Row;
+            int deltaGRow = newGRow - g.Row;
+            if (deltaGRow == 0) continue;
+
+            g.Row = newGRow;
+            g.Y = PixelYFromRow(g.Row) + 8;
+
+            var gTiles = allTiles.Where(t => t.Group == g.Id).ToList();
+            foreach (var t in gTiles)
+            {
+                t.Row += deltaGRow;
+                t.Y = PixelYFromRow(t.Row);
+                if (!modified.Contains(t)) modified.Add(t);
+            }
+        }
+
+        foreach (var kvp in proposedTilePositions)
+        {
+            var t = kvp.Key;
+            int newRow = kvp.Value.Row;
+            if (newRow == t.Row) continue;
+
+            t.Row = newRow;
+            t.Y = PixelYFromRow(t.Row);
+            if (!modified.Contains(t)) modified.Add(t);
         }
 
         return modified;
