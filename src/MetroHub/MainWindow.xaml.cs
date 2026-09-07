@@ -97,6 +97,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
         DiscoverGroupsFromTiles();
         EnsureGroupIndices();
+        MigrateGroupColumnOffsets();
         UpdateLayoutMetrics();
         bool anyCleaned = GridPlacementService.CleanEmptyGroups(Groups, Tiles);
         UpdateGroupHeaderPositions();
@@ -1877,6 +1878,36 @@ public partial class MainWindow : BorderlessFluentWindow
             {
                 ordered[i].OrderIndex = i;
             }
+        }
+    }
+
+    private void MigrateGroupColumnOffsets()
+    {
+        if (Groups.Count == 0) return;
+
+        bool changed = false;
+        foreach (var group in Groups)
+        {
+            int expectedCol = GridPlacementService.GetColumnStartCol(group.ColumnIndex);
+            if (group.Col != expectedCol)
+            {
+                int delta = expectedCol - group.Col;
+                group.Col = expectedCol;
+                group.X = GridPlacementService.PixelXFromCol(expectedCol);
+                changed = true;
+
+                var members = Tiles.Where(t => t.Group == group.Id).ToList();
+                foreach (var t in members)
+                {
+                    t.Col += delta;
+                    t.X = GridPlacementService.PixelXFromCol(t.Col);
+                }
+            }
+        }
+
+        if (changed)
+        {
+            SaveGroupsAndLayout();
         }
     }
 

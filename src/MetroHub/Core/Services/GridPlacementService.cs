@@ -782,15 +782,16 @@ public static class GridPlacementService
     #region Atomic Group Container & Column Architecture
 
     public const int GroupColWidth = 8;
+    public const int GroupColGap = 1;
 
     public static int GetColumnStartCol(int columnIndex)
     {
-        return columnIndex * GroupColWidth;
+        return columnIndex * (GroupColWidth + GroupColGap);
     }
 
     public static int GetColumnIndexFromCol(int col)
     {
-        return Math.Max(0, col / GroupColWidth);
+        return Math.Max(0, col / (GroupColWidth + GroupColGap));
     }
 
     public static (int MinCol, int MaxCol, int MinRow, int MaxRow) GetGroupBoundingBox(TileGroupModel group, IEnumerable<TileModel> allTiles)
