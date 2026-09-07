@@ -1948,42 +1948,255 @@ public static class GridPlacementService
         int minExistingRow = Math.Max(0, items.Min(x => x.MinRow));
         int maxExistingRow = Math.Max(1, items.Max(x => x.MaxRow));
 
+        int candidateRow = maxExistingRow;
+
         double firstItemTopY = PixelYFromRow(minExistingRow);
         if (mouseY < firstItemTopY + 20)
         {
-            return 0;
+            candidateRow = 0;
         }
-
-        double lastItemBottomY = PixelYFromRow(maxExistingRow);
-        if (mouseY >= lastItemBottomY)
+        else
         {
-            return Math.Max(0, maxExistingRow);
-        }
-
-        for (int i = 0; i < items.Count; i++)
-        {
-            var item = items[i];
-            double topY = PixelYFromRow(item.MinRow);
-            double bottomY = PixelYFromRow(item.MaxRow);
-            double midY = (topY + bottomY) / 2.0;
-
-            if (mouseY < midY)
+            double lastItemBottomY = PixelYFromRow(maxExistingRow);
+            if (mouseY >= lastItemBottomY)
             {
-                return Math.Max(0, item.MinRow);
+                candidateRow = Math.Max(0, maxExistingRow);
             }
-
-            if (i + 1 < items.Count)
+            else
             {
-                var nextItem = items[i + 1];
-                double nextTopY = PixelYFromRow(nextItem.MinRow);
-                if (mouseY >= bottomY && mouseY < nextTopY)
+                for (int i = 0; i < items.Count; i++)
                 {
-                    return Math.Max(0, item.MaxRow);
+                    var item = items[i];
+                    double topY = PixelYFromRow(item.MinRow);
+                    double bottomY = PixelYFromRow(item.MaxRow);
+                    double midY = (topY + bottomY) / 2.0;
+
+                    if (mouseY < midY)
+                    {
+                        candidateRow = Math.Max(0, item.MinRow);
+                        break;
+                    }
+
+                    if (i + 1 < items.Count)
+                    {
+                        var nextItem = items[i + 1];
+                        double nextTopY = PixelYFromRow(nextItem.MinRow);
+                        if (mouseY >= bottomY && mouseY < nextTopY)
+                        {
+                            candidateRow = Math.Max(0, item.MaxRow);
+                            break;
+                        }
+                    }
                 }
             }
         }
 
-        return Math.Max(0, maxExistingRow);
+        // Guard: If candidateRow would displace any locked group, snap candidateRow below the locked group
+        int draggedHeight = excludeGroup != null ? CalculateGroupHeightRows(excludeGroup, allTiles) : 2;
+        var groupsList = groups.ToList();
+        var allTilesList = allTiles.ToList();
+        int guardLoop = 0;
+        while (guardLoop++ < 30 && WouldDisplaceLockedGroup(columnIndex, candidateRow, draggedHeight, groupsList, allTilesList, excludeGroup, out var conflict))
+        {
+            if (conflict != null)
+            {
+                var box = GetGroupBoundingBox(conflict, allTilesList);
+                candidateRow = Math.Max(candidateRow, box.MaxRow);
+            }
+            else
+            {
+                candidateRow++;
+            }
+        }
+
+        return Math.Max(0, candidateRow);
+    }
+
+    /// <summary>
+    /// Checks if inserting a group with height <paramref name="groupHeight"/> at (<paramref name="targetColIndex"/>, <paramref name="targetRow"/>)
+    /// would displace any locked group (or locked ungrouped tile) either directly or through cascading collisions.
+    /// </summary>
+    public static bool WouldDisplaceLockedGroup(
+        int targetColIndex,
+        int targetRow,
+        int groupHeight,
+        IEnumerable<TileGroupModel> groups,
+        IEnumerable<TileModel> allTiles,
+        TileGroupModel? draggedGroup,
+        out TileGroupModel? conflictingLockedGroup)
+    {
+        conflictingLockedGroup = null;
+        targetColIndex = Math.Max(0, targetColIndex);
+        targetRow = Math.Max(0, targetRow);
+        int targetColStart = GetColumnStartCol(targetColIndex);
+        int groupSpanX = GroupColWidth;
+
+        var allTilesList = allTiles.ToList();
+        var groupsList = groups.ToList();
+
+        var proposedGroupPositions = new Dictionary<TileGroupModel, (int Col, int Row)>();
+        var proposedTilePositions = new Dictionary<TileModel, (int Col, int Row)>();
+
+        var groupQueue = new Queue<TileGroupModel>();
+        var tileQueue = new Queue<TileModel>();
+        var inGroupQueue = new HashSet<TileGroupModel>();
+        var inTileQueue = new HashSet<TileModel>();
+
+        // 1. Check direct collision with newly placed group
+        foreach (var otherG in groupsList)
+        {
+            if (ReferenceEquals(otherG, draggedGroup)) continue;
+
+            var (minC, maxC, minR, maxR) = GetGroupBoundingBox(otherG, allTilesList);
+            if (DoTilesOverlap(targetColStart, targetRow, groupSpanX, groupHeight, minC, minR, maxC - minC, maxR - minR))
+            {
+                if (otherG.IsLocked)
+                {
+                    conflictingLockedGroup = otherG;
+                    return true;
+                }
+                int pushedRow = targetRow + groupHeight;
+                proposedGroupPositions[otherG] = (otherG.Col, pushedRow);
+                inGroupQueue.Add(otherG);
+                groupQueue.Enqueue(otherG);
+            }
+        }
+
+        foreach (var ut in allTilesList.Where(t => t.Group == null))
+        {
+            if (DoTilesOverlap(targetColStart, targetRow, groupSpanX, groupHeight, ut.Col, ut.Row, ut.SpanX, ut.SpanY))
+            {
+                if (ut.IsLocked)
+                {
+                    return true;
+                }
+                int pushedRow = targetRow + groupHeight;
+                proposedTilePositions[ut] = (ut.Col, pushedRow);
+                inTileQueue.Add(ut);
+                tileQueue.Enqueue(ut);
+            }
+        }
+
+        // 2. Cascade Push Down Simulation
+        while (groupQueue.Count > 0 || tileQueue.Count > 0)
+        {
+            if (groupQueue.Count > 0)
+            {
+                var curG = groupQueue.Dequeue();
+                inGroupQueue.Remove(curG);
+                var pos = proposedGroupPositions[curG];
+                int curGHeight = CalculateGroupHeightRows(curG, allTilesList);
+
+                foreach (var otherG in groupsList)
+                {
+                    if (ReferenceEquals(otherG, draggedGroup) || ReferenceEquals(otherG, curG)) continue;
+
+                    var oPos = proposedGroupPositions.TryGetValue(otherG, out var op) ? op : (otherG.Col, otherG.Row);
+                    int oHeight = CalculateGroupHeightRows(otherG, allTilesList);
+
+                    if (DoTilesOverlap(pos.Col, pos.Row, GroupColWidth, curGHeight, oPos.Col, oPos.Row, GroupColWidth, oHeight))
+                    {
+                        if (otherG.IsLocked)
+                        {
+                            conflictingLockedGroup = otherG;
+                            return true;
+                        }
+                        int neededRow = pos.Row + curGHeight;
+                        if (neededRow > oPos.Row)
+                        {
+                            proposedGroupPositions[otherG] = (oPos.Col, neededRow);
+                            if (!inGroupQueue.Contains(otherG))
+                            {
+                                inGroupQueue.Add(otherG);
+                                groupQueue.Enqueue(otherG);
+                            }
+                        }
+                    }
+                }
+
+                foreach (var ut in allTilesList.Where(t => t.Group == null))
+                {
+                    var oPos = proposedTilePositions.TryGetValue(ut, out var op) ? op : (ut.Col, ut.Row);
+
+                    if (DoTilesOverlap(pos.Col, pos.Row, GroupColWidth, curGHeight, oPos.Col, oPos.Row, ut.SpanX, ut.SpanY))
+                    {
+                        if (ut.IsLocked)
+                        {
+                            return true;
+                        }
+                        int neededRow = pos.Row + curGHeight;
+                        if (neededRow > oPos.Row)
+                        {
+                            proposedTilePositions[ut] = (oPos.Col, neededRow);
+                            if (!inTileQueue.Contains(ut))
+                            {
+                                inTileQueue.Add(ut);
+                                tileQueue.Enqueue(ut);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (tileQueue.Count > 0)
+            {
+                var curT = tileQueue.Dequeue();
+                inTileQueue.Remove(curT);
+                var pos = proposedTilePositions[curT];
+
+                foreach (var otherT in allTilesList.Where(t => t.Group == null))
+                {
+                    if (ReferenceEquals(otherT, curT)) continue;
+                    var oPos = proposedTilePositions.TryGetValue(otherT, out var op) ? op : (otherT.Col, otherT.Row);
+
+                    if (DoTilesOverlap(pos.Col, pos.Row, curT.SpanX, curT.SpanY, oPos.Col, oPos.Row, otherT.SpanX, otherT.SpanY))
+                    {
+                        if (otherT.IsLocked)
+                        {
+                            return true;
+                        }
+                        int neededRow = pos.Row + curT.SpanY;
+                        if (neededRow > oPos.Row)
+                        {
+                            proposedTilePositions[otherT] = (oPos.Col, neededRow);
+                            if (!inTileQueue.Contains(otherT))
+                            {
+                                inTileQueue.Add(otherT);
+                                tileQueue.Enqueue(otherT);
+                            }
+                        }
+                    }
+                }
+
+                foreach (var otherG in groupsList)
+                {
+                    if (ReferenceEquals(otherG, draggedGroup)) continue;
+                    var oPos = proposedGroupPositions.TryGetValue(otherG, out var op) ? op : (otherG.Col, otherG.Row);
+                    int oHeight = CalculateGroupHeightRows(otherG, allTilesList);
+
+                    if (DoTilesOverlap(pos.Col, pos.Row, curT.SpanX, curT.SpanY, oPos.Col, oPos.Row, GroupColWidth, oHeight))
+                    {
+                        if (otherG.IsLocked)
+                        {
+                            conflictingLockedGroup = otherG;
+                            return true;
+                        }
+                        int neededRow = pos.Row + curT.SpanY;
+                        if (neededRow > oPos.Row)
+                        {
+                            proposedGroupPositions[otherG] = (oPos.Col, neededRow);
+                            if (!inGroupQueue.Contains(otherG))
+                            {
+                                inGroupQueue.Add(otherG);
+                                groupQueue.Enqueue(otherG);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -2002,6 +2215,24 @@ public static class GridPlacementService
 
         targetColIndex = Math.Max(0, targetColIndex);
         targetRow = Math.Max(0, targetRow);
+
+        int groupHeight = CalculateGroupHeightRows(draggedGroup, allTiles);
+
+        // Guard: Prevent placing or shoving that would displace any locked group
+        int guardLoop = 0;
+        while (guardLoop++ < 30 && WouldDisplaceLockedGroup(targetColIndex, targetRow, groupHeight, groups, allTiles, draggedGroup, out var conflict))
+        {
+            if (conflict != null)
+            {
+                var box = GetGroupBoundingBox(conflict, allTiles);
+                targetRow = Math.Max(targetRow, box.MaxRow);
+            }
+            else
+            {
+                targetRow++;
+            }
+        }
+
         int targetColStart = GetColumnStartCol(targetColIndex);
 
         int oldGroupCol = draggedGroup.Col >= 0 ? draggedGroup.Col : GetColumnStartCol(draggedGroup.ColumnIndex);
@@ -2037,7 +2268,7 @@ public static class GridPlacementService
             bottomRow = Math.Max(bottomRow, t.Row + t.SpanY);
         }
 
-        int groupHeight = bottomRow - targetRow;
+        groupHeight = bottomRow - targetRow;
         int groupSpanX = GroupColWidth;
 
         // 3. 2D Cascade Push Down for any intersecting objects
@@ -2052,7 +2283,7 @@ public static class GridPlacementService
         // Check initial collisions with the newly placed group
         foreach (var otherG in groups)
         {
-            if (ReferenceEquals(otherG, draggedGroup)) continue;
+            if (ReferenceEquals(otherG, draggedGroup) || otherG.IsLocked) continue;
 
             var (minC, maxC, minR, maxR) = GetGroupBoundingBox(otherG, allTiles);
             if (DoTilesOverlap(targetColStart, targetRow, groupSpanX, groupHeight, minC, minR, maxC - minC, maxR - minR))
@@ -2064,7 +2295,7 @@ public static class GridPlacementService
             }
         }
 
-        foreach (var ut in allTiles.Where(t => t.Group == null))
+        foreach (var ut in allTiles.Where(t => t.Group == null && !t.IsLocked))
         {
             if (DoTilesOverlap(targetColStart, targetRow, groupSpanX, groupHeight, ut.Col, ut.Row, ut.SpanX, ut.SpanY))
             {
@@ -2088,7 +2319,7 @@ public static class GridPlacementService
 
                 foreach (var otherG in groups)
                 {
-                    if (ReferenceEquals(otherG, draggedGroup) || ReferenceEquals(otherG, curG)) continue;
+                    if (ReferenceEquals(otherG, draggedGroup) || ReferenceEquals(otherG, curG) || otherG.IsLocked) continue;
 
                     var oPos = proposedGroupPositions.TryGetValue(otherG, out var op) ? op : (otherG.Col, otherG.Row);
                     int oHeight = CalculateGroupHeightRows(otherG, allTiles);
@@ -2108,7 +2339,7 @@ public static class GridPlacementService
                     }
                 }
 
-                foreach (var ut in allTiles.Where(t => t.Group == null))
+                foreach (var ut in allTiles.Where(t => t.Group == null && !t.IsLocked))
                 {
                     var oPos = proposedTilePositions.TryGetValue(ut, out var op) ? op : (ut.Col, ut.Row);
 
@@ -2134,7 +2365,7 @@ public static class GridPlacementService
                 inTileQueue.Remove(curT);
                 var pos = proposedTilePositions[curT];
 
-                foreach (var otherT in allTiles.Where(t => t.Group == null))
+                foreach (var otherT in allTiles.Where(t => t.Group == null && !t.IsLocked))
                 {
                     if (ReferenceEquals(otherT, curT)) continue;
                     var oPos = proposedTilePositions.TryGetValue(otherT, out var op) ? op : (otherT.Col, otherT.Row);
@@ -2156,7 +2387,7 @@ public static class GridPlacementService
 
                 foreach (var otherG in groups)
                 {
-                    if (ReferenceEquals(otherG, draggedGroup)) continue;
+                    if (ReferenceEquals(otherG, draggedGroup) || otherG.IsLocked) continue;
                     var oPos = proposedGroupPositions.TryGetValue(otherG, out var op) ? op : (otherG.Col, otherG.Row);
                     int oHeight = CalculateGroupHeightRows(otherG, allTiles);
 
@@ -2181,6 +2412,8 @@ public static class GridPlacementService
         foreach (var kvp in proposedGroupPositions)
         {
             var g = kvp.Key;
+            if (g.IsLocked) continue; // Never move locked groups
+
             int oldGRow = g.Row;
             int newGRow = Math.Max(0, kvp.Value.Row);
             int deltaGRow = newGRow - oldGRow;
@@ -2200,6 +2433,8 @@ public static class GridPlacementService
         foreach (var kvp in proposedTilePositions)
         {
             var t = kvp.Key;
+            if (t.IsLocked) continue; // Never move locked tiles
+
             t.Row = Math.Max(0, kvp.Value.Row);
             t.Y = PixelYFromRow(t.Row);
             if (!modifiedTiles.Contains(t)) modifiedTiles.Add(t);
