@@ -13,6 +13,7 @@ public partial class App : Application
     private const string EventName = "MetroHub_App_Wake_Event";
     private const string MutexName = "MetroHub_App_SingleInstance_Mutex";
     private static Mutex? _singleInstanceMutex;
+    private static bool _ownsMutex;
     private static EventWaitHandle? _wakeEvent;
     private TaskbarIcon? _notifyIcon;
     private MainWindow? _mainWindow;
@@ -20,6 +21,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         _singleInstanceMutex = new Mutex(true, MutexName, out bool isNewInstance);
+        _ownsMutex = isNewInstance;
         if (!isNewInstance)
         {
             // Grant permission for the already-running background instance to take the foreground
@@ -67,6 +69,9 @@ public partial class App : Application
         {
             string crashLog = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetroHub", "crash.log");
             File.WriteAllText(crashLog, ex.ToString());
+            MessageBox.Show($"MetroHub failed to start:\n\n{ex.Message}", "MetroHub Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown();
+            return;
         }
 
         InitializeTrayIcon();
@@ -125,7 +130,14 @@ public partial class App : Application
 
         if (_singleInstanceMutex != null)
         {
-            _singleInstanceMutex.ReleaseMutex();
+            if (_ownsMutex)
+            {
+                try
+                {
+                    _singleInstanceMutex.ReleaseMutex();
+                }
+                catch { }
+            }
             _singleInstanceMutex.Dispose();
             _singleInstanceMutex = null;
         }

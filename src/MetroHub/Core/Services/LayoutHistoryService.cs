@@ -18,22 +18,43 @@ public class LayoutHistoryService
     public bool CanUndo => _undoStack.Count > 0;
     public bool CanRedo => _redoStack.Count > 0;
 
-    public static string CaptureSnapshot(IEnumerable<TileModel> tiles)
+    public static string CaptureSnapshot(IEnumerable<TileModel> tiles, IEnumerable<TileGroupModel>? groups = null)
     {
-        return JsonSerializer.Serialize(tiles, JsonOptions);
+        var model = new LayoutSnapshotModel
+        {
+            Tiles = tiles.ToList(),
+            Groups = groups?.ToList() ?? new List<TileGroupModel>()
+        };
+        return JsonSerializer.Serialize(model, JsonOptions);
     }
 
-    public static List<TileModel>? ParseSnapshot(string snapshot)
+    public static LayoutSnapshotModel? ParseSnapshot(string snapshot)
     {
         if (string.IsNullOrWhiteSpace(snapshot)) return null;
         try
         {
-            return JsonSerializer.Deserialize<List<TileModel>>(snapshot, JsonOptions);
+            if (snapshot.TrimStart().StartsWith("{"))
+            {
+                var model = JsonSerializer.Deserialize<LayoutSnapshotModel>(snapshot, JsonOptions);
+                if (model != null) return model;
+            }
+
+            var legacy = JsonSerializer.Deserialize<List<TileModel>>(snapshot, JsonOptions);
+            if (legacy != null)
+            {
+                return new LayoutSnapshotModel { Tiles = legacy };
+            }
         }
         catch
         {
-            return null;
+            try
+            {
+                var legacy = JsonSerializer.Deserialize<List<TileModel>>(snapshot, JsonOptions);
+                if (legacy != null) return new LayoutSnapshotModel { Tiles = legacy };
+            }
+            catch { }
         }
+        return null;
     }
 
     public void PushState(string snapshot)
@@ -79,4 +100,10 @@ public class LayoutHistoryService
         _undoStack.Clear();
         _redoStack.Clear();
     }
+}
+
+public class LayoutSnapshotModel
+{
+    public List<TileModel> Tiles { get; set; } = new();
+    public List<TileGroupModel> Groups { get; set; } = new();
 }

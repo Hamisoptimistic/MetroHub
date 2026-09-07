@@ -267,9 +267,10 @@ public partial class TileControl : UserControl
         int selectedCount = mainWindow.SelectedTiles.Count;
         if (tile.IsSelected && selectedCount > 1)
         {
-            ResizeMenuItem.Header = $"Resize ({selectedCount})";
-            StyleMenuItem.Header = $"Style ({selectedCount})";
-            UnpinMenuItem.Header = $"Unpin ({selectedCount}) from MetroHub";
+            ResizeMenuItem.Header = "Resize";
+            StyleMenuItem.Header = "Style";
+            GroupMenuItem.Header = "Group into New Section";
+            UnpinMenuItem.Header = "Unpin from MetroHub";
 
             RunAdminMenuItem.Visibility = Visibility.Collapsed;
             OpenLocationMenuItem.Visibility = Visibility.Collapsed;
@@ -279,11 +280,20 @@ public partial class TileControl : UserControl
         {
             ResizeMenuItem.Header = "Resize";
             StyleMenuItem.Header = "Style";
+            GroupMenuItem.Header = "Group into New Section";
             UnpinMenuItem.Header = "Unpin from MetroHub";
 
             RunAdminMenuItem.Visibility = Visibility.Visible;
             OpenLocationMenuItem.Visibility = Visibility.Visible;
             SingleAppSeparator.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void OnGroupTilesClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is TileModel tile)
+        {
+            MetroHub.MainWindow.Current?.CreateGroupFromSelectedTiles(tile);
         }
     }
 

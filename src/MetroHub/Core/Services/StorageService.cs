@@ -11,6 +11,7 @@ public class StorageService
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetroHub");
 
     private static readonly string LayoutPath = Path.Combine(AppDataDir, "layout.json");
+    private static readonly string GroupsPath = Path.Combine(AppDataDir, "groups.json");
     private static readonly string SettingsPath = Path.Combine(AppDataDir, "settings.json");
     private static readonly string AppsCachePath = Path.Combine(AppDataDir, "apps_cache.json");
 
@@ -106,6 +107,34 @@ public class StorageService
             string tmpPath = LayoutPath + ".tmp";
             File.WriteAllText(tmpPath, json);
             File.Move(tmpPath, LayoutPath, overwrite: true);
+        }
+        catch { }
+    }
+
+    public static ObservableCollection<TileGroupModel> LoadGroups()
+    {
+        try
+        {
+            if (File.Exists(GroupsPath))
+            {
+                string json = File.ReadAllText(GroupsPath);
+                var groups = JsonSerializer.Deserialize<ObservableCollection<TileGroupModel>>(json, JsonOptions);
+                if (groups != null) return groups;
+            }
+        }
+        catch { }
+
+        return new ObservableCollection<TileGroupModel>();
+    }
+
+    public static void SaveGroups(ObservableCollection<TileGroupModel> groups)
+    {
+        try
+        {
+            string json = JsonSerializer.Serialize(groups, JsonOptions);
+            string tmpPath = GroupsPath + ".tmp";
+            File.WriteAllText(tmpPath, json);
+            File.Move(tmpPath, GroupsPath, overwrite: true);
         }
         catch { }
     }

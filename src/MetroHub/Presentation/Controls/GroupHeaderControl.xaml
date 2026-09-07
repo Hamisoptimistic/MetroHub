@@ -1,0 +1,154 @@
+<UserControl x:Class="MetroHub.Presentation.Controls.GroupHeaderControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d" 
+             Focusable="False"
+             Cursor="Arrow">
+
+    <Border x:Name="RootBorder"
+            Padding="6,4,12,4"
+            CornerRadius="4"
+            Background="Transparent"
+            PreviewMouseLeftButtonDown="OnHeaderPreviewMouseDown"
+            PreviewMouseMove="OnHeaderPreviewMouseMove"
+            PreviewMouseLeftButtonUp="OnHeaderPreviewMouseUp"
+            MouseEnter="OnMouseEnter"
+            MouseLeave="OnMouseLeave">
+
+        <Border.Style>
+            <Style TargetType="Border">
+                <Setter Property="Background" Value="Transparent"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="#15FFFFFF"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+
+        <Border.ContextMenu>
+            <ContextMenu x:Name="HeaderContextMenu">
+                <MenuItem Header="Rename Section" Click="OnRenameClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="Edit24" FontSize="14" />
+                    </MenuItem.Icon>
+                </MenuItem>
+
+                <MenuItem Header="Header Color">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="Color24" FontSize="14" />
+                    </MenuItem.Icon>
+                    <MenuItem Header="Default White" Tag="#F0FFFFFF" Click="OnColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#F0FFFFFF"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Fluent Sky Blue" Tag="#60CDFF" Click="OnColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#60CDFF"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Electric Azure" Tag="#0078D7" Click="OnColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#0078D7"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Emerald Green" Tag="#107C10" Click="OnColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#107C10"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Mint Cyan" Tag="#00B7C3" Click="OnColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#00B7C3"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Neon Orange" Tag="#FF8C00" Click="OnColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FF8C00"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Electric Amber" Tag="#FFD700" Click="OnColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FFD700"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Crimson Red" Tag="#FF4343" Click="OnColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FF4343"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Royal Purple" Tag="#881798" Click="OnColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#881798"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Hot Pink" Tag="#E3008C" Click="OnColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#E3008C"/></MenuItem.Icon>
+                    </MenuItem>
+                </MenuItem>
+
+                <Separator />
+
+                <MenuItem Header="Ungroup Tiles" Click="OnUngroupClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="SelectAllOn24" FontSize="14" />
+                    </MenuItem.Icon>
+                </MenuItem>
+
+                <MenuItem Header="Delete Section &amp; Tiles" Click="OnDeleteGroupClick" Foreground="#FF6B6B">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="Delete24" FontSize="14" Foreground="#FF6B6B" />
+                    </MenuItem.Icon>
+                </MenuItem>
+            </ContextMenu>
+        </Border.ContextMenu>
+
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <!-- Normal Header Label View -->
+            <StackPanel x:Name="ViewPanel" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock x:Name="TitleTextBlock"
+                           Text="{Binding Title}"
+                           FontSize="15"
+                           FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                           FontWeight="SemiBold"
+                           Foreground="{Binding HeaderColor, TargetNullValue='#E8FFFFFF', FallbackValue='#E8FFFFFF'}"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"
+                           MaxWidth="320"
+                           MouseDown="OnTitleMouseDown" />
+
+                <!-- Subtle drag / edit indicator on hover -->
+                <TextBlock x:Name="DragHintIcon"
+                           Text="::"
+                           FontSize="12"
+                           FontWeight="Bold"
+                           Foreground="#50FFFFFF"
+                           Margin="8,0,0,0"
+                           VerticalAlignment="Center"
+                           Opacity="0" />
+            </StackPanel>
+
+            <!-- Inline Renaming TextBox: 100% Transparent & Borderless Fluent Style -->
+            <TextBox x:Name="EditTextBox"
+                     Visibility="Collapsed"
+                     FontSize="15"
+                     FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                     FontWeight="SemiBold"
+                     Foreground="{Binding HeaderColor, TargetNullValue='#FFFFFF', FallbackValue='#FFFFFF'}"
+                     CaretBrush="{Binding HeaderColor, TargetNullValue='#60CDFF', FallbackValue='#60CDFF'}"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     BorderBrush="Transparent"
+                     Padding="0"
+                     Margin="0"
+                     MinWidth="120"
+                     MaxWidth="320"
+                     VerticalAlignment="Center"
+                     KeyDown="OnEditKeyDown"
+                     LostFocus="OnEditLostFocus">
+                <TextBox.Style>
+                    <Style TargetType="TextBox">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="TextBox">
+                                    <Border Background="Transparent" BorderThickness="0" BorderBrush="Transparent">
+                                        <ScrollViewer x:Name="PART_ContentHost" Background="Transparent" />
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </TextBox.Style>
+            </TextBox>
+        </StackPanel>
+    </Border>
+</UserControl>

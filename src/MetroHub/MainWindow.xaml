@@ -80,6 +80,20 @@
                     </Button.Resources>
                 </Button>
 
+                <!-- Group Column Width Toggle Button -->
+                <Button x:Name="ColumnWidthToggleBtn"
+                        Content="Cols: 6"
+                        Height="34" Padding="10,0"
+                        FontSize="11" Foreground="#C0FFFFFF" Background="#1FFFFFFF"
+                        BorderThickness="1" BorderBrush="#2AFFFFFF"
+                        Cursor="Hand" Margin="0,0,10,0"
+                        ToolTip="Switch Group Column Block Width (6 or 8 units)"
+                        Click="OnToggleGroupColumnWidthClick">
+                    <Button.Resources>
+                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="7"/></Style>
+                    </Button.Resources>
+                </Button>
+
                 <!-- Export Layout Button -->
                 <Button Content="Export"
                         Height="34" Padding="12,0"
@@ -151,6 +165,14 @@
                             </MenuItem.Icon>
                         </MenuItem>
 
+                        <MenuItem Header="Group Column Width">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="ColumnTriple24" FontSize="16" />
+                            </MenuItem.Icon>
+                            <MenuItem x:Name="ColWidth6MenuItem" Header="6 Units (Standard 384px)" Click="OnColWidth6Click" />
+                            <MenuItem x:Name="ColWidth8MenuItem" Header="8 Units (Wide 512px)" Click="OnColWidth8Click" />
+                        </MenuItem>
+
                         <MenuItem Header="Mica / Acrylic Toggle" Click="OnBackdropToggleClick">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="DarkTheme24" FontSize="16" />
@@ -188,6 +210,71 @@
                                RadiusX="3"
                                RadiusY="3" />
                 </Canvas>
+
+                <!-- Group Drag-to-Add Perimeter Glow & Floating Badge -->
+                <Canvas x:Name="GroupDropHighlightCanvas" IsHitTestVisible="False" Panel.ZIndex="2500">
+                    <Border x:Name="GroupDropPerimeterBorder"
+                            Visibility="Collapsed"
+                            CornerRadius="8"
+                            BorderThickness="2"
+                            BorderBrush="#60CDFF"
+                            Background="#1260CDFF">
+                        <Border.Effect>
+                            <DropShadowEffect x:Name="GroupDropGlowEffect"
+                                              BlurRadius="24"
+                                              ShadowDepth="0"
+                                              Opacity="0.75"
+                                              Color="#60CDFF" />
+                        </Border.Effect>
+                    </Border>
+
+                    <!-- Sleek Floating Pill Badge -->
+                    <Border x:Name="GroupDropFloatingBadge"
+                            Visibility="Collapsed"
+                            CornerRadius="16"
+                            Background="#F01C1C1E"
+                            BorderThickness="1"
+                            BorderBrush="#60CDFF"
+                            Padding="12,6">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.5" Color="#000000" />
+                        </Border.Effect>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock x:Name="GroupDropBadgePlus" Text="+" FontSize="13" FontWeight="Bold" Foreground="#60CDFF" Margin="0,0,6,0" VerticalAlignment="Center" />
+                            <TextBlock x:Name="GroupDropBadgeText"
+                                       Text="Add to Section"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="#FFFFFF"
+                                       FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </Canvas>
+
+                <!-- Groups Header Layer (Pass-through transparent: only header controls intercept hits) -->
+                <ItemsControl x:Name="GroupsListBox"
+                              ItemsSource="{Binding Groups}"
+                              Background="{x:Null}"
+                              Focusable="False"
+                              Panel.ZIndex="100">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas Background="{x:Null}" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <controls:GroupHeaderControl />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="Canvas.Left" Value="{Binding X, Mode=TwoWay}" />
+                            <Setter Property="Canvas.Top" Value="{Binding Y, Mode=TwoWay}" />
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                </ItemsControl>
 
                 <!-- ItemsControl with Canvas panel: free-placement grid -->
                 <ItemsControl x:Name="TilesListBox"

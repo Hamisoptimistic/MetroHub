@@ -16,4 +16,5 @@ public class AppSettings
     public int GridBaseSize { get; set; } = 64;
     public int TileGap { get; set; } = 8;
     public double AcrylicOpacity { get; set; } = 0.85;
+    public int GroupColumnWidth { get; set; } = 6; // 6 units (Standard) or 8 units (Wide)
 }

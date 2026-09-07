@@ -25,6 +25,7 @@ namespace MetroHub;
 public partial class MainWindow : BorderlessFluentWindow
 {
     public ObservableCollection<TileModel> Tiles { get; set; } = new();
+    public ObservableCollection<TileGroupModel> Groups { get; set; } = new();
     public AppSettings Settings { get; set; } = new();
 
     public static MainWindow? Current { get; private set; }
@@ -88,13 +89,26 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         Settings = StorageService.LoadSettings();
         Tiles = StorageService.LoadLayout();
+        Groups = StorageService.LoadGroups();
+
+        DiscoverGroupsFromTiles();
+        EnsureGroupsHaveHeaderSpace();
+        UpdateGroupHeaderPositions();
 
         UpdateLayoutMetrics();
 
         GridPlacementService.SanitizeAndSnapAll(Tiles, GridPlacementService.MaxCols);
         TilesListBox.ItemsSource = Tiles;
+        if (GroupsListBox != null) GroupsListBox.ItemsSource = Groups;
         UpdateCanvasHeight();
         UpdateExposedAddSlots();
+
+        if (ColumnWidthToggleBtn != null)
+        {
+            ColumnWidthToggleBtn.Content = $"Cols: {Settings.GroupColumnWidth}";
+        }
+        if (ColWidth6MenuItem != null) ColWidth6MenuItem.IsChecked = (Settings.GroupColumnWidth == 6);
+        if (ColWidth8MenuItem != null) ColWidth8MenuItem.IsChecked = (Settings.GroupColumnWidth == 8);
 
         if (BackdropToggleSwitch != null)
         {
@@ -466,6 +480,8 @@ public partial class MainWindow : BorderlessFluentWindow
     private int _dragOriginalRow;
     private bool _isPotentialDrag;
     private bool _isDragging;
+    private TileGroupModel? _hoveredTargetGroup;
+    private bool _isGroupDrag;
 
     // Multi-tile Selection & Cluster Drag State
     private bool _isRubberBanding;
@@ -493,7 +509,7 @@ public partial class MainWindow : BorderlessFluentWindow
         if (_isDragging || _isRubberBanding || !_historyService.CanUndo) return;
 
         ClearTileSelection();
-        string currentSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles);
+        string currentSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
         string? targetSnapshot = _historyService.Undo(currentSnapshot);
         if (!string.IsNullOrWhiteSpace(targetSnapshot))
         {
@@ -506,7 +522,7 @@ public partial class MainWindow : BorderlessFluentWindow
         if (_isDragging || _isRubberBanding || !_historyService.CanRedo) return;
 
         ClearTileSelection();
-        string currentSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles);
+        string currentSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
         string? targetSnapshot = _historyService.Redo(currentSnapshot);
         if (!string.IsNullOrWhiteSpace(targetSnapshot))
         {
@@ -516,8 +532,11 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private void RestoreLayoutFromSnapshot(string snapshot)
     {
-        var targetTiles = LayoutHistoryService.ParseSnapshot(snapshot);
-        if (targetTiles == null) return;
+        var snapshotModel = LayoutHistoryService.ParseSnapshot(snapshot);
+        if (snapshotModel == null) return;
+
+        var targetTiles = snapshotModel.Tiles;
+        var targetGroups = snapshotModel.Groups;
 
         var targetDict = targetTiles.ToDictionary(t => t.Id);
         var currentTiles = Tiles.ToList();
@@ -535,6 +554,36 @@ public partial class MainWindow : BorderlessFluentWindow
         foreach (var t in toAdd)
         {
             Tiles.Add(t);
+        }
+
+        // Restore Groups
+        var targetGroupDict = targetGroups.ToDictionary(g => g.Id);
+        var currentGroups = Groups.ToList();
+        var currentGroupDict = currentGroups.ToDictionary(g => g.Id);
+
+        var groupsToRemove = currentGroups.Where(g => !targetGroupDict.ContainsKey(g.Id)).ToList();
+        foreach (var g in groupsToRemove)
+        {
+            Groups.Remove(g);
+        }
+
+        var groupsToAdd = targetGroups.Where(g => !currentGroupDict.ContainsKey(g.Id)).ToList();
+        foreach (var g in groupsToAdd)
+        {
+            Groups.Add(g);
+        }
+
+        foreach (var tg in targetGroups)
+        {
+            var existingG = Groups.FirstOrDefault(g => g.Id == tg.Id);
+            if (existingG == null) continue;
+            existingG.Title = tg.Title;
+            existingG.HeaderColor = tg.HeaderColor;
+            existingG.Col = tg.Col;
+            existingG.Row = tg.Row;
+            existingG.X = tg.X;
+            existingG.Y = tg.Y;
+            existingG.IsEditing = false;
         }
 
         // Apply coordinates, spans, and styles
@@ -558,6 +607,8 @@ public partial class MainWindow : BorderlessFluentWindow
             existing.SpanY = target.SpanY;
             existing.TileStyle = target.TileStyle;
             existing.AccentColor = target.AccentColor;
+            existing.Group = target.Group;
+            existing.SectionHeader = target.SectionHeader;
 
             if (spanChanged)
             {
@@ -593,10 +644,11 @@ public partial class MainWindow : BorderlessFluentWindow
             AnimateModifiedTiles(modifiedList);
         }
 
+        UpdateGroupHeaderPositions();
         UpdateLayoutMetrics();
         UpdateCanvasHeight();
         UpdateExposedAddSlots();
-        StorageService.SaveLayout(Tiles);
+        SaveGroupsAndLayout();
     }
 
     private void OnCanvasPreviewMouseDown(object sender, MouseButtonEventArgs e)
@@ -607,6 +659,15 @@ public partial class MainWindow : BorderlessFluentWindow
 
         // Bypass if user clicked on a Thumb (ResizeGrip) or its children
         if (FindParent<System.Windows.Controls.Primitives.Thumb>(dep) != null)
+        {
+            _isPotentialDrag = false;
+            _isDragging = false;
+            _draggedTile = null;
+            return;
+        }
+
+        // Bypass if user clicked on a GroupHeaderControl or its children
+        if (FindParent<Presentation.Controls.GroupHeaderControl>(dep) != null)
         {
             _isPotentialDrag = false;
             _isDragging = false;
@@ -876,6 +937,16 @@ public partial class MainWindow : BorderlessFluentWindow
 
             Canvas.SetLeft(DropSlotIndicator, snappedAnchorX + _clusterRelBounds.MinRelX);
             Canvas.SetTop(DropSlotIndicator, snappedAnchorY + _clusterRelBounds.MinRelY);
+
+            // 5. Detect Hovering over Existing Groups (to show glowing perimeter & floating badge)
+            if (!_isGroupDrag && Groups.Count > 0)
+            {
+                UpdateGroupDropHighlight(canvasMouse, clampedAnchorX, clampedAnchorY);
+            }
+            else
+            {
+                HideGroupDropHighlight();
+            }
         }
     }
 
@@ -914,8 +985,21 @@ public partial class MainWindow : BorderlessFluentWindow
             DropSlotIndicator.Visibility = Visibility.Collapsed;
             RootGrid.ReleaseMouseCapture();
 
+            var targetGroup = _hoveredTargetGroup;
+            HideGroupDropHighlight();
+            _isGroupDrag = false;
+
             if (_draggedTile != null)
             {
+                if (targetGroup != null)
+                {
+                    foreach (var cTile in _draggedCluster)
+                    {
+                        cTile.Group = targetGroup.Id;
+                        cTile.SectionHeader = targetGroup.Title;
+                    }
+                }
+
                 foreach (var cTile in _draggedCluster)
                 {
                     cTile.IsBeingDragged = false;
@@ -1000,10 +1084,14 @@ public partial class MainWindow : BorderlessFluentWindow
 
             UpdateExposedAddSlots();
 
-            // Persist the clean layout immediately to layout.json
-            StorageService.SaveLayout(Tiles);
+            foreach (var g in Groups) g.IsBeingDragged = false;
+            EnsureGroupsHaveHeaderSpace();
+            UpdateGroupHeaderPositions();
 
-            string postDropSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles);
+            // Persist the clean layout immediately to layout.json and groups.json
+            SaveGroupsAndLayout();
+
+            string postDropSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
             if (!string.IsNullOrEmpty(_preDragLayoutSnapshot) && _preDragLayoutSnapshot != postDropSnapshot)
             {
                 _historyService.PushState(_preDragLayoutSnapshot);
@@ -1026,17 +1114,10 @@ public partial class MainWindow : BorderlessFluentWindow
 
             bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
 
-            // If user clicked an already selected tile without Ctrl in a multi-selection group,
-            // single clicking collapses selection to just this tile
-            if (!isCtrlDown && _dragBeganWithSelection && _draggedCluster.Count > 1 && clickedTile != null)
+            // Normal left click on any tile launches it immediately and clears selection
+            if (!isCtrlDown && controlToLaunch != null)
             {
                 ClearTileSelection();
-                clickedTile.IsSelected = true;
-            }
-
-            // Launch only on single unselected/individual click without Ctrl
-            if (!isCtrlDown && _draggedCluster.Count <= 1 && controlToLaunch != null)
-            {
                 controlToLaunch.AnimateRelease(() =>
                 {
                     controlToLaunch.LaunchTile();
@@ -1074,6 +1155,7 @@ public partial class MainWindow : BorderlessFluentWindow
             _draggedControl = null;
             _isPotentialDrag = false;
         }
+        HideGroupDropHighlight();
         ClearAllAmbientReveals();
     }
 
@@ -1211,9 +1293,10 @@ public partial class MainWindow : BorderlessFluentWindow
         DropSlotIndicator.Visibility = Visibility.Collapsed;
         UpdateCanvasHeight();
         UpdateExposedAddSlots();
-        StorageService.SaveLayout(Tiles);
+        UpdateGroupHeaderPositions();
+        SaveGroupsAndLayout();
 
-        string postModify = LayoutHistoryService.CaptureSnapshot(Tiles);
+        string postModify = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
         if (preModify != postModify)
         {
             _historyService.PushState(preModify);
@@ -1232,7 +1315,7 @@ public partial class MainWindow : BorderlessFluentWindow
             targets = new List<TileModel> { anchorTile };
         }
 
-        string preModify = LayoutHistoryService.CaptureSnapshot(Tiles);
+        string preModify = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
 
         foreach (var t in targets)
         {
@@ -1249,9 +1332,9 @@ public partial class MainWindow : BorderlessFluentWindow
             control?.ApplyTileStyle(animate: true);
         }
 
-        StorageService.SaveLayout(Tiles);
+        SaveGroupsAndLayout();
 
-        string postModify = LayoutHistoryService.CaptureSnapshot(Tiles);
+        string postModify = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
         if (preModify != postModify)
         {
             _historyService.PushState(preModify);
@@ -1270,7 +1353,7 @@ public partial class MainWindow : BorderlessFluentWindow
             targets = new List<TileModel> { anchorTile };
         }
 
-        string preUnpin = LayoutHistoryService.CaptureSnapshot(Tiles);
+        string preUnpin = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
         _historyService.PushState(preUnpin);
 
         foreach (var t in targets)
@@ -1278,7 +1361,8 @@ public partial class MainWindow : BorderlessFluentWindow
             Tiles.Remove(t);
         }
 
-        StorageService.SaveLayout(Tiles);
+        UpdateGroupHeaderPositions();
+        SaveGroupsAndLayout();
         UpdateCanvasHeight();
         UpdateExposedAddSlots();
     }
@@ -1303,9 +1387,9 @@ public partial class MainWindow : BorderlessFluentWindow
             }
             else
             {
-                string preModify = LayoutHistoryService.CaptureSnapshot(Tiles);
-                StorageService.SaveLayout(Tiles);
-                string postModify = LayoutHistoryService.CaptureSnapshot(Tiles);
+                string preModify = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
+                SaveGroupsAndLayout();
+                string postModify = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
                 if (preModify != postModify)
                 {
                     _historyService.PushState(preModify);
@@ -1356,7 +1440,432 @@ public partial class MainWindow : BorderlessFluentWindow
                 }
             }
         }
+
+        UpdateGroupHeaderPositions();
     }
+
+    #region Named Groups & Sections Engine
+
+    private void DiscoverGroupsFromTiles()
+    {
+        if (Groups.Count > 0) return;
+
+        var grouped = Tiles
+            .Where(t => !string.IsNullOrWhiteSpace(t.SectionHeader) || !string.IsNullOrWhiteSpace(t.Group))
+            .GroupBy(t => !string.IsNullOrWhiteSpace(t.Group) ? t.Group : t.SectionHeader!)
+            .ToList();
+
+        foreach (var grp in grouped)
+        {
+            string title = grp.First().SectionHeader ?? "Group";
+            string id = grp.First().Group ?? Guid.NewGuid().ToString("N");
+
+            var groupModel = new TileGroupModel
+            {
+                Id = id,
+                Title = title
+            };
+
+            foreach (var t in grp)
+            {
+                t.Group = id;
+                t.SectionHeader = title;
+            }
+
+            Groups.Add(groupModel);
+        }
+
+        if (Groups.Count > 0)
+        {
+            SaveGroupsAndLayout();
+        }
+    }
+
+    private void UpdateGroupDropHighlight(Point mousePos, double anchorX, double anchorY)
+    {
+        TileGroupModel? targetGroup = null;
+        Rect bestGroupRect = Rect.Empty;
+
+        foreach (var group in Groups)
+        {
+            var members = Tiles.Where(t => t.Group == group.Id && !_draggedCluster.Contains(t)).ToList();
+            if (members.Count == 0) continue;
+
+            // If the dragged cluster is ALREADY completely inside this group, don't show "Add to Group"
+            if (_draggedCluster.All(t => t.Group == group.Id)) continue;
+
+            // Calculate the outer bounding perimeter of the group (including header & member tiles)
+            double minX = Math.Min(group.X, members.Min(t => t.X));
+            double maxX = Math.Max(group.X + 160, members.Max(t => t.X + t.WidthPixels));
+            double minY = Math.Min(group.Y, members.Min(t => t.Y));
+            double maxY = members.Max(t => t.Y + t.HeightPixels);
+
+            // Generous outer padding around group perimeter (12px)
+            Rect groupRect = new Rect(minX - 12, minY - 10, (maxX - minX) + 24, (maxY - minY) + 20);
+
+            // Check if mouse cursor OR center of the dragged cluster intersects the group bounds
+            double clusterCenterX = anchorX + (_clusterRelBounds.MinRelX + _clusterRelBounds.MaxRelX) / 2.0;
+            double clusterCenterY = anchorY + (_clusterRelBounds.MinRelY + _clusterRelBounds.MaxRelY) / 2.0;
+            Point clusterCenter = new Point(clusterCenterX, clusterCenterY);
+
+            if (groupRect.Contains(mousePos) || groupRect.Contains(clusterCenter))
+            {
+                targetGroup = group;
+                bestGroupRect = groupRect;
+                break;
+            }
+        }
+
+        if (targetGroup != null)
+        {
+            _hoveredTargetGroup = targetGroup;
+
+            Color groupColor = (Color)ColorConverter.ConvertFromString("#60CDFF");
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(targetGroup.HeaderColor))
+                {
+                    groupColor = (Color)ColorConverter.ConvertFromString(targetGroup.HeaderColor);
+                }
+            }
+            catch { }
+
+            var solidBrush = new SolidColorBrush(groupColor);
+            var tintBrush = new SolidColorBrush(Color.FromArgb(22, groupColor.R, groupColor.G, groupColor.B));
+
+            if (GroupDropPerimeterBorder != null)
+            {
+                Canvas.SetLeft(GroupDropPerimeterBorder, bestGroupRect.Left);
+                Canvas.SetTop(GroupDropPerimeterBorder, bestGroupRect.Top);
+                GroupDropPerimeterBorder.Width = bestGroupRect.Width;
+                GroupDropPerimeterBorder.Height = bestGroupRect.Height;
+                GroupDropPerimeterBorder.BorderBrush = solidBrush;
+                GroupDropPerimeterBorder.Background = tintBrush;
+                if (GroupDropGlowEffect != null) GroupDropGlowEffect.Color = groupColor;
+                GroupDropPerimeterBorder.Visibility = Visibility.Visible;
+            }
+
+            if (GroupDropFloatingBadge != null)
+            {
+                GroupDropFloatingBadge.BorderBrush = solidBrush;
+                if (GroupDropBadgePlus != null) GroupDropBadgePlus.Foreground = solidBrush;
+                if (GroupDropBadgeText != null) GroupDropBadgeText.Text = $"Add to {targetGroup.Title}";
+
+                Canvas.SetLeft(GroupDropFloatingBadge, mousePos.X + 16);
+                Canvas.SetTop(GroupDropFloatingBadge, Math.Max(10, mousePos.Y - 38));
+                GroupDropFloatingBadge.Visibility = Visibility.Visible;
+            }
+        }
+        else
+        {
+            HideGroupDropHighlight();
+        }
+    }
+
+    private void HideGroupDropHighlight()
+    {
+        _hoveredTargetGroup = null;
+        if (GroupDropPerimeterBorder != null) GroupDropPerimeterBorder.Visibility = Visibility.Collapsed;
+        if (GroupDropFloatingBadge != null) GroupDropFloatingBadge.Visibility = Visibility.Collapsed;
+    }
+
+    public void EnsureGroupsHaveHeaderSpace()
+    {
+        bool changed = false;
+        foreach (var group in Groups)
+        {
+            var memberTiles = Tiles.Where(t => t.Group == group.Id).ToList();
+            if (memberTiles.Count == 0) continue;
+
+            int minCol = memberTiles.Min(t => GridPlacementService.ColFromPixel(t.X));
+            int maxCol = memberTiles.Max(t => GridPlacementService.ColFromPixel(t.X) + t.SpanX);
+            int minRow = memberTiles.Min(t => GridPlacementService.RowFromPixel(t.Y));
+
+            // A group header lives in row minRow - 1.
+            // If minRow == 0 (no room above for header), or if member tiles are sharing/at-or-above group.Row:
+            if (minRow == 0 || minRow <= group.Row)
+            {
+                int pushFromRow = Math.Min(minRow, group.Row);
+                var tilesToPush = Tiles
+                    .Where(t => t.Col < maxCol && (t.Col + t.SpanX) > minCol && t.Row >= pushFromRow)
+                    .ToList();
+
+                foreach (var t in tilesToPush)
+                {
+                    t.Row += 1;
+                    t.Y = GridPlacementService.PixelYFromRow(t.Row);
+                    var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(t) as ContentPresenter;
+                    if (container != null)
+                    {
+                        Canvas.SetTop(container, t.Y);
+                    }
+                }
+
+                group.Row = pushFromRow;
+                group.Col = minCol;
+                group.X = GridPlacementService.PixelXFromCol(minCol);
+                group.Y = GridPlacementService.PixelYFromRow(pushFromRow) + 8;
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            UpdateCanvasHeight();
+            SaveGroupsAndLayout();
+        }
+    }
+
+    public void UpdateGroupHeaderPositions()
+    {
+        foreach (var group in Groups)
+        {
+            var memberTiles = Tiles.Where(t => t.Group == group.Id).ToList();
+            if (memberTiles.Count > 0)
+            {
+                int minCol = memberTiles.Min(t => GridPlacementService.ColFromPixel(t.X));
+                int minRow = memberTiles.Min(t => GridPlacementService.RowFromPixel(t.Y));
+
+                int headerRow = Math.Max(0, minRow - 1);
+
+                group.Col = minCol;
+                group.Row = headerRow;
+                group.X = GridPlacementService.PixelXFromCol(minCol);
+                group.Y = GridPlacementService.PixelYFromRow(headerRow) + 8;
+
+                var container = GroupsListBox?.ItemContainerGenerator.ContainerFromItem(group) as ContentPresenter;
+                if (container != null)
+                {
+                    Canvas.SetLeft(container, group.X);
+                    Canvas.SetTop(container, group.Y);
+                }
+            }
+        }
+    }
+
+    public void SaveGroupsAndLayout()
+    {
+        StorageService.SaveLayout(Tiles);
+        StorageService.SaveGroups(Groups);
+        UpdateCanvasHeight();
+    }
+
+    public void CreateGroupFromSelectedTiles(TileModel anchorTile)
+    {
+        List<TileModel> targets;
+        if (anchorTile.IsSelected && SelectedTiles.Count > 1)
+        {
+            targets = SelectedTiles.ToList();
+        }
+        else
+        {
+            targets = new List<TileModel> { anchorTile };
+        }
+
+        string pre = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
+
+        string newGroupId = Guid.NewGuid().ToString("N");
+        string defaultTitle = "New Section";
+
+        int minCol = targets.Min(t => GridPlacementService.ColFromPixel(t.X));
+        int maxCol = targets.Max(t => GridPlacementService.ColFromPixel(t.X) + t.SpanX);
+        int minRow = targets.Min(t => GridPlacementService.RowFromPixel(t.Y));
+
+        // Group header occupies a dedicated row at minRow.
+        // Automatically push down all tiles in [minCol, maxCol) that are at or below minRow by 1 row!
+        int headerRow = minRow;
+        var affectedTiles = Tiles
+            .Where(t => t.Col < maxCol && (t.Col + t.SpanX) > minCol && t.Row >= headerRow)
+            .ToList();
+
+        foreach (var t in affectedTiles)
+        {
+            t.Row += 1;
+            t.Y = GridPlacementService.PixelYFromRow(t.Row);
+            var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(t) as ContentPresenter;
+            if (container != null)
+            {
+                Canvas.SetTop(container, t.Y);
+            }
+        }
+
+        var group = new TileGroupModel
+        {
+            Id = newGroupId,
+            Title = defaultTitle,
+            Col = minCol,
+            Row = headerRow,
+            X = GridPlacementService.PixelXFromCol(minCol),
+            Y = GridPlacementService.PixelYFromRow(headerRow) + 8,
+            IsEditing = true
+        };
+
+        foreach (var t in targets)
+        {
+            t.Group = newGroupId;
+            t.SectionHeader = defaultTitle;
+        }
+
+        Groups.Add(group);
+
+        AnimateModifiedTiles(affectedTiles);
+        UpdateGroupHeaderPositions();
+        SaveGroupsAndLayout();
+        UpdateExposedAddSlots();
+
+        _historyService.PushState(pre);
+    }
+
+    public void SetGroupColor(TileGroupModel group, string hex)
+    {
+        string pre = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
+        group.HeaderColor = hex;
+        SaveGroupsAndLayout();
+        _historyService.PushState(pre);
+    }
+
+    public void UngroupTiles(TileGroupModel group)
+    {
+        string pre = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
+
+        var memberTiles = Tiles.Where(t => t.Group == group.Id).ToList();
+        int minCol = memberTiles.Count > 0 ? memberTiles.Min(t => t.Col) : group.Col;
+        int maxCol = memberTiles.Count > 0 ? memberTiles.Max(t => t.Col + t.SpanX) : group.Col + 4;
+        int headerRow = group.Row;
+
+        foreach (var t in memberTiles)
+        {
+            t.Group = null;
+            t.SectionHeader = null;
+        }
+
+        Groups.Remove(group);
+
+        // Reclaim the empty header row by shifting tiles in [minCol, maxCol) at row > headerRow back up by 1 row
+        var affectedTiles = Tiles
+            .Where(t => t.Col < maxCol && (t.Col + t.SpanX) > minCol && t.Row > headerRow)
+            .ToList();
+
+        foreach (var t in affectedTiles)
+        {
+            t.Row -= 1;
+            t.Y = GridPlacementService.PixelYFromRow(t.Row);
+            var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(t) as ContentPresenter;
+            if (container != null)
+            {
+                Canvas.SetTop(container, t.Y);
+            }
+        }
+
+        AnimateModifiedTiles(affectedTiles);
+        UpdateGroupHeaderPositions();
+        SaveGroupsAndLayout();
+        UpdateExposedAddSlots();
+        _historyService.PushState(pre);
+    }
+
+    public void DeleteGroupAndTiles(TileGroupModel group)
+    {
+        string pre = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
+        var memberTiles = Tiles.Where(t => t.Group == group.Id).ToList();
+        foreach (var t in memberTiles)
+        {
+            Tiles.Remove(t);
+        }
+        Groups.Remove(group);
+        SaveGroupsAndLayout();
+        _historyService.PushState(pre);
+    }
+
+    public void StartGroupDrag(TileGroupModel group, MouseEventArgs e)
+    {
+        var members = Tiles.Where(t => t.Group == group.Id).ToList();
+        if (members.Count == 0) return;
+
+        ClearTileSelection();
+        foreach (var m in members)
+        {
+            m.IsSelected = true;
+        }
+
+        var anchor = members.OrderBy(t => t.Row).ThenBy(t => t.Col).First();
+
+        _preDragLayoutSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
+        _draggedTile = anchor;
+        _draggedControl = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, anchor));
+        _draggedContainer = TilesListBox?.ItemContainerGenerator.ContainerFromItem(anchor) as ContentPresenter;
+        _dragStartPoint = e.GetPosition(this);
+
+        Point canvasMouse = TilesListBox != null ? e.GetPosition(TilesListBox) : e.GetPosition(this);
+        _dragOriginalCol = GridPlacementService.ColFromPixel(anchor.X);
+        _dragOriginalRow = GridPlacementService.RowFromPixel(anchor.Y);
+        _dragOffsetX = canvasMouse.X - anchor.X;
+        _dragOffsetY = canvasMouse.Y - anchor.Y;
+        _dragBeganWithSelection = true;
+
+        _draggedCluster = members;
+        _dragClusterOriginals.Clear();
+
+        double minRelX = 0, maxRelX = anchor.WidthPixels, minRelY = 0, maxRelY = anchor.HeightPixels;
+        int minRelCol = 0, maxRelCol = anchor.SpanX, minRelRow = 0, maxRelRow = anchor.SpanY;
+
+        foreach (var cTile in _draggedCluster)
+        {
+            int cCol = GridPlacementService.ColFromPixel(cTile.X);
+            int cRow = GridPlacementService.RowFromPixel(cTile.Y);
+            _dragClusterOriginals[cTile] = (cTile.X, cTile.Y, cCol, cRow);
+
+            double relX = cTile.X - anchor.X;
+            double relY = cTile.Y - anchor.Y;
+            int relCol = cCol - _dragOriginalCol;
+            int relRow = cRow - _dragOriginalRow;
+
+            minRelX = Math.Min(minRelX, relX);
+            maxRelX = Math.Max(maxRelX, relX + cTile.WidthPixels);
+            minRelCol = Math.Min(minRelCol, relCol);
+            maxRelCol = Math.Max(maxRelCol, relCol + cTile.SpanX);
+            minRelRow = Math.Min(minRelRow, relRow);
+            maxRelRow = Math.Max(maxRelRow, relRow + cTile.SpanY);
+        }
+
+        _clusterRelBounds = (minRelX, maxRelX, minRelY, maxRelY);
+        _clusterRelGridBounds = (minRelCol, maxRelCol, minRelRow, maxRelRow);
+
+        _isPotentialDrag = false;
+        _isDragging = true;
+        _isGroupDrag = true;
+        group.IsBeingDragged = true;
+
+        RootGrid.CaptureMouse();
+        DropSlotIndicator.Visibility = Visibility.Visible;
+    }
+
+    private void OnToggleGroupColumnWidthClick(object sender, RoutedEventArgs e)
+    {
+        int newWidth = Settings.GroupColumnWidth == 6 ? 8 : 6;
+        SetGroupColumnWidth(newWidth);
+    }
+
+    private void OnColWidth6Click(object sender, RoutedEventArgs e) => SetGroupColumnWidth(6);
+    private void OnColWidth8Click(object sender, RoutedEventArgs e) => SetGroupColumnWidth(8);
+
+    public void SetGroupColumnWidth(int width)
+    {
+        Settings.GroupColumnWidth = width;
+        StorageService.SaveSettings(Settings);
+
+        if (ColumnWidthToggleBtn != null)
+        {
+            ColumnWidthToggleBtn.Content = $"Cols: {width}";
+        }
+        if (ColWidth6MenuItem != null) ColWidth6MenuItem.IsChecked = (width == 6);
+        if (ColWidth8MenuItem != null) ColWidth8MenuItem.IsChecked = (width == 8);
+
+        UpdateLayoutMetrics();
+        UpdateCanvasHeight();
+    }
+
+    #endregion
 
     private void OnAddTileClick(object sender, RoutedEventArgs e)
     {
