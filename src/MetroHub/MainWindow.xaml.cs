@@ -2263,6 +2263,7 @@ public partial class MainWindow : BorderlessFluentWindow
             ColumnIndex = targetColIndex,
             OrderIndex = nextOrder,
             Col = targetColStart,
+            Row = targetRow,
             IsEditing = true
         };
 

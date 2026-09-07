@@ -1238,73 +1238,15 @@ public static class GridPlacementService
     }
 
     /// <summary>
-    /// Calculates the total vertical footprint of a group (1 header row + rows occupied by packed members).
+    /// Calculates the total vertical footprint of a group (1 header row + rows occupied by member tiles).
+    /// Preserves existing tile positions without repacking.
     /// </summary>
     public static int CalculateGroupHeightRows(TileGroupModel group, IEnumerable<TileModel> allTiles)
     {
-        var members = allTiles.Where(t => t.Group == group.Id)
-            .OrderBy(t => t.Row)
-            .ThenBy(t => t.Col)
-            .ToList();
+        var members = allTiles.Where(t => t.Group == group.Id).ToList();
         if (members.Count == 0) return 1;
-
-        var occupied = new HashSet<(int RelCol, int RelRow)>();
-        int maxRelRowReached = 0;
-
-        foreach (var tile in members)
-        {
-            int spanX = Math.Clamp(tile.SpanX, 1, GroupColWidth);
-            int spanY = Math.Max(1, tile.SpanY);
-
-            int targetRelCol = -1;
-            int targetRelRow = -1;
-
-            for (int r = 0; r < 200; r++)
-            {
-                for (int c = 0; c <= GroupColWidth - spanX; c++)
-                {
-                    bool fits = true;
-                    for (int dy = 0; dy < spanY; dy++)
-                    {
-                        for (int dx = 0; dx < spanX; dx++)
-                        {
-                            if (occupied.Contains((c + dx, r + dy)))
-                            {
-                                fits = false;
-                                break;
-                            }
-                        }
-                        if (!fits) break;
-                    }
-
-                    if (fits)
-                    {
-                        targetRelCol = c;
-                        targetRelRow = r;
-                        break;
-                    }
-                }
-                if (targetRelCol != -1) break;
-            }
-
-            if (targetRelCol == -1)
-            {
-                targetRelCol = 0;
-                targetRelRow = 0;
-            }
-
-            for (int dy = 0; dy < spanY; dy++)
-            {
-                for (int dx = 0; dx < spanX; dx++)
-                {
-                    occupied.Add((targetRelCol + dx, targetRelRow + dy));
-                }
-            }
-
-            maxRelRowReached = Math.Max(maxRelRowReached, targetRelRow + spanY);
-        }
-
-        return 1 + maxRelRowReached;
+        int maxBottom = members.Max(t => t.Row + t.SpanY);
+        return Math.Max(1, maxBottom - group.Row);
     }
 
     /// <summary>
@@ -1408,6 +1350,11 @@ public static class GridPlacementService
         targetRow = Math.Max(0, targetRow);
         int targetColStart = GetColumnStartCol(targetColIndex);
 
+        int oldGroupCol = draggedGroup.Col >= 0 ? draggedGroup.Col : GetColumnStartCol(draggedGroup.ColumnIndex);
+        int oldGroupRow = Math.Max(0, draggedGroup.Row);
+        int colDelta = targetColStart - oldGroupCol;
+        int rowDelta = targetRow - oldGroupRow;
+
         // 1. Position the group header
         draggedGroup.ColumnIndex = targetColIndex;
         draggedGroup.Col = targetColStart;
@@ -1415,9 +1362,26 @@ public static class GridPlacementService
         draggedGroup.X = PixelXFromCol(targetColStart);
         draggedGroup.Y = PixelYFromRow(targetRow) + 8;
 
-        // 2. Pack its tiles gaplessly to determine its total footprint (tiles start at targetRow + 1 >= 1)
+        // 2. Move member tiles rigidly preserving relative positions
         var memberTiles = allTiles.Where(t => t.Group == draggedGroup.Id).ToList();
-        int bottomRow = PackGroupTiles(draggedGroup, memberTiles, startRow: Math.Max(1, targetRow + 1), modifiedList: modifiedTiles);
+        int bottomRow = targetRow + 1;
+
+        foreach (var t in memberTiles)
+        {
+            int newCol = t.Col + colDelta;
+            int newRow = t.Row + rowDelta;
+
+            // Ensure tile stays within the group's 8-unit width and below header
+            int minCol = targetColStart;
+            int maxCol = targetColStart + GroupColWidth - Math.Clamp(t.SpanX, 1, GroupColWidth);
+            t.Col = Math.Clamp(newCol, minCol, maxCol);
+            t.Row = Math.Max(targetRow + 1, newRow);
+            t.X = PixelXFromCol(t.Col);
+            t.Y = PixelYFromRow(t.Row);
+
+            if (!modifiedTiles.Contains(t)) modifiedTiles.Add(t);
+            bottomRow = Math.Max(bottomRow, t.Row + t.SpanY);
+        }
 
         int groupHeight = bottomRow - targetRow;
         int groupSpanX = GroupColWidth;
@@ -1563,11 +1527,20 @@ public static class GridPlacementService
         foreach (var kvp in proposedGroupPositions)
         {
             var g = kvp.Key;
-            g.Row = Math.Max(0, kvp.Value.Row);
+            int oldGRow = g.Row;
+            int newGRow = Math.Max(0, kvp.Value.Row);
+            int deltaGRow = newGRow - oldGRow;
+
+            g.Row = newGRow;
             g.Y = PixelYFromRow(g.Row) + 8;
 
             var gTiles = allTiles.Where(t => t.Group == g.Id).ToList();
-            PackGroupTiles(g, gTiles, startRow: Math.Max(1, g.Row + 1), modifiedList: modifiedTiles);
+            foreach (var t in gTiles)
+            {
+                t.Row += deltaGRow;
+                t.Y = PixelYFromRow(t.Row);
+                if (!modifiedTiles.Contains(t)) modifiedTiles.Add(t);
+            }
         }
 
         foreach (var kvp in proposedTilePositions)
