@@ -2174,17 +2174,67 @@ public partial class MainWindow : BorderlessFluentWindow
             {
                 targetGroup = group;
 
-                double visualMaxY = memberMaxY;
-                if (_draggedTile != null && !group.IsLocked)
+                if (allMembers.Count > 0)
                 {
-                    int rawCol = GridPlacementService.ColFromPixel(anchorX);
-                    int rawRow = GridPlacementService.RowFromPixel(anchorY);
-                    var (_, wrapRow) = FindGroupWrapPosition(group, _draggedTile, rawCol, rawRow);
-                    double previewBottom = GridPlacementService.PixelYFromRow(wrapRow + _draggedTile.SpanY);
-                    visualMaxY = Math.Max(visualMaxY, previewBottom);
-                }
+                    int minCol = allMembers.Min(t => t.Col);
+                    int maxCol = allMembers.Max(t => t.Col + t.SpanX);
+                    int minRow = allMembers.Min(t => t.Row);
+                    int maxRow = allMembers.Max(t => t.Row + t.SpanY);
 
-                bestGroupRect = new Rect(minX - 4, minY - 4, blockWidth + 8, Math.Max(0, (visualMaxY - minY) + 8));
+                    if (_draggedTile != null && !group.IsLocked)
+                    {
+                        int rawCol = GridPlacementService.ColFromPixel(anchorX);
+                        int rawRow = GridPlacementService.RowFromPixel(anchorY);
+                        var (wrapCol, wrapRow) = FindGroupWrapPosition(group, _draggedTile, rawCol, rawRow);
+                        minCol = Math.Min(minCol, wrapCol);
+                        maxCol = Math.Max(maxCol, wrapCol + _draggedTile.SpanX);
+                        minRow = Math.Min(minRow, wrapRow);
+                        maxRow = Math.Max(maxRow, wrapRow + _draggedTile.SpanY);
+                    }
+
+                    int colSpan = Math.Max(1, maxCol - minCol);
+                    int rowSpan = Math.Max(1, maxRow - minRow);
+
+                    double rectX = GridPlacementService.PixelXFromCol(minCol) - 8;
+                    double rectY = GridPlacementService.PixelYFromRow(minRow) - 8;
+                    double rectW = (colSpan * GridPlacementService.GridStep) - GridPlacementService.Gap + 16;
+                    double rectH = (rowSpan * GridPlacementService.GridStep) - GridPlacementService.Gap + 16;
+
+                    bestGroupRect = new Rect(rectX, rectY, rectW, rectH);
+                }
+                else
+                {
+                    if (group.IsLocked)
+                    {
+                        int col = group.Col >= 0 ? group.Col : GridPlacementService.GetColumnStartCol(group.ColumnIndex);
+                        int row = GridPlacementService.RowFromPixel(group.Y) + 1;
+                        double rectX = GridPlacementService.PixelXFromCol(col) - 8;
+                        double rectY = GridPlacementService.PixelYFromRow(row) - 8;
+                        double rectW = (GridPlacementService.GroupColWidth * GridPlacementService.GridStep) - GridPlacementService.Gap + 16;
+                        double rectH = 56;
+                        bestGroupRect = new Rect(rectX, rectY, rectW, rectH);
+                    }
+                    else
+                    {
+                        int rawCol = GridPlacementService.ColFromPixel(anchorX);
+                        int rawRow = GridPlacementService.RowFromPixel(anchorY);
+                        int wrapCol = group.Col >= 0 ? group.Col : GridPlacementService.GetColumnStartCol(group.ColumnIndex);
+                        int wrapRow = GridPlacementService.RowFromPixel(group.Y) + 1;
+                        if (_draggedTile != null)
+                        {
+                            var (wc, wr) = FindGroupWrapPosition(group, _draggedTile, rawCol, rawRow);
+                            wrapCol = wc;
+                            wrapRow = wr;
+                        }
+                        int spanX = _draggedTile?.SpanX ?? 2;
+                        int spanY = _draggedTile?.SpanY ?? 2;
+                        double rectX = GridPlacementService.PixelXFromCol(wrapCol) - 8;
+                        double rectY = GridPlacementService.PixelYFromRow(wrapRow) - 8;
+                        double rectW = (spanX * GridPlacementService.GridStep) - GridPlacementService.Gap + 16;
+                        double rectH = (spanY * GridPlacementService.GridStep) - GridPlacementService.Gap + 16;
+                        bestGroupRect = new Rect(rectX, rectY, rectW, rectH);
+                    }
+                }
                 break;
             }
         }
@@ -2215,6 +2265,13 @@ public partial class MainWindow : BorderlessFluentWindow
 
             if (GroupDropPerimeterBorder != null)
             {
+                GroupDropPerimeterBorder.BeginAnimation(UIElement.OpacityProperty, null);
+                if (GroupDropPerimeterTranslate != null)
+                {
+                    GroupDropPerimeterTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+                    GroupDropPerimeterTranslate.X = 0;
+                }
+                GroupDropPerimeterBorder.CornerRadius = new CornerRadius(6);
                 Canvas.SetLeft(GroupDropPerimeterBorder, bestGroupRect.Left);
                 Canvas.SetTop(GroupDropPerimeterBorder, bestGroupRect.Top);
                 GroupDropPerimeterBorder.Width = bestGroupRect.Width;
@@ -2265,7 +2322,16 @@ public partial class MainWindow : BorderlessFluentWindow
     private void HideGroupDropHighlight()
     {
         _hoveredTargetGroup = null;
-        if (GroupDropPerimeterBorder != null) GroupDropPerimeterBorder.Visibility = Visibility.Collapsed;
+        if (GroupDropPerimeterBorder != null)
+        {
+            GroupDropPerimeterBorder.BeginAnimation(UIElement.OpacityProperty, null);
+            if (GroupDropPerimeterTranslate != null)
+            {
+                GroupDropPerimeterTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+                GroupDropPerimeterTranslate.X = 0;
+            }
+            GroupDropPerimeterBorder.Visibility = Visibility.Collapsed;
+        }
         if (GroupDropFloatingBadge != null) GroupDropFloatingBadge.Visibility = Visibility.Collapsed;
     }
 
@@ -2308,15 +2374,32 @@ public partial class MainWindow : BorderlessFluentWindow
         if (GroupDropPerimeterBorder == null) return;
 
         var members = Tiles.Where(t => t.Group == group.Id).ToList();
-        double blockWidth = GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
-        double minX = GridPlacementService.PixelXFromCol(group.Col);
-        double minY = group.Y;
-        double maxY = members.Count > 0 ? members.Max(t => t.Y + t.HeightPixels) : group.Y + 120;
+        if (members.Count > 0)
+        {
+            int minMemberCol = members.Min(t => t.Col);
+            int maxMemberCol = members.Max(t => t.Col + t.SpanX);
+            int colSpan = Math.Max(1, maxMemberCol - minMemberCol);
 
-        Canvas.SetLeft(GroupDropPerimeterBorder, minX - 6);
-        Canvas.SetTop(GroupDropPerimeterBorder, minY - 6);
-        GroupDropPerimeterBorder.Width = blockWidth + 12;
-        GroupDropPerimeterBorder.Height = (maxY - minY) + 12;
+            int minMemberRow = members.Min(t => t.Row);
+            int maxMemberBottom = members.Max(t => t.Row + t.SpanY);
+            int rowSpan = Math.Max(1, maxMemberBottom - minMemberRow);
+
+            Canvas.SetLeft(GroupDropPerimeterBorder, GridPlacementService.PixelXFromCol(minMemberCol) - 8);
+            Canvas.SetTop(GroupDropPerimeterBorder, GridPlacementService.PixelYFromRow(minMemberRow) - 8);
+            GroupDropPerimeterBorder.Width = (colSpan * GridPlacementService.GridStep) - GridPlacementService.Gap + 16;
+            GroupDropPerimeterBorder.Height = (rowSpan * GridPlacementService.GridStep) - GridPlacementService.Gap + 16;
+        }
+        else
+        {
+            int col = group.Col >= 0 ? group.Col : GridPlacementService.GetColumnStartCol(group.ColumnIndex);
+            int row = GridPlacementService.RowFromPixel(group.Y) + 1;
+            Canvas.SetLeft(GroupDropPerimeterBorder, GridPlacementService.PixelXFromCol(col) - 8);
+            Canvas.SetTop(GroupDropPerimeterBorder, GridPlacementService.PixelYFromRow(row) - 8);
+            GroupDropPerimeterBorder.Width = (GridPlacementService.GroupColWidth * GridPlacementService.GridStep) - GridPlacementService.Gap + 16;
+            GroupDropPerimeterBorder.Height = 56;
+        }
+
+        GroupDropPerimeterBorder.CornerRadius = new CornerRadius(6);
 
         var redColor = Color.FromRgb(0xFF, 0x43, 0x43);
         GroupDropPerimeterBorder.BorderBrush = new SolidColorBrush(redColor);

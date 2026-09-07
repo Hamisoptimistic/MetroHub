@@ -202,8 +202,8 @@
                 <Canvas x:Name="GroupDropHighlightCanvas" IsHitTestVisible="False" Panel.ZIndex="2500">
                     <Border x:Name="GroupDropPerimeterBorder"
                             Visibility="Collapsed"
-                            CornerRadius="8"
-                            BorderThickness="1.5"
+                            CornerRadius="6"
+                            BorderThickness="1"
                             BorderBrush="#60CDFF"
                             Background="#1060CDFF"
                             RenderTransformOrigin="0.5,0.5">
