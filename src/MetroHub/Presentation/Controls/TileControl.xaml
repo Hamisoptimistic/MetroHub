@@ -21,7 +21,9 @@
             Height="{Binding SpanY, Converter={StaticResource SpanConverter}}"
             RenderTransformOrigin="0.5,0.5"
             SnapsToDevicePixels="True"
-            UseLayoutRounding="True">
+            UseLayoutRounding="True"
+            ContextMenuOpening="OnContextMenuOpening"
+            PreviewMouseRightButtonDown="OnPreviewMouseRightButtonDown">
 
         <Border.Style>
             <Style TargetType="Border">
@@ -45,21 +47,21 @@
         </Border.RenderTransform>
 
         <Border.ContextMenu>
-            <ContextMenu>
-                <MenuItem Header="Resize">
+            <ContextMenu x:Name="TileContextMenu">
+                <MenuItem x:Name="ResizeMenuItem" Header="Resize">
                     <MenuItem Header="Small (1x1)" Click="OnResizeSmallClick" />
                     <MenuItem Header="Medium (2x2)" Click="OnResizeMediumClick" />
                     <MenuItem Header="Wide (4x2)" Click="OnResizeWideClick" />
                 </MenuItem>
-                <MenuItem Header="Style">
+                <MenuItem x:Name="StyleMenuItem" Header="Style">
                     <MenuItem Header="Default" Click="OnStyleDefaultClick" />
                     <MenuItem Header="Colourful" Click="OnStyleColourfulClick" />
                 </MenuItem>
+                <Separator x:Name="SingleAppSeparator" />
+                <MenuItem x:Name="RunAdminMenuItem" Header="Run as Administrator" Click="OnRunAsAdminClick" />
+                <MenuItem x:Name="OpenLocationMenuItem" Header="Open File Location" Click="OnOpenFileLocationClick" />
                 <Separator />
-                <MenuItem Header="Run as Administrator" Click="OnRunAsAdminClick" />
-                <MenuItem Header="Open File Location" Click="OnOpenFileLocationClick" />
-                <Separator />
-                <MenuItem Header="Unpin from MetroHub" Click="OnUnpinClick" Foreground="#FF6B6B" />
+                <MenuItem x:Name="UnpinMenuItem" Header="Unpin from MetroHub" Click="OnUnpinClick" Foreground="#FF6B6B" />
             </ContextMenu>
         </Border.ContextMenu>
 

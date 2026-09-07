@@ -238,13 +238,60 @@ public partial class TileControl : UserControl
         }
     }
 
+    private void OnPreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (DataContext is not TileModel tile) return;
+        var mainWindow = MetroHub.MainWindow.Current;
+        if (mainWindow == null) return;
+
+        // If tile is not currently selected, clear other selections and select this one
+        if (!tile.IsSelected)
+        {
+            mainWindow.ClearTileSelection();
+            tile.IsSelected = true;
+        }
+    }
+
+    private void OnContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        if (DataContext is not TileModel tile) return;
+        var mainWindow = MetroHub.MainWindow.Current;
+        if (mainWindow == null) return;
+
+        if (!tile.IsSelected)
+        {
+            mainWindow.ClearTileSelection();
+            tile.IsSelected = true;
+        }
+
+        int selectedCount = mainWindow.SelectedTiles.Count;
+        if (tile.IsSelected && selectedCount > 1)
+        {
+            ResizeMenuItem.Header = $"Resize ({selectedCount})";
+            StyleMenuItem.Header = $"Style ({selectedCount})";
+            UnpinMenuItem.Header = $"Unpin ({selectedCount}) from MetroHub";
+
+            RunAdminMenuItem.Visibility = Visibility.Collapsed;
+            OpenLocationMenuItem.Visibility = Visibility.Collapsed;
+            SingleAppSeparator.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            ResizeMenuItem.Header = "Resize";
+            StyleMenuItem.Header = "Style";
+            UnpinMenuItem.Header = "Unpin from MetroHub";
+
+            RunAdminMenuItem.Visibility = Visibility.Visible;
+            OpenLocationMenuItem.Visibility = Visibility.Visible;
+            SingleAppSeparator.Visibility = Visibility.Visible;
+        }
+    }
+
     private void OnStyleDefaultClick(object sender, RoutedEventArgs e)
     {
         if (DataContext is TileModel tile)
         {
-            tile.TileStyle = "Default";
-            ApplyTileStyle(animate: true);
-            RaiseEvent(new RoutedEventArgs(TileModifiedEvent, tile));
+            MetroHub.MainWindow.Current?.BatchStyleSelectedTiles("Default", tile);
         }
     }
 
@@ -252,13 +299,7 @@ public partial class TileControl : UserControl
     {
         if (DataContext is TileModel tile)
         {
-            tile.TileStyle = "Colourful";
-            if (string.IsNullOrWhiteSpace(tile.AccentColor))
-            {
-                tile.AccentColor = ColorExtractorService.ExtractAccentColor(tile.IconPath);
-            }
-            ApplyTileStyle(animate: true);
-            RaiseEvent(new RoutedEventArgs(TileModifiedEvent, tile));
+            MetroHub.MainWindow.Current?.BatchStyleSelectedTiles("Colourful", tile);
         }
     }
 
@@ -279,20 +320,11 @@ public partial class TileControl : UserControl
     {
         if (DataContext is TileModel tile)
         {
-            if (tile.SpanX == newSpanX && tile.SpanY == newSpanY) return;
-
-            int oldSpanX = tile.SpanX;
-            int oldSpanY = tile.SpanY;
-
-            tile.SpanX = newSpanX;
-            tile.SpanY = newSpanY;
-
-            AnimateResize(oldSpanX, oldSpanY, newSpanX, newSpanY);
-            RaiseEvent(new TileModifiedEventArgs(TileModifiedEvent, tile, oldSpanX, oldSpanY, isResize: true));
+            MetroHub.MainWindow.Current?.BatchResizeSelectedTiles(newSpanX, newSpanY, tile);
         }
     }
 
-    private void AnimateResize(int oldSpanX, int oldSpanY, int newSpanX, int newSpanY)
+    public void AnimateResize(int oldSpanX, int oldSpanY, int newSpanX, int newSpanY)
     {
         double oldW = (oldSpanX * 64) - 8;
         double oldH = (oldSpanY * 64) - 8;
@@ -364,7 +396,7 @@ public partial class TileControl : UserControl
     {
         if (DataContext is TileModel tile)
         {
-            RaiseEvent(new RoutedEventArgs(TileUnpinnedEvent, tile));
+            MetroHub.MainWindow.Current?.BatchUnpinSelectedTiles(tile);
         }
     }
 }

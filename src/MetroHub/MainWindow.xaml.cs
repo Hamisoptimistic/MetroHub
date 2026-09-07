@@ -478,13 +478,15 @@ public partial class MainWindow : BorderlessFluentWindow
     private (int MinRelCol, int MaxRelCol, int MinRelRow, int MaxRelRow) _clusterRelGridBounds;
     private bool _dragBeganWithSelection;
 
-    private void ClearTileSelection()
+    public void ClearTileSelection()
     {
         foreach (var t in Tiles)
         {
             t.IsSelected = false;
         }
     }
+
+    public List<TileModel> SelectedTiles => Tiles.Where(t => t.IsSelected).ToList();
 
     public void ExecuteUndo()
     {
@@ -547,12 +549,21 @@ public partial class MainWindow : BorderlessFluentWindow
             bool spanChanged = existing.SpanX != target.SpanX || existing.SpanY != target.SpanY;
             bool styleChanged = existing.TileStyle != target.TileStyle || existing.AccentColor != target.AccentColor;
 
+            int oldSpanX = existing.SpanX;
+            int oldSpanY = existing.SpanY;
+
             existing.Col = target.Col;
             existing.Row = target.Row;
             existing.SpanX = target.SpanX;
             existing.SpanY = target.SpanY;
             existing.TileStyle = target.TileStyle;
             existing.AccentColor = target.AccentColor;
+
+            if (spanChanged)
+            {
+                var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, existing));
+                control?.AnimateResize(oldSpanX, oldSpanY, target.SpanX, target.SpanY);
+            }
 
             if (posChanged)
             {
@@ -1137,16 +1148,146 @@ public partial class MainWindow : BorderlessFluentWindow
         }
     }
 
+    public void BatchResizeSelectedTiles(int newSpanX, int newSpanY, TileModel anchorTile)
+    {
+        List<TileModel> targets;
+        if (anchorTile.IsSelected && SelectedTiles.Count > 1)
+        {
+            targets = SelectedTiles.ToList();
+        }
+        else
+        {
+            targets = new List<TileModel> { anchorTile };
+        }
+
+        // If all selected tiles are already the desired size, do nothing
+        if (targets.All(t => t.SpanX == newSpanX && t.SpanY == newSpanY))
+        {
+            return;
+        }
+
+        string preModify = LayoutHistoryService.CaptureSnapshot(Tiles);
+
+        // Capture previous spans for animation
+        var oldSpans = targets.ToDictionary(t => t, t => (t.SpanX, t.SpanY));
+
+        // Elevate resizing tiles so they morph on top of sliding neighbors
+        foreach (var t in targets)
+        {
+            var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(t) as ContentPresenter;
+            if (container != null)
+            {
+                Panel.SetZIndex(container, 50);
+                Dispatcher.InvokeAsync(async () =>
+                {
+                    await Task.Delay(260);
+                    Panel.SetZIndex(container, 0);
+                });
+            }
+        }
+
+        UpdateLayoutMetrics();
+        int maxCols = GridPlacementService.MaxCols;
+
+        // Resolve collision using topological batch expansion
+        var modified = GridPlacementService.ResolveBatchResizeExpansion(
+            targets,
+            newSpanX,
+            newSpanY,
+            maxCols,
+            Tiles);
+
+        // Trigger resize animations across all resizing tile controls
+        foreach (var t in targets)
+        {
+            var (oldX, oldY) = oldSpans[t];
+            var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, t));
+            control?.AnimateResize(oldX, oldY, newSpanX, newSpanY);
+        }
+
+        // Animate any displaced neighbor tiles (and self if clamped/shifted)
+        AnimateModifiedTiles(modified);
+
+        DropSlotIndicator.Visibility = Visibility.Collapsed;
+        UpdateCanvasHeight();
+        UpdateExposedAddSlots();
+        StorageService.SaveLayout(Tiles);
+
+        string postModify = LayoutHistoryService.CaptureSnapshot(Tiles);
+        if (preModify != postModify)
+        {
+            _historyService.PushState(preModify);
+        }
+    }
+
+    public void BatchStyleSelectedTiles(string newStyle, TileModel anchorTile)
+    {
+        List<TileModel> targets;
+        if (anchorTile.IsSelected && SelectedTiles.Count > 1)
+        {
+            targets = SelectedTiles.ToList();
+        }
+        else
+        {
+            targets = new List<TileModel> { anchorTile };
+        }
+
+        string preModify = LayoutHistoryService.CaptureSnapshot(Tiles);
+
+        foreach (var t in targets)
+        {
+            t.TileStyle = newStyle;
+            if (string.Equals(newStyle, "Colourful", StringComparison.OrdinalIgnoreCase))
+            {
+                if (string.IsNullOrWhiteSpace(t.AccentColor))
+                {
+                    t.AccentColor = ColorExtractorService.ExtractAccentColor(t.IconPath);
+                }
+            }
+
+            var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, t));
+            control?.ApplyTileStyle(animate: true);
+        }
+
+        StorageService.SaveLayout(Tiles);
+
+        string postModify = LayoutHistoryService.CaptureSnapshot(Tiles);
+        if (preModify != postModify)
+        {
+            _historyService.PushState(preModify);
+        }
+    }
+
+    public void BatchUnpinSelectedTiles(TileModel anchorTile)
+    {
+        List<TileModel> targets;
+        if (anchorTile.IsSelected && SelectedTiles.Count > 1)
+        {
+            targets = SelectedTiles.ToList();
+        }
+        else
+        {
+            targets = new List<TileModel> { anchorTile };
+        }
+
+        string preUnpin = LayoutHistoryService.CaptureSnapshot(Tiles);
+        _historyService.PushState(preUnpin);
+
+        foreach (var t in targets)
+        {
+            Tiles.Remove(t);
+        }
+
+        StorageService.SaveLayout(Tiles);
+        UpdateCanvasHeight();
+        UpdateExposedAddSlots();
+    }
+
     private void OnTileUnpinned(object sender, RoutedEventArgs e)
     {
         if (e.OriginalSource is TileModel tile)
         {
-            string preUnpin = LayoutHistoryService.CaptureSnapshot(Tiles);
-            _historyService.PushState(preUnpin);
-
-            Tiles.Remove(tile);
-            StorageService.SaveLayout(Tiles);
-            UpdateExposedAddSlots();
+            BatchUnpinSelectedTiles(tile);
         }
     }
 
@@ -1155,56 +1296,20 @@ public partial class MainWindow : BorderlessFluentWindow
         TileModel? tile = (e is TileModifiedEventArgs args ? args.Tile : e.OriginalSource as TileModel);
         if (tile != null)
         {
-            string preModify = LayoutHistoryService.CaptureSnapshot(Tiles);
-
-            UpdateLayoutMetrics();
-            int maxCols = GridPlacementService.MaxCols;
-
             bool isResize = e is TileModifiedEventArgs tmArgs && tmArgs.IsResize;
-            int oldSpanX = (e is TileModifiedEventArgs tma) ? tma.OldSpanX : tile.SpanX;
-            int oldSpanY = (e is TileModifiedEventArgs tmb) ? tmb.OldSpanY : tile.SpanY;
-
             if (isResize)
             {
-                // Elevate the resizing tile so it morphs on top of sliding neighbors
-                var resizingContainer = TilesListBox.ItemContainerGenerator.ContainerFromItem(tile) as ContentPresenter;
-                if (resizingContainer != null)
-                {
-                    Panel.SetZIndex(resizingContainer, 50);
-                    Dispatcher.InvokeAsync(async () =>
-                    {
-                        await Task.Delay(260);
-                        Panel.SetZIndex(resizingContainer, 0);
-                    });
-                }
-
-                // Resolve collision using the Directional Push Engine (Right -> Left -> Down Accordion)
-                var modified = GridPlacementService.ResolveResizeExpansion(
-                    tile,
-                    oldSpanX,
-                    oldSpanY,
-                    tile.SpanX,
-                    tile.SpanY,
-                    maxCols,
-                    Tiles);
-
-                AnimateModifiedTiles(modified);
+                BatchResizeSelectedTiles(tile.SpanX, tile.SpanY, tile);
             }
             else
             {
-                // Non-resize change (e.g. style change or lock position toggle)
+                string preModify = LayoutHistoryService.CaptureSnapshot(Tiles);
                 StorageService.SaveLayout(Tiles);
-            }
-
-            DropSlotIndicator.Visibility = Visibility.Collapsed;
-            UpdateCanvasHeight();
-            UpdateExposedAddSlots();
-            StorageService.SaveLayout(Tiles);
-
-            string postModify = LayoutHistoryService.CaptureSnapshot(Tiles);
-            if (preModify != postModify)
-            {
-                _historyService.PushState(preModify);
+                string postModify = LayoutHistoryService.CaptureSnapshot(Tiles);
+                if (preModify != postModify)
+                {
+                    _historyService.PushState(preModify);
+                }
             }
         }
     }

@@ -223,6 +223,58 @@ public static class GridPlacementService
         return modifiedTiles;
     }
 
+    public static List<TileModel> ResolveBatchResizeExpansion(
+        IList<TileModel> resizingTiles,
+        int newSpanX,
+        int newSpanY,
+        int maxCols,
+        IList<TileModel> allTiles)
+    {
+        var modifiedTiles = new List<TileModel>();
+        if (resizingTiles == null || resizingTiles.Count == 0) return modifiedTiles;
+
+        // Separate into shrinking tiles (both dimensions <= current) and expanding tiles
+        var shrinking = resizingTiles.Where(t => newSpanX <= t.SpanX && newSpanY <= t.SpanY).ToList();
+        var expanding = resizingTiles.Where(t => newSpanX > t.SpanX || newSpanY > t.SpanY).ToList();
+
+        // 1. Process shrinking tiles first to liberate grid space
+        foreach (var t in shrinking)
+        {
+            t.SpanX = newSpanX;
+            t.SpanY = newSpanY;
+            if (!modifiedTiles.Contains(t))
+            {
+                modifiedTiles.Add(t);
+            }
+        }
+
+        // 2. Process expanding tiles right-to-left, bottom-to-top to avoid self-blocking
+        var orderedExpanding = expanding
+            .OrderByDescending(t => t.Col)
+            .ThenByDescending(t => t.Row)
+            .ToList();
+
+        foreach (var t in orderedExpanding)
+        {
+            int oldX = t.SpanX;
+            int oldY = t.SpanY;
+
+            var displaced = ResolveResizeExpansion(t, oldX, oldY, newSpanX, newSpanY, maxCols, allTiles);
+            t.SpanX = newSpanX;
+            t.SpanY = newSpanY;
+
+            foreach (var d in displaced)
+            {
+                if (!modifiedTiles.Contains(d))
+                {
+                    modifiedTiles.Add(d);
+                }
+            }
+        }
+
+        return modifiedTiles;
+    }
+
     private static bool TryPushRight(
         TileModel mainTile,
         int mainCol,
