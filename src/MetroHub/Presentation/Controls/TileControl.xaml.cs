@@ -316,26 +316,59 @@ public partial class TileControl : UserControl
 
         foreach (var group in groups)
         {
-            var item = new MenuItem
-            {
-                Header = string.IsNullOrWhiteSpace(group.Title) ? "Untitled Section" : group.Title,
-                Cursor = Cursors.Hand
-            };
+            var item = new MenuItem();
+            string baseTitle = string.IsNullOrWhiteSpace(group.Title) ? "Untitled Section" : group.Title;
 
-            if (!string.IsNullOrWhiteSpace(group.HeaderColor))
+            if (group.IsLocked)
             {
-                try
+                var redBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x6B));
+
+                var headerBlock = new TextBlock
                 {
-                    var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(group.HeaderColor);
-                    var ellipse = new System.Windows.Shapes.Ellipse
+                    Text = $"{baseTitle} (Locked)",
+                    Foreground = redBrush,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                item.Header = headerBlock;
+                item.Foreground = redBrush;
+                item.Icon = new Wpf.Ui.Controls.SymbolIcon
+                {
+                    Symbol = Wpf.Ui.Controls.SymbolRegular.LockClosed24,
+                    FontSize = 16,
+                    Foreground = redBrush
+                };
+                item.IsEnabled = false;
+                ToolTipService.SetShowOnDisabled(item, true);
+                item.ToolTip = "This group is locked and cannot receive new tiles.";
+            }
+            else
+            {
+                item.Header = baseTitle;
+                item.Cursor = Cursors.Hand;
+
+                if (!string.IsNullOrWhiteSpace(group.HeaderColor))
+                {
+                    try
                     {
-                        Width = 12,
-                        Height = 12,
-                        Fill = new System.Windows.Media.SolidColorBrush(color)
-                    };
-                    item.Icon = ellipse;
+                        var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(group.HeaderColor);
+                        var ellipse = new System.Windows.Shapes.Ellipse
+                        {
+                            Width = 12,
+                            Height = 12,
+                            Fill = new System.Windows.Media.SolidColorBrush(color)
+                        };
+                        item.Icon = ellipse;
+                    }
+                    catch
+                    {
+                        item.Icon = new Wpf.Ui.Controls.SymbolIcon
+                        {
+                            Symbol = Wpf.Ui.Controls.SymbolRegular.Folder24,
+                            FontSize = 16
+                        };
+                    }
                 }
-                catch
+                else
                 {
                     item.Icon = new Wpf.Ui.Controls.SymbolIcon
                     {
@@ -343,26 +376,18 @@ public partial class TileControl : UserControl
                         FontSize = 16
                     };
                 }
-            }
-            else
-            {
-                item.Icon = new Wpf.Ui.Controls.SymbolIcon
+
+                var targetGroup = group;
+                item.Click += (s, e) =>
                 {
-                    Symbol = Wpf.Ui.Controls.SymbolRegular.Folder24,
-                    FontSize = 16
+                    var targets = mainWindow.SelectedTiles;
+                    if (targets.Count == 0 && DataContext is TileModel currentTile)
+                    {
+                        targets = new List<TileModel> { currentTile };
+                    }
+                    mainWindow.AddTilesToExistingGroup(targets, targetGroup);
                 };
             }
-
-            var targetGroup = group;
-            item.Click += (s, e) =>
-            {
-                var targets = mainWindow.SelectedTiles;
-                if (targets.Count == 0 && DataContext is TileModel currentTile)
-                {
-                    targets = new List<TileModel> { currentTile };
-                }
-                mainWindow.AddTilesToExistingGroup(targets, targetGroup);
-            };
 
             AddToGroupMenuItem.Items.Add(item);
         }
