@@ -845,6 +845,77 @@ public static class GridPlacementService
     }
 
     /// <summary>
+    /// Checks if a tile at (col, row) with span (spanX, spanY) is positioned in or straddling a 1x1 gap buffer.
+    /// This includes vertical column separation alleys (col % 9 == 8) and group perimeter buffers (bottom, top, left).
+    /// </summary>
+    public static bool IsIn1x1Gap(
+        int col,
+        int row,
+        int spanX,
+        int spanY,
+        IEnumerable<TileGroupModel> groups,
+        IEnumerable<TileModel> allTiles,
+        out int gapCol,
+        out int gapRow,
+        string? ignoreGroupId = null)
+    {
+        gapCol = -1;
+        gapRow = -1;
+
+        // 1. Vertical column separation gap (e.g. col 8, 17, 26...) between 8-unit group tracks
+        int colMod = col % (GroupColWidth + GroupColGap);
+        if (colMod == GroupColWidth || (colMod < GroupColWidth && colMod + spanX > GroupColWidth))
+        {
+            gapCol = (col / (GroupColWidth + GroupColGap)) * (GroupColWidth + GroupColGap) + GroupColWidth;
+            gapRow = row;
+            return true;
+        }
+
+        // 2. Group perimeter gaps (bottom, top, sideways)
+        if (groups != null)
+        {
+            foreach (var g in groups)
+            {
+                if (ignoreGroupId != null && g.Id == ignoreGroupId) continue;
+
+                var members = allTiles?.Where(t => t.Group == g.Id).ToList();
+                if ((members == null || members.Count == 0) && string.IsNullOrWhiteSpace(g.Title)) continue;
+
+                int gMinC = g.Col;
+                int gMaxC = g.Col + GroupColWidth;
+                int gMinR = g.Row;
+                int gMaxR = (members != null && members.Count > 0) ? members.Max(t => t.Row + t.SpanY) : g.Row + 1;
+
+                // Bottom 1x1 gap buffer (row gMaxR, immediately below member tiles)
+                if (row == gMaxR && col < gMaxC && col + spanX > gMinC)
+                {
+                    gapCol = Math.Clamp(col, gMinC, gMaxC - 1);
+                    gapRow = gMaxR;
+                    return true;
+                }
+
+                // Top 1x1 gap buffer (row gMinR - 1, immediately above group header)
+                if (gMinR > 0 && row == gMinR - 1 && col < gMaxC && col + spanX > gMinC)
+                {
+                    gapCol = Math.Clamp(col, gMinC, gMaxC - 1);
+                    gapRow = gMinR - 1;
+                    return true;
+                }
+
+                // Left sideways 1x1 gap buffer
+                if (gMinC > 0 && col == gMinC - 1 && row <= gMaxR && row + spanY > gMinR)
+                {
+                    gapCol = gMinC - 1;
+                    gapRow = row;
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Packs the member tiles of a group gaplessly from left-to-right, top-to-bottom within the 8-unit width.
     /// Returns the bottom-most row used by the member tiles.
     /// </summary>

@@ -973,37 +973,18 @@ public partial class MainWindow : BorderlessFluentWindow
                 : Math.Max(0, -_clusterRelGridBounds.MinRelRow);
             int anchorRow = Math.Max(minAllowedRow, GridPlacementService.RowFromPixel(clampedAnchorY));
 
-            // If loose tile is placed below a group in the same column, enforce 1x1 grid row separation below the group's member tiles
-            if (!_isGroupDrag && _hoveredTargetGroup == null)
+            int rawAnchorCol = anchorCol;
+            int rawAnchorRow = anchorRow;
+
+            // 4. Detect Hovering over Existing Groups (to show glowing perimeter & floating badge)
+            if (!_isGroupDrag && Groups.Count > 0)
             {
-                int clusterMinCol = anchorCol + _clusterRelGridBounds.MinRelCol;
-                int clusterMaxCol = anchorCol + _clusterRelGridBounds.MaxRelCol;
-                foreach (var g in Groups)
-                {
-                    int gMinC = g.Col;
-                    int gMaxC = g.Col + GridPlacementService.GroupColWidth;
-                    // Check horizontal overlap with group's column track
-                    if (clusterMinCol < gMaxC && clusterMaxCol > gMinC)
-                    {
-                        var (minC, maxC, minR, maxR) = GridPlacementService.GetGroupBoundingBox(g, Tiles);
-                        // If any tile would sit on maxR - 1 (the row directly adjacent to group members), push anchorRow down by 1
-                        int clusterStartRow = anchorRow + _clusterRelGridBounds.MinRelRow;
-                        if (clusterStartRow < maxR && clusterStartRow >= maxR - 1)
-                        {
-                            anchorRow = maxR - _clusterRelGridBounds.MinRelRow;
-                        }
-                    }
-                }
+                UpdateGroupDropHighlight(canvasMouse, clampedAnchorX, clampedAnchorY);
             }
-
-            double snappedAnchorX = GridPlacementService.PixelXFromCol(anchorCol);
-            double snappedAnchorY = GridPlacementService.PixelYFromRow(anchorRow);
-
-            DropSlotIndicator.Width = Math.Max(56, _clusterRelBounds.MaxRelX - _clusterRelBounds.MinRelX);
-            DropSlotIndicator.Height = Math.Max(56, _clusterRelBounds.MaxRelY - _clusterRelBounds.MinRelY);
-            Canvas.SetLeft(DropSlotIndicator, snappedAnchorX + _clusterRelBounds.MinRelX);
-            Canvas.SetTop(DropSlotIndicator, snappedAnchorY + _clusterRelBounds.MinRelY);
-            DropSlotIndicator.Visibility = Visibility.Visible;
+            else
+            {
+                HideGroupDropHighlight();
+            }
 
             if (_isGroupDrag && _draggedGroupModel != null)
             {
@@ -1051,31 +1032,19 @@ public partial class MainWindow : BorderlessFluentWindow
                     GroupInsertionLine.Visibility = Visibility.Visible;
                 }
             }
-            else
+            else if (_hoveredTargetGroup != null && _draggedTile != null)
             {
+                // 5. Live preview inside hovered group bounds (internal reordering or adding to group)
                 if (GroupInsertionLine != null) GroupInsertionLine.Visibility = Visibility.Collapsed;
-            }
+                HideGapDropHighlight();
 
-            // 5. Detect Hovering over Existing Groups (to show glowing perimeter & floating badge)
-            if (!_isGroupDrag && Groups.Count > 0)
-            {
-                UpdateGroupDropHighlight(canvasMouse, clampedAnchorX, clampedAnchorY);
-            }
-            else
-            {
-                HideGroupDropHighlight();
-            }
-
-            // 6. Live preview: auto-wrap inside group bounds when hovering
-            if (_hoveredTargetGroup != null && _draggedTile != null && !_isGroupDrag)
-            {
                 if (_hoveredTargetGroup.IsLocked)
                 {
                     DropSlotIndicator.Visibility = Visibility.Collapsed;
                 }
                 else
                 {
-                    var (wrapCol, wrapRow) = FindGroupWrapPosition(_hoveredTargetGroup, _draggedTile, anchorCol, anchorRow);
+                    var (wrapCol, wrapRow) = FindGroupWrapPosition(_hoveredTargetGroup, _draggedTile, rawAnchorCol, rawAnchorRow);
                     double wrapX = GridPlacementService.PixelXFromCol(wrapCol);
                     double wrapY = GridPlacementService.PixelYFromRow(wrapRow);
 
@@ -1084,6 +1053,61 @@ public partial class MainWindow : BorderlessFluentWindow
                     Canvas.SetLeft(DropSlotIndicator, wrapX);
                     Canvas.SetTop(DropSlotIndicator, wrapY);
                     DropSlotIndicator.Visibility = Visibility.Visible;
+                }
+            }
+            else
+            {
+                // 6. Canvas Drag (outside any group): show standard drop slot and check gap buffer
+                if (GroupInsertionLine != null) GroupInsertionLine.Visibility = Visibility.Collapsed;
+
+                // Enforce 1x1 grid row separation below groups for loose tiles on canvas
+                string? originGroupId = _draggedTile?.Group;
+                int clusterMinCol = anchorCol + _clusterRelGridBounds.MinRelCol;
+                int clusterMaxCol = anchorCol + _clusterRelGridBounds.MaxRelCol;
+                foreach (var g in Groups)
+                {
+                    if (originGroupId != null && g.Id == originGroupId) continue;
+
+                    int gMinC = g.Col;
+                    int gMaxC = g.Col + GridPlacementService.GroupColWidth;
+                    if (clusterMinCol < gMaxC && clusterMaxCol > gMinC)
+                    {
+                        var (minC, maxC, minR, maxR) = GridPlacementService.GetGroupBoundingBox(g, Tiles);
+                        int clusterStartRow = anchorRow + _clusterRelGridBounds.MinRelRow;
+                        if (clusterStartRow < maxR && clusterStartRow >= maxR - 1)
+                        {
+                            anchorRow = maxR - _clusterRelGridBounds.MinRelRow;
+                        }
+                    }
+                }
+
+                double snappedAnchorX = GridPlacementService.PixelXFromCol(anchorCol);
+                double snappedAnchorY = GridPlacementService.PixelYFromRow(anchorRow);
+
+                DropSlotIndicator.Width = Math.Max(56, _clusterRelBounds.MaxRelX - _clusterRelBounds.MinRelX);
+                DropSlotIndicator.Height = Math.Max(56, _clusterRelBounds.MaxRelY - _clusterRelBounds.MinRelY);
+                Canvas.SetLeft(DropSlotIndicator, snappedAnchorX + _clusterRelBounds.MinRelX);
+                Canvas.SetTop(DropSlotIndicator, snappedAnchorY + _clusterRelBounds.MinRelY);
+                DropSlotIndicator.Visibility = Visibility.Visible;
+
+                // 7. Live 1x1 Gap Buffer Hover Feedback on Canvas: thin 1x1 red glowing border
+                if (_draggedTile != null || _draggedCluster.Count > 0)
+                {
+                    int tileSpanX = _draggedTile?.SpanX ?? 2;
+                    int tileSpanY = _draggedTile?.SpanY ?? 2;
+
+                    if (Check1x1GapHover(canvasMouse, rawAnchorCol, rawAnchorRow, tileSpanX, tileSpanY, out int gapCol, out int gapRow))
+                    {
+                        ShowGapDropHighlight(gapCol, gapRow, canvasMouse);
+                    }
+                    else
+                    {
+                        HideGapDropHighlight();
+                    }
+                }
+                else
+                {
+                    HideGapDropHighlight();
                 }
             }
         }
@@ -1126,6 +1150,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
             var targetGroup = _hoveredTargetGroup;
             HideGroupDropHighlight();
+            HideGapDropHighlight();
 
             // A. GROUP HEADER DRAG REORDERING
             if (_isGroupDrag && _draggedGroupModel != null)
@@ -1452,6 +1477,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
         if (DropSlotIndicator != null) DropSlotIndicator.Visibility = Visibility.Collapsed;
         HideGroupDropHighlight();
+        HideGapDropHighlight();
 
         if (_preDragLayoutSnapshot != null)
         {
@@ -2013,38 +2039,64 @@ public partial class MainWindow : BorderlessFluentWindow
         TileGroupModel? targetGroup = null;
         Rect bestGroupRect = Rect.Empty;
 
-        foreach (var group in Groups)
-        {
-            var members = Tiles.Where(t => t.Group == group.Id && !_draggedCluster.Contains(t)).ToList();
-            if (members.Count == 0 && string.IsNullOrWhiteSpace(group.Title)) continue;
+        // Origin group prioritization: if dragged tile/cluster belongs to a group,
+        // prioritize that group and provide generous hysteresis so internal reordering never drops out.
+        string? originGroupId = _draggedTile?.Group;
+        bool isClusterFromOriginGroup = originGroupId != null && (_draggedCluster.Count == 0 || _draggedCluster.All(t => t.Group == originGroupId));
 
-            // Calculate the outer bounding perimeter of the group across all its member tiles
+        var sortedGroups = isClusterFromOriginGroup
+            ? Groups.OrderByDescending(g => g.Id == originGroupId).ToList()
+            : Groups.ToList();
+
+        double clusterCenterX = anchorX + (_clusterRelBounds.MinRelX + _clusterRelBounds.MaxRelX) / 2.0;
+        double clusterCenterY = anchorY + (_clusterRelBounds.MinRelY + _clusterRelBounds.MaxRelY) / 2.0;
+        Point clusterCenter = new Point(clusterCenterX, clusterCenterY);
+
+        foreach (var group in sortedGroups)
+        {
+            var allMembers = Tiles.Where(t => t.Group == group.Id).ToList();
+            if (allMembers.Count == 0 && string.IsNullOrWhiteSpace(group.Title)) continue;
+
+            bool isOrigin = isClusterFromOriginGroup && group.Id == originGroupId;
+
             double blockWidth = GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
             double minX = GridPlacementService.PixelXFromCol(group.Col);
             double maxX = minX + blockWidth;
-            double minY = group.Y;
-            double maxY = members.Count > 0 ? members.Max(t => t.Y + t.HeightPixels) : group.Y + 120;
 
-            // Strict group boundary so dragging onto outer 1x1 gaps leaves them as canvas
-            Rect groupDetectRect = new Rect(minX, minY, blockWidth, Math.Max(0, maxY - minY));
+            // Group top bounds: header or tint backplate
+            double minY = group.PlateHeight > 0 ? Math.Min(group.Y, group.PlateY) : group.Y;
 
-            // Check if mouse cursor OR center of the dragged cluster intersects the group bounds
-            double clusterCenterX = anchorX + (_clusterRelBounds.MinRelX + _clusterRelBounds.MaxRelX) / 2.0;
-            double clusterCenterY = anchorY + (_clusterRelBounds.MinRelY + _clusterRelBounds.MaxRelY) / 2.0;
-            Point clusterCenter = new Point(clusterCenterX, clusterCenterY);
+            // Group bottom bounds: include all member tiles and tint backplate
+            double memberMaxY = allMembers.Count > 0 ? allMembers.Max(t => t.Y + t.HeightPixels) : group.Y + 120;
+            if (group.PlateHeight > 0)
+            {
+                memberMaxY = Math.Max(memberMaxY, group.PlateY + group.PlateHeight);
+            }
+
+            // Append slot height: allows dragging into the bottom row to append to or expand the group
+            double tileHeight = _draggedTile?.HeightPixels ?? 120;
+            double appendY = memberMaxY + tileHeight;
+
+            // Generous hysteresis for origin group (20px padding) so moving tiles inside or touching edges
+            // never loses group focus or flickers. Foreign groups get an 8px border buffer + append zone.
+            double padX = isOrigin ? 20.0 : 8.0;
+            double padTop = isOrigin ? 20.0 : 8.0;
+            double padBottom = isOrigin ? 24.0 : 12.0;
+
+            Rect groupDetectRect = new Rect(minX - padX, minY - padTop, blockWidth + (padX * 2), Math.Max(60, (appendY - minY) + padBottom));
 
             if (groupDetectRect.Contains(mousePos) || groupDetectRect.Contains(clusterCenter))
             {
                 targetGroup = group;
 
-                double visualMaxY = maxY;
+                double visualMaxY = memberMaxY;
                 if (_draggedTile != null && !group.IsLocked)
                 {
                     int rawCol = GridPlacementService.ColFromPixel(anchorX);
                     int rawRow = GridPlacementService.RowFromPixel(anchorY);
                     var (_, wrapRow) = FindGroupWrapPosition(group, _draggedTile, rawCol, rawRow);
                     double previewBottom = GridPlacementService.PixelYFromRow(wrapRow + _draggedTile.SpanY);
-                    visualMaxY = Math.Max(maxY, previewBottom);
+                    visualMaxY = Math.Max(visualMaxY, previewBottom);
                 }
 
                 bestGroupRect = new Rect(minX - 4, minY - 4, blockWidth + 8, Math.Max(0, (visualMaxY - minY) + 8));
@@ -2238,6 +2290,8 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         if (GapDropWarningBorder == null) return;
 
+        GapDropWarningBorder.BeginAnimation(UIElement.OpacityProperty, null);
+
         Canvas.SetLeft(GapDropWarningBorder, pixelX);
         Canvas.SetTop(GapDropWarningBorder, pixelY);
         GapDropWarningBorder.Width = width;
@@ -2262,6 +2316,131 @@ public partial class MainWindow : BorderlessFluentWindow
         };
 
         GapDropWarningBorder.BeginAnimation(UIElement.OpacityProperty, fadeAnimation);
+    }
+
+    /// <summary>
+    /// Live hover feedback on the 1x1 gap buffer: shows the glowing thin 1x1 red border
+    /// and floating badge in real-time while dragging over any gap boundary.
+    /// </summary>
+    private void ShowGapDropHighlight(int gapCol, int gapRow, Point mousePos)
+    {
+        if (GapDropWarningBorder == null) return;
+
+        GapDropWarningBorder.BeginAnimation(UIElement.OpacityProperty, null);
+
+        double pixelX = GridPlacementService.PixelXFromCol(gapCol);
+        double pixelY = GridPlacementService.PixelYFromRow(gapRow);
+
+        Canvas.SetLeft(GapDropWarningBorder, pixelX);
+        Canvas.SetTop(GapDropWarningBorder, pixelY);
+        GapDropWarningBorder.Width = 56;
+        GapDropWarningBorder.Height = 56;
+        GapDropWarningBorder.Opacity = 1.0;
+        GapDropWarningBorder.Visibility = Visibility.Visible;
+
+        // Hide normal blue drop slot indicator so user isn't deceived
+        DropSlotIndicator.Visibility = Visibility.Collapsed;
+
+        // Show floating badge with warning icon and text
+        if (GroupDropFloatingBadge != null)
+        {
+            if (GroupDropBadgeIcon != null)
+            {
+                GroupDropBadgeIcon.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x43, 0x43));
+                GroupDropBadgeIcon.Symbol = Wpf.Ui.Controls.SymbolRegular.DismissCircle24;
+            }
+
+            if (GroupDropBadgeText != null)
+            {
+                GroupDropBadgeText.Text = "1×1 Gap Buffer (No Tiles Allowed)";
+            }
+
+            Canvas.SetLeft(GroupDropFloatingBadge, mousePos.X + 16);
+            Canvas.SetTop(GroupDropFloatingBadge, Math.Max(10, mousePos.Y - 38));
+            GroupDropFloatingBadge.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void HideGapDropHighlight()
+    {
+        if (GapDropWarningBorder != null && GapDropWarningBorder.Visibility == Visibility.Visible)
+        {
+            GapDropWarningBorder.BeginAnimation(UIElement.OpacityProperty, null);
+            GapDropWarningBorder.Visibility = Visibility.Collapsed;
+            GapDropWarningBorder.Opacity = 1.0;
+        }
+
+        if (_hoveredTargetGroup == null && GroupDropFloatingBadge != null && GroupDropFloatingBadge.Visibility == Visibility.Visible)
+        {
+            GroupDropFloatingBadge.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private bool Check1x1GapHover(
+        Point mousePos,
+        int rawAnchorCol,
+        int rawAnchorRow,
+        int tileSpanX,
+        int tileSpanY,
+        out int gapCol,
+        out int gapRow)
+    {
+        gapCol = -1;
+        gapRow = -1;
+
+        if (_isGroupDrag || Groups.Count == 0) return false;
+
+        string? originGroupId = _draggedTile?.Group;
+
+        int mouseCol = GridPlacementService.ColFromPixel(mousePos.X);
+        int mouseRow = GridPlacementService.RowFromPixel(mousePos.Y);
+
+        // 1. Check vertical 1x1 column separation alley (e.g. col 8, 17, 26...) between 8-column group tracks.
+        // Check mouse position directly so dragging near edge inside col 7 doesn't false-trigger.
+        int colMod = mouseCol % (GridPlacementService.GroupColWidth + GridPlacementService.GroupColGap);
+        if (colMod == GridPlacementService.GroupColWidth)
+        {
+            gapCol = mouseCol;
+            gapRow = mouseRow;
+            return true;
+        }
+
+        // 2. Check horizontal 1x1 gap buffer below groups ON THE CANVAS (outside group backplates)
+        foreach (var g in Groups)
+        {
+            // If the tile belongs to this group, it can NEVER have a gap violation with its own group!
+            if (originGroupId != null && g.Id == originGroupId) continue;
+
+            var members = Tiles.Where(t => t.Group == g.Id).ToList();
+            if (members.Count == 0 && string.IsNullOrWhiteSpace(g.Title)) continue;
+
+            int gMinC = g.Col;
+            int gMaxC = g.Col + GridPlacementService.GroupColWidth;
+            int gMaxR = members.Count > 0 ? members.Max(t => t.Row + t.SpanY) : g.Row + 1;
+
+            // The 1x1 bottom gap is row gMaxR between the group plate and loose canvas tiles.
+            // It only applies when mouse cursor is explicitly in that row ON THE CANVAS (below the visual backplate).
+            double plateBottom = g.PlateHeight > 0
+                ? g.PlateY + g.PlateHeight
+                : (members.Count > 0 ? members.Max(t => t.Y + t.HeightPixels) : g.Y + 120);
+
+            if (mouseRow == gMaxR && mouseCol >= gMinC && mouseCol < gMaxC && mousePos.Y >= plateBottom)
+            {
+                gapCol = Math.Clamp(mouseCol, gMinC, gMaxC - 1);
+                gapRow = gMaxR;
+                return true;
+            }
+
+            // Top gap buffer: immediately above group header (if group starts below row 0)
+            if (g.Row > 0 && mouseRow == g.Row - 1 && mouseCol >= gMinC && mouseCol < gMaxC && mousePos.Y < g.Y - 6)
+            {
+                gapCol = Math.Clamp(mouseCol, gMinC, gMaxC - 1);
+                gapRow = g.Row - 1;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
