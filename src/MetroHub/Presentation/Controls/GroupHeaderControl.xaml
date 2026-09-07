@@ -112,14 +112,13 @@
                                MouseDown="OnTitleMouseDown" />
 
                     <!-- Subtle drag / edit indicator on hover -->
-                    <TextBlock x:Name="DragHintIcon"
-                               Text="::"
-                               FontSize="12"
-                               FontWeight="Bold"
-                               Foreground="#50FFFFFF"
-                               Margin="8,0,0,0"
-                               VerticalAlignment="Center"
-                               Opacity="0" />
+                    <ui:SymbolIcon x:Name="DragHintIcon"
+                                   Symbol="ReOrder24"
+                                   FontSize="16"
+                                   Foreground="#70FFFFFF"
+                                   Margin="6,0,4,0"
+                                   VerticalAlignment="Center"
+                                   Opacity="0" />
                 </StackPanel>
 
                 <!-- Inline Renaming TextBox: 100% Transparent & Borderless -->
@@ -169,9 +168,10 @@
 
                 <!-- Lock / Unlock button -->
                 <Button x:Name="LockButton"
-                        Width="26" Height="26"
+                        Width="28" Height="28"
                         Padding="0"
                         Cursor="Hand"
+                        FocusVisualStyle="{x:Null}"
                         ToolTip="Lock group"
                         Click="OnLockClick"
                         PreviewMouseLeftButtonDown="OnActionButtonMouseDown">
@@ -179,13 +179,14 @@
                         <Style TargetType="Button">
                             <Setter Property="Background" Value="Transparent"/>
                             <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="Button">
                                         <Border x:Name="Bd"
                                                 Background="{TemplateBinding Background}"
                                                 CornerRadius="4"
-                                                Width="26" Height="26">
+                                                Width="28" Height="28">
                                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                         <ControlTemplate.Triggers>
@@ -201,7 +202,7 @@
                             </Setter>
                         </Style>
                     </Button.Style>
-                    <ui:SymbolIcon x:Name="LockIcon" Symbol="LockOpen24" FontSize="13"
+                    <ui:SymbolIcon x:Name="LockIcon" Symbol="LockOpen24" FontSize="17"
                                    Foreground="#A0FFFFFF" />
                 </Button>
             </StackPanel>

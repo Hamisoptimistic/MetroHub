@@ -57,7 +57,7 @@
                     <MenuItem Header="Default" Click="OnStyleDefaultClick" />
                     <MenuItem Header="Colourful" Click="OnStyleColourfulClick" />
                 </MenuItem>
-                <MenuItem x:Name="GroupMenuItem" Header="Group into New Section" Click="OnGroupTilesClick">
+                <MenuItem x:Name="GroupMenuItem" Header="Create Group from Tiles" Click="OnGroupTilesClick">
                     <MenuItem.Icon>
                         <ui:SymbolIcon Symbol="FolderAdd24" FontSize="16" />
                     </MenuItem.Icon>

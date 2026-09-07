@@ -269,7 +269,7 @@ public partial class TileControl : UserControl
         {
             ResizeMenuItem.Header = "Resize";
             StyleMenuItem.Header = "Style";
-            GroupMenuItem.Header = "Group into New Section";
+            GroupMenuItem.Header = "Create Group from Tiles";
             AddToGroupMenuItem.Header = "Add to Group";
             UnpinMenuItem.Header = "Unpin from MetroHub";
 
@@ -281,7 +281,7 @@ public partial class TileControl : UserControl
         {
             ResizeMenuItem.Header = "Resize";
             StyleMenuItem.Header = "Style";
-            GroupMenuItem.Header = "Group into New Section";
+            GroupMenuItem.Header = "Create Group from Tiles";
             AddToGroupMenuItem.Header = "Add to Group";
             UnpinMenuItem.Header = "Unpin from MetroHub";
 
