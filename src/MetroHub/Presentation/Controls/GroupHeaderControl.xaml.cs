@@ -23,7 +23,6 @@ public partial class GroupHeaderControl : UserControl
         {
             // Restore icon states from persisted model
             UpdateLockIcon(group.IsLocked);
-            UpdateCollapseIcon(group.IsCollapsed);
 
             if (group.IsEditing)
             {
@@ -217,31 +216,6 @@ public partial class GroupHeaderControl : UserControl
                 (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#A0FFFFFF"));
 
         LockButton.ToolTip = isLocked ? "Unlock group" : "Lock group";
-    }
-
-    // ─────────────────────────────────────────────────────────
-    // Collapse button
-    // ─────────────────────────────────────────────────────────
-
-    private void OnCollapseClick(object sender, RoutedEventArgs e)
-    {
-        if (DataContext is not TileGroupModel group) return;
-
-        group.IsCollapsed = !group.IsCollapsed;
-        UpdateCollapseIcon(group.IsCollapsed);
-
-        MainWindow.Current?.AnimateGroupCollapse(group, group.IsCollapsed);
-        MainWindow.Current?.SaveGroupsAndLayout();
-        e.Handled = true;
-    }
-
-    private void UpdateCollapseIcon(bool isCollapsed)
-    {
-        if (CollapseIcon == null) return;
-        CollapseIcon.Symbol = isCollapsed
-            ? Wpf.Ui.Controls.SymbolRegular.ChevronUp24
-            : Wpf.Ui.Controls.SymbolRegular.ChevronDown24;
-        CollapseButton.ToolTip = isCollapsed ? "Expand group" : "Collapse group";
     }
 
     // ─────────────────────────────────────────────────────────

@@ -159,7 +159,7 @@
                 </TextBox>
             </StackPanel>
 
-            <!-- Right: Lock + Collapse icon buttons (fade in on hover) -->
+            <!-- Right: Lock button (fade in on hover) -->
             <StackPanel Grid.Column="1"
                         x:Name="ActionButtonsPanel"
                         Orientation="Horizontal"
@@ -202,45 +202,6 @@
                         </Style>
                     </Button.Style>
                     <ui:SymbolIcon x:Name="LockIcon" Symbol="LockOpen24" FontSize="13"
-                                   Foreground="#A0FFFFFF" />
-                </Button>
-
-                <!-- Collapse / Expand button -->
-                <Button x:Name="CollapseButton"
-                        Width="26" Height="26"
-                        Padding="0"
-                        Cursor="Hand"
-                        ToolTip="Collapse group"
-                        Margin="2,0,0,0"
-                        Click="OnCollapseClick"
-                        PreviewMouseLeftButtonDown="OnActionButtonMouseDown">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bd"
-                                                Background="{TemplateBinding Background}"
-                                                CornerRadius="4"
-                                                Width="26" Height="26">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="Background" Value="#25FFFFFF"/>
-                                            </Trigger>
-                                            <Trigger Property="IsPressed" Value="True">
-                                                <Setter TargetName="Bd" Property="Background" Value="#40FFFFFF"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </Button.Style>
-                    <ui:SymbolIcon x:Name="CollapseIcon" Symbol="ChevronDown24" FontSize="13"
                                    Foreground="#A0FFFFFF" />
                 </Button>
             </StackPanel>

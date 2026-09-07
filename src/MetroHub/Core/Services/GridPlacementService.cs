@@ -778,4 +778,253 @@ public static class GridPlacementService
             placedTiles.Add(tile);
         }
     }
+
+    #region Atomic Group Container & Column Architecture
+
+    public const int GroupColWidth = 8;
+
+    public static int GetColumnStartCol(int columnIndex)
+    {
+        return columnIndex * GroupColWidth;
+    }
+
+    public static int GetColumnIndexFromCol(int col)
+    {
+        return Math.Max(0, col / GroupColWidth);
+    }
+
+    public static (int MinCol, int MaxCol, int MinRow, int MaxRow) GetGroupBoundingBox(TileGroupModel group, IEnumerable<TileModel> allTiles)
+    {
+        int minCol = group.Col;
+        int maxCol = group.Col + GroupColWidth;
+        int minRow = group.Row;
+        int maxRow = group.Row + 1;
+
+        var members = allTiles.Where(t => t.Group == group.Id).ToList();
+        if (members.Count > 0)
+        {
+            maxRow = Math.Max(maxRow, members.Max(t => t.Row + t.SpanY));
+        }
+
+        return (minCol, maxCol, minRow, maxRow);
+    }
+
+    /// <summary>
+    /// Packs the member tiles of a group gaplessly from left-to-right, top-to-bottom within the 8-unit width.
+    /// Returns the bottom-most row used by the member tiles.
+    /// </summary>
+    public static int PackGroupTiles(
+        TileGroupModel group,
+        IList<TileModel> memberTiles,
+        int startRow,
+        IList<TileModel>? modifiedList = null)
+    {
+        if (memberTiles == null || memberTiles.Count == 0)
+        {
+            return startRow;
+        }
+
+        int groupStartCol = group.Col;
+        int maxRowReached = startRow;
+
+        // Track occupied grid cells relative to (groupStartCol, startRow)
+        var occupied = new HashSet<(int RelCol, int RelRow)>();
+
+        foreach (var tile in memberTiles)
+        {
+            int spanX = Math.Clamp(tile.SpanX, 1, GroupColWidth);
+            int spanY = Math.Max(1, tile.SpanY);
+
+            int targetRelCol = -1;
+            int targetRelRow = -1;
+
+            for (int r = 0; r < 200; r++)
+            {
+                for (int c = 0; c <= GroupColWidth - spanX; c++)
+                {
+                    bool fits = true;
+                    for (int dy = 0; dy < spanY; dy++)
+                    {
+                        for (int dx = 0; dx < spanX; dx++)
+                        {
+                            if (occupied.Contains((c + dx, r + dy)))
+                            {
+                                fits = false;
+                                break;
+                            }
+                        }
+                        if (!fits) break;
+                    }
+
+                    if (fits)
+                    {
+                        targetRelCol = c;
+                        targetRelRow = r;
+                        break;
+                    }
+                }
+                if (targetRelCol != -1) break;
+            }
+
+            if (targetRelCol == -1)
+            {
+                targetRelCol = 0;
+                targetRelRow = 0;
+            }
+
+            for (int dy = 0; dy < spanY; dy++)
+            {
+                for (int dx = 0; dx < spanX; dx++)
+                {
+                    occupied.Add((targetRelCol + dx, targetRelRow + dy));
+                }
+            }
+
+            int finalCol = groupStartCol + targetRelCol;
+            int finalRow = startRow + targetRelRow;
+            double finalX = PixelXFromCol(finalCol);
+            double finalY = PixelYFromRow(finalRow);
+
+            if (tile.Col != finalCol || tile.Row != finalRow || Math.Abs(tile.X - finalX) > 0.5 || Math.Abs(tile.Y - finalY) > 0.5)
+            {
+                tile.Col = finalCol;
+                tile.Row = finalRow;
+                tile.X = finalX;
+                tile.Y = finalY;
+                if (modifiedList != null && !modifiedList.Contains(tile))
+                {
+                    modifiedList.Add(tile);
+                }
+            }
+
+            maxRowReached = Math.Max(maxRowReached, finalRow + spanY);
+        }
+
+        return maxRowReached;
+    }
+
+    /// <summary>
+    /// Stacks all groups in a column deterministically by OrderIndex.
+    /// If collapsed, lower groups slide up directly beneath the header.
+    /// Returns any tiles whose coordinates were modified.
+    /// </summary>
+    public static List<TileModel> ReflowColumnGroups(
+        int columnIndex,
+        IList<TileGroupModel> groups,
+        IList<TileModel> allTiles,
+        int compactVerticalSpacing = 1)
+    {
+        var modifiedTiles = new List<TileModel>();
+        int colStart = GetColumnStartCol(columnIndex);
+
+        var colGroups = groups
+            .Where(g => g.ColumnIndex == columnIndex)
+            .OrderBy(g => g.OrderIndex)
+            .ToList();
+
+        for (int i = 0; i < colGroups.Count; i++)
+        {
+            colGroups[i].OrderIndex = i;
+        }
+
+        int currentRow = 0;
+
+        foreach (var group in colGroups)
+        {
+            group.Col = colStart;
+            group.Row = currentRow;
+            group.X = PixelXFromCol(colStart);
+            group.Y = PixelYFromRow(currentRow) + 8;
+
+            var memberTiles = allTiles.Where(t => t.Group == group.Id).ToList();
+
+            int bottomRow = PackGroupTiles(group, memberTiles, startRow: currentRow + 1, modifiedList: modifiedTiles);
+
+            currentRow = bottomRow + compactVerticalSpacing;
+        }
+
+        return modifiedTiles;
+    }
+
+    public static List<TileModel> ReflowAllGroups(
+        IList<TileGroupModel> groups,
+        IList<TileModel> allTiles)
+    {
+        var modified = new List<TileModel>();
+        if (groups == null || groups.Count == 0) return modified;
+
+        var columnIndices = groups.Select(g => g.ColumnIndex).Distinct().ToList();
+        if (columnIndices.Count == 0) columnIndices.Add(0);
+
+        foreach (var colIdx in columnIndices)
+        {
+            var list = ReflowColumnGroups(colIdx, groups, allTiles);
+            foreach (var t in list)
+            {
+                if (!modified.Contains(t)) modified.Add(t);
+            }
+        }
+
+        return modified;
+    }
+
+    public static List<TileModel> ResolveGroupReorder(
+        TileGroupModel draggedGroup,
+        int targetColumnIndex,
+        int targetOrderIndex,
+        IList<TileGroupModel> groups,
+        IList<TileModel> allTiles)
+    {
+        int oldColIndex = draggedGroup.ColumnIndex;
+
+        // Remove from old column list
+        var oldColGroups = groups.Where(g => g.ColumnIndex == oldColIndex && !ReferenceEquals(g, draggedGroup)).OrderBy(g => g.OrderIndex).ToList();
+        for (int i = 0; i < oldColGroups.Count; i++)
+        {
+            oldColGroups[i].OrderIndex = i;
+        }
+
+        draggedGroup.ColumnIndex = targetColumnIndex;
+
+        // Insert into target column list
+        var targetColGroups = groups.Where(g => g.ColumnIndex == targetColumnIndex && !ReferenceEquals(g, draggedGroup)).OrderBy(g => g.OrderIndex).ToList();
+        int insertIdx = Math.Clamp(targetOrderIndex, 0, targetColGroups.Count);
+        targetColGroups.Insert(insertIdx, draggedGroup);
+
+        for (int i = 0; i < targetColGroups.Count; i++)
+        {
+            targetColGroups[i].OrderIndex = i;
+        }
+
+        var modified = new List<TileModel>();
+
+        if (oldColIndex != targetColumnIndex)
+        {
+            var m1 = ReflowColumnGroups(oldColIndex, groups, allTiles);
+            modified.AddRange(m1);
+        }
+
+        var m2 = ReflowColumnGroups(targetColumnIndex, groups, allTiles);
+        foreach (var t in m2)
+        {
+            if (!modified.Contains(t)) modified.Add(t);
+        }
+
+        return modified;
+    }
+
+    public static bool CleanEmptyGroups(IList<TileGroupModel> groups, IList<TileModel> allTiles)
+    {
+        var emptyGroups = groups.Where(g => !allTiles.Any(t => t.Group == g.Id)).ToList();
+        if (emptyGroups.Count == 0) return false;
+
+        foreach (var eg in emptyGroups)
+        {
+            groups.Remove(eg);
+        }
+
+        return true;
+    }
+
+    #endregion
 }

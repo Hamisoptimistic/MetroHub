@@ -238,6 +238,17 @@
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
+
+                    <!-- Horizontal Group Insertion Drop Line -->
+                    <Border x:Name="GroupInsertionLine"
+                            Visibility="Collapsed"
+                            Height="3"
+                            CornerRadius="1.5"
+                            Background="{DynamicResource SystemAccentColorPrimaryBrush}">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.8" Color="#60CDFF" />
+                        </Border.Effect>
+                    </Border>
                 </Canvas>
 
                 <!-- Groups Header Layer (Pass-through transparent: only header controls intercept hits) -->
