@@ -1092,28 +1092,17 @@ public partial class MainWindow : BorderlessFluentWindow
                 var movedGroup = _draggedGroupModel;
                 _draggedGroupModel = null;
 
-                bool targetHasLocked = Groups.Any(g => g.ColumnIndex == _groupDragTargetColIndex && g.IsLocked && !ReferenceEquals(g, movedGroup));
-                if (targetHasLocked)
-                {
-                    var lockedG = Groups.First(g => g.ColumnIndex == _groupDragTargetColIndex && g.IsLocked);
-                    FlashLockedGroupPerimeter(lockedG);
-                    var revertTiles = GridPlacementService.InsertGroupAndResolveCollisions(movedGroup, movedGroup.ColumnIndex, movedGroup.Row, Groups, Tiles);
-                    AnimateModifiedTiles(revertTiles);
-                }
-                else
-                {
-                    var modified = GridPlacementService.InsertGroupAndResolveCollisions(
-                        movedGroup,
-                        _groupDragTargetColIndex,
-                        _groupDragTargetRow,
-                        Groups,
-                        Tiles);
+                var modified = GridPlacementService.InsertGroupAndResolveCollisions(
+                    movedGroup,
+                    _groupDragTargetColIndex,
+                    _groupDragTargetRow,
+                    Groups,
+                    Tiles);
 
-                    AnimateModifiedTiles(modified);
-                    UpdateGroupHeaderPositions();
-                    UpdateCanvasHeight();
-                    SaveGroupsAndLayout();
-                }
+                AnimateModifiedTiles(modified);
+                UpdateGroupHeaderPositions();
+                UpdateCanvasHeight();
+                SaveGroupsAndLayout();
 
                 foreach (var cTile in _draggedCluster)
                 {
