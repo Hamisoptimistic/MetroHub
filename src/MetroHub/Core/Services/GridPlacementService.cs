@@ -911,6 +911,210 @@ public static class GridPlacementService
     }
 
     /// <summary>
+    /// Finds the nearest free grid slot within the group's bounds, starting from the target position.
+    /// Falls back to scanning row-by-row if no slot nearby. Never goes outside the group column width.
+    /// </summary>
+    public static (int Col, int Row) FindFreeSlotInGroup(
+        TileGroupModel group,
+        int targetRelCol,
+        int targetRelRow,
+        int spanX,
+        int spanY,
+        IList<TileModel> groupTiles,
+        TileModel? ignoreTile = null)
+    {
+        int groupCol = group.Col;
+        int maxRelCol = GroupColWidth - spanX;
+        int minRow = group.Row + 1; // tiles start below header
+
+        targetRelCol = Math.Clamp(targetRelCol, 0, maxRelCol);
+        targetRelRow = Math.Max(0, targetRelRow);
+
+        // Build occupation grid relative to (groupCol, minRow)
+        bool IsFree(int relC, int relR)
+        {
+            if (relC < 0 || relC > maxRelCol || relR < 0) return false;
+            int absCol = groupCol + relC;
+            int absRow = minRow + relR;
+            foreach (var t in groupTiles)
+            {
+                if (ReferenceEquals(t, ignoreTile)) continue;
+                int tc = GetCol(t);
+                int tr = GetRow(t);
+                if (DoTilesOverlap(absCol, absRow, spanX, spanY, tc, tr, t.SpanX, t.SpanY))
+                    return false;
+            }
+            return true;
+        }
+
+        // Check exact target first
+        if (IsFree(targetRelCol, targetRelRow))
+            return (groupCol + targetRelCol, minRow + targetRelRow);
+
+        // Expanding concentric scan within group bounds
+        for (int radius = 1; radius <= 40; radius++)
+        {
+            for (int dy = -radius; dy <= radius; dy++)
+            {
+                for (int dx = -radius; dx <= radius; dx++)
+                {
+                    if (Math.Abs(dx) != radius && Math.Abs(dy) != radius) continue;
+                    int rc = targetRelCol + dx;
+                    int rr = targetRelRow + dy;
+                    if (rr < 0) continue;
+                    if (rc < 0 || rc > maxRelCol) continue;
+                    if (IsFree(rc, rr))
+                        return (groupCol + rc, minRow + rr);
+                }
+            }
+        }
+
+        // Fallback: scan row-by-row from top
+        for (int r = 0; r < 100; r++)
+        {
+            for (int c = 0; c <= maxRelCol; c++)
+            {
+                if (IsFree(c, r))
+                    return (groupCol + c, minRow + r);
+            }
+        }
+
+        return (groupCol, minRow);
+    }
+
+    /// <summary>
+    /// Places (or moves) a tile within the group at the given absolute (targetCol, targetRow).
+    /// Uses the same 3-tier strategy as PlaceAndResolveCollisions but scoped to the group's own tiles:
+    ///   1. Free slot → place directly
+    ///   2. Single same-size tile → swap positions
+    ///   3. Otherwise → try rightward push within group, then cascade push down within group
+    /// Never calls PackGroupTiles, so existing tile positions are preserved.
+    /// </summary>
+    public static List<TileModel> PlaceTileInGroup(
+        TileModel draggedTile,
+        int targetCol,
+        int targetRow,
+        int originalCol,
+        int originalRow,
+        TileGroupModel group,
+        IList<TileModel> allTiles)
+    {
+        var modified = new List<TileModel>();
+
+        int groupCol = group.Col;
+        int groupMaxCol = group.Col + GroupColWidth;
+        int minRow = group.Row + 1;
+
+        // Clamp target within group bounds
+        targetCol = Math.Clamp(targetCol, groupCol, Math.Max(groupCol, groupMaxCol - draggedTile.SpanX));
+        targetRow = Math.Max(minRow, targetRow);
+
+        var groupTiles = allTiles.Where(t => t.Group == group.Id).ToList();
+
+        // Detect overlapping group tiles (excluding the dragged tile itself)
+        var overlapping = groupTiles
+            .Where(t => !ReferenceEquals(t, draggedTile))
+            .Where(t => DoTilesOverlap(targetCol, targetRow, draggedTile.SpanX, draggedTile.SpanY,
+                                       GetCol(t), GetRow(t), t.SpanX, t.SpanY))
+            .ToList();
+
+        // Case 1: Free slot
+        if (overlapping.Count == 0)
+        {
+            draggedTile.Col = targetCol;
+            draggedTile.Row = targetRow;
+            draggedTile.X = PixelXFromCol(targetCol);
+            draggedTile.Y = PixelYFromRow(targetRow);
+            modified.Add(draggedTile);
+            return modified;
+        }
+
+        // Case 2: Clean 1-to-1 swap (same size)
+        if (overlapping.Count == 1 &&
+            overlapping[0].SpanX == draggedTile.SpanX &&
+            overlapping[0].SpanY == draggedTile.SpanY &&
+            CanDisplace(overlapping[0]) &&
+            (targetCol != originalCol || targetRow != originalRow))
+        {
+            var swapTarget = overlapping[0];
+            draggedTile.Col = GetCol(swapTarget);
+            draggedTile.Row = GetRow(swapTarget);
+            draggedTile.X = PixelXFromCol(draggedTile.Col);
+            draggedTile.Y = PixelYFromRow(draggedTile.Row);
+            modified.Add(draggedTile);
+
+            swapTarget.Col = originalCol;
+            swapTarget.Row = originalRow;
+            swapTarget.X = PixelXFromCol(originalCol);
+            swapTarget.Y = PixelYFromRow(originalRow);
+            modified.Add(swapTarget);
+            return modified;
+        }
+
+        // Case 3: Place dragged tile, then cascade push down within group
+        draggedTile.Col = targetCol;
+        draggedTile.Row = targetRow;
+        draggedTile.X = PixelXFromCol(targetCol);
+        draggedTile.Y = PixelYFromRow(targetRow);
+        modified.Add(draggedTile);
+
+        // Cascade: displaced tiles get pushed down within the same column band
+        var positions = new Dictionary<TileModel, (int Col, int Row)>();
+        var queue = new Queue<TileModel>(overlapping);
+        var inQueue = new HashSet<TileModel>(overlapping);
+
+        foreach (var t in overlapping)
+        {
+            if (!CanDisplace(t)) continue;
+            int neededRow = targetRow + draggedTile.SpanY;
+            positions[t] = (GetCol(t), Math.Max(neededRow, GetRow(t)));
+        }
+
+        while (queue.Count > 0)
+        {
+            var cur = queue.Dequeue();
+            inQueue.Remove(cur);
+            if (!positions.TryGetValue(cur, out var curPos)) continue;
+            int curC = curPos.Col;
+            int curR = curPos.Row;
+
+            foreach (var other in groupTiles)
+            {
+                if (ReferenceEquals(other, draggedTile) || ReferenceEquals(other, cur)) continue;
+                int oC = positions.TryGetValue(other, out var op) ? op.Col : GetCol(other);
+                int oR = positions.TryGetValue(other, out op) ? op.Row : GetRow(other);
+
+                if (DoTilesOverlap(curC, curR, cur.SpanX, cur.SpanY, oC, oR, other.SpanX, other.SpanY))
+                {
+                    if (!CanDisplace(other)) continue;
+                    int neededOtherRow = curR + cur.SpanY;
+                    if (neededOtherRow > oR)
+                    {
+                        positions[other] = (oC, neededOtherRow);
+                        if (!inQueue.Contains(other))
+                        {
+                            inQueue.Add(other);
+                            queue.Enqueue(other);
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach (var kvp in positions)
+        {
+            var t = kvp.Key;
+            t.Col = kvp.Value.Col;
+            t.Row = kvp.Value.Row;
+            t.X = PixelXFromCol(kvp.Value.Col);
+            t.Y = PixelYFromRow(kvp.Value.Row);
+            if (!modified.Contains(t)) modified.Add(t);
+        }
+
+        return modified;
+    }
+
+    /// <summary>
     /// Stacks all groups in a column deterministically by OrderIndex.
     /// If collapsed, lower groups slide up directly beneath the header.
     /// Returns any tiles whose coordinates were modified.
