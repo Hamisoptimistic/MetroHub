@@ -1212,6 +1212,18 @@ public partial class MainWindow : BorderlessFluentWindow
                 UpdateLayoutMetrics();
                 int maxCols = GridPlacementService.MaxCols;
 
+                // Track origin groups and their old bounding box bottom before drop reassignment
+                var originGroups = _dragClusterOriginals.Keys
+                    .Where(t => !string.IsNullOrEmpty(t.Group))
+                    .Select(t => Groups.FirstOrDefault(g => g.Id == t.Group))
+                    .Where(g => g != null)
+                    .Distinct()
+                    .ToList();
+
+                var originOldBottoms = originGroups.ToDictionary(
+                    g => g!,
+                    g => GridPlacementService.GetGroupBoundingBox(g!, Tiles).MaxRow);
+
                 if (targetGroup != null)
                 {
                     if (targetGroup.IsLocked)
@@ -1392,6 +1404,19 @@ public partial class MainWindow : BorderlessFluentWindow
                 foreach (var cTile in _draggedCluster)
                 {
                     cTile.IsBeingDragged = false;
+                }
+
+                // Upward gravity: If any origin group shrank because tiles were dragged out or rearranged, pull lower groups & tiles up
+                foreach (var og in originGroups)
+                {
+                    int oldBottom = originOldBottoms[og!];
+                    int newBottom = GridPlacementService.GetGroupBoundingBox(og!, Tiles).MaxRow;
+                    int shrink = oldBottom - newBottom;
+                    if (shrink > 0)
+                    {
+                        var pulled = GridPlacementService.PullLowerGroupsUp(og!, Groups, Tiles, shrink);
+                        AnimateModifiedTiles(pulled);
+                    }
                 }
 
                 UpdateCanvasHeight();
@@ -1726,6 +1751,18 @@ public partial class MainWindow : BorderlessFluentWindow
         UpdateLayoutMetrics();
         int maxCols = GridPlacementService.MaxCols;
 
+        // Track groups and their old bounding box bottom before resizing
+        var affectedGroups = targets
+            .Where(t => !string.IsNullOrEmpty(t.Group))
+            .Select(t => Groups.FirstOrDefault(g => g.Id == t.Group))
+            .Where(g => g != null)
+            .Distinct()
+            .ToList();
+
+        var oldGroupBottoms = affectedGroups.ToDictionary(
+            g => g!,
+            g => GridPlacementService.GetGroupBoundingBox(g!, Tiles).MaxRow);
+
         // Resolve collision using topological batch expansion
         var modified = GridPlacementService.ResolveBatchResizeExpansion(
             targets,
@@ -1743,20 +1780,27 @@ public partial class MainWindow : BorderlessFluentWindow
             control?.AnimateResize(oldX, oldY, newSpanX, newSpanY);
         }
 
-        // If any resized tiles belong to a group, push lower groups and ungrouped tiles down
-        var affectedGroups = targets
-            .Where(t => !string.IsNullOrEmpty(t.Group))
-            .Select(t => Groups.FirstOrDefault(g => g.Id == t.Group))
-            .Where(g => g != null)
-            .Distinct()
-            .ToList();
-
+        // If any resized tiles belong to a group, push lower groups down if expanded or pull up if shrank
         foreach (var ag in affectedGroups)
         {
-            var pushed = GridPlacementService.PushLowerGroupsDown(ag!, Groups, Tiles);
-            foreach (var pt in pushed)
+            int oldBottom = oldGroupBottoms[ag!];
+            int newBottom = GridPlacementService.GetGroupBoundingBox(ag!, Tiles).MaxRow;
+            if (newBottom > oldBottom)
             {
-                if (!modified.Contains(pt)) modified.Add(pt);
+                var pushed = GridPlacementService.PushLowerGroupsDown(ag!, Groups, Tiles);
+                foreach (var pt in pushed)
+                {
+                    if (!modified.Contains(pt)) modified.Add(pt);
+                }
+            }
+            else if (newBottom < oldBottom)
+            {
+                int shrink = oldBottom - newBottom;
+                var pulled = GridPlacementService.PullLowerGroupsUp(ag!, Groups, Tiles, shrink);
+                foreach (var pt in pulled)
+                {
+                    if (!modified.Contains(pt)) modified.Add(pt);
+                }
             }
         }
 
@@ -1829,11 +1873,40 @@ public partial class MainWindow : BorderlessFluentWindow
         string preUnpin = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
         _historyService.PushState(preUnpin);
 
+        // Track affected groups and their old bounding box bottom before removing tiles
+        var affectedGroups = targets
+            .Where(t => !string.IsNullOrEmpty(t.Group))
+            .Select(t => Groups.FirstOrDefault(g => g.Id == t.Group))
+            .Where(g => g != null)
+            .Distinct()
+            .ToList();
+
+        var oldBottoms = affectedGroups.ToDictionary(
+            g => g!,
+            g => GridPlacementService.GetGroupBoundingBox(g!, Tiles).MaxRow);
+
         foreach (var t in targets)
         {
             Tiles.Remove(t);
         }
 
+        var modified = new List<TileModel>();
+        foreach (var g in affectedGroups)
+        {
+            int oldBottom = oldBottoms[g!];
+            int newBottom = GridPlacementService.GetGroupBoundingBox(g!, Tiles).MaxRow;
+            int shrink = oldBottom - newBottom;
+            if (shrink > 0)
+            {
+                var pulled = GridPlacementService.PullLowerGroupsUp(g!, Groups, Tiles, shrink);
+                foreach (var pt in pulled)
+                {
+                    if (!modified.Contains(pt)) modified.Add(pt);
+                }
+            }
+        }
+
+        AnimateModifiedTiles(modified);
         CleanEmptyGroupsAndReflow();
         UpdateGroupHeaderPositions();
         SaveGroupsAndLayout();
@@ -2699,7 +2772,7 @@ public partial class MainWindow : BorderlessFluentWindow
         int colIdx = group.ColumnIndex;
         Groups.Remove(group);
 
-        var modifiedTiles = GridPlacementService.ReflowColumnGroups(colIdx, Groups, Tiles);
+        var modifiedTiles = GridPlacementService.PullLowerGroupsUp(group, Groups, Tiles);
         AnimateModifiedTiles(modifiedTiles);
         UpdateGroupHeaderPositions();
         SaveGroupsAndLayout();

@@ -832,7 +832,7 @@ public static class GridPlacementService
         int minCol = group.Col;
         int maxCol = group.Col + GroupColWidth;
         int minRow = group.Row;
-        int maxRow = group.Row + 1;
+        int maxRow = group.Row + 2;
 
         var members = allTiles.Where(t => t.Group == group.Id).ToList();
         if (members.Count > 0)
@@ -1507,6 +1507,95 @@ public static class GridPlacementService
             if (newRow == t.Row) continue;
 
             t.Row = newRow;
+            t.Y = PixelYFromRow(t.Row);
+            if (!modified.Contains(t)) modified.Add(t);
+        }
+
+        return modified;
+    }
+
+    /// <summary>
+    /// Pulls lower groups and ungrouped canvas tiles upwards when targetGroup shrinks,
+    /// closing empty voids while preserving the 1x1 grid row separation below targetGroup
+    /// and maintaining the relative spatial arrangement of all items below.
+    /// </summary>
+    public static List<TileModel> PullLowerGroupsUp(
+        TileGroupModel targetGroup,
+        IList<TileGroupModel>? groups,
+        IList<TileModel> allTiles,
+        int? maxPullUpRows = null)
+    {
+        var modified = new List<TileModel>();
+        if (targetGroup == null || allTiles == null) return modified;
+
+        var groupList = groups ?? new List<TileGroupModel>();
+        int targetColStart = targetGroup.Col >= 0 ? targetGroup.Col : GetColumnStartCol(targetGroup.ColumnIndex);
+        int targetColEnd = targetColStart + GroupColWidth;
+
+        // 1. Calculate the earliest allowed row where lower items can sit (including 1x1 gap buffer)
+        bool isGroupDeleted = !groupList.Contains(targetGroup);
+        int minAllowedRow;
+        if (isGroupDeleted)
+        {
+            minAllowedRow = targetGroup.Row;
+        }
+        else
+        {
+            var targetBox = GetGroupBoundingBox(targetGroup, allTiles);
+            minAllowedRow = targetBox.MaxRow;
+        }
+
+        // 2. Identify all groups and loose canvas tiles below targetGroup in the same column track
+        var lowerGroups = groupList
+            .Where(g => !ReferenceEquals(g, targetGroup) && g.ColumnIndex == targetGroup.ColumnIndex && g.Row > targetGroup.Row)
+            .ToList();
+
+        var lowerLooseTiles = allTiles
+            .Where(t => t.Group == null && t.Col < targetColEnd && (t.Col + t.SpanX) > targetColStart && t.Row > targetGroup.Row)
+            .ToList();
+
+        if (lowerGroups.Count == 0 && lowerLooseTiles.Count == 0) return modified;
+
+        // 3. Determine the top-most row among all lower items
+        int highestLowerRow = int.MaxValue;
+        foreach (var g in lowerGroups)
+        {
+            if (g.Row < highestLowerRow) highestLowerRow = g.Row;
+        }
+        foreach (var t in lowerLooseTiles)
+        {
+            if (t.Row < highestLowerRow) highestLowerRow = t.Row;
+        }
+
+        if (highestLowerRow == int.MaxValue || highestLowerRow <= minAllowedRow) return modified;
+
+        // 4. Calculate upward shift amount
+        int availableVoid = highestLowerRow - minAllowedRow;
+        int pullUpDelta = maxPullUpRows.HasValue
+            ? Math.Min(maxPullUpRows.Value, availableVoid)
+            : availableVoid;
+
+        if (pullUpDelta <= 0) return modified;
+
+        // 5. Shift all lower groups and member tiles up by pullUpDelta
+        foreach (var g in lowerGroups)
+        {
+            g.Row -= pullUpDelta;
+            g.Y = PixelYFromRow(g.Row) + 8;
+
+            var gMembers = allTiles.Where(t => t.Group == g.Id).ToList();
+            foreach (var t in gMembers)
+            {
+                t.Row -= pullUpDelta;
+                t.Y = PixelYFromRow(t.Row);
+                if (!modified.Contains(t)) modified.Add(t);
+            }
+        }
+
+        // 6. Shift all lower loose canvas tiles up by pullUpDelta
+        foreach (var t in lowerLooseTiles)
+        {
+            t.Row -= pullUpDelta;
             t.Y = PixelYFromRow(t.Row);
             if (!modified.Contains(t)) modified.Add(t);
         }
