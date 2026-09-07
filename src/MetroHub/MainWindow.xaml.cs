@@ -1281,6 +1281,8 @@ public partial class MainWindow : BorderlessFluentWindow
                         int dropCol = GridPlacementService.ColFromPixel(_draggedTile.X);
                         int dropRow = GridPlacementService.RowFromPixel(_draggedTile.Y);
 
+                        bool isSameGroup = _draggedTile.Group == targetGroup.Id;
+
                         foreach (var cTile in _draggedCluster)
                         {
                             cTile.Group = targetGroup.Id;
@@ -1289,14 +1291,31 @@ public partial class MainWindow : BorderlessFluentWindow
 
                         CleanEmptyGroupsAndReflow();
 
-                        var mod = GridPlacementService.PlaceTilesInGroup(
-                            _draggedCluster,
-                            targetGroup,
-                            Tiles,
-                            _draggedTile,
-                            dropCol,
-                            dropRow,
-                            Groups);
+                        List<TileModel> mod;
+                        if (_draggedCluster.Count == 1)
+                        {
+                            mod = GridPlacementService.PlaceTileInGroup(
+                                _draggedTile,
+                                dropCol,
+                                dropRow,
+                                _dragOriginalCol,
+                                _dragOriginalRow,
+                                targetGroup,
+                                Tiles,
+                                Groups,
+                                isSameGroup);
+                        }
+                        else
+                        {
+                            mod = GridPlacementService.PlaceTilesInGroup(
+                                _draggedCluster,
+                                targetGroup,
+                                Tiles,
+                                _draggedTile,
+                                dropCol,
+                                dropRow,
+                                Groups);
+                        }
 
                         AnimateModifiedTiles(mod);
                         UpdateGroupHeaderPositions();

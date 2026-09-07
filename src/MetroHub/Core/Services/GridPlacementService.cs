@@ -1105,12 +1105,14 @@ public static class GridPlacementService
         int originalCol,
         int originalRow,
         TileGroupModel group,
-        IList<TileModel> allTiles)
+        IList<TileModel> allTiles,
+        IList<TileGroupModel>? groups = null,
+        bool isSameGroup = true)
     {
         var modified = new List<TileModel>();
 
-        int groupCol = group.Col;
-        int groupMaxCol = group.Col + GroupColWidth;
+        int groupCol = group.Col >= 0 ? group.Col : GetColumnStartCol(group.ColumnIndex);
+        int groupMaxCol = groupCol + GroupColWidth;
         int minRow = group.Row + 1;
 
         // Clamp target within group bounds
@@ -1133,28 +1135,72 @@ public static class GridPlacementService
             draggedTile.Row = targetRow;
             draggedTile.X = PixelXFromCol(targetCol);
             draggedTile.Y = PixelYFromRow(targetRow);
+            draggedTile.Group = group.Id;
+            draggedTile.SectionHeader = group.Title;
             modified.Add(draggedTile);
+
+            if (groups != null)
+            {
+                var pushed = PushLowerGroupsDown(group, groups, allTiles);
+                foreach (var pt in pushed)
+                {
+                    if (!modified.Contains(pt)) modified.Add(pt);
+                }
+            }
+
             return modified;
         }
 
-        // Case 2: Clean 1-to-1 swap (same size)
-        if (overlapping.Count == 1 &&
+        // If target slot collides with any locked tile, fallback to finding a free slot
+        if (overlapping.Any(t => !CanDisplace(t)))
+        {
+            var (freeC, freeR) = FindFreeSlotInGroup(
+                group, targetCol - groupCol, targetRow - minRow, draggedTile.SpanX, draggedTile.SpanY, groupTiles, draggedTile);
+            draggedTile.Col = freeC;
+            draggedTile.Row = freeR;
+            draggedTile.X = PixelXFromCol(freeC);
+            draggedTile.Y = PixelYFromRow(freeR);
+            draggedTile.Group = group.Id;
+            draggedTile.SectionHeader = group.Title;
+            modified.Add(draggedTile);
+
+            if (groups != null)
+            {
+                var pushed = PushLowerGroupsDown(group, groups, allTiles);
+                foreach (var pt in pushed)
+                {
+                    if (!modified.Contains(pt)) modified.Add(pt);
+                }
+            }
+
+            return modified;
+        }
+
+        // Case 2: Clean 1-to-1 swap (same size, within the same group)
+        if (isSameGroup &&
+            overlapping.Count == 1 &&
             overlapping[0].SpanX == draggedTile.SpanX &&
             overlapping[0].SpanY == draggedTile.SpanY &&
-            CanDisplace(overlapping[0]) &&
             (targetCol != originalCol || targetRow != originalRow))
         {
             var swapTarget = overlapping[0];
-            draggedTile.Col = GetCol(swapTarget);
-            draggedTile.Row = GetRow(swapTarget);
+            int swapTargetCol = GetCol(swapTarget);
+            int swapTargetRow = GetRow(swapTarget);
+
+            draggedTile.Col = swapTargetCol;
+            draggedTile.Row = swapTargetRow;
             draggedTile.X = PixelXFromCol(draggedTile.Col);
             draggedTile.Y = PixelYFromRow(draggedTile.Row);
+            draggedTile.Group = group.Id;
+            draggedTile.SectionHeader = group.Title;
             modified.Add(draggedTile);
 
             swapTarget.Col = originalCol;
             swapTarget.Row = originalRow;
             swapTarget.X = PixelXFromCol(originalCol);
             swapTarget.Y = PixelYFromRow(originalRow);
+            swapTarget.Group = group.Id;
+            swapTarget.SectionHeader = group.Title;
             modified.Add(swapTarget);
             return modified;
         }
@@ -1164,9 +1210,11 @@ public static class GridPlacementService
         draggedTile.Row = targetRow;
         draggedTile.X = PixelXFromCol(targetCol);
         draggedTile.Y = PixelYFromRow(targetRow);
+        draggedTile.Group = group.Id;
+        draggedTile.SectionHeader = group.Title;
         modified.Add(draggedTile);
 
-        // Cascade: displaced tiles get pushed down within the same column band
+        // Cascade: displaced tiles get pushed down within the group's 8-column band
         var positions = new Dictionary<TileModel, (int Col, int Row)>();
         var queue = new Queue<TileModel>(overlapping);
         var inQueue = new HashSet<TileModel>(overlapping);
@@ -1217,6 +1265,15 @@ public static class GridPlacementService
             t.X = PixelXFromCol(kvp.Value.Col);
             t.Y = PixelYFromRow(kvp.Value.Row);
             if (!modified.Contains(t)) modified.Add(t);
+        }
+
+        if (groups != null)
+        {
+            var pushed = PushLowerGroupsDown(group, groups, allTiles);
+            foreach (var pt in pushed)
+            {
+                if (!modified.Contains(pt)) modified.Add(pt);
+            }
         }
 
         return modified;
