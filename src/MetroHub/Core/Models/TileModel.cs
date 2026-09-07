@@ -64,6 +64,23 @@ public class TileModel : INotifyPropertyChanged
         set => SetField(ref _isBeingDragged, value);
     }
 
+    private bool _isLocked = false;
+
+    public bool IsLocked
+    {
+        get => _isLocked;
+        set => SetField(ref _isLocked, value);
+    }
+
+    private bool _isSelected = false;
+
+    [JsonIgnore]
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set => SetField(ref _isSelected, value);
+    }
+
     public string? SectionHeader
     {
         get => _sectionHeader;
@@ -147,6 +164,13 @@ public class TileModel : INotifyPropertyChanged
     {
         get => _accentColor;
         set => SetField(ref _accentColor, value);
+    }
+
+    private string _tileStyle = "Default";
+    public string TileStyle
+    {
+        get => _tileStyle;
+        set => SetField(ref _tileStyle, value);
     }
 
     public int OrderIndex

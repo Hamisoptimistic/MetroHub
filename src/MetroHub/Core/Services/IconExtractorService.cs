@@ -169,9 +169,9 @@ public static class IconExtractorService
         return path;
     }
 
-    public static BitmapSource TrimTransparentPadding(BitmapSource source, double paddingPercent = 0.05)
+    public static BitmapSource? TrimTransparentPadding(BitmapSource? source, double paddingPercent = 0.05)
     {
-        if (source == null) return source;
+        if (source == null) return null;
 
         try
         {

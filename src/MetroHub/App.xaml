@@ -9,6 +9,73 @@
                 <ui:ThemesDictionary Theme="Dark" />
                 <ui:ControlsDictionary />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Authentic WPF-UI ContextMenu Style with Fixed Non-Clipping Fluent Glide -->
+            <Style TargetType="{x:Type ContextMenu}">
+                <Setter Property="Foreground" Value="{DynamicResource ContextMenuForeground}" />
+                <Setter Property="Background" Value="{DynamicResource ContextMenuBackground}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource ContextMenuBorderBrush}" />
+                <Setter Property="MinWidth" Value="140" />
+                <Setter Property="Padding" Value="0,3,0,3" />
+                <Setter Property="Margin" Value="0" />
+                <Setter Property="HasDropShadow" Value="False" />
+                <Setter Property="Grid.IsSharedSizeScope" Value="True" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+                <Setter Property="UseLayoutRounding" Value="True" />
+                <Setter Property="OverridesDefaultStyle" Value="True" />
+                <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ContextMenu}">
+                            <Border x:Name="Border"
+                                    BorderThickness="1"
+                                    Padding="0,3,0,3"
+                                    CornerRadius="8"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    Background="{TemplateBinding Background}"
+                                    SnapsToDevicePixels="True"
+                                    UseLayoutRounding="True"
+                                    RenderOptions.ClearTypeHint="Enabled">
+                                <Border.RenderTransform>
+                                    <TranslateTransform x:Name="MenuTranslate" Y="0" />
+                                </Border.RenderTransform>
+                                <StackPanel Orientation="Vertical"
+                                            IsItemsHost="True"
+                                            ClipToBounds="True"
+                                            KeyboardNavigation.DirectionalNavigation="Cycle" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsOpen" Value="True">
+                                    <Trigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <!-- Smooth 12px subtle glide matching WPF-UI design language without the -90px window clipping -->
+                                                <DoubleAnimation Storyboard.TargetName="Border"
+                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                                 From="-12" To="0"
+                                                                 Duration="0:0:0.16">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CircleEase EasingMode="EaseOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                                <!-- Smooth opacity fade in so the menu doesn't abruptly pop in clipped -->
+                                                <DoubleAnimation Storyboard.TargetName="Border"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 From="0.0" To="1.0"
+                                                                 Duration="0:0:0.14">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CircleEase EasingMode="EaseOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.EnterActions>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

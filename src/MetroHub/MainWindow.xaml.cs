@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using System.Windows.Data;
+using System.Windows.Controls.Primitives;
 using Microsoft.Win32;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
@@ -49,7 +50,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
         Activated += OnWindowActivated;
         Deactivated += OnWindowDeactivated;
-        SizeChanged += (s, e) => { UpdateLayoutMetrics(); UpdateCanvasHeight(); };
+        SizeChanged += (s, e) => { UpdateLayoutMetrics(); UpdateCanvasHeight(); UpdateExposedAddSlots(); };
 
         InstalledAppsService.AppsCatalogChanged += OnAppsCatalogChanged;
         Task.Run(() => InstalledAppsService.GetInstalledApps(forceRefresh: false));
@@ -93,6 +94,7 @@ public partial class MainWindow : BorderlessFluentWindow
         GridPlacementService.SanitizeAndSnapAll(Tiles, GridPlacementService.MaxCols);
         TilesListBox.ItemsSource = Tiles;
         UpdateCanvasHeight();
+        UpdateExposedAddSlots();
 
         if (BackdropToggleSwitch != null)
         {
@@ -291,6 +293,7 @@ public partial class MainWindow : BorderlessFluentWindow
         Activate();
         Focus();
         UpdateLayoutMetrics();
+        UpdateExposedAddSlots();
 
         PlayEntranceAnimation();
         TriggerBackgroundAppsCatalogRefresh();
@@ -396,61 +399,389 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private void OnWindowPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Escape || (e.Key == Key.Tab && (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt))
+        bool isCtrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+        bool isShift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+
+        if (isCtrl && e.Key == Key.Z)
+        {
+            if (isShift)
+            {
+                ExecuteRedo();
+            }
+            else
+            {
+                ExecuteUndo();
+            }
+            e.Handled = true;
+            return;
+        }
+
+        if (isCtrl && e.Key == Key.Y)
+        {
+            ExecuteRedo();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Escape)
+        {
+            if (_isRubberBanding)
+            {
+                _isRubberBanding = false;
+                if (RubberBandBox != null) RubberBandBox.Visibility = Visibility.Collapsed;
+                RootGrid.ReleaseMouseCapture();
+                e.Handled = true;
+                return;
+            }
+
+            if (Tiles.Any(t => t.IsSelected))
+            {
+                ClearTileSelection();
+                e.Handled = true;
+                return;
+            }
+
+            HideScreen();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Tab && (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt)
         {
             HideScreen();
             e.Handled = true;
         }
     }
 
+    private readonly LayoutHistoryService _historyService = new();
+    private string? _preDragLayoutSnapshot;
+
     private TileModel? _draggedTile;
     private Presentation.Controls.TileControl? _draggedControl;
     private ContentPresenter? _draggedContainer;
     private Point _dragStartPoint;
-    private double _dragOffsetX;  // offset from mouse to tile's left edge
-    private double _dragOffsetY;  // offset from mouse to tile's top edge
+    private double _dragOffsetX;  // offset from mouse to anchor tile's left edge
+    private double _dragOffsetY;  // offset from mouse to anchor tile's top edge
     private int _dragOriginalCol;
     private int _dragOriginalRow;
     private bool _isPotentialDrag;
     private bool _isDragging;
+
+    // Multi-tile Selection & Cluster Drag State
+    private bool _isRubberBanding;
+    private Point _rubberBandStartPoint;
+    private bool _rubberBandHasMoved;
+    private HashSet<TileModel> _preRubberBandSelected = new();
+    private List<TileModel> _draggedCluster = new();
+    private Dictionary<TileModel, (double X, double Y, int Col, int Row)> _dragClusterOriginals = new();
+    private (double MinRelX, double MaxRelX, double MinRelY, double MaxRelY) _clusterRelBounds;
+    private (int MinRelCol, int MaxRelCol, int MinRelRow, int MaxRelRow) _clusterRelGridBounds;
+    private bool _dragBeganWithSelection;
+
+    private void ClearTileSelection()
+    {
+        foreach (var t in Tiles)
+        {
+            t.IsSelected = false;
+        }
+    }
+
+    public void ExecuteUndo()
+    {
+        if (_isDragging || _isRubberBanding || !_historyService.CanUndo) return;
+
+        ClearTileSelection();
+        string currentSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles);
+        string? targetSnapshot = _historyService.Undo(currentSnapshot);
+        if (!string.IsNullOrWhiteSpace(targetSnapshot))
+        {
+            RestoreLayoutFromSnapshot(targetSnapshot);
+        }
+    }
+
+    public void ExecuteRedo()
+    {
+        if (_isDragging || _isRubberBanding || !_historyService.CanRedo) return;
+
+        ClearTileSelection();
+        string currentSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles);
+        string? targetSnapshot = _historyService.Redo(currentSnapshot);
+        if (!string.IsNullOrWhiteSpace(targetSnapshot))
+        {
+            RestoreLayoutFromSnapshot(targetSnapshot);
+        }
+    }
+
+    private void RestoreLayoutFromSnapshot(string snapshot)
+    {
+        var targetTiles = LayoutHistoryService.ParseSnapshot(snapshot);
+        if (targetTiles == null) return;
+
+        var targetDict = targetTiles.ToDictionary(t => t.Id);
+        var currentTiles = Tiles.ToList();
+        var currentDict = currentTiles.ToDictionary(t => t.Id);
+
+        // Remove tiles that are not in target snapshot (e.g. undo an add)
+        var toRemove = currentTiles.Where(t => !targetDict.ContainsKey(t.Id)).ToList();
+        foreach (var t in toRemove)
+        {
+            Tiles.Remove(t);
+        }
+
+        // Re-add tiles that were previously deleted (e.g. undo an unpin)
+        var toAdd = targetTiles.Where(t => !currentDict.ContainsKey(t.Id)).ToList();
+        foreach (var t in toAdd)
+        {
+            Tiles.Add(t);
+        }
+
+        // Apply coordinates, spans, and styles
+        var modifiedList = new List<TileModel>();
+
+        foreach (var target in targetTiles)
+        {
+            var existing = Tiles.FirstOrDefault(t => t.Id == target.Id);
+            if (existing == null) continue;
+
+            bool posChanged = Math.Abs(existing.X - target.X) > 0.5 || Math.Abs(existing.Y - target.Y) > 0.5;
+            bool spanChanged = existing.SpanX != target.SpanX || existing.SpanY != target.SpanY;
+            bool styleChanged = existing.TileStyle != target.TileStyle || existing.AccentColor != target.AccentColor;
+
+            existing.Col = target.Col;
+            existing.Row = target.Row;
+            existing.SpanX = target.SpanX;
+            existing.SpanY = target.SpanY;
+            existing.TileStyle = target.TileStyle;
+            existing.AccentColor = target.AccentColor;
+
+            if (posChanged)
+            {
+                existing.X = target.X;
+                existing.Y = target.Y;
+                modifiedList.Add(existing);
+            }
+            else
+            {
+                var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(existing) as ContentPresenter;
+                if (container != null)
+                {
+                    Canvas.SetLeft(container, target.X);
+                    Canvas.SetTop(container, target.Y);
+                }
+            }
+
+            if (styleChanged)
+            {
+                var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, existing));
+                control?.ApplyTileStyle(animate: true);
+            }
+        }
+
+        if (modifiedList.Count > 0)
+        {
+            AnimateModifiedTiles(modifiedList);
+        }
+
+        UpdateLayoutMetrics();
+        UpdateCanvasHeight();
+        UpdateExposedAddSlots();
+        StorageService.SaveLayout(Tiles);
+    }
 
     private void OnCanvasPreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
         if (e.LeftButton != MouseButtonState.Pressed) return;
 
         DependencyObject? dep = e.OriginalSource as DependencyObject;
+
+        // Bypass if user clicked on a Thumb (ResizeGrip) or its children
+        if (FindParent<System.Windows.Controls.Primitives.Thumb>(dep) != null)
+        {
+            _isPotentialDrag = false;
+            _isDragging = false;
+            _draggedTile = null;
+            return;
+        }
+
+        // If clicking on Top Header, Search, or Footer, don't trigger canvas selection
+        if (HeaderGrid != null && HeaderGrid.IsMouseOver) return;
+        if (FooterGrid != null && FooterGrid.IsMouseOver) return;
+
+        Point canvasMouse = TilesListBox != null ? e.GetPosition(TilesListBox) : e.GetPosition(this);
+        bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+
         var tileControl = FindParent<Presentation.Controls.TileControl>(dep);
 
         if (tileControl != null && tileControl.DataContext is TileModel tile)
         {
+            _preDragLayoutSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles);
+            _isRubberBanding = false;
             _draggedTile = tile;
             _draggedControl = tileControl;
             _draggedContainer = FindParent<ContentPresenter>(tileControl)
-                ?? TilesListBox.ItemContainerGenerator.ContainerFromItem(tile) as ContentPresenter;
+                ?? TilesListBox?.ItemContainerGenerator.ContainerFromItem(tile) as ContentPresenter;
             _dragStartPoint = e.GetPosition(this);
 
-            // Record exact pre-drag grid coordinates for collision/swap resolution
             _dragOriginalCol = GridPlacementService.ColFromPixel(tile.X);
             _dragOriginalRow = GridPlacementService.RowFromPixel(tile.Y);
 
-            // Calculate offset from mouse position to the tile's current top-left corner
-            // so the tile doesn't "jump" when dragging starts
-            Point mouseOnCanvas = e.GetPosition(TilesListBox);
-            _dragOffsetX = mouseOnCanvas.X - tile.X;
-            _dragOffsetY = mouseOnCanvas.Y - tile.Y;
+            _dragOffsetX = canvasMouse.X - tile.X;
+            _dragOffsetY = canvasMouse.Y - tile.Y;
+
+            if (isCtrlDown)
+            {
+                // Ctrl + Click toggles individual tile selection
+                tile.IsSelected = !tile.IsSelected;
+                _dragBeganWithSelection = tile.IsSelected;
+            }
+            else
+            {
+                // Normal Click:
+                // If clicked tile is already part of a multi-selection, preserve group for cluster dragging!
+                if (!tile.IsSelected)
+                {
+                    ClearTileSelection();
+                    tile.IsSelected = true;
+                    _dragBeganWithSelection = false;
+                }
+                else
+                {
+                    _dragBeganWithSelection = true;
+                }
+            }
+
+            // Gather all selected tiles into the cluster
+            if (tile.IsSelected)
+            {
+                _draggedCluster = Tiles.Where(t => t.IsSelected).ToList();
+            }
+            else
+            {
+                _draggedCluster = new List<TileModel> { tile };
+            }
+
+            // Record pre-drag coordinates and compute relative bounding box of the entire cluster
+            _dragClusterOriginals.Clear();
+            double minRelX = 0, maxRelX = tile.WidthPixels, minRelY = 0, maxRelY = tile.HeightPixels;
+            int minRelCol = 0, maxRelCol = tile.SpanX, minRelRow = 0, maxRelRow = tile.SpanY;
+
+            foreach (var cTile in _draggedCluster)
+            {
+                int cCol = GridPlacementService.ColFromPixel(cTile.X);
+                int cRow = GridPlacementService.RowFromPixel(cTile.Y);
+                _dragClusterOriginals[cTile] = (cTile.X, cTile.Y, cCol, cRow);
+
+                double relX = cTile.X - tile.X;
+                double relY = cTile.Y - tile.Y;
+                int relCol = cCol - _dragOriginalCol;
+                int relRow = cRow - _dragOriginalRow;
+
+                minRelX = Math.Min(minRelX, relX);
+                maxRelX = Math.Max(maxRelX, relX + cTile.WidthPixels);
+                minRelY = Math.Min(minRelY, relY);
+                maxRelY = Math.Max(maxRelY, relY + cTile.HeightPixels);
+
+                minRelCol = Math.Min(minRelCol, relCol);
+                maxRelCol = Math.Max(maxRelCol, relCol + cTile.SpanX);
+                minRelRow = Math.Min(minRelRow, relRow);
+                maxRelRow = Math.Max(maxRelRow, relRow + cTile.SpanY);
+            }
+
+            _clusterRelBounds = (minRelX, maxRelX, minRelY, maxRelY);
+            _clusterRelGridBounds = (minRelCol, maxRelCol, minRelRow, maxRelRow);
 
             _isPotentialDrag = true;
             _isDragging = false;
+            _draggedControl.AnimatePressDown();
         }
         else
         {
+            // Clicked on empty canvas
             _isPotentialDrag = false;
             _isDragging = false;
+            _draggedTile = null;
+            _draggedControl = null;
+            _draggedCluster.Clear();
+
+            if (FindParent<System.Windows.Controls.Button>(dep) != null ||
+                FindParent<ContextMenu>(dep) != null)
+            {
+                return;
+            }
+
+            // Begin rubber-band (marquee) box selection
+            _isRubberBanding = true;
+            _rubberBandHasMoved = false;
+            _rubberBandStartPoint = canvasMouse;
+            _preRubberBandSelected = new HashSet<TileModel>(Tiles.Where(t => t.IsSelected));
+
+            if (!isCtrlDown)
+            {
+                ClearTileSelection();
+                _preRubberBandSelected.Clear();
+            }
+
+            if (RubberBandBox != null)
+            {
+                Canvas.SetLeft(RubberBandBox, canvasMouse.X);
+                Canvas.SetTop(RubberBandBox, canvasMouse.Y);
+                RubberBandBox.Width = 0;
+                RubberBandBox.Height = 0;
+                RubberBandBox.Visibility = Visibility.Collapsed;
+            }
+
+            RootGrid.CaptureMouse();
         }
     }
 
     private void OnCanvasPreviewMouseMove(object sender, MouseEventArgs e)
     {
+        Point canvasMouse = TilesListBox != null ? e.GetPosition(TilesListBox) : e.GetPosition(this);
+
+        // 1. Rubber-Band Marquee Selection
+        if (_isRubberBanding)
+        {
+            Vector diff = canvasMouse - _rubberBandStartPoint;
+            if (Math.Abs(diff.X) > 3 || Math.Abs(diff.Y) > 3)
+            {
+                _rubberBandHasMoved = true;
+            }
+
+            if (_rubberBandHasMoved && RubberBandBox != null)
+            {
+                double left = Math.Min(_rubberBandStartPoint.X, canvasMouse.X);
+                double top = Math.Min(_rubberBandStartPoint.Y, canvasMouse.Y);
+                double width = Math.Abs(canvasMouse.X - _rubberBandStartPoint.X);
+                double height = Math.Abs(canvasMouse.Y - _rubberBandStartPoint.Y);
+
+                Canvas.SetLeft(RubberBandBox, left);
+                Canvas.SetTop(RubberBandBox, top);
+                RubberBandBox.Width = width;
+                RubberBandBox.Height = height;
+                RubberBandBox.Visibility = Visibility.Visible;
+
+                var marqueeRect = new Rect(left, top, width, height);
+                bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+
+                foreach (var t in Tiles)
+                {
+                    var tileRect = new Rect(t.X, t.Y, t.WidthPixels, t.HeightPixels);
+                    bool intersects = marqueeRect.IntersectsWith(tileRect);
+
+                    if (isCtrlDown)
+                    {
+                        t.IsSelected = intersects ? !_preRubberBandSelected.Contains(t) : _preRubberBandSelected.Contains(t);
+                    }
+                    else
+                    {
+                        t.IsSelected = intersects;
+                    }
+                }
+            }
+            return;
+        }
+
+        // 2. Drag threshold check (transition from press to active drag)
         if (_isPotentialDrag && !_isDragging && e.LeftButton == MouseButtonState.Pressed && _draggedTile != null)
         {
             Point current = e.GetPosition(this);
@@ -458,70 +789,113 @@ public partial class MainWindow : BorderlessFluentWindow
             if (Math.Abs(diff.X) > 5 || Math.Abs(diff.Y) > 5)
             {
                 _isDragging = true;
-                _draggedTile.IsBeingDragged = true;
                 ClearAllAmbientReveals();
+                RootGrid.CaptureMouse();
 
-                if (_draggedContainer != null)
+                foreach (var cTile in _draggedCluster)
                 {
-                    Panel.SetZIndex(_draggedContainer, 9999);
+                    cTile.IsBeingDragged = true;
+                    var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
+                    control?.AnimateElevationLift();
+
+                    var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
+                    if (container != null)
+                    {
+                        Panel.SetZIndex(container, 9999);
+                    }
                 }
 
-                // Show DropSlotIndicator with matching tile dimensions
-                DropSlotIndicator.Width = _draggedTile.WidthPixels;
-                DropSlotIndicator.Height = _draggedTile.HeightPixels;
+                // Show DropSlotIndicator matching cluster dimensions
+                DropSlotIndicator.Width = Math.Max(56, _clusterRelBounds.MaxRelX - _clusterRelBounds.MinRelX);
+                DropSlotIndicator.Height = Math.Max(56, _clusterRelBounds.MaxRelY - _clusterRelBounds.MinRelY);
                 DropSlotIndicator.Visibility = Visibility.Visible;
-
-                RootGrid.CaptureMouse();
             }
         }
 
-        if (!_isDragging && TilesListBox != null)
+        // 3. Ambient reveal when idle
+        if (!_isDragging && !_isRubberBanding && TilesListBox != null)
         {
-            Point canvasMouse = e.GetPosition(TilesListBox);
             UpdateAmbientReveal(canvasMouse);
         }
 
+        // 4. Rigid Multi-Tile Cluster Dragging
         if (_isDragging && _draggedTile != null)
         {
-            Point mouseOnCanvas = e.GetPosition(TilesListBox);
-
             UpdateLayoutMetrics();
             int maxCols = GridPlacementService.MaxCols;
-            int maxAllowedCol = Math.Max(0, maxCols - _draggedTile.SpanX);
-            double maxAllowedX = GridPlacementService.PixelXFromCol(maxAllowedCol);
 
-            // Calculate new tile position using the original click offset
-            double newX = mouseOnCanvas.X - _dragOffsetX;
-            double newY = mouseOnCanvas.Y - _dragOffsetY;
+            double rawAnchorX = canvasMouse.X - _dragOffsetX;
+            double rawAnchorY = canvasMouse.Y - _dragOffsetY;
 
-            // Strict boundary clamping: tiles NEVER go outside the window on the right or top/bottom
-            newX = Math.Max(GridPlacementService.OriginX, Math.Min(newX, maxAllowedX));
-            newY = Math.Max(GridPlacementService.OriginY, Math.Min(newY, 3000));
+            // Clamping bounds so the ENTIRE cluster stays within grid and window limits
+            double minAllowedAnchorX = GridPlacementService.OriginX - _clusterRelBounds.MinRelX;
+            double maxAllowedAnchorX = GridPlacementService.PixelXFromCol(maxCols) - _clusterRelBounds.MaxRelX;
+            double minAllowedAnchorY = GridPlacementService.OriginY - _clusterRelBounds.MinRelY;
 
-            // Fluid real-time drag position for the tile itself
-            _draggedTile.X = newX;
-            _draggedTile.Y = newY;
+            if (maxAllowedAnchorX < minAllowedAnchorX) maxAllowedAnchorX = minAllowedAnchorX;
 
-            if (_draggedContainer != null)
+            double clampedAnchorX = Math.Max(minAllowedAnchorX, Math.Min(rawAnchorX, maxAllowedAnchorX));
+            double clampedAnchorY = Math.Max(minAllowedAnchorY, Math.Min(rawAnchorY, 3000));
+
+            // Move every tile in the cluster rigidly preserving relative offsets
+            foreach (var cTile in _draggedCluster)
             {
-                Canvas.SetLeft(_draggedContainer, newX);
-                Canvas.SetTop(_draggedContainer, newY);
+                double relX = _dragClusterOriginals.TryGetValue(cTile, out var orig) ? orig.X - _dragClusterOriginals[_draggedTile].X : 0;
+                double relY = orig.Y - _dragClusterOriginals[_draggedTile].Y;
+
+                cTile.X = clampedAnchorX + relX;
+                cTile.Y = clampedAnchorY + relY;
+
+                var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
+                if (container != null)
+                {
+                    Canvas.SetLeft(container, cTile.X);
+                    Canvas.SetTop(container, cTile.Y);
+                }
             }
 
-            // Snapped target grid cell clamped within maxCols
-            int targetCol = Math.Min(GridPlacementService.ColFromPixel(newX), maxAllowedCol);
-            int targetRow = GridPlacementService.RowFromPixel(newY);
+            // Calculate snapped indicator position for the whole cluster
+            int minAllowedCol = -_clusterRelGridBounds.MinRelCol;
+            int maxAllowedCol = Math.Max(minAllowedCol, maxCols - _clusterRelGridBounds.MaxRelCol);
+            int anchorCol = Math.Clamp(GridPlacementService.ColFromPixel(clampedAnchorX), minAllowedCol, maxAllowedCol);
+            int anchorRow = Math.Max(-_clusterRelGridBounds.MinRelRow, GridPlacementService.RowFromPixel(clampedAnchorY));
 
-            double snappedX = GridPlacementService.PixelXFromCol(targetCol);
-            double snappedY = GridPlacementService.PixelYFromRow(targetRow);
+            double snappedAnchorX = GridPlacementService.PixelXFromCol(anchorCol);
+            double snappedAnchorY = GridPlacementService.PixelYFromRow(anchorRow);
 
-            Canvas.SetLeft(DropSlotIndicator, snappedX);
-            Canvas.SetTop(DropSlotIndicator, snappedY);
+            Canvas.SetLeft(DropSlotIndicator, snappedAnchorX + _clusterRelBounds.MinRelX);
+            Canvas.SetTop(DropSlotIndicator, snappedAnchorY + _clusterRelBounds.MinRelY);
         }
     }
 
     private void OnCanvasPreviewMouseUp(object sender, MouseButtonEventArgs e)
     {
+        // 1. Finishing Rubber-band Marquee Selection
+        if (_isRubberBanding)
+        {
+            _isRubberBanding = false;
+            RootGrid.ReleaseMouseCapture();
+
+            if (RubberBandBox != null)
+            {
+                RubberBandBox.Visibility = Visibility.Collapsed;
+            }
+
+            if (!_rubberBandHasMoved)
+            {
+                // Simple click on empty canvas: deselect all tiles
+                bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+                if (!isCtrlDown)
+                {
+                    ClearTileSelection();
+                }
+            }
+
+            e.Handled = true;
+            return;
+        }
+
+        // 2. Finishing Drag & Drop Placement
         if (_isDragging)
         {
             _isDragging = false;
@@ -531,29 +905,56 @@ public partial class MainWindow : BorderlessFluentWindow
 
             if (_draggedTile != null)
             {
-                _draggedTile.IsBeingDragged = false;
+                foreach (var cTile in _draggedCluster)
+                {
+                    cTile.IsBeingDragged = false;
+                }
 
                 UpdateLayoutMetrics();
                 int maxCols = GridPlacementService.MaxCols;
-                int maxAllowedCol = Math.Max(0, maxCols - _draggedTile.SpanX);
 
-                int targetCol = Math.Min(GridPlacementService.ColFromPixel(_draggedTile.X), maxAllowedCol);
-                int targetRow = GridPlacementService.RowFromPixel(_draggedTile.Y);
+                List<TileModel> modifiedTiles;
 
-                // Place tile and resolve swaps/displacements so tiles NEVER overlap
-                var modifiedTiles = GridPlacementService.PlaceAndResolveCollisions(
-                    _draggedTile, 
-                    targetCol, 
-                    targetRow, 
-                    _dragOriginalCol, 
-                    _dragOriginalRow, 
-                    maxCols, 
-                    Tiles);
+                if (_draggedCluster.Count <= 1)
+                {
+                    int maxAllowedCol = Math.Max(0, maxCols - _draggedTile.SpanX);
+                    int targetCol = Math.Min(GridPlacementService.ColFromPixel(_draggedTile.X), maxAllowedCol);
+                    int targetRow = GridPlacementService.RowFromPixel(_draggedTile.Y);
 
-                // Synchronize visual containers for all affected tiles
+                    modifiedTiles = GridPlacementService.PlaceAndResolveCollisions(
+                        _draggedTile,
+                        targetCol,
+                        targetRow,
+                        _dragOriginalCol,
+                        _dragOriginalRow,
+                        maxCols,
+                        Tiles);
+                }
+                else
+                {
+                    int minAllowedCol = -_clusterRelGridBounds.MinRelCol;
+                    int maxAllowedCol = Math.Max(minAllowedCol, maxCols - _clusterRelGridBounds.MaxRelCol);
+                    int anchorTargetCol = Math.Clamp(GridPlacementService.ColFromPixel(_draggedTile.X), minAllowedCol, maxAllowedCol);
+                    int anchorTargetRow = Math.Max(-_clusterRelGridBounds.MinRelRow, GridPlacementService.RowFromPixel(_draggedTile.Y));
+
+                    var origDict = _dragClusterOriginals.ToDictionary(k => k.Key, v => (v.Value.Col, v.Value.Row));
+
+                    modifiedTiles = GridPlacementService.PlaceClusterAndResolveCollisions(
+                        _draggedCluster,
+                        _draggedTile,
+                        anchorTargetCol,
+                        anchorTargetRow,
+                        _dragOriginalCol,
+                        _dragOriginalRow,
+                        maxCols,
+                        Tiles,
+                        origDict);
+                }
+
+                // Synchronize visual canvas layout for all affected tiles
                 foreach (var tile in modifiedTiles)
                 {
-                    var container = TilesListBox.ItemContainerGenerator.ContainerFromItem(tile) as ContentPresenter;
+                    var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(tile) as ContentPresenter;
                     if (container != null)
                     {
                         Canvas.SetLeft(container, tile.X);
@@ -562,6 +963,19 @@ public partial class MainWindow : BorderlessFluentWindow
                 }
 
                 UpdateCanvasHeight();
+            }
+
+            // Reset ZIndex and trigger AnimateRelease on all cluster tiles
+            foreach (var cTile in _draggedCluster)
+            {
+                var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
+                if (container != null)
+                {
+                    Panel.SetZIndex(container, 0);
+                }
+
+                var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
+                control?.AnimateRelease();
             }
 
             if (_draggedContainer != null)
@@ -573,27 +987,57 @@ public partial class MainWindow : BorderlessFluentWindow
             _draggedTile = null;
             _draggedControl = null;
 
-            // Immediately persist the clean layout to layout.json
+            UpdateExposedAddSlots();
+
+            // Persist the clean layout immediately to layout.json
             StorageService.SaveLayout(Tiles);
+
+            string postDropSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles);
+            if (!string.IsNullOrEmpty(_preDragLayoutSnapshot) && _preDragLayoutSnapshot != postDropSnapshot)
+            {
+                _historyService.PushState(_preDragLayoutSnapshot);
+            }
+            _preDragLayoutSnapshot = null;
+
             e.Handled = true;
             return;
         }
 
+        // 3. Potential Drag that was just a click (no drag distance exceeded)
         if (_isPotentialDrag)
         {
             _isPotentialDrag = false;
             var controlToLaunch = _draggedControl;
+            var clickedTile = _draggedTile;
             _draggedTile = null;
             _draggedControl = null;
             _draggedContainer = null;
 
-            if (controlToLaunch != null)
+            bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+
+            // If user clicked an already selected tile without Ctrl in a multi-selection group,
+            // single clicking collapses selection to just this tile
+            if (!isCtrlDown && _dragBeganWithSelection && _draggedCluster.Count > 1 && clickedTile != null)
             {
-                controlToLaunch.LaunchTile();
-                if (Settings.CloseOnLaunch)
+                ClearTileSelection();
+                clickedTile.IsSelected = true;
+            }
+
+            // Launch only on single unselected/individual click without Ctrl
+            if (!isCtrlDown && _draggedCluster.Count <= 1 && controlToLaunch != null)
+            {
+                controlToLaunch.AnimateRelease(() =>
                 {
-                    HideScreen();
-                }
+                    controlToLaunch.LaunchTile();
+                    if (Settings.CloseOnLaunch)
+                    {
+                        HideScreen();
+                    }
+                });
+            }
+            else
+            {
+                controlToLaunch?.AnimateRelease();
             }
             return;
         }
@@ -601,6 +1045,24 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private void OnCanvasMouseLeave(object sender, MouseEventArgs e)
     {
+        if (_isRubberBanding)
+        {
+            _isRubberBanding = false;
+            if (RubberBandBox != null) RubberBandBox.Visibility = Visibility.Collapsed;
+            RootGrid.ReleaseMouseCapture();
+        }
+
+        if (_isPotentialDrag && !_isDragging)
+        {
+            foreach (var cTile in _draggedCluster)
+            {
+                var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
+                control?.AnimateRelease();
+            }
+            _draggedControl?.AnimateRelease();
+            _draggedControl = null;
+            _isPotentialDrag = false;
+        }
         ClearAllAmbientReveals();
     }
 
@@ -679,8 +1141,115 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         if (e.OriginalSource is TileModel tile)
         {
+            string preUnpin = LayoutHistoryService.CaptureSnapshot(Tiles);
+            _historyService.PushState(preUnpin);
+
             Tiles.Remove(tile);
             StorageService.SaveLayout(Tiles);
+            UpdateExposedAddSlots();
+        }
+    }
+
+    private void OnTileModified(object sender, RoutedEventArgs e)
+    {
+        TileModel? tile = (e is TileModifiedEventArgs args ? args.Tile : e.OriginalSource as TileModel);
+        if (tile != null)
+        {
+            string preModify = LayoutHistoryService.CaptureSnapshot(Tiles);
+
+            UpdateLayoutMetrics();
+            int maxCols = GridPlacementService.MaxCols;
+
+            bool isResize = e is TileModifiedEventArgs tmArgs && tmArgs.IsResize;
+            int oldSpanX = (e is TileModifiedEventArgs tma) ? tma.OldSpanX : tile.SpanX;
+            int oldSpanY = (e is TileModifiedEventArgs tmb) ? tmb.OldSpanY : tile.SpanY;
+
+            if (isResize)
+            {
+                // Elevate the resizing tile so it morphs on top of sliding neighbors
+                var resizingContainer = TilesListBox.ItemContainerGenerator.ContainerFromItem(tile) as ContentPresenter;
+                if (resizingContainer != null)
+                {
+                    Panel.SetZIndex(resizingContainer, 50);
+                    Dispatcher.InvokeAsync(async () =>
+                    {
+                        await Task.Delay(260);
+                        Panel.SetZIndex(resizingContainer, 0);
+                    });
+                }
+
+                // Resolve collision using the Directional Push Engine (Right -> Left -> Down Accordion)
+                var modified = GridPlacementService.ResolveResizeExpansion(
+                    tile,
+                    oldSpanX,
+                    oldSpanY,
+                    tile.SpanX,
+                    tile.SpanY,
+                    maxCols,
+                    Tiles);
+
+                AnimateModifiedTiles(modified);
+            }
+            else
+            {
+                // Non-resize change (e.g. style change or lock position toggle)
+                StorageService.SaveLayout(Tiles);
+            }
+
+            DropSlotIndicator.Visibility = Visibility.Collapsed;
+            UpdateCanvasHeight();
+            UpdateExposedAddSlots();
+            StorageService.SaveLayout(Tiles);
+
+            string postModify = LayoutHistoryService.CaptureSnapshot(Tiles);
+            if (preModify != postModify)
+            {
+                _historyService.PushState(preModify);
+            }
+        }
+    }
+
+    private void AnimateModifiedTiles(IList<TileModel> modified)
+    {
+        foreach (var t in modified)
+        {
+            var container = TilesListBox.ItemContainerGenerator.ContainerFromItem(t) as ContentPresenter;
+            if (container != null)
+            {
+                double currentLeft = Canvas.GetLeft(container);
+                double currentTop = Canvas.GetTop(container);
+                if (double.IsNaN(currentLeft)) currentLeft = t.X;
+                if (double.IsNaN(currentTop)) currentTop = t.Y;
+
+                if (Math.Abs(currentLeft - t.X) > 0.5 || Math.Abs(currentTop - t.Y) > 0.5)
+                {
+                    var animX = new DoubleAnimation(currentLeft, t.X, TimeSpan.FromMilliseconds(220))
+                    {
+                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                    };
+                    var animY = new DoubleAnimation(currentTop, t.Y, TimeSpan.FromMilliseconds(220))
+                    {
+                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                    };
+                    animX.Completed += (s, ev) =>
+                    {
+                        Canvas.SetLeft(container, t.X);
+                        container.BeginAnimation(Canvas.LeftProperty, null);
+                    };
+                    animY.Completed += (s, ev) =>
+                    {
+                        Canvas.SetTop(container, t.Y);
+                        container.BeginAnimation(Canvas.TopProperty, null);
+                    };
+                    container.BeginAnimation(Canvas.LeftProperty, animX);
+                    container.BeginAnimation(Canvas.TopProperty, animY);
+                }
+                else
+                {
+                    Canvas.SetLeft(container, t.X);
+                    Canvas.SetTop(container, t.Y);
+                }
+            }
         }
     }
 
@@ -689,30 +1258,13 @@ public partial class MainWindow : BorderlessFluentWindow
         PromptAddTile();
     }
 
-    private void OnGhostTileMouseDown(object sender, MouseButtonEventArgs e)
+    public void UpdateExposedAddSlots()
     {
-        if (e.LeftButton == MouseButtonState.Pressed)
-        {
-            PromptAddTile();
-        }
+        // Exposed [+] slot button removed completely per user request
     }
 
-    private void OnGhostTileMouseEnter(object sender, MouseEventArgs e)
+    private void OnCanvasContextMenuClosed(object sender, RoutedEventArgs e)
     {
-        if (sender is Border b)
-        {
-            b.BorderBrush = new SolidColorBrush(Color.FromArgb(160, 255, 255, 255));
-            b.Background = new SolidColorBrush(Color.FromArgb(50, 255, 255, 255));
-        }
-    }
-
-    private void OnGhostTileMouseLeave(object sender, MouseEventArgs e)
-    {
-        if (sender is Border b)
-        {
-            b.BorderBrush = new SolidColorBrush(Color.FromArgb(68, 255, 255, 255));
-            b.Background = new SolidColorBrush(Color.FromArgb(26, 255, 255, 255));
-        }
     }
 
     public void PromptAddTile()
@@ -727,11 +1279,14 @@ public partial class MainWindow : BorderlessFluentWindow
                 Multiselect = true
             };
 
-            if (dialog.ShowDialog() == true)
+            if (dialog.ShowDialog() == true && dialog.FileNames.Length > 0)
             {
+                string preAdd = LayoutHistoryService.CaptureSnapshot(Tiles);
+                _historyService.PushState(preAdd);
+
                 foreach (string file in dialog.FileNames)
                 {
-                    AddFileAsTile(file);
+                    AddFileAsTile(file, _canvasRightClickPoint.X, _canvasRightClickPoint.Y, recordHistory: false);
                 }
             }
         }
@@ -741,10 +1296,15 @@ public partial class MainWindow : BorderlessFluentWindow
         }
     }
 
-    public void AddFileAsTile(string filePath, double x = 0, double y = 0)
+    public void AddFileAsTile(string filePath, double x = 0, double y = 0, bool recordHistory = true)
     {
         if (File.Exists(filePath) || Directory.Exists(filePath))
         {
+            if (recordHistory)
+            {
+                string preAdd = LayoutHistoryService.CaptureSnapshot(Tiles);
+                _historyService.PushState(preAdd);
+            }
             string title = Path.GetFileNameWithoutExtension(filePath);
             string? iconPath = IconExtractorService.ExtractAndCacheIcon(filePath);
 
@@ -773,6 +1333,7 @@ public partial class MainWindow : BorderlessFluentWindow
             Tiles.Add(tile);
             StorageService.SaveLayout(Tiles);
             UpdateCanvasHeight();
+            UpdateExposedAddSlots();
         }
     }
 
@@ -782,9 +1343,39 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         DependencyObject? dep = e.OriginalSource as DependencyObject;
         var tileControl = FindParent<Presentation.Controls.TileControl>(dep);
-        if (tileControl == null && TilesListBox != null)
+
+        if (tileControl != null && tileControl.DataContext is TileModel tile)
         {
-            _canvasRightClickPoint = e.GetPosition(TilesListBox);
+            bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+
+            if (isCtrlDown)
+            {
+                tile.IsSelected = !tile.IsSelected;
+            }
+            else
+            {
+                // If clicked tile is already part of a multi-tile selection, keep the group!
+                // If not, clear others and select this tile (like Windows Explorer)
+                if (!tile.IsSelected)
+                {
+                    ClearTileSelection();
+                    tile.IsSelected = true;
+                }
+            }
+        }
+        else
+        {
+            if (TilesListBox != null)
+            {
+                _canvasRightClickPoint = e.GetPosition(TilesListBox);
+            }
+
+            // Right-clicked empty canvas: deselect tiles unless Ctrl is held
+            bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+            if (!isCtrlDown)
+            {
+                ClearTileSelection();
+            }
         }
     }
 
@@ -963,6 +1554,16 @@ public partial class MainWindow : BorderlessFluentWindow
         int spanX = item.SpanX > 0 ? item.SpanX : 2;
         int spanY = item.SpanY > 0 ? item.SpanY : 2;
 
+        // Context-aware sizing: If target slot has room for 1x1 but not full 2x2, adapt down to 1x1
+        if (GridPlacementService.IsRegionFree(col, row, 1, 1, Tiles))
+        {
+            if (!GridPlacementService.IsRegionFree(col, row, spanX, spanY, Tiles))
+            {
+                spanX = 1;
+                spanY = 1;
+            }
+        }
+
         int clampedCol = Math.Max(0, Math.Min(col, maxCols - spanX));
         int clampedRow = Math.Max(0, row);
 
@@ -993,6 +1594,8 @@ public partial class MainWindow : BorderlessFluentWindow
         Tiles.Add(tile);
         StorageService.SaveLayout(Tiles);
         UpdateCanvasHeight();
+
+        UpdateExposedAddSlots();
     }
 
     #endregion
@@ -1037,6 +1640,11 @@ public partial class MainWindow : BorderlessFluentWindow
         }
     }
 
+    private void OnWindowDragLeave(object sender, DragEventArgs e)
+    {
+        UpdateExposedAddSlots();
+    }
+
     private void OnWindowDrop(object sender, DragEventArgs e)
     {
         if (e.Data.GetDataPresent(DataFormats.FileDrop))
@@ -1044,18 +1652,22 @@ public partial class MainWindow : BorderlessFluentWindow
             string[]? files = e.Data.GetData(DataFormats.FileDrop) as string[];
             if (files != null && files.Length > 0)
             {
+                string preDrop = LayoutHistoryService.CaptureSnapshot(Tiles);
+                _historyService.PushState(preDrop);
+
                 Point pos = e.GetPosition(TilesListBox);
                 double currentX = Math.Max(0, pos.X);
                 double currentY = Math.Max(0, pos.Y);
                 foreach (string file in files)
                 {
-                    AddFileAsTile(file, currentX, currentY);
+                    AddFileAsTile(file, currentX, currentY, recordHistory: false);
                     currentX += 70; // offset slightly for multiple files
                     currentY += 70;
                 }
                 e.Handled = true;
             }
         }
+        UpdateExposedAddSlots();
     }
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)

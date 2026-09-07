@@ -22,6 +22,7 @@
         SourceInitialized="OnSourceInitialized"
         AllowDrop="True"
         DragOver="OnWindowDragOver"
+        DragLeave="OnWindowDragLeave"
         Drop="OnWindowDrop">
 
     <!-- WPF Transparent brush passes mouse hit-tests while remaining invisible so DWM Mica renders directly -->
@@ -118,7 +119,8 @@
                   PreviewMouseRightButtonDown="OnCanvasPreviewMouseRightButtonDown">
                 <Grid.ContextMenu>
                     <ContextMenu x:Name="CanvasContextMenu"
-                                 Opened="OnCanvasContextMenuOpened">
+                                 Opened="OnCanvasContextMenuOpened"
+                                 Closed="OnCanvasContextMenuClosed">
                         <!-- Modular Catalogs: Apps -->
                         <MenuItem x:Name="AppsMenuItem"
                                   Header="Apps"
@@ -162,18 +164,29 @@
                         </MenuItem>
                     </ContextMenu>
                 </Grid.ContextMenu>
-                <!-- Drop Target Slot Indicator (snaps to grid in real-time beneath tiles) -->
-                <Canvas x:Name="DropIndicatorCanvas" IsHitTestVisible="False">
+                <!-- Drop Target Slot Indicator (snaps to grid in real-time) -->
+                <Canvas x:Name="DropIndicatorCanvas" IsHitTestVisible="False" Panel.ZIndex="2000">
                     <Border x:Name="DropSlotIndicator"
                             Visibility="Collapsed"
                             CornerRadius="2"
                             BorderThickness="1.5"
-                            BorderBrush="#9060CDFF"
-                            Background="#2560CDFF">
+                            BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
+                            Background="#3060CDFF">
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.5" Color="#60CDFF" />
+                            <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.6" Color="#60CDFF" />
                         </Border.Effect>
                     </Border>
+                </Canvas>
+
+                <!-- Rubber-band (Marquee) Multi-Tile Selection Box -->
+                <Canvas x:Name="RubberBandCanvas" IsHitTestVisible="False" Panel.ZIndex="3000">
+                    <Rectangle x:Name="RubberBandBox"
+                               Visibility="Collapsed"
+                               Fill="#2560CDFF"
+                               Stroke="{DynamicResource SystemAccentColorPrimaryBrush}"
+                               StrokeThickness="1"
+                               RadiusX="3"
+                               RadiusY="3" />
                 </Canvas>
 
                 <!-- ItemsControl with Canvas panel: free-placement grid -->
@@ -191,7 +204,8 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <controls:TileControl TileActivated="OnTileActivated"
-                                                  TileUnpinned="OnTileUnpinned" />
+                                                  TileUnpinned="OnTileUnpinned"
+                                                  TileModified="OnTileModified" />
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
 
@@ -203,6 +217,7 @@
                         </Style>
                     </ItemsControl.ItemContainerStyle>
                 </ItemsControl>
+
             </Grid>
         </ScrollViewer>
 
