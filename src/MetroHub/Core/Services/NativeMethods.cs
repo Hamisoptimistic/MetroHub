@@ -194,8 +194,28 @@ public static class NativeMethods
 
     #region Process Launching
 
+    private static readonly object _launchLock = new();
+    private static string? _lastLaunchKey;
+    private static DateTime _lastLaunchTime = DateTime.MinValue;
+
     public static bool LaunchTarget(string path, string? args = null, bool runAsAdmin = false)
     {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+
+        string launchKey = $"{path.Trim()}|{args?.Trim()}|{runAsAdmin}";
+        lock (_launchLock)
+        {
+            var now = DateTime.UtcNow;
+            if (string.Equals(_lastLaunchKey, launchKey, StringComparison.OrdinalIgnoreCase) &&
+                (now - _lastLaunchTime).TotalMilliseconds < 800)
+            {
+                return false;
+            }
+
+            _lastLaunchKey = launchKey;
+            _lastLaunchTime = now;
+        }
+
         try
         {
             var psi = new ProcessStartInfo

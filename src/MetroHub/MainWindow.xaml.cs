@@ -419,25 +419,45 @@ public partial class MainWindow : BorderlessFluentWindow
         bool isCtrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
         bool isShift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
 
-        if (isCtrl && e.Key == Key.Z)
+        if (isCtrl && (e.Key == Key.Z || e.Key == Key.Y))
         {
-            if (isShift)
+            if (IsTextInputFocused())
+            {
+                return; // Allow focused TextBox to handle text undo/redo normally
+            }
+
+            if (e.Key == Key.Z)
+            {
+                if (isShift)
+                {
+                    ExecuteRedo();
+                }
+                else
+                {
+                    ExecuteUndo();
+                }
+            }
+            else if (e.Key == Key.Y)
             {
                 ExecuteRedo();
-            }
-            else
-            {
-                ExecuteUndo();
             }
             e.Handled = true;
             return;
         }
 
-        if (isCtrl && e.Key == Key.Y)
+        if (e.Key == Key.Delete)
         {
-            ExecuteRedo();
-            e.Handled = true;
-            return;
+            if (IsTextInputFocused())
+            {
+                return; // Allow focused TextBox to delete characters normally
+            }
+
+            if (Tiles.Any(t => t.IsSelected))
+            {
+                DeleteSelectedTiles();
+                e.Handled = true;
+                return;
+            }
         }
 
         if (e.Key == Key.Escape)
@@ -481,6 +501,8 @@ public partial class MainWindow : BorderlessFluentWindow
     private int _dragOriginalRow;
     private bool _isPotentialDrag;
     private bool _isDragging;
+    private bool _isLaunchingTile;
+    private DateTime _lastTileLaunchTime = DateTime.MinValue;
     private const int GroupColWidth = 8;
     private TileGroupModel? _hoveredTargetGroup;
     private bool _isGroupDrag;
@@ -1486,19 +1508,41 @@ public partial class MainWindow : BorderlessFluentWindow
             _draggedTile = null;
             _draggedControl = null;
             _draggedContainer = null;
+            _draggedCluster.Clear();
 
             bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
 
             // Normal left click on any tile launches it immediately and clears selection
             if (!isCtrlDown && controlToLaunch != null)
             {
+                var now = DateTime.UtcNow;
+                if (_isLaunchingTile || (now - _lastTileLaunchTime).TotalMilliseconds < 800)
+                {
+                    controlToLaunch.AnimateRelease();
+                    return;
+                }
+
+                _isLaunchingTile = true;
+                _lastTileLaunchTime = now;
+
                 ClearTileSelection();
                 controlToLaunch.AnimateRelease(() =>
                 {
-                    controlToLaunch.LaunchTile();
-                    if (Settings.CloseOnLaunch)
+                    try
                     {
-                        HideScreen();
+                        controlToLaunch.LaunchTile();
+                        if (Settings.CloseOnLaunch)
+                        {
+                            HideScreen();
+                        }
+                    }
+                    finally
+                    {
+                        Dispatcher.InvokeAsync(async () =>
+                        {
+                            await Task.Delay(500);
+                            _isLaunchingTile = false;
+                        });
                     }
                 });
             }
@@ -1704,6 +1748,16 @@ public partial class MainWindow : BorderlessFluentWindow
         return null;
     }
 
+    private static bool IsTextInputFocused()
+    {
+        var focused = Keyboard.FocusedElement as DependencyObject;
+        if (focused == null) return false;
+        if (focused is System.Windows.Controls.Primitives.TextBoxBase || focused is System.Windows.Controls.PasswordBox)
+            return true;
+        return FindParent<System.Windows.Controls.Primitives.TextBoxBase>(focused) != null
+            || FindParent<System.Windows.Controls.PasswordBox>(focused) != null;
+    }
+
     private bool IsInteractive(DependencyObject? obj)
     {
         while (obj != null && obj != this)
@@ -1878,6 +1932,13 @@ public partial class MainWindow : BorderlessFluentWindow
         }
     }
 
+    public void DeleteSelectedTiles()
+    {
+        var targets = SelectedTiles.ToList();
+        if (targets.Count == 0) return;
+        BatchUnpinTiles(targets);
+    }
+
     public void BatchUnpinSelectedTiles(TileModel anchorTile)
     {
         List<TileModel> targets;
@@ -1890,11 +1951,36 @@ public partial class MainWindow : BorderlessFluentWindow
             targets = new List<TileModel> { anchorTile };
         }
 
+        BatchUnpinTiles(targets);
+    }
+
+    public void BatchUnpinTiles(IList<TileModel> targets)
+    {
+        if (targets == null || targets.Count == 0) return;
+
+        // Never delete tiles that are locked or in a locked group
+        var eligible = targets
+            .Where(t => !t.IsLocked && !(t.Group != null && Groups.FirstOrDefault(g => g.Id == t.Group)?.IsLocked == true))
+            .ToList();
+
+        if (eligible.Count == 0)
+        {
+            var lockedGroup = targets
+                .Where(t => t.Group != null)
+                .Select(t => Groups.FirstOrDefault(g => g.Id == t.Group))
+                .FirstOrDefault(g => g != null && g.IsLocked);
+            if (lockedGroup != null)
+            {
+                FlashLockedGroupPerimeter(lockedGroup);
+            }
+            return;
+        }
+
         string preUnpin = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
         _historyService.PushState(preUnpin);
 
         // Track affected groups and their old bounding box bottom before removing tiles
-        var affectedGroups = targets
+        var affectedGroups = eligible
             .Where(t => !string.IsNullOrEmpty(t.Group))
             .Select(t => Groups.FirstOrDefault(g => g.Id == t.Group))
             .Where(g => g != null)
@@ -1905,7 +1991,7 @@ public partial class MainWindow : BorderlessFluentWindow
             g => g!,
             g => GridPlacementService.GetGroupBoundingBox(g!, Tiles).MaxRow);
 
-        foreach (var t in targets)
+        foreach (var t in eligible)
         {
             Tiles.Remove(t);
         }
@@ -1928,7 +2014,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
         AnimateModifiedTiles(modified);
         CleanEmptyGroupsAndReflow();
-        UpdateGroupHeaderPositions();
+        UpdateGroupHeaderPositions(animate: true);
         SaveGroupsAndLayout();
         UpdateCanvasHeight();
         UpdateExposedAddSlots();

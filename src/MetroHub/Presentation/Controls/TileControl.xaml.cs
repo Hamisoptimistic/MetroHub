@@ -139,10 +139,26 @@ public partial class TileControl : UserControl
         }
     }
 
+    private static DateTime _lastControlLaunchTime = DateTime.MinValue;
+    private static string? _lastControlLaunchPath;
+    private static readonly object _controlLaunchLock = new();
+
     public void LaunchTile()
     {
         if (DataContext is TileModel tile && !string.IsNullOrWhiteSpace(tile.TargetPath))
         {
+            lock (_controlLaunchLock)
+            {
+                var now = DateTime.UtcNow;
+                if (string.Equals(_lastControlLaunchPath, tile.TargetPath, StringComparison.OrdinalIgnoreCase) &&
+                    (now - _lastControlLaunchTime).TotalMilliseconds < 800)
+                {
+                    return;
+                }
+                _lastControlLaunchPath = tile.TargetPath;
+                _lastControlLaunchTime = now;
+            }
+
             NativeMethods.LaunchTarget(tile.TargetPath, tile.Arguments, tile.RunAsAdmin);
             RaiseEvent(new RoutedEventArgs(TileActivatedEvent, tile));
         }
@@ -180,21 +196,33 @@ public partial class TileControl : UserControl
 
     public void AnimateRelease(Action? onCompleted = null)
     {
-        var anim = new DoubleAnimation(TileScale.ScaleX, 1.0, TimeSpan.FromMilliseconds(80))
+        var animX = new DoubleAnimation(TileScale.ScaleX, 1.0, TimeSpan.FromMilliseconds(80))
         {
             EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
         };
-        anim.Completed += (s, e) =>
+        var animY = new DoubleAnimation(TileScale.ScaleY, 1.0, TimeSpan.FromMilliseconds(80))
         {
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        bool completedFired = false;
+        void OnAnimationDone()
+        {
+            if (completedFired) return;
+            completedFired = true;
+
             TileScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
             TileScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
             TileScale.ScaleX = 1.0;
             TileScale.ScaleY = 1.0;
             RootBorder.Effect = null;
             onCompleted?.Invoke();
-        };
-        TileScale.BeginAnimation(ScaleTransform.ScaleXProperty, anim);
-        TileScale.BeginAnimation(ScaleTransform.ScaleYProperty, anim);
+        }
+
+        animX.Completed += (s, e) => OnAnimationDone();
+
+        TileScale.BeginAnimation(ScaleTransform.ScaleXProperty, animX);
+        TileScale.BeginAnimation(ScaleTransform.ScaleYProperty, animY);
     }
 
     public void ApplyTileStyle(bool animate)
