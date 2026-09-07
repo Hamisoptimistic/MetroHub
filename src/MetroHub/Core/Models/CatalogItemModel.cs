@@ -82,12 +82,79 @@ public class CatalogItemModel : INotifyPropertyChanged
         set => SetField(ref _tag, value);
     }
 
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource> _memoryIconCache = new(StringComparer.OrdinalIgnoreCase);
+
+    public static bool HasMemoryCachedIcon(string targetPath)
+    {
+        return !string.IsNullOrWhiteSpace(targetPath) && _memoryIconCache.ContainsKey(targetPath);
+    }
+
+    public static void PrewarmMemoryCache(IEnumerable<CatalogItemModel> items)
+    {
+        if (items == null) return;
+        Task.Run(() =>
+        {
+            foreach (var item in items)
+            {
+                if (string.IsNullOrWhiteSpace(item.TargetPath)) continue;
+                if (_memoryIconCache.ContainsKey(item.TargetPath)) continue;
+
+                try
+                {
+                    string? cached = IconExtractorService.ExtractAndCacheIcon(item.TargetPath);
+                    if (!string.IsNullOrWhiteSpace(cached))
+                    {
+                        App.Current?.Dispatcher?.InvokeAsync(() =>
+                        {
+                            GetOrCreateBitmapImage(cached, item.TargetPath);
+                        }, System.Windows.Threading.DispatcherPriority.Background);
+                    }
+                }
+                catch { }
+            }
+        });
+    }
+
+    private static ImageSource? GetOrCreateBitmapImage(string cachedPath, string targetPath)
+    {
+        if (_memoryIconCache.TryGetValue(targetPath, out var existing))
+        {
+            return existing;
+        }
+
+        try
+        {
+            var bi = new BitmapImage();
+            bi.BeginInit();
+            bi.UriSource = new Uri(cachedPath, UriKind.Absolute);
+            bi.CacheOption = BitmapCacheOption.OnLoad;
+            bi.DecodePixelWidth = 24; // Lightweight 24px menu thumbnail (<2.5 KB RAM per app)
+            bi.EndInit();
+            bi.Freeze();
+
+            _memoryIconCache[targetPath] = bi;
+            return bi;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     [System.Text.Json.Serialization.JsonIgnore]
     public ImageSource? Icon
     {
         get
         {
-            if (_icon == null && !_isIconLoading && !string.IsNullOrWhiteSpace(_targetPath))
+            if (_icon != null) return _icon;
+
+            if (!string.IsNullOrWhiteSpace(_targetPath) && _memoryIconCache.TryGetValue(_targetPath, out var memImg))
+            {
+                _icon = memImg;
+                return _icon;
+            }
+
+            if (!_isIconLoading && !string.IsNullOrWhiteSpace(_targetPath))
             {
                 _isIconLoading = true;
                 LoadIconInBackground();
@@ -108,19 +175,12 @@ public class CatalogItemModel : INotifyPropertyChanged
                 {
                     App.Current?.Dispatcher?.InvokeAsync(() =>
                     {
-                        try
+                        var bi = GetOrCreateBitmapImage(cached, _targetPath);
+                        if (bi != null)
                         {
-                            var bi = new BitmapImage();
-                            bi.BeginInit();
-                            bi.UriSource = new Uri(cached, UriKind.Absolute);
-                            bi.CacheOption = BitmapCacheOption.OnDemand;
-                            bi.DecodePixelWidth = 24; // Lightweight 24px menu thumbnail
-                            bi.EndInit();
-                            bi.Freeze();
                             Icon = bi;
                         }
-                        catch { }
-                    });
+                    }, System.Windows.Threading.DispatcherPriority.Background);
                 }
             }
             catch { }

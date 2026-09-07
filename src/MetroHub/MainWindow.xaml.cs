@@ -54,7 +54,11 @@ public partial class MainWindow : BorderlessFluentWindow
         SizeChanged += (s, e) => { UpdateLayoutMetrics(); UpdateCanvasHeight(); UpdateExposedAddSlots(); };
 
         InstalledAppsService.AppsCatalogChanged += OnAppsCatalogChanged;
-        Task.Run(() => InstalledAppsService.GetInstalledApps(forceRefresh: false));
+        Task.Run(() =>
+        {
+            var apps = InstalledAppsService.GetInstalledApps(forceRefresh: false);
+            CatalogItemModel.PrewarmMemoryCache(apps);
+        });
     }
 
     private DateTime _lastShownTime = DateTime.MinValue;
@@ -2665,6 +2669,8 @@ public partial class MainWindow : BorderlessFluentWindow
             if (provider != null)
             {
                 var items = await provider.GetItemsAsync();
+
+                _ = Task.Run(() => CatalogItemModel.PrewarmMemoryCache(items));
 
                 AppsMenuItem.Items.Clear();
                 foreach (var item in items)

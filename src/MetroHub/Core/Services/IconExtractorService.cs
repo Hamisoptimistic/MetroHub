@@ -20,6 +20,8 @@ public static class IconExtractorService
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "MetroHub", "icons");
 
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _iconPathCache = new(StringComparer.OrdinalIgnoreCase);
+
     private static readonly Guid IID_IShellItemImageFactory = new Guid("bcc18b79-ba16-442f-80c4-8a59c30c463b");
 
     [StructLayout(LayoutKind.Sequential)]
@@ -286,6 +288,11 @@ public static class IconExtractorService
     {
         if (string.IsNullOrWhiteSpace(filePath)) return null;
 
+        if (_iconPathCache.TryGetValue(filePath, out var memoized) && File.Exists(memoized))
+        {
+            return memoized;
+        }
+
         try
         {
             string resolvedPath = ResolveShortcutTarget(filePath);
@@ -295,15 +302,15 @@ public static class IconExtractorService
             string hashName = $"v4_{Math.Abs(keyPath.ToLowerInvariant().GetHashCode())}.png";
             string cachedFilePath = Path.Combine(IconCacheDir, hashName);
 
-            // Fast header check: if already cached and high-res (>= 32px), return existing
+            // Fast check: if already cached on disk, return existing without opening stream
             if (File.Exists(cachedFilePath))
             {
                 try
                 {
-                    using var stream = new FileStream(cachedFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
-                    if (decoder.Frames.Count > 0 && decoder.Frames[0].PixelWidth >= 32)
+                    var fi = new FileInfo(cachedFilePath);
+                    if (fi.Length > 200)
                     {
+                        _iconPathCache[filePath] = cachedFilePath;
                         return cachedFilePath;
                     }
                 }
@@ -323,6 +330,7 @@ public static class IconExtractorService
                     encoder.Frames.Add(BitmapFrame.Create(bs));
                     encoder.Save(fs);
                 }
+                _iconPathCache[filePath] = cachedFilePath;
                 return cachedFilePath;
             }
         }

@@ -134,11 +134,13 @@
                                     <Setter Property="MaxHeight" Value="500" />
                                     <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
                                     <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+                                    <Setter Property="CanContentScroll" Value="True" />
                                 </Style>
                                 <Style TargetType="{x:Type ScrollViewer}">
                                     <Setter Property="MaxHeight" Value="500" />
                                     <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
                                     <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+                                    <Setter Property="CanContentScroll" Value="True" />
                                 </Style>
                             </MenuItem.Resources>
                             <MenuItem Header="Loading applications..." IsEnabled="False" />
