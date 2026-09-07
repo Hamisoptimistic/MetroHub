@@ -948,7 +948,7 @@ public partial class MainWindow : BorderlessFluentWindow
         }
 
         // 4. Rigid Multi-Tile Cluster Dragging
-        if (_isDragging && _draggedTile != null)
+        if (_isDragging && (_draggedTile != null || (_isGroupDrag && _draggedGroupModel != null)))
         {
             UpdateLayoutMetrics();
             int maxCols = GridPlacementService.MaxCols;
@@ -974,19 +974,22 @@ public partial class MainWindow : BorderlessFluentWindow
             double clampedAnchorY = Math.Max(minAllowedAnchorY, Math.Min(rawAnchorY, 3000));
 
             // Move every tile in the cluster rigidly preserving relative offsets
-            foreach (var cTile in _draggedCluster)
+            if (_draggedTile != null)
             {
-                double relX = _dragClusterOriginals.TryGetValue(cTile, out var orig) ? orig.X - _dragClusterOriginals[_draggedTile].X : 0;
-                double relY = orig.Y - _dragClusterOriginals[_draggedTile].Y;
-
-                cTile.X = clampedAnchorX + relX;
-                cTile.Y = clampedAnchorY + relY;
-
-                var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
-                if (container != null)
+                foreach (var cTile in _draggedCluster)
                 {
-                    Canvas.SetLeft(container, cTile.X);
-                    Canvas.SetTop(container, cTile.Y);
+                    double relX = _dragClusterOriginals.TryGetValue(cTile, out var orig) ? orig.X - _dragClusterOriginals[_draggedTile].X : 0;
+                    double relY = orig.Y - _dragClusterOriginals[_draggedTile].Y;
+
+                    cTile.X = clampedAnchorX + relX;
+                    cTile.Y = clampedAnchorY + relY;
+
+                    var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
+                    if (container != null)
+                    {
+                        Canvas.SetLeft(container, cTile.X);
+                        Canvas.SetTop(container, cTile.Y);
+                    }
                 }
             }
 
@@ -996,7 +999,7 @@ public partial class MainWindow : BorderlessFluentWindow
             int anchorCol = Math.Max(0, Math.Clamp(GridPlacementService.ColFromPixel(clampedAnchorX), minAllowedCol, maxAllowedCol));
 
             int minAllowedRow = _isGroupDrag
-                ? Math.Max(1, Math.Max(-_clusterRelGridBounds.MinRelRow, 1 - _clusterRelGridBounds.MinRelRow))
+                ? (_draggedTile != null ? Math.Max(1, Math.Max(-_clusterRelGridBounds.MinRelRow, 1 - _clusterRelGridBounds.MinRelRow)) : 0)
                 : Math.Max(0, -_clusterRelGridBounds.MinRelRow);
             int anchorRow = Math.Max(minAllowedRow, GridPlacementService.RowFromPixel(clampedAnchorY));
 
@@ -1194,9 +1197,12 @@ public partial class MainWindow : BorderlessFluentWindow
                     Tiles);
 
                 AnimateModifiedTiles(modified);
-                UpdateGroupHeaderPositions();
+                UpdateGroupHeaderPositions(animate: true);
                 UpdateCanvasHeight();
                 SaveGroupsAndLayout();
+
+                var gc = GroupsListBox?.ItemContainerGenerator.ContainerFromItem(movedGroup) as ContentPresenter;
+                if (gc != null) Panel.SetZIndex(gc, 0);
 
                 foreach (var cTile in _draggedCluster)
                 {
@@ -1662,6 +1668,8 @@ public partial class MainWindow : BorderlessFluentWindow
         foreach (var g in Groups)
         {
             g.IsBeingDragged = false;
+            var gc = GroupsListBox?.ItemContainerGenerator.ContainerFromItem(g) as ContentPresenter;
+            if (gc != null) Panel.SetZIndex(gc, 0);
         }
 
         _draggedCluster.Clear();
@@ -3127,10 +3135,63 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void StartGroupDrag(TileGroupModel group, MouseEventArgs e)
     {
-        var members = Tiles.Where(t => t.Group == group.Id).ToList();
-        if (members.Count == 0) return;
+        if (group.IsLocked) return;
 
         ClearTileSelection();
+        _preDragLayoutSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
+
+        var members = Tiles.Where(t => t.Group == group.Id).ToList();
+        Point canvasMouse = TilesListBox != null ? e.GetPosition(TilesListBox) : e.GetPosition(this);
+
+        var gc = GroupsListBox?.ItemContainerGenerator.ContainerFromItem(group) as ContentPresenter;
+        if (gc != null) Panel.SetZIndex(gc, 9999);
+
+        if (members.Count == 0)
+        {
+            _draggedTile = null;
+            _draggedControl = null;
+            _draggedContainer = null;
+            _dragStartPoint = e.GetPosition(this);
+
+            int gCol = group.Col >= 0 ? group.Col : GridPlacementService.GetColumnStartCol(group.ColumnIndex);
+            int gRow = Math.Max(0, group.Row);
+            double gX = GridPlacementService.PixelXFromCol(gCol);
+            double gY = GridPlacementService.PixelYFromRow(gRow) + 8;
+
+            _dragOriginalCol = gCol;
+            _dragOriginalRow = gRow;
+            _dragOffsetX = canvasMouse.X - gX;
+            _dragOffsetY = canvasMouse.Y - gY;
+            _dragBeganWithSelection = false;
+
+            _draggedCluster = members;
+            _dragClusterOriginals.Clear();
+
+            _clusterRelBounds = (0, GridPlacementService.GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap, 0, GridPlacementService.GridStep);
+            _clusterRelGridBounds = (0, GridPlacementService.GroupColWidth, 0, 1);
+
+            _isPotentialDrag = false;
+            _isDragging = true;
+            _isGroupDrag = true;
+            _draggedGroupModel = group;
+            _draggedGroupOffsetX = 0;
+            _draggedGroupOffsetY = 0;
+            _draggedPlateOffsetX = 0;
+            _draggedPlateOffsetY = 0;
+            group.IsBeingDragged = true;
+
+            RootGrid.CaptureMouse();
+            DropSlotIndicator.Visibility = Visibility.Collapsed;
+            if (GroupInsertionLine != null)
+            {
+                GroupInsertionLine.Width = GridPlacementService.GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
+                Canvas.SetLeft(GroupInsertionLine, GridPlacementService.PixelXFromCol(gCol));
+                Canvas.SetTop(GroupInsertionLine, group.Y);
+                GroupInsertionLine.Visibility = Visibility.Visible;
+            }
+            return;
+        }
+
         foreach (var m in members)
         {
             m.IsSelected = true;
@@ -3138,13 +3199,11 @@ public partial class MainWindow : BorderlessFluentWindow
 
         var anchor = members.OrderBy(t => t.Row).ThenBy(t => t.Col).First();
 
-        _preDragLayoutSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
         _draggedTile = anchor;
         _draggedControl = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, anchor));
         _draggedContainer = TilesListBox?.ItemContainerGenerator.ContainerFromItem(anchor) as ContentPresenter;
         _dragStartPoint = e.GetPosition(this);
 
-        Point canvasMouse = TilesListBox != null ? e.GetPosition(TilesListBox) : e.GetPosition(this);
         _dragOriginalCol = GridPlacementService.ColFromPixel(anchor.X);
         _dragOriginalRow = GridPlacementService.RowFromPixel(anchor.Y);
         _dragOffsetX = canvasMouse.X - anchor.X;

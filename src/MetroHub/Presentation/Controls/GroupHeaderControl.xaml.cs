@@ -208,6 +208,8 @@ public partial class GroupHeaderControl : UserControl
 
         if (e.LeftButton == MouseButtonState.Pressed && DataContext is TileGroupModel group)
         {
+            if (group.IsLocked) return;
+
             Point current = e.GetPosition(this);
             Vector diff = current - _dragStartPoint;
 
