@@ -55,10 +55,37 @@ public static class GridPlacementService
                r1 + sy1 > r2;
     }
 
-    public static bool IsRegionFree(int col, int row, int spanX, int spanY, IEnumerable<TileModel> tiles, TileModel? ignoreTile = null, int maxCols = int.MaxValue)
+    public static bool IsRegionFree(
+        int col,
+        int row,
+        int spanX,
+        int spanY,
+        IEnumerable<TileModel> tiles,
+        TileModel? ignoreTile = null,
+        int maxCols = int.MaxValue,
+        IEnumerable<TileGroupModel>? groups = null)
     {
         if (col < 0 || row < 0) return false;
         if (col + spanX > maxCols) return false;
+
+        // When groups are present, validate 8-column track alignment and avoid the 1-col track alley gap
+        if (groups != null && groups.Any())
+        {
+            int colMod = col % (GroupColWidth + GroupColGap);
+            if (colMod == GroupColWidth || (colMod < GroupColWidth && colMod + spanX > GroupColWidth))
+            {
+                return false;
+            }
+
+            foreach (var g in groups)
+            {
+                var (minC, maxC, minR, maxR) = GetGroupBoundingBox(g, tiles);
+                if (DoTilesOverlap(col, row, spanX, spanY, minC, minR, maxC - minC, maxR - minR))
+                {
+                    return false;
+                }
+            }
+        }
 
         foreach (var other in tiles)
         {
@@ -97,12 +124,20 @@ public static class GridPlacementService
         return result;
     }
 
-    public static (int Col, int Row) FindNearestAvailableSlot(int startCol, int startRow, int spanX, int spanY, IEnumerable<TileModel> tiles, TileModel? ignoreTile = null, int maxCols = int.MaxValue)
+    public static (int Col, int Row) FindNearestAvailableSlot(
+        int startCol,
+        int startRow,
+        int spanX,
+        int spanY,
+        IEnumerable<TileModel> tiles,
+        TileModel? ignoreTile = null,
+        int maxCols = int.MaxValue,
+        IEnumerable<TileGroupModel>? groups = null)
     {
         startCol = Math.Max(0, Math.Min(startCol, Math.Max(0, maxCols - spanX)));
         startRow = Math.Max(0, startRow);
 
-        if (IsRegionFree(startCol, startRow, spanX, spanY, tiles, ignoreTile, maxCols))
+        if (IsRegionFree(startCol, startRow, spanX, spanY, tiles, ignoreTile, maxCols, groups))
         {
             return (startCol, startRow);
         }
@@ -122,7 +157,7 @@ public static class GridPlacementService
                     if (c < 0 || r < 0) continue;
                     if (c + spanX > maxCols) continue;
 
-                    if (IsRegionFree(c, r, spanX, spanY, tiles, ignoreTile, maxCols))
+                    if (IsRegionFree(c, r, spanX, spanY, tiles, ignoreTile, maxCols, groups))
                     {
                         return (c, r);
                     }
@@ -135,14 +170,24 @@ public static class GridPlacementService
         {
             for (int c = 0; c <= maxCols - spanX; c++)
             {
-                if (IsRegionFree(c, r, spanX, spanY, tiles, ignoreTile, maxCols))
+                if (IsRegionFree(c, r, spanX, spanY, tiles, ignoreTile, maxCols, groups))
                 {
                     return (c, r);
                 }
             }
         }
 
-        return (0, startRow + 2);
+        int maxOccupiedRow = 0;
+        if (tiles != null && tiles.Any())
+        {
+            maxOccupiedRow = Math.Max(maxOccupiedRow, tiles.Max(t => t.Row + t.SpanY));
+        }
+        if (groups != null && groups.Any())
+        {
+            maxOccupiedRow = Math.Max(maxOccupiedRow, groups.Max(g => GetGroupBoundingBox(g, tiles ?? Enumerable.Empty<TileModel>()).MaxRow));
+        }
+
+        return (0, Math.Max(startRow + 2, maxOccupiedRow));
     }
 
     public static bool CanDisplace(TileModel tile) => !tile.IsLocked;
@@ -846,13 +891,12 @@ public static class GridPlacementService
         int minCol = group.Col;
         int maxCol = group.Col + GroupColWidth;
         int minRow = group.Row;
-        int maxRow = group.Row + 2;
+        int maxRow = group.Row + 1;
 
         var members = allTiles.Where(t => t.Group == group.Id).ToList();
         if (members.Count > 0)
         {
-            // Add 1x1 grid row separation below the group so tiles outside the group never touch the group's bottom edge/plate
-            maxRow = Math.Max(maxRow, members.Max(t => t.Row + t.SpanY) + 1);
+            maxRow = Math.Max(maxRow, members.Max(t => t.Row + t.SpanY));
         }
 
         return (minCol, maxCol, minRow, maxRow);

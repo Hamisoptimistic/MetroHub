@@ -68,6 +68,10 @@ public partial class GroupHeaderControl : UserControl
         {
             UpdateLockIcon(group.IsLocked);
             AnimateActionButtons(group.IsLocked ? 0.85 : 0.0);
+            if (group.IsLocked)
+            {
+                AnimateDragHint(0.0);
+            }
         }
     }
 
@@ -77,7 +81,14 @@ public partial class GroupHeaderControl : UserControl
 
     private void OnMouseEnter(object sender, MouseEventArgs e)
     {
-        AnimateDragHint(0.7);
+        if (DataContext is TileGroupModel group && group.IsLocked)
+        {
+            AnimateDragHint(0.0);
+        }
+        else
+        {
+            AnimateDragHint(0.7);
+        }
         AnimateActionButtons(1.0);
     }
 
@@ -120,6 +131,11 @@ public partial class GroupHeaderControl : UserControl
     public void BeginEdit()
     {
         if (DataContext is not TileGroupModel group) return;
+        if (group.IsLocked)
+        {
+            MainWindow.Current?.FlashLockedGroupPerimeter(group);
+            return;
+        }
 
         group.IsEditing = true;
         ViewPanel.Visibility = Visibility.Collapsed;
@@ -208,10 +224,18 @@ public partial class GroupHeaderControl : UserControl
 
         if (e.LeftButton == MouseButtonState.Pressed && DataContext is TileGroupModel group)
         {
-            if (group.IsLocked) return;
-
             Point current = e.GetPosition(this);
             Vector diff = current - _dragStartPoint;
+
+            if (group.IsLocked)
+            {
+                if (_isPotentialDrag && (Math.Abs(diff.X) > 5 || Math.Abs(diff.Y) > 5))
+                {
+                    _isPotentialDrag = false;
+                    MainWindow.Current?.FlashLockedGroupPerimeter(group);
+                }
+                return;
+            }
 
             if (Math.Abs(diff.X) > 6 || Math.Abs(diff.Y) > 6)
             {
@@ -273,6 +297,12 @@ public partial class GroupHeaderControl : UserControl
             : new System.Windows.Media.SolidColorBrush(
                 (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#A0FFFFFF"));
 
+        if (DragHintIcon != null)
+        {
+            DragHintIcon.Visibility = isLocked ? Visibility.Collapsed : Visibility.Visible;
+            if (isLocked) DragHintIcon.Opacity = 0;
+        }
+
         LockButton.ToolTip = isLocked ? "Unlock group" : "Lock group";
     }
 
@@ -306,10 +336,25 @@ public partial class GroupHeaderControl : UserControl
         }
     }
 
+    private void OnHeaderContextMenuOpened(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is TileGroupModel group)
+        {
+            RenameMenuItem.IsEnabled = !group.IsLocked;
+            UngroupMenuItem.IsEnabled = !group.IsLocked;
+            DeleteGroupMenuItem.IsEnabled = !group.IsLocked;
+        }
+    }
+
     private void OnUngroupClick(object sender, RoutedEventArgs e)
     {
         if (DataContext is TileGroupModel group)
         {
+            if (group.IsLocked)
+            {
+                MainWindow.Current?.FlashLockedGroupPerimeter(group);
+                return;
+            }
             MainWindow.Current?.UngroupTiles(group);
         }
     }
@@ -318,6 +363,11 @@ public partial class GroupHeaderControl : UserControl
     {
         if (DataContext is TileGroupModel group)
         {
+            if (group.IsLocked)
+            {
+                MainWindow.Current?.FlashLockedGroupPerimeter(group);
+                return;
+            }
             MainWindow.Current?.DeleteGroupAndTiles(group);
         }
     }

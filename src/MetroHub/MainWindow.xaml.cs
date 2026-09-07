@@ -98,6 +98,7 @@ public partial class MainWindow : BorderlessFluentWindow
         DiscoverGroupsFromTiles();
         EnsureGroupIndices();
         MigrateGroupColumnOffsets();
+        CompactGroupGaps();
         UpdateLayoutMetrics();
         bool anyCleaned = GridPlacementService.CleanEmptyGroups(Groups, Tiles);
         UpdateGroupHeaderPositions();
@@ -908,6 +909,11 @@ public partial class MainWindow : BorderlessFluentWindow
             {
                 // Attempted to drag a tile in a locked group: cancel drag & click so app does not launch
                 _isPotentialDrag = false;
+                var g = Groups.FirstOrDefault(gr => gr.Id == _draggedTile?.Group);
+                if (g != null && g.IsLocked)
+                {
+                    FlashLockedGroupPerimeter(g);
+                }
                 _draggedControl?.AnimateRelease();
                 _draggedTile = null;
                 _draggedControl = null;
@@ -2211,6 +2217,27 @@ public partial class MainWindow : BorderlessFluentWindow
         }
     }
 
+    public void CompactGroupGaps()
+    {
+        if (Groups.Count == 0) return;
+        bool changed = false;
+        var colGroups = Groups.GroupBy(g => g.ColumnIndex).ToList();
+        foreach (var col in colGroups)
+        {
+            var ordered = col.OrderBy(g => g.Row).ToList();
+            foreach (var g in ordered)
+            {
+                var pulled = GridPlacementService.PullLowerGroupsUp(g, Groups, Tiles);
+                if (pulled.Count > 0) changed = true;
+            }
+        }
+        if (changed)
+        {
+            UpdateGroupHeaderPositions();
+            SaveGroupsAndLayout();
+        }
+    }
+
     public void CleanEmptyGroupsAndReflow()
     {
         bool anyCleaned = GridPlacementService.CleanEmptyGroups(Groups, Tiles);
@@ -2471,7 +2498,7 @@ public partial class MainWindow : BorderlessFluentWindow
     /// Shows a red glowing perimeter border with a horizontal shake and smooth fade out
     /// when a user attempts to drop a tile into a locked group.
     /// </summary>
-    private void FlashLockedGroupPerimeter(TileGroupModel group)
+    public void FlashLockedGroupPerimeter(TileGroupModel group)
     {
         if (GroupDropPerimeterBorder == null) return;
 
@@ -2494,11 +2521,10 @@ public partial class MainWindow : BorderlessFluentWindow
         else
         {
             int col = group.Col >= 0 ? group.Col : GridPlacementService.GetColumnStartCol(group.ColumnIndex);
-            int row = GridPlacementService.RowFromPixel(group.Y) + 1;
             Canvas.SetLeft(GroupDropPerimeterBorder, GridPlacementService.PixelXFromCol(col) - 8);
-            Canvas.SetTop(GroupDropPerimeterBorder, GridPlacementService.PixelYFromRow(row) - 8);
+            Canvas.SetTop(GroupDropPerimeterBorder, group.Y);
             GroupDropPerimeterBorder.Width = (GridPlacementService.GroupColWidth * GridPlacementService.GridStep) - GridPlacementService.Gap + 16;
-            GroupDropPerimeterBorder.Height = 56;
+            GroupDropPerimeterBorder.Height = 36;
         }
 
         GroupDropPerimeterBorder.CornerRadius = new CornerRadius(6);
@@ -3098,6 +3124,12 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void UngroupTiles(TileGroupModel group)
     {
+        if (group.IsLocked)
+        {
+            FlashLockedGroupPerimeter(group);
+            return;
+        }
+
         string pre = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
 
         var memberTiles = Tiles.Where(t => t.Group == group.Id).ToList();
@@ -3117,6 +3149,12 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void DeleteGroupAndTiles(TileGroupModel group)
     {
+        if (group.IsLocked)
+        {
+            FlashLockedGroupPerimeter(group);
+            return;
+        }
+
         string pre = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
         var memberTiles = Tiles.Where(t => t.Group == group.Id).ToList();
         foreach (var t in memberTiles)
@@ -3128,14 +3166,21 @@ public partial class MainWindow : BorderlessFluentWindow
 
         var modifiedTiles = GridPlacementService.PullLowerGroupsUp(group, Groups, Tiles);
         AnimateModifiedTiles(modifiedTiles);
-        UpdateGroupHeaderPositions();
+        UpdateGroupHeaderPositions(animate: true);
+        CompactGroupGaps();
         SaveGroupsAndLayout();
+        UpdateCanvasHeight();
+        UpdateExposedAddSlots();
         _historyService.PushState(pre);
     }
 
     public void StartGroupDrag(TileGroupModel group, MouseEventArgs e)
     {
-        if (group.IsLocked) return;
+        if (group.IsLocked)
+        {
+            FlashLockedGroupPerimeter(group);
+            return;
+        }
 
         ClearTileSelection();
         _preDragLayoutSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
@@ -3436,7 +3481,8 @@ public partial class MainWindow : BorderlessFluentWindow
                 return;
             }
 
-            var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(col, row, 2, 2, Tiles, null, maxCols);
+            var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(
+                col, row, 2, 2, Tiles, null, maxCols, Groups);
 
             var tileUngrouped = new TileModel
             {
@@ -3446,11 +3492,24 @@ public partial class MainWindow : BorderlessFluentWindow
                 TileType = TileType.App,
                 SpanX = 2,
                 SpanY = 2,
+                Col = freeCol,
+                Row = freeRow,
                 X = GridPlacementService.PixelXFromCol(freeCol),
                 Y = GridPlacementService.PixelYFromRow(freeRow)
             };
 
             Tiles.Add(tileUngrouped);
+
+            if (Groups != null && Groups.Count > 0)
+            {
+                var looseTiles = Tiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+                var pushedGroupTiles = GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, Groups, Tiles);
+                AnimateModifiedTiles(pushedGroupTiles);
+                UpdateGroupHeaderPositions(animate: true);
+                CompactGroupGaps();
+                SaveGroupsAndLayout();
+            }
+
             StorageService.SaveLayout(Tiles);
             UpdateCanvasHeight();
             UpdateExposedAddSlots();
@@ -3740,9 +3799,9 @@ public partial class MainWindow : BorderlessFluentWindow
         int spanY = item.SpanY > 0 ? item.SpanY : 2;
 
         // Context-aware sizing: If target slot has room for 1x1 but not full 2x2, adapt down to 1x1
-        if (GridPlacementService.IsRegionFree(col, row, 1, 1, Tiles))
+        if (GridPlacementService.IsRegionFree(col, row, 1, 1, Tiles, groups: Groups))
         {
-            if (!GridPlacementService.IsRegionFree(col, row, spanX, spanY, Tiles))
+            if (!GridPlacementService.IsRegionFree(col, row, spanX, spanY, Tiles, groups: Groups))
             {
                 spanX = 1;
                 spanY = 1;
@@ -3759,7 +3818,8 @@ public partial class MainWindow : BorderlessFluentWindow
             spanY,
             Tiles,
             null,
-            maxCols);
+            maxCols,
+            Groups);
 
         string? iconPath = IconExtractorService.ExtractAndCacheIcon(item.TargetPath);
 
@@ -3772,11 +3832,24 @@ public partial class MainWindow : BorderlessFluentWindow
             TileType = item.TileType,
             SpanX = spanX,
             SpanY = spanY,
+            Col = freeCol,
+            Row = freeRow,
             X = GridPlacementService.PixelXFromCol(freeCol),
             Y = GridPlacementService.PixelYFromRow(freeRow)
         };
 
         Tiles.Add(tile);
+
+        if (Groups != null && Groups.Count > 0)
+        {
+            var looseTiles = Tiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+            var pushedGroupTiles = GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, Groups, Tiles);
+            AnimateModifiedTiles(pushedGroupTiles);
+            UpdateGroupHeaderPositions(animate: true);
+            CompactGroupGaps();
+            SaveGroupsAndLayout();
+        }
+
         StorageService.SaveLayout(Tiles);
         UpdateCanvasHeight();
 
