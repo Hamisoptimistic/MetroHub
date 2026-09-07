@@ -283,6 +283,49 @@
                     </ItemsControl.ItemContainerStyle>
                 </ItemsControl>
 
+                <!-- Group Tint Backplates Layer (Below tiles, non-hit-testable decorative acrylic plates) -->
+                <ItemsControl x:Name="GroupTintBackplates"
+                              ItemsSource="{Binding Groups}"
+                              Background="{x:Null}"
+                              Focusable="False"
+                              IsHitTestVisible="False"
+                              Panel.ZIndex="0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas Background="{x:Null}" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="{Binding PlateWidth}"
+                                    Height="{Binding PlateHeight}"
+                                    CornerRadius="6"
+                                    Background="{Binding TintBackgroundBrush}"
+                                    BorderBrush="{Binding TintBorderBrush}"
+                                    BorderThickness="1"
+                                    IsHitTestVisible="False">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasTint}" Value="False">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="Canvas.Left" Value="{Binding PlateX}" />
+                            <Setter Property="Canvas.Top" Value="{Binding PlateY}" />
+                            <Setter Property="IsHitTestVisible" Value="False" />
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                </ItemsControl>
+
                 <!-- ItemsControl with Canvas panel: free-placement grid -->
                 <ItemsControl x:Name="TilesListBox"
                               ItemsSource="{Binding Tiles}"

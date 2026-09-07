@@ -486,6 +486,8 @@ public partial class MainWindow : BorderlessFluentWindow
     private TileGroupModel? _draggedGroupModel;
     private double _draggedGroupOffsetX;
     private double _draggedGroupOffsetY;
+    private double _draggedPlateOffsetX;
+    private double _draggedPlateOffsetY;
     private int _groupDragTargetColIndex;
     private int _groupDragTargetRow;
 
@@ -990,6 +992,17 @@ public partial class MainWindow : BorderlessFluentWindow
                 {
                     Canvas.SetLeft(gContainer, _draggedGroupModel.X);
                     Canvas.SetTop(gContainer, _draggedGroupModel.Y);
+                }
+
+                // Move the tint backplate in real-time right along with the moving tiles and header!
+                _draggedGroupModel.PlateX = clampedAnchorX + _draggedPlateOffsetX;
+                _draggedGroupModel.PlateY = clampedAnchorY + _draggedPlateOffsetY;
+
+                var plateContainer = GroupTintBackplates?.ItemContainerGenerator.ContainerFromItem(_draggedGroupModel) as ContentPresenter;
+                if (plateContainer != null)
+                {
+                    Canvas.SetLeft(plateContainer, _draggedGroupModel.PlateX);
+                    Canvas.SetTop(plateContainer, _draggedGroupModel.PlateY);
                 }
 
                 // Hide generic tile drop indicator during group drag
@@ -2252,6 +2265,29 @@ public partial class MainWindow : BorderlessFluentWindow
                 Canvas.SetLeft(container, group.X);
                 Canvas.SetTop(container, group.Y);
             }
+
+            // Update tint backplate bounding box
+            var (_, _, minR, maxR) = GridPlacementService.GetGroupBoundingBox(group, Tiles);
+            int rowSpan = Math.Max(0, maxR - (group.Row + 1));
+            if (rowSpan > 0)
+            {
+                group.PlateX = GridPlacementService.PixelXFromCol(group.Col) - 8;
+                group.PlateY = GridPlacementService.PixelYFromRow(group.Row + 1) - 8;
+                group.PlateWidth = (GridPlacementService.GroupColWidth * GridPlacementService.GridStep) - GridPlacementService.Gap + 16;
+                group.PlateHeight = (rowSpan * GridPlacementService.GridStep) - GridPlacementService.Gap + 16;
+            }
+            else
+            {
+                group.PlateWidth = 0;
+                group.PlateHeight = 0;
+            }
+
+            var plateContainer = GroupTintBackplates?.ItemContainerGenerator.ContainerFromItem(group) as ContentPresenter;
+            if (plateContainer != null)
+            {
+                Canvas.SetLeft(plateContainer, group.PlateX);
+                Canvas.SetTop(plateContainer, group.PlateY);
+            }
         }
     }
 
@@ -2358,6 +2394,15 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         string pre = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
         group.HeaderColor = hex;
+        SaveGroupsAndLayout();
+        _historyService.PushState(pre);
+    }
+
+    public void SetGroupTintColor(TileGroupModel group, string? hex)
+    {
+        string pre = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
+        group.TintColor = hex;
+        UpdateGroupHeaderPositions();
         SaveGroupsAndLayout();
         _historyService.PushState(pre);
     }
@@ -2472,6 +2517,8 @@ public partial class MainWindow : BorderlessFluentWindow
         _draggedGroupModel = group;
         _draggedGroupOffsetX = group.X - anchor.X;
         _draggedGroupOffsetY = group.Y - anchor.Y;
+        _draggedPlateOffsetX = group.PlateX - anchor.X;
+        _draggedPlateOffsetY = group.PlateY - anchor.Y;
         group.IsBeingDragged = true;
 
         RootGrid.CaptureMouse();

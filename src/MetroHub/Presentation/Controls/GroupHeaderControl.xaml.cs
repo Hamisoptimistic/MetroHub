@@ -235,6 +235,19 @@ public partial class GroupHeaderControl : UserControl
         }
     }
 
+    private void OnTintColorSelectClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem item && DataContext is TileGroupModel group)
+        {
+            string? hex = item.Tag as string;
+            if (string.Equals(hex, "None", StringComparison.OrdinalIgnoreCase))
+            {
+                hex = null;
+            }
+            MainWindow.Current?.SetGroupTintColor(group, hex);
+        }
+    }
+
     private void OnUngroupClick(object sender, RoutedEventArgs e)
     {
         if (DataContext is TileGroupModel group)

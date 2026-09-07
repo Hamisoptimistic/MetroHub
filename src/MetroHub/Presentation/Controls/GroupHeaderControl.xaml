@@ -72,6 +72,41 @@
                         <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#E3008C"/></MenuItem.Icon>
                     </MenuItem>
                 </MenuItem>
+                <MenuItem Header="Group Tint Color">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="DarkTheme24" FontSize="18" />
+                    </MenuItem.Icon>
+                    <MenuItem Header="None (Transparent)" Tag="None" Click="OnTintColorSelectClick">
+                        <MenuItem.Icon><Border Width="12" Height="12" BorderThickness="1" BorderBrush="#80FFFFFF" Background="Transparent" CornerRadius="2"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Fluent Sky Blue" Tag="#60CDFF" Click="OnTintColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#60CDFF"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Electric Azure" Tag="#0078D7" Click="OnTintColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#0078D7"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Emerald Green" Tag="#107C10" Click="OnTintColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#107C10"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Mint Cyan" Tag="#00B7C3" Click="OnTintColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#00B7C3"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Neon Orange" Tag="#FF8C00" Click="OnTintColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FF8C00"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Electric Amber" Tag="#FFD700" Click="OnTintColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FFD700"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Crimson Red" Tag="#FF4343" Click="OnTintColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FF4343"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Royal Purple" Tag="#881798" Click="OnTintColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#881798"/></MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Hot Pink" Tag="#E3008C" Click="OnTintColorSelectClick">
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#E3008C"/></MenuItem.Icon>
+                    </MenuItem>
+                </MenuItem>
 
                 <Separator />
 
