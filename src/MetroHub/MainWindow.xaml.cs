@@ -1323,7 +1323,7 @@ public partial class MainWindow : BorderlessFluentWindow
                         }
 
                         AnimateModifiedTiles(mod);
-                        UpdateGroupHeaderPositions();
+                        UpdateGroupHeaderPositions(animate: true);
                         UpdateCanvasHeight();
                     }
                 }
@@ -1409,7 +1409,7 @@ public partial class MainWindow : BorderlessFluentWindow
                     }
 
                     AnimateModifiedTiles(modifiedTiles);
-                    UpdateGroupHeaderPositions();
+                    UpdateGroupHeaderPositions(animate: true);
                     UpdateCanvasHeight();
                 }
 
@@ -1419,6 +1419,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 }
 
                 // Upward gravity: If any origin group shrank because tiles were dragged out or rearranged, pull lower groups & tiles up
+                bool anyPulled = false;
                 foreach (var og in originGroups)
                 {
                     int oldBottom = originOldBottoms[og!];
@@ -1428,7 +1429,14 @@ public partial class MainWindow : BorderlessFluentWindow
                     {
                         var pulled = GridPlacementService.PullLowerGroupsUp(og!, Groups, Tiles, shrink);
                         AnimateModifiedTiles(pulled);
+                        anyPulled = true;
                     }
+                }
+
+                if (anyPulled)
+                {
+                    UpdateGroupHeaderPositions(animate: true);
+                    SaveGroupsAndLayout();
                 }
 
                 UpdateCanvasHeight();
@@ -2675,7 +2683,7 @@ public partial class MainWindow : BorderlessFluentWindow
         UpdateGroupHeaderPositions();
     }
 
-    public void UpdateGroupHeaderPositions()
+    public void UpdateGroupHeaderPositions(bool animate = false)
     {
         foreach (var group in Groups)
         {
@@ -2685,8 +2693,49 @@ public partial class MainWindow : BorderlessFluentWindow
             var container = GroupsListBox?.ItemContainerGenerator.ContainerFromItem(group) as ContentPresenter;
             if (container != null)
             {
-                Canvas.SetLeft(container, group.X);
-                Canvas.SetTop(container, group.Y);
+                if (animate)
+                {
+                    double curL = Canvas.GetLeft(container);
+                    double curT = Canvas.GetTop(container);
+                    if (double.IsNaN(curL)) curL = group.X;
+                    if (double.IsNaN(curT)) curT = group.Y;
+
+                    if (Math.Abs(curL - group.X) > 0.5 || Math.Abs(curT - group.Y) > 0.5)
+                    {
+                        var animX = new DoubleAnimation(curL, group.X, TimeSpan.FromMilliseconds(220))
+                        {
+                            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                        };
+                        var animY = new DoubleAnimation(curT, group.Y, TimeSpan.FromMilliseconds(220))
+                        {
+                            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                        };
+                        animX.Completed += (s, ev) =>
+                        {
+                            Canvas.SetLeft(container, group.X);
+                            container.BeginAnimation(Canvas.LeftProperty, null);
+                        };
+                        animY.Completed += (s, ev) =>
+                        {
+                            Canvas.SetTop(container, group.Y);
+                            container.BeginAnimation(Canvas.TopProperty, null);
+                        };
+                        container.BeginAnimation(Canvas.LeftProperty, animX);
+                        container.BeginAnimation(Canvas.TopProperty, animY);
+                    }
+                    else
+                    {
+                        Canvas.SetLeft(container, group.X);
+                        Canvas.SetTop(container, group.Y);
+                    }
+                }
+                else
+                {
+                    container.BeginAnimation(Canvas.LeftProperty, null);
+                    container.BeginAnimation(Canvas.TopProperty, null);
+                    Canvas.SetLeft(container, group.X);
+                    Canvas.SetTop(container, group.Y);
+                }
             }
 
             // Update tint backplate bounding box (sized strictly to member tiles with 8px padding)
@@ -2715,8 +2764,49 @@ public partial class MainWindow : BorderlessFluentWindow
             var plateContainer = GroupTintBackplates?.ItemContainerGenerator.ContainerFromItem(group) as ContentPresenter;
             if (plateContainer != null)
             {
-                Canvas.SetLeft(plateContainer, group.PlateX);
-                Canvas.SetTop(plateContainer, group.PlateY);
+                if (animate)
+                {
+                    double curL = Canvas.GetLeft(plateContainer);
+                    double curT = Canvas.GetTop(plateContainer);
+                    if (double.IsNaN(curL)) curL = group.PlateX;
+                    if (double.IsNaN(curT)) curT = group.PlateY;
+
+                    if (Math.Abs(curL - group.PlateX) > 0.5 || Math.Abs(curT - group.PlateY) > 0.5)
+                    {
+                        var animX = new DoubleAnimation(curL, group.PlateX, TimeSpan.FromMilliseconds(220))
+                        {
+                            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                        };
+                        var animY = new DoubleAnimation(curT, group.PlateY, TimeSpan.FromMilliseconds(220))
+                        {
+                            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                        };
+                        animX.Completed += (s, ev) =>
+                        {
+                            Canvas.SetLeft(plateContainer, group.PlateX);
+                            plateContainer.BeginAnimation(Canvas.LeftProperty, null);
+                        };
+                        animY.Completed += (s, ev) =>
+                        {
+                            Canvas.SetTop(plateContainer, group.PlateY);
+                            plateContainer.BeginAnimation(Canvas.TopProperty, null);
+                        };
+                        plateContainer.BeginAnimation(Canvas.LeftProperty, animX);
+                        plateContainer.BeginAnimation(Canvas.TopProperty, animY);
+                    }
+                    else
+                    {
+                        Canvas.SetLeft(plateContainer, group.PlateX);
+                        Canvas.SetTop(plateContainer, group.PlateY);
+                    }
+                }
+                else
+                {
+                    plateContainer.BeginAnimation(Canvas.LeftProperty, null);
+                    plateContainer.BeginAnimation(Canvas.TopProperty, null);
+                    Canvas.SetLeft(plateContainer, group.PlateX);
+                    Canvas.SetTop(plateContainer, group.PlateY);
+                }
             }
         }
     }
