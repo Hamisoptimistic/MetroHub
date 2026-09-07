@@ -868,9 +868,9 @@ public partial class MainWindow : BorderlessFluentWindow
         // 2. Drag threshold check (transition from press to active drag)
         if (_isPotentialDrag && !_isDragging && e.LeftButton == MouseButtonState.Pressed && _draggedTile != null)
         {
-            // Never promote to drag if the tile belongs to a locked group
-            bool lockedTile = !string.IsNullOrEmpty(_draggedTile.Group) &&
-                Groups.FirstOrDefault(g => g.Id == _draggedTile.Group)?.IsLocked == true;
+            // Never promote to drag if any tile in the cluster belongs to a locked group
+            bool lockedTile = _draggedCluster.Any(t =>
+                t.IsLocked || (!string.IsNullOrEmpty(t.Group) && Groups.FirstOrDefault(g => g.Id == t.Group)?.IsLocked == true));
 
             Point current = e.GetPosition(this);
             Vector diff = current - _dragStartPoint;
@@ -1232,19 +1232,34 @@ public partial class MainWindow : BorderlessFluentWindow
                 else
                 {
                     // Dropped on canvas outside targetGroup
-                    // Decision 9: A never: Loose tiles cannot occupy space inside a group's bounding box.
+                    // Decision 9: Loose tiles cannot occupy space inside a group's bounding box.
                     int dropCol = GridPlacementService.ColFromPixel(_draggedTile.X);
                     int dropRow = GridPlacementService.RowFromPixel(_draggedTile.Y);
 
+                    int targetCol = Math.Min(dropCol, Math.Max(0, maxCols - _draggedTile.SpanX));
+                    int targetRow = Math.Max(0, dropRow);
+
+                    var origDict = _dragClusterOriginals.ToDictionary(kvp => kvp.Key, kvp => (kvp.Value.Col, kvp.Value.Row));
+
+                    // Check if ANY tile in the cluster overlaps a group bounding box
                     TileGroupModel? overlappedGroup = null;
                     foreach (var g in Groups)
                     {
                         var (minC, maxC, minR, maxR) = GridPlacementService.GetGroupBoundingBox(g, Tiles);
-                        if (GridPlacementService.DoTilesOverlap(dropCol, dropRow, _draggedTile.SpanX, _draggedTile.SpanY, minC, minR, maxC - minC, maxR - minR))
+                        foreach (var cTile in _draggedCluster)
                         {
-                            overlappedGroup = g;
-                            break;
+                            int relC = origDict.TryGetValue(cTile, out var pos) ? pos.Col - _dragOriginalCol : 0;
+                            int relR = origDict.TryGetValue(cTile, out pos) ? pos.Row - _dragOriginalRow : 0;
+                            int cTargetCol = Math.Max(0, Math.Min(targetCol + relC, maxCols - cTile.SpanX));
+                            int cTargetRow = Math.Max(0, targetRow + relR);
+
+                            if (GridPlacementService.DoTilesOverlap(cTargetCol, cTargetRow, cTile.SpanX, cTile.SpanY, minC, minR, maxC - minC, maxR - minR))
+                            {
+                                overlappedGroup = g;
+                                break;
+                            }
                         }
+                        if (overlappedGroup != null) break;
                     }
 
                     if (overlappedGroup != null)
@@ -1259,16 +1274,36 @@ public partial class MainWindow : BorderlessFluentWindow
                                 {
                                     cTile.Col = orig.Col; cTile.Row = orig.Row; cTile.X = orig.X; cTile.Y = orig.Y;
                                 }
+                                else
+                                {
+                                    cTile.Col = _dragOriginalCol; cTile.Row = _dragOriginalRow;
+                                    cTile.X = GridPlacementService.PixelXFromCol(_dragOriginalCol);
+                                    cTile.Y = GridPlacementService.PixelYFromRow(_dragOriginalRow);
+                                }
+                                var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
+                                if (container != null)
+                                {
+                                    Canvas.SetLeft(container, cTile.X);
+                                    Canvas.SetTop(container, cTile.Y);
+                                    Panel.SetZIndex(container, 0);
+                                }
+                                var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
+                                control?.AnimateRelease();
                             }
                             CleanEmptyGroupsAndReflow();
                             UpdateGroupHeaderPositions();
+                            if (_draggedContainer != null) { Panel.SetZIndex(_draggedContainer, 0); _draggedContainer = null; }
+                            _draggedTile = null;
+                            _draggedControl = null;
+                            _draggedCluster.Clear();
+                            ClearTileSelection();
+                            _preDragLayoutSnapshot = null;
+                            e.Handled = true;
+                            return;
                         }
                         else
                         {
                             // Join the overlapped group – place tile(s) at drop position preserving existing layout
-                            int dropCol2 = GridPlacementService.ColFromPixel(_draggedTile.X);
-                            int dropRow2 = GridPlacementService.RowFromPixel(_draggedTile.Y);
-
                             foreach (var cTile in _draggedCluster)
                             {
                                 cTile.Group = overlappedGroup.Id;
@@ -1282,8 +1317,8 @@ public partial class MainWindow : BorderlessFluentWindow
                                 overlappedGroup,
                                 Tiles,
                                 _draggedTile,
-                                dropCol2,
-                                dropRow2,
+                                dropCol,
+                                dropRow,
                                 Groups);
 
                             AnimateModifiedTiles(mod2);
@@ -1301,14 +1336,11 @@ public partial class MainWindow : BorderlessFluentWindow
                         }
                         CleanEmptyGroupsAndReflow();
 
-                        int targetCol = Math.Min(dropCol, Math.Max(0, maxCols - _draggedTile.SpanX));
-                        int targetRow = Math.Max(0, dropRow);
-
                         List<TileModel> modifiedTiles;
                         if (_draggedCluster.Count > 1)
                         {
                             modifiedTiles = GridPlacementService.PlaceClusterAndResolveCollisions(
-                                _draggedCluster, _draggedTile, targetCol, targetRow, _dragOriginalCol, _dragOriginalRow, maxCols, Tiles);
+                                _draggedCluster, _draggedTile, targetCol, targetRow, _dragOriginalCol, _dragOriginalRow, maxCols, Tiles, origDict);
                         }
                         else
                         {

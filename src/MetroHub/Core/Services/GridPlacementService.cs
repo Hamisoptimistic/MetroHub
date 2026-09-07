@@ -596,11 +596,13 @@ public static class GridPlacementService
 
         foreach (var t in clusterTiles)
         {
-            int origC = (origPositions != null && origPositions.TryGetValue(t, out var pos)) ? pos.Col : GetCol(t);
-            int origR = (origPositions != null && origPositions.TryGetValue(t, out pos)) ? pos.Row : GetRow(t);
+            int relC = (origPositions != null && origPositions.TryGetValue(t, out var pos))
+                ? pos.Col - anchorOrigCol
+                : GetCol(t) - GetCol(anchorTile);
 
-            int relC = origC - anchorOrigCol;
-            int relR = origR - anchorOrigRow;
+            int relR = (origPositions != null && origPositions.TryGetValue(t, out pos))
+                ? pos.Row - anchorOrigRow
+                : GetRow(t) - GetRow(anchorTile);
 
             minRelCol = Math.Min(minRelCol, relC);
             maxRelCol = Math.Max(maxRelCol, relC + t.SpanX);
@@ -620,11 +622,16 @@ public static class GridPlacementService
         // Position all cluster tiles in rigid formation
         foreach (var tile in clusterTiles)
         {
-            int origC = (origPositions != null && origPositions.TryGetValue(tile, out var pos)) ? pos.Col : GetCol(tile);
-            int origR = (origPositions != null && origPositions.TryGetValue(tile, out pos)) ? pos.Row : GetRow(tile);
+            int relC = (origPositions != null && origPositions.TryGetValue(tile, out var pos))
+                ? pos.Col - anchorOrigCol
+                : GetCol(tile) - GetCol(anchorTile);
 
-            int targetC = Math.Max(0, Math.Min(anchorTargetCol + (origC - anchorOrigCol), maxCols - tile.SpanX));
-            int targetR = Math.Max(isGroupCluster ? 1 : 0, anchorTargetRow + (origR - anchorOrigRow));
+            int relR = (origPositions != null && origPositions.TryGetValue(tile, out pos))
+                ? pos.Row - anchorOrigRow
+                : GetRow(tile) - GetRow(anchorTile);
+
+            int targetC = Math.Max(0, Math.Min(anchorTargetCol + relC, maxCols - tile.SpanX));
+            int targetR = Math.Max(isGroupCluster ? 1 : 0, anchorTargetRow + relR);
 
             tile.Col = targetC;
             tile.Row = targetR;
@@ -633,8 +640,10 @@ public static class GridPlacementService
             modifiedTiles.Add(tile);
         }
 
-        // Identify collisions with non-cluster tiles
-        var nonClusterTiles = allTiles.Where(t => !clusterSet.Contains(t)).ToList();
+        // Identify collisions with non-cluster tiles (loose tiles cannot displace group tiles)
+        var nonClusterTiles = isGroupCluster
+            ? allTiles.Where(t => !clusterSet.Contains(t)).ToList()
+            : allTiles.Where(t => !clusterSet.Contains(t) && t.Group == null).ToList();
         var proposedPositions = new Dictionary<TileModel, (int Col, int Row)>();
         var queue = new Queue<TileModel>();
         var inQueue = new HashSet<TileModel>();
@@ -648,6 +657,7 @@ public static class GridPlacementService
 
         foreach (var obstacle in nonClusterTiles)
         {
+            if (!CanDisplace(obstacle)) continue;
             int obsCol = GetCol(obstacle);
             int obsRow = GetRow(obstacle);
 
@@ -723,7 +733,7 @@ public static class GridPlacementService
             // Verify against other non-cluster tiles
             foreach (var other in nonClusterTiles)
             {
-                if (ReferenceEquals(other, current)) continue;
+                if (ReferenceEquals(other, current) || !CanDisplace(other)) continue;
 
                 int otherCol = proposedPositions.TryGetValue(other, out var oPos) ? oPos.Col : GetCol(other);
                 int otherRow = proposedPositions.TryGetValue(other, out oPos) ? oPos.Row : GetRow(other);
