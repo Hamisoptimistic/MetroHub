@@ -270,6 +270,7 @@ public partial class TileControl : UserControl
             ResizeMenuItem.Header = "Resize";
             StyleMenuItem.Header = "Style";
             GroupMenuItem.Header = "Group into New Section";
+            AddToGroupMenuItem.Header = "Add to Group";
             UnpinMenuItem.Header = "Unpin from MetroHub";
 
             RunAdminMenuItem.Visibility = Visibility.Collapsed;
@@ -281,11 +282,89 @@ public partial class TileControl : UserControl
             ResizeMenuItem.Header = "Resize";
             StyleMenuItem.Header = "Style";
             GroupMenuItem.Header = "Group into New Section";
+            AddToGroupMenuItem.Header = "Add to Group";
             UnpinMenuItem.Header = "Unpin from MetroHub";
 
             RunAdminMenuItem.Visibility = Visibility.Visible;
             OpenLocationMenuItem.Visibility = Visibility.Visible;
             SingleAppSeparator.Visibility = Visibility.Visible;
+        }
+
+        PopulateAddToGroupSubmenu(mainWindow);
+    }
+
+    private void PopulateAddToGroupSubmenu(MetroHub.MainWindow mainWindow)
+    {
+        if (AddToGroupMenuItem == null) return;
+
+        AddToGroupMenuItem.Items.Clear();
+
+        var groups = mainWindow.Groups.ToList();
+        if (groups.Count == 0)
+        {
+            var emptyItem = new MenuItem
+            {
+                Header = "(No groups available)",
+                IsEnabled = false
+            };
+            AddToGroupMenuItem.Items.Add(emptyItem);
+            AddToGroupMenuItem.IsEnabled = false;
+            return;
+        }
+
+        AddToGroupMenuItem.IsEnabled = true;
+
+        foreach (var group in groups)
+        {
+            var item = new MenuItem
+            {
+                Header = string.IsNullOrWhiteSpace(group.Title) ? "Untitled Section" : group.Title,
+                Cursor = Cursors.Hand
+            };
+
+            if (!string.IsNullOrWhiteSpace(group.HeaderColor))
+            {
+                try
+                {
+                    var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(group.HeaderColor);
+                    var ellipse = new System.Windows.Shapes.Ellipse
+                    {
+                        Width = 12,
+                        Height = 12,
+                        Fill = new System.Windows.Media.SolidColorBrush(color)
+                    };
+                    item.Icon = ellipse;
+                }
+                catch
+                {
+                    item.Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Folder24,
+                        FontSize = 16
+                    };
+                }
+            }
+            else
+            {
+                item.Icon = new Wpf.Ui.Controls.SymbolIcon
+                {
+                    Symbol = Wpf.Ui.Controls.SymbolRegular.Folder24,
+                    FontSize = 16
+                };
+            }
+
+            var targetGroup = group;
+            item.Click += (s, e) =>
+            {
+                var targets = mainWindow.SelectedTiles;
+                if (targets.Count == 0 && DataContext is TileModel currentTile)
+                {
+                    targets = new List<TileModel> { currentTile };
+                }
+                mainWindow.AddTilesToExistingGroup(targets, targetGroup);
+            };
+
+            AddToGroupMenuItem.Items.Add(item);
         }
     }
 

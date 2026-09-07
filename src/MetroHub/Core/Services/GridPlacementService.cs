@@ -939,8 +939,8 @@ public static class GridPlacementService
             foreach (var t in groupTiles)
             {
                 if (ReferenceEquals(t, ignoreTile)) continue;
-                int tc = GetCol(t);
-                int tr = GetRow(t);
+                int tc = t.Col >= 0 ? t.Col : GetCol(t);
+                int tr = t.Row >= 0 ? t.Row : GetRow(t);
                 if (DoTilesOverlap(absCol, absRow, spanX, spanY, tc, tr, t.SpanX, t.SpanY))
                     return false;
             }
@@ -970,7 +970,8 @@ public static class GridPlacementService
         }
 
         // Fallback: scan row-by-row from top
-        for (int r = 0; r < 100; r++)
+        int maxScanRow = groupTiles.Count > 0 ? Math.Max(100, groupTiles.Max(t => t.Row) + 20) : 100;
+        for (int r = 0; r < maxScanRow; r++)
         {
             for (int c = 0; c <= maxRelCol; c++)
             {
@@ -979,7 +980,8 @@ public static class GridPlacementService
             }
         }
 
-        return (groupCol, minRow);
+        int fallbackRow = groupTiles.Count > 0 ? groupTiles.Max(t => t.Row + t.SpanY) : minRow;
+        return (groupCol, Math.Max(minRow, fallbackRow));
     }
 
     /// <summary>
@@ -1115,6 +1117,124 @@ public static class GridPlacementService
     }
 
     /// <summary>
+    /// Places multiple tiles (or a single tile) into a group, finding free non-overlapping slots
+    /// for each tile while accommodating their exact SpanX and SpanY.
+    /// Preserves existing tile positions inside the group without repacking.
+    /// Pushes lower groups down if the target group expands.
+    /// Returns the list of all tiles whose positions were updated.
+    /// </summary>
+    public static List<TileModel> PlaceTilesInGroup(
+        IList<TileModel> incomingTiles,
+        TileGroupModel targetGroup,
+        IList<TileModel> allTiles,
+        TileModel? anchorTile = null,
+        int? dropAnchorCol = null,
+        int? dropAnchorRow = null,
+        IList<TileGroupModel>? groups = null)
+    {
+        var modified = new List<TileModel>();
+        if (incomingTiles == null || incomingTiles.Count == 0) return modified;
+
+        // Group tiles that are NOT part of the incoming batch (their positions remain undisturbed)
+        var incomingSet = new HashSet<TileModel>(incomingTiles);
+        var groupTiles = allTiles.Where(t => t.Group == targetGroup.Id && !incomingSet.Contains(t)).ToList();
+
+        // Sort incoming tiles top-to-bottom, left-to-right to preserve their relative spatial layout
+        var orderedIncoming = incomingTiles
+            .OrderBy(t => (anchorTile != null && dropAnchorRow.HasValue) 
+                ? (dropAnchorRow.Value + (RowFromPixel(t.Y) - RowFromPixel(anchorTile.Y))) 
+                : RowFromPixel(t.Y))
+            .ThenBy(t => (anchorTile != null && dropAnchorCol.HasValue) 
+                ? (dropAnchorCol.Value + (ColFromPixel(t.X) - ColFromPixel(anchorTile.X))) 
+                : ColFromPixel(t.X))
+            .ToList();
+
+        foreach (var tile in orderedIncoming)
+        {
+            int desiredCol;
+            int desiredRow;
+
+            if (anchorTile != null && dropAnchorCol.HasValue && dropAnchorRow.HasValue)
+            {
+                int relCol = ColFromPixel(tile.X) - ColFromPixel(anchorTile.X);
+                int relRow = RowFromPixel(tile.Y) - RowFromPixel(anchorTile.Y);
+                desiredCol = dropAnchorCol.Value + relCol;
+                desiredRow = dropAnchorRow.Value + relRow;
+            }
+            else if (dropAnchorCol.HasValue && dropAnchorRow.HasValue)
+            {
+                desiredCol = dropAnchorCol.Value;
+                desiredRow = dropAnchorRow.Value;
+            }
+            else if (!double.IsNaN(tile.X) && tile.X > 0 && !double.IsNaN(tile.Y) && tile.Y > 0)
+            {
+                desiredCol = ColFromPixel(tile.X);
+                desiredRow = RowFromPixel(tile.Y);
+            }
+            else
+            {
+                desiredCol = targetGroup.Col;
+                desiredRow = targetGroup.Row + 1;
+            }
+
+            int targetRelCol = desiredCol - targetGroup.Col;
+            int targetRelRow = desiredRow - (targetGroup.Row + 1);
+
+            var (freeCol, freeRow) = FindFreeSlotInGroup(
+                targetGroup, targetRelCol, targetRelRow, tile.SpanX, tile.SpanY, groupTiles);
+
+            tile.Group = targetGroup.Id;
+            tile.SectionHeader = targetGroup.Title;
+            tile.Col = freeCol;
+            tile.Row = freeRow;
+            tile.X = PixelXFromCol(freeCol);
+            tile.Y = PixelYFromRow(freeRow);
+
+            // Add tile to groupTiles so subsequent tiles in this batch will not overlap it
+            groupTiles.Add(tile);
+            modified.Add(tile);
+        }
+
+        // Push lower groups down if targetGroup expanded downwards
+        if (groups != null)
+        {
+            var targetBox = GetGroupBoundingBox(targetGroup, allTiles);
+            int groupBottom = targetBox.MaxRow;
+            var lowerGroups = groups
+                .Where(g => g.ColumnIndex == targetGroup.ColumnIndex && !ReferenceEquals(g, targetGroup) && g.Row >= targetGroup.Row)
+                .OrderBy(g => g.Row)
+                .ToList();
+
+            int currentBoundary = groupBottom + 1;
+            foreach (var lg in lowerGroups)
+            {
+                if (lg.Row < currentBoundary)
+                {
+                    int delta = currentBoundary - lg.Row;
+                    lg.Row = currentBoundary;
+                    lg.Y = PixelYFromRow(lg.Row) + 8;
+                    var lgTiles = allTiles.Where(t => t.Group == lg.Id).ToList();
+                    foreach (var t in lgTiles)
+                    {
+                        t.Row += delta;
+                        t.Y = PixelYFromRow(t.Row);
+                        if (!modified.Contains(t)) modified.Add(t);
+                    }
+                    var lgBox = GetGroupBoundingBox(lg, allTiles);
+                    currentBoundary = lgBox.MaxRow + 1;
+                }
+                else
+                {
+                    var lgBox = GetGroupBoundingBox(lg, allTiles);
+                    currentBoundary = Math.Max(currentBoundary, lgBox.MaxRow + 1);
+                }
+            }
+        }
+
+        return modified;
+    }
+
+    /// <summary>
     /// Stacks all groups in a column deterministically by OrderIndex.
     /// If collapsed, lower groups slide up directly beneath the header.
     /// Returns any tiles whose coordinates were modified.
@@ -1226,15 +1346,9 @@ public static class GridPlacementService
 
     public static bool CleanEmptyGroups(IList<TileGroupModel> groups, IList<TileModel> allTiles)
     {
-        var emptyGroups = groups.Where(g => !allTiles.Any(t => t.Group == g.Id)).ToList();
-        if (emptyGroups.Count == 0) return false;
-
-        foreach (var eg in emptyGroups)
-        {
-            groups.Remove(eg);
-        }
-
-        return true;
+        // Groups can be created empty directly on canvas and populated later.
+        // Empty groups are managed/deleted explicitly by the user via the header context menu.
+        return false;
     }
 
     /// <summary>

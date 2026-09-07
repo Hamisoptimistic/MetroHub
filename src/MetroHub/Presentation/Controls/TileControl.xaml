@@ -57,7 +57,16 @@
                     <MenuItem Header="Default" Click="OnStyleDefaultClick" />
                     <MenuItem Header="Colourful" Click="OnStyleColourfulClick" />
                 </MenuItem>
-                <MenuItem x:Name="GroupMenuItem" Header="Group into New Section" Click="OnGroupTilesClick" />
+                <MenuItem x:Name="GroupMenuItem" Header="Group into New Section" Click="OnGroupTilesClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="FolderAdd24" FontSize="16" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem x:Name="AddToGroupMenuItem" Header="Add to Group">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="FolderArrowRight24" FontSize="16" />
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator x:Name="SingleAppSeparator" />
                 <MenuItem x:Name="RunAdminMenuItem" Header="Run as Administrator" Click="OnRunAsAdminClick" />
                 <MenuItem x:Name="OpenLocationMenuItem" Header="Open File Location" Click="OnOpenFileLocationClick" />
