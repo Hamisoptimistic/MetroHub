@@ -68,22 +68,36 @@ public static class GridPlacementService
         if (col < 0 || row < 0) return false;
         if (col + spanX > maxCols) return false;
 
-        // When groups are present, validate 8-column track alignment and avoid the 1-col track alley gap
-        if (groups != null && groups.Any())
+        // When groups are present and this check is for a loose canvas tile,
+        // enforce that it does not overlap any group and does not occupy the 1x1 perimeter gap around any group.
+        if (groups != null && groups.Any() && (ignoreTile == null || string.IsNullOrEmpty(ignoreTile.Group)))
         {
-            int colMod = col % (GroupColWidth + GroupColGap);
-            if (colMod == GroupColWidth || (colMod < GroupColWidth && colMod + spanX > GroupColWidth))
-            {
-                return false;
-            }
-
             foreach (var g in groups)
             {
-                var (minC, maxC, minR, maxR) = GetGroupBoundingBox(g, tiles);
-                if (DoTilesOverlap(col, row, spanX, spanY, minC, minR, maxC - minC, maxR - minR))
+                var members = tiles?.Where(t => t.Group == g.Id && !ReferenceEquals(t, ignoreTile)).ToList();
+                int gMinC = g.Col;
+                int gMaxC = g.Col + GroupColWidth;
+                int gMinR = g.Row;
+                int gMaxR = (members != null && members.Count > 0) ? members.Max(t => t.Row + t.SpanY) : g.Row + 1;
+
+                // 1. Must not overlap group bounding box
+                if (DoTilesOverlap(col, row, spanX, spanY, gMinC, gMinR, gMaxC - gMinC, gMaxR - gMinR))
                 {
                     return false;
                 }
+
+                // 2. Must not occupy 1x1 perimeter gap buffer around this group
+                // Bottom gap (row == gMaxR, within group horizontal span)
+                if (row == gMaxR && col < gMaxC && (col + spanX) > gMinC) return false;
+
+                // Top gap (row + spanY == gMinR, within group horizontal span)
+                if (gMinR > 0 && (row + spanY) == gMinR && col < gMaxC && (col + spanX) > gMinC) return false;
+
+                // Right sideways gap (col == gMaxC, within group vertical span)
+                if (col == gMaxC && row < gMaxR && (row + spanY) > gMinR) return false;
+
+                // Left sideways gap (col + spanX == gMinC, within group vertical span)
+                if (gMinC > 0 && (col + spanX) == gMinC && row < gMaxR && (row + spanY) > gMinR) return false;
             }
         }
 
@@ -564,7 +578,13 @@ public static class GridPlacementService
         targetCol = Math.Max(0, Math.Min(targetCol, maxAllowedCol));
         targetRow = Math.Max(0, targetRow);
 
-        var overlapping = GetOverlappingTiles(targetCol, targetRow, draggedTile.SpanX, draggedTile.SpanY, allTiles, draggedTile);
+        // When placing a loose canvas tile, only consider other loose canvas tiles for collisions and displacement
+        bool isLoosePlacement = string.IsNullOrEmpty(draggedTile.Group);
+        var candidateTiles = isLoosePlacement
+            ? allTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList()
+            : allTiles;
+
+        var overlapping = GetOverlappingTiles(targetCol, targetRow, draggedTile.SpanX, draggedTile.SpanY, candidateTiles, draggedTile);
 
         // If dropped back where it started and no collision with neighbors, simply re-snap
         if (targetCol == originalCol && targetRow == originalRow && overlapping.Count == 0)
@@ -622,7 +642,7 @@ public static class GridPlacementService
         modifiedTiles.Add(draggedTile);
 
         // Try gentle rightward push first
-        if (TryPushRight(draggedTile, targetCol, targetRow, draggedTile.SpanX, draggedTile.SpanY, maxCols, allTiles, out var rightMoves))
+        if (TryPushRight(draggedTile, targetCol, targetRow, draggedTile.SpanX, draggedTile.SpanY, maxCols, candidateTiles, out var rightMoves))
         {
             foreach (var kvp in rightMoves)
             {
@@ -636,7 +656,7 @@ public static class GridPlacementService
 
         // Fallback: column accordion cascade push down
         var positions = new Dictionary<TileModel, (int Col, int Row)>();
-        CascadePushDown(draggedTile, targetCol, targetRow, draggedTile.SpanX, draggedTile.SpanY, allTiles, positions);
+        CascadePushDown(draggedTile, targetCol, targetRow, draggedTile.SpanX, draggedTile.SpanY, candidateTiles, positions);
 
         foreach (var kvp in positions)
         {
@@ -920,16 +940,7 @@ public static class GridPlacementService
         gapCol = -1;
         gapRow = -1;
 
-        // 1. Vertical column separation gap (e.g. col 8, 17, 26...) between 8-unit group tracks
-        int colMod = col % (GroupColWidth + GroupColGap);
-        if (colMod == GroupColWidth || (colMod < GroupColWidth && colMod + spanX > GroupColWidth))
-        {
-            gapCol = (col / (GroupColWidth + GroupColGap)) * (GroupColWidth + GroupColGap) + GroupColWidth;
-            gapRow = row;
-            return true;
-        }
-
-        // 2. Group perimeter gaps (bottom, top, sideways)
+        // Group perimeter gaps (bottom, top, sideways)
         if (groups != null)
         {
             foreach (var g in groups)
@@ -960,8 +971,16 @@ public static class GridPlacementService
                     return true;
                 }
 
-                // Left sideways 1x1 gap buffer
-                if (gMinC > 0 && col == gMinC - 1 && row <= gMaxR && row + spanY > gMinR)
+                // Right sideways 1x1 gap buffer (col gMaxC, right of the group, or straddling into it)
+                if ((col == gMaxC || (col < gMaxC && col + spanX > gMaxC)) && row <= gMaxR && row + spanY > gMinR)
+                {
+                    gapCol = gMaxC;
+                    gapRow = row;
+                    return true;
+                }
+
+                // Left sideways 1x1 gap buffer (col gMinC - 1, left of the group, or straddling into it)
+                if (gMinC > 0 && (col == gMinC - 1 || (col < gMinC && col + spanX > gMinC - 1)) && row <= gMaxR && row + spanY > gMinR)
                 {
                     gapCol = gMinC - 1;
                     gapRow = row;
@@ -1534,7 +1553,7 @@ public static class GridPlacementService
             {
                 if (DoTilesOverlap(groupStartCol, targetGroup.Row, groupWidth, groupHeight, ut.Col, ut.Row, ut.SpanX, ut.SpanY))
                 {
-                    proposedTilePositions[ut] = (ut.Col, groupBottom);
+                    proposedTilePositions[ut] = (ut.Col, groupBottom + 1);
                     inTileQueue.Add(ut);
                     tileQueue.Enqueue(ut);
                 }
@@ -1583,7 +1602,7 @@ public static class GridPlacementService
                         var oPos = proposedTilePositions.TryGetValue(ut, out var op) ? op : (ut.Col, ut.Row);
                         if (DoTilesOverlap(pos.Col, pos.Row, GroupColWidth, curGHeight, oPos.Col, oPos.Row, ut.SpanX, ut.SpanY))
                         {
-                            int neededRow = pos.Row + curGHeight;
+                            int neededRow = pos.Row + curGHeight + 1;
                             if (neededRow > oPos.Row)
                             {
                                 proposedTilePositions[ut] = (oPos.Col, neededRow);
@@ -1703,20 +1722,7 @@ public static class GridPlacementService
         int targetColStart = targetGroup.Col >= 0 ? targetGroup.Col : GetColumnStartCol(targetGroup.ColumnIndex);
         int targetColEnd = targetColStart + GroupColWidth;
 
-        // 1. Calculate the earliest allowed row where lower items can sit (including 1x1 gap buffer)
-        bool isGroupDeleted = !groupList.Contains(targetGroup);
-        int minAllowedRow;
-        if (isGroupDeleted)
-        {
-            minAllowedRow = targetGroup.Row;
-        }
-        else
-        {
-            var targetBox = GetGroupBoundingBox(targetGroup, allTiles);
-            minAllowedRow = targetBox.MaxRow;
-        }
-
-        // 2. Identify all groups and loose canvas tiles below targetGroup in the same column track
+        // 1. Identify all groups and loose canvas tiles below targetGroup in the same column track
         var lowerGroups = groupList
             .Where(g => !ReferenceEquals(g, targetGroup) && g.ColumnIndex == targetGroup.ColumnIndex && g.Row > targetGroup.Row)
             .ToList();
@@ -1727,7 +1733,7 @@ public static class GridPlacementService
 
         if (lowerGroups.Count == 0 && lowerLooseTiles.Count == 0) return modified;
 
-        // 3. Determine the top-most row among all lower items
+        // 2. Determine the top-most row among all lower items
         int highestLowerRow = int.MaxValue;
         foreach (var g in lowerGroups)
         {
@@ -1736,6 +1742,20 @@ public static class GridPlacementService
         foreach (var t in lowerLooseTiles)
         {
             if (t.Row < highestLowerRow) highestLowerRow = t.Row;
+        }
+
+        // 3. Calculate the earliest allowed row where lower items can sit (including 1x1 gap buffer)
+        bool isGroupDeleted = !groupList.Contains(targetGroup);
+        int minAllowedRow;
+        if (isGroupDeleted)
+        {
+            minAllowedRow = targetGroup.Row;
+        }
+        else
+        {
+            var targetBox = GetGroupBoundingBox(targetGroup, allTiles);
+            bool highestIsLoose = lowerLooseTiles.Any(t => t.Row == highestLowerRow);
+            minAllowedRow = highestIsLoose ? targetBox.MaxRow + 1 : targetBox.MaxRow;
         }
 
         if (highestLowerRow == int.MaxValue || highestLowerRow <= minAllowedRow) return modified;
