@@ -118,6 +118,10 @@
             <Grid x:Name="MainCanvasGrid"
                   Background="Transparent"
                   PreviewMouseRightButtonDown="OnCanvasPreviewMouseRightButtonDown">
+<Grid.LayoutTransform>
+        <ScaleTransform x:Name="CanvasScaleTransform" ScaleX="1.0" ScaleY="1.0" />
+    </Grid.LayoutTransform>
+
                 <Grid.ContextMenu>
                     <ContextMenu x:Name="CanvasContextMenu"
                                  Opened="OnCanvasContextMenuOpened"

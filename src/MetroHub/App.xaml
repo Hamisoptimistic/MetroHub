@@ -10,8 +10,14 @@
                 <ui:ControlsDictionary />
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Authentic WPF-UI ContextMenu Style with Fixed Non-Clipping Fluent Glide -->
+            <!-- Authentic WPF-UI ContextMenu Style with Integrated Responsive Scaling -->
             <Style TargetType="{x:Type ContextMenu}">
+                <Setter Property="LayoutTransform">
+                    <Setter.Value>
+                        <ScaleTransform ScaleX="{Binding Source={x:Static local:MainWindow.Current}, Path=CurrentScale, FallbackValue=1.0}"
+                                        ScaleY="{Binding Source={x:Static local:MainWindow.Current}, Path=CurrentScale, FallbackValue=1.0}" />
+                    </Setter.Value>
+                </Setter>
                 <Setter Property="Foreground" Value="{DynamicResource ContextMenuForeground}" />
                 <Setter Property="Background" Value="{DynamicResource ContextMenuBackground}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource ContextMenuBorderBrush}" />
@@ -49,7 +55,7 @@
                                     <Trigger.EnterActions>
                                         <BeginStoryboard>
                                             <Storyboard>
-                                                <!-- Smooth 12px subtle glide matching WPF-UI design language without the -90px window clipping -->
+                                                <!-- Smooth 12px subtle glide matching WPF-UI design language without window clipping -->
                                                 <DoubleAnimation Storyboard.TargetName="Border"
                                                                  Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
                                                                  From="-12" To="0"
@@ -58,7 +64,7 @@
                                                         <CircleEase EasingMode="EaseOut" />
                                                     </DoubleAnimation.EasingFunction>
                                                 </DoubleAnimation>
-                                                <!-- Smooth opacity fade in so the menu doesn't abruptly pop in clipped -->
+                                                <!-- Smooth opacity fade in -->
                                                 <DoubleAnimation Storyboard.TargetName="Border"
                                                                  Storyboard.TargetProperty="Opacity"
                                                                  From="0.0" To="1.0"

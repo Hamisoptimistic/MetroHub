@@ -31,6 +31,16 @@ public partial class MainWindow : BorderlessFluentWindow
     public static MainWindow? Current { get; private set; }
     public bool IsDialogOpen { get; set; } = false;
 
+    public static readonly DependencyProperty CurrentScaleProperty =
+        DependencyProperty.Register(nameof(CurrentScale), typeof(double), typeof(MainWindow), new PropertyMetadata(1.0));
+
+    public double CurrentScale
+    {
+        get => (double)GetValue(CurrentScaleProperty);
+        set => SetValue(CurrentScaleProperty, value);
+    }
+
+
     private readonly HotkeyService _hotkeyService = new();
     private DispatcherTimer? _hudTimer;
     private DispatcherTimer? _autoScrollTimer;
@@ -136,23 +146,44 @@ public partial class MainWindow : BorderlessFluentWindow
         ApplyConfiguredBackdrop();
     }
 
+    private const double BaseReferenceWidth = 1920.0;
+    private const double MinScaleThreshold = 0.60;
+
+    private void UpdateScaleFactor(double viewportWidth)
+    {
+        if (CanvasScaleTransform == null || viewportWidth <= 0) return;
+
+        double scale = Math.Clamp(viewportWidth / BaseReferenceWidth, MinScaleThreshold, 2.0);
+        CurrentScale = scale;
+        CanvasScaleTransform.ScaleX = scale;
+        CanvasScaleTransform.ScaleY = scale;
+    }
+
     private void UpdateLayoutMetrics()
     {
         double viewportWidth = ContentScrollViewer?.ActualWidth > 0
             ? ContentScrollViewer.ActualWidth
-            : (Width > 0 ? Width : 1920);
+            : (Width > 0 ? Width : BaseReferenceWidth);
 
-        GridPlacementService.UpdateMetrics(viewportWidth);
+        UpdateScaleFactor(viewportWidth);
+
+        double effectiveWidth = (CanvasScaleTransform != null && CanvasScaleTransform.ScaleX > 0)
+            ? viewportWidth / CanvasScaleTransform.ScaleX
+            : viewportWidth;
+
+        GridPlacementService.UpdateMetrics(effectiveWidth);
         double margin = GridPlacementService.OriginX;
+
+        double screenMargin = margin * (CanvasScaleTransform?.ScaleX ?? 1.0);
 
         if (HeaderGrid != null)
         {
-            HeaderGrid.Margin = new Thickness(margin, 0, margin, 0);
+            HeaderGrid.Margin = new Thickness(screenMargin, 0, screenMargin, 0);
         }
 
         if (FooterGrid != null)
         {
-            FooterGrid.Margin = new Thickness(margin, 0, margin, 0);
+            FooterGrid.Margin = new Thickness(screenMargin, 0, screenMargin, 0);
         }
     }
 
@@ -261,7 +292,9 @@ public partial class MainWindow : BorderlessFluentWindow
         ContentScrollViewer.ScrollToVerticalOffset(newOffset);
         ContentScrollViewer.UpdateLayout();
 
-        Point currentCanvasMouse = TilesListBox != null ? Mouse.GetPosition(TilesListBox) : Mouse.GetPosition(this);
+        Point currentCanvasMouse = TilesListBox != null 
+    ? Mouse.GetPosition(TilesListBox) 
+    : (MainCanvasGrid != null ? Mouse.GetPosition(MainCanvasGrid) : Mouse.GetPosition(this));
         ProcessDragMovement(currentCanvasMouse);
     }
 
@@ -3156,7 +3189,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 int maxMemberBottom = members.Max(t => t.Row + t.SpanY);
                 int rowSpan = Math.Max(1, maxMemberBottom - minMemberRow);
 
-                const double PlatePadding = GridPlacementService.Gap * 0;
+                const double PlatePadding = GridPlacementService.Gap * 0.5;
 
                 group.PlateX = GridPlacementService.PixelXFromCol(minMemberCol) - PlatePadding;
                 group.PlateY = GridPlacementService.PixelYFromRow(minMemberRow) - PlatePadding;
@@ -3479,7 +3512,9 @@ public partial class MainWindow : BorderlessFluentWindow
         _preDragLayoutSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
 
         var members = Tiles.Where(t => t.Group == group.Id).ToList();
-        Point canvasMouse = TilesListBox != null ? e.GetPosition(TilesListBox) : e.GetPosition(this);
+        Point canvasMouse = TilesListBox != null 
+    ? e.GetPosition(TilesListBox) 
+    : (MainCanvasGrid != null ? e.GetPosition(MainCanvasGrid) : e.GetPosition(this));
 
         var gc = GroupsListBox?.ItemContainerGenerator.ContainerFromItem(group) as ContentPresenter;
         if (gc != null) Panel.SetZIndex(gc, 9999);
