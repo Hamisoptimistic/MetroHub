@@ -40,12 +40,13 @@ public partial class MainWindow : BorderlessFluentWindow
         set => SetValue(CurrentScaleProperty, value);
     }
 
-
     private readonly HotkeyService _hotkeyService = new();
     private DispatcherTimer? _hudTimer;
     private DispatcherTimer? _autoScrollTimer;
     private double _autoScrollVelocityY;
     private bool _isClosingToExit = false;
+
+    private bool _isDismissing = false;
 
     private Point _canvasRightClickPoint;
     private bool _isAppsLoaded = false;
@@ -63,7 +64,6 @@ public partial class MainWindow : BorderlessFluentWindow
         SetupAutoScrollTimer();
 
         Activated += OnWindowActivated;
-        Deactivated += OnWindowDeactivated;
         SizeChanged += (s, e) =>
         {
             UpdateLayoutMetrics();
@@ -81,7 +81,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private DateTime _lastShownTime = DateTime.MinValue;
     private bool _isFullyActivated = false;
-    private bool _isHiding = false;
 
     private void OnWindowActivated(object? sender, EventArgs e)
     {
@@ -101,9 +100,9 @@ public partial class MainWindow : BorderlessFluentWindow
             return;
         }
 
-        if (!IsDialogOpen && IsVisible && !_isHiding)
+        if (!IsDialogOpen && IsVisible && !_isDismissing)
         {
-            HideScreen();
+            DismissWithAnimation();
         }
     }
 
@@ -147,12 +146,11 @@ public partial class MainWindow : BorderlessFluentWindow
     }
 
     private const double BaseReferenceWidth = 1920.0;
-    private const double MinScaleThreshold = 0.72;
 
     private void UpdateScaleFactor(double viewportWidth)
     {
-        // Keep 1.0 native scale on 1080p and lower (720p, 768p) for 100% crisp text
-        // Scale up only on 4K (viewport > 2500)
+        // 1.0 native pixel scale for 1080p, 768p, and 720p to keep text crisp.
+        // Scales up only on 4K monitors (viewport > 2500)
         double scale = viewportWidth > 2500 ? Math.Clamp(viewportWidth / BaseReferenceWidth, 1.0, 1.75) : 1.0;
         CurrentScale = scale;
     }
@@ -165,7 +163,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
         UpdateScaleFactor(viewportWidth);
 
-        // Calculate available columns based on actual unscaled screen width
         GridPlacementService.UpdateMetrics(viewportWidth);
         double margin = GridPlacementService.OriginX;
 
@@ -227,7 +224,6 @@ public partial class MainWindow : BorderlessFluentWindow
         const double edgeThreshold = 80.0;
         const double maxVelocity = 24.0;
 
-        // Bottom edge detection
         if (svMouse.Y > svHeight - edgeThreshold && svMouse.Y <= svHeight + 120)
         {
             double excess = svMouse.Y - (svHeight - edgeThreshold);
@@ -238,7 +234,6 @@ public partial class MainWindow : BorderlessFluentWindow
                 _autoScrollTimer.Start();
             }
         }
-        // Top edge detection
         else if (svMouse.Y < edgeThreshold && svMouse.Y >= -120)
         {
             double excess = edgeThreshold - svMouse.Y;
@@ -266,7 +261,6 @@ public partial class MainWindow : BorderlessFluentWindow
         UpdateAutoScrollVelocity();
         if (Math.Abs(_autoScrollVelocityY) < 0.1) return;
 
-        // Expand canvas height if scrolling down towards the bottom
         if (_autoScrollVelocityY > 0 && MainCanvasGrid != null)
         {
             double currentBottom = ContentScrollViewer.VerticalOffset + ContentScrollViewer.ActualHeight;
@@ -286,8 +280,8 @@ public partial class MainWindow : BorderlessFluentWindow
         ContentScrollViewer.UpdateLayout();
 
         Point currentCanvasMouse = TilesListBox != null 
-    ? Mouse.GetPosition(TilesListBox) 
-    : (MainCanvasGrid != null ? Mouse.GetPosition(MainCanvasGrid) : Mouse.GetPosition(this));
+            ? Mouse.GetPosition(TilesListBox) 
+            : (MainCanvasGrid != null ? Mouse.GetPosition(MainCanvasGrid) : Mouse.GetPosition(this));
         ProcessDragMovement(currentCanvasMouse);
     }
 
@@ -298,7 +292,6 @@ public partial class MainWindow : BorderlessFluentWindow
         {
             if (IsVisible)
             {
-                // Measures purely MetroHub's internal app data and features, excluding external Windows/DirectX shared memory
                 long bytes = GC.GetTotalMemory(forceFullCollection: false);
                 double mb = Math.Round(bytes / (1024.0 * 1024.0), 1);
                 RamHudTextBlock.Text = $"App RAM: {mb} MB";
@@ -321,7 +314,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
         if (string.Equals(Settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase))
         {
-            // Acrylic backdrop + Smoked Obsidian tint overlay
             NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW);
             if (RootGrid != null)
             {
@@ -330,7 +322,6 @@ public partial class MainWindow : BorderlessFluentWindow
         }
         else if (string.Equals(Settings.BackdropType, "MicaAlt", StringComparison.OrdinalIgnoreCase))
         {
-            // Mica Alt (Tabbed) variant
             NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TABBEDWINDOW);
             if (RootGrid != null)
             {
@@ -339,7 +330,6 @@ public partial class MainWindow : BorderlessFluentWindow
         }
         else
         {
-            // Default: Pure Windows 11 Mica backdrop
             NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
             if (RootGrid != null)
             {
@@ -354,16 +344,59 @@ public partial class MainWindow : BorderlessFluentWindow
 
         ApplyConfiguredBackdrop();
 
-        // Hook Win32 window messages for instant broadcast IPC wake
         var hwndSource = HwndSource.FromHwnd(hwnd);
         hwndSource?.AddHook(WndProc);
 
-        // Register the global hotkey
         _hotkeyService.HotkeyPressed += OnHotkeyPressed;
         _hotkeyService.Register(hwnd, Settings);
 
-        // Snap to active monitor work area (never cover the Windows Taskbar)
         SnapToWorkArea();
+        PlayOpenAnimation();
+    }
+
+    public void PlayOpenAnimation()
+    {
+        _isDismissing = false;
+        if (TryFindResource("OpenStoryboard") is Storyboard openStoryboard)
+        {
+            var sb = openStoryboard.Clone();
+            sb.Begin(this);
+        }
+    }
+
+    public void DismissWithAnimation()
+    {
+        if (_isDismissing || !IsVisible) return;
+
+        if (TryFindResource("ExitStoryboard") is Storyboard exitStoryboard)
+        {
+            _isDismissing = true;
+            var sb = exitStoryboard.Clone();
+            sb.Completed += (s, e) =>
+            {
+                Hide();
+                _isDismissing = false;
+                _isFullyActivated = false;
+
+                // Reset back cleanly without bounce offsets
+                if (RootGrid != null) RootGrid.Opacity = 0.0;
+                if (RootTranslate != null) RootTranslate.Y = 20.0;
+                if (RootScale != null)
+                {
+                    RootScale.ScaleX = 0.985;
+                    RootScale.ScaleY = 0.985;
+                }
+
+                NativeMethods.FlushMemory();
+            };
+            sb.Begin(this);
+        }
+        else
+        {
+            Hide();
+            _isDismissing = false;
+            _isFullyActivated = false;
+        }
     }
 
     private const int WM_SETTINGCHANGE = 0x001A;
@@ -380,8 +413,6 @@ public partial class MainWindow : BorderlessFluentWindow
             Dispatcher.InvokeAsync(async () =>
             {
                 ApplyConfiguredBackdrop();
-
-                // Wait for Windows DWM wallpaper transition cross-fade to complete
                 await Task.Delay(400);
                 ApplyConfiguredBackdrop();
             });
@@ -392,23 +423,40 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void SnapToWorkArea()
     {
-        Rect workArea = NativeMethods.GetActiveMonitorWorkArea();
-        Left = workArea.Left;
-        Top = workArea.Top;
-        Width = workArea.Width;
-        Height = workArea.Height;
-
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
-        if (hwnd != IntPtr.Zero)
-        {
-            NativeMethods.SetWindowPos(hwnd, IntPtr.Zero,
-                (int)workArea.Left, (int)workArea.Top,
-                (int)workArea.Width, (int)workArea.Height,
-                NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_FRAMECHANGED);
-        }
+        if (hwnd == IntPtr.Zero) return;
+
+        // 1. Get raw monitor work area in physical pixels
+        Rect workAreaPixels = NativeMethods.GetActiveMonitorWorkArea();
+
+        // 2. Query active monitor DPI scaling factor for this window
+        DpiScale dpi = VisualTreeHelper.GetDpi(this);
+        double dpiX = dpi.DpiScaleX > 0 ? dpi.DpiScaleX : 1.0;
+        double dpiY = dpi.DpiScaleY > 0 ? dpi.DpiScaleY : 1.0;
+
+        // 3. Convert physical pixels to WPF Device-Independent Units (DIPs)
+        Left = workAreaPixels.Left / dpiX;
+        Top = workAreaPixels.Top / dpiY;
+        Width = workAreaPixels.Width / dpiX;
+        Height = workAreaPixels.Height / dpiY;
+
+        // 4. Force Win32 window bounds in physical pixels so the OS shell aligns exactly
+        NativeMethods.SetWindowPos(
+            hwnd, 
+            IntPtr.Zero,
+            (int)workAreaPixels.Left, 
+            (int)workAreaPixels.Top,
+            (int)workAreaPixels.Width, 
+            (int)workAreaPixels.Height,
+            NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_FRAMECHANGED);
 
         UpdateLayoutMetrics();
         UpdateCanvasHeight();
+    }
+protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+    {
+        base.OnDpiChanged(oldDpi, newDpi);
+        SnapToWorkArea();
     }
 
     private void OnHotkeyPressed()
@@ -418,7 +466,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void ToggleVisibility()
     {
-        if (IsVisible && !_isHiding)
+        if (IsVisible && !_isDismissing)
         {
             HideScreen();
         }
@@ -430,7 +478,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void ShowScreen()
     {
-        _isHiding = false;
+        _isDismissing = false;
         _lastShownTime = DateTime.UtcNow;
         _isFullyActivated = false;
         SnapToWorkArea();
@@ -451,106 +499,13 @@ public partial class MainWindow : BorderlessFluentWindow
         UpdateLayoutMetrics();
         UpdateExposedAddSlots();
 
-        PlayEntranceAnimation();
+        PlayOpenAnimation();
         TriggerBackgroundAppsCatalogRefresh();
     }
 
     public void HideScreen()
     {
-        if (_isHiding || !IsVisible) return;
-        _isHiding = true;
-        _isFullyActivated = false;
-
-        PlayExitAnimation(() =>
-        {
-            if (_isHiding)
-            {
-                Hide();
-                _isHiding = false;
-                NativeMethods.FlushMemory();
-            }
-        });
-    }
-
-    private void PlayEntranceAnimation()
-    {
-        if (RootGrid == null) return;
-
-        var cubicEase = new CubicEase { EasingMode = EasingMode.EaseOut };
-
-        // 1. Fluent Opacity Fade-In (0.0 -> 1.0)
-        var opacityAnim = new DoubleAnimation
-        {
-            From = RootGrid.Opacity < 0.1 ? 0.0 : RootGrid.Opacity,
-            To = 1.0,
-            Duration = TimeSpan.FromMilliseconds(180),
-            EasingFunction = cubicEase
-        };
-
-        // 2. Gentle upward rise (Y: 16 -> 0)
-        var translateAnim = new DoubleAnimation
-        {
-            From = RootTranslate != null ? (RootTranslate.Y > 0 ? RootTranslate.Y : 16.0) : 16.0,
-            To = 0.0,
-            Duration = TimeSpan.FromMilliseconds(200),
-            EasingFunction = cubicEase
-        };
-
-        // 3. Subtle scale lift (0.985 -> 1.0)
-        var scaleAnim = new DoubleAnimation
-        {
-            From = RootScale != null ? (RootScale.ScaleX < 1.0 ? RootScale.ScaleX : 0.985) : 0.985,
-            To = 1.0,
-            Duration = TimeSpan.FromMilliseconds(200),
-            EasingFunction = cubicEase
-        };
-
-        RootGrid.BeginAnimation(UIElement.OpacityProperty, opacityAnim);
-        RootTranslate?.BeginAnimation(TranslateTransform.YProperty, translateAnim);
-        RootScale?.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
-        RootScale?.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
-    }
-
-    private void PlayExitAnimation(Action onCompleted)
-    {
-        if (RootGrid == null)
-        {
-            onCompleted();
-            return;
-        }
-
-        var quadEase = new QuadraticEase { EasingMode = EasingMode.EaseIn };
-
-        // 1. Snappy Opacity Fade-Out (1.0 -> 0.0) in 110ms
-        var opacityAnim = new DoubleAnimation
-        {
-            To = 0.0,
-            Duration = TimeSpan.FromMilliseconds(110),
-            EasingFunction = quadEase
-        };
-
-        // 2. Subtle settle downwards (Y: 0 -> 12)
-        var translateAnim = new DoubleAnimation
-        {
-            To = 12.0,
-            Duration = TimeSpan.FromMilliseconds(110),
-            EasingFunction = quadEase
-        };
-
-        // 3. Subtle scale settle (1.0 -> 0.985)
-        var scaleAnim = new DoubleAnimation
-        {
-            To = 0.985,
-            Duration = TimeSpan.FromMilliseconds(110),
-            EasingFunction = quadEase
-        };
-
-        opacityAnim.Completed += (s, e) => onCompleted();
-
-        RootGrid.BeginAnimation(UIElement.OpacityProperty, opacityAnim);
-        RootTranslate?.BeginAnimation(TranslateTransform.YProperty, translateAnim);
-        RootScale?.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
-        RootScale?.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+        DismissWithAnimation();
     }
 
     private void OnWindowPreviewKeyDown(object sender, KeyEventArgs e)
@@ -560,21 +515,12 @@ public partial class MainWindow : BorderlessFluentWindow
 
         if (isCtrl && (e.Key == Key.Z || e.Key == Key.Y))
         {
-            if (IsTextInputFocused())
-            {
-                return; // Allow focused TextBox to handle text undo/redo normally
-            }
+            if (IsTextInputFocused()) return;
 
             if (e.Key == Key.Z)
             {
-                if (isShift)
-                {
-                    ExecuteRedo();
-                }
-                else
-                {
-                    ExecuteUndo();
-                }
+                if (isShift) ExecuteRedo();
+                else ExecuteUndo();
             }
             else if (e.Key == Key.Y)
             {
@@ -587,10 +533,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
         if (e.Key == Key.Delete)
         {
-            if (IsTextInputFocused())
-            {
-                return; // Allow focused TextBox to delete characters normally
-            }
+            if (IsTextInputFocused()) return;
 
             if (Tiles.Any(t => t.IsSelected))
             {
@@ -635,8 +578,8 @@ public partial class MainWindow : BorderlessFluentWindow
     private Presentation.Controls.TileControl? _draggedControl;
     private ContentPresenter? _draggedContainer;
     private Point _dragStartPoint;
-    private double _dragOffsetX; // offset from mouse to anchor tile's left edge
-    private double _dragOffsetY; // offset from mouse to anchor tile's top edge
+    private double _dragOffsetX;
+    private double _dragOffsetY;
     private int _dragOriginalCol;
     private int _dragOriginalRow;
     private bool _isPotentialDrag;
@@ -654,7 +597,6 @@ public partial class MainWindow : BorderlessFluentWindow
     private int _groupDragTargetColIndex;
     private int _groupDragTargetRow;
 
-    // Multi-tile Selection & Cluster Drag State
     private bool _isRubberBanding;
     private Point _rubberBandStartPoint;
     private bool _rubberBandHasMoved;
@@ -713,26 +655,22 @@ public partial class MainWindow : BorderlessFluentWindow
         var currentTiles = Tiles.ToList();
         var currentDict = currentTiles.ToDictionary(t => t.Id);
 
-        // Remove tiles that are not in target snapshot (e.g. undo an add)
         var toRemove = currentTiles.Where(t => !targetDict.ContainsKey(t.Id)).ToList();
         foreach (var t in toRemove)
         {
             Tiles.Remove(t);
         }
 
-        // Re-add tiles that were previously deleted (e.g. undo an unpin)
         var toAdd = targetTiles.Where(t => !currentDict.ContainsKey(t.Id)).ToList();
         foreach (var t in toAdd)
         {
             Tiles.Add(t);
         }
 
-        // Restore Groups
         var targetGroupDict = targetGroups.ToDictionary(g => g.Id);
         var currentGroups = Groups.ToList();
         var currentGroupDict = currentGroups.ToDictionary(g => g.Id);
 
-        // Defensive: If snapshot has no groups, but current layout has groups and tiles belong to groups, do NOT wipe groups!
         bool shouldRestoreGroups = targetGroups.Count > 0 || !targetTiles.Any(t => !string.IsNullOrEmpty(t.Group));
         if (shouldRestoreGroups)
         {
@@ -766,7 +704,6 @@ public partial class MainWindow : BorderlessFluentWindow
             }
         }
 
-        // Apply coordinates, spans, and styles
         var modifiedList = new List<TileModel>();
 
         foreach (var target in targetTiles)
@@ -793,9 +730,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
             if (spanChanged)
             {
-                var control =
-                    Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc =>
-                        ReferenceEquals(tc.DataContext, existing));
+                var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, existing));
                 control?.AnimateResize(oldSpanX, oldSpanY, target.SpanX, target.SpanY);
             }
 
@@ -817,9 +752,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
             if (styleChanged)
             {
-                var control =
-                    Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc =>
-                        ReferenceEquals(tc.DataContext, existing));
+                var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, existing));
                 control?.ApplyTileStyle(animate: true);
             }
         }
@@ -842,7 +775,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
         DependencyObject? dep = e.OriginalSource as DependencyObject;
 
-        // Bypass if user clicked on a Thumb (ResizeGrip) or its children
         if (FindParent<System.Windows.Controls.Primitives.Thumb>(dep) != null)
         {
             _isPotentialDrag = false;
@@ -851,7 +783,6 @@ public partial class MainWindow : BorderlessFluentWindow
             return;
         }
 
-        // Bypass if user clicked on a GroupHeaderControl or its children
         if (FindParent<Presentation.Controls.GroupHeaderControl>(dep) != null)
         {
             _isPotentialDrag = false;
@@ -860,7 +791,6 @@ public partial class MainWindow : BorderlessFluentWindow
             return;
         }
 
-        // If clicking on Top Header, Search, or Footer, don't trigger canvas selection
         if (HeaderGrid != null && HeaderGrid.IsMouseOver) return;
         if (FooterGrid != null && FooterGrid.IsMouseOver) return;
 
@@ -888,14 +818,11 @@ public partial class MainWindow : BorderlessFluentWindow
 
             if (isCtrlDown)
             {
-                // Ctrl + Click toggles individual tile selection
                 tile.IsSelected = !tile.IsSelected;
                 _dragBeganWithSelection = tile.IsSelected;
             }
             else
             {
-                // Normal Click:
-                // If clicked tile is already part of a multi-selection, preserve group for cluster dragging!
                 if (!tile.IsSelected)
                 {
                     ClearTileSelection();
@@ -908,7 +835,6 @@ public partial class MainWindow : BorderlessFluentWindow
                 }
             }
 
-            // Gather all selected tiles into the cluster
             if (tile.IsSelected)
             {
                 _draggedCluster = Tiles.Where(t => t.IsSelected).ToList();
@@ -918,7 +844,6 @@ public partial class MainWindow : BorderlessFluentWindow
                 _draggedCluster = new List<TileModel> { tile };
             }
 
-            // Record pre-drag coordinates and compute relative bounding box of the entire cluster
             _dragClusterOriginals.Clear();
             double minRelX = 0, maxRelX = tile.WidthPixels, minRelY = 0, maxRelY = tile.HeightPixels;
             int minRelCol = 0, maxRelCol = tile.SpanX, minRelRow = 0, maxRelRow = tile.SpanY;
@@ -954,7 +879,6 @@ public partial class MainWindow : BorderlessFluentWindow
         }
         else
         {
-            // Clicked on empty canvas
             _isPotentialDrag = false;
             _isDragging = false;
             _draggedTile = null;
@@ -967,7 +891,6 @@ public partial class MainWindow : BorderlessFluentWindow
                 return;
             }
 
-            // Begin rubber-band (marquee) box selection
             _isRubberBanding = true;
             _rubberBandHasMoved = false;
             _rubberBandStartPoint = canvasMouse;
@@ -996,7 +919,6 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         Point canvasMouse = TilesListBox != null ? e.GetPosition(TilesListBox) : e.GetPosition(this);
 
-        // 1. Rubber-Band Marquee Selection
         if (_isRubberBanding)
         {
             Vector diff = canvasMouse - _rubberBandStartPoint;
@@ -1042,10 +964,8 @@ public partial class MainWindow : BorderlessFluentWindow
             return;
         }
 
-        // 2. Drag threshold check (transition from press to active drag)
         if (_isPotentialDrag && !_isDragging && e.LeftButton == MouseButtonState.Pressed && _draggedTile != null)
         {
-            // Never promote to drag if any tile in the cluster belongs to a locked group
             bool lockedTile = _draggedCluster.Any(t =>
                 t.IsLocked || (!string.IsNullOrEmpty(t.Group) &&
                                Groups.FirstOrDefault(g => g.Id == t.Group)?.IsLocked == true));
@@ -1054,7 +974,6 @@ public partial class MainWindow : BorderlessFluentWindow
             Vector diff = current - _dragStartPoint;
             if (lockedTile && (Math.Abs(diff.X) > 5 || Math.Abs(diff.Y) > 5))
             {
-                // Attempted to drag a tile in a locked group: cancel drag & click so app does not launch
                 _isPotentialDrag = false;
                 var g = Groups.FirstOrDefault(gr => gr.Id == _draggedTile?.Group);
                 if (g != null && g.IsLocked)
@@ -1078,9 +997,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 foreach (var cTile in _draggedCluster)
                 {
                     cTile.IsBeingDragged = true;
-                    var control =
-                        Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc =>
-                            ReferenceEquals(tc.DataContext, cTile));
+                    var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
                     control?.AnimateElevationLift();
 
                     var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
@@ -1090,20 +1007,17 @@ public partial class MainWindow : BorderlessFluentWindow
                     }
                 }
 
-                // Show DropSlotIndicator matching cluster dimensions
                 DropSlotIndicator.Width = Math.Max(56, _clusterRelBounds.MaxRelX - _clusterRelBounds.MinRelX);
                 DropSlotIndicator.Height = Math.Max(56, _clusterRelBounds.MaxRelY - _clusterRelBounds.MinRelY);
                 DropSlotIndicator.Visibility = Visibility.Visible;
             }
         }
 
-        // 3. Ambient reveal when idle
         if (!_isDragging && !_isRubberBanding && TilesListBox != null)
         {
             UpdateAmbientReveal(canvasMouse);
         }
 
-        // 4. Rigid Multi-Tile Cluster Dragging
         if (_isDragging && (_draggedTile != null || (_isGroupDrag && _draggedGroupModel != null)))
         {
             UpdateAutoScrollVelocity();
@@ -1128,14 +1042,12 @@ public partial class MainWindow : BorderlessFluentWindow
         double rawAnchorX = canvasMouse.X - _dragOffsetX;
         double rawAnchorY = canvasMouse.Y - _dragOffsetY;
 
-        // Clamping bounds so the ENTIRE cluster stays within grid and window limits
         double minAllowedAnchorX = GridPlacementService.OriginX - _clusterRelBounds.MinRelX;
         double maxAllowedAnchorX = GridPlacementService.PixelXFromCol(maxCols) - _clusterRelBounds.MaxRelX;
         double minAllowedAnchorY = GridPlacementService.OriginY - _clusterRelBounds.MinRelY;
 
         if (_isGroupDrag && _draggedGroupModel != null)
         {
-            // Ensure group header never exceeds the top boundary
             double minGroupAnchorY = GridPlacementService.OriginY + 8 - _draggedGroupOffsetY;
             minAllowedAnchorY = Math.Max(minAllowedAnchorY, minGroupAnchorY);
         }
@@ -1151,7 +1063,6 @@ public partial class MainWindow : BorderlessFluentWindow
             MainCanvasGrid.MinHeight = clampedAnchorY + 600;
         }
 
-        // Move every tile in the cluster rigidly preserving relative offsets
         if (_draggedTile != null)
         {
             foreach (var cTile in _draggedCluster)
@@ -1173,11 +1084,9 @@ public partial class MainWindow : BorderlessFluentWindow
             }
         }
 
-        // Calculate snapped indicator position for the whole cluster or group
         int minAllowedCol = Math.Max(0, -_clusterRelGridBounds.MinRelCol);
         int maxAllowedCol = Math.Max(minAllowedCol, maxCols - _clusterRelGridBounds.MaxRelCol);
-        int anchorCol = Math.Max(0,
-            Math.Clamp(GridPlacementService.ColFromPixel(clampedAnchorX), minAllowedCol, maxAllowedCol));
+        int anchorCol = Math.Max(0, Math.Clamp(GridPlacementService.ColFromPixel(clampedAnchorX), minAllowedCol, maxAllowedCol));
 
         int minAllowedRow = _isGroupDrag
             ? (_draggedTile != null
@@ -1189,7 +1098,6 @@ public partial class MainWindow : BorderlessFluentWindow
         int rawAnchorCol = anchorCol;
         int rawAnchorRow = anchorRow;
 
-        // 4. Detect Hovering over Existing Groups (to show glowing perimeter & floating badge)
         if (!_isGroupDrag && Groups.Count > 0)
         {
             UpdateGroupDropHighlight(canvasMouse, clampedAnchorX, clampedAnchorY);
@@ -1201,43 +1109,34 @@ public partial class MainWindow : BorderlessFluentWindow
 
         if (_isGroupDrag && _draggedGroupModel != null)
         {
-            // Move the group header control in real-time right along with the moving tiles!
             _draggedGroupModel.X = clampedAnchorX + _draggedGroupOffsetX;
             _draggedGroupModel.Y = Math.Max(GridPlacementService.OriginY + 8, clampedAnchorY + _draggedGroupOffsetY);
 
-            var gContainer =
-                GroupsListBox?.ItemContainerGenerator.ContainerFromItem(_draggedGroupModel) as ContentPresenter;
+            var gContainer = GroupsListBox?.ItemContainerGenerator.ContainerFromItem(_draggedGroupModel) as ContentPresenter;
             if (gContainer != null)
             {
                 Canvas.SetLeft(gContainer, _draggedGroupModel.X);
                 Canvas.SetTop(gContainer, _draggedGroupModel.Y);
             }
 
-            // Move the tint backplate in real-time right along with the moving tiles and header!
             _draggedGroupModel.PlateX = clampedAnchorX + _draggedPlateOffsetX;
             _draggedGroupModel.PlateY = clampedAnchorY + _draggedPlateOffsetY;
 
-            var plateContainer =
-                GroupTintBackplates?.ItemContainerGenerator.ContainerFromItem(_draggedGroupModel) as ContentPresenter;
+            var plateContainer = GroupTintBackplates?.ItemContainerGenerator.ContainerFromItem(_draggedGroupModel) as ContentPresenter;
             if (plateContainer != null)
             {
                 Canvas.SetLeft(plateContainer, _draggedGroupModel.PlateX);
                 Canvas.SetTop(plateContainer, _draggedGroupModel.PlateY);
             }
 
-            // Hide generic tile drop indicator during group drag
             DropSlotIndicator.Visibility = Visibility.Collapsed;
 
-            int targetColIndex = Math.Max(0,
-                GridPlacementService.GetColumnIndexFromCol(GridPlacementService.ColFromPixel(clampedAnchorX)));
+            int targetColIndex = Math.Max(0, GridPlacementService.GetColumnIndexFromCol(GridPlacementService.ColFromPixel(clampedAnchorX)));
             int colStartCol = GridPlacementService.GetColumnStartCol(targetColIndex);
             double colLeft = GridPlacementService.PixelXFromCol(colStartCol);
-            double colWidth = GridPlacementService.GroupColWidth * GridPlacementService.GridStep -
-                              GridPlacementService.Gap;
+            double colWidth = GridPlacementService.GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
 
-            int targetRow = Math.Max(0,
-                GridPlacementService.FindInsertionRow(targetColIndex, canvasMouse.Y, Groups, Tiles,
-                    _draggedGroupModel));
+            int targetRow = Math.Max(0, GridPlacementService.FindInsertionRow(targetColIndex, canvasMouse.Y, Groups, Tiles, _draggedGroupModel));
             double insertionY = GridPlacementService.PixelYFromRow(targetRow) - 2;
 
             _groupDragTargetColIndex = targetColIndex;
@@ -1253,7 +1152,6 @@ public partial class MainWindow : BorderlessFluentWindow
         }
         else if (_hoveredTargetGroup != null && _draggedTile != null)
         {
-            // 5. Live preview inside hovered group bounds (internal reordering or adding to group)
             if (GroupInsertionLine != null) GroupInsertionLine.Visibility = Visibility.Collapsed;
             HideGapDropHighlight();
 
@@ -1263,8 +1161,7 @@ public partial class MainWindow : BorderlessFluentWindow
             }
             else
             {
-                var (wrapCol, wrapRow) =
-                    FindGroupWrapPosition(_hoveredTargetGroup, _draggedTile, rawAnchorCol, rawAnchorRow);
+                var (wrapCol, wrapRow) = FindGroupWrapPosition(_hoveredTargetGroup, _draggedTile, rawAnchorCol, rawAnchorRow);
                 double wrapX = GridPlacementService.PixelXFromCol(wrapCol);
                 double wrapY = GridPlacementService.PixelYFromRow(wrapRow);
 
@@ -1277,10 +1174,8 @@ public partial class MainWindow : BorderlessFluentWindow
         }
         else
         {
-            // 6. Canvas Drag (outside any group): show standard drop slot and check gap buffer
             if (GroupInsertionLine != null) GroupInsertionLine.Visibility = Visibility.Collapsed;
 
-            // Enforce 1x1 grid row and column separation around groups for loose tiles on canvas
             string? originGroupId = _draggedTile?.Group;
             int clusterMinCol = anchorCol + _clusterRelGridBounds.MinRelCol;
             int clusterMaxCol = anchorCol + _clusterRelGridBounds.MaxRelCol;
@@ -1299,24 +1194,19 @@ public partial class MainWindow : BorderlessFluentWindow
                 int gMinR = g.Row;
                 int gMaxR = members.Count > 0 ? members.Max(t => t.Row + t.SpanY) : g.Row + 1;
 
-                // If hovering in the horizontal column footprint of this group:
                 if (clusterMinCol < gMaxC && clusterMaxCol > gMinC)
                 {
-                    // Bottom gap or inside group: snap below the 1x1 gap
                     if (clusterStartRow <= gMaxR && clusterEndRow > gMinR)
                     {
                         anchorRow = (gMaxR + 1) - _clusterRelGridBounds.MinRelRow;
                     }
                 }
-                // If hovering in the vertical row footprint of this group:
                 else if (clusterStartRow < gMaxR && clusterEndRow > gMinR)
                 {
-                    // Right sideways gap: snap 1 column to the right
                     if (clusterMinCol == gMaxC)
                     {
                         anchorCol = (gMaxC + 1) - _clusterRelGridBounds.MinRelCol;
                     }
-                    // Left sideways gap: snap 1 column to the left
                     else if (gMinC > 0 && clusterMaxCol == gMinC)
                     {
                         anchorCol = (gMinC - 1 - (_clusterRelGridBounds.MaxRelCol - _clusterRelGridBounds.MinRelCol)) -
@@ -1334,14 +1224,12 @@ public partial class MainWindow : BorderlessFluentWindow
             Canvas.SetTop(DropSlotIndicator, snappedAnchorY + _clusterRelBounds.MinRelY);
             DropSlotIndicator.Visibility = Visibility.Visible;
 
-            // 7. Live 1x1 Gap Buffer Hover Feedback on Canvas: thin 1x1 red glowing border
             if (_draggedTile != null || _draggedCluster.Count > 0)
             {
                 int tileSpanX = _draggedTile?.SpanX ?? 2;
                 int tileSpanY = _draggedTile?.SpanY ?? 2;
 
-                if (Check1x1GapHover(canvasMouse, rawAnchorCol, rawAnchorRow, tileSpanX, tileSpanY, out int gapCol,
-                        out int gapRow))
+                if (Check1x1GapHover(canvasMouse, rawAnchorCol, rawAnchorRow, tileSpanX, tileSpanY, out int gapCol, out int gapRow))
                 {
                     ShowGapDropHighlight(gapCol, gapRow, canvasMouse);
                 }
@@ -1359,7 +1247,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private void OnCanvasPreviewMouseUp(object sender, MouseButtonEventArgs e)
     {
-        // 1. Finishing Rubber-band Marquee Selection
         if (_isRubberBanding)
         {
             _isRubberBanding = false;
@@ -1383,7 +1270,6 @@ public partial class MainWindow : BorderlessFluentWindow
             return;
         }
 
-        // 2. Finishing Drag & Drop Placement
         if (_isDragging)
         {
             StopAutoScroll();
@@ -1397,7 +1283,6 @@ public partial class MainWindow : BorderlessFluentWindow
             HideGroupDropHighlight();
             HideGapDropHighlight();
 
-            // A. GROUP HEADER DRAG REORDERING
             if (_isGroupDrag && _draggedGroupModel != null)
             {
                 _isGroupDrag = false;
@@ -1435,9 +1320,7 @@ public partial class MainWindow : BorderlessFluentWindow
                     cTile.IsBeingDragged = false;
                     var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
                     if (container != null) Panel.SetZIndex(container, 0);
-                    var control =
-                        Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc =>
-                            ReferenceEquals(tc.DataContext, cTile));
+                    var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
                     control?.AnimateRelease();
                 }
 
@@ -1468,13 +1351,11 @@ public partial class MainWindow : BorderlessFluentWindow
             _isGroupDrag = false;
             _draggedGroupModel = null;
 
-            // B. TILE / CLUSTER DRAG HANDLING
             if (_draggedTile != null)
             {
                 UpdateLayoutMetrics();
                 int maxCols = GridPlacementService.MaxCols;
 
-                // Track origin groups and their old bounding box bottom before drop reassignment
                 var originGroups = _dragClusterOriginals.Keys
                     .Where(t => !string.IsNullOrEmpty(t.Group))
                     .Select(t => Groups.FirstOrDefault(g => g.Id == t.Group))
@@ -1490,7 +1371,6 @@ public partial class MainWindow : BorderlessFluentWindow
                 {
                     if (targetGroup.IsLocked)
                     {
-                        // 1. LOCKED GROUP: DENY DROP WITH RED FLASH & SHAKE
                         FlashLockedGroupPerimeter(targetGroup);
 
                         foreach (var cTile in _draggedCluster)
@@ -1512,8 +1392,7 @@ public partial class MainWindow : BorderlessFluentWindow
                                 cTile.Y = GridPlacementService.PixelYFromRow(_dragOriginalRow);
                             }
 
-                            var container =
-                                TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
+                            var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
                             if (container != null)
                             {
                                 Canvas.SetLeft(container, cTile.X);
@@ -1521,9 +1400,7 @@ public partial class MainWindow : BorderlessFluentWindow
                                 Panel.SetZIndex(container, 0);
                             }
 
-                            var control =
-                                Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc =>
-                                    ReferenceEquals(tc.DataContext, cTile));
+                            var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
                             control?.AnimateRelease();
                         }
 
@@ -1542,7 +1419,6 @@ public partial class MainWindow : BorderlessFluentWindow
                     }
                     else
                     {
-                        // 2. UNLOCKED GROUP: place tile(s) at drop position, preserving existing tile layout
                         int dropCol = GridPlacementService.ColFromPixel(_draggedTile.X);
                         int dropRow = GridPlacementService.RowFromPixel(_draggedTile.Y);
 
@@ -1589,8 +1465,6 @@ public partial class MainWindow : BorderlessFluentWindow
                 }
                 else
                 {
-                    // Dropped on canvas outside targetGroup
-                    // Canvas drops NEVER join any group! Keep or set as loose tiles.
                     foreach (var cTile in _draggedCluster)
                     {
                         cTile.Group = null;
@@ -1603,10 +1477,8 @@ public partial class MainWindow : BorderlessFluentWindow
                     int targetCol = Math.Min(dropCol, Math.Max(0, maxCols - _draggedTile.SpanX));
                     int targetRow = Math.Max(0, dropRow);
 
-                    var origDict =
-                        _dragClusterOriginals.ToDictionary(kvp => kvp.Key, kvp => (kvp.Value.Col, kvp.Value.Row));
+                    var origDict = _dragClusterOriginals.ToDictionary(kvp => kvp.Key, kvp => (kvp.Value.Col, kvp.Value.Row));
 
-                    // Check if dropped on the 1x1 gap buffer (above, below, sideways) or inside any group area
                     bool droppedOnGap = false;
                     int flashCol = targetCol;
                     int flashRow = targetRow;
@@ -1619,18 +1491,15 @@ public partial class MainWindow : BorderlessFluentWindow
                         int gMinC = g.Col;
                         int gMaxC = g.Col + GridPlacementService.GroupColWidth;
                         int gMinR = g.Row;
-                        int gMaxR = gMembers.Count > 0 ? gMembers.Max(t => t.Row + t.SpanY) : g.Row + 1;
+                        int gMaxR = membersCount(gMembers, g);
 
-                        bool isBottomGap = (targetRow == gMaxR) &&
-                                           (targetCol < gMaxC && (targetCol + _draggedTile.SpanX) > gMinC);
+                        bool isBottomGap = (targetRow == gMaxR) && (targetCol < gMaxC && (targetCol + _draggedTile.SpanX) > gMinC);
                         bool isInsideGroup = (targetCol < gMaxC && (targetCol + _draggedTile.SpanX) > gMinC &&
                                               targetRow < gMaxR && (targetRow + _draggedTile.SpanY) > gMinR);
                         bool isTopGap = (gMinR > 0 && (targetRow + _draggedTile.SpanY) == gMinR) &&
                                         (targetCol < gMaxC && (targetCol + _draggedTile.SpanX) > gMinC);
-                        bool isRightGap =
-                            (targetCol == gMaxC ||
-                             (targetCol < gMaxC + 1 && (targetCol + _draggedTile.SpanX) > gMaxC)) &&
-                            (targetRow < gMaxR && (targetRow + _draggedTile.SpanY) > gMinR);
+                        bool isRightGap = (targetCol == gMaxC || (targetCol < gMaxC + 1 && (targetCol + _draggedTile.SpanX) > gMaxC)) &&
+                                          (targetRow < gMaxR && (targetRow + _draggedTile.SpanY) > gMinR);
                         bool isLeftGap = (gMinC > 0 && (targetCol + _draggedTile.SpanX) == gMinC) &&
                                          (targetRow < gMaxR && (targetRow + _draggedTile.SpanY) > gMinR);
 
@@ -1639,14 +1508,14 @@ public partial class MainWindow : BorderlessFluentWindow
                             droppedOnGap = true;
                             flashCol = targetCol;
                             flashRow = targetRow;
-                            targetRow = gMaxR + 1; // place below the 1x1 gap on canvas
+                            targetRow = gMaxR + 1;
                         }
                         else if (isRightGap)
                         {
                             droppedOnGap = true;
                             flashCol = targetCol;
                             flashRow = targetRow;
-                            targetCol = gMaxC + 1; // place in next column outside gap
+                            targetCol = gMaxC + 1;
                         }
                         else if (isLeftGap)
                         {
@@ -1666,8 +1535,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
                     if (droppedOnGap)
                     {
-                        FlashGapDropPerimeter(GridPlacementService.PixelXFromCol(flashCol),
-                            GridPlacementService.PixelYFromRow(flashRow), 56, 56);
+                        FlashGapDropPerimeter(GridPlacementService.PixelXFromCol(flashCol), GridPlacementService.PixelYFromRow(flashRow), 56, 56);
                     }
 
                     CleanEmptyGroupsAndReflow();
@@ -1688,8 +1556,7 @@ public partial class MainWindow : BorderlessFluentWindow
                     if (Groups != null && Groups.Count > 0)
                     {
                         var looseTiles = Tiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
-                        var pushedGroupTiles =
-                            GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, Groups, Tiles);
+                        var pushedGroupTiles = GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, Groups, Tiles);
                         foreach (var pt in pushedGroupTiles)
                         {
                             if (!modifiedTiles.Contains(pt)) modifiedTiles.Add(pt);
@@ -1706,7 +1573,6 @@ public partial class MainWindow : BorderlessFluentWindow
                     cTile.IsBeingDragged = false;
                 }
 
-                // Upward gravity: If any origin group shrank because tiles were dragged out or rearranged, pull lower groups & tiles up
                 bool anyPulled = false;
                 foreach (var og in originGroups)
                 {
@@ -1734,9 +1600,7 @@ public partial class MainWindow : BorderlessFluentWindow
             {
                 var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
                 if (container != null) Panel.SetZIndex(container, 0);
-                var control =
-                    Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc =>
-                        ReferenceEquals(tc.DataContext, cTile));
+                var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
                 control?.AnimateRelease();
             }
 
@@ -1768,12 +1632,10 @@ public partial class MainWindow : BorderlessFluentWindow
             return;
         }
 
-        // 3. Potential Drag that was just a click (no drag distance exceeded)
         if (_isPotentialDrag)
         {
             _isPotentialDrag = false;
             var controlToLaunch = _draggedControl;
-            var clickedTile = _draggedTile;
             _draggedTile = null;
             _draggedControl = null;
             _draggedContainer = null;
@@ -1781,7 +1643,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
             bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
 
-            // Normal left click on any tile launches it immediately and clears selection
             if (!isCtrlDown && controlToLaunch != null)
             {
                 var now = DateTime.UtcNow;
@@ -1823,6 +1684,9 @@ public partial class MainWindow : BorderlessFluentWindow
             return;
         }
     }
+
+    private static int membersCount(List<TileModel> members, TileGroupModel g) =>
+        members.Count > 0 ? members.Max(t => t.Row + t.SpanY) : g.Row + 1;
 
     public void CancelActiveDrag()
     {
@@ -1911,9 +1775,7 @@ public partial class MainWindow : BorderlessFluentWindow
         foreach (var cTile in _draggedCluster)
         {
             cTile.IsBeingDragged = false;
-            var control =
-                Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc =>
-                    ReferenceEquals(tc.DataContext, cTile));
+            var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
             control?.AnimateRelease();
             var c = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
             if (c != null) Panel.SetZIndex(c, 0);
@@ -1973,9 +1835,7 @@ public partial class MainWindow : BorderlessFluentWindow
         {
             foreach (var cTile in _draggedCluster)
             {
-                var control =
-                    Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc =>
-                        ReferenceEquals(tc.DataContext, cTile));
+                var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
                 control?.AnimateRelease();
             }
 
@@ -2007,8 +1867,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
                 if (distance <= 160)
                 {
-                    control.UpdateAmbientReveal(new Point(mouseOnCanvas.X - tile.X, mouseOnCanvas.Y - tile.Y),
-                        distance);
+                    control.UpdateAmbientReveal(new Point(mouseOnCanvas.X - tile.X, mouseOnCanvas.Y - tile.Y), distance);
                 }
                 else
                 {
@@ -2047,26 +1906,6 @@ public partial class MainWindow : BorderlessFluentWindow
                || FindParent<System.Windows.Controls.PasswordBox>(focused) != null;
     }
 
-    private bool IsInteractive(DependencyObject? obj)
-    {
-        while (obj != null && obj != this)
-        {
-            if (obj is Presentation.Controls.TileControl ||
-                obj is System.Windows.Controls.Button ||
-                obj is System.Windows.Controls.TextBox ||
-                obj is ContextMenu ||
-                obj is System.Windows.Controls.MenuItem ||
-                (obj is Border b && b.ToolTip != null))
-            {
-                return true;
-            }
-
-            obj = VisualTreeHelper.GetParent(obj);
-        }
-
-        return false;
-    }
-
     private void OnTileActivated(object sender, RoutedEventArgs e)
     {
         if (Settings.CloseOnLaunch)
@@ -2077,17 +1916,10 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void BatchResizeSelectedTiles(int newSpanX, int newSpanY, TileModel anchorTile)
     {
-        List<TileModel> targets;
-        if (anchorTile.IsSelected && SelectedTiles.Count > 1)
-        {
-            targets = SelectedTiles.ToList();
-        }
-        else
-        {
-            targets = new List<TileModel> { anchorTile };
-        }
+        List<TileModel> targets = (anchorTile.IsSelected && SelectedTiles.Count > 1)
+            ? SelectedTiles.ToList()
+            : new List<TileModel> { anchorTile };
 
-        // If all selected tiles are already the desired size, do nothing
         if (targets.All(t => t.SpanX == newSpanX && t.SpanY == newSpanY))
         {
             return;
@@ -2095,10 +1927,8 @@ public partial class MainWindow : BorderlessFluentWindow
 
         string preModify = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
 
-        // Capture previous spans for animation
         var oldSpans = targets.ToDictionary(t => t, t => (t.SpanX, t.SpanY));
 
-        // Elevate resizing tiles so they morph on top of sliding neighbors
         foreach (var t in targets)
         {
             var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(t) as ContentPresenter;
@@ -2116,7 +1946,6 @@ public partial class MainWindow : BorderlessFluentWindow
         UpdateLayoutMetrics();
         int maxCols = GridPlacementService.MaxCols;
 
-        // Track groups and their old bounding box bottom before resizing
         var affectedGroups = targets
             .Where(t => !string.IsNullOrEmpty(t.Group))
             .Select(t => Groups.FirstOrDefault(g => g.Id == t.Group))
@@ -2128,7 +1957,6 @@ public partial class MainWindow : BorderlessFluentWindow
             g => g!,
             g => GridPlacementService.GetGroupBoundingBox(g!, Tiles).MaxRow);
 
-        // Resolve collision using topological batch expansion
         var modified = GridPlacementService.ResolveBatchResizeExpansion(
             targets,
             newSpanX,
@@ -2137,16 +1965,13 @@ public partial class MainWindow : BorderlessFluentWindow
             Tiles,
             Groups);
 
-        // Trigger resize animations across all resizing tile controls
         foreach (var t in targets)
         {
             var (oldX, oldY) = oldSpans[t];
-            var control =
-                Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, t));
+            var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, t));
             control?.AnimateResize(oldX, oldY, newSpanX, newSpanY);
         }
 
-        // If any resized tiles belong to a group, push lower groups down if expanded or pull up if shrank
         foreach (var ag in affectedGroups)
         {
             int oldBottom = oldGroupBottoms[ag!];
@@ -2170,7 +1995,6 @@ public partial class MainWindow : BorderlessFluentWindow
             }
         }
 
-        // Animate any displaced neighbor tiles (and self if clamped/shifted)
         AnimateModifiedTiles(modified);
 
         DropSlotIndicator.Visibility = Visibility.Collapsed;
@@ -2188,15 +2012,9 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void BatchStyleSelectedTiles(string newStyle, TileModel anchorTile)
     {
-        List<TileModel> targets;
-        if (anchorTile.IsSelected && SelectedTiles.Count > 1)
-        {
-            targets = SelectedTiles.ToList();
-        }
-        else
-        {
-            targets = new List<TileModel> { anchorTile };
-        }
+        List<TileModel> targets = (anchorTile.IsSelected && SelectedTiles.Count > 1)
+            ? SelectedTiles.ToList()
+            : new List<TileModel> { anchorTile };
 
         string preModify = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
 
@@ -2211,8 +2029,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 }
             }
 
-            var control =
-                Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, t));
+            var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, t));
             control?.ApplyTileStyle(animate: true);
         }
 
@@ -2234,15 +2051,9 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void BatchUnpinSelectedTiles(TileModel anchorTile)
     {
-        List<TileModel> targets;
-        if (anchorTile.IsSelected && SelectedTiles.Count > 1)
-        {
-            targets = SelectedTiles.ToList();
-        }
-        else
-        {
-            targets = new List<TileModel> { anchorTile };
-        }
+        List<TileModel> targets = (anchorTile.IsSelected && SelectedTiles.Count > 1)
+            ? SelectedTiles.ToList()
+            : new List<TileModel> { anchorTile };
 
         BatchUnpinTiles(targets);
     }
@@ -2251,7 +2062,6 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         if (targets == null || targets.Count == 0) return;
 
-        // Never delete tiles that are locked or in a locked group
         var eligible = targets
             .Where(t => !t.IsLocked &&
                         !(t.Group != null && Groups.FirstOrDefault(g => g.Id == t.Group)?.IsLocked == true))
@@ -2274,7 +2084,6 @@ public partial class MainWindow : BorderlessFluentWindow
         string preUnpin = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
         _historyService.PushState(preUnpin);
 
-        // Track affected groups and their old bounding box bottom before removing tiles
         var affectedGroups = eligible
             .Where(t => !string.IsNullOrEmpty(t.Group))
             .Select(t => Groups.FirstOrDefault(g => g.Id == t.Group))
@@ -2467,7 +2276,6 @@ public partial class MainWindow : BorderlessFluentWindow
                 }
             }
 
-            // If any loose tiles are trapped inside this group's bounding box, move them to the nearest free slot outside
             var groupMembers = Tiles.Where(t => t.Group == group.Id).ToList();
             if (groupMembers.Count > 0)
             {
@@ -2535,8 +2343,6 @@ public partial class MainWindow : BorderlessFluentWindow
         TileGroupModel? targetGroup = null;
         Rect bestGroupRect = Rect.Empty;
 
-        // Origin group prioritization: if dragged tile/cluster belongs to a group,
-        // prioritize that group and provide generous hysteresis so internal reordering never drops out.
         string? originGroupId = _draggedTile?.Group;
         bool isClusterFromOriginGroup = originGroupId != null &&
                                         (_draggedCluster.Count == 0 ||
@@ -2559,24 +2365,18 @@ public partial class MainWindow : BorderlessFluentWindow
 
             double blockWidth = GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
             double minX = GridPlacementService.PixelXFromCol(group.Col);
-            double maxX = minX + blockWidth;
 
-            // Group top bounds: header or tint backplate
             double minY = group.PlateHeight > 0 ? Math.Min(group.Y, group.PlateY) : group.Y;
 
-            // Group bottom bounds: include all member tiles and tint backplate
             double memberMaxY = allMembers.Count > 0 ? allMembers.Max(t => t.Y + t.HeightPixels) : group.Y + 120;
             if (group.PlateHeight > 0)
             {
                 memberMaxY = Math.Max(memberMaxY, group.PlateY + group.PlateHeight);
             }
 
-            // Append slot height: allows dragging into the bottom row to append to or expand the group
             double tileHeight = _draggedTile?.HeightPixels ?? 120;
             double appendY = memberMaxY + tileHeight;
 
-            // Generous hysteresis for origin group (20px padding) so moving tiles inside or touching edges
-            // never loses group focus or flickers. Foreign groups get an 8px border buffer + append zone.
             double padX = isOrigin ? 20.0 : 8.0;
             double padTop = isOrigin ? 20.0 : 8.0;
             double padBottom = isOrigin ? 24.0 : 12.0;
@@ -2763,22 +2563,16 @@ public partial class MainWindow : BorderlessFluentWindow
         if (GroupDropFloatingBadge != null) GroupDropFloatingBadge.Visibility = Visibility.Collapsed;
     }
 
-    /// <summary>
-    /// Calculates the snapped (col, row) position for a tile within a 4-column group block.
-    /// Clamps within the 4-column group block, and auto-wraps down to the next row if dragged past the right edge.
-    /// </summary>
     private (int Col, int Row) FindGroupWrapPosition(TileGroupModel group, TileModel tile, int rawCol, int rawRow)
     {
         int groupMinCol = group.Col;
-        int groupMaxCol = group.Col + GroupColWidth; // Exactly 4 units wide
-        int minRow = group.Row + 1; // Row immediately below the group header
+        int groupMaxCol = group.Col + GroupColWidth;
+        int minRow = group.Row + 1;
         int baseRow = Math.Max(minRow, rawRow);
 
         int col;
         int row;
 
-        // Auto-wrap: if dragged past the right edge (column limit) of the group,
-        // bump down to the next row and wrap to the beginning of the group
         if (rawCol + tile.SpanX > groupMaxCol)
         {
             col = groupMinCol;
@@ -2793,10 +2587,6 @@ public partial class MainWindow : BorderlessFluentWindow
         return (col, row);
     }
 
-    /// <summary>
-    /// Shows a red glowing perimeter border with a horizontal shake and smooth fade out
-    /// when a user attempts to drop a tile into a locked group.
-    /// </summary>
     public void FlashLockedGroupPerimeter(TileGroupModel group)
     {
         if (GroupDropPerimeterBorder == null) return;
@@ -2845,7 +2635,6 @@ public partial class MainWindow : BorderlessFluentWindow
         var translate = GroupDropPerimeterTranslate ?? new TranslateTransform();
         GroupDropPerimeterBorder.RenderTransform = translate;
 
-        // 300ms horizontal shake animation
         var shakeAnimation = new DoubleAnimationUsingKeyFrames
         {
             Duration = TimeSpan.FromMilliseconds(300)
@@ -2853,14 +2642,11 @@ public partial class MainWindow : BorderlessFluentWindow
         shakeAnimation.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(0))));
         shakeAnimation.KeyFrames.Add(new LinearDoubleKeyFrame(-6, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(50))));
         shakeAnimation.KeyFrames.Add(new LinearDoubleKeyFrame(6, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(100))));
-        shakeAnimation.KeyFrames.Add(new LinearDoubleKeyFrame(-4,
-            KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(150))));
+        shakeAnimation.KeyFrames.Add(new LinearDoubleKeyFrame(-4, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(150))));
         shakeAnimation.KeyFrames.Add(new LinearDoubleKeyFrame(4, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(200))));
-        shakeAnimation.KeyFrames.Add(new LinearDoubleKeyFrame(-2,
-            KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(250))));
+        shakeAnimation.KeyFrames.Add(new LinearDoubleKeyFrame(-2, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(250))));
         shakeAnimation.KeyFrames.Add(new LinearDoubleKeyFrame(0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(300))));
 
-        // Smooth fade out over 350ms (finishing at ~650ms)
         var fadeAnimation = new DoubleAnimation
         {
             From = 1.0,
@@ -2881,10 +2667,6 @@ public partial class MainWindow : BorderlessFluentWindow
         GroupDropPerimeterBorder.BeginAnimation(UIElement.OpacityProperty, fadeAnimation);
     }
 
-    /// <summary>
-    /// Shows a glowing thin 1x1 red border when a user attempts to drop a tile
-    /// into the 1x1 gap buffer surrounding a group.
-    /// </summary>
     private void FlashGapDropPerimeter(double pixelX, double pixelY, double width = 56, double height = 56)
     {
         if (GapDropWarningBorder == null) return;
@@ -2905,8 +2687,7 @@ public partial class MainWindow : BorderlessFluentWindow
             To = 0.0,
             Duration = TimeSpan.FromMilliseconds(700),
             FillBehavior = FillBehavior.Stop,
-            EasingFunction = new System.Windows.Media.Animation.CubicEase
-                { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
 
         fadeAnimation.Completed += (s, e) =>
@@ -2918,10 +2699,6 @@ public partial class MainWindow : BorderlessFluentWindow
         GapDropWarningBorder.BeginAnimation(UIElement.OpacityProperty, fadeAnimation);
     }
 
-    /// <summary>
-    /// Live hover feedback on the 1x1 gap buffer: shows the glowing thin 1x1 red border
-    /// and floating badge in real-time while dragging over any gap boundary.
-    /// </summary>
     private void ShowGapDropHighlight(int gapCol, int gapRow, Point mousePos)
     {
         if (GapDropWarningBorder == null) return;
@@ -2938,10 +2715,8 @@ public partial class MainWindow : BorderlessFluentWindow
         GapDropWarningBorder.Opacity = 1.0;
         GapDropWarningBorder.Visibility = Visibility.Visible;
 
-        // Hide normal blue drop slot indicator so user isn't deceived
         DropSlotIndicator.Visibility = Visibility.Collapsed;
 
-        // Show floating badge with warning icon and text
         if (GroupDropFloatingBadge != null)
         {
             if (GroupDropBadgeIcon != null)
@@ -2996,10 +2771,8 @@ public partial class MainWindow : BorderlessFluentWindow
         int mouseCol = GridPlacementService.ColFromPixel(mousePos.X);
         int mouseRow = GridPlacementService.RowFromPixel(mousePos.Y);
 
-        // Check 1x1 perimeter gap buffer around groups ON THE CANVAS
         foreach (var g in Groups)
         {
-            // If the tile belongs to this group, it can NEVER have a gap violation with its own group!
             if (originGroupId != null && g.Id == originGroupId) continue;
 
             var members = Tiles.Where(t => t.Group == g.Id).ToList();
@@ -3010,7 +2783,6 @@ public partial class MainWindow : BorderlessFluentWindow
             int gMinR = g.Row;
             int gMaxR = members.Count > 0 ? members.Max(t => t.Row + t.SpanY) : g.Row + 1;
 
-            // 1. Right sideways 1x1 gap alley (mouseCol == gMaxC within group vertical span)
             if (mouseCol == gMaxC && mouseRow >= gMinR && mouseRow <= gMaxR)
             {
                 gapCol = gMaxC;
@@ -3018,7 +2790,6 @@ public partial class MainWindow : BorderlessFluentWindow
                 return true;
             }
 
-            // 2. Left sideways 1x1 gap alley (mouseCol == gMinC - 1 within group vertical span)
             if (gMinC > 0 && mouseCol == gMinC - 1 && mouseRow >= gMinR && mouseRow <= gMaxR)
             {
                 gapCol = gMinC - 1;
@@ -3026,8 +2797,6 @@ public partial class MainWindow : BorderlessFluentWindow
                 return true;
             }
 
-            // 3. The 1x1 bottom gap is row gMaxR between the group plate and loose canvas tiles.
-            // It only applies when mouse cursor is explicitly in that row ON THE CANVAS (below the visual backplate).
             double plateBottom = g.PlateHeight > 0
                 ? g.PlateY + g.PlateHeight
                 : (members.Count > 0 ? members.Max(t => t.Y + t.HeightPixels) : g.Y + 120);
@@ -3039,7 +2808,6 @@ public partial class MainWindow : BorderlessFluentWindow
                 return true;
             }
 
-            // 4. Top gap buffer: immediately above group header (if group starts below row 0)
             if (g.Row > 0 && mouseRow == g.Row - 1 && mouseCol >= gMinC && mouseCol < gMaxC && mousePos.Y < g.Y - 6)
             {
                 gapCol = Math.Clamp(mouseCol, gMinC, gMaxC - 1);
@@ -3049,65 +2817,6 @@ public partial class MainWindow : BorderlessFluentWindow
         }
 
         return false;
-    }
-
-    /// <summary>
-    /// Migrates existing group layouts by reflowing all group member tiles into 4-column blocks.
-    /// </summary>
-    private void ReflowGroupsToFixedColumnWidth()
-    {
-        bool changed = false;
-
-        foreach (var group in Groups)
-        {
-            var members = Tiles.Where(t => t.Group == group.Id).ToList();
-            if (members.Count == 0) continue;
-
-            int groupOriginCol = group.Col;
-            int groupMaxCol = groupOriginCol + GroupColWidth;
-
-            // Check if any member tile exceeds the 4-column group width or starts before groupOriginCol
-            bool needsReflow = members.Any(t => t.Col < groupOriginCol || (t.Col + t.SpanX) > groupMaxCol);
-            if (!needsReflow) continue;
-
-            // Sort members in reading order (row first, then col)
-            var sortedMembers = members
-                .OrderBy(t => t.Row)
-                .ThenBy(t => t.Col)
-                .ToList();
-
-            // Reflow tiles into rows within the 4-unit column constraint
-            int startRow = Math.Max(1, group.Row + 1);
-            int curCol = groupOriginCol;
-            int curRow = startRow;
-            int maxRowInCurrentLine = 1;
-
-            foreach (var t in sortedMembers)
-            {
-                // If tile doesn't fit horizontally on current row, wrap to next line
-                if (curCol + t.SpanX > groupMaxCol)
-                {
-                    curCol = groupOriginCol;
-                    curRow += maxRowInCurrentLine;
-                    maxRowInCurrentLine = 1;
-                }
-
-                t.Col = curCol;
-                t.Row = curRow;
-                t.X = GridPlacementService.PixelXFromCol(curCol);
-                t.Y = GridPlacementService.PixelYFromRow(curRow);
-
-                curCol += t.SpanX;
-                maxRowInCurrentLine = Math.Max(maxRowInCurrentLine, t.SpanY);
-            }
-
-            changed = true;
-        }
-
-        if (changed)
-        {
-            StorageService.SaveLayout(Tiles);
-        }
     }
 
     public void EnsureGroupsHaveHeaderSpace()
@@ -3170,7 +2879,6 @@ public partial class MainWindow : BorderlessFluentWindow
                 }
             }
 
-            // Update tint backplate bounding box (sized strictly to member tiles with 8px padding)
             var members = Tiles.Where(t => t.Group == group.Id).ToList();
             if (members.Count > 0)
             {
@@ -3186,10 +2894,8 @@ public partial class MainWindow : BorderlessFluentWindow
 
                 group.PlateX = GridPlacementService.PixelXFromCol(minMemberCol) - PlatePadding;
                 group.PlateY = GridPlacementService.PixelYFromRow(minMemberRow) - PlatePadding;
-                group.PlateWidth = (colSpan * GridPlacementService.GridStep) - GridPlacementService.Gap +
-                                   (PlatePadding * 2);
-                group.PlateHeight = (rowSpan * GridPlacementService.GridStep) - GridPlacementService.Gap +
-                                    (PlatePadding * 2);
+                group.PlateWidth = (colSpan * GridPlacementService.GridStep) - GridPlacementService.Gap + (PlatePadding * 2);
+                group.PlateHeight = (rowSpan * GridPlacementService.GridStep) - GridPlacementService.Gap + (PlatePadding * 2);
             }
             else
             {
@@ -3197,8 +2903,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 group.PlateHeight = 0;
             }
 
-            var plateContainer =
-                GroupTintBackplates?.ItemContainerGenerator.ContainerFromItem(group) as ContentPresenter;
+            var plateContainer = GroupTintBackplates?.ItemContainerGenerator.ContainerFromItem(group) as ContentPresenter;
             if (plateContainer != null)
             {
                 if (animate)
@@ -3257,15 +2962,9 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void CreateGroupFromSelectedTiles(TileModel anchorTile)
     {
-        List<TileModel> targets;
-        if (anchorTile.IsSelected && SelectedTiles.Count > 1)
-        {
-            targets = SelectedTiles.ToList();
-        }
-        else
-        {
-            targets = new List<TileModel> { anchorTile };
-        }
+        List<TileModel> targets = (anchorTile.IsSelected && SelectedTiles.Count > 1)
+            ? SelectedTiles.ToList()
+            : new List<TileModel> { anchorTile };
 
         string pre = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
 
@@ -3314,10 +3013,8 @@ public partial class MainWindow : BorderlessFluentWindow
 
         Groups.Add(group);
 
-        var modified =
-            GridPlacementService.InsertGroupAndResolveCollisions(group, targetColIndex, targetRow, Groups, Tiles);
+        var modified = GridPlacementService.InsertGroupAndResolveCollisions(group, targetColIndex, targetRow, Groups, Tiles);
 
-        // Upward gravity on any origin groups that lost member tiles
         foreach (var og in originGroups)
         {
             int oldBottom = originOldBottoms[og!];
@@ -3356,7 +3053,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
         string pre = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
 
-        // Track origin groups and their bounding box bottoms before tiles are moved
         var originGroups = tilesToAdd
             .Where(t => !string.IsNullOrEmpty(t.Group))
             .Select(t => Groups.FirstOrDefault(g => g.Id == t.Group))
@@ -3379,7 +3075,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
         ClearTileSelection();
 
-        // Upward gravity: If any origin group shrank because tiles were moved out, pull lower groups & tiles up
         foreach (var og in originGroups)
         {
             int oldBottom = originOldBottoms[og!];
@@ -3480,7 +3175,6 @@ public partial class MainWindow : BorderlessFluentWindow
             Tiles.Remove(t);
         }
 
-        int colIdx = group.ColumnIndex;
         Groups.Remove(group);
 
         var modifiedTiles = GridPlacementService.PullLowerGroupsUp(group, Groups, Tiles);
@@ -3506,8 +3200,8 @@ public partial class MainWindow : BorderlessFluentWindow
 
         var members = Tiles.Where(t => t.Group == group.Id).ToList();
         Point canvasMouse = TilesListBox != null 
-    ? e.GetPosition(TilesListBox) 
-    : (MainCanvasGrid != null ? e.GetPosition(MainCanvasGrid) : e.GetPosition(this));
+            ? e.GetPosition(TilesListBox) 
+            : (MainCanvasGrid != null ? e.GetPosition(MainCanvasGrid) : e.GetPosition(this));
 
         var gc = GroupsListBox?.ItemContainerGenerator.ContainerFromItem(group) as ContentPresenter;
         if (gc != null) Panel.SetZIndex(gc, 9999);
@@ -3533,9 +3227,7 @@ public partial class MainWindow : BorderlessFluentWindow
             _draggedCluster = members;
             _dragClusterOriginals.Clear();
 
-            _clusterRelBounds = (0,
-                GridPlacementService.GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap, 0,
-                GridPlacementService.GridStep);
+            _clusterRelBounds = (0, GridPlacementService.GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap, 0, GridPlacementService.GridStep);
             _clusterRelGridBounds = (0, GridPlacementService.GroupColWidth, 0, 1);
 
             _isPotentialDrag = false;
@@ -3553,8 +3245,7 @@ public partial class MainWindow : BorderlessFluentWindow
             DropSlotIndicator.Visibility = Visibility.Collapsed;
             if (GroupInsertionLine != null)
             {
-                GroupInsertionLine.Width = GridPlacementService.GroupColWidth * GridPlacementService.GridStep -
-                                           GridPlacementService.Gap;
+                GroupInsertionLine.Width = GridPlacementService.GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
                 Canvas.SetLeft(GroupInsertionLine, GridPlacementService.PixelXFromCol(gCol));
                 Canvas.SetTop(GroupInsertionLine, group.Y);
                 GroupInsertionLine.Visibility = Visibility.Visible;
@@ -3571,8 +3262,7 @@ public partial class MainWindow : BorderlessFluentWindow
         var anchor = members.OrderBy(t => t.Row).ThenBy(t => t.Col).First();
 
         _draggedTile = anchor;
-        _draggedControl =
-            Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, anchor));
+        _draggedControl = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, anchor));
         _draggedContainer = TilesListBox?.ItemContainerGenerator.ContainerFromItem(anchor) as ContentPresenter;
         _dragStartPoint = e.GetPosition(this);
 
@@ -3591,9 +3281,7 @@ public partial class MainWindow : BorderlessFluentWindow
         foreach (var cTile in _draggedCluster)
         {
             cTile.IsBeingDragged = true;
-            var control =
-                Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc =>
-                    ReferenceEquals(tc.DataContext, cTile));
+            var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
             control?.AnimateElevationLift();
 
             var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
@@ -3640,8 +3328,7 @@ public partial class MainWindow : BorderlessFluentWindow
         DropSlotIndicator.Visibility = Visibility.Collapsed;
         if (GroupInsertionLine != null)
         {
-            GroupInsertionLine.Width = GridPlacementService.GroupColWidth * GridPlacementService.GridStep -
-                                       GridPlacementService.Gap;
+            GroupInsertionLine.Width = GridPlacementService.GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
             Canvas.SetLeft(GroupInsertionLine, GridPlacementService.PixelXFromCol(group.Col));
             Canvas.SetTop(GroupInsertionLine, group.Y);
             GroupInsertionLine.Visibility = Visibility.Visible;
@@ -3682,8 +3369,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
         Groups.Add(group);
 
-        var modified =
-            GridPlacementService.InsertGroupAndResolveCollisions(group, targetColIndex, targetRow, Groups, Tiles);
+        var modified = GridPlacementService.InsertGroupAndResolveCollisions(group, targetColIndex, targetRow, Groups, Tiles);
         AnimateModifiedTiles(modified);
         UpdateGroupHeaderPositions();
         SaveGroupsAndLayout();
@@ -3699,7 +3385,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void UpdateExposedAddSlots()
     {
-        // Exposed [+] slot button removed completely per user request
     }
 
     private void OnCanvasContextMenuClosed(object sender, RoutedEventArgs e)
@@ -3784,7 +3469,6 @@ public partial class MainWindow : BorderlessFluentWindow
                     SectionHeader = targetGroup.Title
                 };
 
-                // Place tile at click position within the group (preserves existing tile layout)
                 int clickRelCol = col - targetGroup.Col;
                 int clickRelRow = row - (targetGroup.Row + 1);
                 var existingGroupTiles = Tiles.Where(t => t.Group == targetGroup.Id).ToList();
@@ -3865,8 +3549,6 @@ public partial class MainWindow : BorderlessFluentWindow
             }
             else
             {
-                // If clicked tile is already part of a multi-tile selection, keep the group!
-                // If not, clear others and select this tile (like Windows Explorer)
                 if (!tile.IsSelected)
                 {
                     ClearTileSelection();
@@ -3881,7 +3563,6 @@ public partial class MainWindow : BorderlessFluentWindow
                 _canvasRightClickPoint = e.GetPosition(TilesListBox);
             }
 
-            // Right-clicked empty canvas: deselect tiles unless Ctrl is held
             bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
             if (!isCtrlDown)
             {
@@ -3892,7 +3573,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private void OnCanvasContextMenuOpened(object sender, RoutedEventArgs e)
     {
-        // Pre-heat apps catalog in background when context menu opens so hovering over "Apps" is instantaneous
         if (!_isAppsLoaded && !_isLoadingApps)
         {
             _ = LoadAppsSubmenuAsync();
@@ -3951,7 +3631,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private void TriggerBackgroundAppsCatalogRefresh()
     {
-        // Throttle COM enumeration queries to at most once every 10 seconds
         if ((DateTime.UtcNow - _lastAppsRefreshTime).TotalSeconds < 10)
         {
             return;
@@ -3959,7 +3638,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
         _lastAppsRefreshTime = DateTime.UtcNow;
 
-        // Multi-threaded background execution (never blocks UI or animations)
         Task.Run(async () =>
         {
             try
@@ -3971,8 +3649,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
                 if (_isAppsLoaded)
                 {
-                    await Dispatcher.InvokeAsync(() => { UpdateAppsMenuItems(freshItems); },
-                        DispatcherPriority.Background);
+                    await Dispatcher.InvokeAsync(() => { UpdateAppsMenuItems(freshItems); }, DispatcherPriority.Background);
                 }
             }
             catch (Exception ex)
@@ -3993,8 +3670,7 @@ public partial class MainWindow : BorderlessFluentWindow
             {
                 if (AppsMenuItem.Items[i] is MenuItem mi && mi.DataContext is CatalogItemModel existing)
                 {
-                    if (!string.Equals(existing.TargetPath, freshItems[i].TargetPath,
-                            StringComparison.OrdinalIgnoreCase)
+                    if (!string.Equals(existing.TargetPath, freshItems[i].TargetPath, StringComparison.OrdinalIgnoreCase)
                         || !string.Equals(existing.Name, freshItems[i].Name, StringComparison.Ordinal))
                     {
                         hasChanged = true;
@@ -4059,8 +3735,7 @@ public partial class MainWindow : BorderlessFluentWindow
         UpdateLayoutMetrics();
         int maxCols = GridPlacementService.MaxCols;
 
-        Point clickPoint = targetCanvasPosition ??
-                           new Point(GridPlacementService.OriginX, GridPlacementService.OriginY);
+        Point clickPoint = targetCanvasPosition ?? new Point(GridPlacementService.OriginX, GridPlacementService.OriginY);
 
         int col = GridPlacementService.ColFromPixel(clickPoint.X);
         int row = GridPlacementService.RowFromPixel(clickPoint.Y);
@@ -4097,7 +3772,6 @@ public partial class MainWindow : BorderlessFluentWindow
                 SectionHeader = targetGroup.Title
             };
 
-            // Place at click position within the group (preserves existing tile layout)
             int pinRelCol = col - targetGroup.Col;
             int pinRelRow = row - (targetGroup.Row + 1);
             var existingPinGroupTiles = Tiles.Where(t => t.Group == targetGroup.Id).ToList();
@@ -4129,7 +3803,6 @@ public partial class MainWindow : BorderlessFluentWindow
         int spanX = item.SpanX > 0 ? item.SpanX : 2;
         int spanY = item.SpanY > 0 ? item.SpanY : 2;
 
-        // Context-aware sizing: If target slot has room for 1x1 but not full 2x2, adapt down to 1x1
         if (GridPlacementService.IsRegionFree(col, row, 1, 1, Tiles, groups: Groups))
         {
             if (!GridPlacementService.IsRegionFree(col, row, spanX, spanY, Tiles, groups: Groups))
@@ -4183,7 +3856,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
         StorageService.SaveLayout(Tiles);
         UpdateCanvasHeight();
-
         UpdateExposedAddSlots();
     }
 
@@ -4251,7 +3923,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 foreach (string file in files)
                 {
                     AddFileAsTile(file, currentX, currentY, recordHistory: false);
-                    currentX += 70; // offset slightly for multiple files
+                    currentX += 70;
                     currentY += 70;
                 }
 

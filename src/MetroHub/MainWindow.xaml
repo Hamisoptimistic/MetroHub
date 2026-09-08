@@ -20,14 +20,96 @@
         Topmost="True"
         PreviewKeyDown="OnWindowPreviewKeyDown"
         SourceInitialized="OnSourceInitialized"
+        Deactivated="OnWindowDeactivated"
         AllowDrop="True"
         DragOver="OnWindowDragOver"
         DragLeave="OnWindowDragLeave"
         Drop="OnWindowDrop">
 
+    <controls:BorderlessFluentWindow.Resources>
+        <!-- Clean Decelerating Entrance: Smooth Rise & Fade (No Bounce/Overshoot) -->
+        <Storyboard x:Key="OpenStoryboard">
+            <DoubleAnimation Storyboard.TargetName="RootGrid"
+                             Storyboard.TargetProperty="Opacity"
+                             From="0.0" To="1.0"
+                             Duration="0:0:0.18">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation Storyboard.TargetName="RootTranslate"
+                             Storyboard.TargetProperty="Y"
+                             From="20.0" To="0.0"
+                             Duration="0:0:0.20">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation Storyboard.TargetName="RootScale"
+                             Storyboard.TargetProperty="ScaleX"
+                             From="0.985" To="1.0"
+                             Duration="0:0:0.20">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation Storyboard.TargetName="RootScale"
+                             Storyboard.TargetProperty="ScaleY"
+                             From="0.985" To="1.0"
+                             Duration="0:0:0.20">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <!-- Clean Snappy Exit: Smooth Downward Fade -->
+        <Storyboard x:Key="ExitStoryboard">
+            <DoubleAnimation Storyboard.TargetName="RootGrid"
+                             Storyboard.TargetProperty="Opacity"
+                             To="0.0"
+                             Duration="0:0:0.11">
+                <DoubleAnimation.EasingFunction>
+                    <QuadraticEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation Storyboard.TargetName="RootTranslate"
+                             Storyboard.TargetProperty="Y"
+                             To="12.0"
+                             Duration="0:0:0.11">
+                <DoubleAnimation.EasingFunction>
+                    <QuadraticEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation Storyboard.TargetName="RootScale"
+                             Storyboard.TargetProperty="ScaleX"
+                             To="0.985"
+                             Duration="0:0:0.11">
+                <DoubleAnimation.EasingFunction>
+                    <QuadraticEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation Storyboard.TargetName="RootScale"
+                             Storyboard.TargetProperty="ScaleY"
+                             To="0.985"
+                             Duration="0:0:0.11">
+                <DoubleAnimation.EasingFunction>
+                    <QuadraticEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+    </controls:BorderlessFluentWindow.Resources>
+
     <!-- WPF Transparent brush passes mouse hit-tests while remaining invisible so DWM Mica renders directly -->
-    <Grid x:Name="RootGrid" 
+   <Grid x:Name="RootGrid" 
           Background="Transparent"
+          Opacity="0"
           RenderTransformOrigin="0.5, 0.5"
           UseLayoutRounding="True"
           SnapsToDevicePixels="True"
@@ -37,10 +119,10 @@
           PreviewMouseMove="OnCanvasPreviewMouseMove"
           PreviewMouseLeftButtonUp="OnCanvasPreviewMouseUp"
           MouseLeave="OnCanvasMouseLeave">
-        <Grid.RenderTransform>
+       <Grid.RenderTransform>
             <TransformGroup>
-                <ScaleTransform x:Name="RootScale" ScaleX="1.0" ScaleY="1.0" />
-                <TranslateTransform x:Name="RootTranslate" Y="0" />
+                <ScaleTransform x:Name="RootScale" ScaleX="0.985" ScaleY="0.985" />
+                <TranslateTransform x:Name="RootTranslate" Y="20.0" />
             </TransformGroup>
         </Grid.RenderTransform>
         <Grid.RowDefinitions>
@@ -83,7 +165,6 @@
                         <Style TargetType="Border"><Setter Property="CornerRadius" Value="7"/></Style>
                     </Button.Resources>
                 </Button>
-
 
                 <!-- Export Layout Button -->
                 <Button Content="Export"
@@ -379,8 +460,6 @@
 
             </Grid>
         </ScrollViewer>
-
-
 
         <!-- Bottom Status Bar -->
         <Grid x:Name="FooterGrid" Grid.Row="2" Margin="48,0,48,0">
