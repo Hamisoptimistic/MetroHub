@@ -29,6 +29,10 @@
     <Grid x:Name="RootGrid" 
           Background="Transparent"
           RenderTransformOrigin="0.5, 0.5"
+          UseLayoutRounding="True"
+          SnapsToDevicePixels="True"
+          TextOptions.TextFormattingMode="Display"
+          TextOptions.TextRenderingMode="ClearType"
           PreviewMouseLeftButtonDown="OnCanvasPreviewMouseDown"
           PreviewMouseMove="OnCanvasPreviewMouseMove"
           PreviewMouseLeftButtonUp="OnCanvasPreviewMouseUp"
@@ -118,10 +122,6 @@
             <Grid x:Name="MainCanvasGrid"
                   Background="Transparent"
                   PreviewMouseRightButtonDown="OnCanvasPreviewMouseRightButtonDown">
-<Grid.LayoutTransform>
-        <ScaleTransform x:Name="CanvasScaleTransform" ScaleX="1.0" ScaleY="1.0" />
-    </Grid.LayoutTransform>
-
                 <Grid.ContextMenu>
                     <ContextMenu x:Name="CanvasContextMenu"
                                  Opened="OnCanvasContextMenuOpened"

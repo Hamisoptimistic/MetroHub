@@ -147,16 +147,14 @@ public partial class MainWindow : BorderlessFluentWindow
     }
 
     private const double BaseReferenceWidth = 1920.0;
-    private const double MinScaleThreshold = 0.60;
+    private const double MinScaleThreshold = 0.72;
 
     private void UpdateScaleFactor(double viewportWidth)
     {
-        if (CanvasScaleTransform == null || viewportWidth <= 0) return;
-
-        double scale = Math.Clamp(viewportWidth / BaseReferenceWidth, MinScaleThreshold, 2.0);
+        // Keep 1.0 native scale on 1080p and lower (720p, 768p) for 100% crisp text
+        // Scale up only on 4K (viewport > 2500)
+        double scale = viewportWidth > 2500 ? Math.Clamp(viewportWidth / BaseReferenceWidth, 1.0, 1.75) : 1.0;
         CurrentScale = scale;
-        CanvasScaleTransform.ScaleX = scale;
-        CanvasScaleTransform.ScaleY = scale;
     }
 
     private void UpdateLayoutMetrics()
@@ -167,23 +165,18 @@ public partial class MainWindow : BorderlessFluentWindow
 
         UpdateScaleFactor(viewportWidth);
 
-        double effectiveWidth = (CanvasScaleTransform != null && CanvasScaleTransform.ScaleX > 0)
-            ? viewportWidth / CanvasScaleTransform.ScaleX
-            : viewportWidth;
-
-        GridPlacementService.UpdateMetrics(effectiveWidth);
+        // Calculate available columns based on actual unscaled screen width
+        GridPlacementService.UpdateMetrics(viewportWidth);
         double margin = GridPlacementService.OriginX;
-
-        double screenMargin = margin * (CanvasScaleTransform?.ScaleX ?? 1.0);
 
         if (HeaderGrid != null)
         {
-            HeaderGrid.Margin = new Thickness(screenMargin, 0, screenMargin, 0);
+            HeaderGrid.Margin = new Thickness(margin, 0, margin, 0);
         }
 
         if (FooterGrid != null)
         {
-            FooterGrid.Margin = new Thickness(screenMargin, 0, screenMargin, 0);
+            FooterGrid.Margin = new Thickness(margin, 0, margin, 0);
         }
     }
 

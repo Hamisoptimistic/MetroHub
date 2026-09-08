@@ -8,7 +8,12 @@
              mc:Ignorable="d"
              Margin="0"
              Cursor="Hand"
-             Focusable="False">
+             Focusable="False"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True"
+             RenderOptions.ClearTypeHint="Enabled"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
 
     <UserControl.Resources>
         <conv:TileSpanToPixelsConverter x:Key="SpanConverter" />
@@ -105,36 +110,48 @@
                 </Border.BorderBrush>
             </Border>
 
-            <!-- Content Area: Free of outer constraint margin for exact pixel placement -->
-            <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True">
+            <!-- Content Area: ClearType enabled, no aggressive boundary clip -->
+            <Grid SnapsToDevicePixels="True" 
+                  UseLayoutRounding="True"
+                  RenderOptions.ClearTypeHint="Enabled"
+                  RenderOptions.BitmapScalingMode="Fant">
+                  
                 <!-- 1x1 Small Tile Layout (56x56) -->
                 <Grid x:Name="SmallContentGrid" Visibility="{Binding IsSmall, Converter={StaticResource BoolToVis}}">
                     <Image Source="{Binding IconPath}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Width="28" Height="28"
-                           RenderOptions.BitmapScalingMode="HighQuality" />
+                           SnapsToDevicePixels="True"
+                           UseLayoutRounding="True"
+                           RenderOptions.BitmapScalingMode="Fant" />
                 </Grid>
 
                 <!-- 2x2 Medium Tile Layout (120x120) -->
                 <Grid x:Name="MediumContentGrid" Visibility="{Binding IsMedium, Converter={StaticResource BoolToVis}}">
-                    <!-- Icon: Optical Center (balanced breathing room above bottom label) -->
                     <Image Source="{Binding IconPath}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Width="44" Height="44"
-                           Margin="0,0,0,12"
-                           RenderOptions.BitmapScalingMode="HighQuality" />
+                           Margin="0,0,0,14"
+                           SnapsToDevicePixels="True"
+                           UseLayoutRounding="True"
+                           RenderOptions.BitmapScalingMode="Fant" />
 
-                    <!-- Label: Docked to bottom-left in authentic Segoe UI Variable -->
+                    <!-- Label: Display-mode rendering with crisp pixel hinting -->
                     <TextBlock Text="{Binding Title}"
                                VerticalAlignment="Bottom"
                                HorizontalAlignment="Left"
                                Margin="8,0,8,6"
-                               FontSize="11.5"
-                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                               FontSize="12"
+                               FontFamily="Segoe UI"
                                FontWeight="SemiBold"
-                               Foreground="#F0FFFFFF"
+                               Foreground="#FFFFFF"
+                               SnapsToDevicePixels="True"
+                               UseLayoutRounding="True"
+                               TextOptions.TextFormattingMode="Display"
+                               TextOptions.TextRenderingMode="ClearType"
+                               TextOptions.TextHintingMode="Fixed"
                                TextTrimming="CharacterEllipsis"
                                TextWrapping="NoWrap"
                                MaxWidth="104" />
@@ -142,23 +159,27 @@
 
                 <!-- 4x2 Wide Tile Layout (248x120) -->
                 <Grid x:Name="WideContentGrid" Visibility="{Binding IsWide, Converter={StaticResource BoolToVis}}">
-                    <!-- Icon: Centered in wide tile canvas -->
                     <Image Source="{Binding IconPath}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Width="46" Height="46"
-                           Margin="0,0,0,12"
-                           RenderOptions.BitmapScalingMode="HighQuality" />
+                           Margin="0,0,0,14"
+                           SnapsToDevicePixels="True"
+                           UseLayoutRounding="True"
+                           RenderOptions.BitmapScalingMode="Fant" />
 
-                    <!-- Label: Docked to bottom-left in authentic Segoe UI Variable -->
                     <TextBlock Text="{Binding Title}"
                                VerticalAlignment="Bottom"
                                HorizontalAlignment="Left"
                                Margin="8,0,8,6"
                                FontSize="11.5"
-                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                               FontWeight="SemiBold"
-                               Foreground="#F0FFFFFF"
+                               FontFamily="Segoe UI"
+                               FontWeight="Normal"
+                               Foreground="#F5FFFFFF"
+                               SnapsToDevicePixels="True"
+                               UseLayoutRounding="True"
+                               TextOptions.TextFormattingMode="Display"
+                               TextOptions.TextRenderingMode="ClearType"
                                TextTrimming="CharacterEllipsis"
                                TextWrapping="NoWrap"
                                MaxWidth="232" />
