@@ -3156,9 +3156,9 @@ public partial class MainWindow : BorderlessFluentWindow
                 int maxMemberBottom = members.Max(t => t.Row + t.SpanY);
                 int rowSpan = Math.Max(1, maxMemberBottom - minMemberRow);
 
-                const double PlatePadding = GridPlacementService.Gap * 0.4;
+                const double PlatePadding = GridPlacementService.Gap * 0;
 
-                group.PlateX = GridPlacementService.PixelXFromCol(minMemberCol) - PlatePadding
+                group.PlateX = GridPlacementService.PixelXFromCol(minMemberCol) - PlatePadding;
                 group.PlateY = GridPlacementService.PixelYFromRow(minMemberRow) - PlatePadding;
                 group.PlateWidth = (colSpan * GridPlacementService.GridStep) - GridPlacementService.Gap +
                                    (PlatePadding * 2);

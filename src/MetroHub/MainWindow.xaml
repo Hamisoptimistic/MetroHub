@@ -223,7 +223,7 @@
                     <Border x:Name="GapDropWarningBorder"
                             Visibility="Collapsed"
                             Width="56" Height="56"
-                            CornerRadius="6"
+                            CornerRadius="2"
                             BorderThickness="1.5"
                             BorderBrush="#FF4343"
                             Background="#22FF4343"
@@ -317,7 +317,7 @@
                         <DataTemplate>
                             <Border Width="{Binding PlateWidth}"
                                     Height="{Binding PlateHeight}"
-                                    CornerRadius="6"
+                                    CornerRadius="2"
                                     Background="{Binding TintBackgroundBrush}"
                                     BorderBrush="{Binding TintBorderBrush}"
                                     BorderThickness="1"
