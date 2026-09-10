@@ -10,8 +10,14 @@
                 <ui:ControlsDictionary />
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Authentic WPF-UI ContextMenu Style with Integrated Responsive Scaling -->
+            <!-- Authentic Windows 11 Fluent ContextMenu Style with Integrated Responsive Scaling -->
             <Style TargetType="{x:Type ContextMenu}">
+                <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="FontWeight" Value="Normal" />
+                <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+                <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
                 <Setter Property="LayoutTransform">
                     <Setter.Value>
                         <ScaleTransform ScaleX="{Binding Source={x:Static local:MainWindow.Current}, Path=CurrentScale, FallbackValue=1.0}"
@@ -29,7 +35,6 @@
                 <Setter Property="SnapsToDevicePixels" Value="True" />
                 <Setter Property="UseLayoutRounding" Value="True" />
                 <Setter Property="OverridesDefaultStyle" Value="True" />
-                <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type ContextMenu}">
@@ -81,6 +86,20 @@
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
+            </Style>
+
+            <!-- Authentic Windows 11 MenuItem Typography for Top-Level and Nested Sub-Menus -->
+            <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource {x:Type MenuItem}}">
+                <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="FontWeight" Value="Normal" />
+                <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+                <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+                <Setter Property="UseLayoutRounding" Value="True" />
+                <Setter Property="MinHeight" Value="32" />
+                <Setter Property="Padding" Value="10,5,12,5" />
             </Style>
         </ResourceDictionary>
     </Application.Resources>

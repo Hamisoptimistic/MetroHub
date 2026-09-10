@@ -9,6 +9,7 @@
              Cursor="Arrow">
 
     <Border x:Name="RootBorder"
+            Margin="-6,0,0,0"
             Padding="6,4,6,4"
             CornerRadius="4"
             Background="Transparent"
@@ -137,19 +138,21 @@
                 <StackPanel x:Name="ViewPanel" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock x:Name="TitleTextBlock"
                                Text="{Binding Title}"
-                               FontSize="15"
+                               FontSize="18"
                                FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                               FontWeight="SemiBold"
+                               FontWeight="Bold"
                                Foreground="{Binding HeaderColor, TargetNullValue='#E8FFFFFF', FallbackValue='#E8FFFFFF'}"
                                VerticalAlignment="Center"
+                               TextOptions.TextFormattingMode="Display"
+                               TextOptions.TextRenderingMode="ClearType"
                                TextTrimming="CharacterEllipsis"
-                               MaxWidth="220"
+                               MaxWidth="260"
                                MouseDown="OnTitleMouseDown" />
 
                     <!-- Subtle drag / edit indicator on hover -->
                     <ui:SymbolIcon x:Name="DragHintIcon"
                                    Symbol="ReOrder24"
-                                   FontSize="16"
+                                   FontSize="17"
                                    Foreground="#70FFFFFF"
                                    Margin="6,0,4,0"
                                    VerticalAlignment="Center"
@@ -159,9 +162,9 @@
                 <!-- Inline Renaming TextBox: 100% Transparent & Borderless -->
                 <TextBox x:Name="EditTextBox"
                          Visibility="Collapsed"
-                         FontSize="15"
+                         FontSize="18"
                          FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                         FontWeight="SemiBold"
+                         FontWeight="Bold"
                          Foreground="{Binding HeaderColor, TargetNullValue='#FFFFFF', FallbackValue='#FFFFFF'}"
                          CaretBrush="{Binding HeaderColor, TargetNullValue='#60CDFF', FallbackValue='#60CDFF'}"
                          Background="Transparent"
@@ -170,8 +173,10 @@
                          Padding="0"
                          Margin="0"
                          MinWidth="120"
-                         MaxWidth="220"
+                         MaxWidth="260"
                          VerticalAlignment="Center"
+                         TextOptions.TextFormattingMode="Display"
+                         TextOptions.TextRenderingMode="ClearType"
                          KeyDown="OnEditKeyDown"
                          LostFocus="OnEditLostFocus">
                     <TextBox.Style>
