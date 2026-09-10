@@ -94,10 +94,8 @@
         <Grid.RowDefinitions>
             <!-- Top Section: App List Icon -->
             <RowDefinition Height="Auto" />
-            <!-- Middle Spacer -->
+            <!-- Scrollable Bottom Section: System and Folder Shortcuts -->
             <RowDefinition Height="*" />
-            <!-- Bottom Section: System and Folder Shortcuts -->
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Top Section: Single App List Toggle Button -->
@@ -110,8 +108,15 @@
             </Button>
         </StackPanel>
 
-        <!-- Bottom Section: Matching Screenshot 1 -->
-        <StackPanel Grid.Row="2" Margin="0,0,0,10">
+        <!-- Bottom Section: Pins to bottom when space permits, gracefully scrolls on short laptop screens -->
+        <ScrollViewer x:Name="ShortcutsScrollViewer"
+                      Grid.Row="1"
+                      VerticalScrollBarVisibility="Hidden"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Focusable="False"
+                      CanContentScroll="False"
+                      VerticalAlignment="Bottom">
+            <StackPanel Margin="0,0,0,10">
             <!-- User Account -->
             <Button x:Name="UserButton"
                     Style="{StaticResource RailButtonStyle}"
@@ -217,5 +222,6 @@
                 </Button.ContextMenu>
             </Button>
         </StackPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>

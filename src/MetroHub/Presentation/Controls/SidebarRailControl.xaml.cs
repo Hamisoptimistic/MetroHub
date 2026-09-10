@@ -16,10 +16,24 @@ namespace MetroHub.Presentation.Controls
         {
             InitializeComponent();
             Loaded += OnLoaded;
+            SizeChanged += OnSizeChanged;
+        }
+
+        private void OnSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (ShortcutsScrollViewer != null && ShortcutsScrollViewer.ScrollableHeight > 0)
+            {
+                ShortcutsScrollViewer.ScrollToBottom();
+            }
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
+            if (ShortcutsScrollViewer != null && ShortcutsScrollViewer.ScrollableHeight > 0)
+            {
+                ShortcutsScrollViewer.ScrollToBottom();
+            }
+
             try
             {
                 var userName = Environment.UserName;

@@ -156,14 +156,24 @@ namespace MetroHub.Presentation.Controls
             Close();
         }
 
+        private void UpdatePlaceholderVisibility()
+        {
+            bool hasText = !string.IsNullOrWhiteSpace(SearchBox.Text);
+            bool isFocused = SearchBox.IsFocused;
+            SearchPlaceholder.Visibility = (hasText || isFocused) ? Visibility.Collapsed : Visibility.Visible;
+            ClearSearchButton.Visibility = hasText ? Visibility.Visible : Visibility.Collapsed;
+        }
+
         private void OnSearchBoxGotFocus(object sender, RoutedEventArgs e)
         {
             SearchBorder.Background = new SolidColorBrush(Color.FromArgb(0x22, 0xFF, 0xFF, 0xFF));
+            UpdatePlaceholderVisibility();
         }
 
         private void OnSearchBoxLostFocus(object sender, RoutedEventArgs e)
         {
             SearchBorder.Background = new SolidColorBrush(Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF));
+            UpdatePlaceholderVisibility();
         }
 
         private void OnSearchBoxTextChanged(object sender, TextChangedEventArgs e)
@@ -171,8 +181,7 @@ namespace MetroHub.Presentation.Controls
             string query = SearchBox.Text.Trim();
             bool hasText = !string.IsNullOrEmpty(query);
 
-            SearchPlaceholder.Visibility = hasText ? Visibility.Collapsed : Visibility.Visible;
-            ClearSearchButton.Visibility = hasText ? Visibility.Visible : Visibility.Collapsed;
+            UpdatePlaceholderVisibility();
 
             if (!hasText)
             {
@@ -201,8 +210,7 @@ namespace MetroHub.Presentation.Controls
         private void ClearSearch()
         {
             SearchBox.Text = string.Empty;
-            SearchPlaceholder.Visibility = Visibility.Visible;
-            ClearSearchButton.Visibility = Visibility.Collapsed;
+            UpdatePlaceholderVisibility();
             GroupedScrollViewer.Visibility = Visibility.Visible;
             SearchResultsScrollViewer.Visibility = Visibility.Collapsed;
         }

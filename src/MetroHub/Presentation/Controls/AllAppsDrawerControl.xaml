@@ -320,7 +320,6 @@
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="28" />
                                                         <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
 
                                                     <Image Grid.Column="0"
@@ -336,17 +335,8 @@
                                                                FontSize="13"
                                                                Foreground="#E6FFFFFF"
                                                                VerticalAlignment="Center"
-                                                               Margin="8,0,4,0"
+                                                               Margin="8,0,8,0"
                                                                TextTrimming="CharacterEllipsis" />
-
-                                                    <!-- Hover Pin Action Button -->
-                                                    <Button Grid.Column="2"
-                                                            Style="{StaticResource MiniPinButtonStyle}"
-                                                            ToolTip="Pin to Start"
-                                                            Tag="{Binding}"
-                                                            Click="OnQuickPinClick">
-                                                        <ui:SymbolIcon Symbol="Pin20" FontSize="14" Foreground="#80FFFFFF" />
-                                                    </Button>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
@@ -401,7 +391,6 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="28" />
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
 
                                         <Image Grid.Column="0"
@@ -417,16 +406,8 @@
                                                    FontSize="13"
                                                    Foreground="#E6FFFFFF"
                                                    VerticalAlignment="Center"
-                                                   Margin="8,0,4,0"
+                                                   Margin="8,0,8,0"
                                                    TextTrimming="CharacterEllipsis" />
-
-                                        <Button Grid.Column="2"
-                                                Style="{StaticResource MiniPinButtonStyle}"
-                                                ToolTip="Pin to Start"
-                                                Tag="{Binding}"
-                                                Click="OnQuickPinClick">
-                                            <ui:SymbolIcon Symbol="Pin20" FontSize="14" Foreground="#80FFFFFF" />
-                                        </Button>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

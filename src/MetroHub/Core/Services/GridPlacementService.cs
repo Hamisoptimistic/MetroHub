@@ -6,9 +6,9 @@ public static class GridPlacementService
 {
     public const double GridStep = 64.0;
     public const double Gap = 8.0;
-    public const double OriginX = 48.0;
+    public const double OriginX = 16.0;
     public const double OriginY = 40.0;
-    public const double BaseSideMargin = 48.0;
+    public const double BaseSideMargin = 24.0;
     public const int GroupColWidth = 8;
     public const double ColumnGap = 32.0;
 
