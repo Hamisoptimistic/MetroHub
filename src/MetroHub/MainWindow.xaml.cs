@@ -51,7 +51,7 @@ public partial class MainWindow : BorderlessFluentWindow
     private Point _canvasRightClickPoint;
     private bool _isAppsLoaded = false;
     private bool _isLoadingApps = false;
-    private DateTime _lastAppsRefreshTime = DateTime.MinValue;
+    private DateTime _lastAppsRefreshTime = DateTime.UtcNow;
 
     public MainWindow()
     {
@@ -79,6 +79,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
         InstalledAppsService.AppsCatalogChanged += OnAppsCatalogChanged;
         StartBackgroundAppWarmup();
+        _ = Task.Delay(30000).ContinueWith(_ => TriggerBackgroundAppsCatalogRefresh());
     }
 
     private void OnRootGridLostMouseCapture(object sender, MouseEventArgs e)
@@ -540,7 +541,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         }, DispatcherPriority.Render);
 
         PlayOpenAnimation();
-        TriggerBackgroundAppsCatalogRefresh();
     }
 
     public void HideScreen()
@@ -3880,15 +3880,16 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 var apps = InstalledAppsService.GetInstalledApps(forceRefresh: false);
                 if (apps == null || apps.Count == 0) return;
 
-                CatalogItemModel.PrewarmMemoryCache(apps);
-
                 var groups = Presentation.Controls.AllAppsDrawerControl.CreateAlphabeticalGroups(apps);
 
                 await Dispatcher.InvokeAsync(() =>
                 {
                     AllAppsDrawer?.SetPreloadedApps(apps, groups);
-                    PreloadAppsSubmenu(apps);
                 }, DispatcherPriority.ApplicationIdle);
+
+                // Defer non-critical icon prewarming by 3s so startup completes with 0% CPU/disk contention
+                await Task.Delay(3000);
+                CatalogItemModel.PrewarmMemoryCache(apps);
             }
             catch (Exception ex)
             {

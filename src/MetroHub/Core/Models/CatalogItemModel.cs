@@ -97,7 +97,7 @@ public class CatalogItemModel : INotifyPropertyChanged
             var itemList = items.Where(i => !string.IsNullOrWhiteSpace(i.TargetPath) && !_memoryIconCache.ContainsKey(i.TargetPath)).ToList();
             if (itemList.Count == 0) return;
 
-            Parallel.ForEach(itemList, new ParallelOptions { MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount, 2, 8) }, item =>
+            Parallel.ForEach(itemList, new ParallelOptions { MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount / 2, 1, 2) }, item =>
             {
                 try
                 {
