@@ -255,6 +255,21 @@ public static class NativeMethods
     public const int ASFW_ANY = -1;
 
     [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+    [DllImport("kernel32.dll")]
+    public static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr DefWindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
     public static extern bool SetForegroundWindow(IntPtr hWnd);
 
     [DllImport("user32.dll")]
@@ -269,9 +284,28 @@ public static class NativeMethods
     {
         try
         {
-            ShowWindow(hWnd, SW_SHOW);
-            BringWindowToTop(hWnd);
-            SetForegroundWindow(hWnd);
+            IntPtr foreHwnd = GetForegroundWindow();
+            uint foreThread = 0;
+            if (foreHwnd != IntPtr.Zero)
+            {
+                foreThread = GetWindowThreadProcessId(foreHwnd, out _);
+            }
+            uint currentThread = GetCurrentThreadId();
+
+            if (foreThread != 0 && foreThread != currentThread)
+            {
+                AttachThreadInput(currentThread, foreThread, true);
+                ShowWindow(hWnd, SW_SHOW);
+                BringWindowToTop(hWnd);
+                SetForegroundWindow(hWnd);
+                AttachThreadInput(currentThread, foreThread, false);
+            }
+            else
+            {
+                ShowWindow(hWnd, SW_SHOW);
+                BringWindowToTop(hWnd);
+                SetForegroundWindow(hWnd);
+            }
         }
         catch { }
     }

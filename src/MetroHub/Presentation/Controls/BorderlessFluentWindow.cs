@@ -95,7 +95,16 @@ public class BorderlessFluentWindow : FluentWindow
 
     private IntPtr HwndMessageHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == WM_NCACTIVATE || msg == WM_ACTIVATE)
+        if (msg == WM_NCACTIVATE)
+        {
+            ApplyBorderlessAttributes();
+            // Force DWM to always treat the non-client frame as ACTIVE (wParam = 1)
+            // This permanently prevents DWM from dropping to the inactive solid grey fallback.
+            handled = true;
+            return NativeMethods.DefWindowProc(hwnd, (uint)msg, new IntPtr(1), lParam);
+        }
+
+        if (msg == WM_ACTIVATE)
         {
             ApplyBorderlessAttributes();
         }

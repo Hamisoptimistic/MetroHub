@@ -528,6 +528,17 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         UpdateLayoutMetrics();
         UpdateExposedAddSlots();
 
+        Dispatcher.InvokeAsync(() =>
+        {
+            if (hwnd != IntPtr.Zero)
+            {
+                NativeMethods.ForceForeground(hwnd);
+            }
+            ApplyConfiguredBackdrop();
+            Activate();
+            Focus();
+        }, DispatcherPriority.Render);
+
         PlayOpenAnimation();
         TriggerBackgroundAppsCatalogRefresh();
     }
