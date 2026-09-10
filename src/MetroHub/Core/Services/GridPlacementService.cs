@@ -9,24 +9,35 @@ public static class GridPlacementService
     public const double OriginX = 48.0;
     public const double OriginY = 40.0;
     public const double BaseSideMargin = 48.0;
+    public const int GroupColWidth = 8;
+    public const double ColumnGap = 32.0;
 
     public static int MaxCols { get; set; } = 28;
 
     public static void UpdateMetrics(double viewportWidth)
     {
         double available = Math.Max(320, viewportWidth - OriginX - BaseSideMargin);
-        MaxCols = Math.Max(4, (int)Math.Floor((available + Gap) / GridStep));
+        double stride = (GroupColWidth * GridStep) + ColumnGap;
+        int numTracks = Math.Max(1, (int)Math.Floor((available + ColumnGap) / stride));
+        MaxCols = Math.Max(GroupColWidth, numTracks * GroupColWidth);
     }
 
     public static int GetMaxCols(double viewportWidth)
     {
         double available = Math.Max(320, viewportWidth - OriginX - BaseSideMargin);
-        return Math.Max(4, (int)Math.Floor((available + Gap) / GridStep));
+        double stride = (GroupColWidth * GridStep) + ColumnGap;
+        int numTracks = Math.Max(1, (int)Math.Floor((available + ColumnGap) / stride));
+        return Math.Max(GroupColWidth, numTracks * GroupColWidth);
     }
 
     public static int ColFromPixel(double x)
     {
-        return Math.Max(0, (int)Math.Round((x - OriginX) / GridStep));
+        double relX = Math.Max(0, x - OriginX);
+        double stride = (GroupColWidth * GridStep) + ColumnGap;
+        int colIdx = (int)Math.Max(0, Math.Floor((relX + (ColumnGap / 2.0)) / stride));
+        double intraX = relX - (colIdx * stride);
+        int localCol = Math.Clamp((int)Math.Round(intraX / GridStep), 0, GroupColWidth - 1);
+        return (colIdx * GroupColWidth) + localCol;
     }
 
     public static int RowFromPixel(double y)
@@ -36,7 +47,10 @@ public static class GridPlacementService
 
     public static double PixelXFromCol(int col)
     {
-        return OriginX + (col * GridStep);
+        if (col <= 0) return OriginX;
+        int colIdx = col / GroupColWidth;
+        int localCol = col % GroupColWidth;
+        return OriginX + (colIdx * ((GroupColWidth * GridStep) + ColumnGap)) + (localCol * GridStep);
     }
 
     public static double PixelYFromRow(int row)
@@ -92,12 +106,6 @@ public static class GridPlacementService
 
                 // Top gap (row + spanY == gMinR, within group horizontal span)
                 if (gMinR > 0 && (row + spanY) == gMinR && col < gMaxC && (col + spanX) > gMinC) return false;
-
-                // Right sideways gap (col == gMaxC, within group vertical span)
-                if (col == gMaxC && row < gMaxR && (row + spanY) > gMinR) return false;
-
-                // Left sideways gap (col + spanX == gMinC, within group vertical span)
-                if (gMinC > 0 && (col + spanX) == gMinC && row < gMaxR && (row + spanY) > gMinR) return false;
             }
         }
 
@@ -893,17 +901,14 @@ public static class GridPlacementService
 
     #region Atomic Group Container & Column Architecture
 
-    public const int GroupColWidth = 8;
-    public const int GroupColGap = 1;
-
     public static int GetColumnStartCol(int columnIndex)
     {
-        return columnIndex * (GroupColWidth + GroupColGap);
+        return columnIndex * GroupColWidth;
     }
 
     public static int GetColumnIndexFromCol(int col)
     {
-        return Math.Max(0, col / (GroupColWidth + GroupColGap));
+        return Math.Max(0, col / GroupColWidth);
     }
 
     public static (int MinCol, int MaxCol, int MinRow, int MaxRow) GetGroupBoundingBox(TileGroupModel group, IEnumerable<TileModel> allTiles)
@@ -924,7 +929,7 @@ public static class GridPlacementService
 
     /// <summary>
     /// Checks if a tile at (col, row) with span (spanX, spanY) is positioned in or straddling a 1x1 gap buffer.
-    /// This includes vertical column separation alleys (col % 9 == 8) and group perimeter buffers (bottom, top, left).
+    /// This includes group perimeter top and bottom gap buffers.
     /// </summary>
     public static bool IsIn1x1Gap(
         int col,
@@ -940,7 +945,7 @@ public static class GridPlacementService
         gapCol = -1;
         gapRow = -1;
 
-        // Group perimeter gaps (bottom, top, sideways)
+        // Group perimeter gaps (bottom and top)
         if (groups != null)
         {
             foreach (var g in groups)
@@ -968,22 +973,6 @@ public static class GridPlacementService
                 {
                     gapCol = Math.Clamp(col, gMinC, gMaxC - 1);
                     gapRow = gMinR - 1;
-                    return true;
-                }
-
-                // Right sideways 1x1 gap buffer (col gMaxC, right of the group, or straddling into it)
-                if ((col == gMaxC || (col < gMaxC && col + spanX > gMaxC)) && row <= gMaxR && row + spanY > gMinR)
-                {
-                    gapCol = gMaxC;
-                    gapRow = row;
-                    return true;
-                }
-
-                // Left sideways 1x1 gap buffer (col gMinC - 1, left of the group, or straddling into it)
-                if (gMinC > 0 && (col == gMinC - 1 || (col < gMinC && col + spanX > gMinC - 1)) && row <= gMaxR && row + spanY > gMinR)
-                {
-                    gapCol = gMinC - 1;
-                    gapRow = row;
                     return true;
                 }
             }

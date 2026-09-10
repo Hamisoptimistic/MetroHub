@@ -1201,18 +1201,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                         anchorRow = (gMaxR + 1) - _clusterRelGridBounds.MinRelRow;
                     }
                 }
-                else if (clusterStartRow < gMaxR && clusterEndRow > gMinR)
-                {
-                    if (clusterMinCol == gMaxC)
-                    {
-                        anchorCol = (gMaxC + 1) - _clusterRelGridBounds.MinRelCol;
-                    }
-                    else if (gMinC > 0 && clusterMaxCol == gMinC)
-                    {
-                        anchorCol = (gMinC - 1 - (_clusterRelGridBounds.MaxRelCol - _clusterRelGridBounds.MinRelCol)) -
-                                    _clusterRelGridBounds.MinRelCol;
-                    }
-                }
             }
 
             double snappedAnchorX = GridPlacementService.PixelXFromCol(anchorCol);
@@ -1498,10 +1486,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                                               targetRow < gMaxR && (targetRow + _draggedTile.SpanY) > gMinR);
                         bool isTopGap = (gMinR > 0 && (targetRow + _draggedTile.SpanY) == gMinR) &&
                                         (targetCol < gMaxC && (targetCol + _draggedTile.SpanX) > gMinC);
-                        bool isRightGap = (targetCol == gMaxC || (targetCol < gMaxC + 1 && (targetCol + _draggedTile.SpanX) > gMaxC)) &&
-                                          (targetRow < gMaxR && (targetRow + _draggedTile.SpanY) > gMinR);
-                        bool isLeftGap = (gMinC > 0 && (targetCol + _draggedTile.SpanX) == gMinC) &&
-                                         (targetRow < gMaxR && (targetRow + _draggedTile.SpanY) > gMinR);
 
                         if (isBottomGap || isInsideGroup)
                         {
@@ -1509,20 +1493,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                             flashCol = targetCol;
                             flashRow = targetRow;
                             targetRow = gMaxR + 1;
-                        }
-                        else if (isRightGap)
-                        {
-                            droppedOnGap = true;
-                            flashCol = targetCol;
-                            flashRow = targetRow;
-                            targetCol = gMaxC + 1;
-                        }
-                        else if (isLeftGap)
-                        {
-                            droppedOnGap = true;
-                            flashCol = targetCol;
-                            flashRow = targetRow;
-                            targetCol = Math.Max(0, gMinC - 1 - _draggedTile.SpanX);
                         }
                         else if (isTopGap)
                         {
@@ -2275,6 +2245,25 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                     t.X = GridPlacementService.PixelXFromCol(t.Col);
                 }
             }
+            else
+            {
+                double expectedX = GridPlacementService.PixelXFromCol(group.Col);
+                if (Math.Abs(group.X - expectedX) > 0.5)
+                {
+                    group.X = expectedX;
+                    changed = true;
+                }
+                var members = Tiles.Where(t => t.Group == group.Id).ToList();
+                foreach (var t in members)
+                {
+                    double expX = GridPlacementService.PixelXFromCol(t.Col);
+                    if (Math.Abs(t.X - expX) > 0.5)
+                    {
+                        t.X = expX;
+                        changed = true;
+                    }
+                }
+            }
 
             var groupMembers = Tiles.Where(t => t.Group == group.Id).ToList();
             if (groupMembers.Count > 0)
@@ -2289,7 +2278,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                     (t.Row + t.SpanY) > gMinR).ToList();
                 foreach (var lt in trappedLoose)
                 {
-                    var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(gMaxCol + 1, lt.Row,
+                    var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(gMaxCol, lt.Row,
                         lt.SpanX, lt.SpanY, Tiles, lt, GridPlacementService.MaxCols, Groups);
                     lt.Col = freeCol;
                     lt.Row = freeRow;
@@ -2297,6 +2286,38 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                     lt.Y = GridPlacementService.PixelYFromRow(freeRow);
                     changed = true;
                 }
+            }
+        }
+
+        // Compact loose tiles that were artificially pushed by old +1 or +2 sideways gap buffers
+        foreach (var lt in Tiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList())
+        {
+            foreach (var g in Groups)
+            {
+                int gMaxC = g.Col + GridPlacementService.GroupColWidth;
+                for (int offset = 2; offset >= 1; offset--)
+                {
+                    if (lt.Col == gMaxC + offset)
+                    {
+                        if (GridPlacementService.IsRegionFree(gMaxC, lt.Row, lt.SpanX, lt.SpanY, Tiles, lt, GridPlacementService.MaxCols, Groups))
+                        {
+                            lt.Col = gMaxC;
+                            lt.X = GridPlacementService.PixelXFromCol(gMaxC);
+                            changed = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach (var lt in Tiles.Where(t => string.IsNullOrEmpty(t.Group)))
+        {
+            double expX = GridPlacementService.PixelXFromCol(lt.Col);
+            if (Math.Abs(lt.X - expX) > 0.5)
+            {
+                lt.X = expX;
+                changed = true;
             }
         }
 
