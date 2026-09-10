@@ -139,25 +139,26 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Grid.RowDefinitions>
-            <!-- Minimalist Top Bar -->
-            <RowDefinition Height="64" />
-            <!-- Main Unified Draggable Tile Canvas -->
-            <RowDefinition Height="*" />
-            <!-- Bottom Status Bar -->
-            <RowDefinition Height="40" />
-        </Grid.RowDefinitions>
-
         <!-- Left Sidebar Navigation Rail (Spans full window height) -->
         <controls:SidebarRailControl x:Name="SidebarRail"
                                      Grid.Column="0"
-                                     Grid.Row="0"
-                                     Grid.RowSpan="3"
                                      VerticalAlignment="Stretch"
                                      AppsToggleRequested="OnSidebarAppsToggleRequested" />
 
-        <!-- Top Header Bar -->
-        <Grid x:Name="HeaderGrid" Grid.Column="1" Grid.Row="0" Margin="48,0,48,0">
+        <!-- Main Application Content Area (Header + Canvas + Footer) in Column 1 -->
+        <Grid x:Name="MainContentAreaGrid"
+              Grid.Column="1">
+            <Grid.RowDefinitions>
+                <!-- Minimalist Top Bar -->
+                <RowDefinition Height="64" />
+                <!-- Main Unified Draggable Tile Canvas -->
+                <RowDefinition Height="*" />
+                <!-- Bottom Status Bar -->
+                <RowDefinition Height="40" />
+            </Grid.RowDefinitions>
+
+            <!-- Top Header Bar -->
+            <Grid x:Name="HeaderGrid" Grid.Row="0" Margin="48,0,48,0">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="METRO" FontSize="20" FontWeight="Bold" Foreground="#60CDFF" />
                 <TextBlock Text="HUB" FontSize="20" FontWeight="Light" Foreground="#FFFFFF" Margin="3,0,16,0" />
@@ -215,8 +216,7 @@
         </Grid>
 
         <!-- Main Open Tile Canvas: Free placement drag and drop anywhere -->
-        <ScrollViewer Grid.Column="1"
-                      Grid.Row="1"
+        <ScrollViewer Grid.Row="1"
                       x:Name="ContentScrollViewer"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
@@ -591,7 +591,7 @@
         </ScrollViewer>
 
         <!-- Bottom Status Bar -->
-        <Grid x:Name="FooterGrid" Grid.Column="1" Grid.Row="2" Margin="48,0,48,0">
+        <Grid x:Name="FooterGrid" Grid.Row="2" Margin="48,0,48,0">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="Press " FontSize="11" Foreground="#80FFFFFF" />
                 <Border Background="#30FFFFFF" CornerRadius="4" Padding="5,1" Margin="2,0">
@@ -611,24 +611,20 @@
                        FontSize="11"
                        Foreground="#90FFFFFF" />
         </Grid>
-
-        <!-- All Apps Slide-out Drawer Overlay (Overlays Canvas in Column 1 with Zero Left Shadow Leak) -->
-        <Grid Grid.Column="1"
-              Grid.Row="0"
-              Grid.RowSpan="3"
-              Panel.ZIndex="1500">
-            <!-- Strict clip at X=0 so no drop shadow ever bleeds left over the sidebar rail -->
-            <Grid.Clip>
-                <RectangleGeometry Rect="0, -100, 10000, 10000" />
-            </Grid.Clip>
-            <controls:AllAppsDrawerControl x:Name="AllAppsDrawer"
-                                           HorizontalAlignment="Left"
-                                           VerticalAlignment="Stretch"
-                                           AppPinRequested="OnDrawerAppPinRequested"
-                                           AppLaunchRequested="OnDrawerAppLaunchRequested"
-                                           Opened="OnDrawerOpened"
-                                           Closing="OnDrawerClosing"
-                                           Closed="OnDrawerClosed" />
         </Grid>
+
+        <!-- All Apps Slide-out Drawer Overlay (Overlays Canvas in Column 1) -->
+        <controls:AllAppsDrawerControl x:Name="AllAppsDrawer"
+                                       Grid.Column="1"
+                                       Grid.Row="0"
+                                       Grid.RowSpan="3"
+                                       HorizontalAlignment="Left"
+                                       VerticalAlignment="Stretch"
+                                       Panel.ZIndex="1500"
+                                       AppPinRequested="OnDrawerAppPinRequested"
+                                       AppLaunchRequested="OnDrawerAppLaunchRequested"
+                                       Opened="OnDrawerOpened"
+                                       Closing="OnDrawerClosing"
+                                       Closed="OnDrawerClosed" />
     </Grid>
 </controls:BorderlessFluentWindow>

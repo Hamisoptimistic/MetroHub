@@ -165,15 +165,28 @@
         </Style>
     </UserControl.Resources>
 
-    <!-- Main Drawer Container: NO BORDER, Acrylic Obsidian Background (#B80D0D11), Right-directed shadow -->
-    <Border x:Name="DrawerContainer"
-            Background="#B80D0D11"
-            BorderThickness="0"
-            SnapsToDevicePixels="True"
-            UseLayoutRounding="True">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="32" ShadowDepth="6" Direction="0" Color="#000000" Opacity="0.55" />
-        </Border.Effect>
+    <Grid>
+        <!-- Right Edge Soft Drop Shadow: Casts strictly to the right onto canvas tiles, zero shader effect, zero black backbuffer, zero left shadow -->
+        <Border Width="24"
+                HorizontalAlignment="Right"
+                Margin="0,0,-24,0"
+                IsHitTestVisible="False">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                    <GradientStop Color="#45000000" Offset="0" />
+                    <GradientStop Color="#20000000" Offset="0.35" />
+                    <GradientStop Color="#0A000000" Offset="0.75" />
+                    <GradientStop Color="#00000000" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <!-- Main Drawer Container: NO BORDER, Transparent Background allowing Main Window's Acrylic Obsidian to shine through -->
+        <Border x:Name="DrawerContainer"
+                Background="Transparent"
+                BorderThickness="0"
+                SnapsToDevicePixels="True"
+                UseLayoutRounding="True">
 
         <Grid>
             <Grid.RowDefinitions>
@@ -423,4 +436,5 @@
             </ScrollViewer>
         </Grid>
     </Border>
+    </Grid>
 </UserControl>

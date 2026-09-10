@@ -71,16 +71,9 @@ public partial class MainWindow : BorderlessFluentWindow
             UpdateLayoutMetrics();
             UpdateCanvasHeight();
             UpdateExposedAddSlots();
-            if (AllAppsDrawer != null && AllAppsDrawer.IsOpen)
+            if (AllAppsDrawer != null && AllAppsDrawer.IsOpen && MainContentAreaGrid?.Clip is RectangleGeometry rg)
             {
-                if (ContentScrollViewer?.Clip is RectangleGeometry rg)
-                {
-                    rg.Rect = new Rect(320, 0, Math.Max(0, ContentScrollViewer.ActualWidth - 320), ContentScrollViewer.ActualHeight);
-                }
-                if (HeaderGrid?.Clip is RectangleGeometry hg)
-                {
-                    hg.Rect = new Rect(320, 0, Math.Max(0, HeaderGrid.ActualWidth - 320), HeaderGrid.ActualHeight);
-                }
+                rg.Rect = new Rect(320, 0, 50000, 50000);
             }
         };
 
@@ -549,8 +542,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
             AllAppsDrawer.Close();
             SidebarRail?.SetAppsDrawerActive(false);
-            if (ContentScrollViewer != null) ContentScrollViewer.Clip = null;
-            if (HeaderGrid != null) HeaderGrid.Clip = null;
+            if (MainContentAreaGrid != null) MainContentAreaGrid.Clip = null;
         }
         DismissWithAnimation();
     }
@@ -4259,23 +4251,18 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     private void AnimateCanvasMask(bool drawerOpening)
     {
-        if (ContentScrollViewer == null) return;
+        if (MainContentAreaGrid == null) return;
 
         double targetWidth = drawerOpening ? 320 : 0;
         double fromWidth = drawerOpening ? 0 : 320;
 
-        double viewerWidth = ContentScrollViewer.ActualWidth > 0 ? ContentScrollViewer.ActualWidth : 1200;
-        double viewerHeight = ContentScrollViewer.ActualHeight > 0 ? ContentScrollViewer.ActualHeight : 1000;
-        double headerWidth = HeaderGrid != null && HeaderGrid.ActualWidth > 0 ? HeaderGrid.ActualWidth : viewerWidth;
-        double headerHeight = HeaderGrid != null && HeaderGrid.ActualHeight > 0 ? HeaderGrid.ActualHeight : 64;
+        var areaGeom = new RectangleGeometry();
+        MainContentAreaGrid.Clip = areaGeom;
 
-        var viewerGeom = new RectangleGeometry();
-        ContentScrollViewer.Clip = viewerGeom;
-
-        var viewerAnim = new RectAnimation
+        var areaAnim = new RectAnimation
         {
-            From = new Rect(fromWidth, 0, Math.Max(0, viewerWidth - fromWidth), viewerHeight),
-            To = new Rect(targetWidth, 0, Math.Max(0, viewerWidth - targetWidth), viewerHeight),
+            From = new Rect(fromWidth, 0, 50000, 50000),
+            To = new Rect(targetWidth, 0, 50000, 50000),
             Duration = TimeSpan.FromMilliseconds(drawerOpening ? 220 : 180),
             EasingFunction = drawerOpening
                 ? new CubicEase { EasingMode = EasingMode.EaseOut }
@@ -4284,35 +4271,16 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
         if (!drawerOpening)
         {
-            viewerAnim.Completed += (s, e) =>
+            areaAnim.Completed += (s, e) =>
             {
                 if (AllAppsDrawer == null || !AllAppsDrawer.IsOpen)
                 {
-                    ContentScrollViewer.Clip = null;
-                    if (HeaderGrid != null) HeaderGrid.Clip = null;
+                    MainContentAreaGrid.Clip = null;
                 }
             };
         }
 
-        viewerGeom.BeginAnimation(RectangleGeometry.RectProperty, viewerAnim);
-
-        if (HeaderGrid != null)
-        {
-            var headerGeom = new RectangleGeometry();
-            HeaderGrid.Clip = headerGeom;
-
-            var headerAnim = new RectAnimation
-            {
-                From = new Rect(fromWidth, 0, Math.Max(0, headerWidth - fromWidth), headerHeight),
-                To = new Rect(targetWidth, 0, Math.Max(0, headerWidth - targetWidth), headerHeight),
-                Duration = TimeSpan.FromMilliseconds(drawerOpening ? 220 : 180),
-                EasingFunction = drawerOpening
-                    ? new CubicEase { EasingMode = EasingMode.EaseOut }
-                    : new CubicEase { EasingMode = EasingMode.EaseIn }
-            };
-
-            headerGeom.BeginAnimation(RectangleGeometry.RectProperty, headerAnim);
-        }
+        areaGeom.BeginAnimation(RectangleGeometry.RectProperty, areaAnim);
     }
 
     private void OnDrawerAppPinRequested(object? sender, CatalogItemModel item)
