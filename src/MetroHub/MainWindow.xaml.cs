@@ -64,6 +64,8 @@ public partial class MainWindow : BorderlessFluentWindow
         SetupAutoScrollTimer();
 
         Activated += OnWindowActivated;
+        RootGrid.LostMouseCapture += OnRootGridLostMouseCapture;
+        LostMouseCapture += OnRootGridLostMouseCapture;
         SizeChanged += (s, e) =>
         {
             UpdateLayoutMetrics();
@@ -79,16 +81,33 @@ public partial class MainWindow : BorderlessFluentWindow
         });
     }
 
+    private void OnRootGridLostMouseCapture(object sender, MouseEventArgs e)
+    {
+        if (_isDragging || _isPotentialDrag || _isRubberBanding)
+        {
+            CancelActiveDrag();
+        }
+    }
+
     private DateTime _lastShownTime = DateTime.MinValue;
     private bool _isFullyActivated = false;
 
     private void OnWindowActivated(object? sender, EventArgs e)
     {
         _isFullyActivated = true;
+        if ((_isDragging || _isPotentialDrag || _isRubberBanding) && Mouse.LeftButton != MouseButtonState.Pressed)
+        {
+            CancelActiveDrag();
+        }
     }
 
     private void OnWindowDeactivated(object? sender, EventArgs e)
     {
+        if (_isDragging || _isPotentialDrag || _isRubberBanding)
+        {
+            CancelActiveDrag();
+        }
+
         // Must be fully activated first, and ignore premature deactivation within 150ms of opening
         if (!_isFullyActivated)
         {
@@ -368,6 +387,11 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         if (_isDismissing || !IsVisible) return;
 
+        if (_isDragging || _isPotentialDrag || _isRubberBanding)
+        {
+            CancelActiveDrag();
+        }
+
         if (TryFindResource("ExitStoryboard") is Storyboard exitStoryboard)
         {
             _isDismissing = true;
@@ -478,6 +502,11 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     public void ShowScreen()
     {
+        if (_isDragging || _isPotentialDrag || _isRubberBanding)
+        {
+            CancelActiveDrag();
+        }
+
         _isDismissing = false;
         _lastShownTime = DateTime.UtcNow;
         _isFullyActivated = false;
@@ -564,8 +593,12 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             return;
         }
 
-        if (e.Key == Key.Tab && (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt)
+        if ((e.Key == Key.Tab || e.SystemKey == Key.Tab) && ((Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt || e.KeyboardDevice.Modifiers.HasFlag(ModifierKeys.Alt)))
         {
+            if (_isDragging || _isPotentialDrag || _isRubberBanding)
+            {
+                CancelActiveDrag();
+            }
             HideScreen();
             e.Handled = true;
         }
@@ -771,6 +804,11 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     private void OnCanvasPreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
+        if (_isDragging)
+        {
+            CancelActiveDrag();
+        }
+
         if (e.LeftButton != MouseButtonState.Pressed) return;
 
         DependencyObject? dep = e.OriginalSource as DependencyObject;
@@ -964,52 +1002,61 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             return;
         }
 
-        if (_isPotentialDrag && !_isDragging && e.LeftButton == MouseButtonState.Pressed && _draggedTile != null)
+        if (_isPotentialDrag && !_isDragging)
         {
-            bool lockedTile = _draggedCluster.Any(t =>
-                t.IsLocked || (!string.IsNullOrEmpty(t.Group) &&
-                               Groups.FirstOrDefault(g => g.Id == t.Group)?.IsLocked == true));
-
-            Point current = e.GetPosition(this);
-            Vector diff = current - _dragStartPoint;
-            if (lockedTile && (Math.Abs(diff.X) > 5 || Math.Abs(diff.Y) > 5))
+            if (e.LeftButton != MouseButtonState.Pressed && Mouse.LeftButton != MouseButtonState.Pressed)
             {
-                _isPotentialDrag = false;
-                var g = Groups.FirstOrDefault(gr => gr.Id == _draggedTile?.Group);
-                if (g != null && g.IsLocked)
-                {
-                    FlashLockedGroupPerimeter(g);
-                }
-
-                _draggedControl?.AnimateRelease();
-                _draggedTile = null;
-                _draggedControl = null;
-                _draggedContainer = null;
+                CancelActiveDrag();
                 return;
             }
 
-            if (!lockedTile && (Math.Abs(diff.X) > 5 || Math.Abs(diff.Y) > 5))
+            if (_draggedTile != null)
             {
-                _isDragging = true;
-                ClearAllAmbientReveals();
-                RootGrid.CaptureMouse();
+                bool lockedTile = _draggedCluster.Any(t =>
+                    t.IsLocked || (!string.IsNullOrEmpty(t.Group) &&
+                                   Groups.FirstOrDefault(g => g.Id == t.Group)?.IsLocked == true));
 
-                foreach (var cTile in _draggedCluster)
+                Point current = e.GetPosition(this);
+                Vector diff = current - _dragStartPoint;
+                if (lockedTile && (Math.Abs(diff.X) > 5 || Math.Abs(diff.Y) > 5))
                 {
-                    cTile.IsBeingDragged = true;
-                    var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
-                    control?.AnimateElevationLift();
-
-                    var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
-                    if (container != null)
+                    _isPotentialDrag = false;
+                    var g = Groups.FirstOrDefault(gr => gr.Id == _draggedTile?.Group);
+                    if (g != null && g.IsLocked)
                     {
-                        Panel.SetZIndex(container, 9999);
+                        FlashLockedGroupPerimeter(g);
                     }
+
+                    _draggedControl?.AnimateRelease();
+                    _draggedTile = null;
+                    _draggedControl = null;
+                    _draggedContainer = null;
+                    return;
                 }
 
-                DropSlotIndicator.Width = Math.Max(56, _clusterRelBounds.MaxRelX - _clusterRelBounds.MinRelX);
-                DropSlotIndicator.Height = Math.Max(56, _clusterRelBounds.MaxRelY - _clusterRelBounds.MinRelY);
-                DropSlotIndicator.Visibility = Visibility.Visible;
+                if (!lockedTile && (Math.Abs(diff.X) > 5 || Math.Abs(diff.Y) > 5))
+                {
+                    _isDragging = true;
+                    ClearAllAmbientReveals();
+                    RootGrid.CaptureMouse();
+
+                    foreach (var cTile in _draggedCluster)
+                    {
+                        cTile.IsBeingDragged = true;
+                        var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
+                        control?.AnimateElevationLift();
+
+                        var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
+                        if (container != null)
+                        {
+                            Panel.SetZIndex(container, 9999);
+                        }
+                    }
+
+                    DropSlotIndicator.Width = Math.Max(56, _clusterRelBounds.MaxRelX - _clusterRelBounds.MinRelX);
+                    DropSlotIndicator.Height = Math.Max(56, _clusterRelBounds.MaxRelY - _clusterRelBounds.MinRelY);
+                    DropSlotIndicator.Visibility = Visibility.Visible;
+                }
             }
         }
 
@@ -1018,10 +1065,23 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             UpdateAmbientReveal(canvasMouse);
         }
 
-        if (_isDragging && (_draggedTile != null || (_isGroupDrag && _draggedGroupModel != null)))
+        if (_isDragging)
         {
-            UpdateAutoScrollVelocity();
-            ProcessDragMovement(canvasMouse);
+            if (e.LeftButton != MouseButtonState.Pressed && Mouse.LeftButton != MouseButtonState.Pressed)
+            {
+                CancelActiveDrag();
+                return;
+            }
+
+            if (_draggedTile != null || (_isGroupDrag && _draggedGroupModel != null))
+            {
+                UpdateAutoScrollVelocity();
+                ProcessDragMovement(canvasMouse);
+            }
+            else
+            {
+                StopAutoScroll();
+            }
         }
         else
         {
@@ -1669,8 +1729,11 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         }
 
         if (DropSlotIndicator != null) DropSlotIndicator.Visibility = Visibility.Collapsed;
+        if (GroupInsertionLine != null) GroupInsertionLine.Visibility = Visibility.Collapsed;
         HideGroupDropHighlight();
         HideGapDropHighlight();
+        _hoveredTargetGroup = null;
+        _groupDragTargetColIndex = -1;
 
         if (_preDragLayoutSnapshot != null)
         {
@@ -1765,6 +1828,18 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             _draggedControl = null;
         }
 
+        foreach (var t in Tiles)
+        {
+            if (t.IsBeingDragged)
+            {
+                t.IsBeingDragged = false;
+                var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, t));
+                control?.AnimateRelease();
+                var c = TilesListBox?.ItemContainerGenerator.ContainerFromItem(t) as ContentPresenter;
+                if (c != null) Panel.SetZIndex(c, 0);
+            }
+        }
+
         foreach (var g in Groups)
         {
             g.IsBeingDragged = false;
@@ -1780,12 +1855,16 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         _isGroupDrag = false;
         _draggedGroupModel = null;
 
+        UpdateCanvasHeight();
         UpdateGroupHeaderPositions();
         ClearAllAmbientReveals();
 
         try
         {
-            RootGrid.ReleaseMouseCapture();
+            if (RootGrid.IsMouseCaptured)
+            {
+                RootGrid.ReleaseMouseCapture();
+            }
         }
         catch
         {
@@ -1814,8 +1893,11 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             _isPotentialDrag = false;
         }
 
-        _isGroupDrag = false;
-        _draggedGroupModel = null;
+        if (!_isDragging)
+        {
+            _isGroupDrag = false;
+            _draggedGroupModel = null;
+        }
         HideGroupDropHighlight();
         ClearAllAmbientReveals();
     }
