@@ -1229,7 +1229,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 int tileSpanX = _draggedTile?.SpanX ?? 2;
                 int tileSpanY = _draggedTile?.SpanY ?? 2;
 
-                if (Check1x1GapHover(canvasMouse, rawAnchorCol, rawAnchorRow, tileSpanX, tileSpanY, out int gapCol, out int gapRow))
+                if (Check1x1GapHover(canvasMouse, anchorCol, anchorRow, tileSpanX, tileSpanY, out int gapCol, out int gapRow))
                 {
                     ShowGapDropHighlight(gapCol, gapRow, canvasMouse);
                 }
@@ -2352,39 +2352,46 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             ? Groups.OrderByDescending(g => g.Id == originGroupId).ToList()
             : Groups.ToList();
 
-        double clusterCenterX = anchorX + (_clusterRelBounds.MinRelX + _clusterRelBounds.MaxRelX) / 2.0;
-        double clusterCenterY = anchorY + (_clusterRelBounds.MinRelY + _clusterRelBounds.MaxRelY) / 2.0;
-        Point clusterCenter = new Point(clusterCenterX, clusterCenterY);
+        int mouseCol = GridPlacementService.ColFromPixel(mousePos.X);
+        int mouseRow = GridPlacementService.RowFromPixel(mousePos.Y);
 
         foreach (var group in sortedGroups)
         {
             var allMembers = Tiles.Where(t => t.Group == group.Id).ToList();
             if (allMembers.Count == 0 && string.IsNullOrWhiteSpace(group.Title)) continue;
 
-            bool isOrigin = isClusterFromOriginGroup && group.Id == originGroupId;
+            int gMinC = group.Col;
+            int gMaxC = group.Col + GridPlacementService.GroupColWidth;
+            int gMinR = group.Row;
+            int gMaxR = allMembers.Count > 0 ? allMembers.Max(t => t.Row + t.SpanY) : group.Row + 1;
 
-            double blockWidth = GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
+            // 1. Strict column and gap guard:
+            // Mouse MUST be within the group's 8-column boundary [gMinC, gMaxC - 1].
+            // Any mouse position outside this column track is sideways or in the 1x1 gap alley.
+            if (mouseCol < gMinC || mouseCol >= gMaxC) continue;
+
+            // 2. Vertical row and gap guard:
+            // Mouse MUST be within the group's vertical boundary [gMinR, effectiveMaxRow - 1].
+            // For groups with tiles, row gMaxR is the 1x1 bottom gap buffer, and gMaxR + 1 is canvas below.
+            // For empty groups, rows gMinR (header) and gMinR + 1 (initial drop slot) are valid.
+            int effectiveMaxRow = allMembers.Count > 0 ? gMaxR : group.Row + 2;
+            if (mouseRow < gMinR || mouseRow >= effectiveMaxRow) continue;
+
+            // 3. Pixel-exact boundary check:
+            double blockWidth = GridPlacementService.GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
             double minX = GridPlacementService.PixelXFromCol(group.Col);
-
             double minY = group.PlateHeight > 0 ? Math.Min(group.Y, group.PlateY) : group.Y;
 
-            double memberMaxY = allMembers.Count > 0 ? allMembers.Max(t => t.Y + t.HeightPixels) : group.Y + 120;
+            double memberMaxY = allMembers.Count > 0 ? allMembers.Max(t => t.Y + t.HeightPixels) : group.Y + 60;
             if (group.PlateHeight > 0)
             {
                 memberMaxY = Math.Max(memberMaxY, group.PlateY + group.PlateHeight);
             }
 
-            double tileHeight = _draggedTile?.HeightPixels ?? 120;
-            double appendY = memberMaxY + tileHeight;
+            // Exactly bounded to group interior - zero outward pad into gaps, adjacent columns, or canvas below
+            Rect groupDetectRect = new Rect(minX, minY, blockWidth, Math.Max(60, memberMaxY - minY));
 
-            double padX = isOrigin ? 20.0 : 8.0;
-            double padTop = isOrigin ? 20.0 : 8.0;
-            double padBottom = isOrigin ? 24.0 : 12.0;
-
-            Rect groupDetectRect = new Rect(minX - padX, minY - padTop, blockWidth + (padX * 2),
-                Math.Max(60, (appendY - minY) + padBottom));
-
-            if (groupDetectRect.Contains(mousePos) || groupDetectRect.Contains(clusterCenter))
+            if (groupDetectRect.Contains(mousePos))
             {
                 targetGroup = group;
 
@@ -2768,52 +2775,10 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
         string? originGroupId = _draggedTile?.Group;
 
-        int mouseCol = GridPlacementService.ColFromPixel(mousePos.X);
-        int mouseRow = GridPlacementService.RowFromPixel(mousePos.Y);
-
-        foreach (var g in Groups)
+        // Check if the current snap target (rawAnchorCol, rawAnchorRow) is actually in or straddling a 1x1 gap buffer
+        if (GridPlacementService.IsIn1x1Gap(rawAnchorCol, rawAnchorRow, tileSpanX, tileSpanY, Groups, Tiles, out gapCol, out gapRow, originGroupId))
         {
-            if (originGroupId != null && g.Id == originGroupId) continue;
-
-            var members = Tiles.Where(t => t.Group == g.Id).ToList();
-            if (members.Count == 0 && string.IsNullOrWhiteSpace(g.Title)) continue;
-
-            int gMinC = g.Col;
-            int gMaxC = g.Col + GridPlacementService.GroupColWidth;
-            int gMinR = g.Row;
-            int gMaxR = members.Count > 0 ? members.Max(t => t.Row + t.SpanY) : g.Row + 1;
-
-            if (mouseCol == gMaxC && mouseRow >= gMinR && mouseRow <= gMaxR)
-            {
-                gapCol = gMaxC;
-                gapRow = mouseRow;
-                return true;
-            }
-
-            if (gMinC > 0 && mouseCol == gMinC - 1 && mouseRow >= gMinR && mouseRow <= gMaxR)
-            {
-                gapCol = gMinC - 1;
-                gapRow = mouseRow;
-                return true;
-            }
-
-            double plateBottom = g.PlateHeight > 0
-                ? g.PlateY + g.PlateHeight
-                : (members.Count > 0 ? members.Max(t => t.Y + t.HeightPixels) : g.Y + 120);
-
-            if (mouseRow == gMaxR && mouseCol >= gMinC && mouseCol < gMaxC && mousePos.Y >= plateBottom)
-            {
-                gapCol = Math.Clamp(mouseCol, gMinC, gMaxC - 1);
-                gapRow = gMaxR;
-                return true;
-            }
-
-            if (g.Row > 0 && mouseRow == g.Row - 1 && mouseCol >= gMinC && mouseCol < gMaxC && mousePos.Y < g.Y - 6)
-            {
-                gapCol = Math.Clamp(mouseCol, gMinC, gMaxC - 1);
-                gapRow = g.Row - 1;
-                return true;
-            }
+            return true;
         }
 
         return false;
