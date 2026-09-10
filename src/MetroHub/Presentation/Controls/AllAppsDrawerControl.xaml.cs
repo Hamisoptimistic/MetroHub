@@ -105,42 +105,53 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
+        public static List<AlphabeticalAppGroup> CreateAlphabeticalGroups(IEnumerable<CatalogItemModel> apps)
+        {
+            var orderedApps = apps.OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase).ToList();
+            var groups = new Dictionary<string, List<CatalogItemModel>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var app in orderedApps)
+            {
+                if (string.IsNullOrWhiteSpace(app.Name)) continue;
+
+                char first = app.Name.TrimStart()[0];
+                string header = char.IsLetter(first) ? char.ToUpperInvariant(first).ToString() : "#";
+
+                if (!groups.TryGetValue(header, out var list))
+                {
+                    list = new List<CatalogItemModel>();
+                    groups[header] = list;
+                }
+                list.Add(app);
+            }
+
+            return groups
+                .OrderBy(g => g.Key == "#" ? "!" : g.Key)
+                .Select(g => new AlphabeticalAppGroup
+                {
+                    Header = g.Key,
+                    Items = g.Value
+                })
+                .ToList();
+        }
+
+        public void SetPreloadedApps(List<CatalogItemModel> apps, List<AlphabeticalAppGroup> groupedApps)
+        {
+            _allApps = apps.OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase).ToList();
+            GroupedItemsControl.ItemsSource = groupedApps;
+            _isAppsLoaded = true;
+        }
+
         public void LoadApps(List<CatalogItemModel>? preloaded = null)
         {
             try
             {
                 var apps = preloaded ?? InstalledAppsService.GetInstalledApps(forceRefresh: false);
                 _allApps = apps.OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase).ToList();
-                _isAppsLoaded = true;
-
-                // Group by first letter (# for non-alphabetic, A-Z for letters)
-                var groups = new Dictionary<string, List<CatalogItemModel>>(StringComparer.OrdinalIgnoreCase);
-
-                foreach (var app in _allApps)
-                {
-                    if (string.IsNullOrWhiteSpace(app.Name)) continue;
-
-                    char first = app.Name.TrimStart()[0];
-                    string header = char.IsLetter(first) ? char.ToUpperInvariant(first).ToString() : "#";
-
-                    if (!groups.TryGetValue(header, out var list))
-                    {
-                        list = new List<CatalogItemModel>();
-                        groups[header] = list;
-                    }
-                    list.Add(app);
-                }
-
-                var orderedGroups = groups
-                    .OrderBy(g => g.Key == "#" ? "!" : g.Key)
-                    .Select(g => new AlphabeticalAppGroup
-                    {
-                        Header = g.Key,
-                        Items = g.Value
-                    })
-                    .ToList();
+                var orderedGroups = CreateAlphabeticalGroups(_allApps);
 
                 GroupedItemsControl.ItemsSource = orderedGroups;
+                _isAppsLoaded = true;
 
                 // Prewarm icons in memory background
                 CatalogItemModel.PrewarmMemoryCache(_allApps);

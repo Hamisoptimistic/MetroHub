@@ -48,13 +48,17 @@
         <!-- Modern Fluent App Item Style: CornerRadius="2" matching Tiles -->
         <Style x:Key="AppRowContainerStyle" TargetType="Border">
             <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="CornerRadius" Value="2" />
             <Setter Property="Margin" Value="8,1,8,1" />
-            <Setter Property="Padding" Value="8,5" />
+            <Setter Property="Padding" Value="7,4" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#18FFFFFF" />
+                    <Setter Property="BorderBrush" Value="#2AFFFFFF" />
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -276,16 +280,20 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Margin="0,0,0,6">
-                                <!-- Group Header Badge: CornerRadius="2" matching Tiles -->
-                                <Border Width="26"
-                                        Height="26"
+                                <!-- Group Header Badge: Perfectly aligned with app icon column below -->
+                                <Border Width="28"
+                                        Height="28"
                                         Background="#14FFFFFF"
+                                        BorderThickness="1"
+                                        BorderBrush="#1CFFFFFF"
                                         CornerRadius="2"
+                                        SnapsToDevicePixels="True"
                                         HorizontalAlignment="Left"
-                                        Margin="14,8,0,3">
+                                        Margin="16,8,0,4">
                                     <TextBlock Text="{Binding Header}"
-                                               FontSize="12"
+                                               FontSize="14"
                                                FontWeight="Bold"
+                                               FontFamily="Segoe UI Variable Display, Segoe UI Variable Text, Segoe UI, sans-serif"
                                                Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center" />
@@ -299,8 +307,7 @@
                                                     Tag="{Binding}"
                                                     PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
                                                     PreviewMouseMove="OnAppRowPreviewMouseMove"
-                                                    MouseLeftButtonUp="OnAppRowMouseLeftButtonUp"
-                                                    ToolTip="{Binding Name}">
+                                                    MouseLeftButtonUp="OnAppRowMouseLeftButtonUp">
                                                 <Border.ContextMenu>
                                                     <ContextMenu>
                                                         <MenuItem Header="Pin to Start" Click="OnContextMenuPinClick">
@@ -370,8 +377,7 @@
                                         Tag="{Binding}"
                                         PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
                                         PreviewMouseMove="OnAppRowPreviewMouseMove"
-                                        MouseLeftButtonUp="OnAppRowMouseLeftButtonUp"
-                                        ToolTip="{Binding Name}">
+                                        MouseLeftButtonUp="OnAppRowMouseLeftButtonUp">
                                     <Border.ContextMenu>
                                         <ContextMenu>
                                             <MenuItem Header="Pin to Start" Click="OnContextMenuPinClick">

@@ -78,11 +78,7 @@ public partial class MainWindow : BorderlessFluentWindow
         };
 
         InstalledAppsService.AppsCatalogChanged += OnAppsCatalogChanged;
-        Task.Run(() =>
-        {
-            var apps = InstalledAppsService.GetInstalledApps(forceRefresh: false);
-            CatalogItemModel.PrewarmMemoryCache(apps);
-        });
+        StartBackgroundAppWarmup();
     }
 
     private void OnRootGridLostMouseCapture(object sender, MouseEventArgs e)
@@ -3862,6 +3858,46 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     private async void OnAppsSubmenuOpened(object sender, RoutedEventArgs e)
     {
         await LoadAppsSubmenuAsync();
+    }
+
+    private void StartBackgroundAppWarmup()
+    {
+        Task.Run(async () =>
+        {
+            try
+            {
+                var apps = InstalledAppsService.GetInstalledApps(forceRefresh: false);
+                if (apps == null || apps.Count == 0) return;
+
+                CatalogItemModel.PrewarmMemoryCache(apps);
+
+                var groups = Presentation.Controls.AllAppsDrawerControl.CreateAlphabeticalGroups(apps);
+
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    AllAppsDrawer?.SetPreloadedApps(apps, groups);
+                    PreloadAppsSubmenu(apps);
+                }, DispatcherPriority.ApplicationIdle);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[AppWarmup] Background warmup error: {ex.Message}");
+            }
+        });
+    }
+
+    private void PreloadAppsSubmenu(List<CatalogItemModel> items)
+    {
+        if (_isAppsLoaded || AppsMenuItem == null) return;
+
+        AppsMenuItem.Items.Clear();
+        foreach (var item in items)
+        {
+            var menuItem = CreateCatalogMenuItem(item);
+            AppsMenuItem.Items.Add(menuItem);
+        }
+
+        _isAppsLoaded = true;
     }
 
     private async Task LoadAppsSubmenuAsync()

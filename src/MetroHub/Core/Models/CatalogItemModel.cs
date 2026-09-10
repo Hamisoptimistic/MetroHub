@@ -94,24 +94,25 @@ public class CatalogItemModel : INotifyPropertyChanged
         if (items == null) return;
         Task.Run(() =>
         {
-            foreach (var item in items)
-            {
-                if (string.IsNullOrWhiteSpace(item.TargetPath)) continue;
-                if (_memoryIconCache.ContainsKey(item.TargetPath)) continue;
+            var itemList = items.Where(i => !string.IsNullOrWhiteSpace(i.TargetPath) && !_memoryIconCache.ContainsKey(i.TargetPath)).ToList();
+            if (itemList.Count == 0) return;
 
+            Parallel.ForEach(itemList, new ParallelOptions { MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount, 2, 8) }, item =>
+            {
                 try
                 {
                     string? cached = IconExtractorService.ExtractAndCacheIcon(item.TargetPath);
                     if (!string.IsNullOrWhiteSpace(cached))
                     {
-                        App.Current?.Dispatcher?.InvokeAsync(() =>
+                        var img = GetOrCreateBitmapImage(cached, item.TargetPath);
+                        if (img != null && item._icon == null)
                         {
-                            GetOrCreateBitmapImage(cached, item.TargetPath);
-                        }, System.Windows.Threading.DispatcherPriority.Background);
+                            item._icon = img;
+                        }
                     }
                 }
                 catch { }
-            }
+            });
         });
     }
 

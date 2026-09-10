@@ -24,11 +24,13 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Grid Background="Transparent">
-                            <!-- Hover / Active Background Pill -->
+                            <!-- Hover / Active Background Pill with Crisp Fluent Border -->
                             <Border x:Name="PillBorder"
                                     Margin="4,1"
                                     CornerRadius="2"
                                     Background="Transparent"
+                                    BorderThickness="1"
+                                    BorderBrush="Transparent"
                                     SnapsToDevicePixels="True">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
@@ -47,13 +49,16 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="PillBorder" Property="Background" Value="#18FFFFFF" />
+                                <Setter TargetName="PillBorder" Property="BorderBrush" Value="#35FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="PillBorder" Property="Background" Value="#2CFFFFFF" />
+                                <Setter TargetName="PillBorder" Property="BorderBrush" Value="#50FFFFFF" />
                             </Trigger>
                             <Trigger Property="Tag" Value="Active">
                                 <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
                                 <Setter TargetName="PillBorder" Property="Background" Value="#14FFFFFF" />
+                                <Setter TargetName="PillBorder" Property="BorderBrush" Value="#25FFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
