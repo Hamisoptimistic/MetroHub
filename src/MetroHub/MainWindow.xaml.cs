@@ -71,6 +71,17 @@ public partial class MainWindow : BorderlessFluentWindow
             UpdateLayoutMetrics();
             UpdateCanvasHeight();
             UpdateExposedAddSlots();
+            if (AllAppsDrawer != null && AllAppsDrawer.IsOpen)
+            {
+                if (ContentScrollViewer?.Clip is RectangleGeometry rg)
+                {
+                    rg.Rect = new Rect(320, 0, Math.Max(0, ContentScrollViewer.ActualWidth - 320), ContentScrollViewer.ActualHeight);
+                }
+                if (HeaderGrid?.Clip is RectangleGeometry hg)
+                {
+                    hg.Rect = new Rect(320, 0, Math.Max(0, HeaderGrid.ActualWidth - 320), HeaderGrid.ActualHeight);
+                }
+            }
         };
 
         InstalledAppsService.AppsCatalogChanged += OnAppsCatalogChanged;
@@ -534,6 +545,13 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     public void HideScreen()
     {
+        if (AllAppsDrawer != null && AllAppsDrawer.IsOpen)
+        {
+            AllAppsDrawer.Close();
+            SidebarRail?.SetAppsDrawerActive(false);
+            if (ContentScrollViewer != null) ContentScrollViewer.Clip = null;
+            if (HeaderGrid != null) HeaderGrid.Clip = null;
+        }
         DismissWithAnimation();
     }
 
@@ -574,6 +592,14 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
         if (e.Key == Key.Escape)
         {
+            if (AllAppsDrawer != null && AllAppsDrawer.IsOpen)
+            {
+                AllAppsDrawer.Close();
+                SidebarRail?.SetAppsDrawerActive(false);
+                e.Handled = true;
+                return;
+            }
+
             if (_isDragging || _isPotentialDrag || _isRubberBanding)
             {
                 CancelActiveDrag();
@@ -828,6 +854,18 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             _draggedTile = null;
             return;
         }
+
+        if (AllAppsDrawer != null && AllAppsDrawer.IsOpen)
+        {
+            if (!AllAppsDrawer.IsMouseOver && (SidebarRail == null || !SidebarRail.IsMouseOver))
+            {
+                AllAppsDrawer.Close();
+                SidebarRail?.SetAppsDrawerActive(false);
+            }
+        }
+
+        if (SidebarRail != null && SidebarRail.IsMouseOver) return;
+        if (AllAppsDrawer != null && AllAppsDrawer.IsMouseOver) return;
 
         if (HeaderGrid != null && HeaderGrid.IsMouseOver) return;
         if (FooterGrid != null && FooterGrid.IsMouseOver) return;
@@ -3604,6 +3642,18 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     private void OnCanvasPreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (AllAppsDrawer != null && AllAppsDrawer.IsOpen)
+        {
+            if (!AllAppsDrawer.IsMouseOver && (SidebarRail == null || !SidebarRail.IsMouseOver))
+            {
+                AllAppsDrawer.Close();
+                SidebarRail?.SetAppsDrawerActive(false);
+            }
+        }
+
+        if (SidebarRail != null && SidebarRail.IsMouseOver) return;
+        if (AllAppsDrawer != null && AllAppsDrawer.IsMouseOver) return;
+
         DependencyObject? dep = e.OriginalSource as DependencyObject;
         var tileControl = FindParent<Presentation.Controls.TileControl>(dep);
 
@@ -3864,6 +3914,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             {
                 UpdateAppsMenuItems(freshApps);
             }
+            AllAppsDrawer?.LoadApps(freshApps);
         }, DispatcherPriority.Background);
     }
 
@@ -4133,7 +4184,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     private void OnWindowDragOver(object sender, DragEventArgs e)
     {
-        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        if (e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent(typeof(CatalogItemModel)))
         {
             e.Effects = DragDropEffects.Copy;
             e.Handled = true;
@@ -4147,7 +4198,17 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     private void OnWindowDrop(object sender, DragEventArgs e)
     {
-        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        if (e.Data.GetDataPresent(typeof(CatalogItemModel)))
+        {
+            var item = e.Data.GetData(typeof(CatalogItemModel)) as CatalogItemModel;
+            if (item != null)
+            {
+                Point pos = e.GetPosition(TilesListBox);
+                PinCatalogItem(item, pos);
+                e.Handled = true;
+            }
+        }
+        else if (e.Data.GetDataPresent(DataFormats.FileDrop))
         {
             string[]? files = e.Data.GetData(DataFormats.FileDrop) as string[];
             if (files != null && files.Length > 0)
@@ -4171,6 +4232,116 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
         UpdateExposedAddSlots();
     }
+
+    #region Sidebar Rail and All Apps Drawer Handlers
+
+    private void OnSidebarAppsToggleRequested(object? sender, EventArgs e)
+    {
+        AllAppsDrawer?.Toggle();
+    }
+
+    private void OnDrawerOpened(object? sender, EventArgs e)
+    {
+        SidebarRail?.SetAppsDrawerActive(true);
+        AnimateCanvasMask(true);
+    }
+
+    private void OnDrawerClosing(object? sender, EventArgs e)
+    {
+        SidebarRail?.SetAppsDrawerActive(false);
+        AnimateCanvasMask(false);
+    }
+
+    private void OnDrawerClosed(object? sender, EventArgs e)
+    {
+        SidebarRail?.SetAppsDrawerActive(false);
+    }
+
+    private void AnimateCanvasMask(bool drawerOpening)
+    {
+        if (ContentScrollViewer == null) return;
+
+        double targetWidth = drawerOpening ? 320 : 0;
+        double fromWidth = drawerOpening ? 0 : 320;
+
+        double viewerWidth = ContentScrollViewer.ActualWidth > 0 ? ContentScrollViewer.ActualWidth : 1200;
+        double viewerHeight = ContentScrollViewer.ActualHeight > 0 ? ContentScrollViewer.ActualHeight : 1000;
+        double headerWidth = HeaderGrid != null && HeaderGrid.ActualWidth > 0 ? HeaderGrid.ActualWidth : viewerWidth;
+        double headerHeight = HeaderGrid != null && HeaderGrid.ActualHeight > 0 ? HeaderGrid.ActualHeight : 64;
+
+        var viewerGeom = new RectangleGeometry();
+        ContentScrollViewer.Clip = viewerGeom;
+
+        var viewerAnim = new RectAnimation
+        {
+            From = new Rect(fromWidth, 0, Math.Max(0, viewerWidth - fromWidth), viewerHeight),
+            To = new Rect(targetWidth, 0, Math.Max(0, viewerWidth - targetWidth), viewerHeight),
+            Duration = TimeSpan.FromMilliseconds(drawerOpening ? 220 : 180),
+            EasingFunction = drawerOpening
+                ? new CubicEase { EasingMode = EasingMode.EaseOut }
+                : new CubicEase { EasingMode = EasingMode.EaseIn }
+        };
+
+        if (!drawerOpening)
+        {
+            viewerAnim.Completed += (s, e) =>
+            {
+                if (AllAppsDrawer == null || !AllAppsDrawer.IsOpen)
+                {
+                    ContentScrollViewer.Clip = null;
+                    if (HeaderGrid != null) HeaderGrid.Clip = null;
+                }
+            };
+        }
+
+        viewerGeom.BeginAnimation(RectangleGeometry.RectProperty, viewerAnim);
+
+        if (HeaderGrid != null)
+        {
+            var headerGeom = new RectangleGeometry();
+            HeaderGrid.Clip = headerGeom;
+
+            var headerAnim = new RectAnimation
+            {
+                From = new Rect(fromWidth, 0, Math.Max(0, headerWidth - fromWidth), headerHeight),
+                To = new Rect(targetWidth, 0, Math.Max(0, headerWidth - targetWidth), headerHeight),
+                Duration = TimeSpan.FromMilliseconds(drawerOpening ? 220 : 180),
+                EasingFunction = drawerOpening
+                    ? new CubicEase { EasingMode = EasingMode.EaseOut }
+                    : new CubicEase { EasingMode = EasingMode.EaseIn }
+            };
+
+            headerGeom.BeginAnimation(RectangleGeometry.RectProperty, headerAnim);
+        }
+    }
+
+    private void OnDrawerAppPinRequested(object? sender, CatalogItemModel item)
+    {
+        PinCatalogItem(item, null);
+    }
+
+    private void OnDrawerAppLaunchRequested(object? sender, CatalogItemModel item)
+    {
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(item.TargetPath))
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = item.TargetPath,
+                    Arguments = item.Arguments ?? string.Empty,
+                    UseShellExecute = true
+                };
+                Process.Start(psi);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MainWindow] Failed to launch app: {ex.Message}");
+        }
+    }
+
+    #endregion
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
