@@ -3557,11 +3557,181 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         }
     }
 
+    private TileGroupModel? _activeContextMenuGroup;
+
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T typedChild) return typedChild;
+            var desc = FindVisualChild<T>(child);
+            if (desc != null) return desc;
+        }
+        return null;
+    }
+
+    private TileGroupModel? GetGroupAtCanvasPoint(Point pt)
+    {
+        int col = GridPlacementService.ColFromPixel(pt.X);
+        int row = GridPlacementService.RowFromPixel(pt.Y);
+
+        foreach (var g in Groups)
+        {
+            var (minC, maxC, minR, maxR) = GridPlacementService.GetGroupBoundingBox(g, Tiles);
+
+            // 1. Check logical grid cell bounds
+            if (col >= minC && col < maxC && row >= minR && row <= maxR)
+            {
+                return g;
+            }
+
+            // 2. Check acrylic backplate bounds
+            if (g.PlateWidth > 0 && g.PlateHeight > 0)
+            {
+                Rect plateRect = new Rect(g.PlateX, g.PlateY, g.PlateWidth, g.PlateHeight);
+                if (plateRect.Contains(pt))
+                {
+                    return g;
+                }
+            }
+
+            // 3. Check group header area [g.X, g.Y, GroupColWidth * 64, 36]
+            double headerWidth = GridPlacementService.GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
+            Rect headerRect = new Rect(g.X, g.Y, headerWidth, 36);
+            if (headerRect.Contains(pt))
+            {
+                return g;
+            }
+        }
+
+        return null;
+    }
+
     private void OnCanvasContextMenuOpened(object sender, RoutedEventArgs e)
     {
+        _activeContextMenuGroup = GetGroupAtCanvasPoint(_canvasRightClickPoint);
+
+        bool isInsideGroup = _activeContextMenuGroup != null;
+
+        if (GroupMenuSeparator != null)
+            GroupMenuSeparator.Visibility = isInsideGroup ? Visibility.Visible : Visibility.Collapsed;
+
+        if (RenameGroupCanvasMenuItem != null)
+        {
+            RenameGroupCanvasMenuItem.Visibility = isInsideGroup ? Visibility.Visible : Visibility.Collapsed;
+            RenameGroupCanvasMenuItem.IsEnabled = isInsideGroup && !_activeContextMenuGroup!.IsLocked;
+        }
+
+        if (GroupHeaderColorCanvasMenuItem != null)
+            GroupHeaderColorCanvasMenuItem.Visibility = isInsideGroup ? Visibility.Visible : Visibility.Collapsed;
+
+        if (GroupTintColorCanvasMenuItem != null)
+            GroupTintColorCanvasMenuItem.Visibility = isInsideGroup ? Visibility.Visible : Visibility.Collapsed;
+
+        if (LockGroupCanvasMenuItem != null)
+        {
+            LockGroupCanvasMenuItem.Visibility = isInsideGroup ? Visibility.Visible : Visibility.Collapsed;
+            if (isInsideGroup)
+            {
+                LockGroupCanvasMenuItem.Header = _activeContextMenuGroup!.IsLocked ? "Unlock Group" : "Lock Group";
+                if (LockGroupCanvasIcon != null)
+                {
+                    LockGroupCanvasIcon.Symbol = _activeContextMenuGroup.IsLocked
+                        ? Wpf.Ui.Controls.SymbolRegular.LockOpen24
+                        : Wpf.Ui.Controls.SymbolRegular.LockClosed24;
+                }
+            }
+        }
+
+        if (UngroupCanvasMenuItem != null)
+        {
+            UngroupCanvasMenuItem.Visibility = isInsideGroup ? Visibility.Visible : Visibility.Collapsed;
+            UngroupCanvasMenuItem.IsEnabled = isInsideGroup && !_activeContextMenuGroup!.IsLocked;
+        }
+
+        if (DeleteGroupCanvasMenuItem != null)
+        {
+            DeleteGroupCanvasMenuItem.Visibility = isInsideGroup ? Visibility.Visible : Visibility.Collapsed;
+            DeleteGroupCanvasMenuItem.IsEnabled = isInsideGroup && !_activeContextMenuGroup!.IsLocked;
+        }
+
+        if (CreateGroupCanvasMenuItem != null)
+        {
+            CreateGroupCanvasMenuItem.Visibility = isInsideGroup ? Visibility.Collapsed : Visibility.Visible;
+        }
+
         if (!_isAppsLoaded && !_isLoadingApps)
         {
             _ = LoadAppsSubmenuAsync();
+        }
+    }
+
+    private void OnCanvasRenameGroupClick(object sender, RoutedEventArgs e)
+    {
+        if (_activeContextMenuGroup == null) return;
+        if (_activeContextMenuGroup.IsLocked)
+        {
+            FlashLockedGroupPerimeter(_activeContextMenuGroup);
+            return;
+        }
+
+        var group = _activeContextMenuGroup;
+        var container = GroupsListBox?.ItemContainerGenerator.ContainerFromItem(group) as ContentPresenter;
+        if (container != null)
+        {
+            var headerCtrl = FindVisualChild<Presentation.Controls.GroupHeaderControl>(container);
+            if (headerCtrl != null)
+            {
+                headerCtrl.BeginEdit();
+                return;
+            }
+        }
+        group.IsEditing = true;
+    }
+
+    private void OnCanvasGroupColorSelectClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem item && item.Tag is string hex && _activeContextMenuGroup != null)
+        {
+            SetGroupColor(_activeContextMenuGroup, hex);
+        }
+    }
+
+    private void OnCanvasGroupTintColorSelectClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem item && _activeContextMenuGroup != null)
+        {
+            string? hex = item.Tag as string;
+            if (string.Equals(hex, "None", StringComparison.OrdinalIgnoreCase))
+            {
+                hex = null;
+            }
+            SetGroupTintColor(_activeContextMenuGroup, hex);
+        }
+    }
+
+    private void OnCanvasLockGroupClick(object sender, RoutedEventArgs e)
+    {
+        if (_activeContextMenuGroup != null)
+        {
+            ToggleGroupLock(_activeContextMenuGroup);
+        }
+    }
+
+    private void OnCanvasUngroupClick(object sender, RoutedEventArgs e)
+    {
+        if (_activeContextMenuGroup != null)
+        {
+            UngroupTiles(_activeContextMenuGroup);
+        }
+    }
+
+    private void OnCanvasDeleteGroupClick(object sender, RoutedEventArgs e)
+    {
+        if (_activeContextMenuGroup != null)
+        {
+            DeleteGroupAndTiles(_activeContextMenuGroup);
         }
     }
 

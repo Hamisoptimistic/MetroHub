@@ -231,9 +231,127 @@
                             <MenuItem Header="Loading applications..." IsEnabled="False" />
                         </MenuItem>
 
-                        <Separator />
+                        <!-- Dynamic Group Options (Visible when right-clicking empty space inside a group) -->
+                        <Separator x:Name="GroupMenuSeparator" Visibility="Collapsed" />
 
-                        <MenuItem Header="Create Group" Click="OnCreateGroupCanvasClick">
+                        <MenuItem x:Name="RenameGroupCanvasMenuItem"
+                                  Header="Rename Group"
+                                  Visibility="Collapsed"
+                                  Click="OnCanvasRenameGroupClick">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="Edit24" FontSize="20" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <MenuItem x:Name="GroupHeaderColorCanvasMenuItem"
+                                  Header="Header Color"
+                                  Visibility="Collapsed">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="Color24" FontSize="20" />
+                            </MenuItem.Icon>
+                            <MenuItem Header="Default White" Tag="#F0FFFFFF" Click="OnCanvasGroupColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#F0FFFFFF"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Fluent Sky Blue" Tag="#60CDFF" Click="OnCanvasGroupColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#60CDFF"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Electric Azure" Tag="#0078D7" Click="OnCanvasGroupColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#0078D7"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Emerald Green" Tag="#107C10" Click="OnCanvasGroupColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#107C10"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Mint Cyan" Tag="#00B7C3" Click="OnCanvasGroupColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#00B7C3"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Neon Orange" Tag="#FF8C00" Click="OnCanvasGroupColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FF8C00"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Electric Amber" Tag="#FFD700" Click="OnCanvasGroupColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FFD700"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Crimson Red" Tag="#FF4343" Click="OnCanvasGroupColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FF4343"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Royal Purple" Tag="#881798" Click="OnCanvasGroupColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#881798"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Hot Pink" Tag="#E3008C" Click="OnCanvasGroupColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#E3008C"/></MenuItem.Icon>
+                            </MenuItem>
+                        </MenuItem>
+
+                        <MenuItem x:Name="GroupTintColorCanvasMenuItem"
+                                  Header="Group Tint Color"
+                                  Visibility="Collapsed">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="DarkTheme24" FontSize="20" />
+                            </MenuItem.Icon>
+                            <MenuItem Header="None (Transparent)" Tag="None" Click="OnCanvasGroupTintColorSelectClick">
+                                <MenuItem.Icon><Border Width="12" Height="12" BorderThickness="1" BorderBrush="#80FFFFFF" Background="Transparent" CornerRadius="2"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Fluent Sky Blue" Tag="#60CDFF" Click="OnCanvasGroupTintColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#60CDFF"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Electric Azure" Tag="#0078D7" Click="OnCanvasGroupTintColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#0078D7"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Emerald Green" Tag="#107C10" Click="OnCanvasGroupTintColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#107C10"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Mint Cyan" Tag="#00B7C3" Click="OnCanvasGroupTintColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#00B7C3"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Neon Orange" Tag="#FF8C00" Click="OnCanvasGroupTintColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FF8C00"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Electric Amber" Tag="#FFD700" Click="OnCanvasGroupTintColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FFD700"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Crimson Red" Tag="#FF4343" Click="OnCanvasGroupTintColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FF4343"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Royal Purple" Tag="#881798" Click="OnCanvasGroupTintColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#881798"/></MenuItem.Icon>
+                            </MenuItem>
+                            <MenuItem Header="Hot Pink" Tag="#E3008C" Click="OnCanvasGroupTintColorSelectClick">
+                                <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#E3008C"/></MenuItem.Icon>
+                            </MenuItem>
+                        </MenuItem>
+
+                        <MenuItem x:Name="LockGroupCanvasMenuItem"
+                                  Header="Lock Group"
+                                  Visibility="Collapsed"
+                                  Click="OnCanvasLockGroupClick">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon x:Name="LockGroupCanvasIcon" Symbol="LockClosed24" FontSize="20" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <MenuItem x:Name="UngroupCanvasMenuItem"
+                                  Header="Ungroup Tiles"
+                                  Visibility="Collapsed"
+                                  Click="OnCanvasUngroupClick">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="SelectAllOn24" FontSize="20" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <MenuItem x:Name="DeleteGroupCanvasMenuItem"
+                                  Header="Delete Group and Tiles"
+                                  Foreground="#FF6B6B"
+                                  Visibility="Collapsed"
+                                  Click="OnCanvasDeleteGroupClick">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="Delete24" FontSize="20" Foreground="#FF6B6B" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <Separator x:Name="GeneralMenuSeparator" />
+
+                        <MenuItem x:Name="CreateGroupCanvasMenuItem"
+                                  Header="Create Group"
+                                  Click="OnCreateGroupCanvasClick">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="FolderAdd24" FontSize="20" />
                             </MenuItem.Icon>
@@ -242,18 +360,6 @@
                         <MenuItem Header="Add Custom Tile..." Click="OnAddTileClick">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="Add24" FontSize="20" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-
-                        <MenuItem Header="Mica / Acrylic Toggle" Click="OnBackdropToggleClick">
-                            <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="DarkTheme24" FontSize="20" />
-                            </MenuItem.Icon>
-                        </MenuItem>
-
-                        <MenuItem Header="Export Layout" Click="OnExportLayoutClick">
-                            <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="Share24" FontSize="20" />
                             </MenuItem.Icon>
                         </MenuItem>
                     </ContextMenu>
