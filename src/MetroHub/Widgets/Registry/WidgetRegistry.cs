@@ -36,6 +36,26 @@ public static class WidgetRegistry
             ViewModelType: typeof(StubWidgetViewModel),
             Factory: model => new StubWidgetViewModel(model)
         ));
+
+        // Register Clock widget
+        Register(new WidgetDefinition(
+            Id: "clock",
+            DisplayName: "Clock",
+            Description: "Digital clock with live time and date",
+            Icon: SymbolRegular.Clock24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Wide,      // 4x2
+                WidgetSize.Large,     // 4x4
+                WidgetSize.LargeWide, // 6x4
+                WidgetSize.Banner,    // 8x2
+                WidgetSize.Mega       // 8x4
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Clock.ClockWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Clock.ClockWidgetView),
+            DefaultSize: WidgetSize.Wide,
+            Factory: model => new MetroHub.Widgets.Catalog.Clock.ClockWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)

@@ -8,9 +8,9 @@
         Every widget DataTemplate wraps its interior content in this shell.
     -->
     <Style x:Key="WidgetCardStyle" TargetType="{x:Type widgets:WidgetCard}">
-        <Setter Property="Background" Value="#161616" />
-        <Setter Property="BorderBrush" Value="#22FFFFFF" />
-        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
         <Setter Property="CornerRadius" Value="2" />
         <Setter Property="Padding" Value="10" />
         <Setter Property="SnapsToDevicePixels" Value="True" />

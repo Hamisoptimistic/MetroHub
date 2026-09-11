@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using MetroHub.Widgets.Catalog.Clock;
 using MetroHub.Widgets.Catalog.Stub;
 
 namespace MetroHub.Widgets.Serialization;
@@ -13,6 +14,7 @@ namespace MetroHub.Widgets.Serialization;
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(StubWidgetSettings))]
+[JsonSerializable(typeof(ClockWidgetSettings))]
 public partial class WidgetJsonContext : JsonSerializerContext
 {
 }

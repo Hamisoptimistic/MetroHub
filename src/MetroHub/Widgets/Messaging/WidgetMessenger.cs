@@ -9,4 +9,9 @@ namespace MetroHub.Widgets.Messaging;
 public static class WidgetMessenger
 {
     public static IMessenger Default => WeakReferenceMessenger.Default;
+
+    public static TMessage Send<TMessage>(TMessage message) where TMessage : class
+    {
+        return WeakReferenceMessenger.Default.Send(message);
+    }
 }

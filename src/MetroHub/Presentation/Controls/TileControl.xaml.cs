@@ -146,9 +146,24 @@ public partial class TileControl : UserControl
 
     public void LaunchTile()
     {
-        if (DataContext is TileModel tile && !string.IsNullOrWhiteSpace(tile.TargetPath))
+        if (DataContext is TileModel tile)
         {
-            if (tile.TileType == TileType.Widget) return;
+            if (tile.TileType == TileType.Widget)
+            {
+                if (tile.TileContent is Widgets.Catalog.Clock.ClockWidgetViewModel clockVm)
+                {
+                    clockVm.Toggle24HourFormat();
+                    return;
+                }
+                if (tile.TileContent is Widgets.Catalog.Stub.StubWidgetViewModel stubVm)
+                {
+                    stubVm.CycleColor();
+                    return;
+                }
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(tile.TargetPath)) return;
 
             lock (_controlLaunchLock)
             {
@@ -232,16 +247,12 @@ public partial class TileControl : UserControl
     {
         if (DataContext is not TileModel tile) return;
 
-        // In 0.1: Widgets never receive accent-fill treatment.
-        // Ensure RootBorder retains hit-testing with Transparent background so dragging and context menus work.
+        Color targetColor;
         if (tile.TileType == TileType.Widget)
         {
-            RootBorder.Background = Brushes.Transparent;
-            return;
+            targetColor = ColorExtractorService.GetDefaultGlassColor();
         }
-
-        Color targetColor;
-        if (string.Equals(tile.TileStyle, "Colourful", StringComparison.OrdinalIgnoreCase))
+        else if (string.Equals(tile.TileStyle, "Colourful", StringComparison.OrdinalIgnoreCase))
         {
             if (string.IsNullOrWhiteSpace(tile.AccentColor))
             {
@@ -327,6 +338,35 @@ public partial class TileControl : UserControl
             RunAdminMenuItem.Visibility = Visibility.Visible;
             OpenLocationMenuItem.Visibility = Visibility.Visible;
             SingleAppSeparator.Visibility = Visibility.Visible;
+        }
+
+        // Widget-specific context menu adaptation
+        var priorDynamicItem = TileContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => (string?)m.Tag == "WidgetCustomMenu");
+        if (priorDynamicItem != null) TileContextMenu.Items.Remove(priorDynamicItem);
+
+        if (tile.TileType == TileType.Widget)
+        {
+            RunAdminMenuItem.Visibility = Visibility.Collapsed;
+            OpenLocationMenuItem.Visibility = Visibility.Collapsed;
+            SingleAppSeparator.Visibility = Visibility.Collapsed;
+            StyleMenuItem.Visibility = Visibility.Collapsed;
+
+            if (tile.TileContent is Widgets.Catalog.Clock.ClockWidgetViewModel clockVm)
+            {
+                var formatItem = new MenuItem
+                {
+                    Header = "24-Hour Format",
+                    IsCheckable = true,
+                    IsChecked = clockVm.Is24HourFormat,
+                    Tag = "WidgetCustomMenu"
+                };
+                formatItem.Click += (s, ev) => clockVm.Toggle24HourFormat();
+                TileContextMenu.Items.Insert(0, formatItem);
+            }
+        }
+        else
+        {
+            StyleMenuItem.Visibility = Visibility.Visible;
         }
 
         PopulateResizeSubmenu(tile);

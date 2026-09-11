@@ -258,6 +258,16 @@
                             <MenuItem Header="Loading applications..." IsEnabled="False" />
                         </MenuItem>
 
+                        <!-- Modular Catalogs: Widgets -->
+                        <MenuItem x:Name="WidgetsMenuItem"
+                                  Header="Widgets"
+                                  SubmenuOpened="OnWidgetsSubmenuOpened">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="AppGeneric24" FontSize="20" />
+                            </MenuItem.Icon>
+                            <MenuItem Header="Loading widgets..." IsEnabled="False" />
+                        </MenuItem>
+
                         <!-- Dynamic Group Options (Visible when right-clicking empty space inside a group) -->
                         <Separator x:Name="GroupMenuSeparator" Visibility="Collapsed" />
 

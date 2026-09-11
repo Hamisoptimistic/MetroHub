@@ -170,6 +170,7 @@ public partial class MainWindow : BorderlessFluentWindow
             var testWidget = new TileModel
             {
                 Title = "Widget Preview",
+                TargetPath = "stub",
                 TileType = TileType.Widget,
                 Col = 12,
                 Row = 1,
@@ -855,6 +856,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         }, DispatcherPriority.Render);
 
         PlayOpenAnimation();
+        MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(true));
     }
 
     public void HideScreen()
@@ -865,6 +867,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             SidebarRail?.SetAppsDrawerActive(false);
             if (MainContentAreaGrid != null) MainContentAreaGrid.Clip = null;
         }
+        MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(false));
         DismissWithAnimation();
     }
 
@@ -2034,15 +2037,19 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
             if (!isCtrlDown && controlToLaunch != null)
             {
+                bool isWidget = controlToLaunch.DataContext is TileModel t && t.TileType == TileType.Widget;
                 var now = DateTime.UtcNow;
-                if (_isLaunchingTile || (now - _lastTileLaunchTime).TotalMilliseconds < 800)
+                if (!isWidget && (_isLaunchingTile || (now - _lastTileLaunchTime).TotalMilliseconds < 800))
                 {
                     controlToLaunch.AnimateRelease();
                     return;
                 }
 
-                _isLaunchingTile = true;
-                _lastTileLaunchTime = now;
+                if (!isWidget)
+                {
+                    _isLaunchingTile = true;
+                    _lastTileLaunchTime = now;
+                }
 
                 ClearTileSelection();
                 controlToLaunch.AnimateRelease(() =>
@@ -2050,18 +2057,21 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                     try
                     {
                         controlToLaunch.LaunchTile();
-                        if (Settings.CloseOnLaunch)
+                        if (!isWidget && Settings.CloseOnLaunch)
                         {
                             HideScreen();
                         }
                     }
                     finally
                     {
-                        Dispatcher.InvokeAsync(async () =>
+                        if (!isWidget)
                         {
-                            await Task.Delay(500);
-                            _isLaunchingTile = false;
-                        });
+                            Dispatcher.InvokeAsync(async () =>
+                            {
+                                await Task.Delay(500);
+                                _isLaunchingTile = false;
+                            });
+                        }
                     }
                 });
             }
@@ -4449,6 +4459,158 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             Arguments = item.Arguments,
             IconPath = iconPath,
             TileType = item.TileType,
+            SpanX = spanX,
+            SpanY = spanY,
+            Col = freeCol,
+            Row = freeRow,
+            X = GridPlacementService.PixelXFromCol(freeCol),
+            Y = GridPlacementService.PixelYFromRow(freeRow)
+        };
+
+        Tiles.Add(tile);
+
+        if (Groups != null && Groups.Count > 0)
+        {
+            var looseTiles = Tiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+            var pushedGroupTiles = GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, Groups, Tiles);
+            AnimateModifiedTiles(pushedGroupTiles);
+            UpdateGroupHeaderPositions(animate: true);
+            CompactGroupGaps();
+            SaveGroupsAndLayout();
+        }
+
+        StorageService.SaveLayout(Tiles);
+        UpdateCanvasHeight();
+        UpdateExposedAddSlots();
+    }
+
+    private void OnWidgetsSubmenuOpened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem widgetsMenu) return;
+        widgetsMenu.Items.Clear();
+
+        var widgets = MetroHub.Widgets.Registry.WidgetRegistry.GetAll();
+        if (widgets.Count == 0)
+        {
+            widgetsMenu.Items.Add(new MenuItem { Header = "No widgets available", IsEnabled = false });
+            return;
+        }
+
+        foreach (var def in widgets)
+        {
+            var mi = new MenuItem
+            {
+                Header = def.DisplayName,
+                Icon = new Wpf.Ui.Controls.SymbolIcon { Symbol = def.Icon, FontSize = 18, Foreground = new SolidColorBrush(Color.FromRgb(0x60, 0xCD, 0xFF)) },
+                Tag = def,
+                Cursor = Cursors.Hand,
+                MinHeight = 32,
+                Padding = new Thickness(10, 4, 14, 4)
+            };
+            mi.Click += OnWidgetMenuItemClick;
+            widgetsMenu.Items.Add(mi);
+        }
+    }
+
+    private void OnWidgetMenuItemClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem mi && mi.Tag is MetroHub.Widgets.Registry.WidgetDefinition def)
+        {
+            PinWidget(def, _canvasRightClickPoint);
+        }
+    }
+
+    public void PinWidget(MetroHub.Widgets.Registry.WidgetDefinition def, Point? targetCanvasPosition = null)
+    {
+        if (def == null) return;
+
+        string prePin = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
+        _historyService.PushState(prePin);
+
+        UpdateLayoutMetrics();
+        int maxCols = GridPlacementService.MaxCols;
+
+        Point clickPoint = targetCanvasPosition ?? new Point(GridPlacementService.OriginX, GridPlacementService.OriginY);
+
+        int col = GridPlacementService.ColFromPixel(clickPoint.X);
+        int row = GridPlacementService.RowFromPixel(clickPoint.Y);
+
+        TileGroupModel? targetGroup = null;
+        if (targetCanvasPosition != null)
+        {
+            foreach (var g in Groups)
+            {
+                var (minC, maxC, minR, maxR) = GridPlacementService.GetGroupBoundingBox(g, Tiles);
+                if (col >= minC && col < maxC && row >= minR && row <= maxR)
+                {
+                    targetGroup = g;
+                    break;
+                }
+            }
+        }
+
+        int spanX = def.InitialSize.SpanX;
+        int spanY = def.InitialSize.SpanY;
+
+        if (targetGroup != null)
+        {
+            var groupTile = new TileModel
+            {
+                Title = def.DisplayName,
+                TargetPath = def.Id,
+                TileType = TileType.Widget,
+                SpanX = spanX,
+                SpanY = spanY,
+                Group = targetGroup.Id,
+                SectionHeader = targetGroup.Title
+            };
+
+            int pinRelCol = col - targetGroup.Col;
+            int pinRelRow = row - (targetGroup.Row + 1);
+            var existingPinGroupTiles = Tiles.Where(t => t.Group == targetGroup.Id).ToList();
+            var (pinSlotCol, pinSlotRow) = GridPlacementService.FindFreeSlotInGroup(
+                targetGroup, pinRelCol, pinRelRow, spanX, spanY, existingPinGroupTiles);
+            groupTile.Col = pinSlotCol;
+            groupTile.Row = pinSlotRow;
+            groupTile.X = GridPlacementService.PixelXFromCol(pinSlotCol);
+            groupTile.Y = GridPlacementService.PixelYFromRow(pinSlotRow);
+
+            Tiles.Add(groupTile);
+            var mod = GridPlacementService.PlaceTileInGroup(
+                groupTile, pinSlotCol, pinSlotRow, pinSlotCol, pinSlotRow, targetGroup, Tiles);
+            var pushed = GridPlacementService.PushLowerGroupsDown(targetGroup, Groups, Tiles);
+            foreach (var pt in pushed)
+            {
+                if (!mod.Contains(pt)) mod.Add(pt);
+            }
+
+            AnimateModifiedTiles(mod);
+            UpdateGroupHeaderPositions();
+            StorageService.SaveLayout(Tiles);
+            SaveGroupsAndLayout();
+            UpdateCanvasHeight();
+            UpdateExposedAddSlots();
+            return;
+        }
+
+        int clampedCol = Math.Max(0, Math.Min(col, maxCols - spanX));
+        int clampedRow = Math.Max(1, row);
+
+        var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(
+            clampedCol,
+            clampedRow,
+            spanX,
+            spanY,
+            Tiles,
+            null,
+            maxCols,
+            Groups);
+
+        var tile = new TileModel
+        {
+            Title = def.DisplayName,
+            TargetPath = def.Id,
+            TileType = TileType.Widget,
             SpanX = spanX,
             SpanY = spanY,
             Col = freeCol,

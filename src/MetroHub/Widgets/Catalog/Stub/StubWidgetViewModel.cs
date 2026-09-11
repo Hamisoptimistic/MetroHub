@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
 using MetroHub.Widgets.Serialization;
 
@@ -12,8 +14,21 @@ namespace MetroHub.Widgets.Catalog.Stub;
 /// </summary>
 public partial class StubWidgetViewModel : WidgetViewModelBase
 {
+    private static readonly string[] Palette = { "#2563EB", "#7C3AED", "#059669", "#D97706", "#DC2626" };
+
     [ObservableProperty]
-    private string _statusText = "Stub Widget";
+    [NotifyPropertyChangedFor(nameof(SettingsSummary))]
+    private string _label = "Stub Widget";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SettingsSummary))]
+    private string _boxColor = "#2563EB";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SettingsSummary))]
+    private int _counter = 0;
+
+    public string SettingsSummary => $"Color: {BoxColor} | Clicks: {Counter}";
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new List<WidgetSize>
     {
@@ -33,9 +48,11 @@ public partial class StubWidgetViewModel : WidgetViewModelBase
     protected override void LoadSettings(string? settingsJson)
     {
         var settings = WidgetSerializer.Deserialize<StubWidgetSettings>(settingsJson);
-        if (settings != null && !string.IsNullOrWhiteSpace(settings.Note))
+        if (settings != null)
         {
-            StatusText = settings.Note;
+            Label = settings.Label ?? "Stub Widget";
+            BoxColor = string.IsNullOrWhiteSpace(settings.BoxColor) ? "#2563EB" : settings.BoxColor;
+            Counter = settings.Counter;
         }
     }
 
@@ -43,9 +60,23 @@ public partial class StubWidgetViewModel : WidgetViewModelBase
     {
         var settings = new StubWidgetSettings
         {
-            Note = StatusText
+            Label = Label,
+            BoxColor = BoxColor,
+            Counter = Counter
         };
+        Model.TargetPath = "stub";
         Model.SettingsJson = WidgetSerializer.Serialize(settings);
+        MainWindow.Current?.SaveGroupsAndLayout();
+    }
+
+    [RelayCommand]
+    public void CycleColor()
+    {
+        Counter++;
+        BoxColor = Palette[Counter % Palette.Length];
+        Label = $"Stub Widget #{Counter}";
+        SaveSettings();
     }
 }
+
 
