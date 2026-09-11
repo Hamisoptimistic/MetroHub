@@ -80,6 +80,8 @@ public partial class MainWindow : BorderlessFluentWindow
         InstalledAppsService.AppsCatalogChanged += OnAppsCatalogChanged;
         StartBackgroundAppWarmup();
         _ = Task.Delay(30000).ContinueWith(_ => TriggerBackgroundAppsCatalogRefresh());
+
+        PreviewTextInput += OnWindowPreviewTextInput;
     }
 
     private void OnRootGridLostMouseCapture(object sender, MouseEventArgs e)
@@ -4223,6 +4225,53 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     }
 
     #region Sidebar Rail and All Apps Drawer Handlers
+
+    private void OnWindowPreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        // Don't trigger if a dialog is open, or during active drag / rubberbanding
+        if (IsDialogOpen || _isDragging || _isPotentialDrag || _isRubberBanding)
+        {
+            return;
+        }
+
+        // Don't trigger if modifier keys (Ctrl, Alt, Win) are held down
+        if ((Keyboard.Modifiers & (ModifierKeys.Control | ModifierKeys.Alt | ModifierKeys.Windows)) != 0)
+        {
+            return;
+        }
+
+        // Don't intercept if user is already typing in an existing input element
+        if (IsTextInputFocused())
+        {
+            return;
+        }
+
+        if (string.IsNullOrEmpty(e.Text))
+        {
+            return;
+        }
+
+        char c = e.Text[0];
+        // Ignore control characters (\b, \r, \n) and standalone whitespace
+        if (char.IsControl(c) || char.IsWhiteSpace(c))
+        {
+            return;
+        }
+
+        if (AllAppsDrawer != null)
+        {
+            if (!AllAppsDrawer.IsOpen)
+            {
+                AllAppsDrawer.StartSearch(e.Text);
+                e.Handled = true;
+            }
+            else
+            {
+                AllAppsDrawer.AppendSearch(e.Text);
+                e.Handled = true;
+            }
+        }
+    }
 
     private void OnSidebarAppsToggleRequested(object? sender, EventArgs e)
     {

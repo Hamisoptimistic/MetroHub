@@ -111,6 +111,25 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
+        public void StartSearch(string initialText)
+        {
+            if (!IsOpen)
+            {
+                Open();
+            }
+
+            SearchBox.Text = initialText;
+            SearchBox.CaretIndex = SearchBox.Text.Length;
+            SearchBox.Focus();
+        }
+
+        public void AppendSearch(string text)
+        {
+            SearchBox.Focus();
+            SearchBox.Text += text;
+            SearchBox.CaretIndex = SearchBox.Text.Length;
+        }
+
         public static List<AlphabeticalAppGroup> CreateAlphabeticalGroups(IEnumerable<CatalogItemModel> apps)
         {
             var orderedApps = apps.OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase).ToList();
@@ -217,6 +236,7 @@ namespace MetroHub.Presentation.Controls
 
                 GroupedScrollViewer.Visibility = Visibility.Collapsed;
                 SearchResultsScrollViewer.Visibility = Visibility.Visible;
+                SearchResultsScrollViewer.ScrollToTop();
 
                 if (matches.Count > 0)
                 {
@@ -283,6 +303,11 @@ namespace MetroHub.Presentation.Controls
                         e.Handled = true;
                     }
                 }
+            }
+            else if (e.Key == Key.Back && string.IsNullOrEmpty(SearchBox.Text))
+            {
+                Close();
+                e.Handled = true;
             }
             else if (e.Key == Key.Escape)
             {
