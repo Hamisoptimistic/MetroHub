@@ -206,16 +206,19 @@ public static class GridPlacementService
             }
         }
 
-        foreach (var other in tiles)
+        if (tiles != null)
         {
-            if (ReferenceEquals(other, ignoreTile)) continue;
-
-            int otherCol = GetCol(other);
-            int otherRow = GetRow(other);
-
-            if (DoTilesOverlap(col, row, spanX, spanY, otherCol, otherRow, other.SpanX, other.SpanY))
+            foreach (var other in tiles)
             {
-                return false;
+                if (ReferenceEquals(other, ignoreTile)) continue;
+
+                int otherCol = GetCol(other);
+                int otherRow = GetRow(other);
+
+                if (DoTilesOverlap(col, row, spanX, spanY, otherCol, otherRow, other.SpanX, other.SpanY))
+                {
+                    return false;
+                }
             }
         }
 

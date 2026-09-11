@@ -1721,7 +1721,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             _draggedCluster.Clear();
 
             UpdateExposedAddSlots();
-            foreach (var g in Groups) g.IsBeingDragged = false;
+            if (Groups != null) foreach (var g in Groups) g.IsBeingDragged = false;
             UpdateGroupHeaderPositions();
             ClearTileSelection();
             SaveGroupsAndLayout();
@@ -3072,6 +3072,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     {
         StorageService.SaveLayout(Tiles);
         StorageService.SaveGroups(Groups);
+        GridPlacementService.SetActiveGroups(Groups);
         UpdateCanvasHeight();
     }
 
