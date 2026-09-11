@@ -3868,7 +3868,10 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     private async void OnAppsSubmenuOpened(object sender, RoutedEventArgs e)
     {
-        await LoadAppsSubmenuAsync();
+        if (!_isAppsLoaded)
+        {
+            await LoadAppsSubmenuAsync();
+        }
     }
 
     private void StartBackgroundAppWarmup()
@@ -3881,14 +3884,22 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 if (apps == null || apps.Count == 0) return;
 
                 var groups = Presentation.Controls.AllAppsDrawerControl.CreateAlphabeticalGroups(apps);
+                var ordered = apps.OrderBy(i => i.Name, StringComparer.OrdinalIgnoreCase).ToList();
 
                 await Dispatcher.InvokeAsync(() =>
                 {
                     AllAppsDrawer?.SetPreloadedApps(apps, groups);
+                    if (AppsMenuItem != null)
+                    {
+                        AppsMenuItem.ItemsSource = null;
+                        AppsMenuItem.Items.Clear();
+                        AppsMenuItem.ItemsSource = ordered;
+                    }
+                    _isAppsLoaded = true;
                 }, DispatcherPriority.ApplicationIdle);
 
-                // Defer non-critical icon prewarming by 3s so startup completes with 0% CPU/disk contention
-                await Task.Delay(3000);
+                // Defer non-critical icon prewarming by 500ms so startup completes with 0% CPU/disk contention
+                await Task.Delay(500);
                 CatalogItemModel.PrewarmMemoryCache(apps);
             }
             catch (Exception ex)
@@ -3896,20 +3907,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 Debug.WriteLine($"[AppWarmup] Background warmup error: {ex.Message}");
             }
         });
-    }
-
-    private void PreloadAppsSubmenu(List<CatalogItemModel> items)
-    {
-        if (_isAppsLoaded || AppsMenuItem == null) return;
-
-        AppsMenuItem.Items.Clear();
-        foreach (var item in items)
-        {
-            var menuItem = CreateCatalogMenuItem(item);
-            AppsMenuItem.Items.Add(menuItem);
-        }
-
-        _isAppsLoaded = true;
     }
 
     private async Task LoadAppsSubmenuAsync()
@@ -3920,20 +3917,18 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         try
         {
             var provider = CatalogService.GetProvider("installed_apps");
-            if (provider != null)
+            if (provider != null && AppsMenuItem != null)
             {
                 var items = await provider.GetItemsAsync();
+                var ordered = items.OrderBy(i => i.Name, StringComparer.OrdinalIgnoreCase).ToList();
 
-                _ = Task.Run(() => CatalogItemModel.PrewarmMemoryCache(items));
-
+                AppsMenuItem.ItemsSource = null;
                 AppsMenuItem.Items.Clear();
-                foreach (var item in items)
-                {
-                    var menuItem = CreateCatalogMenuItem(item);
-                    AppsMenuItem.Items.Add(menuItem);
-                }
+                AppsMenuItem.ItemsSource = ordered;
 
                 _isAppsLoaded = true;
+
+                CatalogItemModel.PrewarmMemoryCache(ordered);
             }
         }
         catch (Exception ex)
@@ -3952,7 +3947,10 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
             if (_isAppsLoaded && AppsMenuItem != null)
             {
-                UpdateAppsMenuItems(freshApps);
+                var ordered = freshApps.OrderBy(i => i.Name, StringComparer.OrdinalIgnoreCase).ToList();
+                AppsMenuItem.ItemsSource = null;
+                AppsMenuItem.Items.Clear();
+                AppsMenuItem.ItemsSource = ordered;
             }
             AllAppsDrawer?.LoadApps(freshApps);
         }, DispatcherPriority.Background);
@@ -3978,7 +3976,16 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
                 if (_isAppsLoaded)
                 {
-                    await Dispatcher.InvokeAsync(() => { UpdateAppsMenuItems(freshItems); }, DispatcherPriority.Background);
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                        if (AppsMenuItem != null)
+                        {
+                            var ordered = freshItems.OrderBy(i => i.Name, StringComparer.OrdinalIgnoreCase).ToList();
+                            AppsMenuItem.ItemsSource = null;
+                            AppsMenuItem.Items.Clear();
+                            AppsMenuItem.ItemsSource = ordered;
+                        }
+                    }, DispatcherPriority.Background);
                 }
             }
             catch (Exception ex)
@@ -3988,70 +3995,12 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         });
     }
 
-    private void UpdateAppsMenuItems(IReadOnlyList<CatalogItemModel> freshItems)
+    private void OnAppMenuItemClick(object sender, RoutedEventArgs e)
     {
-        if (AppsMenuItem == null) return;
-
-        bool hasChanged = AppsMenuItem.Items.Count != freshItems.Count;
-        if (!hasChanged)
+        if (sender is MenuItem mi && mi.DataContext is CatalogItemModel item)
         {
-            for (int i = 0; i < freshItems.Count; i++)
-            {
-                if (AppsMenuItem.Items[i] is MenuItem mi && mi.DataContext is CatalogItemModel existing)
-                {
-                    if (!string.Equals(existing.TargetPath, freshItems[i].TargetPath, StringComparison.OrdinalIgnoreCase)
-                        || !string.Equals(existing.Name, freshItems[i].Name, StringComparison.Ordinal))
-                    {
-                        hasChanged = true;
-                        break;
-                    }
-                }
-                else
-                {
-                    hasChanged = true;
-                    break;
-                }
-            }
+            PinCatalogItem(item, _canvasRightClickPoint);
         }
-
-        if (hasChanged)
-        {
-            AppsMenuItem.Items.Clear();
-            foreach (var item in freshItems)
-            {
-                AppsMenuItem.Items.Add(CreateCatalogMenuItem(item));
-            }
-        }
-    }
-
-    private MenuItem CreateCatalogMenuItem(CatalogItemModel item)
-    {
-        var menuItem = new MenuItem
-        {
-            Header = item.Name,
-            DataContext = item,
-            Cursor = Cursors.Hand
-        };
-
-        var img = new Image
-        {
-            Width = 18,
-            Height = 18,
-            SnapsToDevicePixels = true
-        };
-        RenderOptions.SetBitmapScalingMode(img, BitmapScalingMode.HighQuality);
-
-        var binding = new Binding("Icon")
-        {
-            Source = item,
-            Mode = BindingMode.OneWay
-        };
-        img.SetBinding(Image.SourceProperty, binding);
-        menuItem.Icon = img;
-
-        menuItem.Click += (s, e) => { PinCatalogItem(item, _canvasRightClickPoint); };
-
-        return menuItem;
     }
 
     public void PinCatalogItem(CatalogItemModel item, Point? targetCanvasPosition = null)

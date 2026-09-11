@@ -230,6 +230,22 @@
                     <ContextMenu x:Name="CanvasContextMenu"
                                  Opened="OnCanvasContextMenuOpened"
                                  Closed="OnCanvasContextMenuClosed">
+                        <ContextMenu.Resources>
+                            <!-- Cap submenu flyouts to exactly ~15 visible items (460px) with smooth scrolling -->
+                            <Style TargetType="{x:Type ui:PassiveScrollViewer}">
+                                <Setter Property="MaxHeight" Value="460" />
+                                <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+                                <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+                                <Setter Property="CanContentScroll" Value="True" />
+                            </Style>
+                            <Style TargetType="{x:Type ScrollViewer}">
+                                <Setter Property="MaxHeight" Value="460" />
+                                <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+                                <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+                                <Setter Property="CanContentScroll" Value="True" />
+                            </Style>
+                        </ContextMenu.Resources>
+
                         <!-- Modular Catalogs: Apps -->
                         <MenuItem x:Name="AppsMenuItem"
                                   Header="Apps"
@@ -237,20 +253,46 @@
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="Apps24" FontSize="20" />
                             </MenuItem.Icon>
-                            <MenuItem.Resources>
-                                <Style TargetType="{x:Type ui:PassiveScrollViewer}">
-                                    <Setter Property="MaxHeight" Value="500" />
-                                    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
-                                    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
-                                    <Setter Property="CanContentScroll" Value="True" />
+                            <MenuItem.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel IsVirtualizing="True"
+                                                            VirtualizationMode="Recycling" />
+                                </ItemsPanelTemplate>
+                            </MenuItem.ItemsPanel>
+                            <MenuItem.ItemContainerStyle>
+                                <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource {x:Type MenuItem}}">
+                                    <Setter Property="Cursor" Value="Hand" />
+                                    <Setter Property="MinHeight" Value="30" />
+                                    <Setter Property="Padding" Value="10,4,14,4" />
+                                    <Setter Property="Header" Value="{Binding}" />
+                                    <Setter Property="HeaderTemplate">
+                                        <Setter.Value>
+                                            <DataTemplate>
+                                                <Grid VerticalAlignment="Center">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="24" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Image Grid.Column="0"
+                                                           Source="{Binding Icon}"
+                                                           Width="20" Height="20"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           RenderOptions.BitmapScalingMode="HighQuality"
+                                                           SnapsToDevicePixels="True" />
+                                                    <TextBlock Grid.Column="1"
+                                                               Text="{Binding Name}"
+                                                               VerticalAlignment="Center"
+                                                               Margin="10,0,8,0"
+                                                               FontSize="13"
+                                                               Foreground="#F0FFFFFF" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <EventSetter Event="Click" Handler="OnAppMenuItemClick" />
                                 </Style>
-                                <Style TargetType="{x:Type ScrollViewer}">
-                                    <Setter Property="MaxHeight" Value="500" />
-                                    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
-                                    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
-                                    <Setter Property="CanContentScroll" Value="True" />
-                                </Style>
-                            </MenuItem.Resources>
+                            </MenuItem.ItemContainerStyle>
                             <MenuItem Header="Loading applications..." IsEnabled="False" />
                         </MenuItem>
 

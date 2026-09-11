@@ -94,20 +94,35 @@ public class CatalogItemModel : INotifyPropertyChanged
         if (items == null) return;
         Task.Run(() =>
         {
-            var itemList = items.Where(i => !string.IsNullOrWhiteSpace(i.TargetPath) && !_memoryIconCache.ContainsKey(i.TargetPath)).ToList();
+            var itemList = items.Where(i => !string.IsNullOrWhiteSpace(i.TargetPath)).ToList();
             if (itemList.Count == 0) return;
 
-            Parallel.ForEach(itemList, new ParallelOptions { MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount / 2, 1, 2) }, item =>
+            Parallel.ForEach(itemList, new ParallelOptions { MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount, 2, 4) }, item =>
             {
                 try
                 {
+                    if (item.TargetPath == null) return;
+
+                    if (_memoryIconCache.TryGetValue(item.TargetPath, out var memImg))
+                    {
+                        if (item._icon != memImg)
+                        {
+                            item._icon = memImg;
+                            App.Current?.Dispatcher?.InvokeAsync(() => item.OnPropertyChanged(nameof(Icon)),
+                                System.Windows.Threading.DispatcherPriority.Background);
+                        }
+                        return;
+                    }
+
                     string? cached = IconExtractorService.ExtractAndCacheIcon(item.TargetPath);
                     if (!string.IsNullOrWhiteSpace(cached))
                     {
                         var img = GetOrCreateBitmapImage(cached, item.TargetPath);
-                        if (img != null && item._icon == null)
+                        if (img != null && item._icon != img)
                         {
                             item._icon = img;
+                            App.Current?.Dispatcher?.InvokeAsync(() => item.OnPropertyChanged(nameof(Icon)),
+                                System.Windows.Threading.DispatcherPriority.Background);
                         }
                     }
                 }
@@ -171,20 +186,35 @@ public class CatalogItemModel : INotifyPropertyChanged
         {
             try
             {
-                string? cached = IconExtractorService.ExtractAndCacheIcon(_targetPath);
-                if (!string.IsNullOrWhiteSpace(cached))
+                if (string.IsNullOrWhiteSpace(_targetPath)) return;
+
+                if (_memoryIconCache.TryGetValue(_targetPath, out var memImg))
                 {
                     App.Current?.Dispatcher?.InvokeAsync(() =>
                     {
-                        var bi = GetOrCreateBitmapImage(cached, _targetPath);
-                        if (bi != null)
+                        Icon = memImg;
+                    }, System.Windows.Threading.DispatcherPriority.Normal);
+                    return;
+                }
+
+                string? cached = IconExtractorService.ExtractAndCacheIcon(_targetPath);
+                if (!string.IsNullOrWhiteSpace(cached))
+                {
+                    var bi = GetOrCreateBitmapImage(cached, _targetPath);
+                    if (bi != null)
+                    {
+                        App.Current?.Dispatcher?.InvokeAsync(() =>
                         {
                             Icon = bi;
-                        }
-                    }, System.Windows.Threading.DispatcherPriority.Background);
+                        }, System.Windows.Threading.DispatcherPriority.Normal);
+                    }
                 }
             }
             catch { }
+            finally
+            {
+                _isIconLoading = false;
+            }
         });
     }
 

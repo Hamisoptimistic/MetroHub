@@ -63,6 +63,69 @@
             </Style.Triggers>
         </Style>
 
+        <!-- Modern Fluent Search Result Item Style with Selection & Hover Focus -->
+        <Style x:Key="FluentSearchListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Margin" Value="8,1,8,1" />
+            <Setter Property="Padding" Value="7,4" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="2"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Rectangle x:Name="AccentPill"
+                                           Width="3"
+                                           Height="16"
+                                           HorizontalAlignment="Left"
+                                           VerticalAlignment="Center"
+                                           RadiusX="1.5"
+                                           RadiusY="1.5"
+                                           Fill="#60CDFF"
+                                           Visibility="Collapsed"
+                                           Margin="-5,0,0,0" />
+                                <ContentPresenter />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#18FFFFFF" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#2AFFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#25FFFFFF" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#45FFFFFF" />
+                                <Setter TargetName="AccentPill" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#25FFFFFF" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#45FFFFFF" />
+                                <Setter TargetName="AccentPill" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="True" />
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bd" Property="Background" Value="#30FFFFFF" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#55FFFFFF" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Modern Mini Pin Button Style: CornerRadius="2" matching Tiles -->
         <Style x:Key="MiniPinButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
@@ -255,7 +318,8 @@
                              Margin="34,0,28,0"
                              TextChanged="OnSearchBoxTextChanged"
                              GotFocus="OnSearchBoxGotFocus"
-                             LostFocus="OnSearchBoxLostFocus" />
+                             LostFocus="OnSearchBoxLostFocus"
+                             PreviewKeyDown="OnSearchBoxPreviewKeyDown" />
 
                     <Button x:Name="ClearSearchButton"
                             HorizontalAlignment="Right"
@@ -370,15 +434,25 @@
                                Margin="0,32,0,0"
                                Visibility="Collapsed" />
 
-                    <ItemsControl x:Name="SearchResultsItemsControl">
-                        <ItemsControl.ItemTemplate>
+                    <ListBox x:Name="SearchResultsListBox"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Padding="0"
+                             FocusVisualStyle="{x:Null}"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                             ItemContainerStyle="{StaticResource FluentSearchListBoxItemStyle}"
+                             KeyDown="OnSearchResultsKeyDown"
+                             PreviewKeyDown="OnSearchResultsPreviewKeyDown"
+                             PreviewTextInput="OnSearchResultsPreviewTextInput">
+                        <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Style="{StaticResource AppRowContainerStyle}"
-                                        Tag="{Binding}"
-                                        PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
-                                        PreviewMouseMove="OnAppRowPreviewMouseMove"
-                                        MouseLeftButtonUp="OnAppRowMouseLeftButtonUp">
-                                    <Border.ContextMenu>
+                                <Grid Tag="{Binding}"
+                                      Background="Transparent"
+                                      PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
+                                      PreviewMouseMove="OnAppRowPreviewMouseMove"
+                                      MouseLeftButtonUp="OnAppRowMouseLeftButtonUp">
+                                    <Grid.ContextMenu>
                                         <ContextMenu>
                                             <MenuItem Header="Pin to Start" Click="OnContextMenuPinClick">
                                                 <MenuItem.Icon>
@@ -391,34 +465,32 @@
                                                 </MenuItem.Icon>
                                             </MenuItem>
                                         </ContextMenu>
-                                    </Border.ContextMenu>
+                                    </Grid.ContextMenu>
 
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="28" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="28" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
 
-                                        <Image Grid.Column="0"
-                                               Source="{Binding Icon}"
-                                               Width="22"
-                                               Height="22"
-                                               HorizontalAlignment="Center"
+                                    <Image Grid.Column="0"
+                                           Source="{Binding Icon}"
+                                           Width="22"
+                                           Height="22"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           RenderOptions.BitmapScalingMode="HighQuality" />
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Name}"
+                                               FontSize="13"
+                                               Foreground="#E6FFFFFF"
                                                VerticalAlignment="Center"
-                                               RenderOptions.BitmapScalingMode="HighQuality" />
-
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding Name}"
-                                                   FontSize="13"
-                                                   Foreground="#E6FFFFFF"
-                                                   VerticalAlignment="Center"
-                                                   Margin="8,0,8,0"
-                                                   TextTrimming="CharacterEllipsis" />
-                                    </Grid>
-                                </Border>
+                                               Margin="8,0,8,0"
+                                               TextTrimming="CharacterEllipsis" />
+                                </Grid>
                             </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </StackPanel>
             </ScrollViewer>
         </Grid>

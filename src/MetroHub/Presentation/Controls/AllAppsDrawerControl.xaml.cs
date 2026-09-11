@@ -63,6 +63,12 @@ namespace MetroHub.Presentation.Controls
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
             DrawerTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
+
+            // Focus search box smoothly when opening
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+            {
+                SearchBox.Focus();
+            }));
         }
 
         public void Close()
@@ -198,6 +204,7 @@ namespace MetroHub.Presentation.Controls
             {
                 GroupedScrollViewer.Visibility = Visibility.Visible;
                 SearchResultsScrollViewer.Visibility = Visibility.Collapsed;
+                SearchResultsListBox.ItemsSource = null;
             }
             else
             {
@@ -205,11 +212,164 @@ namespace MetroHub.Presentation.Controls
                     .Where(a => a.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
-                SearchResultsItemsControl.ItemsSource = matches;
+                SearchResultsListBox.ItemsSource = matches;
                 NoResultsTextBlock.Visibility = matches.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
                 GroupedScrollViewer.Visibility = Visibility.Collapsed;
                 SearchResultsScrollViewer.Visibility = Visibility.Visible;
+
+                if (matches.Count > 0)
+                {
+                    SearchResultsListBox.SelectedIndex = 0;
+                }
+            }
+        }
+
+        private void OnSearchBoxPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Down)
+            {
+                if (SearchResultsListBox.Items.Count > 0)
+                {
+                    int targetIndex = SearchResultsListBox.SelectedIndex;
+                    if (targetIndex < 0)
+                    {
+                        targetIndex = 0;
+                    }
+                    else if (targetIndex < SearchResultsListBox.Items.Count - 1)
+                    {
+                        targetIndex++;
+                    }
+                    else
+                    {
+                        targetIndex = 0;
+                    }
+
+                    FocusSearchItem(targetIndex);
+                    e.Handled = true;
+                }
+            }
+            else if (e.Key == Key.Up)
+            {
+                if (SearchResultsListBox.Items.Count > 0)
+                {
+                    int targetIndex = SearchResultsListBox.SelectedIndex;
+                    if (targetIndex <= 0)
+                    {
+                        targetIndex = SearchResultsListBox.Items.Count - 1;
+                    }
+                    else
+                    {
+                        targetIndex--;
+                    }
+
+                    FocusSearchItem(targetIndex);
+                    e.Handled = true;
+                }
+            }
+            else if (e.Key == Key.Enter)
+            {
+                if (SearchResultsListBox.SelectedItem is CatalogItemModel app)
+                {
+                    AppLaunchRequested?.Invoke(this, app);
+                    e.Handled = true;
+                }
+                else if (SearchResultsListBox.Items.Count > 0)
+                {
+                    SearchResultsListBox.SelectedIndex = 0;
+                    if (SearchResultsListBox.SelectedItem is CatalogItemModel topApp)
+                    {
+                        AppLaunchRequested?.Invoke(this, topApp);
+                        e.Handled = true;
+                    }
+                }
+            }
+            else if (e.Key == Key.Escape)
+            {
+                if (!string.IsNullOrEmpty(SearchBox.Text))
+                {
+                    ClearSearch();
+                    e.Handled = true;
+                }
+                else
+                {
+                    Close();
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private void FocusSearchItem(int index)
+        {
+            if (index >= 0 && index < SearchResultsListBox.Items.Count)
+            {
+                SearchResultsListBox.SelectedIndex = index;
+                SearchResultsListBox.ScrollIntoView(SearchResultsListBox.SelectedItem);
+                SearchResultsListBox.UpdateLayout();
+
+                if (SearchResultsListBox.ItemContainerGenerator.ContainerFromIndex(index) is ListBoxItem lbi)
+                {
+                    lbi.Focus();
+                }
+                else
+                {
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(() =>
+                    {
+                        var container = SearchResultsListBox.ItemContainerGenerator.ContainerFromIndex(index) as ListBoxItem;
+                        container?.Focus();
+                    }));
+                }
+            }
+        }
+
+        private void OnSearchResultsKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                if (SearchResultsListBox.SelectedItem is CatalogItemModel app)
+                {
+                    AppLaunchRequested?.Invoke(this, app);
+                    e.Handled = true;
+                }
+            }
+            else if (e.Key == Key.Escape)
+            {
+                ClearSearch();
+                SearchBox.Focus();
+                e.Handled = true;
+            }
+        }
+
+        private void OnSearchResultsPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Up && SearchResultsListBox.SelectedIndex == 0)
+            {
+                // Smoothly return focus back to the search box when pressing Up from the top item
+                SearchBox.Focus();
+                SearchBox.CaretIndex = SearchBox.Text.Length;
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Back)
+            {
+                // Backspace while focused on results immediately moves focus back to search box
+                SearchBox.Focus();
+                if (!string.IsNullOrEmpty(SearchBox.Text))
+                {
+                    SearchBox.Text = SearchBox.Text[..^1];
+                    SearchBox.CaretIndex = SearchBox.Text.Length;
+                }
+                e.Handled = true;
+            }
+        }
+
+        private void OnSearchResultsPreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(e.Text))
+            {
+                SearchBox.Focus();
+                SearchBox.Text += e.Text;
+                SearchBox.CaretIndex = SearchBox.Text.Length;
+                e.Handled = true;
             }
         }
 
@@ -224,6 +384,7 @@ namespace MetroHub.Presentation.Controls
             UpdatePlaceholderVisibility();
             GroupedScrollViewer.Visibility = Visibility.Visible;
             SearchResultsScrollViewer.Visibility = Visibility.Collapsed;
+            SearchResultsListBox.ItemsSource = null;
         }
 
         private void OnAppRowPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
