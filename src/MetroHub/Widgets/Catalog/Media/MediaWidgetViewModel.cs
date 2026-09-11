@@ -365,11 +365,10 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
             byte[] pixels = new byte[height * stride];
             converted.CopyPixels(pixels, stride, 0);
 
-            double bestScore = -1;
-            byte bestR = 58, bestG = 130, bestB = 212;
-
-            double totalWeight = 0;
+            double totalColorWeight = 0;
             double accR = 0, accG = 0, accB = 0;
+            int validPixelCount = 0;
+            double totalLum = 0;
 
             for (int i = 0; i <= pixels.Length - 4; i += 4)
             {
@@ -379,59 +378,69 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 byte a = pixels[i + 3];
                 if (a < 128) continue;
 
+                int max = Math.Max(r, Math.Max(g, b));
+                int min = Math.Min(r, Math.Min(g, b));
+                int delta = max - min;
+
                 var (h, s, v) = RgbToHsv(r, g, b);
+                validPixelCount++;
+                totalLum += v;
 
-                // Skip washed out or near-black pixels
-                if (v < 0.12 || (v > 0.94 && s < 0.08)) continue;
-
-                double score = s * 2.0 + (1.0 - Math.Abs(v - 0.7));
-                if (score > bestScore)
+                // Strict check for genuine chromatic color:
+                // delta >= 24 ensures grayscale/white compression artifacts (where r is 1-2 units > b)
+                // are NEVER mistaken for red hue 0!
+                if (delta >= 24 && s >= 0.20 && v >= 0.18 && v <= 0.95)
                 {
-                    bestScore = score;
-                    bestR = r;
-                    bestG = g;
-                    bestB = b;
-                }
-
-                if (s > 0.22 && v > 0.2)
-                {
-                    double weight = s * s * v;
+                    double weight = s * s * (1.0 - Math.Abs(v - 0.65));
                     accR += r * weight;
                     accG += g * weight;
                     accB += b * weight;
-                    totalWeight += weight;
+                    totalColorWeight += weight;
                 }
             }
 
             Color accent;
-            if (totalWeight > 0.1)
+            bool isMonochrome = totalColorWeight < 0.05;
+
+            if (!isMonochrome)
             {
-                byte avgR = (byte)Math.Clamp(accR / totalWeight, 0, 255);
-                byte avgG = (byte)Math.Clamp(accG / totalWeight, 0, 255);
-                byte avgB = (byte)Math.Clamp(accB / totalWeight, 0, 255);
+                byte avgR = (byte)Math.Clamp(accR / totalColorWeight, 0, 255);
+                byte avgG = (byte)Math.Clamp(accG / totalColorWeight, 0, 255);
+                byte avgB = (byte)Math.Clamp(accB / totalColorWeight, 0, 255);
 
                 var (h, s, v) = RgbToHsv(avgR, avgG, avgB);
-                s = Math.Clamp(s * 1.35, 0.65, 1.0);
-                v = Math.Clamp(v * 1.25, 0.60, 0.90);
-                accent = ColorFromHsv(h, s, v);
-            }
-            else if (bestScore > 0.2)
-            {
-                var (h, s, v) = RgbToHsv(bestR, bestG, bestB);
-                s = Math.Clamp(s * 1.35, 0.65, 1.0);
-                v = Math.Clamp(v * 1.25, 0.60, 0.90);
+                s = Math.Clamp(s * 1.3, 0.45, 0.95);
+                v = Math.Clamp(v * 1.15, 0.55, 0.88);
                 accent = ColorFromHsv(h, s, v);
             }
             else
             {
-                accent = Color.FromRgb(0x3A, 0x82, 0xD4);
+                // Monochromatic / White / Black album art:
+                // Produce a sensual, luminous moonlight pearl-white aura — NOT red!
+                double avgLum = validPixelCount > 0 ? totalLum / validPixelCount : 0.8;
+                if (avgLum > 0.4)
+                {
+                    // White or light-gray album art -> Pure pearl-white
+                    accent = Color.FromRgb(242, 246, 255);
+                }
+                else
+                {
+                    // Dark / black album art -> Soft silver moonlight
+                    accent = Color.FromRgb(215, 228, 245);
+                }
             }
 
             var solidBrush = new SolidColorBrush(accent);
             solidBrush.Freeze();
 
             // Sensual, fluent multi-stop radial gradient originating from behind the album art
-            // and diffusing across the entire glass tile card
+            // diffusing across the entire card with a smooth non-linear cubic decay curve
+            byte a0 = isMonochrome ? (byte)100 : (byte)140;
+            byte a1 = isMonochrome ? (byte)75  : (byte)105;
+            byte a2 = isMonochrome ? (byte)48  : (byte)66;
+            byte a3 = isMonochrome ? (byte)24  : (byte)34;
+            byte a4 = isMonochrome ? (byte)8   : (byte)12;
+
             var sensualBrush = new RadialGradientBrush
             {
                 MappingMode = BrushMappingMode.RelativeToBoundingBox,
@@ -440,12 +449,12 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 RadiusX = 0.95,
                 RadiusY = 1.15
             };
-            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(140, accent.R, accent.G, accent.B), 0.0));
-            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(105, accent.R, accent.G, accent.B), 0.18));
-            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(66, accent.R, accent.G, accent.B), 0.38));
-            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(34, accent.R, accent.G, accent.B), 0.60));
-            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(12, accent.R, accent.G, accent.B), 0.82));
-            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(0, accent.R, accent.G, accent.B), 1.0));
+            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(a0, accent.R, accent.G, accent.B), 0.00));
+            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(a1, accent.R, accent.G, accent.B), 0.18));
+            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(a2, accent.R, accent.G, accent.B), 0.38));
+            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(a3, accent.R, accent.G, accent.B), 0.60));
+            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(a4, accent.R, accent.G, accent.B), 0.82));
+            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(0,  accent.R, accent.G, accent.B), 1.00));
             sensualBrush.Freeze();
 
             return (accent, solidBrush, sensualBrush);
@@ -464,11 +473,12 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 RadiusX = 0.95,
                 RadiusY = 1.15
             };
-            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(120, 0x3A, 0x82, 0xD4), 0.0));
-            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(85, 0x3A, 0x82, 0xD4), 0.20));
-            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(45, 0x3A, 0x82, 0xD4), 0.45));
-            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(15, 0x3A, 0x82, 0xD4), 0.75));
-            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(0, 0x3A, 0x82, 0xD4), 1.0));
+            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(140, 0x3A, 0x82, 0xD4), 0.00));
+            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(105, 0x3A, 0x82, 0xD4), 0.18));
+            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(66,  0x3A, 0x82, 0xD4), 0.38));
+            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(34,  0x3A, 0x82, 0xD4), 0.60));
+            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(12,  0x3A, 0x82, 0xD4), 0.82));
+            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(0,   0x3A, 0x82, 0xD4), 1.00));
             fallbackSensual.Freeze();
 
             return (fallbackColor, fallbackSolid, fallbackSensual);

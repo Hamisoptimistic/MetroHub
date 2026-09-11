@@ -62,13 +62,17 @@
                 <RowDefinition Height="38" />   <!-- Row 1: Fluent Acrylic Strip: Sound Source (Left) + Controls (Far Right) -->
             </Grid.RowDefinitions>
 
-            <!-- 1. Sensual Fluent Ambient Radial Glow across the entire card from behind -->
+            <!-- 1. Sensual Fluent Ambient Radial Glow across the entire card from behind (Gaussian-smoothed to eliminate banding lines) -->
             <Border Grid.RowSpan="2"
                     CornerRadius="2"
                     Background="{Binding SensualRadialBrush}"
                     IsHitTestVisible="False"
                     SnapsToDevicePixels="True"
-                    Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}" />
+                    Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}">
+                <Border.Effect>
+                    <BlurEffect Radius="24" KernelType="Gaussian" />
+                </Border.Effect>
+            </Border>
 
             <!-- Row 0: Top Section (Track Info + Elevated Album Art) -->
             <Grid Grid.Row="0">
@@ -188,81 +192,66 @@
                 </Grid>
             </Grid>
 
-            <!-- Row 1: Bottom Docked Bar (Fluent Acrylic Translucent Strip) -->
+            <!-- Row 1: Bottom Docked Bar: Transport Controls Aligned with Title, with Hairline Divider Line -->
             <Border Grid.Row="1"
-                    Background="#18000000"
-                    BorderThickness="0"
-                    Padding="18,0,6,0">
-                <Grid VerticalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />    <!-- Left: Sound Source -->
-                        <ColumnDefinition Width="Auto" /> <!-- Right: Transport Controls Docked on Far Right -->
-                    </Grid.ColumnDefinitions>
+                    Background="#14000000"
+                    BorderThickness="0,0.5,0,0"
+                    BorderBrush="#0EFFFFFF"
+                    CornerRadius="0,0,2,2"
+                    SnapsToDevicePixels="True"
+                    Padding="8,0,28,0">
+                <!-- Transport Controls (< ▷ >) Aligned with Title Name on Left -->
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center">
+                    <!-- Previous Track (<) -->
+                    <Button Style="{StaticResource MediaTransportButtonStyle}"
+                            Command="{Binding SkipPreviousCommand}"
+                            IsEnabled="{Binding CanSkipPrevious}"
+                            ToolTip="Previous">
+                        <TextBlock Text="&#xE76B;"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="13"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center" />
+                    </Button>
 
-                    <!-- Left: Sound Source (e.g. "YouTube Music", "Spotify", "Zen Browser") -->
-                    <TextBlock Grid.Column="0"
-                               Text="{Binding SourceName}"
-                               FontSize="13"
-                               FontWeight="Normal"
-                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                               Foreground="#B8BDC8"
-                               TextTrimming="CharacterEllipsis"
-                               VerticalAlignment="Center" />
+                    <!-- Play / Pause (▷ or ||) -->
+                    <Button Style="{StaticResource MediaTransportButtonStyle}"
+                            Command="{Binding TogglePlayPauseCommand}"
+                            IsEnabled="{Binding CanPlayPause}"
+                            Margin="4,0"
+                            ToolTip="Play / Pause">
+                        <TextBlock x:Name="PlayPauseIcon"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="13"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="&#xE768;" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                            <Setter Property="Text" Value="&#xE769;" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Button>
 
-                    <!-- Right: Transport Controls (< ▷ >) Docked on the Far Right of Tile -->
-                    <StackPanel Grid.Column="1"
-                                Orientation="Horizontal"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center">
-                        <!-- Previous Track (<) -->
-                        <Button Style="{StaticResource MediaTransportButtonStyle}"
-                                Command="{Binding SkipPreviousCommand}"
-                                IsEnabled="{Binding CanSkipPrevious}"
-                                ToolTip="Previous">
-                            <TextBlock Text="&#xE76B;"
-                                       FontFamily="Segoe MDL2 Assets"
-                                       FontSize="12"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center" />
-                        </Button>
-
-                        <!-- Play / Pause (▷ or ||) -->
-                        <Button Style="{StaticResource MediaTransportButtonStyle}"
-                                Command="{Binding TogglePlayPauseCommand}"
-                                IsEnabled="{Binding CanPlayPause}"
-                                Margin="3,0"
-                                ToolTip="Play / Pause">
-                            <TextBlock x:Name="PlayPauseIcon"
-                                       FontFamily="Segoe MDL2 Assets"
-                                       FontSize="13"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="&#xE768;" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                                <Setter Property="Text" Value="&#xE769;" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Button>
-
-                        <!-- Next Track (>) -->
-                        <Button Style="{StaticResource MediaTransportButtonStyle}"
-                                Command="{Binding SkipNextCommand}"
-                                IsEnabled="{Binding CanSkipNext}"
-                                ToolTip="Next">
-                            <TextBlock Text="&#xE76C;"
-                                       FontFamily="Segoe MDL2 Assets"
-                                       FontSize="12"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center" />
-                        </Button>
-                    </StackPanel>
-                </Grid>
+                    <!-- Next Track (>) -->
+                    <Button Style="{StaticResource MediaTransportButtonStyle}"
+                            Command="{Binding SkipNextCommand}"
+                            IsEnabled="{Binding CanSkipNext}"
+                            ToolTip="Next">
+                        <TextBlock Text="&#xE76C;"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="13"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center" />
+                    </Button>
+                </StackPanel>
             </Border>
         </Grid>
     </widgets:WidgetCard>
