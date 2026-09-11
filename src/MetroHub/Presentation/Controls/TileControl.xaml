@@ -104,13 +104,23 @@
         <DataTemplate DataType="{x:Type stub:StubWidgetViewModel}">
             <widgets:WidgetCard>
                 <Grid>
-                    <TextBlock Text="Widget"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               Foreground="#44FFFFFF"
-                               FontSize="11"
-                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                               SnapsToDevicePixels="True" />
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ui:SymbolIcon Symbol="AppGeneric24" FontSize="26" Foreground="#80FFFFFF" HorizontalAlignment="Center" Margin="0,0,0,6" />
+                        <TextBlock Text="Widget Stub"
+                                   HorizontalAlignment="Center"
+                                   Foreground="#D0FFFFFF"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                                   SnapsToDevicePixels="True" />
+                        <TextBlock Text="Phase 0.2 Shell"
+                                   HorizontalAlignment="Center"
+                                   Foreground="#60FFFFFF"
+                                   FontSize="10"
+                                   FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                                   Margin="0,2,0,0"
+                                   SnapsToDevicePixels="True" />
+                    </StackPanel>
                 </Grid>
             </widgets:WidgetCard>
         </DataTemplate>
@@ -150,11 +160,7 @@
 
         <Border.ContextMenu>
             <ContextMenu x:Name="TileContextMenu">
-                <MenuItem x:Name="ResizeMenuItem" Header="Resize">
-                    <MenuItem Header="Small (1x1)" Click="OnResizeSmallClick" />
-                    <MenuItem Header="Medium (2x2)" Click="OnResizeMediumClick" />
-                    <MenuItem Header="Wide (4x2)" Click="OnResizeWideClick" />
-                </MenuItem>
+                <MenuItem x:Name="ResizeMenuItem" Header="Resize" />
                 <MenuItem x:Name="StyleMenuItem" Header="Style">
                     <MenuItem Header="Default" Click="OnStyleDefaultClick" />
                     <MenuItem Header="Colourful" Click="OnStyleColourfulClick" />

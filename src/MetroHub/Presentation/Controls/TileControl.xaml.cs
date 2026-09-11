@@ -8,6 +8,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
+using MetroHub.Widgets;
 
 namespace MetroHub.Presentation.Controls;
 
@@ -328,7 +329,60 @@ public partial class TileControl : UserControl
             SingleAppSeparator.Visibility = Visibility.Visible;
         }
 
+        PopulateResizeSubmenu(tile);
         PopulateAddToGroupSubmenu(mainWindow);
+    }
+
+    private void PopulateResizeSubmenu(TileModel tile)
+    {
+        if (ResizeMenuItem == null) return;
+        ResizeMenuItem.Items.Clear();
+
+        // Phase 0.3: If tile is a widget and declares allowed sizes via IWidgetViewModel, dynamically populate from them:
+        if (tile.TileType == TileType.Widget && tile.TileContent is IWidgetViewModel widgetVm && widgetVm.AllowedSizes?.Count > 0)
+        {
+            foreach (var size in widgetVm.AllowedSizes)
+            {
+                var item = new MenuItem
+                {
+                    Header = size.DisplayName,
+                    IsChecked = (tile.SpanX == size.SpanX && tile.SpanY == size.SpanY)
+                };
+                int spanX = size.SpanX;
+                int spanY = size.SpanY;
+                item.Click += (s, e) => ResizeTileTo(spanX, spanY);
+                ResizeMenuItem.Items.Add(item);
+            }
+            ResizeMenuItem.Visibility = Visibility.Visible;
+            return;
+        }
+
+        // App tiles keep their existing three-option behavior unchanged (Small 1x1, Medium 2x2, Wide 4x2)
+        var smallItem = new MenuItem
+        {
+            Header = "Small (1x1)",
+            IsChecked = (tile.SpanX == 1 && tile.SpanY == 1)
+        };
+        smallItem.Click += OnResizeSmallClick;
+
+        var mediumItem = new MenuItem
+        {
+            Header = "Medium (2x2)",
+            IsChecked = (tile.SpanX == 2 && tile.SpanY == 2)
+        };
+        mediumItem.Click += OnResizeMediumClick;
+
+        var wideItem = new MenuItem
+        {
+            Header = "Wide (4x2)",
+            IsChecked = (tile.SpanX == 4 && tile.SpanY == 2)
+        };
+        wideItem.Click += OnResizeWideClick;
+
+        ResizeMenuItem.Items.Add(smallItem);
+        ResizeMenuItem.Items.Add(mediumItem);
+        ResizeMenuItem.Items.Add(wideItem);
+        ResizeMenuItem.Visibility = Visibility.Visible;
     }
 
     private void PopulateAddToGroupSubmenu(MetroHub.MainWindow mainWindow)

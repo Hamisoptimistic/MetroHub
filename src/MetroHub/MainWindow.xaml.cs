@@ -162,7 +162,23 @@ public partial class MainWindow : BorderlessFluentWindow
             t.Col = Math.Max(0, t.Col);
             t.Row = Math.Max(1, t.Row);
             t.X = GridPlacementService.PixelXFromCol(t.Col);
-            t.Y = GridPlacementService.PixelYFromRow(t.Row);
+        }
+
+        // Temporary sample stub widget tile for Phase 0.2 visual verification
+        if (!Tiles.Any(t => t.TileType == TileType.Widget))
+        {
+            var testWidget = new TileModel
+            {
+                Title = "Widget Preview",
+                TileType = TileType.Widget,
+                Col = 12,
+                Row = 1,
+                SpanX = 2,
+                SpanY = 2,
+                X = GridPlacementService.PixelXFromCol(12),
+                Y = GridPlacementService.PixelYFromRow(1)
+            };
+            Tiles.Add(testWidget);
         }
 
         DiscoverGroupsFromTiles();
