@@ -157,6 +157,32 @@
             </Setter>
         </Style>
 
+        <!-- Comprehensive Fluent App Context Menu: Open -> Run as Admin -> Pin/Unpin -> Separator -> Uninstall -->
+        <ContextMenu x:Key="AppItemContextMenu"
+                     Opened="OnAppContextMenuOpened"
+                     PreviewKeyDown="OnAppContextMenuPreviewKeyDown">
+            <MenuItem Header="Open" Click="OnContextMenuOpenClick">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="ArrowRight24" FontSize="18" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Run as administrator" Click="OnContextMenuRunAsAdminClick">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="Shield24" FontSize="18" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="PinMenuItem" Header="Pin to Start" Click="OnContextMenuPinToggleClick">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="Pin24" FontSize="18" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="Uninstall" Click="OnContextMenuUninstallClick" Foreground="#FF6B6B">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="Delete24" FontSize="18" Foreground="#FF6B6B" />
+                </MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
     </UserControl.Resources>
 
     <Grid>
@@ -302,22 +328,9 @@
                                                     Tag="{Binding}"
                                                     PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
                                                     PreviewMouseMove="OnAppRowPreviewMouseMove"
-                                                    MouseLeftButtonUp="OnAppRowMouseLeftButtonUp">
-                                                <Border.ContextMenu>
-                                                    <ContextMenu>
-                                                        <MenuItem Header="Pin to Start" Click="OnContextMenuPinClick">
-                                                            <MenuItem.Icon>
-                                                                <ui:SymbolIcon Symbol="Pin24" FontSize="18" />
-                                                            </MenuItem.Icon>
-                                                        </MenuItem>
-                                                        <MenuItem Header="Open" Click="OnContextMenuOpenClick">
-                                                            <MenuItem.Icon>
-                                                                <ui:SymbolIcon Symbol="ArrowRight24" FontSize="18" />
-                                                            </MenuItem.Icon>
-                                                        </MenuItem>
-                                                    </ContextMenu>
-                                                </Border.ContextMenu>
-
+                                                    MouseLeftButtonUp="OnAppRowMouseLeftButtonUp"
+                                                    ContextMenu="{StaticResource AppItemContextMenu}"
+                                                    ContextMenuOpening="OnAppContextMenuOpening">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="28" />
@@ -386,21 +399,9 @@
                                       Background="Transparent"
                                       PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
                                       PreviewMouseMove="OnAppRowPreviewMouseMove"
-                                      MouseLeftButtonUp="OnAppRowMouseLeftButtonUp">
-                                    <Grid.ContextMenu>
-                                        <ContextMenu>
-                                            <MenuItem Header="Pin to Start" Click="OnContextMenuPinClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Pin24" FontSize="18" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="Open" Click="OnContextMenuOpenClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="ArrowRight24" FontSize="18" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                        </ContextMenu>
-                                    </Grid.ContextMenu>
+                                      MouseLeftButtonUp="OnAppRowMouseLeftButtonUp"
+                                      ContextMenu="{StaticResource AppItemContextMenu}"
+                                      ContextMenuOpening="OnAppContextMenuOpening">
 
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="28" />

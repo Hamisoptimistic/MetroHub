@@ -34,6 +34,7 @@ namespace MetroHub.Presentation.Controls
         private CatalogItemModel? _draggedItem;
         private bool _isAppDragPotential = false;
         private bool _isAppsLoaded = false;
+        private CatalogItemModel? _activeContextMenuItem;
 
         public AllAppsDrawerControl()
         {
@@ -304,6 +305,14 @@ namespace MetroHub.Presentation.Controls
                     }
                 }
             }
+            else if (e.Key == Key.Right)
+            {
+                if (SearchBox.CaretIndex == SearchBox.Text.Length && SearchResultsListBox.Items.Count > 0)
+                {
+                    OpenContextMenuForCurrentSearchItem();
+                    e.Handled = true;
+                }
+            }
             else if (e.Key == Key.Back && string.IsNullOrEmpty(SearchBox.Text))
             {
                 Close();
@@ -367,7 +376,18 @@ namespace MetroHub.Presentation.Controls
 
         private void OnSearchResultsPreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Up && SearchResultsListBox.SelectedIndex == 0)
+            if (e.Key == Key.Right || e.Key == Key.Apps || (e.Key == Key.F10 && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift))
+            {
+                OpenContextMenuForCurrentSearchItem();
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Left)
+            {
+                SearchBox.Focus();
+                SearchBox.CaretIndex = SearchBox.Text.Length;
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Up && SearchResultsListBox.SelectedIndex == 0)
             {
                 // Smoothly return focus back to the search box when pressing Up from the top item
                 SearchBox.Focus();
@@ -460,19 +480,288 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
+        private void OpenContextMenuForCurrentSearchItem()
+        {
+            if (SearchResultsListBox.Items.Count == 0) return;
+
+            int selIdx = SearchResultsListBox.SelectedIndex;
+            if (selIdx < 0)
+            {
+                selIdx = 0;
+                SearchResultsListBox.SelectedIndex = 0;
+            }
+
+            if (SearchResultsListBox.SelectedItem is not CatalogItemModel item) return;
+
+            var container = SearchResultsListBox.ItemContainerGenerator.ContainerFromIndex(selIdx) as ListBoxItem;
+            if (container == null)
+            {
+                SearchResultsListBox.ScrollIntoView(item);
+                SearchResultsListBox.UpdateLayout();
+                container = SearchResultsListBox.ItemContainerGenerator.ContainerFromIndex(selIdx) as ListBoxItem;
+            }
+
+            if (Resources["AppItemContextMenu"] is ContextMenu contextMenu)
+            {
+                _activeContextMenuItem = item;
+                contextMenu.PlacementTarget = container ?? (UIElement)SearchResultsListBox;
+                contextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Right;
+                contextMenu.HorizontalOffset = 4;
+                contextMenu.VerticalOffset = 0;
+                contextMenu.DataContext = item;
+
+                UpdatePinMenuItemState(contextMenu, item);
+
+                contextMenu.IsOpen = true;
+
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                {
+                    if (contextMenu.Items.Count > 0 && contextMenu.Items[0] is MenuItem firstItem)
+                    {
+                        firstItem.Focus();
+                    }
+                }));
+            }
+        }
+
+        private void OnAppContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            if (Resources["AppItemContextMenu"] is ContextMenu menu)
+            {
+                var item = (sender as FrameworkElement)?.Tag as CatalogItemModel
+                           ?? (sender as FrameworkElement)?.DataContext as CatalogItemModel
+                           ?? SearchResultsListBox.SelectedItem as CatalogItemModel;
+                if (item != null)
+                {
+                    _activeContextMenuItem = item;
+                    menu.DataContext = item;
+                    UpdatePinMenuItemState(menu, item);
+                }
+            }
+        }
+
+        private void OnAppContextMenuOpened(object sender, RoutedEventArgs e)
+        {
+            if (sender is ContextMenu menu)
+            {
+                var item = GetCatalogItemFromMenu(menu) ?? _activeContextMenuItem;
+                if (item != null)
+                {
+                    _activeContextMenuItem = item;
+                    UpdatePinMenuItemState(menu, item);
+                }
+            }
+        }
+
+        private void OnAppContextMenuPreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Left)
+            {
+                if (sender is ContextMenu menu)
+                {
+                    menu.IsOpen = false;
+                    e.Handled = true;
+
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                    {
+                        if (SearchResultsListBox.SelectedItem != null && SearchResultsListBox.SelectedIndex >= 0)
+                        {
+                            FocusSearchItem(SearchResultsListBox.SelectedIndex);
+                        }
+                        else
+                        {
+                            SearchBox.Focus();
+                            SearchBox.CaretIndex = SearchBox.Text.Length;
+                        }
+                    }));
+                }
+            }
+            else if (e.Key == Key.Escape)
+            {
+                if (sender is ContextMenu menu)
+                {
+                    menu.IsOpen = false;
+                    e.Handled = true;
+
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+                    {
+                        if (SearchResultsListBox.SelectedItem != null && SearchResultsListBox.SelectedIndex >= 0)
+                        {
+                            FocusSearchItem(SearchResultsListBox.SelectedIndex);
+                        }
+                        else
+                        {
+                            SearchBox.Focus();
+                        }
+                    }));
+                }
+            }
+        }
+
+        private static MenuItem? FindPinMenuItem(ContextMenu menu)
+        {
+            foreach (var item in menu.Items)
+            {
+                if (item is MenuItem mi && (mi.Name == "PinMenuItem" || mi.Header?.ToString()?.Contains("Pin") == true))
+                {
+                    return mi;
+                }
+            }
+            return null;
+        }
+
+        private void UpdatePinMenuItemState(ContextMenu menu, CatalogItemModel item)
+        {
+            var pinItem = FindPinMenuItem(menu);
+            if (pinItem == null) return;
+
+            bool isPinned = IsAppPinned(item, out _);
+            if (isPinned)
+            {
+                pinItem.Header = "Unpin from Start";
+                if (pinItem.Icon is Wpf.Ui.Controls.SymbolIcon sym)
+                {
+                    sym.Symbol = Wpf.Ui.Controls.SymbolRegular.Pin24;
+                    sym.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x6B));
+                }
+                pinItem.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x6B));
+            }
+            else
+            {
+                pinItem.Header = "Pin to Start";
+                if (pinItem.Icon is Wpf.Ui.Controls.SymbolIcon sym)
+                {
+                    sym.Symbol = Wpf.Ui.Controls.SymbolRegular.Pin24;
+                    sym.ClearValue(Wpf.Ui.Controls.SymbolIcon.ForegroundProperty);
+                }
+                pinItem.ClearValue(MenuItem.ForegroundProperty);
+            }
+        }
+
+        private static bool IsAppPinned(CatalogItemModel item, out List<TileModel> matchedTiles)
+        {
+            matchedTiles = new List<TileModel>();
+            var current = MainWindow.Current;
+            if (current == null || item == null) return false;
+
+            foreach (var tile in current.Tiles)
+            {
+                bool targetMatch = !string.IsNullOrEmpty(item.TargetPath) &&
+                    string.Equals(tile.TargetPath, item.TargetPath, StringComparison.OrdinalIgnoreCase);
+                bool nameMatch = !string.IsNullOrEmpty(item.Name) &&
+                    string.Equals(tile.Title, item.Name, StringComparison.OrdinalIgnoreCase);
+
+                if (targetMatch || nameMatch)
+                {
+                    matchedTiles.Add(tile);
+                }
+            }
+
+            return matchedTiles.Count > 0;
+        }
+
+        private CatalogItemModel? GetCatalogItemFromMenu(object? sender)
+        {
+            if (_activeContextMenuItem != null) return _activeContextMenuItem;
+
+            if (sender is MenuItem menuItem)
+            {
+                if (menuItem.DataContext is CatalogItemModel directItem) return directItem;
+                if (ItemsControl.ItemsControlFromItemContainer(menuItem) is ContextMenu icMenu && icMenu.DataContext is CatalogItemModel icItem) return icItem;
+                if (menuItem.Parent is ContextMenu parentMenu && parentMenu.DataContext is CatalogItemModel pmItem) return pmItem;
+            }
+            else if (sender is ContextMenu menu)
+            {
+                if (menu.DataContext is CatalogItemModel cmItem) return cmItem;
+                if (menu.PlacementTarget is FrameworkElement targetFe)
+                {
+                    if (targetFe.Tag is CatalogItemModel tagItem) return tagItem;
+                    if (targetFe.DataContext is CatalogItemModel dcItem) return dcItem;
+                }
+            }
+            return SearchResultsListBox.SelectedItem as CatalogItemModel;
+        }
+
+        private void OnContextMenuOpenClick(object sender, RoutedEventArgs e)
+        {
+            var item = _activeContextMenuItem ?? GetCatalogItemFromMenu(sender);
+            if (item != null)
+            {
+                AppLaunchRequested?.Invoke(this, item);
+                Close();
+                MainWindow.Current?.HideScreen();
+            }
+        }
+
+        private void OnContextMenuRunAsAdminClick(object sender, RoutedEventArgs e)
+        {
+            var item = _activeContextMenuItem ?? GetCatalogItemFromMenu(sender);
+            if (item == null || string.IsNullOrWhiteSpace(item.TargetPath)) return;
+
+            try
+            {
+                string rawPath = item.TargetPath;
+                string execPath = IconExtractorService.ResolveExecutableTarget(rawPath);
+
+                if (rawPath.Contains("WindowsTerminal", StringComparison.OrdinalIgnoreCase) ||
+                    item.Name.Contains("Terminal", StringComparison.OrdinalIgnoreCase))
+                {
+                    execPath = "wt.exe";
+                }
+                else if (rawPath.Contains("WindowsNotepad", StringComparison.OrdinalIgnoreCase))
+                {
+                    execPath = "notepad.exe";
+                }
+                else if (rawPath.Contains("Microsoft.Paint", StringComparison.OrdinalIgnoreCase))
+                {
+                    execPath = "mspaint.exe";
+                }
+
+                var psi = new ProcessStartInfo
+                {
+                    FileName = execPath,
+                    Arguments = item.Arguments ?? string.Empty,
+                    Verb = "runas",
+                    UseShellExecute = true
+                };
+                Process.Start(psi);
+
+                // Close drawer and hide MetroHub on successful launch so elevated prompt and window come forward
+                Close();
+                MainWindow.Current?.HideScreen();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[AllAppsDrawer] Run as admin failed: {ex.Message}");
+            }
+        }
+
         private void OnContextMenuPinClick(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement fe && fe.DataContext is CatalogItemModel item)
+            OnContextMenuPinToggleClick(sender, e);
+        }
+
+        private void OnContextMenuPinToggleClick(object sender, RoutedEventArgs e)
+        {
+            var item = _activeContextMenuItem ?? GetCatalogItemFromMenu(sender);
+            if (item == null) return;
+
+            if (IsAppPinned(item, out var matchedTiles))
+            {
+                MainWindow.Current?.BatchUnpinTiles(matchedTiles);
+            }
+            else
             {
                 AppPinRequested?.Invoke(this, item);
             }
         }
 
-        private void OnContextMenuOpenClick(object sender, RoutedEventArgs e)
+        private void OnContextMenuUninstallClick(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement fe && fe.DataContext is CatalogItemModel item)
+            var item = _activeContextMenuItem ?? GetCatalogItemFromMenu(sender);
+            if (item != null)
             {
-                AppLaunchRequested?.Invoke(this, item);
+                AppUninstallService.RequestUninstall(item);
             }
         }
     }

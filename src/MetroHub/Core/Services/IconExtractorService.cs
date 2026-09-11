@@ -574,4 +574,47 @@ public static class IconExtractorService
 
         return shortcutPath;
     }
+
+    public static string ResolveExecutableTarget(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return path;
+
+        string kf = ResolveKnownFolderGuid(path);
+        if (File.Exists(kf)) path = kf;
+
+        if (path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                Type? shellType = Type.GetTypeFromProgID("WScript.Shell");
+                if (shellType != null)
+                {
+                    dynamic? shell = Activator.CreateInstance(shellType);
+                    if (shell != null)
+                    {
+                        dynamic shortcut = shell.CreateShortcut(path);
+                        string target = shortcut.TargetPath?.ToString() ?? string.Empty;
+                        Marshal.FinalReleaseComObject(shortcut);
+                        Marshal.FinalReleaseComObject(shell);
+
+                        if (!string.IsNullOrWhiteSpace(target))
+                        {
+                            string resolved = ResolveKnownFolderGuid(target);
+                            if (File.Exists(resolved) && (resolved.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || resolved.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) || resolved.EndsWith(".bat", StringComparison.OrdinalIgnoreCase)))
+                            {
+                                return resolved;
+                            }
+                            if (File.Exists(target))
+                            {
+                                return target;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        return path;
+    }
 }
