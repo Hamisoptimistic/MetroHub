@@ -211,6 +211,13 @@ public class TileModel : INotifyPropertyChanged
         set => SetField(ref _tileStyle, value);
     }
 
+    private string? _settingsJson;
+    public string? SettingsJson
+    {
+        get => _settingsJson;
+        set => SetField(ref _settingsJson, value);
+    }
+
     public int OrderIndex
     {
         get => _orderIndex;
