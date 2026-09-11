@@ -1246,7 +1246,9 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
         int minAllowedCol = Math.Max(0, -_clusterRelGridBounds.MinRelCol);
         int maxAllowedCol = Math.Max(minAllowedCol, maxCols - _clusterRelGridBounds.MaxRelCol);
-        int anchorCol = Math.Max(0, Math.Clamp(GridPlacementService.ColFromPixel(clampedAnchorX), minAllowedCol, maxAllowedCol));
+        int rawCol = Math.Max(0, Math.Clamp(GridPlacementService.ColFromPixel(clampedAnchorX), minAllowedCol, maxAllowedCol));
+        int clusterSpanX = Math.Max(1, _clusterRelGridBounds.MaxRelCol - _clusterRelGridBounds.MinRelCol);
+        int anchorCol = GridPlacementService.SnapColToValidTrackSlot(rawCol, clusterSpanX, maxCols, clampedAnchorX);
 
         int minAllowedRow = _isGroupDrag
             ? (_draggedTile != null
@@ -1622,7 +1624,10 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                     int dropCol = GridPlacementService.ColFromPixel(_draggedTile.X);
                     int dropRow = GridPlacementService.RowFromPixel(_draggedTile.Y);
 
-                    int targetCol = Math.Min(dropCol, Math.Max(0, maxCols - _draggedTile.SpanX));
+                    int clusterSpanX = _draggedCluster.Count > 1
+                        ? Math.Max(1, _clusterRelGridBounds.MaxRelCol - _clusterRelGridBounds.MinRelCol)
+                        : _draggedTile.SpanX;
+                    int targetCol = GridPlacementService.SnapColToValidTrackSlot(dropCol, clusterSpanX, maxCols, _draggedTile.X);
                     int targetRow = Math.Max(1, dropRow);
 
                     var origDict = _dragClusterOriginals.ToDictionary(kvp => kvp.Key, kvp => (kvp.Value.Col, kvp.Value.Row));
@@ -2491,6 +2496,38 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                     }
                 }
             }
+        }
+
+        // Auto-heal any loose tiles that currently straddle 8-column track boundaries or overlap
+        var looseTilesToHeal = Tiles.Where(t => string.IsNullOrEmpty(t.Group)).OrderBy(t => t.Row).ThenBy(t => t.Col).ToList();
+        var placedLooseTiles = new List<TileModel>();
+        foreach (var lt in looseTilesToHeal)
+        {
+            int validCol = GridPlacementService.SnapColToValidTrackSlot(lt.Col, lt.SpanX, GridPlacementService.MaxCols, lt.X);
+            if (validCol != lt.Col)
+            {
+                lt.Col = validCol;
+                lt.X = GridPlacementService.PixelXFromCol(validCol);
+                changed = true;
+            }
+
+            bool hasOverlap = placedLooseTiles.Any(other =>
+                GridPlacementService.DoTilesOverlap(lt.Col, lt.Row, lt.SpanX, lt.SpanY, other.Col, other.Row, other.SpanX, other.SpanY));
+
+            if (hasOverlap)
+            {
+                var (freeC, freeR) = GridPlacementService.FindNearestAvailableSlot(
+                    lt.Col, lt.Row, lt.SpanX, lt.SpanY,
+                    placedLooseTiles.Concat(Tiles.Where(t => !string.IsNullOrEmpty(t.Group))),
+                    lt, GridPlacementService.MaxCols, Groups);
+
+                lt.Col = freeC;
+                lt.Row = freeR;
+                lt.X = GridPlacementService.PixelXFromCol(freeC);
+                lt.Y = GridPlacementService.PixelYFromRow(freeR);
+                changed = true;
+            }
+            placedLooseTiles.Add(lt);
         }
 
         foreach (var lt in Tiles.Where(t => string.IsNullOrEmpty(t.Group)))

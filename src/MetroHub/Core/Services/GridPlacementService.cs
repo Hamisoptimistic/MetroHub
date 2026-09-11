@@ -66,6 +66,36 @@ public static class GridPlacementService
         return OriginY + (row * GridStep);
     }
 
+    public static int SnapColToValidTrackSlot(int col, int spanX, int maxCols, double pixelX = 0)
+    {
+        if (col < 0) return 0;
+        spanX = Math.Max(1, spanX);
+        int trackStart = (col / GroupColWidth) * GroupColWidth;
+        int trackMax = trackStart + GroupColWidth - spanX;
+
+        // If the tile fits cleanly within this track at the given column and stays inside maxCols
+        if (col <= trackMax && col + spanX <= maxCols)
+        {
+            return col;
+        }
+
+        // If it would straddle across this track boundary:
+        int nextTrack = trackStart + GroupColWidth;
+        if (nextTrack + spanX <= maxCols)
+        {
+            double curMaxX = PixelXFromCol(Math.Max(trackStart, trackMax));
+            double nextTrackX = PixelXFromCol(nextTrack);
+            double midpoint = (curMaxX + nextTrackX) / 2.0;
+
+            if (pixelX >= midpoint)
+            {
+                return nextTrack;
+            }
+        }
+
+        return Math.Max(0, Math.Min(maxCols - spanX, Math.Max(trackStart, trackMax)));
+    }
+
     public static int GetCol(TileModel tile) => (tile.X > 0 || tile.Col == 0) ? ColFromPixel(tile.X) : tile.Col;
     public static int GetRow(TileModel tile) => (tile.Y > 0 || tile.Row == 0) ? RowFromPixel(tile.Y) : tile.Row;
 
@@ -89,6 +119,13 @@ public static class GridPlacementService
     {
         if (col < 0 || row < 1) return false;
         if (col + spanX > maxCols) return false;
+
+        // A tile cannot straddle across 8-column track boundaries (due to the 32px ColumnGap)
+        int trackColStart = (col / GroupColWidth) * GroupColWidth;
+        if (col + spanX > trackColStart + GroupColWidth)
+        {
+            return false;
+        }
 
         // When groups are present and this check is for a loose canvas tile,
         // enforce that it does not overlap any group and does not occupy the 1x1 perimeter gap around any group.
@@ -164,7 +201,7 @@ public static class GridPlacementService
         int maxCols = int.MaxValue,
         IEnumerable<TileGroupModel>? groups = null)
     {
-        startCol = Math.Max(0, Math.Min(startCol, Math.Max(0, maxCols - spanX)));
+        startCol = SnapColToValidTrackSlot(startCol, spanX, maxCols, PixelXFromCol(startCol));
         startRow = Math.Max(1, startRow);
 
         if (IsRegionFree(startCol, startRow, spanX, spanY, tiles, ignoreTile, maxCols, groups))
@@ -250,7 +287,20 @@ public static class GridPlacementService
         }
         else
         {
+            int trackCol = (col / GroupColWidth) * GroupColWidth;
+            effectiveMinCol = trackCol;
+            effectiveMaxCol = Math.Min(maxCols, trackCol + GroupColWidth);
             scopeTiles = allTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+        }
+
+        // If this track cannot accommodate the new width (e.g. narrow edge track), find nearest slot
+        if (effectiveMaxCol - effectiveMinCol < newSpanX)
+        {
+            var (targetC, targetR) = FindNearestAvailableSlot(col, row, newSpanX, newSpanY, allTiles, resizingTile, maxCols, groups);
+            col = targetC;
+            row = targetR;
+            effectiveMinCol = (col / GroupColWidth) * GroupColWidth;
+            effectiveMaxCol = Math.Min(maxCols, effectiveMinCol + GroupColWidth);
         }
 
         // If expanding horizontally pushes beyond the allowed column boundary, clamp/shift left
@@ -424,9 +474,10 @@ public static class GridPlacementService
             int newCol = shiftedCols[current];
             int r = GetRow(current);
 
-            if (newCol + current.SpanX > maxCols)
+            int trackStart = (newCol / GroupColWidth) * GroupColWidth;
+            if (newCol + current.SpanX > maxCols || newCol + current.SpanX > trackStart + GroupColWidth)
             {
-                return false; // Exceeds right edge of grid
+                return false; // Exceeds right edge of grid or track boundary
             }
 
             foreach (var other in allTiles)
@@ -463,7 +514,8 @@ public static class GridPlacementService
 
         foreach (var kvp in shiftedCols)
         {
-            if (!CanDisplace(kvp.Key) || kvp.Value + kvp.Key.SpanX > maxCols)
+            int tStart = (kvp.Value / GroupColWidth) * GroupColWidth;
+            if (!CanDisplace(kvp.Key) || kvp.Value + kvp.Key.SpanX > maxCols || kvp.Value + kvp.Key.SpanX > tStart + GroupColWidth)
             {
                 return false;
             }
@@ -592,6 +644,7 @@ public static class GridPlacementService
         var modifiedTiles = new List<TileModel>();
         int maxAllowedCol = Math.Max(0, maxCols - draggedTile.SpanX);
         targetCol = Math.Max(0, Math.Min(targetCol, maxAllowedCol));
+        targetCol = SnapColToValidTrackSlot(targetCol, draggedTile.SpanX, maxCols, draggedTile.X);
         targetRow = Math.Max(0, targetRow);
 
         // When placing a loose canvas tile, only consider other loose canvas tiles for collisions and displacement
@@ -893,7 +946,7 @@ public static class GridPlacementService
 
         foreach (var tile in orderedTiles)
         {
-            int col = Math.Min(Math.Max(0, ColFromPixel(tile.X)), Math.Max(0, maxCols - tile.SpanX));
+            int col = SnapColToValidTrackSlot(ColFromPixel(tile.X), tile.SpanX, maxCols, tile.X);
             int row = Math.Max(0, RowFromPixel(tile.Y));
 
             var (freeCol, freeRow) = FindNearestAvailableSlot(col, row, tile.SpanX, tile.SpanY, placedTiles, null, maxCols);
