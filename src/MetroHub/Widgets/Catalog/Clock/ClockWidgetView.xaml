@@ -18,44 +18,44 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </UserControl.Resources>
 
-    <widgets:WidgetCard Padding="12">
+    <widgets:WidgetCard Padding="8,4">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
-            <!-- 1. Wide 4x2 Layout: SemiBold Time + AM/PM Centered (No Date) with Micro-Motion -->
+            <!-- 1. Wide 4x2 Layout: Time + AM/PM Centered (No Date) with Micro-Motion -->
             <Grid Visibility="{Binding IsWideOnly, Converter={StaticResource BoolToVis}}"
                   VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <clock:AnimatedTimeBlock Text="{Binding HoursString}"
-                                             FontSize="52"
-                                             FontWeight="SemiBold"
-                                             FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                                             FontSize="68"
+                                             FontWeight="{Binding ClockFontWeight}"
+                                             FontFamily="{Binding ClockFontFamily}"
                                              Foreground="#FFFFFF" />
                     <TextBlock Text=":"
-                               FontSize="52"
-                               FontWeight="SemiBold"
-                               FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                               FontSize="68"
+                               FontWeight="{Binding ClockFontWeight}"
+                               FontFamily="{Binding ClockFontFamily}"
                                Foreground="#B0FFFFFF"
-                               Margin="1,-2,1,0"
+                               Margin="1,-3,1,0"
                                VerticalAlignment="Center"
                                SnapsToDevicePixels="True"
                                UseLayoutRounding="True" />
                     <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
-                                             FontSize="52"
-                                             FontWeight="SemiBold"
-                                             FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                                             FontSize="68"
+                                             FontWeight="{Binding ClockFontWeight}"
+                                             FontFamily="{Binding ClockFontFamily}"
                                              Foreground="#FFFFFF" />
                     <clock:AnimatedTimeBlock Text="{Binding AmPmString}"
-                                             FontSize="15"
-                                             FontWeight="SemiBold"
-                                             FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                                             FontSize="18"
+                                             FontWeight="{Binding ClockFontWeight}"
+                                             FontFamily="{Binding ClockFontFamily}"
                                              Foreground="#90FFFFFF"
                                              Margin="6,12,0,0"
                                              VerticalAlignment="Top" />
                 </StackPanel>
             </Grid>
 
-            <!-- 2. Banner 8x2 Layout: SemiBold Time + AM/PM on Left, Full Date on Right with Micro-Motion -->
+            <!-- 2. Banner 8x2 Layout: Time + AM/PM on Left, Full Date on Right with Micro-Motion -->
             <Grid Visibility="{Binding IsBanner, Converter={StaticResource BoolToVis}}"
-                  VerticalAlignment="Center" Margin="24,0">
+                  VerticalAlignment="Center" Margin="16,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
@@ -64,28 +64,28 @@
                 <!-- Time & AM/PM -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <clock:AnimatedTimeBlock Text="{Binding HoursString}"
-                                             FontSize="48"
-                                             FontWeight="SemiBold"
-                                             FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                                             FontSize="68"
+                                             FontWeight="{Binding ClockFontWeight}"
+                                             FontFamily="{Binding ClockFontFamily}"
                                              Foreground="#FFFFFF" />
                     <TextBlock Text=":"
-                               FontSize="48"
-                               FontWeight="SemiBold"
-                               FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                               FontSize="68"
+                               FontWeight="{Binding ClockFontWeight}"
+                               FontFamily="{Binding ClockFontFamily}"
                                Foreground="#B0FFFFFF"
-                               Margin="1,-2,1,0"
+                               Margin="1,-3,1,0"
                                VerticalAlignment="Center"
                                SnapsToDevicePixels="True"
                                UseLayoutRounding="True" />
                     <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
-                                             FontSize="48"
-                                             FontWeight="SemiBold"
-                                             FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                                             FontSize="68"
+                                             FontWeight="{Binding ClockFontWeight}"
+                                             FontFamily="{Binding ClockFontFamily}"
                                              Foreground="#FFFFFF" />
                     <clock:AnimatedTimeBlock Text="{Binding AmPmString}"
-                                             FontSize="16"
-                                             FontWeight="SemiBold"
-                                             FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                                             FontSize="18"
+                                             FontWeight="{Binding ClockFontWeight}"
+                                             FontFamily="{Binding ClockFontFamily}"
                                              Foreground="#90FFFFFF"
                                              Margin="6,12,0,0"
                                              VerticalAlignment="Top" />
@@ -94,7 +94,7 @@
                 <!-- Full Date (e.g. Friday, 11 September) -->
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
                     <clock:AnimatedTimeBlock Text="{Binding FullDateString}"
-                                             FontSize="18"
+                                             FontSize="22"
                                              FontWeight="SemiBold"
                                              FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
                                              Foreground="#E0FFFFFF"
@@ -108,28 +108,28 @@
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <clock:AnimatedTimeBlock Text="{Binding HoursString}"
-                                                 FontSize="68"
-                                                 FontWeight="SemiBold"
-                                                 FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                                                 FontSize="84"
+                                                 FontWeight="{Binding ClockFontWeight}"
+                                                 FontFamily="{Binding ClockFontFamily}"
                                                  Foreground="#FFFFFF" />
                         <TextBlock Text=":"
-                                   FontSize="68"
-                                   FontWeight="SemiBold"
-                                   FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                                   FontSize="84"
+                                   FontWeight="{Binding ClockFontWeight}"
+                                   FontFamily="{Binding ClockFontFamily}"
                                    Foreground="#B0FFFFFF"
-                                   Margin="2,-3,2,0"
+                                   Margin="2,-4,2,0"
                                    VerticalAlignment="Center"
                                    SnapsToDevicePixels="True"
                                    UseLayoutRounding="True" />
                         <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
-                                                 FontSize="68"
-                                                 FontWeight="SemiBold"
-                                                 FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                                                 FontSize="84"
+                                                 FontWeight="{Binding ClockFontWeight}"
+                                                 FontFamily="{Binding ClockFontFamily}"
                                                  Foreground="#FFFFFF" />
                         <clock:AnimatedTimeBlock Text="{Binding AmPmString}"
-                                                 FontSize="18"
-                                                 FontWeight="SemiBold"
-                                                 FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                                                 FontSize="22"
+                                                 FontWeight="{Binding ClockFontWeight}"
+                                                 FontFamily="{Binding ClockFontFamily}"
                                                  Foreground="#90FFFFFF"
                                                  Margin="8,16,0,0"
                                                  VerticalAlignment="Top" />
@@ -137,12 +137,12 @@
 
                     <!-- Full Date -->
                     <clock:AnimatedTimeBlock Text="{Binding FullDateString}"
-                                             FontSize="18"
+                                             FontSize="20"
                                              FontWeight="SemiBold"
                                              FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
                                              Foreground="#E0FFFFFF"
                                              HorizontalAlignment="Center"
-                                             Margin="0,8,0,0" />
+                                             Margin="0,10,0,0" />
                 </StackPanel>
             </Grid>
         </Grid>

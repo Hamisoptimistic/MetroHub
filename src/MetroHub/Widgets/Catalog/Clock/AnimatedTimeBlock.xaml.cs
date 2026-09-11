@@ -71,6 +71,14 @@ public partial class AnimatedTimeBlock : UserControl
     {
         InitializeComponent();
 
+        SyncStyling();
+        if (PartCurrentText != null)
+        {
+            PartCurrentText.Text = Text;
+            PartCurrentText.Opacity = 1.0;
+            PartCurrentTransform.Y = 0;
+        }
+
         Loaded += OnControlLoaded;
     }
 

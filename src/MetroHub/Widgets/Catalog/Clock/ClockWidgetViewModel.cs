@@ -43,6 +43,15 @@ public partial class ClockWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     [ObservableProperty]
     private bool _is24HourFormat = false;
 
+    [ObservableProperty]
+    private ClockFontFace _fontFace = ClockFontFace.SegoeUI;
+
+    [ObservableProperty]
+    private string _clockFontFamily = "Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif";
+
+    [ObservableProperty]
+    private string _clockFontWeight = "SemiBold";
+
     public bool IsWideOnly => Model.SpanX <= 4 && Model.SpanY <= 2;
     public bool IsBanner => Model.SpanX >= 8 && Model.SpanY <= 2;
     public bool IsHero => Model.SpanY >= 4;
@@ -142,25 +151,58 @@ public partial class ClockWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
         if (settings != null)
         {
             Is24HourFormat = settings.Is24HourFormat;
+            FontFace = settings.FontFace;
         }
+        UpdateFontProperties();
     }
 
     public override void SaveSettings()
     {
         var settings = new ClockWidgetSettings
         {
-            Is24HourFormat = Is24HourFormat
+            Is24HourFormat = Is24HourFormat,
+            FontFace = FontFace
         };
         Model.TargetPath = "clock";
         Model.SettingsJson = WidgetSerializer.Serialize(settings);
         MainWindow.Current?.SaveGroupsAndLayout();
     }
 
+    public void SetTimeFormat(bool is24Hour)
+    {
+        Is24HourFormat = is24Hour;
+        UpdateTime();
+        SaveSettings();
+    }
+
+    public void SetFontFace(ClockFontFace fontFace)
+    {
+        FontFace = fontFace;
+        UpdateFontProperties();
+        SaveSettings();
+    }
+
+    private void UpdateFontProperties()
+    {
+        ClockFontFamily = FontFace switch
+        {
+            ClockFontFace.Monoton => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Monoton, Segoe UI",
+            ClockFontFace.PixelifySans => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Pixelify Sans, Segoe UI",
+            ClockFontFace.Doto => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Doto, Segoe UI",
+            _ => "Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+        };
+
+        ClockFontWeight = FontFace switch
+        {
+            ClockFontFace.Monoton => "Normal",
+            ClockFontFace.Doto => "Bold",
+            _ => "SemiBold"
+        };
+    }
+
     [RelayCommand]
     public void Toggle24HourFormat()
     {
-        Is24HourFormat = !Is24HourFormat;
-        UpdateTime();
-        SaveSettings();
+        SetTimeFormat(!Is24HourFormat);
     }
 }

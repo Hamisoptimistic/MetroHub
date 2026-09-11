@@ -340,9 +340,14 @@ public partial class TileControl : UserControl
             SingleAppSeparator.Visibility = Visibility.Visible;
         }
 
-        // Widget-specific context menu adaptation
-        var priorDynamicItem = TileContextMenu.Items.OfType<MenuItem>().FirstOrDefault(m => (string?)m.Tag == "WidgetCustomMenu");
-        if (priorDynamicItem != null) TileContextMenu.Items.Remove(priorDynamicItem);
+        // Widget-specific context menu adaptation: remove all prior dynamic items
+        var priorDynamicItems = TileContextMenu.Items.OfType<FrameworkElement>()
+            .Where(m => (string?)m.Tag == "WidgetCustomMenu")
+            .ToList();
+        foreach (var item in priorDynamicItems)
+        {
+            TileContextMenu.Items.Remove(item);
+        }
 
         if (tile.TileType == TileType.Widget)
         {
@@ -353,15 +358,101 @@ public partial class TileControl : UserControl
 
             if (tile.TileContent is Widgets.Catalog.Clock.ClockWidgetViewModel clockVm)
             {
-                var formatItem = new MenuItem
+                // 1. Time Format Submenu (Replaces the single checkbox)
+                var timeFormatItem = new MenuItem
                 {
-                    Header = "24-Hour Format",
+                    Header = "Time Format",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Clock24,
+                        FontSize = 20
+                    }
+                };
+
+                var item12Hr = new MenuItem
+                {
+                    Header = "12 Hours",
                     IsCheckable = true,
-                    IsChecked = clockVm.Is24HourFormat,
+                    IsChecked = !clockVm.Is24HourFormat
+                };
+                item12Hr.Click += (s, ev) => clockVm.SetTimeFormat(false);
+
+                var item24Hr = new MenuItem
+                {
+                    Header = "24 Hours",
+                    IsCheckable = true,
+                    IsChecked = clockVm.Is24HourFormat
+                };
+                item24Hr.Click += (s, ev) => clockVm.SetTimeFormat(true);
+
+                timeFormatItem.Items.Add(item12Hr);
+                timeFormatItem.Items.Add(item24Hr);
+
+                // 3. Font Submenu (Segoe UI, Monoton, Pixelify Sans)
+                var fontItem = new MenuItem
+                {
+                    Header = "Font",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.TextFont24,
+                        FontSize = 20
+                    }
+                };
+
+                var itemSegoe = new MenuItem
+                {
+                    Header = "Segoe UI Variable",
+                    IsCheckable = true,
+                    IsChecked = clockVm.FontFace == Widgets.Catalog.Clock.ClockFontFace.SegoeUI
+                };
+                itemSegoe.Click += (s, ev) => clockVm.SetFontFace(Widgets.Catalog.Clock.ClockFontFace.SegoeUI);
+
+                var itemMonoton = new MenuItem
+                {
+                    Header = "Monoton",
+                    IsCheckable = true,
+                    IsChecked = clockVm.FontFace == Widgets.Catalog.Clock.ClockFontFace.Monoton
+                };
+                itemMonoton.Click += (s, ev) => clockVm.SetFontFace(Widgets.Catalog.Clock.ClockFontFace.Monoton);
+
+                var itemPixelify = new MenuItem
+                {
+                    Header = "Pixelify Sans",
+                    IsCheckable = true,
+                    IsChecked = clockVm.FontFace == Widgets.Catalog.Clock.ClockFontFace.PixelifySans
+                };
+                itemPixelify.Click += (s, ev) => clockVm.SetFontFace(Widgets.Catalog.Clock.ClockFontFace.PixelifySans);
+
+                var itemDoto = new MenuItem
+                {
+                    Header = "Doto (LED Matrix)",
+                    IsCheckable = true,
+                    IsChecked = clockVm.FontFace == Widgets.Catalog.Clock.ClockFontFace.Doto
+                };
+                itemDoto.Click += (s, ev) => clockVm.SetFontFace(Widgets.Catalog.Clock.ClockFontFace.Doto);
+
+                fontItem.Items.Add(itemSegoe);
+                fontItem.Items.Add(itemMonoton);
+                fontItem.Items.Add(itemPixelify);
+                fontItem.Items.Add(itemDoto);
+
+                // 4. Divider
+                var clockDivider = new Separator
+                {
                     Tag = "WidgetCustomMenu"
                 };
-                formatItem.Click += (s, ev) => clockVm.Toggle24HourFormat();
-                TileContextMenu.Items.Insert(0, formatItem);
+
+                // Exact hierarchy:
+                // 0: Time Format
+                // 1: Resize (originally index 0, shifted by inserting at 0)
+                // 2: Font
+                // 3: Divider
+                // 4+: Other stuff (Group, Add to Group, Unpin)
+                TileContextMenu.Items.Insert(0, timeFormatItem);
+                TileContextMenu.Items.Insert(2, fontItem);
+                TileContextMenu.Items.Insert(3, clockDivider);
             }
         }
         else

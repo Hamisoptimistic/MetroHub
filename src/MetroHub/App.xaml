@@ -110,10 +110,27 @@
                 </Style.Triggers>
             </Style>
 
-            <!-- Universal DirectWrite Typography Defaults: Crisp fractional vector metrics without color fringing -->
+            <!-- Universal DirectWrite Typography & Icon Defaults: Crisp vector outlines, zero color fringing across all future UI -->
             <Style TargetType="{x:Type TextBlock}">
                 <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
                 <Setter Property="TextOptions.TextRenderingMode" Value="Auto" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+                <Setter Property="UseLayoutRounding" Value="True" />
+            </Style>
+
+            <Style TargetType="{x:Type Control}">
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="Auto" />
+            </Style>
+
+            <!-- Global Crisp DirectWrite Vector Styling for all current and future WPF-UI Icons -->
+            <Style TargetType="{x:Type ui:SymbolIcon}">
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+                <Setter Property="UseLayoutRounding" Value="True" />
+                <Setter Property="Focusable" Value="False" />
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+                <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
             </Style>
 
             <!-- Authentic Windows 11 Fluent ContextMenu Style with Integrated Responsive Scaling -->
