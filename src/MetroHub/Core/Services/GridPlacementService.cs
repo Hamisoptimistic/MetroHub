@@ -1569,6 +1569,128 @@ public static class GridPlacementService
     }
 
     /// <summary>
+    /// Arranges and positions a list of tiles into a target group.
+    /// If the tiles already fit within the 8-column width without overlapping, their relative layout is preserved.
+    /// If the tiles span wider than 8 columns (e.g. wide row of loose tiles) or collide,
+    /// packs them cleanly into rows within the 8-column boundary from left to right, top to bottom.
+    /// Returns the list of modified tiles.
+    /// </summary>
+    public static List<TileModel> ArrangeTilesInNewGroup(
+        TileGroupModel targetGroup,
+        IList<TileModel> tilesToGroup,
+        int targetColStart,
+        int targetRow,
+        string defaultTitle = "New Section")
+    {
+        var modified = new List<TileModel>();
+        if (tilesToGroup == null || tilesToGroup.Count == 0) return modified;
+
+        int minCol = tilesToGroup.Min(t => ColFromPixel(t.X));
+        int minRow = tilesToGroup.Min(t => RowFromPixel(t.Y));
+        int maxCol = tilesToGroup.Max(t => ColFromPixel(t.X) + t.SpanX);
+        int totalSpanX = maxCol - minCol;
+
+        // Check if tiles already fit within 8 columns without any mutual overlaps
+        bool canPreserveLayout = (totalSpanX <= GroupColWidth);
+        if (canPreserveLayout)
+        {
+            for (int i = 0; i < tilesToGroup.Count; i++)
+            {
+                var a = tilesToGroup[i];
+                int aRelC = ColFromPixel(a.X) - minCol;
+                int aRelR = RowFromPixel(a.Y) - minRow;
+                for (int j = i + 1; j < tilesToGroup.Count; j++)
+                {
+                    var b = tilesToGroup[j];
+                    int bRelC = ColFromPixel(b.X) - minCol;
+                    int bRelR = RowFromPixel(b.Y) - minRow;
+                    if (DoTilesOverlap(aRelC, aRelR, a.SpanX, a.SpanY, bRelC, bRelR, b.SpanX, b.SpanY))
+                    {
+                        canPreserveLayout = false;
+                        break;
+                    }
+                }
+                if (!canPreserveLayout) break;
+            }
+        }
+
+        if (canPreserveLayout)
+        {
+            // Path A: Preserve relative arrangement
+            foreach (var t in tilesToGroup)
+            {
+                int relC = ColFromPixel(t.X) - minCol;
+                int relR = RowFromPixel(t.Y) - minRow;
+
+                t.Group = targetGroup.Id;
+                t.SectionHeader = targetGroup.Title ?? defaultTitle;
+                t.Col = targetColStart + relC;
+                t.Row = targetRow + 1 + relR;
+                t.X = PixelXFromCol(t.Col);
+                t.Y = PixelYFromRow(t.Row);
+
+                modified.Add(t);
+            }
+        }
+        else
+        {
+            // Path B: 2D First-Fit Bin Packing within 8-column container
+            var ordered = tilesToGroup
+                .OrderBy(t => RowFromPixel(t.Y))
+                .ThenBy(t => ColFromPixel(t.X))
+                .ToList();
+
+            var placed = new List<TileModel>();
+
+            foreach (var t in ordered)
+            {
+                int bestRelCol = 0;
+                int bestRelRow = 0;
+                bool slotFound = false;
+
+                int maxRelCol = GroupColWidth - Math.Clamp(t.SpanX, 1, GroupColWidth);
+
+                for (int r = 0; r < 200 && !slotFound; r++)
+                {
+                    for (int c = 0; c <= maxRelCol; c++)
+                    {
+                        bool overlap = false;
+                        foreach (var p in placed)
+                        {
+                            int pRelC = p.Col - targetColStart;
+                            int pRelR = p.Row - (targetRow + 1);
+                            if (DoTilesOverlap(c, r, t.SpanX, t.SpanY, pRelC, pRelR, p.SpanX, p.SpanY))
+                            {
+                                overlap = true;
+                                break;
+                            }
+                        }
+                        if (!overlap)
+                        {
+                            bestRelCol = c;
+                            bestRelRow = r;
+                            slotFound = true;
+                            break;
+                        }
+                    }
+                }
+
+                t.Group = targetGroup.Id;
+                t.SectionHeader = targetGroup.Title ?? defaultTitle;
+                t.Col = targetColStart + bestRelCol;
+                t.Row = targetRow + 1 + bestRelRow;
+                t.X = PixelXFromCol(t.Col);
+                t.Y = PixelYFromRow(t.Row);
+
+                placed.Add(t);
+                modified.Add(t);
+            }
+        }
+
+        return modified;
+    }
+
+    /// <summary>
     /// Checks all loose canvas tiles against all groups.
     /// If any loose tile overlaps a group header or penetrates into a group's vertical footprint,
     /// pushes the group (and all of its member tiles) downward, and cascades downward
@@ -2435,7 +2557,7 @@ public static class GridPlacementService
             }
         }
 
-        foreach (var ut in allTiles.Where(t => t.Group == null && !t.IsLocked))
+        foreach (var ut in allTiles.Where(t => string.IsNullOrEmpty(t.Group) && !t.IsLocked))
         {
             if (DoTilesOverlap(targetColStart, targetRow, groupSpanX, groupHeight, ut.Col, ut.Row, ut.SpanX, ut.SpanY))
             {
@@ -2479,7 +2601,7 @@ public static class GridPlacementService
                     }
                 }
 
-                foreach (var ut in allTiles.Where(t => t.Group == null && !t.IsLocked))
+                foreach (var ut in allTiles.Where(t => string.IsNullOrEmpty(t.Group) && !t.IsLocked))
                 {
                     var oPos = proposedTilePositions.TryGetValue(ut, out var op) ? op : (ut.Col, ut.Row);
 
@@ -2505,7 +2627,7 @@ public static class GridPlacementService
                 inTileQueue.Remove(curT);
                 var pos = proposedTilePositions[curT];
 
-                foreach (var otherT in allTiles.Where(t => t.Group == null && !t.IsLocked))
+                foreach (var otherT in allTiles.Where(t => string.IsNullOrEmpty(t.Group) && !t.IsLocked))
                 {
                     if (ReferenceEquals(otherT, curT)) continue;
                     var oPos = proposedTilePositions.TryGetValue(otherT, out var op) ? op : (otherT.Col, otherT.Row);

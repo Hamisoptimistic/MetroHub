@@ -3211,15 +3211,17 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             g => g!,
             g => GridPlacementService.GetGroupBoundingBox(g!, Tiles).MaxRow);
 
-        foreach (var t in targets)
-        {
-            t.Group = newGroupId;
-            t.SectionHeader = defaultTitle;
-        }
+        var arranged = GridPlacementService.ArrangeTilesInNewGroup(group, targets, targetColStart, targetRow, defaultTitle);
 
         Groups.Add(group);
 
         var modified = GridPlacementService.InsertGroupAndResolveCollisions(group, targetColIndex, targetRow, Groups, Tiles);
+        foreach (var at in arranged)
+        {
+            if (!modified.Contains(at)) modified.Add(at);
+        }
+
+        ClearTileSelection();
 
         foreach (var og in originGroups)
         {
