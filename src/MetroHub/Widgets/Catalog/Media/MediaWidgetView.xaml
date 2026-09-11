@@ -17,13 +17,13 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
-        <!-- Media Transport Button Style: Fluent Acrylic Button -->
+        <!-- Media Transport Button Style: Fluent Acrylic Button with 2px Corner Radius -->
         <Style x:Key="MediaTransportButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Foreground" Value="#E5E9F0" />
-            <Setter Property="Width" Value="36" />
-            <Setter Property="Height" Value="30" />
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="28" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
             <Setter Property="Template">
@@ -31,7 +31,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Border"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="5"
+                                CornerRadius="2"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
@@ -58,91 +58,82 @@
     <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
             <Grid.RowDefinitions>
-                <RowDefinition Height="*" />    <!-- Top Section: Text Info + Album Art with Dynamic Glow -->
-                <RowDefinition Height="38" />   <!-- Bottom Bar: Fluent Acrylic Sound Source + Controls -->
+                <RowDefinition Height="*" />    <!-- Row 0: Track Info + Album Art -->
+                <RowDefinition Height="38" />   <!-- Row 1: Fluent Acrylic Strip: Sound Source (Left) + Controls (Far Right) -->
             </Grid.RowDefinitions>
 
-            <!-- Top Section (Track Info + Album Art with Ambient Glow) -->
-            <Grid Grid.Row="0" ClipToBounds="True">
-                
-                <!-- Right Album Art Container with Dynamic Gradient Glow -->
+            <!-- 1. Sensual Fluent Ambient Radial Glow across the entire card from behind -->
+            <Border Grid.RowSpan="2"
+                    CornerRadius="2"
+                    Background="{Binding SensualRadialBrush}"
+                    IsHitTestVisible="False"
+                    SnapsToDevicePixels="True"
+                    Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}" />
+
+            <!-- Row 0: Top Section (Track Info + Elevated Album Art) -->
+            <Grid Grid.Row="0">
+                <!-- Album Art Container on Right Side -->
                 <Grid HorizontalAlignment="Right"
                       VerticalAlignment="Center"
-                      Margin="0,0,26,0"
-                      Width="136"
-                      Height="136">
+                      Margin="0,0,28,0">
 
-                    <!-- 1. Dynamic Ambient Colored Glow Layer (Sampled from album art with blur) -->
-                    <Image Source="{Binding Thumbnail}"
-                           Stretch="UniformToFill"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Width="105"
-                           Height="105"
-                           Opacity="0.55"
-                           IsHitTestVisible="False"
-                           Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}">
-                        <Image.Effect>
-                            <BlurEffect Radius="36" RenderingBias="Performance" />
-                        </Image.Effect>
-                        <Image.RenderTransform>
-                            <ScaleTransform ScaleX="1.32" ScaleY="1.32" CenterX="52.5" CenterY="52.5" />
-                        </Image.RenderTransform>
-                    </Image>
-
-                    <!-- 2. Crisp Album Art Card with Drop Shadow and 8px Rounded Corners -->
-                    <Border Width="105"
-                            Height="105"
-                            CornerRadius="8"
-                            ClipToBounds="True"
-                            Background="#14FFFFFF"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center">
+                    <!-- 1. Album Cover with Guaranteed 2px Rounded Corners matching Tiles -->
+                    <Border Width="{Binding AlbumArtSize}"
+                            Height="{Binding AlbumArtSize}"
+                            CornerRadius="2"
+                            BorderBrush="#38FFFFFF"
+                            BorderThickness="1"
+                            SnapsToDevicePixels="True"
+                            UseLayoutRounding="True"
+                            Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}">
                         <Border.Effect>
                             <DropShadowEffect BlurRadius="16"
-                                              ShadowDepth="2"
+                                              ShadowDepth="3"
                                               Direction="270"
-                                              Opacity="0.4"
+                                              Opacity="0.35"
                                               Color="#000000" />
                         </Border.Effect>
-                        <Grid>
-                            <!-- Real Album Artwork Image -->
-                            <Image Source="{Binding Thumbnail}"
-                                   Stretch="UniformToFill"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}" />
+                        <Border.Background>
+                            <ImageBrush ImageSource="{Binding Thumbnail}" Stretch="UniformToFill" />
+                        </Border.Background>
+                    </Border>
 
-                            <!-- Watermark Note when no album art is present -->
-                            <TextBlock Text="&#xE8D6;"
-                                       FontFamily="Segoe MDL2 Assets"
-                                       FontSize="38"
-                                       Foreground="#25FFFFFF"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasThumbnail}" Value="False">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Grid>
+                    <!-- 2. Fallback Watermark Box when no album art is available -->
+                    <Border Width="{Binding AlbumArtSize}"
+                            Height="{Binding AlbumArtSize}"
+                            CornerRadius="2"
+                            Background="#14FFFFFF"
+                            BorderBrush="#20FFFFFF"
+                            BorderThickness="1"
+                            SnapsToDevicePixels="True"
+                            UseLayoutRounding="True">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasThumbnail}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <TextBlock Text="&#xE8D6;"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="36"
+                                   Foreground="#25FFFFFF"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
                     </Border>
                 </Grid>
 
                 <!-- Left Content: Track Title, Artist, Album/Feature -->
                 <Grid HorizontalAlignment="Left"
                       VerticalAlignment="Center"
-                      Margin="24,12,175,12">
+                      Margin="20,0,175,0">
                     <StackPanel>
                         <!-- Track Title -->
                         <TextBlock Text="{Binding Title}"
-                                   FontSize="18"
+                                   FontSize="17"
                                    FontWeight="SemiBold"
                                    FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
                                    Foreground="#FFFFFF"
@@ -197,18 +188,18 @@
                 </Grid>
             </Grid>
 
-            <!-- Bottom Docked Bar: Fluent Acrylic Translucent Strip (No Horizontal Divider Line) -->
+            <!-- Row 1: Bottom Docked Bar (Fluent Acrylic Translucent Strip) -->
             <Border Grid.Row="1"
                     Background="#18000000"
                     BorderThickness="0"
-                    Padding="22,0,16,0">
+                    Padding="18,0,6,0">
                 <Grid VerticalAlignment="Center">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />    <!-- Left: Sound Source -->
+                        <ColumnDefinition Width="Auto" /> <!-- Right: Transport Controls Docked on Far Right -->
                     </Grid.ColumnDefinitions>
 
-                    <!-- Left: Detected Sound Source (e.g. "YouTube Music", "Spotify", "Zen Browser") -->
+                    <!-- Left: Sound Source (e.g. "YouTube Music", "Spotify", "Zen Browser") -->
                     <TextBlock Grid.Column="0"
                                Text="{Binding SourceName}"
                                FontSize="13"
@@ -218,9 +209,10 @@
                                TextTrimming="CharacterEllipsis"
                                VerticalAlignment="Center" />
 
-                    <!-- Right: Transport Controls (< ▷ >) -->
+                    <!-- Right: Transport Controls (< ▷ >) Docked on the Far Right of Tile -->
                     <StackPanel Grid.Column="1"
                                 Orientation="Horizontal"
+                                HorizontalAlignment="Right"
                                 VerticalAlignment="Center">
                         <!-- Previous Track (<) -->
                         <Button Style="{StaticResource MediaTransportButtonStyle}"
@@ -238,11 +230,11 @@
                         <Button Style="{StaticResource MediaTransportButtonStyle}"
                                 Command="{Binding TogglePlayPauseCommand}"
                                 IsEnabled="{Binding CanPlayPause}"
-                                Margin="4,0"
+                                Margin="3,0"
                                 ToolTip="Play / Pause">
                             <TextBlock x:Name="PlayPauseIcon"
                                        FontFamily="Segoe MDL2 Assets"
-                                       FontSize="12"
+                                       FontSize="13"
                                        VerticalAlignment="Center"
                                        HorizontalAlignment="Center">
                                 <TextBlock.Style>

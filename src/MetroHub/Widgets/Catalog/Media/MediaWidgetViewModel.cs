@@ -49,6 +49,22 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     private bool _hasThumbnail;
 
     [ObservableProperty]
+    private Brush? _glowBrush;
+
+    [ObservableProperty]
+    private Brush? _sensualRadialBrush;
+
+    [ObservableProperty]
+    private SolidColorBrush _glowSolidBrush = new SolidColorBrush(Color.FromRgb(0x3A, 0x82, 0xD4));
+
+    [ObservableProperty]
+    private Color _glowColor = Color.FromRgb(0x3A, 0x82, 0xD4);
+
+    public double AlbumArtSize => Model.SpanY >= 4 ? 132.0 : 104.0;
+
+    public double GlowBlurRadius => Model.SpanY >= 4 ? 30.0 : 20.0;
+
+    [ObservableProperty]
     private bool _isPlaying;
 
     [ObservableProperty]
@@ -65,6 +81,21 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
 
     public MediaWidgetViewModel(TileModel model) : base(model)
     {
+        if (model.SpanX != 8 || (model.SpanY != 4 && model.SpanY != 3))
+        {
+            model.SpanX = 8;
+            model.SpanY = 4;
+        }
+
+        model.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
+            {
+                OnPropertyChanged(nameof(AlbumArtSize));
+                OnPropertyChanged(nameof(GlowBlurRadius));
+            }
+        };
+
         InitializeAsync();
     }
 
@@ -130,6 +161,12 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 SourceName = "Media Player";
                 Thumbnail = null;
                 HasThumbnail = false;
+                GlowBrush = null;
+                SensualRadialBrush = null;
+                GlowColor = Color.FromRgb(0x3A, 0x82, 0xD4);
+                var fallbackBrush = new SolidColorBrush(Color.FromRgb(0x3A, 0x82, 0xD4));
+                fallbackBrush.Freeze();
+                GlowSolidBrush = fallbackBrush;
                 IsPlaying = false;
             });
         }
@@ -191,6 +228,12 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                     SourceName = ResolveSourceName(rawSource, null, null);
                     Thumbnail = null;
                     HasThumbnail = false;
+                    var fallbackBrush = new SolidColorBrush(Color.FromRgb(0x3A, 0x82, 0xD4));
+                    fallbackBrush.Freeze();
+                    GlowSolidBrush = fallbackBrush;
+                    SensualRadialBrush = null;
+                    GlowBrush = null;
+                    GlowColor = Color.FromRgb(0x3A, 0x82, 0xD4);
                 });
                 return;
             }
@@ -234,9 +277,18 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
             var controls = playback?.Controls;
 
             ImageSource? bmp = null;
+            Color glowColor = Color.FromRgb(0x3A, 0x82, 0xD4);
+            var glowSolidBrush = new SolidColorBrush(glowColor);
+            glowSolidBrush.Freeze();
+            RadialGradientBrush? sensualRadialBrush = null;
+
             if (props.Thumbnail != null)
             {
                 bmp = await LoadThumbnailAsync(props.Thumbnail);
+                if (bmp is BitmapSource bs)
+                {
+                    (glowColor, glowSolidBrush, sensualRadialBrush) = CreateGlow(bs);
+                }
             }
 
             await Application.Current.Dispatcher.InvokeAsync(() =>
@@ -248,6 +300,10 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 SourceName = cleanSource;
                 Thumbnail = bmp;
                 HasThumbnail = bmp != null;
+                GlowSolidBrush = glowSolidBrush;
+                SensualRadialBrush = sensualRadialBrush;
+                GlowBrush = sensualRadialBrush;
+                GlowColor = glowColor;
                 IsPlaying = playing;
                 HasMedia = true;
                 CanPlayPause = controls?.IsPlayPauseToggleEnabled ?? true;
@@ -295,6 +351,172 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
         {
             return null;
         }
+    }
+
+    private static (Color, SolidColorBrush, RadialGradientBrush) CreateGlow(BitmapSource bitmap)
+    {
+        try
+        {
+            var thumb = new TransformedBitmap(bitmap, new ScaleTransform(16.0 / bitmap.PixelWidth, 16.0 / bitmap.PixelHeight));
+            var converted = new FormatConvertedBitmap(thumb, PixelFormats.Bgra32, null, 0);
+            int width = converted.PixelWidth;
+            int height = converted.PixelHeight;
+            int stride = width * 4;
+            byte[] pixels = new byte[height * stride];
+            converted.CopyPixels(pixels, stride, 0);
+
+            double bestScore = -1;
+            byte bestR = 58, bestG = 130, bestB = 212;
+
+            double totalWeight = 0;
+            double accR = 0, accG = 0, accB = 0;
+
+            for (int i = 0; i <= pixels.Length - 4; i += 4)
+            {
+                byte b = pixels[i];
+                byte g = pixels[i + 1];
+                byte r = pixels[i + 2];
+                byte a = pixels[i + 3];
+                if (a < 128) continue;
+
+                var (h, s, v) = RgbToHsv(r, g, b);
+
+                // Skip washed out or near-black pixels
+                if (v < 0.12 || (v > 0.94 && s < 0.08)) continue;
+
+                double score = s * 2.0 + (1.0 - Math.Abs(v - 0.7));
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    bestR = r;
+                    bestG = g;
+                    bestB = b;
+                }
+
+                if (s > 0.22 && v > 0.2)
+                {
+                    double weight = s * s * v;
+                    accR += r * weight;
+                    accG += g * weight;
+                    accB += b * weight;
+                    totalWeight += weight;
+                }
+            }
+
+            Color accent;
+            if (totalWeight > 0.1)
+            {
+                byte avgR = (byte)Math.Clamp(accR / totalWeight, 0, 255);
+                byte avgG = (byte)Math.Clamp(accG / totalWeight, 0, 255);
+                byte avgB = (byte)Math.Clamp(accB / totalWeight, 0, 255);
+
+                var (h, s, v) = RgbToHsv(avgR, avgG, avgB);
+                s = Math.Clamp(s * 1.35, 0.65, 1.0);
+                v = Math.Clamp(v * 1.25, 0.60, 0.90);
+                accent = ColorFromHsv(h, s, v);
+            }
+            else if (bestScore > 0.2)
+            {
+                var (h, s, v) = RgbToHsv(bestR, bestG, bestB);
+                s = Math.Clamp(s * 1.35, 0.65, 1.0);
+                v = Math.Clamp(v * 1.25, 0.60, 0.90);
+                accent = ColorFromHsv(h, s, v);
+            }
+            else
+            {
+                accent = Color.FromRgb(0x3A, 0x82, 0xD4);
+            }
+
+            var solidBrush = new SolidColorBrush(accent);
+            solidBrush.Freeze();
+
+            // Sensual, fluent multi-stop radial gradient originating from behind the album art
+            // and diffusing across the entire glass tile card
+            var sensualBrush = new RadialGradientBrush
+            {
+                MappingMode = BrushMappingMode.RelativeToBoundingBox,
+                Center = new Point(0.80, 0.42),
+                GradientOrigin = new Point(0.80, 0.42),
+                RadiusX = 0.95,
+                RadiusY = 1.15
+            };
+            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(140, accent.R, accent.G, accent.B), 0.0));
+            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(105, accent.R, accent.G, accent.B), 0.18));
+            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(66, accent.R, accent.G, accent.B), 0.38));
+            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(34, accent.R, accent.G, accent.B), 0.60));
+            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(12, accent.R, accent.G, accent.B), 0.82));
+            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(0, accent.R, accent.G, accent.B), 1.0));
+            sensualBrush.Freeze();
+
+            return (accent, solidBrush, sensualBrush);
+        }
+        catch
+        {
+            var fallbackColor = Color.FromRgb(0x3A, 0x82, 0xD4);
+            var fallbackSolid = new SolidColorBrush(fallbackColor);
+            fallbackSolid.Freeze();
+
+            var fallbackSensual = new RadialGradientBrush
+            {
+                MappingMode = BrushMappingMode.RelativeToBoundingBox,
+                Center = new Point(0.80, 0.42),
+                GradientOrigin = new Point(0.80, 0.42),
+                RadiusX = 0.95,
+                RadiusY = 1.15
+            };
+            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(120, 0x3A, 0x82, 0xD4), 0.0));
+            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(85, 0x3A, 0x82, 0xD4), 0.20));
+            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(45, 0x3A, 0x82, 0xD4), 0.45));
+            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(15, 0x3A, 0x82, 0xD4), 0.75));
+            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(0, 0x3A, 0x82, 0xD4), 1.0));
+            fallbackSensual.Freeze();
+
+            return (fallbackColor, fallbackSolid, fallbackSensual);
+        }
+    }
+
+    private static (double h, double s, double v) RgbToHsv(byte r, byte g, byte b)
+    {
+        double rd = r / 255.0, gd = g / 255.0, bd = b / 255.0;
+        double max = Math.Max(rd, Math.Max(gd, bd));
+        double min = Math.Min(rd, Math.Min(gd, bd));
+        double delta = max - min;
+
+        double h = 0;
+        if (delta > 0)
+        {
+            if (max == rd) h = ((gd - bd) / delta) % 6.0;
+            else if (max == gd) h = ((bd - rd) / delta) + 2.0;
+            else h = ((rd - gd) / delta) + 4.0;
+            h *= 60.0;
+            if (h < 0) h += 360.0;
+        }
+
+        double s = max == 0 ? 0 : delta / max;
+        double v = max;
+        return (h, s, v);
+    }
+
+    private static Color ColorFromHsv(double hue, double saturation, double value)
+    {
+        int hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
+        double f = hue / 60 - Math.Floor(hue / 60);
+
+        value = value * 255;
+        byte v = (byte)Math.Clamp(value, 0, 255);
+        byte p = (byte)Math.Clamp(value * (1 - saturation), 0, 255);
+        byte q = (byte)Math.Clamp(value * (1 - f * saturation), 0, 255);
+        byte t = (byte)Math.Clamp(value * (1 - (1 - f) * saturation), 0, 255);
+
+        return hi switch
+        {
+            0 => Color.FromRgb(v, t, p),
+            1 => Color.FromRgb(q, v, p),
+            2 => Color.FromRgb(p, v, t),
+            3 => Color.FromRgb(p, q, v),
+            4 => Color.FromRgb(t, p, v),
+            _ => Color.FromRgb(v, p, q),
+        };
     }
 
     public static string ResolveSourceName(string? appId, string? title, string? artist)
