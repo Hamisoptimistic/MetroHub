@@ -7,7 +7,9 @@ public class AppSettings
     public string HotkeyDisplayString { get; set; } = "Ctrl + `";
 
     public string ThemeMode { get; set; } = "System"; // System, Dark, Light
-    public string BackdropType { get; set; } = "Mica"; // Mica, MicaAlt, Acrylic
+    public string BackdropType { get; set; } = "Mica"; // Mica, MicaAlt, Acrylic, DesktopWallpaper, Wallpaper
+    public string? CustomWallpaperPath { get; set; }
+    public double WallpaperDimOpacity { get; set; } = 0.50; // 0.35, 0.50, 0.65
     
     public bool LaunchAtStartup { get; set; } = false;
     public bool CloseOnLaunch { get; set; } = true;

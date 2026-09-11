@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using System.Windows.Data;
 using System.Windows.Controls.Primitives;
@@ -197,6 +198,49 @@ public partial class MainWindow : BorderlessFluentWindow
         ApplyConfiguredBackdrop();
     }
 
+    private void OnBackdropDesktopWallpaperClick(object sender, RoutedEventArgs e)
+    {
+        Settings.BackdropType = "DesktopWallpaper";
+        StorageService.SaveSettings(Settings);
+        ApplyConfiguredBackdrop();
+    }
+
+    private void OnBackdropCustomImageClick(object sender, RoutedEventArgs e)
+    {
+        IsDialogOpen = true;
+        try
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Select Custom Wallpaper",
+                Filter = "Image Files (*.png;*.jpg;*.jpeg;*.webp;*.bmp)|*.png;*.jpg;*.jpeg;*.webp;*.bmp|All Files (*.*)|*.*"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                Settings.BackdropType = "Wallpaper";
+                Settings.CustomWallpaperPath = dialog.FileName;
+                StorageService.SaveSettings(Settings);
+                ApplyConfiguredBackdrop();
+            }
+        }
+        finally
+        {
+            IsDialogOpen = false;
+        }
+    }
+
+    private void OnWallpaperDimLightClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.35);
+    private void OnWallpaperDimBalancedClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.50);
+    private void OnWallpaperDimHeavyClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.65);
+
+    private void SetWallpaperDim(double opacity)
+    {
+        Settings.WallpaperDimOpacity = opacity;
+        StorageService.SaveSettings(Settings);
+        ApplyConfiguredBackdrop();
+    }
+
     private const double BaseReferenceWidth = 1920.0;
 
     private void UpdateScaleFactor(double viewportWidth)
@@ -359,30 +403,153 @@ public partial class MainWindow : BorderlessFluentWindow
             hs.CompositionTarget.BackgroundColor = System.Windows.Media.Colors.Transparent;
         }
 
-        if (string.Equals(Settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase))
+        bool isWallpaper = string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(Settings.BackdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase);
+
+        if (isWallpaper)
         {
-            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW);
-            if (RootGrid != null)
-            {
-                RootGrid.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0x99, 0x0D, 0x0D, 0x11));
-            }
-        }
-        else if (string.Equals(Settings.BackdropType, "MicaAlt", StringComparison.OrdinalIgnoreCase))
-        {
-            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TABBEDWINDOW);
+            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_NONE);
             if (RootGrid != null)
             {
                 RootGrid.Background = System.Windows.Media.Brushes.Transparent;
             }
+            UpdateWallpaperDisplay();
         }
         else
         {
-            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
-            if (RootGrid != null)
+            if (CustomWallpaperHost != null)
             {
-                RootGrid.Background = System.Windows.Media.Brushes.Transparent;
+                CustomWallpaperHost.Visibility = Visibility.Collapsed;
+            }
+
+            if (string.Equals(Settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase))
+            {
+                NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW);
+                if (RootGrid != null)
+                {
+                    RootGrid.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0x99, 0x0D, 0x0D, 0x11));
+                }
+            }
+            else if (string.Equals(Settings.BackdropType, "MicaAlt", StringComparison.OrdinalIgnoreCase))
+            {
+                NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TABBEDWINDOW);
+                if (RootGrid != null)
+                {
+                    RootGrid.Background = System.Windows.Media.Brushes.Transparent;
+                }
+            }
+            else
+            {
+                NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
+                if (RootGrid != null)
+                {
+                    RootGrid.Background = System.Windows.Media.Brushes.Transparent;
+                }
             }
         }
+
+        UpdateBackdropMenuChecks();
+    }
+
+    public static BitmapImage? LoadOptimizedBitmap(string path, int decodeWidth = 1920)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
+        try
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri(path, UriKind.Absolute);
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            if (decodeWidth > 0)
+            {
+                bitmap.DecodePixelWidth = decodeWidth;
+            }
+            bitmap.EndInit();
+            bitmap.Freeze();
+            return bitmap;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public static string? GetActiveDesktopWallpaperPath()
+    {
+        try
+        {
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string transcoded = Path.Combine(appData, @"Microsoft\Windows\Themes\TranscodedWallpaper");
+            if (File.Exists(transcoded))
+            {
+                return transcoded;
+            }
+
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop");
+            string? regPath = key?.GetValue("WallPaper") as string;
+            if (!string.IsNullOrEmpty(regPath) && File.Exists(regPath))
+            {
+                return regPath;
+            }
+        }
+        catch { }
+
+        return null;
+    }
+
+    private void UpdateWallpaperDisplay()
+    {
+        if (CustomWallpaperHost == null || WallpaperImage == null || WallpaperScrim == null) return;
+
+        string? imagePath = null;
+        if (string.Equals(Settings.BackdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase))
+        {
+            imagePath = GetActiveDesktopWallpaperPath();
+        }
+        else if (string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase))
+        {
+            imagePath = Settings.CustomWallpaperPath;
+        }
+
+        if (!string.IsNullOrEmpty(imagePath) && File.Exists(imagePath))
+        {
+            int decodeWidth = (int)Math.Max(1280, ActualWidth > 0 ? ActualWidth : 1920);
+            var bmp = LoadOptimizedBitmap(imagePath, decodeWidth);
+            if (bmp != null)
+            {
+                WallpaperImage.Source = bmp;
+                CustomWallpaperHost.Visibility = Visibility.Visible;
+
+                double dim = Math.Clamp(Settings.WallpaperDimOpacity, 0.1, 0.9);
+                byte alpha = (byte)(255 * dim);
+                WallpaperScrim.Background = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
+                return;
+            }
+        }
+
+        // Fallback to clean dark background if image is missing
+        CustomWallpaperHost.Visibility = Visibility.Collapsed;
+        if (RootGrid != null)
+        {
+            RootGrid.Background = new SolidColorBrush(Color.FromArgb(0xEE, 0x10, 0x10, 0x14));
+        }
+    }
+
+    private void UpdateBackdropMenuChecks()
+    {
+        if (BackdropMicaItem != null)
+            BackdropMicaItem.IsChecked = string.Equals(Settings.BackdropType, "Mica", StringComparison.OrdinalIgnoreCase);
+        if (BackdropAcrylicItem != null)
+            BackdropAcrylicItem.IsChecked = string.Equals(Settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase);
+        if (BackdropDesktopWallpaperItem != null)
+            BackdropDesktopWallpaperItem.IsChecked = string.Equals(Settings.BackdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase);
+        if (BackdropCustomImageItem != null)
+            BackdropCustomImageItem.IsChecked = string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase);
+
+        double dim = Settings.WallpaperDimOpacity;
+        if (DimLightItem != null) DimLightItem.IsChecked = Math.Abs(dim - 0.35) < 0.05;
+        if (DimBalancedItem != null) DimBalancedItem.IsChecked = Math.Abs(dim - 0.50) < 0.05;
+        if (DimHeavyItem != null) DimHeavyItem.IsChecked = Math.Abs(dim - 0.65) < 0.05;
     }
 
     private void OnSourceInitialized(object sender, EventArgs e)
@@ -3757,6 +3924,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         _activeContextMenuGroup = GetGroupAtCanvasPoint(_canvasRightClickPoint);
 
         bool isInsideGroup = _activeContextMenuGroup != null;
+        UpdateBackdropMenuChecks();
 
         if (GroupMenuSeparator != null)
             GroupMenuSeparator.Visibility = isInsideGroup ? Visibility.Visible : Visibility.Collapsed;

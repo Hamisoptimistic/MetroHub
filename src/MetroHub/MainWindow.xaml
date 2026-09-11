@@ -139,6 +139,23 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
+        <!-- Background Layer: Custom / Desktop Wallpaper with Fluent Dark Scrim -->
+        <Grid x:Name="CustomWallpaperHost"
+              Grid.Column="0"
+              Grid.ColumnSpan="2"
+              Panel.ZIndex="-100"
+              ClipToBounds="True"
+              Visibility="Collapsed">
+            <Image x:Name="WallpaperImage"
+                   Stretch="UniformToFill"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   RenderOptions.BitmapScalingMode="HighQuality" />
+            <!-- Fluent Dark Scrim Overlay (ensures 4.5:1 text readability across all images) -->
+            <Border x:Name="WallpaperScrim"
+                    Background="#80000000" />
+        </Grid>
+
         <!-- Left Sidebar Navigation Rail (Spans full window height) -->
         <controls:SidebarRailControl x:Name="SidebarRail"
                                      Grid.Column="0"
@@ -381,8 +398,19 @@
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="DarkTheme24" FontSize="20" />
                             </MenuItem.Icon>
-                            <MenuItem Header="Mica" Click="OnBackdropMicaClick" />
-                            <MenuItem Header="Acrylic Obsidian" Click="OnBackdropAcrylicClick" />
+                            <MenuItem x:Name="BackdropMicaItem" Header="Mica (Windows 11)" Click="OnBackdropMicaClick" />
+                            <MenuItem x:Name="BackdropAcrylicItem" Header="Acrylic Obsidian" Click="OnBackdropAcrylicClick" />
+                            <MenuItem x:Name="BackdropDesktopWallpaperItem" Header="Current Desktop Wallpaper" Click="OnBackdropDesktopWallpaperClick" />
+                            <MenuItem x:Name="BackdropCustomImageItem" Header="Custom Picture..." Click="OnBackdropCustomImageClick" />
+                            <Separator />
+                            <MenuItem Header="Wallpaper Dimming">
+                                <MenuItem.Icon>
+                                    <ui:SymbolIcon Symbol="BrightnessHigh24" FontSize="20" />
+                                </MenuItem.Icon>
+                                <MenuItem x:Name="DimLightItem" Header="Light (35%)" Click="OnWallpaperDimLightClick" />
+                                <MenuItem x:Name="DimBalancedItem" Header="Balanced (50% - Recommended)" Click="OnWallpaperDimBalancedClick" />
+                                <MenuItem x:Name="DimHeavyItem" Header="Heavy (65%)" Click="OnWallpaperDimHeavyClick" />
+                            </MenuItem>
                         </MenuItem>
                     </ContextMenu>
                 </Grid.ContextMenu>
