@@ -1277,6 +1277,11 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         Point canvasMouse = TilesListBox != null ? e.GetPosition(TilesListBox) : e.GetPosition(this);
         bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
 
+        if (FindParent<System.Windows.Controls.Button>(dep) != null)
+        {
+            return;
+        }
+
         var tileControl = FindParent<Presentation.Controls.TileControl>(dep);
 
         if (tileControl != null && tileControl.DataContext is TileModel tile)
@@ -1355,7 +1360,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
             _isPotentialDrag = true;
             _isDragging = false;
-            if (!(tile.TileType == TileType.Widget && tile.TargetPath == "calendar"))
+            if (!(tile.TileType == TileType.Widget && (tile.TargetPath == "calendar" || tile.TargetPath == "media")))
             {
                 _draggedControl.AnimatePressDown();
             }

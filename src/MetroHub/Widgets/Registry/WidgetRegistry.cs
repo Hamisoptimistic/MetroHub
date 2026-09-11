@@ -72,6 +72,23 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Huge,
             Factory: model => new MetroHub.Widgets.Catalog.Calendar.CalendarWidgetViewModel(model)
         ));
+
+        // Register Media Player widget (Groove Live Tile style)
+        Register(new WidgetDefinition(
+            Id: "media",
+            DisplayName: "Media Player",
+            Description: "Live media player with playback controls and track details",
+            Icon: SymbolRegular.Play24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Mega,    // 8x4
+                WidgetSize.Banner3  // 8x3
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Media.MediaWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Media.MediaWidgetView),
+            DefaultSize: WidgetSize.Mega,
+            Factory: model => new MetroHub.Widgets.Catalog.Media.MediaWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)

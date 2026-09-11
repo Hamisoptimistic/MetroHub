@@ -15,6 +15,7 @@ public record WidgetSize(int SpanX, int SpanY, string DisplayName)
     public static readonly WidgetSize Wide = new(4, 2, "Wide (4x2)");
     public static readonly WidgetSize ExtraWide = new(6, 2, "Extra Wide (6x2)");
     public static readonly WidgetSize Banner = new(8, 2, "Banner (8x2)");
+    public static readonly WidgetSize Banner3 = new(8, 3, "Banner (8x3)");
 
     // Tall & Vertical Cards
     public static readonly WidgetSize SmallTall = new(1, 2, "Small Tall (1x2)");

@@ -10,6 +10,7 @@
              xmlns:stub="clr-namespace:MetroHub.Widgets.Catalog.Stub"
              xmlns:clock="clr-namespace:MetroHub.Widgets.Catalog.Clock"
              xmlns:calendar="clr-namespace:MetroHub.Widgets.Catalog.Calendar"
+             xmlns:media="clr-namespace:MetroHub.Widgets.Catalog.Media"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -148,6 +149,11 @@
         <!-- 4. Calendar Widget DataTemplate (Windows 10 Style Standalone Widget) -->
         <DataTemplate DataType="{x:Type calendar:CalendarWidgetViewModel}">
             <calendar:CalendarWidgetView />
+        </DataTemplate>
+
+        <!-- 5. Media Player Widget DataTemplate (Groove Live Tile Style) -->
+        <DataTemplate DataType="{x:Type media:MediaWidgetViewModel}">
+            <media:MediaWidgetView />
         </DataTemplate>
     </UserControl.Resources>
 
