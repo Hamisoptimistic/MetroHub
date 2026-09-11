@@ -205,6 +205,17 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 cleanTitle = cleanTitle.Substring(0, cleanTitle.Length - " - YouTube".Length).Trim();
             }
 
+            // Clean YouTube Music "- Topic" suffix from artist name (e.g. "Deftones - Topic" -> "Deftones")
+            string rawArtist = cleanArtist;
+            if (cleanArtist.EndsWith(" - Topic", StringComparison.OrdinalIgnoreCase))
+            {
+                cleanArtist = cleanArtist.Substring(0, cleanArtist.Length - " - Topic".Length).Trim();
+            }
+            else if (cleanArtist.EndsWith("- Topic", StringComparison.OrdinalIgnoreCase))
+            {
+                cleanArtist = cleanArtist.Substring(0, cleanArtist.Length - "- Topic".Length).Trim();
+            }
+
             // If artist is empty but title has " - ", split artist and track name (common on YouTube/browser streams)
             if (string.IsNullOrWhiteSpace(cleanArtist) && cleanTitle.Contains(" - "))
             {
@@ -216,13 +227,13 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 }
             }
 
-            string cleanSource = ResolveSourceName(rawSource, cleanTitle, cleanArtist);
+            string cleanSource = ResolveSourceName(rawSource, cleanTitle, rawArtist);
             bool hasAlbum = !string.IsNullOrWhiteSpace(cleanAlbum);
 
             bool playing = playback?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
             var controls = playback?.Controls;
 
-            BitmapImage? bmp = null;
+            ImageSource? bmp = null;
             if (props.Thumbnail != null)
             {
                 bmp = await LoadThumbnailAsync(props.Thumbnail);
@@ -250,7 +261,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
         }
     }
 
-    private static async Task<BitmapImage?> LoadThumbnailAsync(IRandomAccessStreamReference streamRef)
+    private static async Task<ImageSource?> LoadThumbnailAsync(IRandomAccessStreamReference streamRef)
     {
         try
         {
@@ -266,6 +277,18 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
             bitmap.StreamSource = memory;
             bitmap.EndInit();
             bitmap.Freeze();
+
+            // If thumbnail is 16:9 YouTube video frame with pillarboxes,
+            // center-crop to the square album cover to eliminate side pillarbox bars!
+            if (bitmap.PixelWidth > bitmap.PixelHeight * 1.25)
+            {
+                int size = bitmap.PixelHeight;
+                int xOffset = (bitmap.PixelWidth - size) / 2;
+                var cropped = new CroppedBitmap(bitmap, new Int32Rect(xOffset, 0, size, size));
+                cropped.Freeze();
+                return cropped;
+            }
+
             return bitmap;
         }
         catch
@@ -276,6 +299,17 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
 
     public static string ResolveSourceName(string? appId, string? title, string? artist)
     {
+        // 1. Detect YouTube / YouTube Music
+        if (artist != null && (artist.EndsWith("- Topic", StringComparison.OrdinalIgnoreCase) || artist.EndsWith("Topic", StringComparison.OrdinalIgnoreCase)))
+        {
+            return "YouTube Music";
+        }
+        if ((title != null && title.Contains("YouTube", StringComparison.OrdinalIgnoreCase)) ||
+            (artist != null && artist.Contains("YouTube", StringComparison.OrdinalIgnoreCase)))
+        {
+            return "YouTube";
+        }
+
         if (string.IsNullOrWhiteSpace(appId)) return "Media Player";
 
         string lower = appId.ToLowerInvariant();
@@ -288,20 +322,25 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
         if (lower.Contains("aimp")) return "AIMP";
         if (lower.Contains("zunemusic") || lower.Contains("microsoft.zunemusic")) return "Groove Music";
         if (lower.Contains("microsoft.media.player")) return "Media Player";
+        if (lower.Contains("zen")) return "Zen Browser";
 
-        // Browser playback: check for YouTube
-        if (lower.Contains("chrome") || lower.Contains("edge") || lower.Contains("msedge") || lower.Contains("brave") || lower.Contains("firefox") || lower.Contains("opera"))
+        // Known browsers
+        if (lower.Contains("edge") || lower.Contains("msedge")) return "Microsoft Edge";
+        if (lower.Contains("chrome")) return "Google Chrome";
+        if (lower.Contains("brave")) return "Brave";
+        if (lower.Contains("firefox")) return "Firefox";
+        if (lower.Contains("opera")) return "Opera";
+
+        // 2. Query Windows Registry AppUserModelId (e.g. ZenToast-F0DC299D809B9700 or PWAs)
+        string? regName = TryResolveFromRegistry(appId);
+        if (!string.IsNullOrWhiteSpace(regName))
         {
-            if ((title != null && title.Contains("YouTube", StringComparison.OrdinalIgnoreCase)) ||
-                (artist != null && artist.Contains("YouTube", StringComparison.OrdinalIgnoreCase)) ||
-                lower.Contains("youtube"))
-            {
-                return "YouTube";
-            }
-            if (lower.Contains("edge") || lower.Contains("msedge")) return "Microsoft Edge";
-            if (lower.Contains("chrome")) return "Google Chrome";
-            if (lower.Contains("brave")) return "Brave";
-            if (lower.Contains("firefox")) return "Firefox";
+            return regName;
+        }
+
+        // 3. Prevent raw hex hash names (e.g. "F0DC299D809B9700") from displaying
+        if (IsHexOrHash(appId))
+        {
             return "Web Browser";
         }
 
@@ -311,7 +350,56 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
         {
             name = name.Substring(bang + 1);
         }
+
+        if (IsHexOrHash(name))
+        {
+            return "Web Browser";
+        }
+
         return name;
+    }
+
+    private static bool IsHexOrHash(string str)
+    {
+        if (string.IsNullOrWhiteSpace(str)) return false;
+        string s = str.Trim();
+        if (s.Length >= 8 && s.Length <= 64)
+        {
+            bool allHex = true;
+            foreach (char c in s)
+            {
+                if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
+                {
+                    allHex = false;
+                    break;
+                }
+            }
+            if (allHex) return true;
+        }
+        return false;
+    }
+
+    private static string? TryResolveFromRegistry(string appId)
+    {
+        try
+        {
+            using var root = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Classes\AppUserModelId");
+            if (root != null)
+            {
+                foreach (var subKeyName in root.GetSubKeyNames())
+                {
+                    if (subKeyName.IndexOf(appId, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        appId.IndexOf(subKeyName, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        using var subKey = root.OpenSubKey(subKeyName);
+                        var disp = subKey?.GetValue("DisplayName") as string;
+                        if (!string.IsNullOrWhiteSpace(disp)) return disp;
+                    }
+                }
+            }
+        }
+        catch { }
+        return null;
     }
 
     [RelayCommand]
