@@ -93,15 +93,23 @@ public class BorderlessFluentWindow : FluentWindow
         ApplyBorderlessAttributes();
     }
 
+    public bool IsDismissing { get; set; } = false;
+
     private IntPtr HwndMessageHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         if (msg == WM_NCACTIVATE)
         {
             ApplyBorderlessAttributes();
-            // Force DWM to always treat the non-client frame as ACTIVE (wParam = 1)
-            // This permanently prevents DWM from dropping to the inactive solid grey fallback.
-            handled = true;
-            return NativeMethods.DefWindowProc(hwnd, (uint)msg, new IntPtr(1), lParam);
+
+            // When the window is visible and NOT dismissing, force DWM to treat the non-client
+            // frame as ACTIVE (wParam = 1). This ensures Windows 11 DWM renders Mica/Acrylic
+            // immediately on the very first launch and does not drop to inactive solid dark/grey fallback.
+            // When dismissing, allow default handling so the OS/WPF deactivation processes normally.
+            if (!IsDismissing && IsVisible)
+            {
+                handled = true;
+                return NativeMethods.DefWindowProc(hwnd, (uint)msg, new IntPtr(1), lParam);
+            }
         }
 
         if (msg == WM_ACTIVATE)

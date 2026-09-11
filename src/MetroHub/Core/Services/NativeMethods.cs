@@ -78,6 +78,11 @@ public static class NativeMethods
                 int trueVal = 1;
                 DwmSetWindowAttribute(hwnd, 1029, ref trueVal, sizeof(int));
             }
+
+            // Inform DWM that the non-client frame and backdrop metrics have changed.
+            // This forces DWM to recompute composition and apply the backdrop immediately on initial launch.
+            SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
         }
         catch { }
     }
@@ -318,6 +323,17 @@ public static class NativeMethods
 
     public static readonly IntPtr HWND_BROADCAST = new IntPtr(0xffff);
     public static readonly uint WM_SHOW_METROHUB = RegisterWindowMessage("WM_SHOW_METROHUB_WAKE");
+
+    public delegate void WinEventDelegate(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr hmodWinEventProc, WinEventDelegate lpfnWinEventProc, uint idProcess, uint idThread, uint dwFlags);
+
+    [DllImport("user32.dll")]
+    public static extern bool UnhookWinEvent(IntPtr hWinEventHook);
+
+    public const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
+    public const uint WINEVENT_OUTOFCONTEXT = 0x0000;
 
     #endregion
 }

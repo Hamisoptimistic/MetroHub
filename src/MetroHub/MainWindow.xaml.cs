@@ -46,12 +46,19 @@ public partial class MainWindow : BorderlessFluentWindow
     private double _autoScrollVelocityY;
     private bool _isClosingToExit = false;
 
-    private bool _isDismissing = false;
+    private bool _isDismissing
+    {
+        get => IsDismissing;
+        set => IsDismissing = value;
+    }
 
     private Point _canvasRightClickPoint;
     private bool _isAppsLoaded = false;
     private bool _isLoadingApps = false;
     private DateTime _lastAppsRefreshTime = DateTime.UtcNow;
+
+    private IntPtr _winEventHook = IntPtr.Zero;
+    private NativeMethods.WinEventDelegate? _winEventDelegate;
 
     public MainWindow()
     {
@@ -124,7 +131,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
         if (!IsDialogOpen && IsVisible && !_isDismissing)
         {
-            DismissWithAnimation();
+            HideScreen();
         }
     }
 
@@ -372,8 +379,44 @@ public partial class MainWindow : BorderlessFluentWindow
         _hotkeyService.HotkeyPressed += OnHotkeyPressed;
         _hotkeyService.Register(hwnd, Settings);
 
+        _winEventDelegate = OnSystemForegroundChanged;
+        _winEventHook = NativeMethods.SetWinEventHook(
+            NativeMethods.EVENT_SYSTEM_FOREGROUND,
+            NativeMethods.EVENT_SYSTEM_FOREGROUND,
+            IntPtr.Zero,
+            _winEventDelegate,
+            0,
+            0,
+            NativeMethods.WINEVENT_OUTOFCONTEXT);
+
         SnapToWorkArea();
-        PlayOpenAnimation();
+    }
+
+    private void OnSystemForegroundChanged(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
+    {
+        if (hwnd == IntPtr.Zero) return;
+        if (!IsVisible || _isDismissing || IsDialogOpen) return;
+
+        // Prevent premature dismissal in first 150ms of opening
+        if ((DateTime.UtcNow - _lastShownTime).TotalMilliseconds < 150) return;
+
+        // If user is currently dragging a tile, don't dismiss
+        if (_isDragging || _isPotentialDrag || _isRubberBanding) return;
+
+        // Check if the foreground window belongs to an external process (taskbar, clock, other app, desktop)
+        uint currentProcessId = (uint)Environment.ProcessId;
+        NativeMethods.GetWindowThreadProcessId(hwnd, out uint foreProcessId);
+
+        if (foreProcessId != 0 && foreProcessId != currentProcessId)
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                if (IsVisible && !_isDismissing && !IsDialogOpen)
+                {
+                    HideScreen();
+                }
+            });
+        }
     }
 
     public void PlayOpenAnimation()
@@ -404,6 +447,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 Hide();
                 _isDismissing = false;
                 _isFullyActivated = false;
+                Topmost = false;
 
                 // Reset back cleanly without bounce offsets
                 if (RootGrid != null) RootGrid.Opacity = 0.0;
@@ -423,6 +467,7 @@ public partial class MainWindow : BorderlessFluentWindow
             Hide();
             _isDismissing = false;
             _isFullyActivated = false;
+            Topmost = false;
         }
     }
 
@@ -4366,6 +4411,11 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         }
         else
         {
+            if (_winEventHook != IntPtr.Zero)
+            {
+                NativeMethods.UnhookWinEvent(_winEventHook);
+                _winEventHook = IntPtr.Zero;
+            }
             _hotkeyService.Dispose();
             base.OnClosing(e);
         }
@@ -4374,6 +4424,11 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     public void ExitApplication()
     {
         _isClosingToExit = true;
+        if (_winEventHook != IntPtr.Zero)
+        {
+            NativeMethods.UnhookWinEvent(_winEventHook);
+            _winEventHook = IntPtr.Zero;
+        }
         _hotkeyService.Dispose();
         Close();
         Application.Current.Shutdown();

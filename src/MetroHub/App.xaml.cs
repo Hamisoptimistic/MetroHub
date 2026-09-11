@@ -20,13 +20,13 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Grant permission for this process and any instances to manage foreground window
+        NativeMethods.AllowSetForegroundWindow(NativeMethods.ASFW_ANY);
+
         _singleInstanceMutex = new Mutex(true, MutexName, out bool isNewInstance);
         _ownsMutex = isNewInstance;
         if (!isNewInstance)
         {
-            // Grant permission for the already-running background instance to take the foreground
-            NativeMethods.AllowSetForegroundWindow(NativeMethods.ASFW_ANY);
-
             // Broadcast the custom registered message directly into the running instance's message queue!
             NativeMethods.PostMessage(NativeMethods.HWND_BROADCAST, NativeMethods.WM_SHOW_METROHUB, IntPtr.Zero, IntPtr.Zero);
 
