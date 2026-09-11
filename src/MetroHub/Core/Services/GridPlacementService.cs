@@ -7,7 +7,7 @@ public static class GridPlacementService
     public const double GridStep = 64.0;
     public const double Gap = 8.0;
     public const double OriginX = 16.0;
-    public const double OriginY = 40.0;
+    public const double OriginY = 12.0;
     public const double BaseSideMargin = 24.0;
     public const int GroupColWidth = 8;
     public const double ColumnGap = 32.0;
@@ -79,7 +79,7 @@ public static class GridPlacementService
         int maxCols = int.MaxValue,
         IEnumerable<TileGroupModel>? groups = null)
     {
-        if (col < 0 || row < 0) return false;
+        if (col < 0 || row < 1) return false;
         if (col + spanX > maxCols) return false;
 
         // When groups are present and this check is for a loose canvas tile,
@@ -157,7 +157,7 @@ public static class GridPlacementService
         IEnumerable<TileGroupModel>? groups = null)
     {
         startCol = Math.Max(0, Math.Min(startCol, Math.Max(0, maxCols - spanX)));
-        startRow = Math.Max(0, startRow);
+        startRow = Math.Max(1, startRow);
 
         if (IsRegionFree(startCol, startRow, spanX, spanY, tiles, ignoreTile, maxCols, groups))
         {
@@ -176,7 +176,7 @@ public static class GridPlacementService
                     int c = startCol + dx;
                     int r = startRow + dy;
 
-                    if (c < 0 || r < 0) continue;
+                    if (c < 0 || r < 1) continue;
                     if (c + spanX > maxCols) continue;
 
                     if (IsRegionFree(c, r, spanX, spanY, tiles, ignoreTile, maxCols, groups))
@@ -188,7 +188,7 @@ public static class GridPlacementService
         }
 
         // Fallback: search downward row by row
-        for (int r = startRow + 1; r < startRow + 50; r++)
+        for (int r = Math.Max(1, startRow + 1); r < startRow + 50; r++)
         {
             for (int c = 0; c <= maxCols - spanX; c++)
             {

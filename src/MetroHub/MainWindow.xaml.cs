@@ -141,6 +141,27 @@ public partial class MainWindow : BorderlessFluentWindow
         Tiles = StorageService.LoadLayout();
         Groups = StorageService.LoadGroups();
 
+        // Auto-migrate: ensure Row 0 is the dedicated header zone.
+        // Shift loose tiles that start at Row 0 down to Row >= 1, preserving relative spacing.
+        var looseTilesAtZero = Tiles.Where(t => string.IsNullOrEmpty(t.Group) && t.Row == 0).ToList();
+        if (looseTilesAtZero.Count > 0)
+        {
+            foreach (var t in Tiles.Where(t => string.IsNullOrEmpty(t.Group)))
+            {
+                t.Row += 1;
+            }
+            StorageService.SaveLayout(Tiles);
+        }
+
+        // Re-sync all tiles pixel positions with current GridPlacementService metrics
+        foreach (var t in Tiles)
+        {
+            t.Col = Math.Max(0, t.Col);
+            t.Row = Math.Max(1, t.Row);
+            t.X = GridPlacementService.PixelXFromCol(t.Col);
+            t.Y = GridPlacementService.PixelYFromRow(t.Row);
+        }
+
         DiscoverGroupsFromTiles();
         EnsureGroupIndices();
         MigrateGroupColumnOffsets();
@@ -159,17 +180,18 @@ public partial class MainWindow : BorderlessFluentWindow
         if (GroupTintBackplates != null) GroupTintBackplates.ItemsSource = Groups;
         UpdateCanvasHeight();
         UpdateExposedAddSlots();
-
-        if (BackdropToggleSwitch != null)
-        {
-            BackdropToggleSwitch.IsChecked =
-                string.Equals(Settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase);
-        }
     }
 
-    private void OnBackdropToggleClick(object sender, RoutedEventArgs e)
+    private void OnBackdropMicaClick(object sender, RoutedEventArgs e)
     {
-        Settings.BackdropType = BackdropToggleSwitch.IsChecked == true ? "Acrylic" : "Mica";
+        Settings.BackdropType = "Mica";
+        StorageService.SaveSettings(Settings);
+        ApplyConfiguredBackdrop();
+    }
+
+    private void OnBackdropAcrylicClick(object sender, RoutedEventArgs e)
+    {
+        Settings.BackdropType = "Acrylic";
         StorageService.SaveSettings(Settings);
         ApplyConfiguredBackdrop();
     }
@@ -194,11 +216,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
         GridPlacementService.UpdateMetrics(viewportWidth);
         double margin = GridPlacementService.OriginX;
-
-        if (HeaderGrid != null)
-        {
-            HeaderGrid.Margin = new Thickness(margin, 0, margin, 0);
-        }
 
         if (FooterGrid != null)
         {
@@ -913,7 +930,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         if (SidebarRail != null && SidebarRail.IsMouseOver) return;
         if (AllAppsDrawer != null && AllAppsDrawer.IsMouseOver) return;
 
-        if (HeaderGrid != null && HeaderGrid.IsMouseOver) return;
         if (FooterGrid != null && FooterGrid.IsMouseOver) return;
 
         Point canvasMouse = TilesListBox != null ? e.GetPosition(TilesListBox) : e.GetPosition(this);
@@ -1236,7 +1252,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             ? (_draggedTile != null
                 ? Math.Max(1, Math.Max(-_clusterRelGridBounds.MinRelRow, 1 - _clusterRelGridBounds.MinRelRow))
                 : 0)
-            : Math.Max(0, -_clusterRelGridBounds.MinRelRow);
+            : Math.Max(1, 1 - _clusterRelGridBounds.MinRelRow);
         int anchorRow = Math.Max(minAllowedRow, GridPlacementService.RowFromPixel(clampedAnchorY));
 
         int rawAnchorCol = anchorCol;
@@ -1607,7 +1623,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                     int dropRow = GridPlacementService.RowFromPixel(_draggedTile.Y);
 
                     int targetCol = Math.Min(dropCol, Math.Max(0, maxCols - _draggedTile.SpanX));
-                    int targetRow = Math.Max(0, dropRow);
+                    int targetRow = Math.Max(1, dropRow);
 
                     var origDict = _dragClusterOriginals.ToDictionary(kvp => kvp.Key, kvp => (kvp.Value.Col, kvp.Value.Row));
 
@@ -1643,7 +1659,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                             droppedOnGap = true;
                             flashCol = targetCol;
                             flashRow = targetRow;
-                            targetRow = Math.Max(0, gMinR - 1 - _draggedTile.SpanY);
+                            targetRow = Math.Max(1, gMinR - 1 - _draggedTile.SpanY);
                         }
                     }
 
@@ -3650,7 +3666,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             }
 
             var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(
-                col, row, 2, 2, Tiles, null, maxCols, Groups);
+                col, Math.Max(1, row), 2, 2, Tiles, null, maxCols, Groups);
 
             var tileUngrouped = new TileModel
             {
@@ -4138,7 +4154,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         }
 
         int clampedCol = Math.Max(0, Math.Min(col, maxCols - spanX));
-        int clampedRow = Math.Max(0, row);
+        int clampedRow = Math.Max(1, row);
 
         var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(
             clampedCol,

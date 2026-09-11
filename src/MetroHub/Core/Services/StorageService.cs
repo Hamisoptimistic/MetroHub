@@ -72,10 +72,10 @@ public class StorageService
                     bool iconsRefreshed = false;
                     foreach (var tile in tiles)
                     {
-                        if (tile.Col < 0 || tile.Row < 0 || tile.Y < GridPlacementService.OriginY)
+                        if (tile.Col < 0 || tile.Row < 1 || tile.Y < GridPlacementService.PixelYFromRow(1))
                         {
                             tile.Col = Math.Max(0, tile.Col);
-                            tile.Row = !string.IsNullOrEmpty(tile.Group) ? Math.Max(1, tile.Row) : Math.Max(0, tile.Row);
+                            tile.Row = Math.Max(1, tile.Row);
                             tile.X = GridPlacementService.PixelXFromCol(tile.Col);
                             tile.Y = GridPlacementService.PixelYFromRow(tile.Row);
                             iconsRefreshed = true;

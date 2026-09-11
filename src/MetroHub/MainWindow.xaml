@@ -149,75 +149,15 @@
         <Grid x:Name="MainContentAreaGrid"
               Grid.Column="1">
             <Grid.RowDefinitions>
-                <!-- Minimalist Top Bar -->
-                <RowDefinition Height="64" />
-                <!-- Main Unified Draggable Tile Canvas -->
+                <!-- Main Unified Draggable Tile Canvas (Full-height top canvas) -->
                 <RowDefinition Height="*" />
                 <!-- Bottom Status Bar -->
                 <RowDefinition Height="40" />
             </Grid.RowDefinitions>
 
-            <!-- Top Header Bar -->
-            <Grid x:Name="HeaderGrid" Grid.Row="0" Margin="16,0,16,0">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="METRO" FontSize="20" FontWeight="Bold" Foreground="#60CDFF" />
-                <TextBlock Text="HUB" FontSize="20" FontWeight="Light" Foreground="#FFFFFF" Margin="3,0,16,0" />
-                <TextBlock Text="•  Start Canvas" FontSize="13" Foreground="#90FFFFFF" VerticalAlignment="Center" />
-            </StackPanel>
-
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <!-- Backdrop Material Switch -->
-                <ui:ToggleSwitch x:Name="BackdropToggleSwitch"
-                                 OnContent="Acrylic Obsidian"
-                                 OffContent="Mica"
-                                 FontSize="11"
-                                 Foreground="#C0FFFFFF"
-                                 VerticalAlignment="Center"
-                                 Margin="0,0,16,0"
-                                 Click="OnBackdropToggleClick" />
-
-                <!-- Add Tile Button -->
-                <Button Content="+ Add Tile"
-                        Height="34" Padding="14,0"
-                        FontSize="12" FontWeight="SemiBold"
-                        Foreground="#FFFFFF" Background="#33FFFFFF"
-                        BorderThickness="1" BorderBrush="#44FFFFFF"
-                        Cursor="Hand" Margin="0,0,12,0"
-                        Click="OnAddTileClick">
-                    <Button.Resources>
-                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="7"/></Style>
-                    </Button.Resources>
-                </Button>
-
-                <!-- Export Layout Button -->
-                <Button Content="Export"
-                        Height="34" Padding="12,0"
-                        FontSize="11" Foreground="#C0FFFFFF" Background="#1FFFFFFF"
-                        BorderThickness="1" BorderBrush="#2AFFFFFF"
-                        Cursor="Hand" Margin="0,0,10,0"
-                        Click="OnExportLayoutClick">
-                    <Button.Resources>
-                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="7"/></Style>
-                    </Button.Resources>
-                </Button>
-
-                <!-- Close to Tray Button -->
-                <Button Content="✕"
-                        Width="34" Height="34"
-                        FontSize="13" Foreground="#C0FFFFFF" Background="#1FFFFFFF"
-                        BorderThickness="1" BorderBrush="#2AFFFFFF"
-                        Cursor="Hand" ToolTip="Hide to Tray (Esc)"
-                        Click="OnCloseToTrayClick">
-                    <Button.Resources>
-                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="7"/></Style>
-                    </Button.Resources>
-                </Button>
-            </StackPanel>
-        </Grid>
-
-        <!-- Main Open Tile Canvas: Free placement drag and drop anywhere -->
-        <ScrollViewer Grid.Row="1"
-                      x:Name="ContentScrollViewer"
+            <!-- Main Open Tile Canvas: Free placement drag and drop anywhere -->
+            <ScrollViewer Grid.Row="0"
+                          x:Name="ContentScrollViewer"
                       controls:AutoHideScrollBehavior.IsEnabled="True"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
@@ -428,6 +368,22 @@
                                 <ui:SymbolIcon Symbol="Add24" FontSize="20" />
                             </MenuItem.Icon>
                         </MenuItem>
+
+                        <Separator />
+
+                        <MenuItem Header="Export Layout..." Click="OnExportLayoutClick">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="Share24" FontSize="20" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+
+                        <MenuItem Header="Backdrop">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="DarkTheme24" FontSize="20" />
+                            </MenuItem.Icon>
+                            <MenuItem Header="Mica" Click="OnBackdropMicaClick" />
+                            <MenuItem Header="Acrylic Obsidian" Click="OnBackdropAcrylicClick" />
+                        </MenuItem>
                     </ContextMenu>
                 </Grid.ContextMenu>
                 <!-- Drop Target Slot Indicator (snaps to grid in real-time) -->
@@ -634,13 +590,13 @@
         </ScrollViewer>
 
         <!-- Bottom Status Bar -->
-        <Grid x:Name="FooterGrid" Grid.Row="2" Margin="16,0,16,0">
+        <Grid x:Name="FooterGrid" Grid.Row="1" Margin="16,0,16,0">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="Press " FontSize="11" Foreground="#80FFFFFF" />
                 <Border Background="#30FFFFFF" CornerRadius="4" Padding="5,1" Margin="2,0">
                     <TextBlock Text="Esc" FontSize="10" FontWeight="SemiBold" Foreground="#FFFFFF" />
                 </Border>
-                <TextBlock Text=" or ✕ to close   •   Press " FontSize="11" Foreground="#80FFFFFF" />
+                <TextBlock Text=" to close   •   Press " FontSize="11" Foreground="#80FFFFFF" />
                 <Border Background="#30FFFFFF" CornerRadius="4" Padding="5,1" Margin="2,0">
                     <TextBlock Text="{Binding HotkeyDisplayString, FallbackValue='Ctrl + `'}" FontSize="10" FontWeight="SemiBold" Foreground="#60CDFF" />
                 </Border>
@@ -660,7 +616,7 @@
         <controls:AllAppsDrawerControl x:Name="AllAppsDrawer"
                                        Grid.Column="1"
                                        Grid.Row="0"
-                                       Grid.RowSpan="3"
+                                       Grid.RowSpan="2"
                                        HorizontalAlignment="Left"
                                        VerticalAlignment="Stretch"
                                        Panel.ZIndex="1500"

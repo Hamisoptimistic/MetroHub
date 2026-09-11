@@ -11,19 +11,19 @@ public static class AppScannerService
         var tiles = new ObservableCollection<TileModel>();
 
         // File Explorer (Medium 2x2)
-        tiles.Add(CreateAppTile("File Explorer", "explorer.exe", IconExtractorService.ExtractAndCacheIcon("explorer.exe"), 2, 2, "#0078D7", 0, 0));
+        tiles.Add(CreateAppTile("File Explorer", "explorer.exe", IconExtractorService.ExtractAndCacheIcon("explorer.exe"), 2, 2, "#0078D7", 0, 1));
 
         // Default Browser (Edge / Chrome)
         string browserPath = FindDefaultBrowser();
-        tiles.Add(CreateAppTile("Browser", browserPath, IconExtractorService.ExtractAndCacheIcon(browserPath), 2, 2, "#0080FF", 2, 0));
+        tiles.Add(CreateAppTile("Browser", browserPath, IconExtractorService.ExtractAndCacheIcon(browserPath), 2, 2, "#0080FF", 2, 1));
 
         // Terminal / PowerShell
         string terminalPath = FindTerminal();
-        tiles.Add(CreateAppTile("Terminal", terminalPath, IconExtractorService.ExtractAndCacheIcon(terminalPath), 2, 2, "#4E5664", 4, 0));
+        tiles.Add(CreateAppTile("Terminal", terminalPath, IconExtractorService.ExtractAndCacheIcon(terminalPath), 2, 2, "#4E5664", 4, 1));
 
         // Task Manager
         string taskmgr = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "taskmgr.exe");
-        tiles.Add(CreateAppTile("Task Manager", taskmgr, IconExtractorService.ExtractAndCacheIcon(taskmgr), 2, 2, "#0063B1", 6, 0));
+        tiles.Add(CreateAppTile("Task Manager", taskmgr, IconExtractorService.ExtractAndCacheIcon(taskmgr), 2, 2, "#0063B1", 6, 1));
 
         // Windows Settings (ms-settings:)
         tiles.Add(new TileModel
@@ -36,22 +36,22 @@ public static class AppScannerService
             AccentColor = "#69797E",
             IconPath = IconExtractorService.ExtractAndCacheIcon(taskmgr),
             Col = 8,
-            Row = 0,
+            Row = 1,
             X = GridPlacementService.PixelXFromCol(8),
-            Y = GridPlacementService.PixelYFromRow(0)
+            Y = GridPlacementService.PixelYFromRow(1)
         });
 
         // Notepad (1x1)
         string notepad = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "notepad.exe");
-        tiles.Add(CreateAppTile("Notepad", notepad, IconExtractorService.ExtractAndCacheIcon(notepad), 1, 1, "#107C41", 10, 0));
+        tiles.Add(CreateAppTile("Notepad", notepad, IconExtractorService.ExtractAndCacheIcon(notepad), 1, 1, "#107C41", 10, 1));
 
         // Calculator (1x1)
         string calc = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "calc.exe");
-        tiles.Add(CreateAppTile("Calculator", calc, IconExtractorService.ExtractAndCacheIcon(calc), 1, 1, "#008272", 10, 1));
+        tiles.Add(CreateAppTile("Calculator", calc, IconExtractorService.ExtractAndCacheIcon(calc), 1, 1, "#008272", 10, 2));
 
         // Command Prompt (1x1)
         string cmd = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
-        tiles.Add(CreateAppTile("Command Prompt", cmd, IconExtractorService.ExtractAndCacheIcon(cmd), 1, 1, "#303030", 11, 0));
+        tiles.Add(CreateAppTile("Command Prompt", cmd, IconExtractorService.ExtractAndCacheIcon(cmd), 1, 1, "#303030", 11, 1));
 
         return tiles;
     }
