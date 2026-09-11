@@ -1375,24 +1375,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             Canvas.SetTop(DropSlotIndicator, snappedAnchorY + _clusterRelBounds.MinRelY);
             DropSlotIndicator.Visibility = Visibility.Visible;
 
-            if (_draggedTile != null || _draggedCluster.Count > 0)
-            {
-                int tileSpanX = _draggedTile?.SpanX ?? 2;
-                int tileSpanY = _draggedTile?.SpanY ?? 2;
-
-                if (Check1x1GapHover(canvasMouse, anchorCol, anchorRow, tileSpanX, tileSpanY, out int gapCol, out int gapRow))
-                {
-                    ShowGapDropHighlight(gapCol, gapRow, canvasMouse);
-                }
-                else
-                {
-                    HideGapDropHighlight();
-                }
-            }
-            else
-            {
-                HideGapDropHighlight();
-            }
+            HideGapDropHighlight();
         }
     }
 
@@ -1633,10 +1616,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
                     var origDict = _dragClusterOriginals.ToDictionary(kvp => kvp.Key, kvp => (kvp.Value.Col, kvp.Value.Row));
 
-                    bool droppedOnGap = false;
-                    int flashCol = targetCol;
-                    int flashRow = targetRow;
-
                     foreach (var g in Groups)
                     {
                         var gMembers = Tiles.Where(t => t.Group == g.Id && !_draggedCluster.Contains(t)).ToList();
@@ -1655,24 +1634,15 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
                         if (isBottomGap || isInsideGroup)
                         {
-                            droppedOnGap = true;
-                            flashCol = targetCol;
-                            flashRow = targetRow;
                             targetRow = gMaxR + 1;
                         }
                         else if (isTopGap)
                         {
-                            droppedOnGap = true;
-                            flashCol = targetCol;
-                            flashRow = targetRow;
                             targetRow = Math.Max(1, gMinR - 1 - _draggedTile.SpanY);
                         }
                     }
 
-                    if (droppedOnGap)
-                    {
-                        FlashGapDropPerimeter(GridPlacementService.PixelXFromCol(flashCol), GridPlacementService.PixelYFromRow(flashRow), 56, 56);
-                    }
+
 
                     CleanEmptyGroupsAndReflow();
 
@@ -2917,71 +2887,10 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     private void FlashGapDropPerimeter(double pixelX, double pixelY, double width = 56, double height = 56)
     {
-        if (GapDropWarningBorder == null) return;
-
-        GapDropWarningBorder.BeginAnimation(UIElement.OpacityProperty, null);
-
-        Canvas.SetLeft(GapDropWarningBorder, pixelX);
-        Canvas.SetTop(GapDropWarningBorder, pixelY);
-        GapDropWarningBorder.Width = width;
-        GapDropWarningBorder.Height = height;
-
-        GapDropWarningBorder.Opacity = 1.0;
-        GapDropWarningBorder.Visibility = Visibility.Visible;
-
-        var fadeAnimation = new DoubleAnimation
-        {
-            From = 1.0,
-            To = 0.0,
-            Duration = TimeSpan.FromMilliseconds(700),
-            FillBehavior = FillBehavior.Stop,
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-
-        fadeAnimation.Completed += (s, e) =>
-        {
-            GapDropWarningBorder.Visibility = Visibility.Collapsed;
-            GapDropWarningBorder.Opacity = 1.0;
-        };
-
-        GapDropWarningBorder.BeginAnimation(UIElement.OpacityProperty, fadeAnimation);
     }
 
     private void ShowGapDropHighlight(int gapCol, int gapRow, Point mousePos)
     {
-        if (GapDropWarningBorder == null) return;
-
-        GapDropWarningBorder.BeginAnimation(UIElement.OpacityProperty, null);
-
-        double pixelX = GridPlacementService.PixelXFromCol(gapCol);
-        double pixelY = GridPlacementService.PixelYFromRow(gapRow);
-
-        Canvas.SetLeft(GapDropWarningBorder, pixelX);
-        Canvas.SetTop(GapDropWarningBorder, pixelY);
-        GapDropWarningBorder.Width = 56;
-        GapDropWarningBorder.Height = 56;
-        GapDropWarningBorder.Opacity = 1.0;
-        GapDropWarningBorder.Visibility = Visibility.Visible;
-
-        DropSlotIndicator.Visibility = Visibility.Collapsed;
-
-        if (GroupDropFloatingBadge != null)
-        {
-            if (GroupDropBadgeIcon != null)
-            {
-                GroupDropBadgeIcon.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x43, 0x43));
-                GroupDropBadgeIcon.Symbol = Wpf.Ui.Controls.SymbolRegular.DismissCircle24;
-            }
-
-            if (GroupDropBadgeText != null)
-            {
-                GroupDropBadgeText.Text = "1×1 Gap Buffer (No Tiles Allowed)";
-            }
-
-            Canvas.SetLeft(GroupDropFloatingBadge, mousePos.X + 16);
-            Canvas.SetTop(GroupDropFloatingBadge, Math.Max(10, mousePos.Y - 38));
-            GroupDropFloatingBadge.Visibility = Visibility.Visible;
-        }
     }
 
     private void HideGapDropHighlight()
