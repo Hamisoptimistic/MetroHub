@@ -1,0 +1,18 @@
+using System.Text.Json.Serialization;
+using MetroHub.Widgets.Catalog.Stub;
+
+namespace MetroHub.Widgets.Serialization;
+
+/// <summary>
+/// Source-generated System.Text.Json serialization context for widget settings payloads (Phase 0.6).
+/// Replaces reflection-based serialization to ensure compile-time verification, trimmed-assembly safety,
+/// and maximum execution performance.
+/// </summary>
+[JsonSourceGenerationOptions(
+    WriteIndented = false,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSerializable(typeof(StubWidgetSettings))]
+public partial class WidgetJsonContext : JsonSerializerContext
+{
+}

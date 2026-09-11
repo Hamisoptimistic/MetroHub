@@ -1,18 +1,21 @@
 using System.Collections.Generic;
+using CommunityToolkit.Mvvm.ComponentModel;
 using MetroHub.Core.Models;
+using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Stub;
 
 /// <summary>
 /// Minimal stub ViewModel representing a generic or uninitialized widget tile.
-/// Implements IWidgetViewModel with customizable/declared allowed sizes (Phase 0.3).
-/// Contains zero WPF UI dependencies.
+/// Implements WidgetViewModelBase using CommunityToolkit.Mvvm (Phase 0.5 directive).
+/// Demonstrates source-generated settings persistence and has zero WPF UI dependencies.
 /// </summary>
-public class StubWidgetViewModel : IWidgetViewModel
+public partial class StubWidgetViewModel : WidgetViewModelBase
 {
-    public TileModel Model { get; }
+    [ObservableProperty]
+    private string _statusText = "Stub Widget";
 
-    public IReadOnlyList<WidgetSize> AllowedSizes { get; set; } = new List<WidgetSize>
+    public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new List<WidgetSize>
     {
         WidgetSize.Small,    // 1x1
         WidgetSize.Medium,   // 2x2
@@ -22,8 +25,27 @@ public class StubWidgetViewModel : IWidgetViewModel
         WidgetSize.Banner    // 8x2 (Full Track Width)
     };
 
-    public StubWidgetViewModel(TileModel model)
+    public StubWidgetViewModel(TileModel model) : base(model)
     {
-        Model = model;
+        LoadSettings(model.SettingsJson);
+    }
+
+    protected override void LoadSettings(string? settingsJson)
+    {
+        var settings = WidgetSerializer.Deserialize<StubWidgetSettings>(settingsJson);
+        if (settings != null && !string.IsNullOrWhiteSpace(settings.Note))
+        {
+            StatusText = settings.Note;
+        }
+    }
+
+    public override void SaveSettings()
+    {
+        var settings = new StubWidgetSettings
+        {
+            Note = StatusText
+        };
+        Model.SettingsJson = WidgetSerializer.Serialize(settings);
     }
 }
+

@@ -156,7 +156,7 @@ public class TileModel : INotifyPropertyChanged
         {
             if (TileType == TileType.Widget)
             {
-                return _widgetViewModel ?? (_stubWidgetViewModel ??= new MetroHub.Widgets.Catalog.Stub.StubWidgetViewModel(this));
+                return _widgetViewModel ?? (_stubWidgetViewModel ??= MetroHub.Widgets.Registry.WidgetRegistry.CreateViewModelForTile(this));
             }
             return this;
         }
