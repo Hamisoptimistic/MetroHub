@@ -16,18 +16,26 @@ public static class GridPlacementService
 
     public static void UpdateMetrics(double viewportWidth)
     {
-        double available = Math.Max(320, viewportWidth - OriginX - BaseSideMargin);
-        double stride = (GroupColWidth * GridStep) + ColumnGap;
-        int numTracks = Math.Max(1, (int)Math.Floor((available + ColumnGap) / stride));
-        MaxCols = Math.Max(GroupColWidth, numTracks * GroupColWidth);
+        MaxCols = GetMaxCols(viewportWidth);
     }
 
     public static int GetMaxCols(double viewportWidth)
     {
         double available = Math.Max(320, viewportWidth - OriginX - BaseSideMargin);
         double stride = (GroupColWidth * GridStep) + ColumnGap;
-        int numTracks = Math.Max(1, (int)Math.Floor((available + ColumnGap) / stride));
-        return Math.Max(GroupColWidth, numTracks * GroupColWidth);
+        int fullTracks = (int)Math.Floor((available + ColumnGap) / stride);
+        fullTracks = Math.Max(1, fullTracks);
+
+        double usedByFullTracks = (fullTracks * GroupColWidth * GridStep) + ((fullTracks - 1) * ColumnGap);
+        double remainder = available - usedByFullTracks;
+
+        int extraCols = 0;
+        if (remainder > ColumnGap)
+        {
+            extraCols = Math.Clamp((int)Math.Floor((remainder - ColumnGap) / GridStep), 0, GroupColWidth - 1);
+        }
+
+        return Math.Max(GroupColWidth, (fullTracks * GroupColWidth) + extraCols);
     }
 
     public static int ColFromPixel(double x)
