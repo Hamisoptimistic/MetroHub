@@ -147,6 +147,8 @@ public partial class TileControl : UserControl
     {
         if (DataContext is TileModel tile && !string.IsNullOrWhiteSpace(tile.TargetPath))
         {
+            if (tile.TileType == TileType.Widget) return;
+
             lock (_controlLaunchLock)
             {
                 var now = DateTime.UtcNow;
@@ -228,6 +230,14 @@ public partial class TileControl : UserControl
     public void ApplyTileStyle(bool animate)
     {
         if (DataContext is not TileModel tile) return;
+
+        // In 0.1: Widgets never receive accent-fill treatment.
+        // Ensure RootBorder retains hit-testing with Transparent background so dragging and context menus work.
+        if (tile.TileType == TileType.Widget)
+        {
+            RootBorder.Background = Brushes.Transparent;
+            return;
+        }
 
         Color targetColor;
         if (string.Equals(tile.TileStyle, "Colourful", StringComparison.OrdinalIgnoreCase))
@@ -489,12 +499,7 @@ public partial class TileControl : UserControl
         RootBorder.BeginAnimation(FrameworkElement.HeightProperty, animH);
 
         // Content fade in transition
-        Grid? active = null;
-        if (newSpanX == 1 && newSpanY == 1) active = SmallContentGrid;
-        else if (newSpanX == 2 && newSpanY == 2) active = MediumContentGrid;
-        else if (newSpanX == 4 && newSpanY == 2) active = WideContentGrid;
-
-        if (active != null)
+        if (TileContentPresenter != null)
         {
             var fade = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(200))
             {
@@ -502,10 +507,10 @@ public partial class TileControl : UserControl
             };
             fade.Completed += (s, e) =>
             {
-                active.BeginAnimation(UIElement.OpacityProperty, null);
-                active.Opacity = 1.0;
+                TileContentPresenter.BeginAnimation(UIElement.OpacityProperty, null);
+                TileContentPresenter.Opacity = 1.0;
             };
-            active.BeginAnimation(UIElement.OpacityProperty, fade);
+            TileContentPresenter.BeginAnimation(UIElement.OpacityProperty, fade);
         }
     }
 

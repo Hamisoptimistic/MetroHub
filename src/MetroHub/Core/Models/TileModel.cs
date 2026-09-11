@@ -121,7 +121,45 @@ public class TileModel : INotifyPropertyChanged
     public TileType TileType
     {
         get => _tileType;
-        set => SetField(ref _tileType, value);
+        set
+        {
+            if (SetField(ref _tileType, value))
+            {
+                OnPropertyChanged(nameof(TileContent));
+            }
+        }
+    }
+
+    [JsonIgnore]
+    private object? _widgetViewModel;
+
+    [JsonIgnore]
+    public object? WidgetViewModel
+    {
+        get => _widgetViewModel;
+        set
+        {
+            if (SetField(ref _widgetViewModel, value))
+            {
+                OnPropertyChanged(nameof(TileContent));
+            }
+        }
+    }
+
+    [JsonIgnore]
+    private object? _stubWidgetViewModel;
+
+    [JsonIgnore]
+    public object? TileContent
+    {
+        get
+        {
+            if (TileType == TileType.Widget)
+            {
+                return _widgetViewModel ?? (_stubWidgetViewModel ??= new MetroHub.Widgets.Catalog.Stub.StubWidgetViewModel(this));
+            }
+            return this;
+        }
     }
 
     public int SpanX

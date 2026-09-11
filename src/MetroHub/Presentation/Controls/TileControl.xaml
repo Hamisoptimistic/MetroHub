@@ -5,6 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:conv="clr-namespace:MetroHub.Presentation.Converters"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:models="clr-namespace:MetroHub.Core.Models"
+             xmlns:stub="clr-namespace:MetroHub.Widgets.Catalog.Stub"
              mc:Ignorable="d"
              Margin="0"
              Cursor="Hand"
@@ -18,9 +20,106 @@
     <UserControl.Resources>
         <conv:TileSpanToPixelsConverter x:Key="SpanConverter" />
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- 1. App Tile DataTemplate (Exact original visual layout and ClearType hinting) -->
+        <DataTemplate DataType="{x:Type models:TileModel}">
+            <Grid SnapsToDevicePixels="True" 
+                  UseLayoutRounding="True"
+                  RenderOptions.ClearTypeHint="Enabled"
+                  RenderOptions.BitmapScalingMode="Fant">
+                  
+                <!-- 1x1 Small Tile Layout (56x56) -->
+                <Grid Visibility="{Binding IsSmall, Converter={StaticResource BoolToVis}}">
+                    <Image Source="{Binding IconPath}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Width="28" Height="28"
+                           SnapsToDevicePixels="True"
+                           UseLayoutRounding="True"
+                           RenderOptions.BitmapScalingMode="Fant" />
+                </Grid>
+
+                <!-- 2x2 Medium Tile Layout (120x120) -->
+                <Grid Visibility="{Binding IsMedium, Converter={StaticResource BoolToVis}}">
+                    <Image Source="{Binding IconPath}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Width="44" Height="44"
+                           Margin="0,0,0,14"
+                           SnapsToDevicePixels="True"
+                           UseLayoutRounding="True"
+                           RenderOptions.BitmapScalingMode="Fant" />
+
+                    <!-- Label: Display-mode rendering with crisp pixel hinting -->
+                    <TextBlock Text="{Binding Title}"
+                               VerticalAlignment="Bottom"
+                               HorizontalAlignment="Left"
+                               Margin="8,0,8,6"
+                               FontSize="12"
+                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                               FontWeight="SemiBold"
+                               Foreground="#FFFFFF"
+                               SnapsToDevicePixels="True"
+                               UseLayoutRounding="True"
+                               TextOptions.TextFormattingMode="Display"
+                               TextOptions.TextRenderingMode="ClearType"
+                               TextOptions.TextHintingMode="Fixed"
+                               TextTrimming="CharacterEllipsis"
+                               TextWrapping="NoWrap"
+                               MaxWidth="104" />
+                </Grid>
+
+                <!-- 4x2 Wide Tile Layout (248x120) -->
+                <Grid Visibility="{Binding IsWide, Converter={StaticResource BoolToVis}}">
+                    <Image Source="{Binding IconPath}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Width="46" Height="46"
+                           Margin="0,0,0,14"
+                           SnapsToDevicePixels="True"
+                           UseLayoutRounding="True"
+                           RenderOptions.BitmapScalingMode="Fant" />
+
+                    <TextBlock Text="{Binding Title}"
+                               VerticalAlignment="Bottom"
+                               HorizontalAlignment="Left"
+                               Margin="8,0,8,6"
+                               FontSize="12"
+                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                               FontWeight="SemiBold"
+                               Foreground="#F5FFFFFF"
+                               SnapsToDevicePixels="True"
+                               UseLayoutRounding="True"
+                               TextOptions.TextFormattingMode="Display"
+                               TextOptions.TextRenderingMode="ClearType"
+                               TextTrimming="CharacterEllipsis"
+                               TextWrapping="NoWrap"
+                               MaxWidth="232" />
+                </Grid>
+            </Grid>
+        </DataTemplate>
+
+        <!-- 2. Stub Widget DataTemplate (Dark card, no accent fill) -->
+        <DataTemplate DataType="{x:Type stub:StubWidgetViewModel}">
+            <Border Background="#141414"
+                    BorderThickness="1"
+                    BorderBrush="#22FFFFFF"
+                    CornerRadius="2"
+                    SnapsToDevicePixels="True"
+                    UseLayoutRounding="True">
+                <TextBlock Text="Widget"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="#44FFFFFF"
+                           FontSize="11"
+                           FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                           SnapsToDevicePixels="True" />
+            </Border>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Border x:Name="RootBorder"
+            Background="Transparent"
             CornerRadius="2"
             Width="{Binding SpanX, Converter={StaticResource SpanConverter}}"
             Height="{Binding SpanY, Converter={StaticResource SpanConverter}}"
@@ -110,82 +209,11 @@
                 </Border.BorderBrush>
             </Border>
 
-            <!-- Content Area: ClearType enabled, no aggressive boundary clip -->
-            <Grid SnapsToDevicePixels="True" 
-                  UseLayoutRounding="True"
-                  RenderOptions.ClearTypeHint="Enabled"
-                  RenderOptions.BitmapScalingMode="Fant">
-                  
-                <!-- 1x1 Small Tile Layout (56x56) -->
-                <Grid x:Name="SmallContentGrid" Visibility="{Binding IsSmall, Converter={StaticResource BoolToVis}}">
-                    <Image Source="{Binding IconPath}"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Width="28" Height="28"
-                           SnapsToDevicePixels="True"
-                           UseLayoutRounding="True"
-                           RenderOptions.BitmapScalingMode="Fant" />
-                </Grid>
-
-                <!-- 2x2 Medium Tile Layout (120x120) -->
-                <Grid x:Name="MediumContentGrid" Visibility="{Binding IsMedium, Converter={StaticResource BoolToVis}}">
-                    <Image Source="{Binding IconPath}"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Width="44" Height="44"
-                           Margin="0,0,0,14"
-                           SnapsToDevicePixels="True"
-                           UseLayoutRounding="True"
-                           RenderOptions.BitmapScalingMode="Fant" />
-
-                    <!-- Label: Display-mode rendering with crisp pixel hinting -->
-                    <TextBlock Text="{Binding Title}"
-                               VerticalAlignment="Bottom"
-                               HorizontalAlignment="Left"
-                               Margin="8,0,8,6"
-                               FontSize="12"
-                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                               FontWeight="SemiBold"
-                               Foreground="#FFFFFF"
-                               SnapsToDevicePixels="True"
-                               UseLayoutRounding="True"
-                               TextOptions.TextFormattingMode="Display"
-                               TextOptions.TextRenderingMode="ClearType"
-                               TextOptions.TextHintingMode="Fixed"
-                               TextTrimming="CharacterEllipsis"
-                               TextWrapping="NoWrap"
-                               MaxWidth="104" />
-                </Grid>
-
-                <!-- 4x2 Wide Tile Layout (248x120) -->
-                <Grid x:Name="WideContentGrid" Visibility="{Binding IsWide, Converter={StaticResource BoolToVis}}">
-                    <Image Source="{Binding IconPath}"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Width="46" Height="46"
-                           Margin="0,0,0,14"
-                           SnapsToDevicePixels="True"
-                           UseLayoutRounding="True"
-                           RenderOptions.BitmapScalingMode="Fant" />
-
-                    <TextBlock Text="{Binding Title}"
-                               VerticalAlignment="Bottom"
-                               HorizontalAlignment="Left"
-                               Margin="8,0,8,6"
-                               FontSize="12"
-                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                               FontWeight="SemiBold"
-                               Foreground="#F5FFFFFF"
-                               SnapsToDevicePixels="True"
-                               UseLayoutRounding="True"
-                               TextOptions.TextFormattingMode="Display"
-                               TextOptions.TextRenderingMode="ClearType"
-                               TextTrimming="CharacterEllipsis"
-                               TextWrapping="NoWrap"
-                               MaxWidth="232" />
-                </Grid>
-            </Grid>
-
+            <!-- Content Area via ContentPresenter: resolved via DataType DataTemplates -->
+            <ContentPresenter x:Name="TileContentPresenter"
+                              Content="{Binding TileContent}"
+                              SnapsToDevicePixels="True"
+                              UseLayoutRounding="True" />
         </Grid>
     </Border>
 </UserControl>
