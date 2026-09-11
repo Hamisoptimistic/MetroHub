@@ -690,10 +690,61 @@ public partial class MainWindow : BorderlessFluentWindow
     public void PlayOpenAnimation()
     {
         _isDismissing = false;
+
+        var edge = NativeMethods.GetActiveMonitorTaskbarEdge();
+        double startX = 0.0;
+        double startY = 0.0;
+
+        switch (edge)
+        {
+            case NativeMethods.TaskbarEdge.Bottom:
+                startY = 36.0;
+                break;
+            case NativeMethods.TaskbarEdge.Top:
+                startY = -36.0;
+                break;
+            case NativeMethods.TaskbarEdge.Left:
+                startX = -36.0;
+                break;
+            case NativeMethods.TaskbarEdge.Right:
+                startX = 36.0;
+                break;
+        }
+
+        if (RootTranslate != null)
+        {
+            RootTranslate.X = startX;
+            RootTranslate.Y = startY;
+        }
+
         if (TryFindResource("OpenStoryboard") is Storyboard openStoryboard)
         {
             var sb = openStoryboard.Clone();
+
+            foreach (var child in sb.Children)
+            {
+                if (child is DoubleAnimationUsingKeyFrames kf)
+                {
+                    var prop = Storyboard.GetTargetProperty(kf)?.Path;
+                    if (prop?.EndsWith("Y", StringComparison.OrdinalIgnoreCase) == true && kf.KeyFrames.Count >= 2)
+                    {
+                        kf.KeyFrames[0].Value = startY;
+                        kf.KeyFrames[1].Value = 0.0;
+                    }
+                    else if (prop?.EndsWith("X", StringComparison.OrdinalIgnoreCase) == true && kf.KeyFrames.Count >= 2)
+                    {
+                        kf.KeyFrames[0].Value = startX;
+                        kf.KeyFrames[1].Value = 0.0;
+                    }
+                }
+            }
+
             sb.Begin(this);
+        }
+        else
+        {
+            if (RootGrid != null) RootGrid.Opacity = 1.0;
+            if (RootTranslate != null) { RootTranslate.X = 0.0; RootTranslate.Y = 0.0; }
         }
     }
 
@@ -706,10 +757,49 @@ public partial class MainWindow : BorderlessFluentWindow
             CancelActiveDrag();
         }
 
+        var edge = NativeMethods.GetActiveMonitorTaskbarEdge();
+        double endX = 0.0;
+        double endY = 0.0;
+
+        switch (edge)
+        {
+            case NativeMethods.TaskbarEdge.Bottom:
+                endY = 24.0;
+                break;
+            case NativeMethods.TaskbarEdge.Top:
+                endY = -24.0;
+                break;
+            case NativeMethods.TaskbarEdge.Left:
+                endX = -24.0;
+                break;
+            case NativeMethods.TaskbarEdge.Right:
+                endX = 24.0;
+                break;
+        }
+
         if (TryFindResource("ExitStoryboard") is Storyboard exitStoryboard)
         {
             _isDismissing = true;
             var sb = exitStoryboard.Clone();
+
+            foreach (var child in sb.Children)
+            {
+                if (child is DoubleAnimationUsingKeyFrames kf)
+                {
+                    var prop = Storyboard.GetTargetProperty(kf)?.Path;
+                    if (prop?.EndsWith("Y", StringComparison.OrdinalIgnoreCase) == true && kf.KeyFrames.Count >= 2)
+                    {
+                        kf.KeyFrames[0].Value = 0.0;
+                        kf.KeyFrames[1].Value = endY;
+                    }
+                    else if (prop?.EndsWith("X", StringComparison.OrdinalIgnoreCase) == true && kf.KeyFrames.Count >= 2)
+                    {
+                        kf.KeyFrames[0].Value = 0.0;
+                        kf.KeyFrames[1].Value = endX;
+                    }
+                }
+            }
+
             sb.Completed += (s, e) =>
             {
                 Hide();
@@ -717,13 +807,12 @@ public partial class MainWindow : BorderlessFluentWindow
                 _isFullyActivated = false;
                 Topmost = false;
 
-                // Reset back cleanly without bounce offsets
+                // Reset back cleanly
                 if (RootGrid != null) RootGrid.Opacity = 0.0;
-                if (RootTranslate != null) RootTranslate.Y = 20.0;
-                if (RootScale != null)
+                if (RootTranslate != null)
                 {
-                    RootScale.ScaleX = 0.985;
-                    RootScale.ScaleY = 0.985;
+                    RootTranslate.X = 0.0;
+                    RootTranslate.Y = 0.0;
                 }
 
                 NativeMethods.FlushMemory();
@@ -1266,7 +1355,10 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
             _isPotentialDrag = true;
             _isDragging = false;
-            _draggedControl.AnimatePressDown();
+            if (!(tile.TileType == TileType.Widget && tile.TargetPath == "calendar"))
+            {
+                _draggedControl.AnimatePressDown();
+            }
         }
         else
         {

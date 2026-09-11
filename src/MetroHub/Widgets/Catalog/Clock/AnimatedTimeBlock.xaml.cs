@@ -184,6 +184,13 @@ public partial class AnimatedTimeBlock : UserControl
         var currFade = new DoubleAnimation(0.0, 1.0, duration) { EasingFunction = easeOut };
         var currSlide = new DoubleAnimation(slide, 0.0, duration) { EasingFunction = easeOut };
 
+        // When previous fade completes, clear its text so it doesn't inflate element width
+        prevFade.Completed += (s, e) =>
+        {
+            PartPreviousText.Text = string.Empty;
+            PartPreviousText.Opacity = 0.0;
+        };
+
         PartPreviousText.BeginAnimation(UIElement.OpacityProperty, prevFade);
         PartPreviousTransform.BeginAnimation(TranslateTransform.YProperty, prevSlide);
 

@@ -140,7 +140,7 @@ public partial class ClockWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
         HoursString = Is24HourFormat ? now.ToString("HH") : now.ToString("%h");
         MinutesString = now.ToString("mm");
         TimeString = $"{HoursString}:{MinutesString}";
-        AmPmString = Is24HourFormat ? string.Empty : now.ToString("tt", CultureInfo.InvariantCulture).ToUpperInvariant();
+        AmPmString = string.Empty;
         FullDateString = now.ToString("dddd, d MMMM", CultureInfo.InvariantCulture);
         DayOfWeekString = now.ToString("dddd", CultureInfo.InvariantCulture);
     }

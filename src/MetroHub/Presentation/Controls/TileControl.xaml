@@ -9,6 +9,7 @@
              xmlns:widgets="clr-namespace:MetroHub.Widgets"
              xmlns:stub="clr-namespace:MetroHub.Widgets.Catalog.Stub"
              xmlns:clock="clr-namespace:MetroHub.Widgets.Catalog.Clock"
+             xmlns:calendar="clr-namespace:MetroHub.Widgets.Catalog.Calendar"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -142,6 +143,11 @@
         <!-- 3. Clock Widget DataTemplate (Phase 3 Native Widget: Isolated Component) -->
         <DataTemplate DataType="{x:Type clock:ClockWidgetViewModel}">
             <clock:ClockWidgetView />
+        </DataTemplate>
+
+        <!-- 4. Calendar Widget DataTemplate (Windows 10 Style Standalone Widget) -->
+        <DataTemplate DataType="{x:Type calendar:CalendarWidgetViewModel}">
+            <calendar:CalendarWidgetView />
         </DataTemplate>
     </UserControl.Resources>
 

@@ -20,40 +20,19 @@
 
     <widgets:WidgetCard Padding="8,4">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
-            <!-- 1. Wide 4x2 Layout: Time + AM/PM Centered (No Date) with Micro-Motion -->
+            <!-- 1. Wide 4x2 Layout: Time Centered (No AM/PM, No Date) with Micro-Motion -->
             <Grid Visibility="{Binding IsWideOnly, Converter={StaticResource BoolToVis}}"
                   VerticalAlignment="Center" HorizontalAlignment="Center">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <clock:AnimatedTimeBlock Text="{Binding HoursString}"
-                                             FontSize="68"
-                                             FontWeight="{Binding ClockFontWeight}"
-                                             FontFamily="{Binding ClockFontFamily}"
-                                             Foreground="#FFFFFF" />
-                    <TextBlock Text=":"
-                               FontSize="68"
-                               FontWeight="{Binding ClockFontWeight}"
-                               FontFamily="{Binding ClockFontFamily}"
-                               Foreground="#B0FFFFFF"
-                               Margin="1,-3,1,0"
-                               VerticalAlignment="Center"
-                               SnapsToDevicePixels="True"
-                               UseLayoutRounding="True" />
-                    <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
-                                             FontSize="68"
-                                             FontWeight="{Binding ClockFontWeight}"
-                                             FontFamily="{Binding ClockFontFamily}"
-                                             Foreground="#FFFFFF" />
-                    <clock:AnimatedTimeBlock Text="{Binding AmPmString}"
-                                             FontSize="18"
-                                             FontWeight="{Binding ClockFontWeight}"
-                                             FontFamily="{Binding ClockFontFamily}"
-                                             Foreground="#90FFFFFF"
-                                             Margin="6,12,0,0"
-                                             VerticalAlignment="Top" />
-                </StackPanel>
+                <clock:AnimatedTimeBlock Text="{Binding TimeString}"
+                                         FontSize="68"
+                                         FontWeight="{Binding ClockFontWeight}"
+                                         FontFamily="{Binding ClockFontFamily}"
+                                         Foreground="#FFFFFF"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center" />
             </Grid>
 
-            <!-- 2. Banner 8x2 Layout: Time + AM/PM on Left, Full Date on Right with Micro-Motion -->
+            <!-- 2. Banner 8x2 Layout: Time on Left, Full Date on Right with Micro-Motion -->
             <Grid Visibility="{Binding IsBanner, Converter={StaticResource BoolToVis}}"
                   VerticalAlignment="Center" Margin="16,0">
                 <Grid.ColumnDefinitions>
@@ -61,79 +40,38 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Time & AM/PM -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <clock:AnimatedTimeBlock Text="{Binding HoursString}"
-                                             FontSize="68"
-                                             FontWeight="{Binding ClockFontWeight}"
-                                             FontFamily="{Binding ClockFontFamily}"
-                                             Foreground="#FFFFFF" />
-                    <TextBlock Text=":"
-                               FontSize="68"
-                               FontWeight="{Binding ClockFontWeight}"
-                               FontFamily="{Binding ClockFontFamily}"
-                               Foreground="#B0FFFFFF"
-                               Margin="1,-3,1,0"
-                               VerticalAlignment="Center"
-                               SnapsToDevicePixels="True"
-                               UseLayoutRounding="True" />
-                    <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
-                                             FontSize="68"
-                                             FontWeight="{Binding ClockFontWeight}"
-                                             FontFamily="{Binding ClockFontFamily}"
-                                             Foreground="#FFFFFF" />
-                    <clock:AnimatedTimeBlock Text="{Binding AmPmString}"
-                                             FontSize="18"
-                                             FontWeight="{Binding ClockFontWeight}"
-                                             FontFamily="{Binding ClockFontFamily}"
-                                             Foreground="#90FFFFFF"
-                                             Margin="6,12,0,0"
-                                             VerticalAlignment="Top" />
-                </StackPanel>
+                <!-- Time -->
+                <clock:AnimatedTimeBlock Grid.Column="0"
+                                         Text="{Binding TimeString}"
+                                         FontSize="68"
+                                         FontWeight="{Binding ClockFontWeight}"
+                                         FontFamily="{Binding ClockFontFamily}"
+                                         Foreground="#FFFFFF"
+                                         VerticalAlignment="Center" />
 
                 <!-- Full Date (e.g. Friday, 11 September) -->
-                <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
-                    <clock:AnimatedTimeBlock Text="{Binding FullDateString}"
-                                             FontSize="22"
-                                             FontWeight="SemiBold"
-                                             FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                                             Foreground="#E0FFFFFF"
-                                             TextAlignment="Right" />
-                </StackPanel>
+                <clock:AnimatedTimeBlock Grid.Column="1"
+                                         Text="{Binding FullDateString}"
+                                         FontSize="22"
+                                         FontWeight="SemiBold"
+                                         FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                                         Foreground="#E0FFFFFF"
+                                         VerticalAlignment="Center"
+                                         HorizontalAlignment="Right"
+                                         TextAlignment="Right" />
             </Grid>
 
             <!-- 3. Hero 4x4 / 6x4 / 8x4 Layout: Massive Centered Typography with Micro-Motion -->
             <Grid Visibility="{Binding IsHero, Converter={StaticResource BoolToVis}}"
                   VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <clock:AnimatedTimeBlock Text="{Binding HoursString}"
-                                                 FontSize="84"
-                                                 FontWeight="{Binding ClockFontWeight}"
-                                                 FontFamily="{Binding ClockFontFamily}"
-                                                 Foreground="#FFFFFF" />
-                        <TextBlock Text=":"
-                                   FontSize="84"
-                                   FontWeight="{Binding ClockFontWeight}"
-                                   FontFamily="{Binding ClockFontFamily}"
-                                   Foreground="#B0FFFFFF"
-                                   Margin="2,-4,2,0"
-                                   VerticalAlignment="Center"
-                                   SnapsToDevicePixels="True"
-                                   UseLayoutRounding="True" />
-                        <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
-                                                 FontSize="84"
-                                                 FontWeight="{Binding ClockFontWeight}"
-                                                 FontFamily="{Binding ClockFontFamily}"
-                                                 Foreground="#FFFFFF" />
-                        <clock:AnimatedTimeBlock Text="{Binding AmPmString}"
-                                                 FontSize="22"
-                                                 FontWeight="{Binding ClockFontWeight}"
-                                                 FontFamily="{Binding ClockFontFamily}"
-                                                 Foreground="#90FFFFFF"
-                                                 Margin="8,16,0,0"
-                                                 VerticalAlignment="Top" />
-                    </StackPanel>
+                    <clock:AnimatedTimeBlock Text="{Binding TimeString}"
+                                             FontSize="84"
+                                             FontWeight="{Binding ClockFontWeight}"
+                                             FontFamily="{Binding ClockFontFamily}"
+                                             Foreground="#FFFFFF"
+                                             HorizontalAlignment="Center"
+                                             VerticalAlignment="Center" />
 
                     <!-- Full Date -->
                     <clock:AnimatedTimeBlock Text="{Binding FullDateString}"

@@ -33,82 +33,52 @@
         Drop="OnWindowDrop">
 
     <controls:BorderlessFluentWindow.Resources>
-        <!-- Clean Decelerating Entrance: Smooth Rise & Fade (No Bounce/Overshoot) -->
+        <!-- Windows 11 Fluent Decelerating Slide & Fade (Hardware-Accelerated 60+ FPS) -->
         <Storyboard x:Key="OpenStoryboard">
             <DoubleAnimation Storyboard.TargetName="RootGrid"
                              Storyboard.TargetProperty="Opacity"
                              From="0.0" To="1.0"
-                             Duration="0:0:0.18">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-
-            <DoubleAnimation Storyboard.TargetName="RootTranslate"
-                             Storyboard.TargetProperty="Y"
-                             From="20.0" To="0.0"
                              Duration="0:0:0.20">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut" />
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
 
-            <DoubleAnimation Storyboard.TargetName="RootScale"
-                             Storyboard.TargetProperty="ScaleX"
-                             From="0.985" To="1.0"
-                             Duration="0:0:0.20">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RootTranslate"
+                                           Storyboard.TargetProperty="Y">
+                <SplineDoubleKeyFrame KeyTime="0:0:0" Value="36.0" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.24" Value="0.0" KeySpline="0.1, 0.9, 0.2, 1.0" />
+            </DoubleAnimationUsingKeyFrames>
 
-            <DoubleAnimation Storyboard.TargetName="RootScale"
-                             Storyboard.TargetProperty="ScaleY"
-                             From="0.985" To="1.0"
-                             Duration="0:0:0.20">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RootTranslate"
+                                           Storyboard.TargetProperty="X">
+                <SplineDoubleKeyFrame KeyTime="0:0:0" Value="0.0" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.24" Value="0.0" KeySpline="0.1, 0.9, 0.2, 1.0" />
+            </DoubleAnimationUsingKeyFrames>
         </Storyboard>
 
-        <!-- Clean Snappy Exit: Smooth Downward Fade -->
+        <!-- Windows 11 Fluent Accelerating Slide & Fade Exit -->
         <Storyboard x:Key="ExitStoryboard">
             <DoubleAnimation Storyboard.TargetName="RootGrid"
                              Storyboard.TargetProperty="Opacity"
-                             To="0.0"
-                             Duration="0:0:0.11">
+                             From="1.0" To="0.0"
+                             Duration="0:0:0.14">
                 <DoubleAnimation.EasingFunction>
-                    <QuadraticEase EasingMode="EaseIn" />
+                    <CubicEase EasingMode="EaseIn" />
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
 
-            <DoubleAnimation Storyboard.TargetName="RootTranslate"
-                             Storyboard.TargetProperty="Y"
-                             To="12.0"
-                             Duration="0:0:0.11">
-                <DoubleAnimation.EasingFunction>
-                    <QuadraticEase EasingMode="EaseIn" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RootTranslate"
+                                           Storyboard.TargetProperty="Y">
+                <SplineDoubleKeyFrame KeyTime="0:0:0" Value="0.0" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.16" Value="24.0" KeySpline="0.7, 0.0, 1.0, 0.5" />
+            </DoubleAnimationUsingKeyFrames>
 
-            <DoubleAnimation Storyboard.TargetName="RootScale"
-                             Storyboard.TargetProperty="ScaleX"
-                             To="0.985"
-                             Duration="0:0:0.11">
-                <DoubleAnimation.EasingFunction>
-                    <QuadraticEase EasingMode="EaseIn" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-
-            <DoubleAnimation Storyboard.TargetName="RootScale"
-                             Storyboard.TargetProperty="ScaleY"
-                             To="0.985"
-                             Duration="0:0:0.11">
-                <DoubleAnimation.EasingFunction>
-                    <QuadraticEase EasingMode="EaseIn" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RootTranslate"
+                                           Storyboard.TargetProperty="X">
+                <SplineDoubleKeyFrame KeyTime="0:0:0" Value="0.0" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.16" Value="0.0" KeySpline="0.7, 0.0, 1.0, 0.5" />
+            </DoubleAnimationUsingKeyFrames>
         </Storyboard>
     </controls:BorderlessFluentWindow.Resources>
 
@@ -124,11 +94,8 @@
           PreviewMouseLeftButtonUp="OnCanvasPreviewMouseUp"
           MouseLeave="OnCanvasMouseLeave">
        <Grid.RenderTransform>
-            <TransformGroup>
-                <ScaleTransform x:Name="RootScale" ScaleX="0.985" ScaleY="0.985" />
-                <TranslateTransform x:Name="RootTranslate" Y="20.0" />
-            </TransformGroup>
-        </Grid.RenderTransform>
+           <TranslateTransform x:Name="RootTranslate" X="0" Y="0" />
+       </Grid.RenderTransform>
         <Grid.ColumnDefinitions>
             <!-- Left Navigation Sidebar Rail (Fixed 48px, Full Height) -->
             <ColumnDefinition Width="48" />

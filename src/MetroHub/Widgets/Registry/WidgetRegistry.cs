@@ -56,6 +56,22 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Wide,
             Factory: model => new MetroHub.Widgets.Catalog.Clock.ClockWidgetViewModel(model)
         ));
+
+        // Register Calendar widget
+        Register(new WidgetDefinition(
+            Id: "calendar",
+            DisplayName: "Calendar",
+            Description: "Windows 10 style monthly calendar",
+            Icon: SymbolRegular.CalendarLtr24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Huge // 8x6
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Calendar.CalendarWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Calendar.CalendarWidgetView),
+            DefaultSize: WidgetSize.Huge,
+            Factory: model => new MetroHub.Widgets.Catalog.Calendar.CalendarWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)

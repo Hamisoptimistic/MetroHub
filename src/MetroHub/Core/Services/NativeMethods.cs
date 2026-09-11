@@ -195,6 +195,36 @@ public static class NativeMethods
         return SystemParameters.WorkArea;
     }
 
+    public enum TaskbarEdge
+    {
+        Bottom,
+        Top,
+        Left,
+        Right
+    }
+
+    public static TaskbarEdge GetActiveMonitorTaskbarEdge()
+    {
+        try
+        {
+            GetCursorPos(out POINT cursor);
+            IntPtr hMonitor = MonitorFromPoint(cursor, MONITOR_DEFAULTTONEAREST);
+            MONITORINFO mi = new MONITORINFO();
+            mi.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
+
+            if (GetMonitorInfo(hMonitor, ref mi))
+            {
+                if (mi.rcWork.Bottom < mi.rcMonitor.Bottom) return TaskbarEdge.Bottom;
+                if (mi.rcWork.Top > mi.rcMonitor.Top) return TaskbarEdge.Top;
+                if (mi.rcWork.Left > mi.rcMonitor.Left) return TaskbarEdge.Left;
+                if (mi.rcWork.Right < mi.rcMonitor.Right) return TaskbarEdge.Right;
+            }
+        }
+        catch { }
+
+        return TaskbarEdge.Bottom;
+    }
+
     #endregion
 
     #region Process Launching

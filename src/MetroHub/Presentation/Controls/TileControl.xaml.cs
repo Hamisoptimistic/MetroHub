@@ -184,6 +184,11 @@ public partial class TileControl : UserControl
 
     public void AnimatePressDown()
     {
+        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" })
+        {
+            return;
+        }
+
         var anim = new DoubleAnimation(TileScale.ScaleX, 0.95, TimeSpan.FromMilliseconds(50))
         {
             EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
@@ -454,6 +459,25 @@ public partial class TileControl : UserControl
                 TileContextMenu.Items.Insert(2, fontItem);
                 TileContextMenu.Items.Insert(3, clockDivider);
             }
+            else if (tile.TileContent is Widgets.Catalog.Calendar.CalendarWidgetViewModel calVm)
+            {
+                var todayItem = new MenuItem
+                {
+                    Header = "Go to Today",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.CalendarToday24,
+                        FontSize = 20
+                    }
+                };
+                todayItem.Click += (s, ev) => calVm.ResetToToday();
+
+                var calDivider = new Separator { Tag = "WidgetCustomMenu" };
+
+                TileContextMenu.Items.Insert(0, todayItem);
+                TileContextMenu.Items.Insert(1, calDivider);
+            }
         }
         else
         {
@@ -472,6 +496,11 @@ public partial class TileControl : UserControl
         // Phase 0.3: If tile is a widget and declares allowed sizes via IWidgetViewModel, dynamically populate from them:
         if (tile.TileType == TileType.Widget && tile.TileContent is IWidgetViewModel widgetVm && widgetVm.AllowedSizes?.Count > 0)
         {
+            if (widgetVm.AllowedSizes.Count <= 1)
+            {
+                ResizeMenuItem.Visibility = Visibility.Collapsed;
+                return;
+            }
             foreach (var size in widgetVm.AllowedSizes)
             {
                 var item = new MenuItem
