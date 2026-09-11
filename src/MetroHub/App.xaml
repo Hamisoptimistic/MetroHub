@@ -8,6 +8,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <ui:ThemesDictionary Theme="Dark" />
                 <ui:ControlsDictionary />
+                <ResourceDictionary Source="/Widgets/WidgetStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <!-- Universal Fluent ScrollBar: 100% Transparent Track (No grey background gutter ever), Translucent White Thumb -->

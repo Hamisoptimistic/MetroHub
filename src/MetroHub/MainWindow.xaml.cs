@@ -1557,7 +1557,22 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             }
             else
             {
-                var (wrapCol, wrapRow) = FindGroupWrapPosition(_hoveredTargetGroup, _draggedTile, rawAnchorCol, rawAnchorRow);
+                var allMembers = Tiles.Where(t => t.Group == _hoveredTargetGroup.Id).ToList();
+                int gMaxR = allMembers.Count > 0 ? allMembers.Max(t => t.Row + t.SpanY) : _hoveredTargetGroup.Row + 1;
+                double memberMaxY = allMembers.Count > 0 ? allMembers.Max(t => t.Y + t.HeightPixels) : _hoveredTargetGroup.Y + 60;
+                if (_hoveredTargetGroup.PlateHeight > 0)
+                {
+                    memberMaxY = Math.Max(memberMaxY, _hoveredTargetGroup.PlateY + _hoveredTargetGroup.PlateHeight);
+                }
+
+                int queryRow = rawAnchorRow;
+                int mouseRow = GridPlacementService.RowFromPixel(canvasMouse.Y);
+                if (canvasMouse.Y >= memberMaxY - 12 || mouseRow >= gMaxR)
+                {
+                    queryRow = Math.Max(queryRow, gMaxR);
+                }
+
+                var (wrapCol, wrapRow) = FindGroupWrapPosition(_hoveredTargetGroup, _draggedTile, rawAnchorCol, queryRow);
                 double wrapX = GridPlacementService.PixelXFromCol(wrapCol);
                 double wrapY = GridPlacementService.PixelYFromRow(wrapRow);
 
@@ -1788,6 +1803,25 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                     {
                         int dropCol = GridPlacementService.ColFromPixel(_draggedTile.X);
                         int dropRow = GridPlacementService.RowFromPixel(_draggedTile.Y);
+
+                        var members = Tiles.Where(t => t.Group == targetGroup.Id).ToList();
+                        int gMaxR = members.Count > 0 ? members.Max(t => t.Row + t.SpanY) : targetGroup.Row + 1;
+                        double memberMaxY = members.Count > 0 ? members.Max(t => t.Y + t.HeightPixels) : targetGroup.Y + 60;
+                        if (targetGroup.PlateHeight > 0)
+                        {
+                            memberMaxY = Math.Max(memberMaxY, targetGroup.PlateY + targetGroup.PlateHeight);
+                        }
+
+                        Point dropMouse = e.GetPosition(MainCanvasGrid);
+                        int mouseRow = GridPlacementService.RowFromPixel(dropMouse.Y);
+                        if (dropMouse.Y >= memberMaxY - 12 || mouseRow >= gMaxR)
+                        {
+                            dropRow = Math.Max(dropRow, gMaxR);
+                        }
+
+                        var (finalCol, finalRow) = FindGroupWrapPosition(targetGroup, _draggedTile, dropCol, dropRow);
+                        dropCol = finalCol;
+                        dropRow = finalRow;
 
                         bool isSameGroup = _draggedTile.Group == targetGroup.Id;
 
@@ -2837,10 +2871,19 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             if (mouseCol < gMinC || mouseCol >= gMaxC) continue;
 
             // 2. Vertical row and gap guard:
-            // Mouse MUST be within the group's vertical boundary [gMinR, effectiveMaxRow - 1].
-            // For groups with tiles, row gMaxR is the 1x1 bottom gap buffer, and gMaxR + 1 is canvas below.
-            // For empty groups, rows gMinR (header) and gMinR + 1 (initial drop slot) are valid.
-            int effectiveMaxRow = allMembers.Count > 0 ? gMaxR : group.Row + 2;
+            // For locked groups, strictly bound to member tiles [gMinR, gMaxR - 1] (or group.Row + 2 if empty).
+            // For unlocked groups, allow hover detection down into the append zone (gMaxR + tileSpanY) so the tint
+            // can smoothly expand vertically to accommodate new rows, while preserving exact horizontal and top sensitivity.
+            int tileSpanY = _draggedTile != null
+                ? _draggedTile.SpanY
+                : Math.Max(1, _clusterRelGridBounds.MaxRelRow - _clusterRelGridBounds.MinRelRow + 1);
+            double tileHeight = _draggedTile != null
+                ? _draggedTile.HeightPixels
+                : Math.Max(60, _clusterRelBounds.MaxRelY - _clusterRelBounds.MinRelY);
+
+            int effectiveMaxRow = group.IsLocked
+                ? (allMembers.Count > 0 ? gMaxR : group.Row + 2)
+                : (allMembers.Count > 0 ? (gMaxR + tileSpanY + 1) : (group.Row + 1 + tileSpanY + 1));
             if (mouseRow < gMinR || mouseRow >= effectiveMaxRow) continue;
 
             // 3. Pixel-exact boundary check:
@@ -2852,8 +2895,12 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 memberMaxY = Math.Max(memberMaxY, group.PlateY + group.PlateHeight);
             }
 
-            // Exactly bounded to group interior - zero outward pad into gaps, adjacent columns, or canvas below
-            Rect groupDetectRect = new Rect(minX, minY, blockWidth, Math.Max(60, memberMaxY - minY));
+            double detectMaxY = group.IsLocked
+                ? memberMaxY
+                : (allMembers.Count > 0 ? (memberMaxY + tileHeight) : (group.Y + 60 + tileHeight));
+
+            // Bounded to group interior and append area - zero outward pad into adjacent column tracks
+            Rect groupDetectRect = new Rect(minX, minY, blockWidth, Math.Max(60, detectMaxY - minY));
 
             if (groupDetectRect.Contains(mousePos))
             {
@@ -2870,7 +2917,12 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                     {
                         int rawCol = GridPlacementService.ColFromPixel(anchorX);
                         int rawRow = GridPlacementService.RowFromPixel(anchorY);
-                        var (wrapCol, wrapRow) = FindGroupWrapPosition(group, _draggedTile, rawCol, rawRow);
+                        int queryRow = rawRow;
+                        if (mousePos.Y >= memberMaxY - 12 || mouseRow >= gMaxR)
+                        {
+                            queryRow = Math.Max(queryRow, gMaxR);
+                        }
+                        var (wrapCol, wrapRow) = FindGroupWrapPosition(group, _draggedTile, rawCol, queryRow);
                         minCol = Math.Min(minCol, wrapCol);
                         maxCol = Math.Max(maxCol, wrapCol + _draggedTile.SpanX);
                         minRow = Math.Min(minRow, wrapRow);

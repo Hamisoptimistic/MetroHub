@@ -6,6 +6,7 @@
              xmlns:conv="clr-namespace:MetroHub.Presentation.Converters"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:models="clr-namespace:MetroHub.Core.Models"
+             xmlns:widgets="clr-namespace:MetroHub.Widgets"
              xmlns:stub="clr-namespace:MetroHub.Widgets.Catalog.Stub"
              mc:Ignorable="d"
              Margin="0"
@@ -99,22 +100,19 @@
             </Grid>
         </DataTemplate>
 
-        <!-- 2. Stub Widget DataTemplate (Dark card, no accent fill) -->
+        <!-- 2. Stub Widget DataTemplate (Wraps interior in shared WidgetCard shell - Phase 0.2) -->
         <DataTemplate DataType="{x:Type stub:StubWidgetViewModel}">
-            <Border Background="#141414"
-                    BorderThickness="1"
-                    BorderBrush="#22FFFFFF"
-                    CornerRadius="2"
-                    SnapsToDevicePixels="True"
-                    UseLayoutRounding="True">
-                <TextBlock Text="Widget"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Foreground="#44FFFFFF"
-                           FontSize="11"
-                           FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                           SnapsToDevicePixels="True" />
-            </Border>
+            <widgets:WidgetCard>
+                <Grid>
+                    <TextBlock Text="Widget"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Foreground="#44FFFFFF"
+                               FontSize="11"
+                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                               SnapsToDevicePixels="True" />
+                </Grid>
+            </widgets:WidgetCard>
         </DataTemplate>
     </UserControl.Resources>
 
