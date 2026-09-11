@@ -218,6 +218,7 @@
         <!-- Main Open Tile Canvas: Free placement drag and drop anywhere -->
         <ScrollViewer Grid.Row="1"
                       x:Name="ContentScrollViewer"
+                      controls:AutoHideScrollBehavior.IsEnabled="True"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Background="Transparent"

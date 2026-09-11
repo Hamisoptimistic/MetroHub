@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
              mc:Ignorable="d" 
              Width="320"
              HorizontalAlignment="Left"
@@ -156,80 +157,6 @@
             </Setter>
         </Style>
 
-        <!-- Minimalist Fluent ScrollBar & ScrollViewer: No ugly grey box, transparent track -->
-        <Style x:Key="FluentScrollThumbStyle" TargetType="{x:Type Thumb}">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="IsTabStop" Value="False" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type Thumb}">
-                        <Border x:Name="ThumbBorder"
-                                Background="#35FFFFFF"
-                                CornerRadius="2"
-                                Margin="0,2,2,2"
-                                SnapsToDevicePixels="True" />
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ThumbBorder" Property="Background" Value="#75FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsDragging" Value="True">
-                                <Setter TargetName="ThumbBorder" Property="Background" Value="#A0FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="MinimalScrollBarStyle" TargetType="{x:Type ScrollBar}">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Width" Value="6" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ScrollBar}">
-                        <Track x:Name="PART_Track" IsDirectionReversed="True">
-                            <Track.Thumb>
-                                <Thumb Style="{StaticResource FluentScrollThumbStyle}" />
-                            </Track.Thumb>
-                        </Track>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="MinimalScrollViewerStyle" TargetType="{x:Type ScrollViewer}">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
-            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
-            <Setter Property="CanContentScroll" Value="True" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ScrollViewer}">
-                        <Grid Background="Transparent">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <ScrollContentPresenter Grid.ColumnSpan="2" />
-                            <ScrollBar x:Name="PART_VerticalScrollBar"
-                                       Grid.Column="1"
-                                       Orientation="Vertical"
-                                       Style="{StaticResource MinimalScrollBarStyle}"
-                                       Value="{TemplateBinding VerticalOffset}"
-                                       Maximum="{TemplateBinding ScrollableHeight}"
-                                       ViewportSize="{TemplateBinding ViewportHeight}"
-                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
-                                       HorizontalAlignment="Right" />
-                        </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -338,8 +265,12 @@
             <!-- Mode 1: Alphabetical Grouped Apps List with Breathing Room -->
             <ScrollViewer Grid.Row="2"
                           x:Name="GroupedScrollViewer"
-                          Style="{StaticResource MinimalScrollViewerStyle}"
-                          Padding="0,2,0,16">
+                          controls:AutoHideScrollBehavior.IsEnabled="True"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Focusable="False"
+                          Background="Transparent"
+                          Padding="0,2,14,16">
                 <ItemsControl x:Name="GroupedItemsControl">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -422,9 +353,13 @@
             <!-- Mode 2: Search Results Flat List with Breathing Room -->
             <ScrollViewer Grid.Row="2"
                           x:Name="SearchResultsScrollViewer"
+                          controls:AutoHideScrollBehavior.IsEnabled="True"
                           Visibility="Collapsed"
-                          Style="{StaticResource MinimalScrollViewerStyle}"
-                          Padding="0,2,0,16">
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Focusable="False"
+                          Background="Transparent"
+                          Padding="0,2,14,16">
                 <StackPanel>
                     <TextBlock x:Name="NoResultsTextBlock"
                                Text="No apps found"
