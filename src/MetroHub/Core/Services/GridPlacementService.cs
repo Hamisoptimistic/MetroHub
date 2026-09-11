@@ -13,39 +13,82 @@ public static class GridPlacementService
     public const double ColumnGap = 32.0;
 
     public static int MaxCols { get; set; } = 28;
+    public static HashSet<int> ActiveGroupTracks { get; } = new();
 
-    public static void UpdateMetrics(double viewportWidth)
+    public static void SetActiveGroups(IEnumerable<TileGroupModel>? groups)
     {
+        ActiveGroupTracks.Clear();
+        if (groups != null)
+        {
+            foreach (var g in groups)
+            {
+                ActiveGroupTracks.Add(g.Col / GroupColWidth);
+            }
+        }
+    }
+
+    public static void UpdateMetrics(double viewportWidth, IEnumerable<TileGroupModel>? groups = null)
+    {
+        if (groups != null)
+        {
+            SetActiveGroups(groups);
+        }
         MaxCols = GetMaxCols(viewportWidth);
+    }
+
+    public static bool HasGutterAfterTrack(int trackIndex)
+    {
+        if (ActiveGroupTracks.Count == 0) return false;
+        return ActiveGroupTracks.Contains(trackIndex) || ActiveGroupTracks.Contains(trackIndex + 1);
+    }
+
+    public static int GetGutterCount(int col)
+    {
+        if (ActiveGroupTracks.Count == 0 || col <= 0) return 0;
+        int track = col / GroupColWidth;
+        int count = 0;
+        for (int t = 0; t < track; t++)
+        {
+            if (HasGutterAfterTrack(t))
+            {
+                count++;
+            }
+        }
+        return count;
     }
 
     public static int GetMaxCols(double viewportWidth)
     {
-        double available = Math.Max(320, viewportWidth - OriginX - BaseSideMargin);
-        double stride = (GroupColWidth * GridStep) + ColumnGap;
-        int fullTracks = (int)Math.Floor((available + ColumnGap) / stride);
-        fullTracks = Math.Max(1, fullTracks);
-
-        double usedByFullTracks = (fullTracks * GroupColWidth * GridStep) + ((fullTracks - 1) * ColumnGap);
-        double remainder = available - usedByFullTracks;
-
-        int extraCols = 0;
-        if (remainder > ColumnGap)
+        double available = Math.Max(320, viewportWidth - BaseSideMargin);
+        int c = 0;
+        while (PixelXFromCol(c) + GridStep - Gap <= available && c < 120)
         {
-            extraCols = Math.Clamp((int)Math.Floor((remainder - ColumnGap) / GridStep), 0, GroupColWidth - 1);
+            c++;
         }
-
-        return Math.Max(GroupColWidth, (fullTracks * GroupColWidth) + extraCols);
+        return Math.Max(GroupColWidth, c);
     }
 
     public static int ColFromPixel(double x)
     {
-        double relX = Math.Max(0, x - OriginX);
-        double stride = (GroupColWidth * GridStep) + ColumnGap;
-        int colIdx = (int)Math.Max(0, Math.Floor((relX + (ColumnGap / 2.0)) / stride));
-        double intraX = relX - (colIdx * stride);
-        int localCol = Math.Clamp((int)Math.Round(intraX / GridStep), 0, GroupColWidth - 1);
-        return (colIdx * GroupColWidth) + localCol;
+        if (x <= OriginX) return 0;
+        int bestCol = 0;
+        double bestDist = double.MaxValue;
+        int limit = Math.Max(MaxCols, 40);
+        for (int c = 0; c <= limit; c++)
+        {
+            double colX = PixelXFromCol(c);
+            double dist = Math.Abs(x - colX);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                bestCol = c;
+            }
+            else if (colX > x + GridStep)
+            {
+                break;
+            }
+        }
+        return bestCol;
     }
 
     public static int RowFromPixel(double y)
@@ -56,9 +99,7 @@ public static class GridPlacementService
     public static double PixelXFromCol(int col)
     {
         if (col <= 0) return OriginX;
-        int colIdx = col / GroupColWidth;
-        int localCol = col % GroupColWidth;
-        return OriginX + (colIdx * ((GroupColWidth * GridStep) + ColumnGap)) + (localCol * GridStep);
+        return OriginX + (col * GridStep) + (GetGutterCount(col) * ColumnGap);
     }
 
     public static double PixelYFromRow(int row)
@@ -70,30 +111,42 @@ public static class GridPlacementService
     {
         if (col < 0) return 0;
         spanX = Math.Max(1, spanX);
-        int trackStart = (col / GroupColWidth) * GroupColWidth;
-        int trackMax = trackStart + GroupColWidth - spanX;
+        col = Math.Min(col, Math.Max(0, maxCols - spanX));
 
-        // If the tile fits cleanly within this track at the given column and stays inside maxCols
-        if (col <= trackMax && col + spanX <= maxCols)
+        // If this tile placement does not cross any 32px group gutter, it is completely valid!
+        if (GetGutterCount(col + spanX - 1) == GetGutterCount(col))
         {
             return col;
         }
 
-        // If it would straddle across this track boundary:
-        int nextTrack = trackStart + GroupColWidth;
-        if (nextTrack + spanX <= maxCols)
+        // If it crosses a 32px group gutter boundary, snap cleanly to the left or right of the gutter
+        int gutterCol = -1;
+        for (int c = col; c < col + spanX; c++)
         {
-            double curMaxX = PixelXFromCol(Math.Max(trackStart, trackMax));
-            double nextTrackX = PixelXFromCol(nextTrack);
-            double midpoint = (curMaxX + nextTrackX) / 2.0;
-
-            if (pixelX >= midpoint)
+            if (GetGutterCount(c) > GetGutterCount(col))
             {
-                return nextTrack;
+                gutterCol = c;
+                break;
             }
         }
 
-        return Math.Max(0, Math.Min(maxCols - spanX, Math.Max(trackStart, trackMax)));
+        if (gutterCol > 0)
+        {
+            int leftSnap = gutterCol - spanX;
+            int rightSnap = gutterCol;
+
+            double leftX = PixelXFromCol(Math.Max(0, leftSnap));
+            double rightX = PixelXFromCol(rightSnap);
+            double midpoint = (leftX + rightX) / 2.0;
+
+            if (rightSnap + spanX <= maxCols && pixelX >= midpoint)
+            {
+                return rightSnap;
+            }
+            return Math.Max(0, leftSnap);
+        }
+
+        return col;
     }
 
     public static int GetCol(TileModel tile) => (tile.X > 0 || tile.Col == 0) ? ColFromPixel(tile.X) : tile.Col;
@@ -120,9 +173,8 @@ public static class GridPlacementService
         if (col < 0 || row < 1) return false;
         if (col + spanX > maxCols) return false;
 
-        // A tile cannot straddle across 8-column track boundaries (due to the 32px ColumnGap)
-        int trackColStart = (col / GroupColWidth) * GroupColWidth;
-        if (col + spanX > trackColStart + GroupColWidth)
+        // A tile cannot straddle across an active 32px group gutter boundary
+        if (GetGutterCount(col + spanX - 1) != GetGutterCount(col))
         {
             return false;
         }
@@ -287,20 +339,40 @@ public static class GridPlacementService
         }
         else
         {
-            int trackCol = (col / GroupColWidth) * GroupColWidth;
-            effectiveMinCol = trackCol;
-            effectiveMaxCol = Math.Min(maxCols, trackCol + GroupColWidth);
+            int leftBound = 0;
+            int rightBound = maxCols;
+            int curGutter = GetGutterCount(col);
+
+            for (int c = col; c >= 0; c--)
+            {
+                if (GetGutterCount(c) < curGutter)
+                {
+                    leftBound = c + 1;
+                    break;
+                }
+            }
+            for (int c = col; c <= maxCols; c++)
+            {
+                if (GetGutterCount(c) > curGutter)
+                {
+                    rightBound = c;
+                    break;
+                }
+            }
+
+            effectiveMinCol = leftBound;
+            effectiveMaxCol = rightBound;
             scopeTiles = allTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
         }
 
-        // If this track cannot accommodate the new width (e.g. narrow edge track), find nearest slot
+        // If this zone cannot accommodate the new width, find nearest slot
         if (effectiveMaxCol - effectiveMinCol < newSpanX)
         {
             var (targetC, targetR) = FindNearestAvailableSlot(col, row, newSpanX, newSpanY, allTiles, resizingTile, maxCols, groups);
             col = targetC;
             row = targetR;
-            effectiveMinCol = (col / GroupColWidth) * GroupColWidth;
-            effectiveMaxCol = Math.Min(maxCols, effectiveMinCol + GroupColWidth);
+            effectiveMinCol = 0;
+            effectiveMaxCol = maxCols;
         }
 
         // If expanding horizontally pushes beyond the allowed column boundary, clamp/shift left
@@ -474,10 +546,9 @@ public static class GridPlacementService
             int newCol = shiftedCols[current];
             int r = GetRow(current);
 
-            int trackStart = (newCol / GroupColWidth) * GroupColWidth;
-            if (newCol + current.SpanX > maxCols || newCol + current.SpanX > trackStart + GroupColWidth)
+            if (newCol + current.SpanX > maxCols || GetGutterCount(newCol + current.SpanX - 1) != GetGutterCount(newCol))
             {
-                return false; // Exceeds right edge of grid or track boundary
+                return false; // Exceeds right edge of grid or crosses a group gutter
             }
 
             foreach (var other in allTiles)
@@ -514,8 +585,7 @@ public static class GridPlacementService
 
         foreach (var kvp in shiftedCols)
         {
-            int tStart = (kvp.Value / GroupColWidth) * GroupColWidth;
-            if (!CanDisplace(kvp.Key) || kvp.Value + kvp.Key.SpanX > maxCols || kvp.Value + kvp.Key.SpanX > tStart + GroupColWidth)
+            if (!CanDisplace(kvp.Key) || kvp.Value + kvp.Key.SpanX > maxCols || GetGutterCount(kvp.Value + kvp.Key.SpanX - 1) != GetGutterCount(kvp.Value))
             {
                 return false;
             }

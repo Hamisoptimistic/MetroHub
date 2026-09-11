@@ -140,6 +140,7 @@ public partial class MainWindow : BorderlessFluentWindow
         Settings = StorageService.LoadSettings();
         Tiles = StorageService.LoadLayout();
         Groups = StorageService.LoadGroups();
+        GridPlacementService.SetActiveGroups(Groups);
 
         // Auto-migrate: ensure Row 0 is the dedicated header zone.
         // Shift loose tiles that start at Row 0 down to Row >= 1, preserving relative spacing.
@@ -214,7 +215,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
         UpdateScaleFactor(viewportWidth);
 
-        GridPlacementService.UpdateMetrics(viewportWidth);
+        GridPlacementService.UpdateMetrics(viewportWidth, Groups);
         double margin = GridPlacementService.OriginX;
 
         if (FooterGrid != null)
