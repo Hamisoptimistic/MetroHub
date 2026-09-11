@@ -717,14 +717,7 @@ namespace MetroHub.Presentation.Controls
                     execPath = "mspaint.exe";
                 }
 
-                var psi = new ProcessStartInfo
-                {
-                    FileName = execPath,
-                    Arguments = item.Arguments ?? string.Empty,
-                    Verb = "runas",
-                    UseShellExecute = true
-                };
-                Process.Start(psi);
+                NativeMethods.LaunchTarget(execPath, item.Arguments, runAsAdmin: true);
 
                 // Close drawer and hide MetroHub on successful launch so elevated prompt and window come forward
                 Close();

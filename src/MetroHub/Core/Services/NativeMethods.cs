@@ -230,6 +230,12 @@ public static class NativeMethods
                 UseShellExecute = true
             };
 
+            string? workDir = ResolveWorkingDirectory(path);
+            if (!string.IsNullOrWhiteSpace(workDir) && Directory.Exists(workDir))
+            {
+                psi.WorkingDirectory = workDir;
+            }
+
             if (path.StartsWith("shell:", StringComparison.OrdinalIgnoreCase))
             {
                 psi.FileName = "explorer.exe";
@@ -248,6 +254,72 @@ public static class NativeMethods
         {
             return false;
         }
+    }
+
+    public static string? ResolveWorkingDirectory(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return null;
+
+        try
+        {
+            string kf = IconExtractorService.ResolveKnownFolderGuid(path);
+            if (File.Exists(kf) || Directory.Exists(kf)) path = kf;
+
+            if (path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) && File.Exists(path))
+            {
+                Type? shellType = Type.GetTypeFromProgID("WScript.Shell");
+                if (shellType != null)
+                {
+                    dynamic? shell = Activator.CreateInstance(shellType);
+                    if (shell != null)
+                    {
+                        try
+                        {
+                            dynamic shortcut = shell.CreateShortcut(path);
+                            string workDir = shortcut.WorkingDirectory?.ToString() ?? string.Empty;
+                            string target = shortcut.TargetPath?.ToString() ?? string.Empty;
+                            Marshal.FinalReleaseComObject(shortcut);
+
+                            if (!string.IsNullOrWhiteSpace(workDir) && Directory.Exists(workDir))
+                            {
+                                return workDir;
+                            }
+
+                            if (!string.IsNullOrWhiteSpace(target))
+                            {
+                                string resolvedTarget = IconExtractorService.ResolveKnownFolderGuid(target);
+                                if (File.Exists(resolvedTarget))
+                                {
+                                    return Path.GetDirectoryName(resolvedTarget);
+                                }
+                                if (File.Exists(target))
+                                {
+                                    return Path.GetDirectoryName(target);
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            Marshal.FinalReleaseComObject(shell);
+                        }
+                    }
+                }
+                return Path.GetDirectoryName(path);
+            }
+
+            if (File.Exists(path))
+            {
+                return Path.GetDirectoryName(path);
+            }
+
+            if (Directory.Exists(path))
+            {
+                return path;
+            }
+        }
+        catch { }
+
+        return null;
     }
 
     #endregion

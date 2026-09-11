@@ -4401,13 +4401,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
             if (!string.IsNullOrWhiteSpace(item.TargetPath))
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = item.TargetPath,
-                    Arguments = item.Arguments ?? string.Empty,
-                    UseShellExecute = true
-                };
-                Process.Start(psi);
+                NativeMethods.LaunchTarget(item.TargetPath, item.Arguments);
             }
         }
         catch (Exception ex)
