@@ -143,8 +143,8 @@
                                FontWeight="Bold"
                                Foreground="{Binding HeaderColor, TargetNullValue='#E8FFFFFF', FallbackValue='#E8FFFFFF'}"
                                VerticalAlignment="Center"
-                               TextOptions.TextFormattingMode="Display"
-                               TextOptions.TextRenderingMode="ClearType"
+                               TextOptions.TextFormattingMode="Ideal"
+                               TextOptions.TextRenderingMode="Auto"
                                TextTrimming="CharacterEllipsis"
                                MaxWidth="260"
                                MouseDown="OnTitleMouseDown" />
@@ -175,8 +175,8 @@
                          MinWidth="120"
                          MaxWidth="260"
                          VerticalAlignment="Center"
-                         TextOptions.TextFormattingMode="Display"
-                         TextOptions.TextRenderingMode="ClearType"
+                         TextOptions.TextFormattingMode="Ideal"
+                         TextOptions.TextRenderingMode="Auto"
                          KeyDown="OnEditKeyDown"
                          LostFocus="OnEditLostFocus">
                     <TextBox.Style>

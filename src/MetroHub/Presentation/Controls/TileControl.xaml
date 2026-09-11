@@ -16,9 +16,8 @@
              Focusable="False"
              SnapsToDevicePixels="True"
              UseLayoutRounding="True"
-             RenderOptions.ClearTypeHint="Enabled"
-             TextOptions.TextFormattingMode="Display"
-             TextOptions.TextRenderingMode="ClearType">
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="Auto">
 
     <UserControl.Resources>
         <conv:TileSpanToPixelsConverter x:Key="SpanConverter" />
@@ -29,7 +28,6 @@
         <DataTemplate DataType="{x:Type models:TileModel}">
             <Grid SnapsToDevicePixels="True" 
                   UseLayoutRounding="True"
-                  RenderOptions.ClearTypeHint="Enabled"
                   RenderOptions.BitmapScalingMode="Fant">
                   
                 <!-- 1x1 Small Tile Layout (56x56) -->
@@ -54,7 +52,7 @@
                            UseLayoutRounding="True"
                            RenderOptions.BitmapScalingMode="Fant" />
 
-                    <!-- Label: Display-mode rendering with crisp pixel hinting -->
+                    <!-- Label: DirectWrite Ideal typography rendering -->
                     <TextBlock Text="{Binding Title}"
                                VerticalAlignment="Bottom"
                                HorizontalAlignment="Left"
@@ -65,9 +63,8 @@
                                Foreground="#FFFFFF"
                                SnapsToDevicePixels="True"
                                UseLayoutRounding="True"
-                               TextOptions.TextFormattingMode="Display"
-                               TextOptions.TextRenderingMode="ClearType"
-                               TextOptions.TextHintingMode="Fixed"
+                               TextOptions.TextFormattingMode="Ideal"
+                               TextOptions.TextRenderingMode="Auto"
                                TextTrimming="CharacterEllipsis"
                                TextWrapping="NoWrap"
                                MaxWidth="104" />
@@ -94,8 +91,8 @@
                                Foreground="#F5FFFFFF"
                                SnapsToDevicePixels="True"
                                UseLayoutRounding="True"
-                               TextOptions.TextFormattingMode="Display"
-                               TextOptions.TextRenderingMode="ClearType"
+                               TextOptions.TextFormattingMode="Ideal"
+                               TextOptions.TextRenderingMode="Auto"
                                TextTrimming="CharacterEllipsis"
                                TextWrapping="NoWrap"
                                MaxWidth="232" />

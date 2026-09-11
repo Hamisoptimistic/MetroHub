@@ -1,0 +1,45 @@
+<UserControl x:Class="MetroHub.Widgets.Catalog.Clock.AnimatedTimeBlock"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d"
+             Focusable="False"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="Grayscale"
+             TextOptions.TextHintingMode="Animated"
+             ClipToBounds="False">
+    <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="False">
+        <!-- Previous Text Layer (slides up & fades out) -->
+        <TextBlock x:Name="PartPreviousText"
+                   Opacity="0"
+                   IsHitTestVisible="False"
+                   SnapsToDevicePixels="True"
+                   UseLayoutRounding="True"
+                   TextOptions.TextFormattingMode="Ideal"
+                   TextOptions.TextRenderingMode="Grayscale"
+                   TextOptions.TextHintingMode="Animated"
+                   Typography.NumeralAlignment="Tabular">
+            <TextBlock.RenderTransform>
+                <TranslateTransform x:Name="PartPreviousTransform" Y="0" />
+            </TextBlock.RenderTransform>
+        </TextBlock>
+
+        <!-- Current Text Layer (slides in from bottom & fades in) -->
+        <TextBlock x:Name="PartCurrentText"
+                   Opacity="1"
+                   IsHitTestVisible="False"
+                   SnapsToDevicePixels="True"
+                   UseLayoutRounding="True"
+                   TextOptions.TextFormattingMode="Ideal"
+                   TextOptions.TextRenderingMode="Grayscale"
+                   TextOptions.TextHintingMode="Animated"
+                   Typography.NumeralAlignment="Tabular">
+            <TextBlock.RenderTransform>
+                <TranslateTransform x:Name="PartCurrentTransform" Y="0" />
+            </TextBlock.RenderTransform>
+        </TextBlock>
+    </Grid>
+</UserControl>

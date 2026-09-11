@@ -110,14 +110,19 @@
                 </Style.Triggers>
             </Style>
 
+            <!-- Universal DirectWrite Typography Defaults: Crisp fractional vector metrics without color fringing -->
+            <Style TargetType="{x:Type TextBlock}">
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="Auto" />
+            </Style>
+
             <!-- Authentic Windows 11 Fluent ContextMenu Style with Integrated Responsive Scaling -->
             <Style TargetType="{x:Type ContextMenu}">
                 <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif" />
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="FontWeight" Value="Normal" />
-                <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
-                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
-                <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="Auto" />
                 <Setter Property="LayoutTransform">
                     <Setter.Value>
                         <ScaleTransform ScaleX="{Binding Source={x:Static local:MainWindow.Current}, Path=CurrentScale, FallbackValue=1.0}"
@@ -145,8 +150,7 @@
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     Background="{TemplateBinding Background}"
                                     SnapsToDevicePixels="True"
-                                    UseLayoutRounding="True"
-                                    RenderOptions.ClearTypeHint="Enabled">
+                                    UseLayoutRounding="True">
                                 <Border.RenderTransform>
                                     <TranslateTransform x:Name="MenuTranslate" Y="0" />
                                 </Border.RenderTransform>
@@ -193,9 +197,8 @@
                 <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif" />
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="FontWeight" Value="Normal" />
-                <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
-                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
-                <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="Auto" />
                 <Setter Property="SnapsToDevicePixels" Value="True" />
                 <Setter Property="UseLayoutRounding" Value="True" />
                 <Setter Property="MinHeight" Value="32" />

@@ -76,8 +76,8 @@
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif" />
             <Setter Property="FontWeight" Value="Normal" />
-            <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
-            <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+            <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+            <Setter Property="TextOptions.TextRenderingMode" Value="Auto" />
             <Setter Property="HasDropShadow" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>

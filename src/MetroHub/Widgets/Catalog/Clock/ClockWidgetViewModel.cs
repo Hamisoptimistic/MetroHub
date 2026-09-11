@@ -23,6 +23,12 @@ public partial class ClockWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     private DispatcherTimer? _timer;
 
     [ObservableProperty]
+    private string _hoursString = string.Empty;
+
+    [ObservableProperty]
+    private string _minutesString = string.Empty;
+
+    [ObservableProperty]
     private string _timeString = string.Empty;
 
     [ObservableProperty]
@@ -122,7 +128,9 @@ public partial class ClockWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     {
         var now = DateTime.Now;
 
-        TimeString = Is24HourFormat ? now.ToString("HH:mm") : now.ToString("h:mm");
+        HoursString = Is24HourFormat ? now.ToString("HH") : now.ToString("%h");
+        MinutesString = now.ToString("mm");
+        TimeString = $"{HoursString}:{MinutesString}";
         AmPmString = Is24HourFormat ? string.Empty : now.ToString("tt", CultureInfo.InvariantCulture).ToUpperInvariant();
         FullDateString = now.ToString("dddd, d MMMM", CultureInfo.InvariantCulture);
         DayOfWeekString = now.ToString("dddd", CultureInfo.InvariantCulture);

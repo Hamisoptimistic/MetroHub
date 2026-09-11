@@ -10,9 +10,9 @@
              Focusable="False"
              SnapsToDevicePixels="True"
              UseLayoutRounding="True"
-             RenderOptions.ClearTypeHint="Enabled"
-             TextOptions.TextFormattingMode="Display"
-             TextOptions.TextRenderingMode="ClearType">
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="Grayscale"
+             TextOptions.TextHintingMode="Animated">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -20,32 +20,40 @@
 
     <widgets:WidgetCard Padding="12">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
-            <!-- 1. Wide 4x2 Layout: Bold Time + AM/PM Centered (No Date) -->
+            <!-- 1. Wide 4x2 Layout: SemiBold Time + AM/PM Centered (No Date) with Micro-Motion -->
             <Grid Visibility="{Binding IsWideOnly, Converter={StaticResource BoolToVis}}"
                   VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding TimeString}"
+                    <clock:AnimatedTimeBlock Text="{Binding HoursString}"
+                                             FontSize="52"
+                                             FontWeight="SemiBold"
+                                             FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                                             Foreground="#FFFFFF" />
+                    <TextBlock Text=":"
                                FontSize="52"
-                               FontWeight="Bold"
-                               FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
-                               Foreground="#FFFFFF"
-                               SnapsToDevicePixels="True"
-                               UseLayoutRounding="True"
-                               TextOptions.TextFormattingMode="Display"
-                               TextOptions.TextRenderingMode="ClearType"
-                               Typography.NumeralAlignment="Tabular" />
-                    <TextBlock Text="{Binding AmPmString}"
-                               FontSize="15"
                                FontWeight="SemiBold"
-                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                               Foreground="#90FFFFFF"
-                               Margin="6,12,0,0"
-                               VerticalAlignment="Top"
-                               SnapsToDevicePixels="True" />
+                               FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                               Foreground="#B0FFFFFF"
+                               Margin="1,-2,1,0"
+                               VerticalAlignment="Center"
+                               SnapsToDevicePixels="True"
+                               UseLayoutRounding="True" />
+                    <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
+                                             FontSize="52"
+                                             FontWeight="SemiBold"
+                                             FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                                             Foreground="#FFFFFF" />
+                    <clock:AnimatedTimeBlock Text="{Binding AmPmString}"
+                                             FontSize="15"
+                                             FontWeight="SemiBold"
+                                             FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                                             Foreground="#90FFFFFF"
+                                             Margin="6,12,0,0"
+                                             VerticalAlignment="Top" />
                 </StackPanel>
             </Grid>
 
-            <!-- 2. Banner 8x2 Layout: Bold Time + AM/PM on Left, Full Date on Right -->
+            <!-- 2. Banner 8x2 Layout: SemiBold Time + AM/PM on Left, Full Date on Right with Micro-Motion -->
             <Grid Visibility="{Binding IsBanner, Converter={StaticResource BoolToVis}}"
                   VerticalAlignment="Center" Margin="24,0">
                 <Grid.ColumnDefinitions>
@@ -55,73 +63,86 @@
 
                 <!-- Time & AM/PM -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding TimeString}"
+                    <clock:AnimatedTimeBlock Text="{Binding HoursString}"
+                                             FontSize="48"
+                                             FontWeight="SemiBold"
+                                             FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                                             Foreground="#FFFFFF" />
+                    <TextBlock Text=":"
                                FontSize="48"
-                               FontWeight="Bold"
-                               FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
-                               Foreground="#FFFFFF"
-                               SnapsToDevicePixels="True"
-                               UseLayoutRounding="True"
-                               TextOptions.TextFormattingMode="Display"
-                               TextOptions.TextRenderingMode="ClearType"
-                               Typography.NumeralAlignment="Tabular" />
-                    <TextBlock Text="{Binding AmPmString}"
-                               FontSize="16"
                                FontWeight="SemiBold"
-                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                               Foreground="#90FFFFFF"
-                               Margin="6,12,0,0"
-                               VerticalAlignment="Top"
-                               SnapsToDevicePixels="True" />
+                               FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                               Foreground="#B0FFFFFF"
+                               Margin="1,-2,1,0"
+                               VerticalAlignment="Center"
+                               SnapsToDevicePixels="True"
+                               UseLayoutRounding="True" />
+                    <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
+                                             FontSize="48"
+                                             FontWeight="SemiBold"
+                                             FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                                             Foreground="#FFFFFF" />
+                    <clock:AnimatedTimeBlock Text="{Binding AmPmString}"
+                                             FontSize="16"
+                                             FontWeight="SemiBold"
+                                             FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                                             Foreground="#90FFFFFF"
+                                             Margin="6,12,0,0"
+                                             VerticalAlignment="Top" />
                 </StackPanel>
 
                 <!-- Full Date (e.g. Friday, 11 September) -->
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
-                    <TextBlock Text="{Binding FullDateString}"
-                               FontSize="18"
-                               FontWeight="SemiBold"
-                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                               Foreground="#E0FFFFFF"
-                               TextAlignment="Right"
-                               TextTrimming="CharacterEllipsis"
-                               SnapsToDevicePixels="True" />
+                    <clock:AnimatedTimeBlock Text="{Binding FullDateString}"
+                                             FontSize="18"
+                                             FontWeight="SemiBold"
+                                             FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                                             Foreground="#E0FFFFFF"
+                                             TextAlignment="Right" />
                 </StackPanel>
             </Grid>
 
-            <!-- 3. Hero 4x4 / 6x4 / 8x4 Layout: Massive Centered Typography -->
+            <!-- 3. Hero 4x4 / 6x4 / 8x4 Layout: Massive Centered Typography with Micro-Motion -->
             <Grid Visibility="{Binding IsHero, Converter={StaticResource BoolToVis}}"
                   VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding TimeString}"
+                        <clock:AnimatedTimeBlock Text="{Binding HoursString}"
+                                                 FontSize="68"
+                                                 FontWeight="SemiBold"
+                                                 FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                                                 Foreground="#FFFFFF" />
+                        <TextBlock Text=":"
                                    FontSize="68"
-                                   FontWeight="Bold"
-                                   FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
-                                   Foreground="#FFFFFF"
-                                   SnapsToDevicePixels="True"
-                                   UseLayoutRounding="True"
-                                   TextOptions.TextFormattingMode="Display"
-                                   TextOptions.TextRenderingMode="ClearType"
-                                   Typography.NumeralAlignment="Tabular" />
-                        <TextBlock Text="{Binding AmPmString}"
-                                   FontSize="18"
                                    FontWeight="SemiBold"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                                   Foreground="#90FFFFFF"
-                                   Margin="8,16,0,0"
-                                   VerticalAlignment="Top"
-                                   SnapsToDevicePixels="True" />
+                                   FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                                   Foreground="#B0FFFFFF"
+                                   Margin="2,-3,2,0"
+                                   VerticalAlignment="Center"
+                                   SnapsToDevicePixels="True"
+                                   UseLayoutRounding="True" />
+                        <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
+                                                 FontSize="68"
+                                                 FontWeight="SemiBold"
+                                                 FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                                                 Foreground="#FFFFFF" />
+                        <clock:AnimatedTimeBlock Text="{Binding AmPmString}"
+                                                 FontSize="18"
+                                                 FontWeight="SemiBold"
+                                                 FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                                                 Foreground="#90FFFFFF"
+                                                 Margin="8,16,0,0"
+                                                 VerticalAlignment="Top" />
                     </StackPanel>
 
                     <!-- Full Date -->
-                    <TextBlock Text="{Binding FullDateString}"
-                               FontSize="18"
-                               FontWeight="SemiBold"
-                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
-                               Foreground="#E0FFFFFF"
-                               HorizontalAlignment="Center"
-                               Margin="0,8,0,0"
-                               SnapsToDevicePixels="True" />
+                    <clock:AnimatedTimeBlock Text="{Binding FullDateString}"
+                                             FontSize="18"
+                                             FontWeight="SemiBold"
+                                             FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
+                                             Foreground="#E0FFFFFF"
+                                             HorizontalAlignment="Center"
+                                             Margin="0,8,0,0" />
                 </StackPanel>
             </Grid>
         </Grid>
