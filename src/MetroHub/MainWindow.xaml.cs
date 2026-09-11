@@ -90,6 +90,7 @@ public partial class MainWindow : BorderlessFluentWindow
         _ = Task.Delay(30000).ContinueWith(_ => TriggerBackgroundAppsCatalogRefresh());
 
         PreviewTextInput += OnWindowPreviewTextInput;
+        ContentScrollViewer.ScrollChanged += OnContentScrollViewerScrollChanged;
     }
 
     private void OnRootGridLostMouseCapture(object sender, MouseEventArgs e)
@@ -239,6 +240,22 @@ public partial class MainWindow : BorderlessFluentWindow
         Settings.WallpaperDimOpacity = opacity;
         StorageService.SaveSettings(Settings);
         ApplyConfiguredBackdrop();
+    }
+
+    private void OnParallaxEnabledClick(object sender, RoutedEventArgs e)
+    {
+        Settings.WallpaperParallax = true;
+        StorageService.SaveSettings(Settings);
+        UpdateBackdropMenuChecks();
+        UpdateWallpaperParallax();
+    }
+
+    private void OnParallaxDisabledClick(object sender, RoutedEventArgs e)
+    {
+        Settings.WallpaperParallax = false;
+        StorageService.SaveSettings(Settings);
+        UpdateBackdropMenuChecks();
+        UpdateWallpaperParallax();
     }
 
     private const double BaseReferenceWidth = 1920.0;
@@ -523,15 +540,50 @@ public partial class MainWindow : BorderlessFluentWindow
                 double dim = Math.Clamp(Settings.WallpaperDimOpacity, 0.1, 0.9);
                 byte alpha = (byte)(255 * dim);
                 WallpaperScrim.Background = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
+                UpdateWallpaperParallax();
                 return;
             }
         }
 
         // Fallback to clean dark background if image is missing
         CustomWallpaperHost.Visibility = Visibility.Collapsed;
+        UpdateWallpaperParallax();
         if (RootGrid != null)
         {
             RootGrid.Background = new SolidColorBrush(Color.FromArgb(0xEE, 0x10, 0x10, 0x14));
+        }
+    }
+
+    private void OnContentScrollViewerScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        UpdateWallpaperParallax();
+    }
+
+    private void UpdateWallpaperParallax()
+    {
+        if (WallpaperTranslateTransform == null || WallpaperImage == null) return;
+
+        bool isWallpaper = string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(Settings.BackdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase);
+
+        if (!isWallpaper || !Settings.WallpaperParallax || ContentScrollViewer == null)
+        {
+            WallpaperTranslateTransform.Y = 0;
+            WallpaperImage.Margin = new Thickness(0);
+            return;
+        }
+
+        const double maxShift = 90.0;
+        WallpaperImage.Margin = new Thickness(0, 0, 0, -maxShift);
+
+        if (ContentScrollViewer.ScrollableHeight > 0)
+        {
+            double ratio = Math.Clamp(ContentScrollViewer.VerticalOffset / ContentScrollViewer.ScrollableHeight, 0.0, 1.0);
+            WallpaperTranslateTransform.Y = -ratio * maxShift;
+        }
+        else
+        {
+            WallpaperTranslateTransform.Y = 0;
         }
     }
 
@@ -550,6 +602,20 @@ public partial class MainWindow : BorderlessFluentWindow
         if (DimLightItem != null) DimLightItem.IsChecked = Math.Abs(dim - 0.35) < 0.05;
         if (DimBalancedItem != null) DimBalancedItem.IsChecked = Math.Abs(dim - 0.50) < 0.05;
         if (DimHeavyItem != null) DimHeavyItem.IsChecked = Math.Abs(dim - 0.65) < 0.05;
+
+        bool isWallpaper = string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(Settings.BackdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase);
+
+        if (ParallaxEnabledItem != null)
+        {
+            ParallaxEnabledItem.IsChecked = Settings.WallpaperParallax;
+            ParallaxEnabledItem.IsEnabled = isWallpaper;
+        }
+        if (ParallaxDisabledItem != null)
+        {
+            ParallaxDisabledItem.IsChecked = !Settings.WallpaperParallax;
+            ParallaxDisabledItem.IsEnabled = isWallpaper;
+        }
     }
 
     private void OnSourceInitialized(object sender, EventArgs e)

@@ -149,8 +149,12 @@
             <Image x:Name="WallpaperImage"
                    Stretch="UniformToFill"
                    HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   RenderOptions.BitmapScalingMode="HighQuality" />
+                   VerticalAlignment="Top"
+                   RenderOptions.BitmapScalingMode="HighQuality">
+                <Image.RenderTransform>
+                    <TranslateTransform x:Name="WallpaperTranslateTransform" />
+                </Image.RenderTransform>
+            </Image>
             <!-- Fluent Dark Scrim Overlay (ensures 4.5:1 text readability across all images) -->
             <Border x:Name="WallpaperScrim"
                     Background="#80000000" />
@@ -394,7 +398,7 @@
                             </MenuItem.Icon>
                         </MenuItem>
 
-                        <MenuItem Header="Backdrop">
+                        <MenuItem Header="Background">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="DarkTheme24" FontSize="20" />
                             </MenuItem.Icon>
@@ -403,12 +407,13 @@
                             <MenuItem x:Name="BackdropDesktopWallpaperItem" Header="Current Desktop Wallpaper" Click="OnBackdropDesktopWallpaperClick" />
                             <MenuItem x:Name="BackdropCustomImageItem" Header="Custom Picture..." Click="OnBackdropCustomImageClick" />
                             <Separator />
+                            <MenuItem Header="Wallpaper Parallax">
+                                <MenuItem x:Name="ParallaxEnabledItem" Header="Enabled" Click="OnParallaxEnabledClick" />
+                                <MenuItem x:Name="ParallaxDisabledItem" Header="Disabled" Click="OnParallaxDisabledClick" />
+                            </MenuItem>
                             <MenuItem Header="Wallpaper Dimming">
-                                <MenuItem.Icon>
-                                    <ui:SymbolIcon Symbol="BrightnessHigh24" FontSize="20" />
-                                </MenuItem.Icon>
                                 <MenuItem x:Name="DimLightItem" Header="Light (35%)" Click="OnWallpaperDimLightClick" />
-                                <MenuItem x:Name="DimBalancedItem" Header="Balanced (50% - Recommended)" Click="OnWallpaperDimBalancedClick" />
+                                <MenuItem x:Name="DimBalancedItem" Header="Balanced (50%)" Click="OnWallpaperDimBalancedClick" />
                                 <MenuItem x:Name="DimHeavyItem" Header="Heavy (65%)" Click="OnWallpaperDimHeavyClick" />
                             </MenuItem>
                         </MenuItem>
