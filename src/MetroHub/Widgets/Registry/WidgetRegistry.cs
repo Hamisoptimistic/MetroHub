@@ -89,6 +89,24 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Mega,
             Factory: model => new MetroHub.Widgets.Catalog.Media.MediaWidgetViewModel(model)
         ));
+
+        // Register Focus / Pomodoro widget
+        Register(new WidgetDefinition(
+            Id: "pomodoro",
+            DisplayName: "Focus Timer",
+            Description: "Fluent Pomodoro timer with focus sessions, breaks and cycle tracking",
+            Icon: SymbolRegular.Timer24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Wide,    // 4x2
+                WidgetSize.Banner3, // 8x3
+                WidgetSize.Mega     // 8x4
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Pomodoro.PomodoroWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Pomodoro.PomodoroWidgetView),
+            DefaultSize: WidgetSize.Mega,
+            Factory: model => new MetroHub.Widgets.Catalog.Pomodoro.PomodoroWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)

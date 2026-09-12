@@ -184,7 +184,7 @@ public partial class TileControl : UserControl
 
     public void AnimatePressDown()
     {
-        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" })
+        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" })
         {
             return;
         }
@@ -361,6 +361,7 @@ public partial class TileControl : UserControl
             SingleAppSeparator.Visibility = Visibility.Collapsed;
             StyleMenuItem.Visibility = Visibility.Collapsed;
             UnpinSeparator.Visibility = Visibility.Collapsed;
+            GroupMenuItem.Visibility = Visibility.Collapsed;
 
             if (tile.TileContent is Widgets.Catalog.Clock.ClockWidgetViewModel clockVm)
             {
@@ -457,7 +458,7 @@ public partial class TileControl : UserControl
                 // Index 1: Time Format
                 // Index 2: Font
                 // Index 3: Separator
-                // Then: GroupMenuItem, AddToGroupMenuItem, UnpinMenuItem (UnpinSeparator collapsed)
+                // Then: AddToGroupMenuItem, UnpinMenuItem (GroupMenuItem & UnpinSeparator collapsed)
                 TileContextMenu.Items.Insert(1, timeFormatItem);
                 TileContextMenu.Items.Insert(2, fontItem);
                 TileContextMenu.Items.Insert(3, clockDivider);
@@ -483,6 +484,7 @@ public partial class TileControl : UserControl
                 // Index 0: Resize
                 // Index 1: Go to Today
                 // Index 2: Separator
+                // Then: AddToGroupMenuItem, UnpinMenuItem (GroupMenuItem & UnpinSeparator collapsed)
                 TileContextMenu.Items.Insert(1, todayItem);
                 TileContextMenu.Items.Insert(2, calDivider);
             }
@@ -534,8 +536,61 @@ public partial class TileControl : UserControl
                 // Index 0: Resize
                 // Index 1: Effects
                 // Index 2: Separator
+                // Then: AddToGroupMenuItem, UnpinMenuItem (GroupMenuItem & UnpinSeparator collapsed)
                 TileContextMenu.Items.Insert(1, effectsItem);
                 TileContextMenu.Items.Insert(2, mediaDivider);
+            }
+            else if (tile.TileContent is Widgets.Catalog.Pomodoro.PomodoroWidgetViewModel pomodoroVm)
+            {
+                var presetItem = new MenuItem
+                {
+                    Header = "Focus Duration",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Timer24,
+                        FontSize = 20,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                    }
+                };
+
+                var item25 = new MenuItem
+                {
+                    Header = "25m Focus / 5m Break (Classic)",
+                    IsCheckable = true,
+                    IsChecked = pomodoroVm.FocusMinutes == 25
+                };
+                item25.Click += (s, ev) => pomodoroVm.SetPreset(25, 5, 15);
+
+                var item50 = new MenuItem
+                {
+                    Header = "50m Focus / 10m Break (Deep Work)",
+                    IsCheckable = true,
+                    IsChecked = pomodoroVm.FocusMinutes == 50
+                };
+                item50.Click += (s, ev) => pomodoroVm.SetPreset(50, 10, 30);
+
+                var item15 = new MenuItem
+                {
+                    Header = "15m Focus / 3m Break (Sprint)",
+                    IsCheckable = true,
+                    IsChecked = pomodoroVm.FocusMinutes == 15
+                };
+                item15.Click += (s, ev) => pomodoroVm.SetPreset(15, 3, 10);
+
+                presetItem.Items.Add(item25);
+                presetItem.Items.Add(item50);
+                presetItem.Items.Add(item15);
+
+                var pomodoroDivider = new Separator { Tag = "WidgetCustomMenu" };
+
+                // Universal Widget Hierarchy:
+                // Index 0: Resize
+                // Index 1: Focus Duration
+                // Index 2: Separator
+                // Then: AddToGroupMenuItem, UnpinMenuItem (GroupMenuItem & UnpinSeparator collapsed)
+                TileContextMenu.Items.Insert(1, presetItem);
+                TileContextMenu.Items.Insert(2, pomodoroDivider);
             }
         }
         else
@@ -545,6 +600,9 @@ public partial class TileControl : UserControl
             OpenLocationMenuItem.Visibility = Visibility.Visible;
             StyleMenuItem.Visibility = Visibility.Visible;
             UnpinSeparator.Visibility = Visibility.Visible;
+            GroupMenuItem.Visibility = mainWindow.SelectedTiles.Any(t => t.TileType == TileType.Widget)
+                ? Visibility.Collapsed
+                : Visibility.Visible;
 
             bool isColourful = string.Equals(tile.TileStyle, "Colourful", StringComparison.OrdinalIgnoreCase);
             if (StyleDefaultMenuItem != null)

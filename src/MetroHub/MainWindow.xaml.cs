@@ -1372,7 +1372,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
             _isPotentialDrag = true;
             _isDragging = false;
-            if (!(tile.TileType == TileType.Widget && (tile.TargetPath == "calendar" || tile.TargetPath == "media")))
+            if (!(tile.TileType == TileType.Widget && (tile.TargetPath == "calendar" || tile.TargetPath == "media" || tile.TargetPath == "pomodoro")))
             {
                 _draggedControl.AnimatePressDown();
             }
@@ -3524,9 +3524,13 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     public void CreateGroupFromSelectedTiles(TileModel anchorTile)
     {
+        if (anchorTile.TileType == TileType.Widget) return;
+
         List<TileModel> targets = (anchorTile.IsSelected && SelectedTiles.Count > 1)
-            ? SelectedTiles.ToList()
+            ? SelectedTiles.Where(t => t.TileType != TileType.Widget).ToList()
             : new List<TileModel> { anchorTile };
+
+        if (targets.Count == 0) return;
 
         string pre = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
 
