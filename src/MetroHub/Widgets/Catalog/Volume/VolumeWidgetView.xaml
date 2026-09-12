@@ -85,7 +85,44 @@
             </Setter>
         </Style>
 
-        <!-- Minimalist 6px Transparent Scrollbar for Device List (Zero Borders) -->
+        <!-- Ultra-Slim 3px Fluent ScrollBar (Transparent track, no arrows, subtle pill thumb) -->
+        <Style x:Key="FluentSlimScrollBarStyle" TargetType="{x:Type ScrollBar}">
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Width" Value="3" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Track x:Name="PART_Track" IsDirectionReversed="True" Focusable="False">
+                            <Track.Thumb>
+                                <Thumb x:Name="Thumb">
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="{x:Type Thumb}">
+                                            <Border x:Name="ThumbBorder"
+                                                    Background="#55FFFFFF"
+                                                    CornerRadius="1.5"
+                                                    SnapsToDevicePixels="True" />
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#95FFFFFF" />
+                                                </Trigger>
+                                                <Trigger Property="IsDragging" Value="True">
+                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#D0FFFFFF" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Windows 11 Auto-Hiding ScrollViewer: Hidden by default (Opacity 0), appears on hover/scroll -->
         <Style x:Key="MinimalScrollViewerStyle" TargetType="ScrollViewer">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Background" Value="Transparent" />
@@ -101,15 +138,44 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <ScrollContentPresenter Grid.Column="0" CanContentScroll="{TemplateBinding CanContentScroll}" />
+                            <!-- 8px right margin ensures device item highlight boxes NEVER collide with the scrollbar -->
+                            <ScrollContentPresenter Grid.Column="0"
+                                                   Margin="0,0,8,0"
+                                                   CanContentScroll="{TemplateBinding CanContentScroll}" />
                             <ScrollBar Grid.Column="1"
                                        x:Name="PART_VerticalScrollBar"
-                                       Width="6"
+                                       Style="{StaticResource FluentSlimScrollBarStyle}"
                                        Value="{TemplateBinding VerticalOffset}"
                                        Maximum="{TemplateBinding ScrollableHeight}"
                                        ViewportSize="{TemplateBinding ViewportHeight}"
-                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
+                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                                       Opacity="0"
+                                       Margin="2,0,0,0" />
                         </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="PART_VerticalScrollBar"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0.85"
+                                                             Duration="0:0:0.18" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="PART_VerticalScrollBar"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0.0"
+                                                             Duration="0:0:0.35" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -155,8 +221,9 @@
                                HorizontalAlignment="Center" />
                 </Button>
 
-                <!-- 2. Master Volume Seekbar (With Dragging Percentage Floating Bubble) -->
-                <controls:FluentVolumeSlider Grid.Column="1"
+                <!-- 2. Master Volume Seekbar -->
+                <controls:FluentVolumeSlider x:Name="MasterVolumeSlider"
+                                            Grid.Column="1"
                                             Margin="12,0"
                                             VerticalAlignment="Center"
                                             Value="{Binding MasterVolume, Mode=TwoWay}"
@@ -166,30 +233,95 @@
                                             Tag="InteractiveControl"
                                             SnapsToDevicePixels="True" />
 
-                <!-- 3. Mute Button (White, Borderless, No Box, Aligned to right 14px) -->
+                <!-- 3. Mute Button: Displays Speaker Glyph normally, Cross-fades to % while dragging/scrolling -->
                 <Button Grid.Column="2"
                         Style="{StaticResource VolumeTransportButtonStyle}"
                         HorizontalAlignment="Right"
                         Command="{Binding ToggleMasterMuteCommand}"
-                        ToolTip="Mute / Unmute Master Volume">
-                    <TextBlock Text="{Binding MasterGlyph}"
-                               FontFamily="Segoe MDL2 Assets"
-                               FontSize="16"
-                               Foreground="#FFFFFF"
-                               VerticalAlignment="Center"
-                               HorizontalAlignment="Center" />
+                        ToolTip="Mute / Unmute Master Volume"
+                        MinWidth="34">
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <!-- 1. Speaker / Mute Glyph Icon -->
+                        <TextBlock x:Name="MuteIcon"
+                                   Text="{Binding MasterGlyph}"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="15"
+                                   Foreground="#FFFFFF"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Opacity" Value="1.0" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDragging, ElementName=MasterVolumeSlider}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         To="0.0" Duration="0:0:0.12" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         To="1.0" Duration="0:0:0.25" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- 2. Volume Percentage Number (e.g. 76%) Shown While Dragging -->
+                        <TextBlock x:Name="VolumePercentageText"
+                                   Text="{Binding MasterVolumePercentText}"
+                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                   FontSize="11.5"
+                                   FontWeight="SemiBold"
+                                   Foreground="#FFFFFF"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Opacity" Value="0.0" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDragging, ElementName=MasterVolumeSlider}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         To="1.0" Duration="0:0:0.12" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         To="0.0" Duration="0:0:0.25" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
                 </Button>
             </Grid>
 
             <!-- ============================================================= -->
             <!-- ROW 1: OUTPUT DEVICE SECTION                                  -->
-            <!-- Edge-to-Edge Divider: BorderThickness="0,1,0,0" #18FFFFFF     -->
             <!-- Exactly matching Focus Timer (Pomodoro) and Media Player      -->
             <!-- ============================================================= -->
             <Border Grid.Row="1"
                     Background="#14000000"
-                    BorderThickness="0,1,0,0"
-                    BorderBrush="#18FFFFFF"
+                    BorderThickness="0"
                     CornerRadius="0,0,2,2"
                     SnapsToDevicePixels="True"
                     Padding="14,10,14,10">
@@ -212,14 +344,14 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <!-- Section Header: OUTPUT DEVICE (Flush aligned with Output Logo above at 14px) -->
+                    <!-- Section Header: OUTPUT DEVICE (Flush aligned with Output Logo above at 20px baseline) -->
                     <TextBlock Grid.Row="0"
                                Text="OUTPUT DEVICE"
                                FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                               FontSize="10"
-                               FontWeight="SemiBold"
-                               Foreground="#80FFFFFF"
-                               Margin="0,0,0,6"
+                               FontSize="11.5"
+                               FontWeight="Bold"
+                               Foreground="#FFFFFF"
+                               Margin="6,0,0,8"
                                SnapsToDevicePixels="True" />
 
                     <!-- Native Windows 11 Output Devices List -->
@@ -312,6 +444,34 @@
                     </ScrollViewer>
                 </Grid>
             </Border>
+
+            <!-- ============================================================= -->
+            <!-- Edge-to-Edge Hairline Divider Track (Identical to Focus Timer)-->
+            <!-- ============================================================= -->
+            <Grid Grid.Row="1"
+                  VerticalAlignment="Top"
+                  Height="14"
+                  Margin="0,-7,0,0"
+                  Background="Transparent"
+                  SnapsToDevicePixels="True">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsCompactMode}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <!-- Background Track (2px tall hairline with 1px radius, #14FFFFFF) -->
+                <Border Height="2"
+                        VerticalAlignment="Center"
+                        Background="#14FFFFFF"
+                        CornerRadius="1"
+                        SnapsToDevicePixels="True" />
+            </Grid>
 
             <!-- ========================================================================= -->
             <!-- PER-APP VOLUME MIXER (TEMPORARILY COMMENTED OUT - TO BE IMPLEMENTED LATER) -->

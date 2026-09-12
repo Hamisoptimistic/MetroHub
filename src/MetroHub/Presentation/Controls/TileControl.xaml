@@ -178,6 +178,7 @@
     <Border x:Name="RootBorder"
             Background="Transparent"
             CornerRadius="2"
+            ClipToBounds="True"
             Width="{Binding SpanX, Converter={StaticResource SpanConverter}}"
             Height="{Binding SpanY, Converter={StaticResource SpanConverter}}"
             RenderTransformOrigin="0.5,0.5"

@@ -1019,35 +1019,28 @@ public partial class TileControl : UserControl
         double newW = (newSpanX * 64) - 8;
         double newH = (newSpanY * 64) - 8;
 
-        var animW = new DoubleAnimation(oldW, newW, TimeSpan.FromMilliseconds(200))
+        var animW = new DoubleAnimation(oldW, newW, TimeSpan.FromMilliseconds(220))
         {
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            EasingFunction = new QuarticEase { EasingMode = EasingMode.EaseOut }
         };
-        var animH = new DoubleAnimation(oldH, newH, TimeSpan.FromMilliseconds(200))
+        var animH = new DoubleAnimation(oldH, newH, TimeSpan.FromMilliseconds(220))
         {
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            EasingFunction = new QuarticEase { EasingMode = EasingMode.EaseOut }
         };
 
-        animW.Completed += (s, e) => RootBorder.BeginAnimation(FrameworkElement.WidthProperty, null);
-        animH.Completed += (s, e) => RootBorder.BeginAnimation(FrameworkElement.HeightProperty, null);
+        animW.Completed += (s, e) =>
+        {
+            RootBorder.BeginAnimation(FrameworkElement.WidthProperty, null);
+            RootBorder.Width = newW;
+        };
+        animH.Completed += (s, e) =>
+        {
+            RootBorder.BeginAnimation(FrameworkElement.HeightProperty, null);
+            RootBorder.Height = newH;
+        };
 
         RootBorder.BeginAnimation(FrameworkElement.WidthProperty, animW);
         RootBorder.BeginAnimation(FrameworkElement.HeightProperty, animH);
-
-        // Content fade in transition
-        if (TileContentPresenter != null)
-        {
-            var fade = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(200))
-            {
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-            };
-            fade.Completed += (s, e) =>
-            {
-                TileContentPresenter.BeginAnimation(UIElement.OpacityProperty, null);
-                TileContentPresenter.Opacity = 1.0;
-            };
-            TileContentPresenter.BeginAnimation(UIElement.OpacityProperty, fade);
-        }
     }
 
     private void OnRunAsAdminClick(object sender, RoutedEventArgs e)

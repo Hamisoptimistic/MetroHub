@@ -154,6 +154,14 @@ public partial class VolumeWidgetViewModel : WidgetViewModelBase
         _audioService.DeviceListChanged += OnAudioServiceDeviceListChanged;
         _audioService.SessionsChanged += OnAudioServiceSessionsChanged;
 
+        model.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
+            {
+                OnPropertyChanged(nameof(IsCompactMode));
+            }
+        };
+
         RefreshAll();
     }
 

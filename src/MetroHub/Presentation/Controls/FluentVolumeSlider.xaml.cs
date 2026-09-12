@@ -61,7 +61,21 @@ public partial class FluentVolumeSlider : UserControl
         set => SetValue(IsMutedProperty, value);
     }
 
+    public static readonly DependencyProperty IsDraggingProperty =
+        DependencyProperty.Register(
+            nameof(IsDragging),
+            typeof(bool),
+            typeof(FluentVolumeSlider),
+            new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+    public bool IsDragging
+    {
+        get => (bool)GetValue(IsDraggingProperty);
+        set => SetValue(IsDraggingProperty, value);
+    }
+
     private bool _isDragging;
+    private System.Windows.Threading.DispatcherTimer? _dragReleaseTimer;
 
     public FluentVolumeSlider()
     {
@@ -123,15 +137,6 @@ public partial class FluentVolumeSlider : UserControl
         double thumbLeft = ratio * maxThumbLeft;
 
         SliderThumb.Margin = new Thickness(thumbLeft, 0, 0, 0);
-
-        if (FloatingTooltip != null && TooltipText != null && TooltipTranslate != null)
-        {
-            TooltipText.Text = $"{Math.Round(Value)}%";
-            double tooltipWidth = FloatingTooltip.ActualWidth > 0 ? FloatingTooltip.ActualWidth : 36.0;
-            double thumbCenter = thumbLeft + (thumbWidth / 2.0);
-            double targetX = Math.Clamp(thumbCenter - (tooltipWidth / 2.0), 0.0, Math.Max(0, width - tooltipWidth));
-            TooltipTranslate.X = targetX;
-        }
     }
 
     private void UpdateValueFromPosition(Point pos)
@@ -151,7 +156,9 @@ public partial class FluentVolumeSlider : UserControl
         // Intercept tunneling mouse down event to completely prevent parent tile activation/drag
         e.Handled = true;
 
+        _dragReleaseTimer?.Stop();
         _isDragging = true;
+        IsDragging = true;
         RootContainer.CaptureMouse();
         AnimateHoverState(true, isDragging: true);
 
@@ -179,6 +186,19 @@ public partial class FluentVolumeSlider : UserControl
 
             bool isMouseStillOver = RootContainer.IsMouseOver;
             AnimateHoverState(isMouseStillOver, isDragging: false);
+
+            _dragReleaseTimer?.Stop();
+            _dragReleaseTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(650)
+            };
+            _dragReleaseTimer.Tick += (s, ev) =>
+            {
+                _dragReleaseTimer?.Stop();
+                _dragReleaseTimer = null;
+                IsDragging = false;
+            };
+            _dragReleaseTimer.Start();
         }
     }
 
@@ -190,6 +210,21 @@ public partial class FluentVolumeSlider : UserControl
 
         double delta = e.Delta > 0 ? step : -step;
         Value = Math.Clamp(Value + delta, Minimum, Maximum);
+
+        // Flash percentage temporarily on wheel scroll as well
+        IsDragging = true;
+        _dragReleaseTimer?.Stop();
+        _dragReleaseTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(750)
+        };
+        _dragReleaseTimer.Tick += (s, ev) =>
+        {
+            _dragReleaseTimer?.Stop();
+            _dragReleaseTimer = null;
+            IsDragging = false;
+        };
+        _dragReleaseTimer.Start();
     }
 
     private void OnMouseEnter(object sender, MouseEventArgs e)
@@ -232,16 +267,5 @@ public partial class FluentVolumeSlider : UserControl
         TrackTrough?.BeginAnimation(HeightProperty, trackHeightAnim);
         TrackBg?.BeginAnimation(HeightProperty, trackHeightAnim);
         ProgressFill?.BeginAnimation(HeightProperty, trackHeightAnim);
-
-        // 4. Floating Drag Tooltip: 1.0 ONLY while actively dragging, 0 when released or merely hovered
-        if (FloatingTooltip != null)
-        {
-            double targetTooltipOpacity = isDragging ? 1.0 : 0.0;
-            var tooltipAnim = new DoubleAnimation(targetTooltipOpacity, TimeSpan.FromMilliseconds(140))
-            {
-                EasingFunction = easing
-            };
-            FloatingTooltip.BeginAnimation(OpacityProperty, tooltipAnim);
-        }
     }
 }
