@@ -102,6 +102,12 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
     [ObservableProperty]
     private Color _glowColor = Color.FromRgb(0x3A, 0x82, 0xD4);
 
+    [ObservableProperty]
+    private SolidColorBrush _seekbarBrush = new SolidColorBrush(Color.FromRgb(0x4C, 0x9E, 0xFF));
+
+    [ObservableProperty]
+    private Color _seekbarGlowColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
+
     public double AlbumArtSize => Model.SpanY >= 4 ? 132.0 : 104.0;
 
     public double GlowBlurRadius => Model.SpanY >= 4 ? 30.0 : 20.0;
@@ -275,6 +281,11 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 var fallbackBrush = new SolidColorBrush(Color.FromRgb(0x3A, 0x82, 0xD4));
                 fallbackBrush.Freeze();
                 GlowSolidBrush = fallbackBrush;
+                var fallbackSeekColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
+                var fallbackSeekBrush = new SolidColorBrush(fallbackSeekColor);
+                fallbackSeekBrush.Freeze();
+                SeekbarBrush = fallbackSeekBrush;
+                SeekbarGlowColor = fallbackSeekColor;
                 IsPlaying = false;
                 DurationSeconds = 0;
                 PositionSeconds = 0;
@@ -753,6 +764,11 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                     var fallbackBrush = new SolidColorBrush(Color.FromRgb(0x3A, 0x82, 0xD4));
                     fallbackBrush.Freeze();
                     GlowSolidBrush = fallbackBrush;
+                    var fallbackSeekColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
+                    var fallbackSeekBrush = new SolidColorBrush(fallbackSeekColor);
+                    fallbackSeekBrush.Freeze();
+                    SeekbarBrush = fallbackSeekBrush;
+                    SeekbarGlowColor = fallbackSeekColor;
                     SensualRadialBrush = null;
                     GlowBrush = null;
                     GlowColor = Color.FromRgb(0x3A, 0x82, 0xD4);
@@ -817,6 +833,9 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
             Color glowColor = Color.FromRgb(0x3A, 0x82, 0xD4);
             var glowSolidBrush = new SolidColorBrush(glowColor);
             glowSolidBrush.Freeze();
+            Color seekbarColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
+            var seekbarBrush = new SolidColorBrush(seekbarColor);
+            seekbarBrush.Freeze();
             RadialGradientBrush? sensualRadialBrush = null;
             RadialGradientBrush? fluidWaveBrush = null;
             LinearGradientBrush? fluidSecondaryBrush = null;
@@ -827,7 +846,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 if (epoch != _updateEpoch) return;
                 if (bmp is BitmapSource bs)
                 {
-                    (glowColor, glowSolidBrush, sensualRadialBrush, fluidWaveBrush, fluidSecondaryBrush) = CreateGlow(bs);
+                    (glowColor, glowSolidBrush, sensualRadialBrush, fluidWaveBrush, fluidSecondaryBrush, seekbarBrush, seekbarColor) = CreateGlow(bs);
                 }
             }
 
@@ -848,6 +867,8 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 FluidSecondaryBrush = fluidSecondaryBrush;
                 GlowBrush = sensualRadialBrush;
                 GlowColor = glowColor;
+                SeekbarBrush = seekbarBrush;
+                SeekbarGlowColor = seekbarColor;
                 HasMedia = true;
 
                 // Sync controls and playback authoritatively from session
@@ -896,7 +917,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    private static (Color, SolidColorBrush, RadialGradientBrush, RadialGradientBrush, LinearGradientBrush) CreateGlow(BitmapSource bitmap)
+    private static (Color, SolidColorBrush, RadialGradientBrush, RadialGradientBrush, LinearGradientBrush, SolidColorBrush, Color) CreateGlow(BitmapSource bitmap)
     {
         try
         {
@@ -940,6 +961,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
             }
 
             Color accent;
+            Color seekbarColor;
             bool isMonochrome = totalColorWeight < 0.05;
 
             if (!isMonochrome)
@@ -949,9 +971,31 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 byte avgB = (byte)Math.Clamp(accB / totalColorWeight, 0, 255);
 
                 var (h, s, v) = RgbToHsv(avgR, avgG, avgB);
-                s = Math.Clamp(s * 1.15, 0.45, 0.88);
-                v = Math.Clamp(v * 0.85, 0.42, 0.65);
-                accent = ColorFromHsv(h, s, v);
+
+                // 1. Ambient Background Aura (Moody, deeper, non-glaring)
+                double ambientS = Math.Clamp(s * 1.15, 0.45, 0.88);
+                double ambientV = Math.Clamp(v * 0.85, 0.42, 0.65);
+                accent = ColorFromHsv(h, ambientS, ambientV);
+
+                // 2. Interactive Foreground Seekbar (Luminous, electric, guaranteed high-contrast)
+                double seekH = h;
+                double seekS = s;
+                double seekV = v;
+
+                // Blue-Indigo-Violet Range (195° - 275°) Compensation:
+                // Human eye perceives blue at only ~7% luminance. Deep navy blues (e.g. #1E3A8A) look like black on dark acrylic.
+                // If hue is in the blue/indigo zone, lift brightness significantly and reduce overly dark saturation.
+                if (seekH >= 195.0 && seekH <= 275.0)
+                {
+                    seekV = Math.Clamp(seekV * 1.60, 0.88, 1.0);
+                    seekS = Math.Clamp(seekS * 0.82, 0.42, 0.78);
+                }
+                else
+                {
+                    seekV = Math.Clamp(seekV * 1.35, 0.82, 0.98);
+                    seekS = Math.Clamp(seekS * 0.95, 0.55, 0.90);
+                }
+                seekbarColor = ColorFromHsv(seekH, seekS, seekV);
             }
             else
             {
@@ -959,15 +1003,20 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 if (avgLum > 0.4)
                 {
                     accent = Color.FromRgb(180, 195, 215);
+                    seekbarColor = Color.FromRgb(240, 244, 255); // Crisp moonlight pearl-white
                 }
                 else
                 {
                     accent = Color.FromRgb(140, 160, 190);
+                    seekbarColor = Color.FromRgb(180, 215, 255); // Electric ice-blue
                 }
             }
 
             var solidBrush = new SolidColorBrush(accent);
             solidBrush.Freeze();
+
+            var seekbarBrush = new SolidColorBrush(seekbarColor);
+            seekbarBrush.Freeze();
 
             // 1. Sensual Static Brush: EXACT classic localized halo behind the album art
             // Confined to the right side of the card without covering the entire tile!
@@ -1004,13 +1053,17 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
             AddSmoothCosineStops(fluidSecondaryBrush.GradientStops, accent, isMonochrome ? (byte)50 : (byte)75, 0, 14);
             fluidSecondaryBrush.Freeze();
 
-            return (accent, solidBrush, sensualBrush, fluidWaveBrush, fluidSecondaryBrush);
+            return (accent, solidBrush, sensualBrush, fluidWaveBrush, fluidSecondaryBrush, seekbarBrush, seekbarColor);
         }
         catch
         {
             var fallbackColor = Color.FromRgb(0x24, 0x54, 0x94);
             var fallbackSolid = new SolidColorBrush(fallbackColor);
             fallbackSolid.Freeze();
+
+            var fallbackSeekColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
+            var fallbackSeekbarBrush = new SolidColorBrush(fallbackSeekColor);
+            fallbackSeekbarBrush.Freeze();
 
             var fallbackSensual = new RadialGradientBrush
             {
@@ -1042,7 +1095,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
             AddSmoothCosineStops(fallbackSecondary.GradientStops, fallbackColor, 75, 0, 14);
             fallbackSecondary.Freeze();
 
-            return (fallbackColor, fallbackSolid, fallbackSensual, fallbackWave, fallbackSecondary);
+            return (fallbackColor, fallbackSolid, fallbackSensual, fallbackWave, fallbackSecondary, fallbackSeekbarBrush, fallbackSeekColor);
         }
     }
 

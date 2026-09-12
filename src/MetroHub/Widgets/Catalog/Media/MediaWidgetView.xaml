@@ -490,13 +490,13 @@
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
                         Width="0"
-                        Background="{Binding GlowSolidBrush}"
+                        Background="{Binding SeekbarBrush}"
                         CornerRadius="1.5"
                         SnapsToDevicePixels="True">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="6"
                                           ShadowDepth="0"
-                                          Color="{Binding GlowColor}"
+                                          Color="{Binding SeekbarGlowColor}"
                                           Opacity="0.75" />
                     </Border.Effect>
                 </Border>
@@ -507,7 +507,7 @@
                         Height="14"
                         CornerRadius="2.5"
                         Background="#FFFFFF"
-                        BorderBrush="{Binding GlowSolidBrush}"
+                        BorderBrush="{Binding SeekbarBrush}"
                         BorderThickness="1"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
@@ -521,7 +521,7 @@
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="10"
                                           ShadowDepth="0"
-                                          Color="{Binding GlowColor}"
+                                          Color="{Binding SeekbarGlowColor}"
                                           Opacity="0.95" />
                     </Border.Effect>
                 </Border>
