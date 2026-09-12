@@ -139,7 +139,9 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     private long _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
     private TimeSpan _lastTimelinePosition = TimeSpan.Zero;
     private TimeSpan _trackDuration = TimeSpan.Zero;
+    private double _playbackRate = 1.0;
     private bool _isScrubbing = false;
+    private CancellationTokenSource? _resumeVerificationCts;
 
     public MediaWidgetViewModel(TileModel model) : base(model)
     {
@@ -221,7 +223,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
             _currentSession.PlaybackInfoChanged += Session_PlaybackInfoChanged;
             _currentSession.TimelinePropertiesChanged += Session_TimelinePropertiesChanged;
             await UpdateMediaDetailsAsync();
-            UpdateTimelineInfo();
+            SyncPlaybackState(_currentSession);
         }
         else
         {
@@ -256,61 +258,42 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     private void Session_MediaPropertiesChanged(GlobalSystemMediaTransportControlsSession sender, MediaPropertiesChangedEventArgs args)
     {
         _ = UpdateMediaDetailsAsync();
-        UpdateTimelineInfo();
+        SyncPlaybackState(sender);
     }
 
     private void Session_PlaybackInfoChanged(GlobalSystemMediaTransportControlsSession sender, PlaybackInfoChangedEventArgs args)
     {
-        UpdatePlaybackInfo();
-        UpdateTimelineInfo();
+        SyncPlaybackState(sender);
     }
 
     private void Session_TimelinePropertiesChanged(GlobalSystemMediaTransportControlsSession sender, TimelinePropertiesChangedEventArgs args)
     {
-        UpdateTimelineInfo();
+        SyncPlaybackState(sender);
     }
 
-    private void UpdatePlaybackInfo()
+    private void SyncPlaybackState(GlobalSystemMediaTransportControlsSession? targetSession = null)
     {
-        if (!_isHubVisible || _currentSession == null) return;
+        if (!_isHubVisible) return;
+
+        var session = targetSession ?? _currentSession;
+        if (session == null) return;
 
         try
         {
-            var playback = _currentSession.GetPlaybackInfo();
-            if (playback != null)
-            {
-                bool playing = playback.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
-                var controls = playback.Controls;
+            var playback = session.GetPlaybackInfo();
+            var timeline = session.GetTimelineProperties();
 
-                Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    IsPlaying = playing;
-                    CanPlayPause = controls?.IsPlayPauseToggleEnabled ?? true;
-                    CanSkipNext = controls?.IsNextEnabled ?? true;
-                    CanSkipPrevious = controls?.IsPreviousEnabled ?? true;
-                    CanSeek = controls?.IsPlaybackPositionEnabled ?? true;
+            if (playback == null && timeline == null) return;
 
-                    if (playing && HasMedia && _isHubVisible)
-                    {
-                        _playbackTimer?.Start();
-                    }
-                    else
-                    {
-                        _playbackTimer?.Stop();
-                    }
-                });
-            }
-        }
-        catch { }
-    }
+            bool isPlaying = playback?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+            var controls = playback?.Controls;
+            double rate = playback?.PlaybackRate ?? 1.0;
+            if (rate <= 0.0) rate = 1.0;
 
-    private void UpdateTimelineInfo()
-    {
-        if (!_isHubVisible || _currentSession == null) return;
+            TimeSpan duration = _trackDuration;
+            TimeSpan position = _lastTimelinePosition;
+            bool shouldUpdatePosition = false;
 
-        try
-        {
-            var timeline = _currentSession.GetTimelineProperties();
             if (timeline != null)
             {
                 var newDuration = timeline.EndTime - timeline.StartTime;
@@ -321,60 +304,149 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
 
                 if (newDuration > TimeSpan.Zero)
                 {
+                    duration = newDuration;
                     _trackDuration = newDuration;
                 }
 
                 if (timeline.Position >= TimeSpan.Zero)
                 {
-                    _lastTimelinePosition = timeline.Position;
-                    _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-                }
+                    // Anti-glitch: Detect Chromium transient 0:00 reset when resuming mid-stream playback
+                    bool isSuspectZeroReset = isPlaying &&
+                                              timeline.Position <= TimeSpan.FromSeconds(1) &&
+                                              _lastTimelinePosition > TimeSpan.FromSeconds(3) &&
+                                              duration > TimeSpan.FromSeconds(5);
 
-                double durationSec = Math.Max(0, _trackDuration.TotalSeconds);
-                double positionSec = Math.Max(0, _lastTimelinePosition.TotalSeconds);
-
-                Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    if (durationSec > 0)
+                    if (isSuspectZeroReset)
                     {
-                        DurationSeconds = durationSec;
-                    }
-
-                    if (!_isScrubbing && DurationSeconds > 0)
-                    {
-                        PositionSeconds = Math.Clamp(positionSec, 0, DurationSeconds);
-                        ProgressRatio = Math.Clamp(PositionSeconds / DurationSeconds, 0.0, 1.0);
-                        UpdateTimeDisplay(PositionSeconds, DurationSeconds);
-                    }
-
-                    if (IsPlaying && HasMedia && _isHubVisible)
-                    {
-                        _playbackTimer?.Start();
+                        // Keep our valid last-known timestamp and trigger a delayed verification re-poll
+                        _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                        ScheduleResumeVerification(session);
                     }
                     else
                     {
-                        _playbackTimer?.Stop();
+                        // Official GSMTC extrapolation from LastUpdatedTime if available and playing
+                        TimeSpan calculatedPos = timeline.Position;
+                        var lastUpdated = timeline.LastUpdatedTime;
+                        var nowUtc = DateTimeOffset.UtcNow;
+
+                        if (isPlaying && lastUpdated > DateTimeOffset.MinValue && nowUtc >= lastUpdated)
+                        {
+                            var diff = (nowUtc - lastUpdated).TotalSeconds * rate;
+                            if (diff >= 0 && diff < 10.0)
+                            {
+                                calculatedPos += TimeSpan.FromSeconds(diff);
+                            }
+                        }
+
+                        _lastTimelinePosition = calculatedPos;
+                        _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                        _playbackRate = rate;
+                        position = calculatedPos;
+                        shouldUpdatePosition = true;
                     }
-                });
+                }
             }
+
+            double durSec = Math.Max(0, duration.TotalSeconds);
+            double posSec = Math.Max(0, position.TotalSeconds);
+
+            Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                IsPlaying = isPlaying;
+                if (controls != null)
+                {
+                    CanPlayPause = controls.IsPlayPauseToggleEnabled;
+                    CanSkipNext = controls.IsNextEnabled;
+                    CanSkipPrevious = controls.IsPreviousEnabled;
+                    CanSeek = controls.IsPlaybackPositionEnabled;
+                }
+
+                if (durSec > 0)
+                {
+                    DurationSeconds = durSec;
+                }
+
+                if (shouldUpdatePosition && !_isScrubbing && DurationSeconds > 0)
+                {
+                    PositionSeconds = Math.Clamp(posSec, 0, DurationSeconds);
+                    ProgressRatio = Math.Clamp(PositionSeconds / DurationSeconds, 0.0, 1.0);
+                    UpdateTimeDisplay(PositionSeconds, DurationSeconds);
+                }
+
+                if (isPlaying && HasMedia && _isHubVisible)
+                {
+                    if (_playbackTimer?.IsEnabled != true)
+                    {
+                        _playbackTimer?.Start();
+                    }
+                }
+                else
+                {
+                    _playbackTimer?.Stop();
+                }
+            });
         }
-        catch { }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MediaWidget] SyncPlaybackState error: {ex.Message}");
+        }
+    }
+
+    private void ScheduleResumeVerification(GlobalSystemMediaTransportControlsSession session)
+    {
+        _resumeVerificationCts?.Cancel();
+        _resumeVerificationCts = new CancellationTokenSource();
+        var token = _resumeVerificationCts.Token;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(150, token);
+                if (token.IsCancellationRequested) return;
+
+                var timeline = session.GetTimelineProperties();
+                if (timeline != null && timeline.Position > TimeSpan.FromSeconds(1))
+                {
+                    _lastTimelinePosition = timeline.Position;
+                    _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        if (!_isScrubbing && DurationSeconds > 0)
+                        {
+                            PositionSeconds = Math.Clamp(timeline.Position.TotalSeconds, 0, DurationSeconds);
+                            ProgressRatio = Math.Clamp(PositionSeconds / DurationSeconds, 0.0, 1.0);
+                            UpdateTimeDisplay(PositionSeconds, DurationSeconds);
+                        }
+                    });
+                }
+            }
+            catch { }
+        }, token);
     }
 
     private void OnPlaybackTimerTick(object? sender, EventArgs e)
     {
-        if (!_isHubVisible || !HasMedia || !IsPlaying || _isScrubbing) return;
+        if (!IsPlaying || !_isHubVisible || !HasMedia || _isScrubbing)
+        {
+            if (!IsPlaying)
+            {
+                _playbackTimer?.Stop();
+            }
+            return;
+        }
 
         if (DurationSeconds <= 0 || _trackDuration <= TimeSpan.Zero)
         {
-            UpdateTimelineInfo();
+            SyncPlaybackState();
             return;
         }
 
         double elapsedSeconds = (double)(System.Diagnostics.Stopwatch.GetTimestamp() - _lastLocalTimestamp) / System.Diagnostics.Stopwatch.Frequency;
         if (elapsedSeconds < 0) elapsedSeconds = 0;
 
-        double currentPos = Math.Clamp(_lastTimelinePosition.TotalSeconds + elapsedSeconds, 0, DurationSeconds);
+        double currentPos = Math.Clamp(_lastTimelinePosition.TotalSeconds + (elapsedSeconds * _playbackRate), 0, DurationSeconds);
         PositionSeconds = currentPos;
         ProgressRatio = DurationSeconds > 0 ? Math.Clamp(currentPos / DurationSeconds, 0.0, 1.0) : 0.0;
         UpdateTimeDisplay(PositionSeconds, DurationSeconds);
@@ -545,11 +617,9 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
 
             _ = Task.Run(async () =>
             {
-                UpdateTimelineInfo();
-                await Task.Delay(200);
-                UpdateTimelineInfo();
-                await Task.Delay(400);
-                UpdateTimelineInfo();
+                SyncPlaybackState();
+                await Task.Delay(250);
+                SyncPlaybackState();
             });
         }
         catch (Exception ex)
@@ -951,7 +1021,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
             {
                 IsPlaying = !IsPlaying;
                 await _currentSession.TryTogglePlayPauseAsync();
-                UpdatePlaybackInfo();
+                SyncPlaybackState(_currentSession);
             }
             catch { }
         }
@@ -1049,6 +1119,10 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     {
         if (disposing)
         {
+            _resumeVerificationCts?.Cancel();
+            _resumeVerificationCts?.Dispose();
+            _resumeVerificationCts = null;
+
             if (_playbackTimer != null)
             {
                 _playbackTimer.Stop();
