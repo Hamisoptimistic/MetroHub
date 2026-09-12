@@ -12,6 +12,8 @@ using MetroHub.Core.Models;
 using MetroHub.Widgets.Messaging;
 using Windows.Media.Control;
 using Windows.Storage.Streams;
+using System.Windows.Threading;
+using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Media;
 
@@ -48,11 +50,50 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     [ObservableProperty]
     private bool _hasThumbnail;
 
+    private bool _isSettingsLoaded;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsStaticGlowVisible))]
+    [NotifyPropertyChangedFor(nameof(IsAnimatedGlowVisible))]
+    [NotifyPropertyChangedFor(nameof(IsGlowAnimated))]
+    private MediaGlowMode _glowMode = MediaGlowMode.Static;
+
+    partial void OnGlowModeChanged(MediaGlowMode value)
+    {
+        if (_isSettingsLoaded)
+        {
+            SaveSettings();
+        }
+    }
+
+    partial void OnHasThumbnailChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsStaticGlowVisible));
+        OnPropertyChanged(nameof(IsAnimatedGlowVisible));
+    }
+
+    partial void OnIsPlayingChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsGlowAnimated));
+    }
+
+    public bool IsStaticGlowVisible => GlowMode == MediaGlowMode.Static && HasThumbnail;
+
+    public bool IsAnimatedGlowVisible => GlowMode == MediaGlowMode.Animated && HasThumbnail;
+
+    public bool IsGlowAnimated => GlowMode == MediaGlowMode.Animated && IsPlaying && _isHubVisible;
+
     [ObservableProperty]
     private Brush? _glowBrush;
 
     [ObservableProperty]
     private Brush? _sensualRadialBrush;
+
+    [ObservableProperty]
+    private Brush? _fluidWaveBrush;
+
+    [ObservableProperty]
+    private Brush? _fluidSecondaryBrush;
 
     [ObservableProperty]
     private SolidColorBrush _glowSolidBrush = new SolidColorBrush(Color.FromRgb(0x3A, 0x82, 0xD4));
@@ -79,6 +120,24 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     [ObservableProperty]
     private bool _canSkipPrevious = true;
 
+    [ObservableProperty]
+    private bool _canSeek = true;
+
+    [ObservableProperty]
+    private double _positionSeconds;
+
+    [ObservableProperty]
+    private double _durationSeconds;
+
+    [ObservableProperty]
+    private double _progressRatio;
+
+    private DispatcherTimer? _playbackTimer;
+    private long _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+    private TimeSpan _lastTimelinePosition = TimeSpan.Zero;
+    private TimeSpan _trackDuration = TimeSpan.Zero;
+    private bool _isScrubbing = false;
+
     public MediaWidgetViewModel(TileModel model) : base(model)
     {
         if (model.SpanX != 8 || (model.SpanY != 4 && model.SpanY != 3))
@@ -95,6 +154,15 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 OnPropertyChanged(nameof(GlowBlurRadius));
             }
         };
+
+        LoadSettings(model.SettingsJson);
+        _isSettingsLoaded = true;
+
+        _playbackTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(250)
+        };
+        _playbackTimer.Tick += OnPlaybackTimerTick;
 
         InitializeAsync();
     }
@@ -139,6 +207,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
         {
             _currentSession.MediaPropertiesChanged -= Session_MediaPropertiesChanged;
             _currentSession.PlaybackInfoChanged -= Session_PlaybackInfoChanged;
+            _currentSession.TimelinePropertiesChanged -= Session_TimelinePropertiesChanged;
         }
 
         _currentSession = newSession;
@@ -147,7 +216,9 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
         {
             _currentSession.MediaPropertiesChanged += Session_MediaPropertiesChanged;
             _currentSession.PlaybackInfoChanged += Session_PlaybackInfoChanged;
+            _currentSession.TimelinePropertiesChanged += Session_TimelinePropertiesChanged;
             await UpdateMediaDetailsAsync();
+            UpdateTimelineInfo();
         }
         else
         {
@@ -163,11 +234,17 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 HasThumbnail = false;
                 GlowBrush = null;
                 SensualRadialBrush = null;
+                FluidWaveBrush = null;
+                FluidSecondaryBrush = null;
                 GlowColor = Color.FromRgb(0x3A, 0x82, 0xD4);
                 var fallbackBrush = new SolidColorBrush(Color.FromRgb(0x3A, 0x82, 0xD4));
                 fallbackBrush.Freeze();
                 GlowSolidBrush = fallbackBrush;
                 IsPlaying = false;
+                DurationSeconds = 0;
+                PositionSeconds = 0;
+                ProgressRatio = 0.0;
+                _playbackTimer?.Stop();
             });
         }
     }
@@ -175,11 +252,18 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     private void Session_MediaPropertiesChanged(GlobalSystemMediaTransportControlsSession sender, MediaPropertiesChangedEventArgs args)
     {
         _ = UpdateMediaDetailsAsync();
+        UpdateTimelineInfo();
     }
 
     private void Session_PlaybackInfoChanged(GlobalSystemMediaTransportControlsSession sender, PlaybackInfoChangedEventArgs args)
     {
         UpdatePlaybackInfo();
+        UpdateTimelineInfo();
+    }
+
+    private void Session_TimelinePropertiesChanged(GlobalSystemMediaTransportControlsSession sender, TimelinePropertiesChangedEventArgs args)
+    {
+        UpdateTimelineInfo();
     }
 
     private void UpdatePlaybackInfo()
@@ -200,10 +284,133 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                     CanPlayPause = controls?.IsPlayPauseToggleEnabled ?? true;
                     CanSkipNext = controls?.IsNextEnabled ?? true;
                     CanSkipPrevious = controls?.IsPreviousEnabled ?? true;
+                    CanSeek = controls?.IsPlaybackPositionEnabled ?? true;
+
+                    if (playing && HasMedia && _isHubVisible)
+                    {
+                        _playbackTimer?.Start();
+                    }
+                    else
+                    {
+                        _playbackTimer?.Stop();
+                    }
                 });
             }
         }
         catch { }
+    }
+
+    private void UpdateTimelineInfo()
+    {
+        if (_currentSession == null) return;
+
+        try
+        {
+            var timeline = _currentSession.GetTimelineProperties();
+            if (timeline != null)
+            {
+                var newDuration = timeline.EndTime - timeline.StartTime;
+                if (newDuration <= TimeSpan.Zero && timeline.MaxSeekTime > timeline.MinSeekTime)
+                {
+                    newDuration = timeline.MaxSeekTime - timeline.MinSeekTime;
+                }
+
+                if (newDuration > TimeSpan.Zero)
+                {
+                    _trackDuration = newDuration;
+                }
+
+                if (timeline.Position >= TimeSpan.Zero)
+                {
+                    _lastTimelinePosition = timeline.Position;
+                    _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                }
+
+                double durationSec = Math.Max(0, _trackDuration.TotalSeconds);
+                double positionSec = Math.Max(0, _lastTimelinePosition.TotalSeconds);
+
+                Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    if (durationSec > 0)
+                    {
+                        DurationSeconds = durationSec;
+                    }
+
+                    if (!_isScrubbing && DurationSeconds > 0)
+                    {
+                        PositionSeconds = Math.Clamp(positionSec, 0, DurationSeconds);
+                        ProgressRatio = Math.Clamp(PositionSeconds / DurationSeconds, 0.0, 1.0);
+                    }
+
+                    if (IsPlaying && HasMedia && _isHubVisible)
+                    {
+                        _playbackTimer?.Start();
+                    }
+                    else
+                    {
+                        _playbackTimer?.Stop();
+                    }
+                });
+            }
+        }
+        catch { }
+    }
+
+    private void OnPlaybackTimerTick(object? sender, EventArgs e)
+    {
+        if (!_isHubVisible || !HasMedia || !IsPlaying || _isScrubbing) return;
+
+        if (DurationSeconds <= 0 || _trackDuration <= TimeSpan.Zero)
+        {
+            UpdateTimelineInfo();
+            return;
+        }
+
+        double elapsedSeconds = (double)(System.Diagnostics.Stopwatch.GetTimestamp() - _lastLocalTimestamp) / System.Diagnostics.Stopwatch.Frequency;
+        if (elapsedSeconds < 0) elapsedSeconds = 0;
+
+        double currentPos = Math.Clamp(_lastTimelinePosition.TotalSeconds + elapsedSeconds, 0, DurationSeconds);
+        PositionSeconds = currentPos;
+        ProgressRatio = DurationSeconds > 0 ? Math.Clamp(currentPos / DurationSeconds, 0.0, 1.0) : 0.0;
+    }
+
+    public void StartScrubbing()
+    {
+        _isScrubbing = true;
+    }
+
+    public void StopScrubbing(double finalRatio)
+    {
+        _isScrubbing = false;
+        _ = SeekToRatioAsync(finalRatio);
+    }
+
+    public async Task SeekToRatioAsync(double ratio)
+    {
+        if (_currentSession == null && _manager != null)
+        {
+            try { _currentSession = _manager.GetCurrentSession(); } catch { }
+        }
+
+        if (_currentSession == null || DurationSeconds <= 0) return;
+
+        ratio = Math.Clamp(ratio, 0.0, 1.0);
+        double targetSeconds = ratio * DurationSeconds;
+        long requestedTicks = (long)(targetSeconds * TimeSpan.TicksPerSecond);
+
+        PositionSeconds = targetSeconds;
+        ProgressRatio = ratio;
+        _lastTimelinePosition = TimeSpan.FromSeconds(targetSeconds);
+        _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+
+        try
+        {
+            await _currentSession.TryChangePlaybackPositionAsync(requestedTicks);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MediaWidget] Seek failed: {ex.Message}");
+        }
     }
 
     private async Task UpdateMediaDetailsAsync()
@@ -281,13 +488,15 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
             var glowSolidBrush = new SolidColorBrush(glowColor);
             glowSolidBrush.Freeze();
             RadialGradientBrush? sensualRadialBrush = null;
+            RadialGradientBrush? fluidWaveBrush = null;
+            LinearGradientBrush? fluidSecondaryBrush = null;
 
             if (props.Thumbnail != null)
             {
                 bmp = await LoadThumbnailAsync(props.Thumbnail);
                 if (bmp is BitmapSource bs)
                 {
-                    (glowColor, glowSolidBrush, sensualRadialBrush) = CreateGlow(bs);
+                    (glowColor, glowSolidBrush, sensualRadialBrush, fluidWaveBrush, fluidSecondaryBrush) = CreateGlow(bs);
                 }
             }
 
@@ -302,6 +511,8 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 HasThumbnail = bmp != null;
                 GlowSolidBrush = glowSolidBrush;
                 SensualRadialBrush = sensualRadialBrush;
+                FluidWaveBrush = fluidWaveBrush;
+                FluidSecondaryBrush = fluidSecondaryBrush;
                 GlowBrush = sensualRadialBrush;
                 GlowColor = glowColor;
                 IsPlaying = playing;
@@ -309,6 +520,15 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 CanPlayPause = controls?.IsPlayPauseToggleEnabled ?? true;
                 CanSkipNext = controls?.IsNextEnabled ?? true;
                 CanSkipPrevious = controls?.IsPreviousEnabled ?? true;
+            });
+
+            _ = Task.Run(async () =>
+            {
+                UpdateTimelineInfo();
+                await Task.Delay(200);
+                UpdateTimelineInfo();
+                await Task.Delay(400);
+                UpdateTimelineInfo();
             });
         }
         catch (Exception ex)
@@ -353,7 +573,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
         }
     }
 
-    private static (Color, SolidColorBrush, RadialGradientBrush) CreateGlow(BitmapSource bitmap)
+    private static (Color, SolidColorBrush, RadialGradientBrush, RadialGradientBrush, LinearGradientBrush) CreateGlow(BitmapSource bitmap)
     {
         try
         {
@@ -386,9 +606,6 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 validPixelCount++;
                 totalLum += v;
 
-                // Strict check for genuine chromatic color:
-                // delta >= 24 ensures grayscale/white compression artifacts (where r is 1-2 units > b)
-                // are NEVER mistaken for red hue 0!
                 if (delta >= 24 && s >= 0.20 && v >= 0.18 && v <= 0.95)
                 {
                     double weight = s * s * (1.0 - Math.Abs(v - 0.65));
@@ -409,23 +626,19 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 byte avgB = (byte)Math.Clamp(accB / totalColorWeight, 0, 255);
 
                 var (h, s, v) = RgbToHsv(avgR, avgG, avgB);
-                s = Math.Clamp(s * 1.3, 0.45, 0.95);
-                v = Math.Clamp(v * 1.15, 0.55, 0.88);
+                s = Math.Clamp(s * 1.40, 0.52, 0.98);
+                v = Math.Clamp(v * 1.20, 0.62, 0.96);
                 accent = ColorFromHsv(h, s, v);
             }
             else
             {
-                // Monochromatic / White / Black album art:
-                // Produce a sensual, luminous moonlight pearl-white aura — NOT red!
                 double avgLum = validPixelCount > 0 ? totalLum / validPixelCount : 0.8;
                 if (avgLum > 0.4)
                 {
-                    // White or light-gray album art -> Pure pearl-white
                     accent = Color.FromRgb(242, 246, 255);
                 }
                 else
                 {
-                    // Dark / black album art -> Soft silver moonlight
                     accent = Color.FromRgb(215, 228, 245);
                 }
             }
@@ -433,14 +646,8 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
             var solidBrush = new SolidColorBrush(accent);
             solidBrush.Freeze();
 
-            // Sensual, fluent multi-stop radial gradient originating from behind the album art
-            // diffusing across the entire card with a smooth non-linear cubic decay curve
-            byte a0 = isMonochrome ? (byte)100 : (byte)140;
-            byte a1 = isMonochrome ? (byte)75  : (byte)105;
-            byte a2 = isMonochrome ? (byte)48  : (byte)66;
-            byte a3 = isMonochrome ? (byte)24  : (byte)34;
-            byte a4 = isMonochrome ? (byte)8   : (byte)12;
-
+            // 1. Sensual Static Brush: EXACT classic localized halo behind the album art
+            // Confined to the right side of the card without covering the entire tile!
             var sensualBrush = new RadialGradientBrush
             {
                 MappingMode = BrushMappingMode.RelativeToBoundingBox,
@@ -449,15 +656,32 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 RadiusX = 0.95,
                 RadiusY = 1.15
             };
-            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(a0, accent.R, accent.G, accent.B), 0.00));
-            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(a1, accent.R, accent.G, accent.B), 0.18));
-            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(a2, accent.R, accent.G, accent.B), 0.38));
-            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(a3, accent.R, accent.G, accent.B), 0.60));
-            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(a4, accent.R, accent.G, accent.B), 0.82));
-            sensualBrush.GradientStops.Add(new GradientStop(Color.FromArgb(0,  accent.R, accent.G, accent.B), 1.00));
+            AddSmoothCosineStops(sensualBrush.GradientStops, accent, isMonochrome ? (byte)100 : (byte)140, 0, 16);
             sensualBrush.Freeze();
 
-            return (accent, solidBrush, sensualBrush);
+            // 2. Fluid Wave Stream Brush: Expansive radial stream emanating from album art in expanded overscan coords
+            // and washing across toward the left, covering the entire tile with zero boundary cliff
+            var fluidWaveBrush = new RadialGradientBrush
+            {
+                MappingMode = BrushMappingMode.RelativeToBoundingBox,
+                Center = new Point(0.656, 0.470),
+                GradientOrigin = new Point(0.656, 0.470),
+                RadiusX = 1.35,
+                RadiusY = 1.15
+            };
+            AddSmoothCosineStops(fluidWaveBrush.GradientStops, accent, isMonochrome ? (byte)150 : (byte)215, 0, 16);
+            fluidWaveBrush.Freeze();
+
+            // 3. Fluid Secondary Undercurrent Brush: Horizontal linear gradient flowing smoothly right to left
+            var fluidSecondaryBrush = new LinearGradientBrush
+            {
+                StartPoint = new Point(0.85, 0.35),
+                EndPoint = new Point(0.08, 0.65)
+            };
+            AddSmoothCosineStops(fluidSecondaryBrush.GradientStops, accent, isMonochrome ? (byte)95 : (byte)140, 0, 14);
+            fluidSecondaryBrush.Freeze();
+
+            return (accent, solidBrush, sensualBrush, fluidWaveBrush, fluidSecondaryBrush);
         }
         catch
         {
@@ -473,15 +697,73 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 RadiusX = 0.95,
                 RadiusY = 1.15
             };
-            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(140, 0x3A, 0x82, 0xD4), 0.00));
-            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(105, 0x3A, 0x82, 0xD4), 0.18));
-            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(66,  0x3A, 0x82, 0xD4), 0.38));
-            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(34,  0x3A, 0x82, 0xD4), 0.60));
-            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(12,  0x3A, 0x82, 0xD4), 0.82));
-            fallbackSensual.GradientStops.Add(new GradientStop(Color.FromArgb(0,   0x3A, 0x82, 0xD4), 1.00));
+            AddSmoothCosineStops(fallbackSensual.GradientStops, fallbackColor, 140, 0, 16);
             fallbackSensual.Freeze();
 
-            return (fallbackColor, fallbackSolid, fallbackSensual);
+            var fallbackWave = new RadialGradientBrush
+            {
+                MappingMode = BrushMappingMode.RelativeToBoundingBox,
+                Center = new Point(0.656, 0.470),
+                GradientOrigin = new Point(0.656, 0.470),
+                RadiusX = 1.35,
+                RadiusY = 1.15
+            };
+            AddSmoothCosineStops(fallbackWave.GradientStops, fallbackColor, 215, 0, 16);
+            fallbackWave.Freeze();
+
+            var fallbackSecondary = new LinearGradientBrush
+            {
+                StartPoint = new Point(0.85, 0.35),
+                EndPoint = new Point(0.08, 0.65)
+            };
+            AddSmoothCosineStops(fallbackSecondary.GradientStops, fallbackColor, 140, 0, 14);
+            fallbackSecondary.Freeze();
+
+            return (fallbackColor, fallbackSolid, fallbackSensual, fallbackWave, fallbackSecondary);
+        }
+    }
+
+    public static ImageSource DitherNoiseTexture { get; } = CreateDitherNoiseBitmap();
+
+    private static ImageSource CreateDitherNoiseBitmap()
+    {
+        int width = 64;
+        int height = 64;
+        byte[] pixels = new byte[width * height * 4];
+        var rand = new Random(1337);
+
+        for (int i = 0; i < pixels.Length; i += 4)
+        {
+            byte v = (byte)rand.Next(0, 256);
+            pixels[i] = v;     // B
+            pixels[i + 1] = v; // G
+            pixels[i + 2] = v; // R
+            pixels[i + 3] = (byte)rand.Next(10, 26); // subtle ~4-10% dither alpha
+        }
+
+        var bitmap = BitmapSource.Create(
+            width, height,
+            96, 96,
+            PixelFormats.Bgra32,
+            null,
+            pixels,
+            width * 4
+        );
+        bitmap.Freeze();
+        return bitmap;
+    }
+
+    public ImageSource DitherNoise => DitherNoiseTexture;
+
+    private static void AddSmoothCosineStops(GradientStopCollection collection, Color color, byte maxAlpha, byte minAlpha, int stopCount = 16)
+    {
+        for (int i = 0; i <= stopCount; i++)
+        {
+            double t = (double)i / stopCount;
+            // Cosine smooth curve with zero derivative at both ends (C^1 continuous, eliminating Mach bands)
+            double factor = (1.0 + Math.Cos(Math.PI * t)) / 2.0;
+            byte a = (byte)Math.Round(minAlpha + (maxAlpha - minAlpha) * factor);
+            collection.Add(new GradientStop(Color.FromArgb(a, color.R, color.G, color.B), t));
         }
     }
 
@@ -693,11 +975,14 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     public override void Pause()
     {
         _isHubVisible = false;
+        _playbackTimer?.Stop();
+        OnPropertyChanged(nameof(IsGlowAnimated));
     }
 
     public override void Resume()
     {
         _isHubVisible = true;
+        OnPropertyChanged(nameof(IsGlowAnimated));
         _ = RefreshSessionAsync();
     }
 
@@ -711,5 +996,31 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
         {
             Pause();
         }
+    }
+
+    protected override void LoadSettings(string? settingsJson)
+    {
+        var settings = WidgetSerializer.Deserialize<MediaWidgetSettings>(settingsJson);
+        if (settings != null)
+        {
+            GlowMode = settings.GlowMode;
+        }
+    }
+
+    public override void SaveSettings()
+    {
+        var settings = new MediaWidgetSettings
+        {
+            GlowMode = GlowMode
+        };
+        Model.TargetPath = "media";
+        Model.SettingsJson = WidgetSerializer.Serialize(settings);
+        MainWindow.Current?.SaveGroupsAndLayout();
+    }
+
+    public void SetGlowMode(MediaGlowMode mode)
+    {
+        GlowMode = mode;
+        SaveSettings();
     }
 }

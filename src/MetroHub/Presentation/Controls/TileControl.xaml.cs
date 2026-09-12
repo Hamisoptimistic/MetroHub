@@ -478,6 +478,52 @@ public partial class TileControl : UserControl
                 TileContextMenu.Items.Insert(0, todayItem);
                 TileContextMenu.Items.Insert(1, calDivider);
             }
+            else if (tile.TileContent is Widgets.Catalog.Media.MediaWidgetViewModel mediaVm)
+            {
+                var glowItem = new MenuItem
+                {
+                    Header = "Ambient Glow",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Sparkle24,
+                        FontSize = 20
+                    }
+                };
+
+                var itemStatic = new MenuItem
+                {
+                    Header = "Sensual Static (Default)",
+                    IsCheckable = true,
+                    IsChecked = mediaVm.GlowMode == Widgets.Catalog.Media.MediaGlowMode.Static
+                };
+                itemStatic.Click += (s, ev) => mediaVm.SetGlowMode(Widgets.Catalog.Media.MediaGlowMode.Static);
+
+                var itemAnimated = new MenuItem
+                {
+                    Header = "Fluid Breathing (Animated)",
+                    IsCheckable = true,
+                    IsChecked = mediaVm.GlowMode == Widgets.Catalog.Media.MediaGlowMode.Animated
+                };
+                itemAnimated.Click += (s, ev) => mediaVm.SetGlowMode(Widgets.Catalog.Media.MediaGlowMode.Animated);
+
+                var itemOff = new MenuItem
+                {
+                    Header = "Off (Clean Minimal)",
+                    IsCheckable = true,
+                    IsChecked = mediaVm.GlowMode == Widgets.Catalog.Media.MediaGlowMode.Off
+                };
+                itemOff.Click += (s, ev) => mediaVm.SetGlowMode(Widgets.Catalog.Media.MediaGlowMode.Off);
+
+                glowItem.Items.Add(itemStatic);
+                glowItem.Items.Add(itemAnimated);
+                glowItem.Items.Add(itemOff);
+
+                var mediaDivider = new Separator { Tag = "WidgetCustomMenu" };
+
+                TileContextMenu.Items.Insert(0, glowItem);
+                TileContextMenu.Items.Insert(1, mediaDivider);
+            }
         }
         else
         {

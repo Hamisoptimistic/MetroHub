@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using MetroHub.Widgets.Catalog.Clock;
+using MetroHub.Widgets.Catalog.Media;
 using MetroHub.Widgets.Catalog.Stub;
 
 namespace MetroHub.Widgets.Serialization;
@@ -15,6 +16,7 @@ namespace MetroHub.Widgets.Serialization;
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(StubWidgetSettings))]
 [JsonSerializable(typeof(ClockWidgetSettings))]
+[JsonSerializable(typeof(MediaWidgetSettings))]
 public partial class WidgetJsonContext : JsonSerializerContext
 {
 }

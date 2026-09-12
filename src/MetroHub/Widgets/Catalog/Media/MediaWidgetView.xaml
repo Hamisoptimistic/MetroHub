@@ -56,22 +56,152 @@
 
     <!-- Transparent WidgetCard to inherit the exact glass/acrylic tile background of other tiles -->
     <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
-        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
+        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />    <!-- Row 0: Track Info + Album Art -->
                 <RowDefinition Height="38" />   <!-- Row 1: Fluent Acrylic Strip: Sound Source (Left) + Controls (Far Right) -->
             </Grid.RowDefinitions>
 
-            <!-- 1. Sensual Fluent Ambient Radial Glow across the entire card from behind (Gaussian-smoothed to eliminate banding lines) -->
-            <Border Grid.RowSpan="2"
+            <!-- 1. MODE A: SENSUAL STATIC GLOW (Classic localized halo behind artwork - does NOT cover the whole tile) -->
+            <Border x:Name="StaticGlowBorder"
+                    Grid.RowSpan="2"
                     CornerRadius="2"
                     Background="{Binding SensualRadialBrush}"
                     IsHitTestVisible="False"
                     SnapsToDevicePixels="True"
+                    Visibility="{Binding IsStaticGlowVisible, Converter={StaticResource BoolToVis}}" />
+
+            <!-- 2. MODE B: SOPHISTICATED FLUID ANIMATED GLOW (Flows seamlessly across the whole tile with zero edge cutoff) -->
+            <Grid Grid.RowSpan="2"
+                  ClipToBounds="True"
+                  IsHitTestVisible="False"
+                  Visibility="{Binding IsAnimatedGlowVisible, Converter={StaticResource BoolToVis}}">
+
+                <!-- Layer 0: Seamless Continuous Base Ambient Wash (Guarantees zero cutoff or transparency boundary anywhere) -->
+                <Border Margin="-150"
+                        Background="{Binding FluidSecondaryBrush}"
+                        Opacity="0.45"
+                        SnapsToDevicePixels="True" />
+
+                <!-- Layer 1: Ambient River Drift (Overscan bounds prevent any boundary from entering the visible tile) -->
+                <Border x:Name="FluidDriftBorder"
+                        Margin="-150"
+                        Background="{Binding FluidSecondaryBrush}"
+                        CornerRadius="2"
+                        SnapsToDevicePixels="True">
+                    <Border.RenderTransform>
+                        <TranslateTransform x:Name="DriftTranslate" X="0" Y="0" />
+                    </Border.RenderTransform>
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsGlowAnimated}" Value="True">
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard x:Name="DriftStoryboard">
+                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                <!-- Horizontal drift from album cover to the left -->
+                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                 From="15" To="-85"
+                                                                 Duration="0:0:3.8">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <SineEase EasingMode="EaseInOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                                <!-- Floating vertical wave -->
+                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                                 From="-10" To="10"
+                                                                 Duration="0:0:2.9">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <SineEase EasingMode="EaseInOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                                <!-- Smooth luminous undulation -->
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                 From="0.45" To="0.90"
+                                                                 Duration="0:0:3.3">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <SineEase EasingMode="EaseInOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <StopStoryboard BeginStoryboardName="DriftStoryboard" />
+                                    </DataTrigger.ExitActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                </Border>
+
+                <!-- Layer 2: Dynamic Fluid Wave Bloom (Overscan bounds ensure ScaleX never pulls an edge inside the card) -->
+                <Border x:Name="FluidBloomBorder"
+                        Margin="-150"
+                        Background="{Binding FluidWaveBrush}"
+                        CornerRadius="2"
+                        SnapsToDevicePixels="True"
+                        RenderTransformOrigin="0.656,0.470">
+                    <Border.RenderTransform>
+                        <ScaleTransform x:Name="BloomScale" ScaleX="1.0" ScaleY="1.0" />
+                    </Border.RenderTransform>
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsGlowAnimated}" Value="True">
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard x:Name="BloomStoryboard">
+                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                <!-- Punchy rhythmic radial expansion surging out toward the left -->
+                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                                 From="0.85" To="1.25"
+                                                                 Duration="0:0:2.2">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseInOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                                 From="0.90" To="1.15"
+                                                                 Duration="0:0:2.7">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <SineEase EasingMode="EaseInOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                                <!-- Opacity pulse with beat swell -->
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                 From="0.55" To="1.00"
+                                                                 Duration="0:0:2.2">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseInOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <StopStoryboard BeginStoryboardName="BloomStoryboard" />
+                                    </DataTrigger.ExitActions>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                </Border>
+
+            </Grid>
+
+            <!-- 3. Micro-Noise Dither Film Grain (Destroys 8-bit color banding steps on all monitors) -->
+            <Border Grid.RowSpan="2"
+                    IsHitTestVisible="False"
+                    CornerRadius="2"
+                    Opacity="0.045"
+                    SnapsToDevicePixels="True"
                     Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}">
-                <Border.Effect>
-                    <BlurEffect Radius="24" KernelType="Gaussian" />
-                </Border.Effect>
+                <Border.Background>
+                    <ImageBrush ImageSource="{Binding DitherNoise}"
+                                TileMode="Tile"
+                                Viewport="0,0,64,64"
+                                ViewportUnits="Absolute" />
+                </Border.Background>
             </Border>
 
             <!-- Row 0: Top Section (Track Info + Elevated Album Art) -->
@@ -192,11 +322,10 @@
                 </Grid>
             </Grid>
 
-            <!-- Row 1: Bottom Docked Bar: Transport Controls Aligned with Title, with Hairline Divider Line -->
+            <!-- Row 1: Bottom Docked Bar: Transport Controls Aligned with Title -->
             <Border Grid.Row="1"
                     Background="#14000000"
-                    BorderThickness="0,0.5,0,0"
-                    BorderBrush="#0EFFFFFF"
+                    BorderThickness="0"
                     CornerRadius="0,0,2,2"
                     SnapsToDevicePixels="True"
                     Padding="8,0,28,0">
@@ -253,6 +382,86 @@
                     </Button>
                 </StackPanel>
             </Border>
+
+            <!-- Edge-to-Edge Hairline Fluent Seekbar running along the top boundary of Row 1 -->
+            <Grid x:Name="SeekbarContainer"
+                  Grid.Row="1"
+                  VerticalAlignment="Top"
+                  Height="14"
+                  Margin="0,-7,0,0"
+                  Background="Transparent"
+                  Cursor="Hand"
+                  Focusable="False"
+                  Tag="InteractiveControl"
+                  PreviewMouseLeftButtonDown="Seekbar_PreviewMouseLeftButtonDown"
+                  MouseEnter="Seekbar_MouseEnter"
+                  MouseLeave="Seekbar_MouseLeave"
+                  MouseLeftButtonDown="Seekbar_MouseLeftButtonDown"
+                  MouseMove="Seekbar_MouseMove"
+                  MouseLeftButtonUp="Seekbar_MouseLeftButtonUp"
+                  SizeChanged="Seekbar_SizeChanged"
+                  SnapsToDevicePixels="True">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasMedia}" Value="False">
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <!-- 1. Background Track: Hairline Divider Line (2px tall) -->
+                <Border x:Name="SeekTrackBg"
+                        Height="2"
+                        VerticalAlignment="Center"
+                        Background="#14FFFFFF"
+                        CornerRadius="1"
+                        SnapsToDevicePixels="True" />
+
+                <!-- 2. Elapsed Progress Fill Track: Luminous Glowing Fill -->
+                <Border x:Name="SeekProgressFill"
+                        Height="2"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Width="0"
+                        Background="{Binding GlowSolidBrush}"
+                        CornerRadius="1"
+                        SnapsToDevicePixels="True">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="6"
+                                          ShadowDepth="0"
+                                          Color="{Binding GlowColor}"
+                                          Opacity="0.65" />
+                    </Border.Effect>
+                </Border>
+
+                <!-- 3. Sleek Fluent Vertical Pill Thumb (Appears on Hover/Scrubbing) -->
+                <Border x:Name="SeekThumb"
+                        Width="5"
+                        Height="14"
+                        CornerRadius="2.5"
+                        Background="#FFFFFF"
+                        BorderBrush="{Binding GlowSolidBrush}"
+                        BorderThickness="1"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Opacity="0"
+                        SnapsToDevicePixels="True"
+                        IsHitTestVisible="False"
+                        RenderTransformOrigin="0.5,0.5">
+                    <Border.RenderTransform>
+                        <ScaleTransform x:Name="SeekThumbScale" ScaleX="0.6" ScaleY="0.7" />
+                    </Border.RenderTransform>
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="8"
+                                          ShadowDepth="0"
+                                          Color="{Binding GlowColor}"
+                                          Opacity="0.9" />
+                    </Border.Effect>
+                </Border>
+            </Grid>
         </Grid>
     </widgets:WidgetCard>
 </UserControl>

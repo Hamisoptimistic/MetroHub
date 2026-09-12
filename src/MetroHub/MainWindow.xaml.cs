@@ -1277,8 +1277,20 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         Point canvasMouse = TilesListBox != null ? e.GetPosition(TilesListBox) : e.GetPosition(this);
         bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
 
-        if (FindParent<System.Windows.Controls.Button>(dep) != null)
+        if (FindParent<System.Windows.Controls.Button>(dep) != null ||
+            FindParent<System.Windows.Controls.Primitives.Thumb>(dep) != null ||
+            FindParent<System.Windows.Controls.Primitives.RangeBase>(dep) != null ||
+            FindParent<System.Windows.Controls.Slider>(dep) != null ||
+            FindParent<System.Windows.Controls.ProgressBar>(dep) != null ||
+            FindParent<FrameworkElement>(dep)?.Name == "SeekbarContainer" ||
+            FindParent<FrameworkElement>(dep)?.Name == "SeekThumb" ||
+            FindParent<FrameworkElement>(dep)?.Name == "SeekTrackBg" ||
+            FindParent<FrameworkElement>(dep)?.Name == "SeekProgressFill" ||
+            FindParent<FrameworkElement>(dep)?.Tag as string == "InteractiveControl")
         {
+            _isPotentialDrag = false;
+            _isDragging = false;
+            _draggedTile = null;
             return;
         }
 
@@ -1374,7 +1386,13 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             _draggedCluster.Clear();
 
             if (FindParent<System.Windows.Controls.Button>(dep) != null ||
-                FindParent<ContextMenu>(dep) != null)
+                FindParent<System.Windows.Controls.Primitives.Thumb>(dep) != null ||
+                FindParent<ContextMenu>(dep) != null ||
+                FindParent<FrameworkElement>(dep)?.Name == "SeekbarContainer" ||
+                FindParent<FrameworkElement>(dep)?.Name == "SeekThumb" ||
+                FindParent<FrameworkElement>(dep)?.Name == "SeekTrackBg" ||
+                FindParent<FrameworkElement>(dep)?.Name == "SeekProgressFill" ||
+                FindParent<FrameworkElement>(dep)?.Tag as string == "InteractiveControl")
             {
                 return;
             }
