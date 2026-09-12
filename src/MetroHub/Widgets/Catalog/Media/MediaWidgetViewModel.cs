@@ -23,7 +23,6 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 {
     private GlobalSystemMediaTransportControlsSessionManager? _manager;
     private GlobalSystemMediaTransportControlsSession? _currentSession;
-    private bool _isHubVisible = true;
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
@@ -83,7 +82,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public bool IsAnimatedGlowVisible => GlowMode == MediaGlowMode.Animated && HasThumbnail;
 
-    public bool IsGlowAnimated => GlowMode == MediaGlowMode.Animated && IsPlaying && _isHubVisible;
+    public bool IsGlowAnimated => GlowMode == MediaGlowMode.Animated && IsPlaying;
 
     [ObservableProperty]
     private Brush? _glowBrush;
@@ -151,6 +150,8 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
     // After a large position jump (seek), enter a recovery window where every
     // timer tick does a full OS query instead of local extrapolation.
     private long _seekRecoveryUntil = 0;
+    private long _transientZeroDetectedAt = 0;
+    private long _lastChromiumFlushTimestamp = 0;
 
     private DispatcherTimer? _playbackTimer;
     private long _lastLocalTimestamp = Stopwatch.GetTimestamp();
@@ -307,8 +308,6 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
     private void SyncPlaybackState(GlobalSystemMediaTransportControlsSession? targetSession = null)
     {
-        if (!_isHubVisible) return;
-
         var session = targetSession ?? _currentSession ?? _manager?.GetCurrentSession();
         if (session == null)
         {
@@ -358,7 +357,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
             SyncTimelineProperties(session, playback);
 
-            if (isPlaying && HasMedia && _isHubVisible)
+            if (isPlaying && HasMedia)
             {
                 if (_playbackTimer?.IsEnabled != true)
                 {
@@ -393,9 +392,30 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 newDuration = timeline.MaxSeekTime - timeline.MinSeekTime;
             }
 
+            bool isPlaying = playback?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+            if (Stopwatch.GetTimestamp() < _optimisticUntilTimestamp)
+            {
+                isPlaying = _optimisticPlaybackTarget;
+            }
+
             lock (_stateLock)
             {
-                if (newDuration > TimeSpan.Zero)
+                // If the OS timeline has no range (EndTime <= 0), it is an uninitialized
+                // or cleared timeline (Chromium/YouTube emits this during seeks and buffering).
+                if (newDuration <= TimeSpan.Zero)
+                {
+                    if (isPlaying && HasMedia)
+                    {
+                        PromptChromiumTimelineFlush(session);
+                    }
+
+                    // NEVER overwrite an established duration or position with zeros from a cleared timeline!
+                    if (_trackDuration > TimeSpan.Zero)
+                    {
+                        return;
+                    }
+                }
+                else
                 {
                     _trackDuration = newDuration;
                 }
@@ -414,31 +434,56 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 // during seek/pause/play transitions. The LastUpdatedTime reported by the OS
                 // is the canonical freshness signal. If this update is OLDER than one we've
                 // already accepted, it's stale → reject it.
-                // Exception: if LastUpdatedTime is MinValue (some players don't report it),
-                // fall through to the anti-glitch check below.
                 if (incomingUpdateTime > DateTimeOffset.MinValue &&
                     _lastAcceptedOsUpdateTime > DateTimeOffset.MinValue &&
                     incomingUpdateTime < _lastAcceptedOsUpdateTime)
                 {
-                    // Stale update — the OS gave us data older than what we already have.
-                    // Trigger a recovery poll to find the real position.
                     ScheduleSeekRecoveryPoll(session);
                     return;
                 }
 
+
+                TimeSpan calculatedPos = incomingPos;
+
+                // Extrapolate position forward if playing (accounts for event delivery latency & browser batching)
+                if (isPlaying && incomingUpdateTime > DateTimeOffset.MinValue)
+                {
+                    var diff = (DateTimeOffset.UtcNow - incomingUpdateTime).TotalSeconds;
+                    if (diff >= 0)
+                    {
+                        calculatedPos += TimeSpan.FromSeconds(diff * rate);
+                    }
+                }
+
                 // ── ANTI-GLITCH: Transient zero/near-zero detection ──
-                // Chromium emits transient 0:00 during state transitions.
-                // If we were at ≥2.5s and the incoming is <1.5s on a long track,
-                // reject it and schedule recovery to find the real position.
-                bool isTransientZero = incomingPos <= TimeSpan.FromSeconds(1.5) &&
+                // Check if the EXTRAPOLATED position calculatedPos is near zero while we were previously well into a track.
+                // Note: We MUST check calculatedPos (not incomingPos), because Chromium browsers leave incomingPos at 00:00:00!
+                bool isTransientZero = calculatedPos <= TimeSpan.FromSeconds(1.5) &&
                                        _lastTimelinePosition >= TimeSpan.FromSeconds(2.5) &&
                                        _trackDuration > TimeSpan.FromSeconds(5.0);
+
+                if (isTransientZero)
+                {
+                    if (_transientZeroDetectedAt == 0)
+                    {
+                        _transientZeroDetectedAt = Stopwatch.GetTimestamp();
+                    }
+                    else if ((Stopwatch.GetTimestamp() - _transientZeroDetectedAt) / (double)Stopwatch.Frequency > 0.5)
+                    {
+                        // OS has consistently reported near-zero for >500ms.
+                        // Assume it's a genuine user seek to the beginning, accept it.
+                        isTransientZero = false;
+                        _transientZeroDetectedAt = 0;
+                    }
+                }
 
                 if (isTransientZero)
                 {
                     ScheduleSeekRecoveryPoll(session);
                     return;
                 }
+                
+                _transientZeroDetectedAt = 0;
 
                 // ── ACCEPT THIS UPDATE ──
                 if (incomingUpdateTime > DateTimeOffset.MinValue)
@@ -446,30 +491,11 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                     _lastAcceptedOsUpdateTime = incomingUpdateTime;
                 }
 
-                TimeSpan calculatedPos = incomingPos;
-                bool isPlaying = playback?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
-
-                if (Stopwatch.GetTimestamp() < _optimisticUntilTimestamp)
-                {
-                    isPlaying = _optimisticPlaybackTarget;
-                }
-
-                // Extrapolate position forward if playing (accounts for event delivery latency)
-                if (isPlaying && incomingUpdateTime > DateTimeOffset.MinValue)
-                {
-                    var diff = (DateTimeOffset.UtcNow - incomingUpdateTime).TotalSeconds;
-                    if (diff >= 0 && diff < 30.0)
-                    {
-                        calculatedPos += TimeSpan.FromSeconds(diff * rate);
-                    }
-                }
-
                 // Detect large position jumps (seek) and enter recovery window
+                // Only trigger if _lastTimelinePosition was already established (>0)
                 double positionDelta = Math.Abs(calculatedPos.TotalSeconds - _lastTimelinePosition.TotalSeconds);
-                if (positionDelta > 3.0 && _trackDuration > TimeSpan.FromSeconds(5.0))
+                if (_lastTimelinePosition > TimeSpan.Zero && positionDelta > 3.0 && _trackDuration > TimeSpan.FromSeconds(5.0))
                 {
-                    // Large jump detected — enter seek recovery for 1.5s
-                    // During this window, every timer tick will do a full OS query
                     _seekRecoveryUntil = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 1.5);
                     ScheduleSeekRecoveryPoll(session);
                 }
@@ -539,9 +565,38 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
         }, token);
     }
 
+    /// <summary>
+    /// Chromium/YouTube only flushes MediaSession position to Windows SMTC on transport changes.
+    /// When Chromium clears its timeline (EndTime=0) during a web seek or buffering,
+    /// this rapid toggle prompts Chromium to flush its actual HTML5 video currentTime and duration.
+    /// </summary>
+    private void PromptChromiumTimelineFlush(GlobalSystemMediaTransportControlsSession session)
+    {
+        long now = Stopwatch.GetTimestamp();
+        // Throttle to at most once every 1.5 seconds
+        if ((now - _lastChromiumFlushTimestamp) / (double)Stopwatch.Frequency < 1.5)
+        {
+            return;
+        }
+        _lastChromiumFlushTimestamp = now;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await session.TryTogglePlayPauseAsync();
+                await session.TryTogglePlayPauseAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MediaWidget] PromptChromiumTimelineFlush error: {ex.Message}");
+            }
+        });
+    }
+
     private void OnPlaybackTimerTick(object? sender, EventArgs e)
     {
-        if (!_isHubVisible || !HasMedia || _isScrubbing)
+        if (!HasMedia || _isScrubbing)
         {
             return;
         }
@@ -602,7 +657,8 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 double elapsedSeconds = (double)(Stopwatch.GetTimestamp() - _lastLocalTimestamp) / Stopwatch.Frequency;
                 if (elapsedSeconds < 0) elapsedSeconds = 0;
 
-                double currentPos = Math.Clamp(_lastTimelinePosition.TotalSeconds + (elapsedSeconds * _playbackRate), 0, DurationSeconds);
+                double maxPos = DurationSeconds > 0 ? DurationSeconds : double.MaxValue;
+                double currentPos = Math.Clamp(_lastTimelinePosition.TotalSeconds + (elapsedSeconds * _playbackRate), 0, maxPos);
                 PositionSeconds = currentPos;
                 ProgressRatio = DurationSeconds > 0 ? Math.Clamp(currentPos / DurationSeconds, 0.0, 1.0) : 0.0;
                 UpdateTimeDisplay(PositionSeconds, DurationSeconds);
@@ -669,7 +725,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
     private async Task UpdateMediaDetailsAsync()
     {
-        if (!_isHubVisible || _currentSession == null) return;
+        if (_currentSession == null) return;
 
         long epoch = Interlocked.Increment(ref _updateEpoch);
 
@@ -749,6 +805,8 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                     _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
                     _suppressExternalPositionUpdatesUntil = 0;
                     _seekRecoveryUntil = 0;
+                    _transientZeroDetectedAt = 0;
+                    _trackDuration = TimeSpan.Zero;
                 }
             }
 
@@ -1199,7 +1257,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
             {
                 _playbackTimer?.Stop();
             }
-            else if (_isHubVisible)
+            else
             {
                 _lastLocalTimestamp = Stopwatch.GetTimestamp();
                 _playbackTimer?.Start();
@@ -1288,18 +1346,29 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
         }
     }
 
+    public override void Receive(HubVisibilityChangedMessage message)
+    {
+        if (message.IsVisible)
+        {
+            // When MetroHub is opened, if the timeline is currently in a cleared state
+            // (e.g. user was seeking on YouTube while the hub was closed), immediately prompt
+            // Chromium to flush the true position so the UI instantly displays the exact time!
+            var session = _currentSession ?? _manager?.GetCurrentSession();
+            if (session != null && IsPlaying && HasMedia && DurationSeconds <= 0)
+            {
+                PromptChromiumTimelineFlush(session);
+            }
+        }
+    }
+
     public override void Pause()
     {
-        _isHubVisible = false;
-        _playbackTimer?.Stop();
-        OnPropertyChanged(nameof(IsGlowAnimated));
+        // Intentionally empty - do not pause media tracking or timer in the background.
     }
 
     public override void Resume()
     {
-        _isHubVisible = true;
-        OnPropertyChanged(nameof(IsGlowAnimated));
-        _ = RefreshSessionAsync();
+        // Intentionally empty - media widget runs continuously in the background.
     }
 
     protected override void LoadSettings(string? settingsJson)

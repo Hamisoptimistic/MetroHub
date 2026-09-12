@@ -216,6 +216,29 @@ public partial class VolumeWidgetViewModel : WidgetViewModelBase
     }
 
     [RelayCommand]
+    public void ToggleNextDevice()
+    {
+        if (Devices.Count <= 1)
+        {
+            RefreshDevices();
+            if (Devices.Count <= 1) return;
+        }
+
+        int currentIndex = -1;
+        for (int i = 0; i < Devices.Count; i++)
+        {
+            if (Devices[i].IsDefault)
+            {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        int nextIndex = currentIndex >= 0 ? (currentIndex + 1) % Devices.Count : 0;
+        SelectDevice(Devices[nextIndex]);
+    }
+
+    [RelayCommand]
     public void SelectDevice(AudioDeviceItemViewModel? device)
     {
         if (device == null || device.IsDefault) return;

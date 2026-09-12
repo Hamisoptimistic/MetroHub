@@ -1,3 +1,7 @@
+---
+trigger: manual
+---
+
 # Bug Fixing Protocol — Universal Systematic Debugging & Resolution Guide
 
 > **CRITICAL DIRECTIVE**: When asked to fix ANY bug — UI glitch, data corruption, race condition, performance issue, crash, API misbehavior, or anything else — you MUST follow this protocol end-to-end. Do NOT skip steps. Do NOT guess at solutions. Do NOT apply surface-level patches. Treat every bug as a forensic investigation — understand the root cause BEFORE writing a single line of fix code.

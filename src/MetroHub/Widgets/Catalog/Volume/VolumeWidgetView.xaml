@@ -221,8 +221,8 @@
                 <Button Grid.Column="0"
                         Style="{StaticResource VolumeTransportButtonStyle}"
                         HorizontalAlignment="Left"
-                        ToolTip="{Binding ActiveDeviceName}"
-                        Cursor="Arrow">
+                        Command="{Binding ToggleNextDeviceCommand}"
+                        ToolTip="{Binding ActiveDeviceName}">
                     <TextBlock Text="{Binding ActiveDeviceIcon}"
                                FontFamily="Segoe MDL2 Assets"
                                FontSize="16"
