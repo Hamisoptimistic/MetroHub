@@ -80,50 +80,55 @@ public class AudioService : IDisposable
         }
     }
 
+    private readonly object _deviceLock = new();
+
     private void BindToDefaultDevice()
     {
-        if (_enumerator == null) return;
-
-        // Clean up previous endpoint-specific objects
-        if (_endpointVolume != null)
+        lock (_deviceLock)
         {
-            try { _endpointVolume.UnregisterControlChangeNotify(_volumeListener); } catch { }
-            SafeRelease(ref _endpointVolume);
-        }
+            if (_enumerator == null) return;
 
-        if (_sessionManager != null)
-        {
-            try { _sessionManager.UnregisterSessionNotification(_sessionListener); } catch { }
-            SafeRelease(ref _sessionManager);
-        }
-
-        SafeRelease(ref _defaultRenderDevice);
-
-        int hr = _enumerator.GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eMultimedia, out _defaultRenderDevice);
-        if (hr != 0 || _defaultRenderDevice == null)
-        {
-            // Fallback to console role
-            hr = _enumerator.GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eConsole, out _defaultRenderDevice);
-        }
-
-        if (hr == 0 && _defaultRenderDevice != null)
-        {
-            // 1. Activate IAudioEndpointVolume
-            var iidVol = typeof(IAudioEndpointVolume).GUID;
-            hr = _defaultRenderDevice.Activate(ref iidVol, CLSCTX.ALL, IntPtr.Zero, out var volObj);
-            if (hr == 0 && volObj is IAudioEndpointVolume endpointVol)
+            // Clean up previous endpoint-specific objects
+            if (_endpointVolume != null)
             {
-                _endpointVolume = endpointVol;
-                _endpointVolume.RegisterControlChangeNotify(_volumeListener);
+                try { _endpointVolume.UnregisterControlChangeNotify(_volumeListener); } catch { }
+                SafeRelease(ref _endpointVolume);
             }
 
-            // 2. Activate IAudioSessionManager2
-            var iidSession = typeof(IAudioSessionManager2).GUID;
-            hr = _defaultRenderDevice.Activate(ref iidSession, CLSCTX.ALL, IntPtr.Zero, out var sessionObj);
-            if (hr == 0 && sessionObj is IAudioSessionManager2 sessionMgr)
+            if (_sessionManager != null)
             {
-                _sessionManager = sessionMgr;
-                _sessionManager.RegisterSessionNotification(_sessionListener);
+                try { _sessionManager.UnregisterSessionNotification(_sessionListener); } catch { }
+                SafeRelease(ref _sessionManager);
+            }
+
+            SafeRelease(ref _defaultRenderDevice);
+
+            int hr = _enumerator.GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eMultimedia, out _defaultRenderDevice);
+            if (hr != 0 || _defaultRenderDevice == null)
+            {
+                // Fallback to console role
+                hr = _enumerator.GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eConsole, out _defaultRenderDevice);
+            }
+
+            if (hr == 0 && _defaultRenderDevice != null)
+            {
+                // 1. Activate IAudioEndpointVolume
+                var iidVol = typeof(IAudioEndpointVolume).GUID;
+                hr = _defaultRenderDevice.Activate(ref iidVol, CLSCTX.INPROC_SERVER, IntPtr.Zero, out var volObj);
+                if (hr == 0 && volObj is IAudioEndpointVolume endpointVol)
+                {
+                    _endpointVolume = endpointVol;
+                    _endpointVolume.RegisterControlChangeNotify(_volumeListener);
+                }
+
+                // 2. Activate IAudioSessionManager2
+                var iidSession = typeof(IAudioSessionManager2).GUID;
+                hr = _defaultRenderDevice.Activate(ref iidSession, CLSCTX.INPROC_SERVER, IntPtr.Zero, out var sessionObj);
+                if (hr == 0 && sessionObj is IAudioSessionManager2 sessionMgr)
+                {
+                    _sessionManager = sessionMgr;
+                    _sessionManager.RegisterSessionNotification(_sessionListener);
+                }
             }
         }
     }
@@ -202,9 +207,18 @@ public class AudioService : IDisposable
         if (_enumerator == null) return devices;
 
         string currentDefaultId = string.Empty;
-        if (_defaultRenderDevice != null)
+        IMMDevice? defaultDev = null;
+        try
         {
-            _defaultRenderDevice.GetId(out currentDefaultId);
+            if (_enumerator.GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eMultimedia, out defaultDev) == 0 && defaultDev != null)
+            {
+                defaultDev.GetId(out currentDefaultId);
+            }
+        }
+        catch { }
+        finally
+        {
+            SafeRelease(ref defaultDev);
         }
 
         IMMDeviceCollection? collection = null;
@@ -287,19 +301,14 @@ public class AudioService : IDisposable
 
         try
         {
-            var client = new CPolicyConfigVistaClient();
+            var client = new PolicyConfigClient();
             if (client is IPolicyConfigVista policyConfig)
             {
-                policyConfig.SetDefaultEndpoint(deviceId, ERole.eConsole);
-                policyConfig.SetDefaultEndpoint(deviceId, ERole.eMultimedia);
-                policyConfig.SetDefaultEndpoint(deviceId, ERole.eCommunications);
-
+                int hrConsole = policyConfig.SetDefaultEndpoint(deviceId, ERole.eConsole);
+                int hrMulti = policyConfig.SetDefaultEndpoint(deviceId, ERole.eMultimedia);
+                int hrComm = policyConfig.SetDefaultEndpoint(deviceId, ERole.eCommunications);
                 Marshal.ReleaseComObject(policyConfig);
-
-                // Immediate local resync
-                BindToDefaultDevice();
-                DefaultDeviceChanged?.Invoke();
-                return true;
+                return hrConsole == 0 || hrMulti == 0 || hrComm == 0;
             }
         }
         catch (Exception ex)

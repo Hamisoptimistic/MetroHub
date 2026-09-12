@@ -211,7 +211,18 @@ public partial class VolumeWidgetViewModel : WidgetViewModelBase
     {
         if (device == null || device.IsDefault) return;
 
-        _audioService.SetDefaultPlaybackDevice(device.Id);
+        // Optimistic UI update for instant feedback
+        foreach (var d in Devices)
+        {
+            d.IsDefault = string.Equals(d.Id, device.Id, StringComparison.OrdinalIgnoreCase);
+        }
+        ActiveDeviceName = device.Name;
+        ActiveDeviceIcon = device.IconGlyph;
+
+        Task.Run(() =>
+        {
+            _audioService.SetDefaultPlaybackDevice(device.Id);
+        });
     }
 
     [RelayCommand]
@@ -263,16 +274,27 @@ public partial class VolumeWidgetViewModel : WidgetViewModelBase
             ActiveDeviceIcon = "\uE7F5";
         }
 
-        Devices.Clear();
-        foreach (var dev in rawDevices)
+        // In-place update if device list matches to prevent list flicker
+        if (Devices.Count == rawDevices.Count && Devices.Select(d => d.Id).SequenceEqual(rawDevices.Select(d => d.Id), StringComparer.OrdinalIgnoreCase))
         {
-            Devices.Add(new AudioDeviceItemViewModel
+            for (int i = 0; i < Devices.Count; i++)
             {
-                Id = dev.Id,
-                Name = dev.Name,
-                IconGlyph = dev.IconGlyph,
-                IsDefault = dev.IsDefault
-            });
+                Devices[i].IsDefault = rawDevices[i].IsDefault;
+            }
+        }
+        else
+        {
+            Devices.Clear();
+            foreach (var dev in rawDevices)
+            {
+                Devices.Add(new AudioDeviceItemViewModel
+                {
+                    Id = dev.Id,
+                    Name = dev.Name,
+                    IconGlyph = dev.IconGlyph,
+                    IsDefault = dev.IsDefault
+                });
+            }
         }
     }
 

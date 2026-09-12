@@ -10,19 +10,19 @@ public class EndpointNotificationCallback : IMMNotificationClient
 
     public int OnDeviceStateChanged(string pwstrDeviceId, DeviceState dwNewState)
     {
-        DeviceListChanged?.Invoke();
+        Task.Run(() => DeviceListChanged?.Invoke());
         return 0;
     }
 
     public int OnDeviceAdded(string pwstrDeviceId)
     {
-        DeviceListChanged?.Invoke();
+        Task.Run(() => DeviceListChanged?.Invoke());
         return 0;
     }
 
     public int OnDeviceRemoved(string pwstrDeviceId)
     {
-        DeviceListChanged?.Invoke();
+        Task.Run(() => DeviceListChanged?.Invoke());
         return 0;
     }
 
@@ -30,7 +30,7 @@ public class EndpointNotificationCallback : IMMNotificationClient
     {
         if (flow == EDataFlow.eRender && (role == ERole.eMultimedia || role == ERole.eConsole))
         {
-            DefaultDeviceChanged?.Invoke();
+            Task.Run(() => DefaultDeviceChanged?.Invoke());
         }
         return 0;
     }

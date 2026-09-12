@@ -122,8 +122,12 @@ public struct AUDIO_VOLUME_NOTIFICATION_DATA
 public class MMDeviceEnumeratorComObject { }
 
 [ComImport]
-[Guid("870C3566-037F-4446-AB30-E9B0DE0B3004")]
+[Guid("870AF99C-171D-4F9E-AF0D-E63DF40C2BC9")]
 public class CPolicyConfigVistaClient { }
+
+[ComImport]
+[Guid("870AF99C-171D-4F9E-AF0D-E63DF40C2BC9")]
+public class PolicyConfigClient { }
 
 #endregion
 
@@ -223,7 +227,7 @@ public interface IMMNotificationClient
 }
 
 [ComImport]
-[Guid("5BC63DB8-8855-4742-8370-5F0837D15259")]
+[Guid("5CDF2C82-841E-4546-9722-0CF74078229A")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 public interface IAudioEndpointVolume
 {
@@ -283,7 +287,7 @@ public interface IAudioEndpointVolume
 }
 
 [ComImport]
-[Guid("657804FA-D6AD-4496-8560-E5D56D30419C")]
+[Guid("657804FA-D6AD-4496-8A60-352752AF4F89")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
 public interface IAudioEndpointVolumeCallback
 {

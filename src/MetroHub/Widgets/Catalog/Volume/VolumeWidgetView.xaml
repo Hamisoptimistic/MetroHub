@@ -229,7 +229,7 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type volume:AudioDeviceItemViewModel}">
                                     <Button Style="{StaticResource DeviceListItemButtonStyle}"
-                                            Command="{Binding DataContext.SelectDeviceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            Command="{Binding DataContext.SelectDeviceCommand, RelativeSource={RelativeSource AncestorType={x:Type volume:VolumeWidgetView}}}"
                                             CommandParameter="{Binding}">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
