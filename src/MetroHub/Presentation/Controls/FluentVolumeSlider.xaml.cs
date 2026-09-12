@@ -96,7 +96,7 @@ public partial class FluentVolumeSlider : UserControl
     private void UpdateMutedVisuals()
     {
         ProgressFill.Opacity = IsMuted ? 0.35 : 1.0;
-        SliderThumb.Opacity = IsMuted ? 0.45 : 0.85;
+        SliderThumb.Opacity = IsMuted ? 0.45 : (_isDragging || IsMouseOver ? 1.0 : 0.0);
     }
 
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
@@ -118,11 +118,20 @@ public partial class FluentVolumeSlider : UserControl
 
         ProgressFill.Width = ratio * width;
 
-        double thumbWidth = SliderThumb.ActualWidth > 0 ? SliderThumb.ActualWidth : 6;
+        double thumbWidth = SliderThumb.ActualWidth > 0 ? SliderThumb.ActualWidth : 5;
         double maxThumbLeft = Math.Max(0, width - thumbWidth);
         double thumbLeft = ratio * maxThumbLeft;
 
         SliderThumb.Margin = new Thickness(thumbLeft, 0, 0, 0);
+
+        if (FloatingTooltip != null && TooltipText != null && TooltipTranslate != null)
+        {
+            TooltipText.Text = $"{Math.Round(Value)}%";
+            double tooltipWidth = FloatingTooltip.ActualWidth > 0 ? FloatingTooltip.ActualWidth : 36.0;
+            double thumbCenter = thumbLeft + (thumbWidth / 2.0);
+            double targetX = Math.Clamp(thumbCenter - (tooltipWidth / 2.0), 0.0, Math.Max(0, width - tooltipWidth));
+            TooltipTranslate.X = targetX;
+        }
     }
 
     private void UpdateValueFromPosition(Point pos)
@@ -139,12 +148,12 @@ public partial class FluentVolumeSlider : UserControl
 
     private void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        // Suppress tile drag / activation
+        // Intercept tunneling mouse down event to completely prevent parent tile activation/drag
         e.Handled = true;
 
         _isDragging = true;
         RootContainer.CaptureMouse();
-        AnimateThumbScale(1.3, 1.2, 0.95);
+        AnimateHoverState(true, isDragging: true);
 
         Point pt = e.GetPosition(RootContainer);
         UpdateValueFromPosition(pt);
@@ -168,14 +177,8 @@ public partial class FluentVolumeSlider : UserControl
             _isDragging = false;
             RootContainer.ReleaseMouseCapture();
 
-            if (RootContainer.IsMouseOver)
-            {
-                AnimateThumbScale(1.15, 1.1, 0.9);
-            }
-            else
-            {
-                AnimateThumbScale(1.0, 1.0, IsMuted ? 0.45 : 0.85);
-            }
+            bool isMouseStillOver = RootContainer.IsMouseOver;
+            AnimateHoverState(isMouseStillOver, isDragging: false);
         }
     }
 
@@ -193,7 +196,7 @@ public partial class FluentVolumeSlider : UserControl
     {
         if (!_isDragging)
         {
-            AnimateThumbScale(1.15, 1.1, 0.9);
+            AnimateHoverState(true, isDragging: false);
         }
     }
 
@@ -201,20 +204,44 @@ public partial class FluentVolumeSlider : UserControl
     {
         if (!_isDragging)
         {
-            AnimateThumbScale(1.0, 1.0, IsMuted ? 0.45 : 0.85);
+            AnimateHoverState(false, isDragging: false);
         }
     }
 
-    private void AnimateThumbScale(double scaleX, double scaleY, double opacity)
+    private void AnimateHoverState(bool isHovered, bool isDragging)
     {
-        if (ThumbScale == null || SliderThumb == null) return;
+        var duration = TimeSpan.FromMilliseconds(160);
+        var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
 
-        var animX = new DoubleAnimation(scaleX, TimeSpan.FromMilliseconds(100));
-        var animY = new DoubleAnimation(scaleY, TimeSpan.FromMilliseconds(100));
-        var animO = new DoubleAnimation(opacity, TimeSpan.FromMilliseconds(100));
+        // 1. Thumb Opacity: 0 when resting, 1.0 when hovered or scrubbing
+        double targetOpacity = (isHovered || isDragging) ? (IsMuted ? 0.45 : 1.0) : 0.0;
+        var thumbOpacityAnim = new DoubleAnimation(targetOpacity, duration) { EasingFunction = easing };
+        SliderThumb.BeginAnimation(OpacityProperty, thumbOpacityAnim);
 
-        ThumbScale.BeginAnimation(ScaleTransform.ScaleXProperty, animX);
-        ThumbScale.BeginAnimation(ScaleTransform.ScaleYProperty, animY);
-        SliderThumb.BeginAnimation(OpacityProperty, animO);
+        // 2. Vertical Pill Thumb Scale: 0.6x0.7 resting -> 1.0x1.0 hover -> 1.2x1.1 dragging
+        double targetScaleX = isDragging ? 1.2 : (isHovered ? 1.0 : 0.6);
+        double targetScaleY = isDragging ? 1.1 : (isHovered ? 1.0 : 0.7);
+        var scaleXAnim = new DoubleAnimation(targetScaleX, duration) { EasingFunction = easing };
+        var scaleYAnim = new DoubleAnimation(targetScaleY, duration) { EasingFunction = easing };
+        ThumbScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
+        ThumbScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
+
+        // 3. Track Height: 3px resting -> 4.5px on hover/drag
+        double targetHeight = (isHovered || isDragging) ? 4.5 : 3.0;
+        var trackHeightAnim = new DoubleAnimation(targetHeight, duration) { EasingFunction = easing };
+        TrackTrough?.BeginAnimation(HeightProperty, trackHeightAnim);
+        TrackBg?.BeginAnimation(HeightProperty, trackHeightAnim);
+        ProgressFill?.BeginAnimation(HeightProperty, trackHeightAnim);
+
+        // 4. Floating Drag Tooltip: 1.0 ONLY while actively dragging, 0 when released or merely hovered
+        if (FloatingTooltip != null)
+        {
+            double targetTooltipOpacity = isDragging ? 1.0 : 0.0;
+            var tooltipAnim = new DoubleAnimation(targetTooltipOpacity, TimeSpan.FromMilliseconds(140))
+            {
+                EasingFunction = easing
+            };
+            FloatingTooltip.BeginAnimation(OpacityProperty, tooltipAnim);
+        }
     }
 }

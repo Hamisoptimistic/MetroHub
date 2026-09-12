@@ -3,69 +3,117 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
-             Height="20"
-             MinHeight="16"
+             Height="16"
+             MinHeight="14"
              Focusable="False"
-             Tag="InteractiveControl"
-             behaviors:InputSafeguard.SuppressTileDrag="True"
              Cursor="Hand"
+             ClipToBounds="False"
              SnapsToDevicePixels="True"
              UseLayoutRounding="True">
 
     <Grid x:Name="RootContainer"
           Background="Transparent"
+          ClipToBounds="False"
           PreviewMouseLeftButtonDown="OnPreviewMouseLeftButtonDown"
           PreviewMouseMove="OnPreviewMouseMove"
           PreviewMouseLeftButtonUp="OnPreviewMouseLeftButtonUp"
           PreviewMouseWheel="OnPreviewMouseWheel"
           MouseEnter="OnMouseEnter"
           MouseLeave="OnMouseLeave"
-          SizeChanged="OnSizeChanged">
+          SizeChanged="OnSizeChanged"
+          SnapsToDevicePixels="True">
 
-        <!-- 1. Dark Glass Background Trough (4px high) -->
-        <Border Height="4"
+        <!-- 1. Dark Glass Background Under-Groove (3px tall, matching Media Player) -->
+        <Border x:Name="TrackTrough"
+                Height="3"
                 VerticalAlignment="Center"
-                Background="#50000000"
-                CornerRadius="2"
+                Background="#45000000"
+                CornerRadius="1.5"
                 SnapsToDevicePixels="True" />
 
-        <!-- 2. Unfilled Track (Frosted translucent bar, 4px high) -->
+        <!-- 2. Frosted Unfilled Track Background (3px tall, matching Media Player) -->
         <Border x:Name="TrackBg"
-                Height="4"
+                Height="3"
                 VerticalAlignment="Center"
-                Background="#30FFFFFF"
-                CornerRadius="2"
+                Background="#35FFFFFF"
+                CornerRadius="1.5"
                 SnapsToDevicePixels="True" />
 
-        <!-- 3. Active Fill Bar (Vibrant Accent, 4px high) -->
+        <!-- 3. Active Luminous Accent Progress Fill (3px tall) -->
         <Border x:Name="ProgressFill"
-                Height="4"
+                Height="3"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
                 Width="0"
                 Background="{DynamicResource SystemAccentColorPrimaryBrush}"
-                CornerRadius="2"
-                SnapsToDevicePixels="True" />
+                CornerRadius="1.5"
+                SnapsToDevicePixels="True">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="6"
+                                  ShadowDepth="0"
+                                  Color="{DynamicResource SystemAccentColor}"
+                                  Opacity="0.75" />
+            </Border.Effect>
+        </Border>
 
-        <!-- 4. Fluent Capsule Thumb (6x16px Pill, expands on hover/drag) -->
+        <!-- 4. Sleek Fluent Vertical Pill Thumb (5x14px, appears on hover/drag, matching Media Player) -->
         <Border x:Name="SliderThumb"
-                Width="6"
-                Height="16"
-                CornerRadius="3"
+                Width="5"
+                Height="14"
+                CornerRadius="2.5"
                 Background="#FFFFFF"
                 BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
                 BorderThickness="1"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
-                Opacity="0.85"
+                Opacity="0"
                 SnapsToDevicePixels="True"
                 IsHitTestVisible="False"
                 RenderTransformOrigin="0.5,0.5">
             <Border.RenderTransform>
-                <ScaleTransform x:Name="ThumbScale" ScaleX="1.0" ScaleY="1.0" />
+                <ScaleTransform x:Name="ThumbScale" ScaleX="0.6" ScaleY="0.7" />
             </Border.RenderTransform>
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="8"
+                                  ShadowDepth="0"
+                                  Color="{DynamicResource SystemAccentColor}"
+                                  Opacity="0.85" />
+            </Border.Effect>
+        </Border>
+
+        <!-- 5. Floating Value Tooltip Bubble (Visible only while dragging) -->
+        <Border x:Name="FloatingTooltip"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                Margin="0,-24,0,0"
+                Background="#EE1A1C22"
+                BorderBrush="#25FFFFFF"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="6,2"
+                Opacity="0"
+                IsHitTestVisible="False"
+                SnapsToDevicePixels="True">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="TooltipTranslate" X="0" Y="0" />
+            </Border.RenderTransform>
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="8"
+                                  ShadowDepth="2"
+                                  Direction="270"
+                                  Color="#000000"
+                                  Opacity="0.45" />
+            </Border.Effect>
+            <TextBlock x:Name="TooltipText"
+                       Text="50%"
+                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                       FontSize="11"
+                       FontWeight="SemiBold"
+                       Foreground="#FFFFFF"
+                       SnapsToDevicePixels="True"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
         </Border>
     </Grid>
 </UserControl>
