@@ -124,3 +124,34 @@ MetroHub rests quietly in the Windows system tray when closed.
   1. `IsDialogOpen = true` MUST be set BEFORE `ShowDialog()` to prevent premature window dismissal.
   2. `mainWindow` MUST be passed as the owner to `ShowDialog(mainWindow)` so the dialog is modal and anchored to MetroHub.
   3. In `finally`, `IsDialogOpen = false` must be reset AND `mainWindow.Activate()` invoked so keyboard/mouse focus returns cleanly to MetroHub.
+
+---
+
+## 10. Tile Resize Optimization & Dynamic Span Handling
+- **Layout Thrashing Prevention:**
+  - Widgets with multi-row features (such as lists or secondary headers) MUST listen to `model.PropertyChanged` for `SpanX` and `SpanY`.
+  - When `SpanY <= 1`, instantly update `IsCompactMode = true` so the sub-layout collapses BEFORE or DURING the animation, rather than overflowing and forcing the WPF layout engine to re-measure deeply nested items during resize interpolation.
+- **Uninterrupted Content Rendering:**
+  - DO NOT animate tile content opacity to `0.0` on resize.
+  - Animate width and height directly using `QuarticEase` (220ms) with `ClipToBounds="True"` on `RootBorder`.
+
+---
+
+## 11. Single-Instance Mutex & Process Lifecycle Hygiene
+- MetroHub enforces a named single-instance mutex (`MetroHub_App_SingleInstance_Mutex`).
+- If an orphaned background process is alive (e.g. from a previous build or crash), any newly launched instance will immediately exit after ~0.5 seconds upon detecting the existing mutex owner.
+- Always ensure previous processes are cleanly terminated (`Stop-Process -Name MetroHub -Force`) before deploying or starting new builds.
+
+---
+
+## 12. Windows Media Session (GSMTC) Synchronization & Concurrency Hygiene
+- **Never Rely Solely on Passive WinRT Events:** Windows GSMTC events (`PlaybackInfoChanged`, `TimelinePropertiesChanged`) are delivered asynchronously across arbitrary threadpool threads and can be delayed, dropped, or arrive out of order during player state transitions.
+- **Active Authoritative State Query:** On every playback timer tick (250ms), actively check `session.GetPlaybackInfo()`. If `PlaybackStatus != Playing`, halt the timer immediately, set `IsPlaying = false`, and freeze position to prevent seekbar advancement while paused.
+- **Freshness-Based Timeline Gate (LastUpdatedTime):** Use the OS-reported `timeline.LastUpdatedTime` as the **canonical freshness signal**. If an incoming timeline update has a `LastUpdatedTime` OLDER than the most recently accepted one, reject it as stale. This eliminates all classes of transient/out-of-order position glitches from Chromium.
+- **Guard Against Chromium 0:00 Transient Resets:** Chromium/YouTube emits transient 0:00 position snapshots during pause, play, and seek transitions. Never overwrite known positions ($\ge 2.5\text{s}$) with $< 1.5\text{s}$ on the same track — reject and schedule a recovery poll.
+- **Seek Recovery Window:** After any large position jump ($> 3\text{s}$), enter a 1.5s "seek recovery" window. During this window, every timer tick performs a full OS timeline query (instead of local extrapolation) and aggressive background polls (50ms, 100ms, 200ms, 400ms, 800ms delays) sample the OS to quickly converge on the real position.
+- **Atomic Track Identity Resets:** Reset position to 0:00 atomically only when track identity (`Artist|Title|Album`) changes, ensuring new tracks start cleanly at 0:00 while mid-stream tracks remain protected. Also reset `_lastAcceptedOsUpdateTime` and `_seekRecoveryUntil`.
+- **Optimistic Transport Locking:** Apply a 1.5s grace window on user play/pause toggles to prevent UI flickering while the OS processes asynchronous commands.
+- **Thread Safety:** Lock state mutations under a synchronization lock (`_stateLock`) and marshal all WinRT event updates to the UI Dispatcher.
+
+

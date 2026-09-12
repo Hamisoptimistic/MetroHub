@@ -18,7 +18,7 @@ namespace MetroHub.Widgets.Catalog.Clock;
 /// Supports 12h/24h toggle, full date formatting ("Friday, 11 September"),
 /// responsive adaptive layouts (2x2 up to 8x4), and zero background drain when hidden.
 /// </summary>
-public partial class ClockWidgetViewModel : WidgetViewModelBase, IRecipient<HubVisibilityChangedMessage>
+public partial class ClockWidgetViewModel : WidgetViewModelBase
 {
     private DispatcherTimer? _timer;
 
@@ -119,18 +119,6 @@ public partial class ClockWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     {
         UpdateTime();
         StartTimer();
-    }
-
-    public void Receive(HubVisibilityChangedMessage message)
-    {
-        if (message.IsVisible)
-        {
-            Resume();
-        }
-        else
-        {
-            Pause();
-        }
     }
 
     public void UpdateTime()

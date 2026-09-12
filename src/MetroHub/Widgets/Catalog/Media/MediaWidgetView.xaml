@@ -455,6 +455,7 @@
                   MouseLeftButtonDown="Seekbar_MouseLeftButtonDown"
                   MouseMove="Seekbar_MouseMove"
                   MouseLeftButtonUp="Seekbar_MouseLeftButtonUp"
+                  LostMouseCapture="Seekbar_LostMouseCapture"
                   SizeChanged="Seekbar_SizeChanged"
                   SnapsToDevicePixels="True">
                 <Grid.Style>

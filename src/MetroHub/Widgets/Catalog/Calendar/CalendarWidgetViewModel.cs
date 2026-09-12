@@ -15,7 +15,7 @@ namespace MetroHub.Widgets.Catalog.Calendar;
 /// Operates at fixed 8x6 dimensions (504x376px) featuring vertical month navigation
 /// and a 42-day contiguous month grid with zero UI thread overhead when hidden.
 /// </summary>
-public partial class CalendarWidgetViewModel : WidgetViewModelBase, IRecipient<HubVisibilityChangedMessage>
+public partial class CalendarWidgetViewModel : WidgetViewModelBase
 {
     private DispatcherTimer? _midnightTimer;
 
@@ -86,18 +86,6 @@ public partial class CalendarWidgetViewModel : WidgetViewModelBase, IRecipient<H
     {
         RebuildCalendar();
         _midnightTimer?.Start();
-    }
-
-    public void Receive(HubVisibilityChangedMessage message)
-    {
-        if (message.IsVisible)
-        {
-            Resume();
-        }
-        else
-        {
-            Pause();
-        }
     }
 
     [RelayCommand]

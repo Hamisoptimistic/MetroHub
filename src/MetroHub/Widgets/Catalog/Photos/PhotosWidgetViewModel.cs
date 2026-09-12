@@ -15,7 +15,7 @@ using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Photos;
 
-public partial class PhotosWidgetViewModel : WidgetViewModelBase, IRecipient<HubVisibilityChangedMessage>
+public partial class PhotosWidgetViewModel : WidgetViewModelBase
 {
     private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -546,18 +546,6 @@ public partial class PhotosWidgetViewModel : WidgetViewModelBase, IRecipient<Hub
         if (HasPhotos && PhotoCount > 1 && !_isHovered)
         {
             _slideshowTimer?.Start();
-        }
-    }
-
-    public void Receive(HubVisibilityChangedMessage message)
-    {
-        if (message.IsVisible)
-        {
-            Resume();
-        }
-        else
-        {
-            Pause();
         }
     }
 

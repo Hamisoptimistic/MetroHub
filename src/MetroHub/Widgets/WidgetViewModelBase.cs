@@ -13,7 +13,7 @@ namespace MetroHub.Widgets;
 /// Enforces decoupled boundary adaptation with TileModel.SettingsJson, zero WPF UI dependencies,
 /// and weak-reference messaging lifecycle support.
 /// </summary>
-public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidgetViewModel
+public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidgetViewModel, IRecipient<HubVisibilityChangedMessage>
 {
     public TileModel Model { get; protected set; }
 
@@ -22,6 +22,7 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
     protected WidgetViewModelBase(TileModel model) : base(WidgetMessenger.Default)
     {
         Model = model ?? throw new ArgumentNullException(nameof(model));
+        IsActive = true;
     }
 
     public virtual void Initialize(TileModel model)
@@ -51,6 +52,22 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
     /// Lifecycle hook: resume timers/polling when MetroHub is visible.
     /// </summary>
     public virtual void Resume() { }
+
+    /// <summary>
+    /// Centralized hub visibility recipient for all widgets.
+    /// Cascades visibility messages directly into Pause() and Resume() hooks.
+    /// </summary>
+    public virtual void Receive(HubVisibilityChangedMessage message)
+    {
+        if (message.IsVisible)
+        {
+            Resume();
+        }
+        else
+        {
+            Pause();
+        }
+    }
 
     private bool _disposed;
 

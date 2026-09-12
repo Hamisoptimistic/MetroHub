@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -17,7 +19,7 @@ using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Media;
 
-public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubVisibilityChangedMessage>
+public partial class MediaWidgetViewModel : WidgetViewModelBase
 {
     private GlobalSystemMediaTransportControlsSessionManager? _manager;
     private GlobalSystemMediaTransportControlsSession? _currentSession;
@@ -135,13 +137,28 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     [ObservableProperty]
     private string _timeDisplayString = string.Empty;
 
+    private readonly object _stateLock = new();
+    private string _currentTrackId = string.Empty;
+    private long _updateEpoch = 0;
+    private long _suppressExternalPositionUpdatesUntil = 0;
+    private bool _optimisticPlaybackTarget = false;
+    private long _optimisticUntilTimestamp = 0;
+    private int _timerTickCount = 0;
+
+    // Bulletproof sync: Track the freshest OS-reported LastUpdatedTime we've seen.
+    // Any incoming update with an OLDER LastUpdatedTime is stale and rejected.
+    private DateTimeOffset _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
+    // After a large position jump (seek), enter a recovery window where every
+    // timer tick does a full OS query instead of local extrapolation.
+    private long _seekRecoveryUntil = 0;
+
     private DispatcherTimer? _playbackTimer;
-    private long _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+    private long _lastLocalTimestamp = Stopwatch.GetTimestamp();
     private TimeSpan _lastTimelinePosition = TimeSpan.Zero;
     private TimeSpan _trackDuration = TimeSpan.Zero;
     private double _playbackRate = 1.0;
     private bool _isScrubbing = false;
-    private CancellationTokenSource? _resumeVerificationCts;
+    private CancellationTokenSource? _seekRecoveryCts;
 
     public MediaWidgetViewModel(TileModel model) : base(model)
     {
@@ -194,7 +211,10 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
 
     private void Manager_CurrentSessionChanged(GlobalSystemMediaTransportControlsSessionManager sender, CurrentSessionChangedEventArgs args)
     {
-        _ = RefreshSessionAsync();
+        if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
+        {
+            disp.InvokeAsync(async () => await RefreshSessionAsync());
+        }
     }
 
     public async Task RefreshSessionAsync()
@@ -210,18 +230,27 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
 
         if (_currentSession != null)
         {
-            _currentSession.MediaPropertiesChanged -= Session_MediaPropertiesChanged;
-            _currentSession.PlaybackInfoChanged -= Session_PlaybackInfoChanged;
-            _currentSession.TimelinePropertiesChanged -= Session_TimelinePropertiesChanged;
+            try
+            {
+                _currentSession.MediaPropertiesChanged -= Session_MediaPropertiesChanged;
+                _currentSession.PlaybackInfoChanged -= Session_PlaybackInfoChanged;
+                _currentSession.TimelinePropertiesChanged -= Session_TimelinePropertiesChanged;
+            }
+            catch { }
         }
 
         _currentSession = newSession;
 
         if (_currentSession != null)
         {
-            _currentSession.MediaPropertiesChanged += Session_MediaPropertiesChanged;
-            _currentSession.PlaybackInfoChanged += Session_PlaybackInfoChanged;
-            _currentSession.TimelinePropertiesChanged += Session_TimelinePropertiesChanged;
+            try
+            {
+                _currentSession.MediaPropertiesChanged += Session_MediaPropertiesChanged;
+                _currentSession.PlaybackInfoChanged += Session_PlaybackInfoChanged;
+                _currentSession.TimelinePropertiesChanged += Session_TimelinePropertiesChanged;
+            }
+            catch { }
+
             await UpdateMediaDetailsAsync();
             SyncPlaybackState(_currentSession);
         }
@@ -258,133 +287,88 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     private void Session_MediaPropertiesChanged(GlobalSystemMediaTransportControlsSession sender, MediaPropertiesChangedEventArgs args)
     {
         _ = UpdateMediaDetailsAsync();
-        SyncPlaybackState(sender);
     }
 
     private void Session_PlaybackInfoChanged(GlobalSystemMediaTransportControlsSession sender, PlaybackInfoChangedEventArgs args)
     {
-        SyncPlaybackState(sender);
+        if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
+        {
+            disp.InvokeAsync(() => SyncPlaybackState(sender));
+        }
     }
 
     private void Session_TimelinePropertiesChanged(GlobalSystemMediaTransportControlsSession sender, TimelinePropertiesChangedEventArgs args)
     {
-        SyncPlaybackState(sender);
+        if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
+        {
+            disp.InvokeAsync(() => SyncPlaybackState(sender));
+        }
     }
 
     private void SyncPlaybackState(GlobalSystemMediaTransportControlsSession? targetSession = null)
     {
         if (!_isHubVisible) return;
 
-        var session = targetSession ?? _currentSession;
-        if (session == null) return;
+        var session = targetSession ?? _currentSession ?? _manager?.GetCurrentSession();
+        if (session == null)
+        {
+            if (Application.Current?.Dispatcher is Dispatcher disp && !disp.CheckAccess())
+            {
+                disp.InvokeAsync(() => SyncPlaybackState(null));
+                return;
+            }
+            IsPlaying = false;
+            _playbackTimer?.Stop();
+            return;
+        }
+
+        if (Application.Current?.Dispatcher is Dispatcher d && !d.CheckAccess())
+        {
+            d.InvokeAsync(() => SyncPlaybackState(session));
+            return;
+        }
 
         try
         {
             var playback = session.GetPlaybackInfo();
-            var timeline = session.GetTimelineProperties();
-
-            if (playback == null && timeline == null) return;
-
-            bool isPlaying = playback?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
             var controls = playback?.Controls;
-            double rate = playback?.PlaybackRate ?? 1.0;
-            if (rate <= 0.0) rate = 1.0;
+            bool isPlaying = playback?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
 
-            TimeSpan duration = _trackDuration;
-            TimeSpan position = _lastTimelinePosition;
-            bool shouldUpdatePosition = false;
-
-            if (timeline != null)
+            if (Stopwatch.GetTimestamp() < _optimisticUntilTimestamp)
             {
-                var newDuration = timeline.EndTime - timeline.StartTime;
-                if (newDuration <= TimeSpan.Zero && timeline.MaxSeekTime > timeline.MinSeekTime)
+                if (isPlaying == _optimisticPlaybackTarget)
                 {
-                    newDuration = timeline.MaxSeekTime - timeline.MinSeekTime;
-                }
-
-                if (newDuration > TimeSpan.Zero)
-                {
-                    duration = newDuration;
-                    _trackDuration = newDuration;
-                }
-
-                if (timeline.Position >= TimeSpan.Zero)
-                {
-                    // Anti-glitch: Detect Chromium transient 0:00 reset when resuming mid-stream playback
-                    bool isSuspectZeroReset = isPlaying &&
-                                              timeline.Position <= TimeSpan.FromSeconds(1) &&
-                                              _lastTimelinePosition > TimeSpan.FromSeconds(3) &&
-                                              duration > TimeSpan.FromSeconds(5);
-
-                    if (isSuspectZeroReset)
-                    {
-                        // Keep our valid last-known timestamp and trigger a delayed verification re-poll
-                        _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-                        ScheduleResumeVerification(session);
-                    }
-                    else
-                    {
-                        // Official GSMTC extrapolation from LastUpdatedTime if available and playing
-                        TimeSpan calculatedPos = timeline.Position;
-                        var lastUpdated = timeline.LastUpdatedTime;
-                        var nowUtc = DateTimeOffset.UtcNow;
-
-                        if (isPlaying && lastUpdated > DateTimeOffset.MinValue && nowUtc >= lastUpdated)
-                        {
-                            var diff = (nowUtc - lastUpdated).TotalSeconds * rate;
-                            if (diff >= 0 && diff < 10.0)
-                            {
-                                calculatedPos += TimeSpan.FromSeconds(diff);
-                            }
-                        }
-
-                        _lastTimelinePosition = calculatedPos;
-                        _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-                        _playbackRate = rate;
-                        position = calculatedPos;
-                        shouldUpdatePosition = true;
-                    }
-                }
-            }
-
-            double durSec = Math.Max(0, duration.TotalSeconds);
-            double posSec = Math.Max(0, position.TotalSeconds);
-
-            Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                IsPlaying = isPlaying;
-                if (controls != null)
-                {
-                    CanPlayPause = controls.IsPlayPauseToggleEnabled;
-                    CanSkipNext = controls.IsNextEnabled;
-                    CanSkipPrevious = controls.IsPreviousEnabled;
-                    CanSeek = controls.IsPlaybackPositionEnabled;
-                }
-
-                if (durSec > 0)
-                {
-                    DurationSeconds = durSec;
-                }
-
-                if (shouldUpdatePosition && !_isScrubbing && DurationSeconds > 0)
-                {
-                    PositionSeconds = Math.Clamp(posSec, 0, DurationSeconds);
-                    ProgressRatio = Math.Clamp(PositionSeconds / DurationSeconds, 0.0, 1.0);
-                    UpdateTimeDisplay(PositionSeconds, DurationSeconds);
-                }
-
-                if (isPlaying && HasMedia && _isHubVisible)
-                {
-                    if (_playbackTimer?.IsEnabled != true)
-                    {
-                        _playbackTimer?.Start();
-                    }
+                    _optimisticUntilTimestamp = 0;
                 }
                 else
                 {
-                    _playbackTimer?.Stop();
+                    isPlaying = _optimisticPlaybackTarget;
                 }
-            });
+            }
+
+            if (controls != null)
+            {
+                CanPlayPause = controls.IsPlayPauseToggleEnabled;
+                CanSkipNext = controls.IsNextEnabled;
+                CanSkipPrevious = controls.IsPreviousEnabled;
+                CanSeek = controls.IsPlaybackPositionEnabled;
+            }
+
+            IsPlaying = isPlaying;
+
+            SyncTimelineProperties(session, playback);
+
+            if (isPlaying && HasMedia && _isHubVisible)
+            {
+                if (_playbackTimer?.IsEnabled != true)
+                {
+                    _playbackTimer?.Start();
+                }
+            }
+            else
+            {
+                _playbackTimer?.Stop();
+            }
         }
         catch (Exception ex)
         {
@@ -392,64 +376,238 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
         }
     }
 
-    private void ScheduleResumeVerification(GlobalSystemMediaTransportControlsSession session)
+    private void SyncTimelineProperties(GlobalSystemMediaTransportControlsSession session, GlobalSystemMediaTransportControlsSessionPlaybackInfo? playbackInfo = null)
     {
-        _resumeVerificationCts?.Cancel();
-        _resumeVerificationCts = new CancellationTokenSource();
-        var token = _resumeVerificationCts.Token;
+        try
+        {
+            var timeline = session.GetTimelineProperties();
+            var playback = playbackInfo ?? session.GetPlaybackInfo();
+            if (timeline == null) return;
+
+            double rate = playback?.PlaybackRate ?? 1.0;
+            if (rate <= 0.0) rate = 1.0;
+
+            TimeSpan newDuration = timeline.EndTime - timeline.StartTime;
+            if (newDuration <= TimeSpan.Zero && timeline.MaxSeekTime > timeline.MinSeekTime)
+            {
+                newDuration = timeline.MaxSeekTime - timeline.MinSeekTime;
+            }
+
+            lock (_stateLock)
+            {
+                if (newDuration > TimeSpan.Zero)
+                {
+                    _trackDuration = newDuration;
+                }
+
+                // If we're in a user-initiated seek suppression window, skip external updates entirely
+                if (Stopwatch.GetTimestamp() < _suppressExternalPositionUpdatesUntil)
+                {
+                    return;
+                }
+
+                TimeSpan incomingPos = timeline.Position;
+                DateTimeOffset incomingUpdateTime = timeline.LastUpdatedTime;
+
+                // ── FRESHNESS GATE ──
+                // Chromium/YouTube often fires stale snapshots (position=0 or old position)
+                // during seek/pause/play transitions. The LastUpdatedTime reported by the OS
+                // is the canonical freshness signal. If this update is OLDER than one we've
+                // already accepted, it's stale → reject it.
+                // Exception: if LastUpdatedTime is MinValue (some players don't report it),
+                // fall through to the anti-glitch check below.
+                if (incomingUpdateTime > DateTimeOffset.MinValue &&
+                    _lastAcceptedOsUpdateTime > DateTimeOffset.MinValue &&
+                    incomingUpdateTime < _lastAcceptedOsUpdateTime)
+                {
+                    // Stale update — the OS gave us data older than what we already have.
+                    // Trigger a recovery poll to find the real position.
+                    ScheduleSeekRecoveryPoll(session);
+                    return;
+                }
+
+                // ── ANTI-GLITCH: Transient zero/near-zero detection ──
+                // Chromium emits transient 0:00 during state transitions.
+                // If we were at ≥2.5s and the incoming is <1.5s on a long track,
+                // reject it and schedule recovery to find the real position.
+                bool isTransientZero = incomingPos <= TimeSpan.FromSeconds(1.5) &&
+                                       _lastTimelinePosition >= TimeSpan.FromSeconds(2.5) &&
+                                       _trackDuration > TimeSpan.FromSeconds(5.0);
+
+                if (isTransientZero)
+                {
+                    ScheduleSeekRecoveryPoll(session);
+                    return;
+                }
+
+                // ── ACCEPT THIS UPDATE ──
+                if (incomingUpdateTime > DateTimeOffset.MinValue)
+                {
+                    _lastAcceptedOsUpdateTime = incomingUpdateTime;
+                }
+
+                TimeSpan calculatedPos = incomingPos;
+                bool isPlaying = playback?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+
+                if (Stopwatch.GetTimestamp() < _optimisticUntilTimestamp)
+                {
+                    isPlaying = _optimisticPlaybackTarget;
+                }
+
+                // Extrapolate position forward if playing (accounts for event delivery latency)
+                if (isPlaying && incomingUpdateTime > DateTimeOffset.MinValue)
+                {
+                    var diff = (DateTimeOffset.UtcNow - incomingUpdateTime).TotalSeconds;
+                    if (diff >= 0 && diff < 30.0)
+                    {
+                        calculatedPos += TimeSpan.FromSeconds(diff * rate);
+                    }
+                }
+
+                // Detect large position jumps (seek) and enter recovery window
+                double positionDelta = Math.Abs(calculatedPos.TotalSeconds - _lastTimelinePosition.TotalSeconds);
+                if (positionDelta > 3.0 && _trackDuration > TimeSpan.FromSeconds(5.0))
+                {
+                    // Large jump detected — enter seek recovery for 1.5s
+                    // During this window, every timer tick will do a full OS query
+                    _seekRecoveryUntil = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 1.5);
+                    ScheduleSeekRecoveryPoll(session);
+                }
+
+                _lastTimelinePosition = calculatedPos;
+                _lastLocalTimestamp = Stopwatch.GetTimestamp();
+                _playbackRate = rate;
+
+                double durSec = _trackDuration.TotalSeconds;
+                double posSec = Math.Clamp(calculatedPos.TotalSeconds, 0, durSec > 0 ? durSec : calculatedPos.TotalSeconds);
+
+                if (!_isScrubbing)
+                {
+                    if (durSec > 0)
+                    {
+                        DurationSeconds = durSec;
+                    }
+                    PositionSeconds = posSec;
+                    ProgressRatio = durSec > 0 ? Math.Clamp(posSec / durSec, 0.0, 1.0) : 0.0;
+                    UpdateTimeDisplay(posSec, durSec);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MediaWidget] SyncTimelineProperties error: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Schedules aggressive re-polling of the OS timeline to find the real position
+    /// after a seek or glitch is detected. Uses increasing delays to catch the OS
+    /// as it stabilizes. Each poll that finds a fresher LastUpdatedTime will accept
+    /// and apply the position, automatically stopping further polls.
+    /// </summary>
+    private void ScheduleSeekRecoveryPoll(GlobalSystemMediaTransportControlsSession session)
+    {
+        _seekRecoveryCts?.Cancel();
+        _seekRecoveryCts = new CancellationTokenSource();
+        var token = _seekRecoveryCts.Token;
+
+        // Enter recovery window: every timer tick will also do a full OS query
+        _seekRecoveryUntil = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 1.5);
 
         _ = Task.Run(async () =>
         {
-            try
+            // Aggressive polling with increasing backoff
+            int[] delays = { 50, 100, 200, 400, 800 };
+            foreach (int delay in delays)
             {
-                await Task.Delay(150, token);
-                if (token.IsCancellationRequested) return;
-
-                var timeline = session.GetTimelineProperties();
-                if (timeline != null && timeline.Position > TimeSpan.FromSeconds(1))
+                try
                 {
-                    _lastTimelinePosition = timeline.Position;
-                    _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                    await Task.Delay(delay, token);
+                    if (token.IsCancellationRequested) return;
 
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
                     {
-                        if (!_isScrubbing && DurationSeconds > 0)
+                        await disp.InvokeAsync(() =>
                         {
-                            PositionSeconds = Math.Clamp(timeline.Position.TotalSeconds, 0, DurationSeconds);
-                            ProgressRatio = Math.Clamp(PositionSeconds / DurationSeconds, 0.0, 1.0);
-                            UpdateTimeDisplay(PositionSeconds, DurationSeconds);
-                        }
-                    });
+                            if (token.IsCancellationRequested) return;
+                            SyncTimelineProperties(session);
+                        });
+                    }
                 }
+                catch { }
             }
-            catch { }
         }, token);
     }
 
     private void OnPlaybackTimerTick(object? sender, EventArgs e)
     {
-        if (!IsPlaying || !_isHubVisible || !HasMedia || _isScrubbing)
+        if (!_isHubVisible || !HasMedia || _isScrubbing)
         {
-            if (!IsPlaying)
+            return;
+        }
+
+        var session = _currentSession ?? _manager?.GetCurrentSession();
+        if (session == null)
+        {
+            IsPlaying = false;
+            _playbackTimer?.Stop();
+            return;
+        }
+
+        // Direct OS query to ensure bulletproof synchronization
+        var playback = session.GetPlaybackInfo();
+        bool isActuallyPlaying = playback?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+
+        if (Stopwatch.GetTimestamp() < _optimisticUntilTimestamp)
+        {
+            if (isActuallyPlaying == _optimisticPlaybackTarget)
             {
-                _playbackTimer?.Stop();
+                _optimisticUntilTimestamp = 0;
             }
-            return;
+            else
+            {
+                isActuallyPlaying = _optimisticPlaybackTarget;
+            }
         }
 
-        if (DurationSeconds <= 0 || _trackDuration <= TimeSpan.Zero)
+        if (!isActuallyPlaying)
         {
-            SyncPlaybackState();
+            if (IsPlaying)
+            {
+                IsPlaying = false;
+            }
+            _playbackTimer?.Stop();
             return;
         }
 
-        double elapsedSeconds = (double)(System.Diagnostics.Stopwatch.GetTimestamp() - _lastLocalTimestamp) / System.Diagnostics.Stopwatch.Frequency;
-        if (elapsedSeconds < 0) elapsedSeconds = 0;
+        if (!IsPlaying)
+        {
+            IsPlaying = true;
+        }
 
-        double currentPos = Math.Clamp(_lastTimelinePosition.TotalSeconds + (elapsedSeconds * _playbackRate), 0, DurationSeconds);
-        PositionSeconds = currentPos;
-        ProgressRatio = DurationSeconds > 0 ? Math.Clamp(currentPos / DurationSeconds, 0.0, 1.0) : 0.0;
-        UpdateTimeDisplay(PositionSeconds, DurationSeconds);
+        _timerTickCount++;
+        bool inSeekRecovery = Stopwatch.GetTimestamp() < _seekRecoveryUntil;
+
+        // During seek recovery OR every 4th tick (1s cadence), do a full OS sync
+        // to ensure we converge on the real position quickly
+        if (inSeekRecovery || _timerTickCount % 4 == 0 || DurationSeconds <= 0)
+        {
+            SyncTimelineProperties(session, playback);
+        }
+        else
+        {
+            // Local extrapolation between full syncs for smooth seekbar motion
+            lock (_stateLock)
+            {
+                double elapsedSeconds = (double)(Stopwatch.GetTimestamp() - _lastLocalTimestamp) / Stopwatch.Frequency;
+                if (elapsedSeconds < 0) elapsedSeconds = 0;
+
+                double currentPos = Math.Clamp(_lastTimelinePosition.TotalSeconds + (elapsedSeconds * _playbackRate), 0, DurationSeconds);
+                PositionSeconds = currentPos;
+                ProgressRatio = DurationSeconds > 0 ? Math.Clamp(currentPos / DurationSeconds, 0.0, 1.0) : 0.0;
+                UpdateTimeDisplay(PositionSeconds, DurationSeconds);
+            }
+        }
     }
 
     private void UpdateTimeDisplay(double pos, double dur)
@@ -479,26 +637,29 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
 
     public async Task SeekToRatioAsync(double ratio)
     {
-        if (_currentSession == null && _manager != null)
-        {
-            try { _currentSession = _manager.GetCurrentSession(); } catch { }
-        }
-
-        if (_currentSession == null || DurationSeconds <= 0) return;
+        var session = _currentSession ?? _manager?.GetCurrentSession();
+        if (session == null || DurationSeconds <= 0) return;
 
         ratio = Math.Clamp(ratio, 0.0, 1.0);
         double targetSeconds = ratio * DurationSeconds;
         long requestedTicks = (long)(targetSeconds * TimeSpan.TicksPerSecond);
 
-        PositionSeconds = targetSeconds;
-        ProgressRatio = ratio;
-        _lastTimelinePosition = TimeSpan.FromSeconds(targetSeconds);
-        _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+        lock (_stateLock)
+        {
+            PositionSeconds = targetSeconds;
+            ProgressRatio = ratio;
+            _lastTimelinePosition = TimeSpan.FromSeconds(targetSeconds);
+            _lastLocalTimestamp = Stopwatch.GetTimestamp();
+            // Suppress external updates for 1.2s while the OS processes our seek command
+            _suppressExternalPositionUpdatesUntil = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 1.2);
+            // Reset the freshness tracker so the next OS update is always accepted
+            _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
+        }
         UpdateTimeDisplay(PositionSeconds, DurationSeconds);
 
         try
         {
-            await _currentSession.TryChangePlaybackPositionAsync(requestedTicks);
+            await session.TryChangePlaybackPositionAsync(requestedTicks);
         }
         catch (Exception ex)
         {
@@ -510,16 +671,21 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     {
         if (!_isHubVisible || _currentSession == null) return;
 
+        long epoch = Interlocked.Increment(ref _updateEpoch);
+
         try
         {
             var props = await _currentSession.TryGetMediaPropertiesAsync();
-            var playback = _currentSession.GetPlaybackInfo();
+            if (epoch != _updateEpoch) return;
+
             string rawSource = _currentSession.SourceAppUserModelId ?? string.Empty;
 
             if (props == null || (string.IsNullOrWhiteSpace(props.Title) && string.IsNullOrWhiteSpace(props.Artist)))
             {
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
+                    if (epoch != _updateEpoch) return;
+
                     HasMedia = false;
                     Title = "No media playing";
                     Artist = "Open Spotify, YouTube, or VLC";
@@ -534,6 +700,8 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                     SensualRadialBrush = null;
                     GlowBrush = null;
                     GlowColor = Color.FromRgb(0x3A, 0x82, 0xD4);
+                    IsPlaying = false;
+                    _playbackTimer?.Stop();
                 });
                 return;
             }
@@ -570,11 +738,22 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 }
             }
 
+            string newTrackId = $"{cleanArtist}|{cleanTitle}|{cleanAlbum}";
+            lock (_stateLock)
+            {
+                if (!string.Equals(_currentTrackId, newTrackId, StringComparison.Ordinal))
+                {
+                    _currentTrackId = newTrackId;
+                    _lastTimelinePosition = TimeSpan.Zero;
+                    _lastLocalTimestamp = Stopwatch.GetTimestamp();
+                    _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
+                    _suppressExternalPositionUpdatesUntil = 0;
+                    _seekRecoveryUntil = 0;
+                }
+            }
+
             string cleanSource = ResolveSourceName(rawSource, cleanTitle, rawArtist);
             bool hasAlbum = !string.IsNullOrWhiteSpace(cleanAlbum);
-
-            bool playing = playback?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
-            var controls = playback?.Controls;
 
             ImageSource? bmp = null;
             Color glowColor = Color.FromRgb(0x3A, 0x82, 0xD4);
@@ -587,6 +766,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
             if (props.Thumbnail != null)
             {
                 bmp = await LoadThumbnailAsync(props.Thumbnail);
+                if (epoch != _updateEpoch) return;
                 if (bmp is BitmapSource bs)
                 {
                     (glowColor, glowSolidBrush, sensualRadialBrush, fluidWaveBrush, fluidSecondaryBrush) = CreateGlow(bs);
@@ -595,6 +775,8 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
 
             await Application.Current.Dispatcher.InvokeAsync(() =>
             {
+                if (epoch != _updateEpoch) return;
+
                 Title = cleanTitle;
                 Artist = cleanArtist;
                 Album = cleanAlbum;
@@ -608,18 +790,10 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 FluidSecondaryBrush = fluidSecondaryBrush;
                 GlowBrush = sensualRadialBrush;
                 GlowColor = glowColor;
-                IsPlaying = playing;
                 HasMedia = true;
-                CanPlayPause = controls?.IsPlayPauseToggleEnabled ?? true;
-                CanSkipNext = controls?.IsNextEnabled ?? true;
-                CanSkipPrevious = controls?.IsPreviousEnabled ?? true;
-            });
 
-            _ = Task.Run(async () =>
-            {
-                SyncPlaybackState();
-                await Task.Delay(250);
-                SyncPlaybackState();
+                // Sync controls and playback authoritatively from session
+                SyncPlaybackState(_currentSession);
             });
         }
         catch (Exception ex)
@@ -1010,56 +1184,107 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     [RelayCommand]
     public async Task TogglePlayPauseAsync()
     {
-        if (_currentSession == null && _manager != null)
-        {
-            try { _currentSession = _manager.GetCurrentSession(); } catch { }
-        }
+        var session = _currentSession ?? _manager?.GetCurrentSession();
+        if (session == null) return;
 
-        if (_currentSession != null)
+        try
         {
-            try
+            bool targetState = !IsPlaying;
+
+            _optimisticPlaybackTarget = targetState;
+            _optimisticUntilTimestamp = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 1.5);
+            IsPlaying = targetState;
+
+            if (!targetState)
             {
-                IsPlaying = !IsPlaying;
-                await _currentSession.TryTogglePlayPauseAsync();
-                SyncPlaybackState(_currentSession);
+                _playbackTimer?.Stop();
             }
-            catch { }
+            else if (_isHubVisible)
+            {
+                _lastLocalTimestamp = Stopwatch.GetTimestamp();
+                _playbackTimer?.Start();
+            }
+
+            await session.TryTogglePlayPauseAsync();
+
+            _ = Task.Run(async () =>
+            {
+                for (int i = 0; i < 6; i++)
+                {
+                    await Task.Delay(100);
+                    if (_currentSession == null) break;
+                    var pb = _currentSession.GetPlaybackInfo();
+                    if (pb != null && (pb.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing) == targetState)
+                    {
+                        _optimisticUntilTimestamp = 0;
+                        if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
+                        {
+                            await disp.InvokeAsync(() => SyncPlaybackState(_currentSession));
+                        }
+                        break;
+                    }
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MediaWidget] TogglePlayPause error: {ex.Message}");
         }
     }
 
     [RelayCommand]
     public async Task SkipNextAsync()
     {
-        if (_currentSession == null && _manager != null)
-        {
-            try { _currentSession = _manager.GetCurrentSession(); } catch { }
-        }
+        var session = _currentSession ?? _manager?.GetCurrentSession();
+        if (session == null) return;
 
-        if (_currentSession != null)
+        try
         {
-            try
+            await session.TrySkipNextAsync();
+            _ = Task.Run(async () =>
             {
-                await _currentSession.TrySkipNextAsync();
-            }
-            catch { }
+                await Task.Delay(150);
+                if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
+                {
+                    await disp.InvokeAsync(async () =>
+                    {
+                        await UpdateMediaDetailsAsync();
+                        SyncPlaybackState(_currentSession);
+                    });
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MediaWidget] SkipNext error: {ex.Message}");
         }
     }
 
     [RelayCommand]
     public async Task SkipPreviousAsync()
     {
-        if (_currentSession == null && _manager != null)
-        {
-            try { _currentSession = _manager.GetCurrentSession(); } catch { }
-        }
+        var session = _currentSession ?? _manager?.GetCurrentSession();
+        if (session == null) return;
 
-        if (_currentSession != null)
+        try
         {
-            try
+            await session.TrySkipPreviousAsync();
+            _ = Task.Run(async () =>
             {
-                await _currentSession.TrySkipPreviousAsync();
-            }
-            catch { }
+                await Task.Delay(150);
+                if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
+                {
+                    await disp.InvokeAsync(async () =>
+                    {
+                        await UpdateMediaDetailsAsync();
+                        SyncPlaybackState(_currentSession);
+                    });
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MediaWidget] SkipPrevious error: {ex.Message}");
         }
     }
 
@@ -1075,18 +1300,6 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
         _isHubVisible = true;
         OnPropertyChanged(nameof(IsGlowAnimated));
         _ = RefreshSessionAsync();
-    }
-
-    public void Receive(HubVisibilityChangedMessage message)
-    {
-        if (message.IsVisible)
-        {
-            Resume();
-        }
-        else
-        {
-            Pause();
-        }
     }
 
     protected override void LoadSettings(string? settingsJson)
@@ -1119,9 +1332,9 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     {
         if (disposing)
         {
-            _resumeVerificationCts?.Cancel();
-            _resumeVerificationCts?.Dispose();
-            _resumeVerificationCts = null;
+            _seekRecoveryCts?.Cancel();
+            _seekRecoveryCts?.Dispose();
+            _seekRecoveryCts = null;
 
             if (_playbackTimer != null)
             {

@@ -13,6 +13,7 @@ public record WidgetSize(int SpanX, int SpanY, string DisplayName)
 
     // Wide & Horizontal Banners
     public static readonly WidgetSize SlimWide = new(4, 1, "Slim Wide (4x1)");
+    public static readonly WidgetSize SlimBanner = new(8, 1, "Slim Banner (8x1)");
     public static readonly WidgetSize Wide = new(4, 2, "Wide (4x2)");
     public static readonly WidgetSize ExtraWide = new(6, 2, "Extra Wide (6x2)");
     public static readonly WidgetSize Banner = new(8, 2, "Banner (8x2)");

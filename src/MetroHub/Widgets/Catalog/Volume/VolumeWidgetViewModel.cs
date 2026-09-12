@@ -98,9 +98,10 @@ public partial class VolumeWidgetViewModel : WidgetViewModelBase
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
-        WidgetSize.SlimWide, // 4x1
-        WidgetSize.Mega,     // 8x4
-        WidgetSize.Huge      // 8x6
+        WidgetSize.SlimWide,   // 4x1
+        WidgetSize.SlimBanner, // 8x1
+        WidgetSize.Mega,       // 8x4
+        WidgetSize.Huge        // 8x6
     };
 
     [ObservableProperty]

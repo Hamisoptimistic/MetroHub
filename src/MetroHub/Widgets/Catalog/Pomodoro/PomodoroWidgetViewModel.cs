@@ -19,7 +19,7 @@ namespace MetroHub.Widgets.Catalog.Pomodoro;
 /// Follows the exact design and architectural patterns of MediaWidgetViewModel.
 /// Supports 4x2 (ring-only), 8x3 (Banner3), and 8x4 (Mega) sizes with zero-drift timing.
 /// </summary>
-public partial class PomodoroWidgetViewModel : WidgetViewModelBase, IRecipient<HubVisibilityChangedMessage>
+public partial class PomodoroWidgetViewModel : WidgetViewModelBase
 {
     private DispatcherTimer? _uiTimer;
     private Timer? _dormantBackgroundTimer;
@@ -434,18 +434,6 @@ public partial class PomodoroWidgetViewModel : WidgetViewModelBase, IRecipient<H
         else
         {
             UpdateVisualState();
-        }
-    }
-
-    public void Receive(HubVisibilityChangedMessage message)
-    {
-        if (message.IsVisible)
-        {
-            Resume();
-        }
-        else
-        {
-            Pause();
         }
     }
 

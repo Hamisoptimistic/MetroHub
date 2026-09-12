@@ -134,9 +134,10 @@ public static class WidgetRegistry
             Icon: SymbolRegular.Speaker224,
             AllowedSizes: new[]
             {
-                WidgetSize.SlimWide, // 4x1
-                WidgetSize.Mega,     // 8x4
-                WidgetSize.Huge      // 8x6
+                WidgetSize.SlimWide,   // 4x1
+                WidgetSize.SlimBanner, // 8x1
+                WidgetSize.Mega,       // 8x4
+                WidgetSize.Huge        // 8x6
             },
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Volume.VolumeWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Volume.VolumeWidgetView),

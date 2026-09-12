@@ -186,6 +186,19 @@ public partial class MediaWidgetView : UserControl
         }
     }
 
+    private void Seekbar_LostMouseCapture(object sender, MouseEventArgs e)
+    {
+        if (_isDragging)
+        {
+            _isDragging = false;
+            AnimateHoverState(SeekbarContainer.IsMouseOver, isDragging: false);
+            if (_vm != null)
+            {
+                _vm.StopScrubbing(_vm.ProgressRatio);
+            }
+        }
+    }
+
     private void AnimateHoverState(bool isHovered, bool isDragging)
     {
         var duration = TimeSpan.FromMilliseconds(160);

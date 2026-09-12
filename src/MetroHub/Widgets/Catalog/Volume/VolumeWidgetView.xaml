@@ -198,6 +198,16 @@
             <!-- Flush aligned to 14px horizontal baseline standard            -->
             <!-- ============================================================= -->
             <Grid Grid.Row="0" Margin="14,0,14,0" Background="Transparent" VerticalAlignment="Center">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Grid.RowSpan" Value="1" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsCompactMode}" Value="True">
+                                <Setter Property="Grid.RowSpan" Value="2" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
                 <Grid.ColumnDefinitions>
                     <!-- Col 0: Output Logo Icon (Borderless, White, No Box) -->
                     <ColumnDefinition Width="Auto" />
@@ -316,17 +326,12 @@
             </Grid>
 
             <!-- ============================================================= -->
-            <!-- ROW 1: OUTPUT DEVICE SECTION                                  -->
-            <!-- Exactly matching Focus Timer (Pomodoro) and Media Player      -->
+            <!-- ROW 1: OUTPUT DEVICE SECTION + SEPARATOR                      -->
+            <!-- Completely Collapsed in 1-Row Compact Mode (4x1 and 8x1)      -->
             <!-- ============================================================= -->
-            <Border Grid.Row="1"
-                    Background="#14000000"
-                    BorderThickness="0"
-                    CornerRadius="0,0,2,2"
-                    SnapsToDevicePixels="True"
-                    Padding="14,10,14,10">
-                <Border.Style>
-                    <Style TargetType="Border">
+            <Grid Grid.Row="1">
+                <Grid.Style>
+                    <Style TargetType="Grid">
                         <Setter Property="Visibility" Value="Visible" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsCompactMode}" Value="True">
@@ -334,7 +339,14 @@
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
-                </Border.Style>
+                </Grid.Style>
+
+                <!-- 1. Docked Output Device List Container -->
+                <Border Background="#14000000"
+                        BorderThickness="0"
+                        CornerRadius="0,0,2,2"
+                        SnapsToDevicePixels="True"
+                        Padding="14,14,14,12">
 
                 <Grid Background="Transparent">
                     <Grid.RowDefinitions>
@@ -344,14 +356,14 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <!-- Section Header: OUTPUT DEVICE (Flush aligned with Output Logo above at 20px baseline) -->
+                    <!-- Section Header: OUTPUT DEVICE (Flush aligned with Output Logo above at 20px baseline, with comfortable breathing room from separator) -->
                     <TextBlock Grid.Row="0"
                                Text="OUTPUT DEVICE"
                                FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                FontSize="11.5"
                                FontWeight="Bold"
                                Foreground="#FFFFFF"
-                               Margin="6,0,0,8"
+                               Margin="6,2,0,8"
                                SnapsToDevicePixels="True" />
 
                     <!-- Native Windows 11 Output Devices List -->
@@ -445,33 +457,19 @@
                 </Grid>
             </Border>
 
-            <!-- ============================================================= -->
-            <!-- Edge-to-Edge Hairline Divider Track (Identical to Focus Timer)-->
-            <!-- ============================================================= -->
-            <Grid Grid.Row="1"
-                  VerticalAlignment="Top"
+            <!-- 2. Focus Timer-Identical Edge-to-Edge Hairline Divider Track -->
+            <Grid VerticalAlignment="Top"
                   Height="14"
                   Margin="0,-7,0,0"
                   Background="Transparent"
                   SnapsToDevicePixels="True">
-                <Grid.Style>
-                    <Style TargetType="Grid">
-                        <Setter Property="Visibility" Value="Visible" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsCompactMode}" Value="True">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Grid.Style>
-
-                <!-- Background Track (2px tall hairline with 1px radius, #14FFFFFF) -->
                 <Border Height="2"
                         VerticalAlignment="Center"
                         Background="#14FFFFFF"
                         CornerRadius="1"
                         SnapsToDevicePixels="True" />
             </Grid>
+        </Grid>
 
             <!-- ========================================================================= -->
             <!-- PER-APP VOLUME MIXER (TEMPORARILY COMMENTED OUT - TO BE IMPLEMENTED LATER) -->
