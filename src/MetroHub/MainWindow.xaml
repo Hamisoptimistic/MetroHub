@@ -379,6 +379,8 @@
                             <MenuItem x:Name="BackdropMicaItem" Header="Mica (Windows 11)" IsCheckable="True" Click="OnBackdropMicaClick" />
                             <MenuItem x:Name="BackdropAcrylicItem" Header="Acrylic Obsidian" IsCheckable="True" Click="OnBackdropAcrylicClick" />
                             <MenuItem x:Name="BackdropDesktopWallpaperItem" Header="Current Desktop Wallpaper" IsCheckable="True" Click="OnBackdropDesktopWallpaperClick" />
+                            <MenuItem x:Name="BackdropBingDailyItem" Header="Bing Wallpaper of the Day" IsCheckable="True" Click="OnBackdropBingDailyClick" />
+                            <MenuItem x:Name="BackdropSpotlightDailyItem" Header="Windows Spotlight Image" IsCheckable="True" Click="OnBackdropSpotlightDailyClick" />
                             <MenuItem x:Name="BackdropCustomImageItem" Header="Custom Picture..." IsCheckable="True" Click="OnBackdropCustomImageClick" />
                             <Separator />
                             <MenuItem Header="Wallpaper Parallax">

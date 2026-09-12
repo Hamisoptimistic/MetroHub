@@ -223,6 +223,20 @@ public partial class MainWindow : BorderlessFluentWindow
         ApplyConfiguredBackdrop();
     }
 
+    private void OnBackdropBingDailyClick(object sender, RoutedEventArgs e)
+    {
+        Settings.BackdropType = "BingDaily";
+        StorageService.SaveSettings(Settings);
+        ApplyConfiguredBackdrop();
+    }
+
+    private void OnBackdropSpotlightDailyClick(object sender, RoutedEventArgs e)
+    {
+        Settings.BackdropType = "SpotlightDaily";
+        StorageService.SaveSettings(Settings);
+        ApplyConfiguredBackdrop();
+    }
+
     private void OnBackdropCustomImageClick(object sender, RoutedEventArgs e)
     {
         IsDialogOpen = true;
@@ -442,8 +456,7 @@ public partial class MainWindow : BorderlessFluentWindow
             hs.CompositionTarget.BackgroundColor = System.Windows.Media.Colors.Transparent;
         }
 
-        bool isWallpaper = string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase) ||
-                           string.Equals(Settings.BackdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase);
+        bool isWallpaper = IsWallpaperBackdrop(Settings.BackdropType);
 
         if (isWallpaper)
         {
@@ -488,6 +501,14 @@ public partial class MainWindow : BorderlessFluentWindow
         }
 
         UpdateBackdropMenuChecks();
+    }
+
+    public static bool IsWallpaperBackdrop(string? backdropType)
+    {
+        return string.Equals(backdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(backdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(backdropType, "BingDaily", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(backdropType, "SpotlightDaily", StringComparison.OrdinalIgnoreCase);
     }
 
     public static BitmapImage? LoadOptimizedBitmap(string path, int decodeWidth = 1920)
@@ -536,44 +557,81 @@ public partial class MainWindow : BorderlessFluentWindow
         return null;
     }
 
-    private void UpdateWallpaperDisplay()
+    private int _wallpaperLoadGeneration = 0;
+
+    private async void UpdateWallpaperDisplay()
     {
         if (CustomWallpaperHost == null || WallpaperImage == null || WallpaperScrim == null) return;
 
-        string? imagePath = null;
-        if (string.Equals(Settings.BackdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase))
-        {
-            imagePath = GetActiveDesktopWallpaperPath();
-        }
-        else if (string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase))
-        {
-            imagePath = Settings.CustomWallpaperPath;
-        }
+        int currentGen = ++_wallpaperLoadGeneration;
+        string backdropType = Settings.BackdropType;
 
-        if (!string.IsNullOrEmpty(imagePath) && File.Exists(imagePath))
+        // Apply scrim dim opacity immediately
+        double dim = Math.Clamp(Settings.WallpaperDimOpacity, 0.1, 0.9);
+        byte alpha = (byte)(255 * dim);
+        WallpaperScrim.Background = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
+
+        try
         {
-            int decodeWidth = (int)Math.Max(1280, ActualWidth > 0 ? ActualWidth : 1920);
-            var bmp = LoadOptimizedBitmap(imagePath, decodeWidth);
-            if (bmp != null)
+            string? imagePath = null;
+
+            if (string.Equals(backdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase))
             {
-                WallpaperImage.Source = bmp;
-                CustomWallpaperHost.Visibility = Visibility.Visible;
+                imagePath = GetActiveDesktopWallpaperPath();
+            }
+            else if (string.Equals(backdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase))
+            {
+                imagePath = Settings.CustomWallpaperPath;
+            }
+            else if (string.Equals(backdropType, "BingDaily", StringComparison.OrdinalIgnoreCase))
+            {
+                imagePath = await DailyWallpaperService.Instance.GetBingDailyWallpaperAsync().ConfigureAwait(true);
+            }
+            else if (string.Equals(backdropType, "SpotlightDaily", StringComparison.OrdinalIgnoreCase))
+            {
+                imagePath = await DailyWallpaperService.Instance.GetSpotlightDailyWallpaperAsync().ConfigureAwait(true);
+            }
 
-                double dim = Math.Clamp(Settings.WallpaperDimOpacity, 0.1, 0.9);
-                byte alpha = (byte)(255 * dim);
-                WallpaperScrim.Background = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
-                UpdateWallpaperParallax();
-                return;
+            // If user switched backdrop while awaiting, discard this stale result
+            if (currentGen != _wallpaperLoadGeneration) return;
+
+            if (!string.IsNullOrEmpty(imagePath) && File.Exists(imagePath))
+            {
+                int decodeWidth = (int)Math.Max(1920, ActualWidth > 0 ? ActualWidth * 1.5 : 3840);
+                var bmp = await DailyWallpaperService.LoadFrozenBitmapAsync(imagePath, decodeWidth).ConfigureAwait(true);
+
+                if (currentGen != _wallpaperLoadGeneration) return;
+
+                if (bmp != null)
+                {
+                    WallpaperImage.Source = bmp;
+                    CustomWallpaperHost.Visibility = Visibility.Visible;
+                    UpdateWallpaperParallax();
+
+                    // Subtle, silky smooth fade-in
+                    var anim = new System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(300));
+                    WallpaperImage.BeginAnimation(UIElement.OpacityProperty, anim);
+                    return;
+                }
             }
         }
-
-        // Fallback to clean dark background if image is missing
-        CustomWallpaperHost.Visibility = Visibility.Collapsed;
-        UpdateWallpaperParallax();
-        if (RootGrid != null)
+        catch (Exception ex)
         {
-            RootGrid.Background = new SolidColorBrush(Color.FromArgb(0xEE, 0x10, 0x10, 0x14));
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] UpdateWallpaperDisplay error: {ex.Message}");
         }
+
+        if (currentGen != _wallpaperLoadGeneration) return;
+
+        // Fallback to dark background if no image could be loaded
+        if (WallpaperImage.Source == null)
+        {
+            CustomWallpaperHost.Visibility = Visibility.Collapsed;
+            if (RootGrid != null)
+            {
+                RootGrid.Background = new SolidColorBrush(Color.FromArgb(0xEE, 0x10, 0x10, 0x14));
+            }
+        }
+        UpdateWallpaperParallax();
     }
 
     private void OnContentScrollViewerScrollChanged(object sender, ScrollChangedEventArgs e)
@@ -585,8 +643,7 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         if (WallpaperTranslateTransform == null || WallpaperImage == null) return;
 
-        bool isWallpaper = string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase) ||
-                           string.Equals(Settings.BackdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase);
+        bool isWallpaper = IsWallpaperBackdrop(Settings.BackdropType);
 
         if (!isWallpaper || !Settings.WallpaperParallax || ContentScrollViewer == null)
         {
@@ -617,6 +674,10 @@ public partial class MainWindow : BorderlessFluentWindow
             BackdropAcrylicItem.IsChecked = string.Equals(Settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase);
         if (BackdropDesktopWallpaperItem != null)
             BackdropDesktopWallpaperItem.IsChecked = string.Equals(Settings.BackdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase);
+        if (BackdropBingDailyItem != null)
+            BackdropBingDailyItem.IsChecked = string.Equals(Settings.BackdropType, "BingDaily", StringComparison.OrdinalIgnoreCase);
+        if (BackdropSpotlightDailyItem != null)
+            BackdropSpotlightDailyItem.IsChecked = string.Equals(Settings.BackdropType, "SpotlightDaily", StringComparison.OrdinalIgnoreCase);
         if (BackdropCustomImageItem != null)
             BackdropCustomImageItem.IsChecked = string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase);
 
@@ -625,8 +686,7 @@ public partial class MainWindow : BorderlessFluentWindow
         if (DimBalancedItem != null) DimBalancedItem.IsChecked = Math.Abs(dim - 0.50) < 0.05;
         if (DimHeavyItem != null) DimHeavyItem.IsChecked = Math.Abs(dim - 0.65) < 0.05;
 
-        bool isWallpaper = string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase) ||
-                           string.Equals(Settings.BackdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase);
+        bool isWallpaper = IsWallpaperBackdrop(Settings.BackdropType);
 
         if (ParallaxEnabledItem != null)
         {
