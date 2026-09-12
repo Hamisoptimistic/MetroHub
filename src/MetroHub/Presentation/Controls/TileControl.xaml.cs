@@ -528,6 +528,17 @@ public partial class TileControl : UserControl
         else
         {
             StyleMenuItem.Visibility = Visibility.Visible;
+            bool isColourful = string.Equals(tile.TileStyle, "Colourful", StringComparison.OrdinalIgnoreCase);
+            if (StyleDefaultMenuItem != null)
+            {
+                StyleDefaultMenuItem.IsCheckable = true;
+                StyleDefaultMenuItem.IsChecked = !isColourful;
+            }
+            if (StyleColourfulMenuItem != null)
+            {
+                StyleColourfulMenuItem.IsCheckable = true;
+                StyleColourfulMenuItem.IsChecked = isColourful;
+            }
         }
 
         PopulateResizeSubmenu(tile);
@@ -552,6 +563,7 @@ public partial class TileControl : UserControl
                 var item = new MenuItem
                 {
                     Header = size.DisplayName,
+                    IsCheckable = true,
                     IsChecked = (tile.SpanX == size.SpanX && tile.SpanY == size.SpanY)
                 };
                 int spanX = size.SpanX;
@@ -567,6 +579,7 @@ public partial class TileControl : UserControl
         var smallItem = new MenuItem
         {
             Header = "Small (1x1)",
+            IsCheckable = true,
             IsChecked = (tile.SpanX == 1 && tile.SpanY == 1)
         };
         smallItem.Click += OnResizeSmallClick;
@@ -574,6 +587,7 @@ public partial class TileControl : UserControl
         var mediumItem = new MenuItem
         {
             Header = "Medium (2x2)",
+            IsCheckable = true,
             IsChecked = (tile.SpanX == 2 && tile.SpanY == 2)
         };
         mediumItem.Click += OnResizeMediumClick;
@@ -581,6 +595,7 @@ public partial class TileControl : UserControl
         var wideItem = new MenuItem
         {
             Header = "Wide (4x2)",
+            IsCheckable = true,
             IsChecked = (tile.SpanX == 4 && tile.SpanY == 2)
         };
         wideItem.Click += OnResizeWideClick;

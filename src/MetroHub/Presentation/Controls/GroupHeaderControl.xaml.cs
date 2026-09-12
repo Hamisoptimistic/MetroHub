@@ -320,6 +320,13 @@ public partial class GroupHeaderControl : UserControl
         if (sender is MenuItem item && item.Tag is string hex && DataContext is TileGroupModel group)
         {
             MainWindow.Current?.SetGroupColor(group, hex);
+            if (HeaderColorMenuItem != null)
+            {
+                foreach (var mi in HeaderColorMenuItem.Items.OfType<MenuItem>())
+                {
+                    mi.IsChecked = (mi == item);
+                }
+            }
         }
     }
 
@@ -333,6 +340,13 @@ public partial class GroupHeaderControl : UserControl
                 hex = null;
             }
             MainWindow.Current?.SetGroupTintColor(group, hex);
+            if (TintColorMenuItem != null)
+            {
+                foreach (var mi in TintColorMenuItem.Items.OfType<MenuItem>())
+                {
+                    mi.IsChecked = (mi == item);
+                }
+            }
         }
     }
 
@@ -343,6 +357,26 @@ public partial class GroupHeaderControl : UserControl
             RenameMenuItem.IsEnabled = !group.IsLocked;
             UngroupMenuItem.IsEnabled = !group.IsLocked;
             DeleteGroupMenuItem.IsEnabled = !group.IsLocked;
+
+            if (HeaderColorMenuItem != null)
+            {
+                string currentColor = string.IsNullOrWhiteSpace(group.HeaderColor) ? "#F0FFFFFF" : group.HeaderColor;
+                foreach (var item in HeaderColorMenuItem.Items.OfType<MenuItem>())
+                {
+                    item.IsCheckable = true;
+                    item.IsChecked = string.Equals(item.Tag as string, currentColor, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+
+            if (TintColorMenuItem != null)
+            {
+                string currentTint = string.IsNullOrWhiteSpace(group.TintColor) ? "None" : group.TintColor;
+                foreach (var item in TintColorMenuItem.Items.OfType<MenuItem>())
+                {
+                    item.IsCheckable = true;
+                    item.IsChecked = string.Equals(item.Tag as string, currentTint, StringComparison.OrdinalIgnoreCase);
+                }
+            }
         }
     }
 

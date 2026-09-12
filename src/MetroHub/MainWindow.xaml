@@ -376,19 +376,19 @@
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="DarkTheme24" FontSize="20" />
                             </MenuItem.Icon>
-                            <MenuItem x:Name="BackdropMicaItem" Header="Mica (Windows 11)" Click="OnBackdropMicaClick" />
-                            <MenuItem x:Name="BackdropAcrylicItem" Header="Acrylic Obsidian" Click="OnBackdropAcrylicClick" />
-                            <MenuItem x:Name="BackdropDesktopWallpaperItem" Header="Current Desktop Wallpaper" Click="OnBackdropDesktopWallpaperClick" />
-                            <MenuItem x:Name="BackdropCustomImageItem" Header="Custom Picture..." Click="OnBackdropCustomImageClick" />
+                            <MenuItem x:Name="BackdropMicaItem" Header="Mica (Windows 11)" IsCheckable="True" Click="OnBackdropMicaClick" />
+                            <MenuItem x:Name="BackdropAcrylicItem" Header="Acrylic Obsidian" IsCheckable="True" Click="OnBackdropAcrylicClick" />
+                            <MenuItem x:Name="BackdropDesktopWallpaperItem" Header="Current Desktop Wallpaper" IsCheckable="True" Click="OnBackdropDesktopWallpaperClick" />
+                            <MenuItem x:Name="BackdropCustomImageItem" Header="Custom Picture..." IsCheckable="True" Click="OnBackdropCustomImageClick" />
                             <Separator />
                             <MenuItem Header="Wallpaper Parallax">
-                                <MenuItem x:Name="ParallaxEnabledItem" Header="Enabled" Click="OnParallaxEnabledClick" />
-                                <MenuItem x:Name="ParallaxDisabledItem" Header="Disabled" Click="OnParallaxDisabledClick" />
+                                <MenuItem x:Name="ParallaxEnabledItem" Header="Enabled" IsCheckable="True" Click="OnParallaxEnabledClick" />
+                                <MenuItem x:Name="ParallaxDisabledItem" Header="Disabled" IsCheckable="True" Click="OnParallaxDisabledClick" />
                             </MenuItem>
                             <MenuItem Header="Wallpaper Dimming">
-                                <MenuItem x:Name="DimLightItem" Header="Light (35%)" Click="OnWallpaperDimLightClick" />
-                                <MenuItem x:Name="DimBalancedItem" Header="Balanced (50%)" Click="OnWallpaperDimBalancedClick" />
-                                <MenuItem x:Name="DimHeavyItem" Header="Heavy (65%)" Click="OnWallpaperDimHeavyClick" />
+                                <MenuItem x:Name="DimLightItem" Header="Light (35%)" IsCheckable="True" Click="OnWallpaperDimLightClick" />
+                                <MenuItem x:Name="DimBalancedItem" Header="Balanced (50%)" IsCheckable="True" Click="OnWallpaperDimBalancedClick" />
+                                <MenuItem x:Name="DimHeavyItem" Header="Heavy (65%)" IsCheckable="True" Click="OnWallpaperDimHeavyClick" />
                             </MenuItem>
                         </MenuItem>
                     </ContextMenu>

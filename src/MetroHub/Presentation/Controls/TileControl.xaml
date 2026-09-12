@@ -193,8 +193,8 @@
             <ContextMenu x:Name="TileContextMenu">
                 <MenuItem x:Name="ResizeMenuItem" Header="Resize" />
                 <MenuItem x:Name="StyleMenuItem" Header="Style">
-                    <MenuItem Header="Default" Click="OnStyleDefaultClick" />
-                    <MenuItem Header="Colourful" Click="OnStyleColourfulClick" />
+                    <MenuItem x:Name="StyleDefaultMenuItem" Header="Default" IsCheckable="True" Click="OnStyleDefaultClick" />
+                    <MenuItem x:Name="StyleColourfulMenuItem" Header="Colourful" IsCheckable="True" Click="OnStyleColourfulClick" />
                 </MenuItem>
                 <MenuItem x:Name="GroupMenuItem" Header="Create Group from Tiles" Click="OnGroupTilesClick">
                     <MenuItem.Icon>
