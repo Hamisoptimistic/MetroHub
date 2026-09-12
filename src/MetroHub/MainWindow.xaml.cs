@@ -1353,6 +1353,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             FindParent<FrameworkElement>(dep)?.Name == "SeekThumb" ||
             FindParent<FrameworkElement>(dep)?.Name == "SeekTrackBg" ||
             FindParent<FrameworkElement>(dep)?.Name == "SeekProgressFill" ||
+            FindParent<Presentation.Controls.FluentVolumeSlider>(dep) != null ||
             FindParent<FrameworkElement>(dep)?.Tag as string == "InteractiveControl")
         {
             _isPotentialDrag = false;
@@ -1439,7 +1440,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
             _isPotentialDrag = true;
             _isDragging = false;
-            if (!(tile.TileType == TileType.Widget && (tile.TargetPath == "calendar" || tile.TargetPath == "media" || tile.TargetPath == "pomodoro" || tile.TargetPath == "photos")))
+            if (!(tile.TileType == TileType.Widget && (tile.TargetPath == "calendar" || tile.TargetPath == "media" || tile.TargetPath == "pomodoro" || tile.TargetPath == "photos" || tile.TargetPath == "volume")))
             {
                 _draggedControl.AnimatePressDown();
             }

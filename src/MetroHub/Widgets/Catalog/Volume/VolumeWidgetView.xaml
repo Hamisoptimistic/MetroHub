@@ -1,0 +1,612 @@
+<UserControl x:Class="MetroHub.Widgets.Catalog.Volume.VolumeWidgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:widgets="clr-namespace:MetroHub.Widgets"
+             xmlns:volume="clr-namespace:MetroHub.Widgets.Catalog.Volume"
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+             xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=volume:VolumeWidgetViewModel}"
+             Focusable="False"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="Grayscale"
+             TextOptions.TextHintingMode="Animated">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- Media Transport Button Style -->
+        <Style x:Key="VolumeTransportButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="#E5E9F0" />
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Tag" Value="InteractiveControl" />
+            <Setter Property="behaviors:InputSafeguard.SuppressTileDrag" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="3"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Segmented Tab Pill Button Style -->
+        <Style x:Key="SegmentedTabButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="#90FFFFFF" />
+            <Setter Property="Height" Value="24" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Tag" Value="InteractiveControl" />
+            <Setter Property="behaviors:InputSafeguard.SuppressTileDrag" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="3"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#1AFFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Output Device Card Button Style -->
+        <Style x:Key="DeviceCardButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#08FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="#14FFFFFF" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Margin" Value="0,2,0,2" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Tag" Value="InteractiveControl" />
+            <Setter Property="behaviors:InputSafeguard.SuppressTileDrag" Value="True" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="CardBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter Margin="0" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CardBorder" Property="Background" Value="#1AFFFFFF" />
+                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="#24FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="CardBorder" Property="Background" Value="#26FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Minimalist 6px Transparent Scrollbar for Internal Lists -->
+        <Style x:Key="MinimalScrollViewerStyle" TargetType="ScrollViewer">
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollViewer">
+                        <Grid SnapsToDevicePixels="True">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ScrollContentPresenter Grid.Column="0" CanContentScroll="{TemplateBinding CanContentScroll}" />
+                            <ScrollBar Grid.Column="1"
+                                       x:Name="PART_VerticalScrollBar"
+                                       Width="6"
+                                       Value="{TemplateBinding VerticalOffset}"
+                                       Maximum="{TemplateBinding ScrollableHeight}"
+                                       ViewportSize="{TemplateBinding ViewportHeight}"
+                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Outer Card Shell with Universal 14px Margin Standard -->
+    <widgets:WidgetCard Padding="14,10,14,10" Background="Transparent" CornerRadius="2">
+        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
+            <Grid.RowDefinitions>
+                <!-- Row 0: Active Device Header (Collapsed in Compact 4x1) -->
+                <RowDefinition Height="Auto" />
+                <!-- Row 1: Master Volume Control Bar (Always visible) -->
+                <RowDefinition Height="Auto" />
+                <!-- Row 2: Segmented Navigation Pills (Collapsed in Compact 4x1) -->
+                <RowDefinition Height="Auto" />
+                <!-- Row 3: Tab Content (Mixer or Devices) -->
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- ========================================== -->
+            <!-- ROW 0: ACTIVE DEVICE HEADER               -->
+            <!-- ========================================== -->
+            <Grid Grid.Row="0" Margin="0,0,0,6">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsCompactMode}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Active Endpoint Badge -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ActiveDeviceIcon}"
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="13"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,6,0" />
+                    <TextBlock Text="{Binding ActiveDeviceName}"
+                               FontFamily="Segoe UI Variable Text, Segoe UI"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="#D0FFFFFF"
+                               TextTrimming="CharacterEllipsis"
+                               VerticalAlignment="Center"
+                               MaxWidth="260" />
+                </StackPanel>
+
+                <!-- Right: Quick Output Switcher Button -->
+                <Button Grid.Column="1"
+                        Style="{StaticResource VolumeTransportButtonStyle}"
+                        Width="Auto"
+                        Height="22"
+                        Padding="8,0"
+                        Command="{Binding SwitchTabCommand}"
+                        CommandParameter="Devices"
+                        ToolTip="Switch Audio Output Device">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Outputs"
+                                   FontFamily="Segoe UI Variable Text, Segoe UI"
+                                   FontSize="11"
+                                   Foreground="#A0FFFFFF"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,4,0" />
+                        <TextBlock Text="&#xE70D;"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="9"
+                                   Foreground="#A0FFFFFF"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <!-- ========================================== -->
+            <!-- ROW 1: MASTER VOLUME CONTROL BAR          -->
+            <!-- ========================================== -->
+            <Grid Grid.Row="1" Margin="0,2,0,8" Height="28">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="32" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="36" />
+                    <ColumnDefinition Width="32" />
+                </Grid.ColumnDefinitions>
+
+                <!-- 1. Master Icon Button (Toggle Mute) -->
+                <Button Grid.Column="0"
+                        Style="{StaticResource VolumeTransportButtonStyle}"
+                        Command="{Binding ToggleMasterMuteCommand}"
+                        ToolTip="Mute / Unmute Master Volume">
+                    <TextBlock Text="{Binding MasterGlyph}"
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="14"
+                               Foreground="#E5E9F0" />
+                </Button>
+
+                <!-- 2. Master Fluent Volume Slider -->
+                <controls:FluentVolumeSlider Grid.Column="1"
+                                            Margin="8,0"
+                                            VerticalAlignment="Center"
+                                            Value="{Binding MasterVolume, Mode=TwoWay}"
+                                            IsMuted="{Binding IsMasterMuted}"
+                                            Minimum="0"
+                                            Maximum="100" />
+
+                <!-- 3. Percentage Readout -->
+                <TextBlock Grid.Column="2"
+                           Text="{Binding MasterVolumePercentText}"
+                           FontFamily="Segoe UI Variable Text, Segoe UI"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="#E5E9F0"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right" />
+
+                <!-- 4. Quick Mute Button -->
+                <Button Grid.Column="3"
+                        Margin="4,0,0,0"
+                        Style="{StaticResource VolumeTransportButtonStyle}"
+                        Command="{Binding ToggleMasterMuteCommand}">
+                    <TextBlock Text="{Binding MasterGlyph}"
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="12"
+                               Foreground="{Binding IsMasterMuted, Converter={StaticResource BoolToVis}}" />
+                </Button>
+            </Grid>
+
+            <!-- ========================================== -->
+            <!-- ROW 2: SEGMENTED NAVIGATION PILLS         -->
+            <!-- ========================================== -->
+            <Grid Grid.Row="2" Margin="0,0,0,8">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsCompactMode}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Segmented Tab Container -->
+                <Border Background="#10FFFFFF"
+                        CornerRadius="4"
+                        Padding="2"
+                        HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal">
+                        <!-- App Mixer Tab -->
+                        <Button Command="{Binding SwitchTabCommand}"
+                                CommandParameter="Mixer">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SegmentedTabButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsMixerTab}" Value="True">
+                                            <Setter Property="Background" Value="#25FFFFFF" />
+                                            <Setter Property="Foreground" Value="#FFFFFF" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE995;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Apps Mixer" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Output Devices Tab -->
+                        <Button Command="{Binding SwitchTabCommand}"
+                                CommandParameter="Devices">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource SegmentedTabButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDevicesTab}" Value="True">
+                                            <Setter Property="Background" Value="#25FFFFFF" />
+                                            <Setter Property="Foreground" Value="#FFFFFF" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE7F6;" FontFamily="Segoe MDL2 Assets" FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Output Devices" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <!-- Right: Active Session Count Badge -->
+                <TextBlock Grid.Column="1"
+                           Text="{Binding AppSessions.Count, StringFormat='{}{0} apps active'}"
+                           FontFamily="Segoe UI Variable Text, Segoe UI"
+                           FontSize="11"
+                           Foreground="#60FFFFFF"
+                           VerticalAlignment="Center">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsMixerTab}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+
+            <!-- ========================================== -->
+            <!-- ROW 3: TAB CONTENT (MIXER OR DEVICES)     -->
+            <!-- ========================================== -->
+            <Grid Grid.Row="3">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsCompactMode}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <!-- 1. APPLICATION MIXER VIEW -->
+                <Grid>
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsMixerTab}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+
+                    <!-- Empty State -->
+                    <TextBlock Text="No active applications playing audio"
+                               FontFamily="Segoe UI Variable Text, Segoe UI"
+                               FontSize="12"
+                               Foreground="#50FFFFFF"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding AppSessions.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <!-- Apps List -->
+                    <ScrollViewer Style="{StaticResource MinimalScrollViewerStyle}">
+                        <ItemsControl ItemsSource="{Binding AppSessions}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type volume:AppSessionItemViewModel}">
+                                    <Border Background="#08FFFFFF"
+                                            BorderBrush="#10FFFFFF"
+                                            BorderThickness="1"
+                                            CornerRadius="4"
+                                            Padding="8,6"
+                                            Margin="0,2,0,4"
+                                            SnapsToDevicePixels="True">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <!-- App Icon & Title -->
+                                                <ColumnDefinition Width="130" />
+                                                <!-- Volume Slider -->
+                                                <ColumnDefinition Width="*" />
+                                                <!-- Percentage -->
+                                                <ColumnDefinition Width="34" />
+                                                <!-- Mute Button -->
+                                                <ColumnDefinition Width="32" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- App Identity -->
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <!-- App Icon -->
+                                                <Border Width="20" Height="20" Margin="0,0,8,0" CornerRadius="2" SnapsToDevicePixels="True">
+                                                    <Grid>
+                                                        <Image Source="{Binding IconSource}"
+                                                               Width="20" Height="20"
+                                                               RenderOptions.BitmapScalingMode="HighQuality">
+                                                            <Image.Style>
+                                                                <Style TargetType="Image">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IconSource}" Value="{x:Null}">
+                                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Image.Style>
+                                                        </Image>
+                                                        <!-- Fallback Icon if Image is null -->
+                                                        <TextBlock Text="&#xE7F5;"
+                                                                   FontFamily="Segoe MDL2 Assets"
+                                                                   FontSize="12"
+                                                                   Foreground="#80FFFFFF"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IconSource}" Value="{x:Null}">
+                                                                            <Setter Property="Visibility" Value="Visible" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </Border>
+
+                                                <!-- App Title -->
+                                                <TextBlock Text="{Binding DisplayName}"
+                                                           FontFamily="Segoe UI Variable Text, Segoe UI"
+                                                           FontSize="12"
+                                                           Foreground="#E0FFFFFF"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           ToolTip="{Binding DisplayName}"
+                                                           MaxWidth="98"
+                                                           VerticalAlignment="Center" />
+                                            </StackPanel>
+
+                                            <!-- App Slider -->
+                                            <controls:FluentVolumeSlider Grid.Column="1"
+                                                                        Margin="6,0"
+                                                                        VerticalAlignment="Center"
+                                                                        Value="{Binding Volume, Mode=TwoWay}"
+                                                                        IsMuted="{Binding IsMuted}"
+                                                                        Minimum="0"
+                                                                        Maximum="100" />
+
+                                            <!-- Percentage -->
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding VolumePercentText}"
+                                                       FontFamily="Segoe UI Variable Text, Segoe UI"
+                                                       FontSize="11"
+                                                       Foreground="#A0FFFFFF"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Right" />
+
+                                            <!-- Mute Button -->
+                                            <Button Grid.Column="3"
+                                                    Margin="4,0,0,0"
+                                                    Style="{StaticResource VolumeTransportButtonStyle}"
+                                                    Command="{Binding DataContext.ToggleAppMuteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="Mute / Unmute Application">
+                                                <TextBlock Text="{Binding VolumeGlyph}"
+                                                           FontFamily="Segoe MDL2 Assets"
+                                                           FontSize="12"
+                                                           Foreground="#C0FFFFFF" />
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+
+                <!-- 2. OUTPUT DEVICES VIEW -->
+                <Grid>
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsDevicesTab}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+
+                    <ScrollViewer Style="{StaticResource MinimalScrollViewerStyle}">
+                        <ItemsControl ItemsSource="{Binding Devices}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type volume:AudioDeviceItemViewModel}">
+                                    <Button Style="{StaticResource DeviceCardButtonStyle}"
+                                            Command="{Binding DataContext.SelectDeviceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}">
+                                        <Grid Margin="10,0,12,0">
+                                            <Grid.ColumnDefinitions>
+                                                <!-- Left: Active Accent Indicator Pill -->
+                                                <ColumnDefinition Width="6" />
+                                                <!-- Device Glyph -->
+                                                <ColumnDefinition Width="24" />
+                                                <!-- Device Name -->
+                                                <ColumnDefinition Width="*" />
+                                                <!-- Right: Active Checkmark -->
+                                                <ColumnDefinition Width="24" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Active Indicator Pill -->
+                                            <Border Grid.Column="0"
+                                                    Width="3"
+                                                    Height="16"
+                                                    HorizontalAlignment="Left"
+                                                    Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                    CornerRadius="1.5"
+                                                    Visibility="{Binding IsDefault, Converter={StaticResource BoolToVis}}" />
+
+                                            <!-- Device Glyph -->
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding IconGlyph}"
+                                                       FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="14"
+                                                       Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                       VerticalAlignment="Center"
+                                                       HorizontalAlignment="Left" />
+
+                                            <!-- Device Name -->
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding Name}"
+                                                       FontFamily="Segoe UI Variable Text, Segoe UI"
+                                                       FontSize="12"
+                                                       FontWeight="Normal"
+                                                       Foreground="#FFFFFF"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       VerticalAlignment="Center"
+                                                       Margin="4,0" />
+
+                                            <!-- Active Checkmark -->
+                                            <TextBlock Grid.Column="3"
+                                                       Text="&#xE73E;"
+                                                       FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="12"
+                                                       Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                       HorizontalAlignment="Right"
+                                                       VerticalAlignment="Center"
+                                                       Visibility="{Binding IsDefault, Converter={StaticResource BoolToVis}}" />
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </Grid>
+    </widgets:WidgetCard>
+</UserControl>

@@ -13,6 +13,7 @@
              xmlns:media="clr-namespace:MetroHub.Widgets.Catalog.Media"
              xmlns:pomodoro="clr-namespace:MetroHub.Widgets.Catalog.Pomodoro"
              xmlns:photos="clr-namespace:MetroHub.Widgets.Catalog.Photos"
+             xmlns:volume="clr-namespace:MetroHub.Widgets.Catalog.Volume"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -166,6 +167,11 @@
         <!-- 7. Photos / Slideshow Widget DataTemplate -->
         <DataTemplate DataType="{x:Type photos:PhotosWidgetViewModel}">
             <photos:PhotosWidgetView />
+        </DataTemplate>
+
+        <!-- 8. Volume & Audio Mixer Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type volume:VolumeWidgetViewModel}">
+            <volume:VolumeWidgetView />
         </DataTemplate>
     </UserControl.Resources>
 

@@ -1,0 +1,71 @@
+<UserControl x:Class="MetroHub.Presentation.Controls.FluentVolumeSlider"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
+             mc:Ignorable="d"
+             Height="20"
+             MinHeight="16"
+             Focusable="False"
+             Tag="InteractiveControl"
+             behaviors:InputSafeguard.SuppressTileDrag="True"
+             Cursor="Hand"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True">
+
+    <Grid x:Name="RootContainer"
+          Background="Transparent"
+          PreviewMouseLeftButtonDown="OnPreviewMouseLeftButtonDown"
+          PreviewMouseMove="OnPreviewMouseMove"
+          PreviewMouseLeftButtonUp="OnPreviewMouseLeftButtonUp"
+          PreviewMouseWheel="OnPreviewMouseWheel"
+          MouseEnter="OnMouseEnter"
+          MouseLeave="OnMouseLeave"
+          SizeChanged="OnSizeChanged">
+
+        <!-- 1. Dark Glass Background Trough (4px high) -->
+        <Border Height="4"
+                VerticalAlignment="Center"
+                Background="#50000000"
+                CornerRadius="2"
+                SnapsToDevicePixels="True" />
+
+        <!-- 2. Unfilled Track (Frosted translucent bar, 4px high) -->
+        <Border x:Name="TrackBg"
+                Height="4"
+                VerticalAlignment="Center"
+                Background="#30FFFFFF"
+                CornerRadius="2"
+                SnapsToDevicePixels="True" />
+
+        <!-- 3. Active Fill Bar (Vibrant Accent, 4px high) -->
+        <Border x:Name="ProgressFill"
+                Height="4"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Width="0"
+                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                CornerRadius="2"
+                SnapsToDevicePixels="True" />
+
+        <!-- 4. Fluent Capsule Thumb (6x16px Pill, expands on hover/drag) -->
+        <Border x:Name="SliderThumb"
+                Width="6"
+                Height="16"
+                CornerRadius="3"
+                Background="#FFFFFF"
+                BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
+                BorderThickness="1"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Opacity="0.85"
+                SnapsToDevicePixels="True"
+                IsHitTestVisible="False"
+                RenderTransformOrigin="0.5,0.5">
+            <Border.RenderTransform>
+                <ScaleTransform x:Name="ThumbScale" ScaleX="1.0" ScaleY="1.0" />
+            </Border.RenderTransform>
+        </Border>
+    </Grid>
+</UserControl>

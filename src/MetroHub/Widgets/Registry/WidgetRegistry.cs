@@ -125,6 +125,24 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Large,
             Factory: model => new MetroHub.Widgets.Catalog.Photos.PhotosWidgetViewModel(model)
         ));
+
+        // Register Volume & Audio widget
+        Register(new WidgetDefinition(
+            Id: "volume",
+            DisplayName: "Volume & Audio",
+            Description: "Master volume, output device switcher, and per-app volume mixer",
+            Icon: SymbolRegular.Speaker224,
+            AllowedSizes: new[]
+            {
+                WidgetSize.SlimWide, // 4x1
+                WidgetSize.Mega,     // 8x4
+                WidgetSize.Huge      // 8x6
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Volume.VolumeWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Volume.VolumeWidgetView),
+            DefaultSize: WidgetSize.Mega,
+            Factory: model => new MetroHub.Widgets.Catalog.Volume.VolumeWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)
