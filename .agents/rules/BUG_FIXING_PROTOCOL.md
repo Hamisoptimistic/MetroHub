@@ -1,6 +1,6 @@
-# Bug Fixing Protocol — Systematic Debugging & Resolution Guide
+# Bug Fixing Protocol — Universal Systematic Debugging & Resolution Guide
 
-> **CRITICAL DIRECTIVE**: When asked to fix a bug, you MUST follow this protocol end-to-end. Do NOT skip steps. Do NOT guess at solutions. Do NOT apply surface-level patches. Treat every bug as a forensic investigation — understand the root cause BEFORE writing a single line of fix code.
+> **CRITICAL DIRECTIVE**: When asked to fix ANY bug — UI glitch, data corruption, race condition, performance issue, crash, API misbehavior, or anything else — you MUST follow this protocol end-to-end. Do NOT skip steps. Do NOT guess at solutions. Do NOT apply surface-level patches. Treat every bug as a forensic investigation — understand the root cause BEFORE writing a single line of fix code.
 
 ---
 
@@ -13,19 +13,25 @@ Before doing ANYTHING, extract these from the user's description:
 3. **What are the exact reproduction steps?** (Click X, then Y, then Z)
 4. **When did it start?** (After a specific change? Always broken?)
 5. **Is it intermittent or 100% reproducible?**
-6. **What environment?** (Which OS, browser, player, device, etc.)
+6. **What environment?** (OS version, browser, hardware, display scale, etc.)
 
 ### Ask Clarifying Questions
 
-If the user's report is vague, ASK. Don't assume. Example:
+If the user's report is vague or ambiguous, ASK. Don't assume. Examples:
 
-> User: "the media player is never in sync"
-> BAD: Immediately start coding a fix
-> GOOD: "When you say out of sync — does the seekbar jump back to 0:00? Does it show the wrong time? Does it lag behind? Does it happen on seek, pause, or play? Which browser/player?"
+| Vague report | Questions to ask |
+|---|---|
+| "it's broken" | What specifically is broken? What do you see vs. what you expect? |
+| "it's slow" | How slow? Which action is slow? Was it fast before? When did it change? |
+| "it crashes" | When exactly? What were you doing? Is there an error message? |
+| "it's not syncing" | What data is wrong? Is it delayed, missing, or showing old values? |
+| "it looks wrong" | Can you screenshot it? Which element? On which screen size? |
 
-**Write down the precise symptom before proceeding.** Example from a real bug:
+**Write down the precise symptom before proceeding:**
 
-> **Symptom**: When user seeks on YouTube (clicks YouTube's seekbar to jump to a new position), MetroHub's seekbar resets to 0:00 briefly, then after ~1-2 seconds shows the correct position. Clicking play/pause "fixes" the sync.
+> ✅ GOOD: "When the user clicks YouTube's seekbar to jump to 2:30, MetroHub's seekbar resets to 0:00 for ~1.5 seconds, then snaps to the correct position."
+>
+> ❌ BAD: "Media player sync is broken"
 
 ---
 
@@ -35,180 +41,209 @@ If the user's report is vague, ASK. Don't assume. Example:
 
 Do NOT skim. Do NOT read just the function you think is broken. Read the **entire file** top to bottom. You need to understand:
 
-- All state variables and what they track
-- All event handlers and when they fire
-- All timers and their intervals
-- The complete data flow from OS → ViewModel → View
-- Thread safety (locks, dispatchers, async patterns)
-- Edge cases already handled (or not)
+- **All state variables** and what they track
+- **All event handlers** and when they fire
+- **All timers/intervals** and their cadence
+- **The complete data flow** from input → processing → output
+- **Thread safety** (locks, dispatchers, async patterns, reentrancy)
+- **Edge cases** already handled (or not)
+- **Dispose/cleanup logic** (resource leaks cause delayed bugs)
 
-### 1.2 Read the View/XAML code-behind
+### 1.2 Read connected files
 
-Bugs often live in the interaction between ViewModel and View. Read:
-- How the View subscribes to ViewModel changes
-- Mouse/input event handlers (drag, scrub, click)
-- Animation code that might interfere with data binding
+Bugs rarely live in isolation. Also read:
+
+- **View/UI code**: How does the UI consume the data? Bindings, event handlers, animations
+- **Models/DTOs**: Is the data structure correct? Missing fields? Wrong types?
+- **Services/APIs**: Is the data source reliable? What does it actually return?
+- **Configuration**: Wrong settings, missing defaults, environment-specific values?
 
 ### 1.3 Read the standards/rules docs
 
-Check `.agents/rules/` for any existing standards that govern the area you're debugging. The fix must comply with existing architecture.
+Check `.agents/rules/` for any existing standards that govern the area you're debugging. The fix MUST comply with existing architecture patterns. Violating established patterns to "fix" a bug just creates new bugs.
 
 ### 1.4 Map the data flow
 
-Draw a mental (or written) map:
+Draw the complete pipeline from source to symptom:
 
 ```
-OS Event (WinRT thread) 
-  → Dispatcher.InvokeAsync 
-    → SyncPlaybackState() 
-      → SyncTimelineProperties() 
-        → Updates PositionSeconds, ProgressRatio 
-          → PropertyChanged fires 
-            → View.OnViewModelPropertyChanged() 
-              → UpdateProgressVisuals()
+[Data Source] → [Processing Layer] → [State Management] → [UI Binding] → [Rendering]
 ```
 
-Understanding the **complete chain** reveals where data can get lost, delayed, or corrupted.
+For example:
+- **Network bug**: API response → deserialization → cache → ViewModel → View
+- **UI glitch**: User input → event handler → state update → PropertyChanged → render
+- **File bug**: FileSystem → read/parse → transform → write → verify
+- **Timing bug**: Timer tick → state query → calculation → UI dispatch → animation
+
+Understanding the **complete chain** reveals where data can get lost, delayed, corrupted, or overwritten.
 
 ---
 
 ## Phase 2: REPRODUCE AND OBSERVE — Understand the Failure Mode
 
-### 2.1 Add diagnostic logging (if needed)
+### 2.1 Reproduce the bug yourself
 
-Add `Debug.WriteLine` statements at critical points to trace what the OS is actually sending:
+Before fixing anything, **confirm you can trigger the bug**. If you can't reproduce it:
+- Ask the user for more specific steps
+- Check if it's environment-specific (screen resolution, OS version, hardware)
+- Check if it's timing-dependent (race condition)
+- Check if it requires specific data/state (empty list, long string, special characters)
+
+### 2.2 Add diagnostic logging
+
+Add `Debug.WriteLine` / `console.log` / `print` statements at critical decision points to trace what's ACTUALLY happening at runtime:
 
 ```csharp
+// C# / WPF example
 System.Diagnostics.Debug.WriteLine(
-    $"[MediaWidget] TIMELINE: pos={timeline.Position}, " +
-    $"lastUpdate={timeline.LastUpdatedTime}, " +
-    $"status={playback?.PlaybackStatus}, " +
-    $"stored={_lastTimelinePosition}");
+    $"[ComponentName] METHOD: input={inputValue}, " +
+    $"currentState={_stateVar}, " +
+    $"decision={someCondition}");
 ```
 
-### 2.2 Write diagnostic scripts
-
-Create PowerShell/Python scripts that directly query the same OS APIs your code uses. This isolates whether the bug is in YOUR code or in the OS/browser behavior.
-
-Example — querying GSMTC directly from PowerShell:
-```powershell
-# Check what the OS is actually reporting
-Add-Type -AssemblyName System.Runtime.WindowsRuntime
-$manager = [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync().GetAwaiter().GetResult()
-$session = $manager.GetCurrentSession()
-$timeline = $session.GetTimelineProperties()
-Write-Host "Position: $($timeline.Position)"
-Write-Host "LastUpdated: $($timeline.LastUpdatedTime)"
+```javascript
+// JS example
+console.log(`[ComponentName] handler: event=${e.type}, state=`, this.state);
 ```
 
-### 2.3 Identify the REAL source of the problem
+**Log at EVERY branch point** — you need to see which code path is executing and why.
 
-The bug is almost never where you first think it is. Common traps:
+### 2.3 Write diagnostic scripts to isolate the source
 
-| What it looks like | What it actually is |
+Create standalone scripts that test the underlying API/system independently of your application code. This isolates whether the bug is in YOUR code or in the OS/library/API/browser.
+
+**Examples:**
+
+| Bug type | Diagnostic approach |
 |---|---|
-| "The UI shows wrong data" | The OS is sending wrong/stale data |
-| "The timer is broken" | An event handler is overwriting the timer's work |
-| "The position resets to 0" | The OS sends a transient 0 during state transitions |
-| "It works sometimes" | Race condition between multiple async code paths |
-| "It fixes itself after a click" | The click triggers a re-sync that masks the real issue |
+| OS API returns wrong data | Write a script that calls the API directly and logs results |
+| CSS layout broken | Create a minimal HTML file with just the broken element |
+| Database query wrong | Run the raw query in a SQL client and check results |
+| Network timing issue | Use `curl`/`fetch` to call the endpoint directly and measure timing |
+| File parsing bug | Write a script that parses the file and dumps the parsed structure |
+
+### 2.4 Narrow down the scope
+
+Use **binary search debugging**: If you have a long pipeline, check the data at the MIDPOINT.
+- If data is correct at midpoint → bug is in the second half
+- If data is wrong at midpoint → bug is in the first half
+
+Repeat until you find the exact point where correct data becomes incorrect.
 
 ---
 
 ## Phase 3: ROOT CAUSE ANALYSIS — Go Deep, Not Wide
 
-### 3.1 Ask "WHY?" five times (Five Whys)
+### 3.1 Ask "WHY?" five times (Five Whys Technique)
+
+Never stop at the first answer. Keep asking WHY until you reach the fundamental cause:
 
 ```
-WHY does the seekbar reset to 0:00?
-  → Because SyncTimelineProperties receives position=0 from the OS
+WHY does the UI show wrong data?
+  → Because the ViewModel has wrong data
 
-WHY does the OS send position=0?
-  → Because Chromium sends a transient 0:00 snapshot during seek transitions
+WHY does the ViewModel have wrong data?
+  → Because an event handler overwrote it with stale data
 
-WHY does our code accept it?
-  → Because we have no way to distinguish "real 0:00" from "transient glitch 0:00"
+WHY did the event handler have stale data?
+  → Because the OS/API sends out-of-order updates during transitions
 
-WHY can't we distinguish them?
-  → Because we don't track the FRESHNESS of incoming updates (LastUpdatedTime)
+WHY does our code accept out-of-order updates?
+  → Because we have no freshness/ordering check on incoming data
 
-WHY don't we track freshness?
-  → Because the original code relied only on position value, not metadata
+WHY don't we have a freshness check?
+  → Because the original code assumed events always arrive in order
+  
+ROOT CAUSE: Missing freshness validation on incoming async data
 ```
 
-**The root cause is at the BOTTOM of the chain**, not the top.
+**The root cause is ALWAYS at the bottom of the chain, not the top.**
 
 ### 3.2 Identify ALL code paths that touch the broken state
 
-Search for every place the broken variable is read or written:
+Search for every place the broken variable/state is read or written:
 
+```bash
+# Find all references to the broken state
+grep -n "BrokenVariable" *.cs
+grep -n "BrokenVariable" *.xaml
 ```
-grep -n "PositionSeconds" MediaWidgetViewModel.cs
-grep -n "_lastTimelinePosition" MediaWidgetViewModel.cs
-```
 
-Often bugs exist because **two different code paths** both modify the same state and one overwrites the other's work.
+Common bug patterns:
+- **Two writers, one wins**: Two code paths both modify the same state, and one overwrites the other's work
+- **Stale closure**: An async callback captures a variable that changed before the callback executes
+- **Missing lock**: Two threads read-modify-write the same state without synchronization
+- **Event storm**: An event handler triggers the same event again, causing infinite recursion or rapid re-entry
+- **Dispose race**: Object is disposed while an async operation is still using it
 
-### 3.3 Check thread safety
+### 3.3 Classify the bug type
 
-If multiple threads can modify the same state:
-- Is there a lock?
-- Is the lock held for the ENTIRE read-modify-write cycle?
-- Are WinRT events being marshaled to the UI thread correctly?
-- Can an event handler fire DURING another event handler?
+| Category | Common causes | Fix strategy |
+|---|---|---|
+| **Data correctness** | Wrong calculation, off-by-one, type coercion | Fix the math, add assertions |
+| **Race condition** | Missing lock, async ordering, event reentrancy | Add synchronization, use freshness tokens |
+| **Stale data** | Cache not invalidated, old event applied after new one | Add versioning/epoch, freshness gates |
+| **Resource leak** | Missing dispose, uncancelled timer, dangling event handler | Add cleanup in Dispose, use `using`, cancel tokens |
+| **UI glitch** | Wrong binding, animation conflict, layout thrashing | Fix binding, isolate animations, batch updates |
+| **Performance** | O(n²) loop, unnecessary allocations, blocking UI thread | Profile, optimize hot path, move work off UI thread |
+| **Crash/exception** | Null reference, index out of bounds, disposed object | Add null checks, validate inputs, guard async paths |
 
 ---
 
 ## Phase 4: RESEARCH — Learn From Others Who Solved This
 
-### 4.1 Search strategy (use ALL of these)
+### 4.1 When to research
 
-When the bug involves OS APIs, browser behavior, or third-party interactions, you MUST research how others handle it:
+Research is MANDATORY when:
+- The bug involves **OS APIs, browser behavior, or third-party libraries** you don't control
+- The bug is a **known limitation** of a platform (e.g., WinRT async delivery quirks)
+- You've never seen this class of bug before
+- Your first fix attempt didn't work
 
-1. **GitHub Code Search**: Find open-source projects using the same API
-   - Search for function names: `GetTimelineProperties`, `TimelinePropertiesChanged`
-   - Search for class names: `GlobalSystemMediaTransportControlsSession`
-   - Look at projects like ModernFlyouts, EarTrumpet, Rainmeter NowPlaying
+### 4.2 Where to search (use ALL of these)
 
-2. **Read the actual source code** of the component causing the bug
-   - For Chromium bugs: Read `system_media_controls_win.cc` in the Chromium source
-   - For Windows API bugs: Read Microsoft documentation AND the WinRT source
-   - Don't just read docs — read the IMPLEMENTATION to understand edge cases
-
-3. **Search forums and issue trackers**:
-   - GitHub Issues on related projects
-   - Stack Overflow with exact API names
-   - Reddit (r/csharp, r/wpf, r/dotnet)
-   - Microsoft Developer Community
-
-4. **Search with specific error patterns**:
-   - `"TimelinePropertiesChanged" "position" "zero" seek`
-   - `"GSMTC" "chromium" "position resets"`
-   - `site:github.com GetTimelineProperties position sync`
-
-### 4.2 Read reference implementations
-
-Find 2-3 open-source projects that do the same thing and study their approach:
-
+**1. GitHub Code Search** — Find how other projects handle the same API/pattern:
 ```
-# Example: Reading ModernFlyouts' GSMTC implementation
-https://github.com/ModernFlyouts-Community/ModernFlyouts/blob/main/ModernFlyouts.Core/Media/Control/GSMTCMediaSession.cs
+site:github.com "FunctionName" "language:csharp"
+site:github.com "APIName" fix OR workaround OR issue
 ```
+Look at well-known open-source projects in the same domain.
 
-Look for:
-- Do they have anti-glitch logic?
-- Do they use LastUpdatedTime?
-- Do they poll or only use events?
-- How do they handle seek?
+**2. Read the source code** of the component causing the bug:
+- Browser bugs → Read Chromium/Firefox source
+- Windows API bugs → Read WinRT/Win32 source or Microsoft reference source
+- Library bugs → Read the library's GitHub repo
+- Don't just read docs — read the IMPLEMENTATION to understand edge cases
 
-### 4.3 Read the OS/browser source code
+**3. Search forums and issue trackers:**
+- GitHub Issues on the library/framework you're using
+- Stack Overflow with exact API names and error messages
+- Reddit (relevant subreddits: r/csharp, r/wpf, r/webdev, r/reactjs, etc.)
+- Microsoft Developer Community, Mozilla Bugzilla, Chromium bug tracker
 
-For Chromium GSMTC behavior, the authoritative source is:
+**4. Search with specific error patterns:**
 ```
-chromium/src/chrome/browser/ui/views/frame/system_media_controls_win.cc
+"ExactErrorMessage" site:stackoverflow.com
+"APIName" "unexpected behavior" OR "bug" OR "workaround"
+"ClassName.MethodName" returns wrong OR incorrect OR stale
 ```
 
-This reveals EXACTLY what Chromium sends to the OS during seek/pause/play — no guessing needed.
+### 4.3 Study reference implementations
+
+Find 2-3 open-source projects that solve the same problem and study their approach:
+- What patterns do they use?
+- What edge cases do they handle that you don't?
+- What anti-glitch / defensive logic do they have?
+- Did they file issues about the same problem you're seeing?
+
+### 4.4 Read official documentation critically
+
+Documentation describes the **intended** behavior. Bugs often exist in the gap between intended and actual behavior. Look for:
+- "Note" and "Important" callouts (often describe quirks)
+- "Known issues" sections
+- Version-specific behavior changes
+- Threading/concurrency warnings
 
 ---
 
@@ -216,37 +251,44 @@ This reveals EXACTLY what Chromium sends to the OS during seek/pause/play — no
 
 ### 5.1 Write down the fix strategy BEFORE coding
 
-Document:
-1. **What is the root cause?** (one sentence)
-2. **What is the fix approach?** (conceptual, not code)
-3. **What are the defense layers?** (never rely on a single check)
+Answer these questions in writing:
+
+1. **What is the root cause?** (One sentence)
+2. **What is the conceptual fix?** (Not code — the idea)
+3. **What defense layers are needed?** (Never single-point-of-failure)
 4. **What edge cases must be handled?**
 5. **What existing behavior must be preserved?**
+6. **What is the performance impact?**
 
 ### 5.2 Design with defense-in-depth
 
-Never rely on a single check. Layer multiple independent guards:
+Never rely on a single check. Good fixes have **multiple independent safety layers**:
 
 ```
-Layer 1: Freshness Gate (LastUpdatedTime comparison)
-   → Catches: stale/out-of-order OS updates
-   
-Layer 2: Anti-Glitch (position threshold check)  
-   → Catches: transient 0:00 resets even if LastUpdatedTime unavailable
-
-Layer 3: Seek Recovery Window (aggressive re-polling)
-   → Catches: delayed convergence after any large position jump
+Layer 1: Input validation     → Reject obviously invalid data at entry point
+Layer 2: Freshness/ordering   → Reject stale or out-of-order data
+Layer 3: Sanity check         → Detect impossible state transitions
+Layer 4: Recovery mechanism   → Self-heal if bad state is detected
 ```
 
-If Layer 1 fails (player doesn't report LastUpdatedTime), Layer 2 catches it.
-If Layer 2 fails (glitch is to a non-zero position), Layer 3 catches it.
+If Layer 1 fails to catch a bad input, Layer 2 should catch it.
+If Layer 2 also fails, Layer 3 should detect the impossible state.
+If everything fails, Layer 4 recovers gracefully.
 
-### 5.3 Consider performance impact
+### 5.3 Consider the blast radius
 
-- Don't add high-frequency polling permanently — use time-windowed recovery
-- Don't hold locks longer than necessary
-- Don't dispatch to UI thread when hidden (`_isHubVisible` check)
-- Cancel previous async operations before starting new ones
+Before implementing, ask:
+- **What else could this fix break?** Trace all callers of modified functions
+- **Does this change any public API contracts?** (Return types, side effects, timing)
+- **Does this affect performance?** (Extra allocations, more frequent polling, longer locks)
+- **Is this fix forward-compatible?** (Will it still work when the OS/library updates?)
+
+### 5.4 Choose the minimal effective fix
+
+Prefer the smallest change that fully fixes the root cause. Don't:
+- Refactor unrelated code in the same change
+- "Improve" code style while fixing a bug
+- Add features alongside bug fixes
 
 ---
 
@@ -255,212 +297,255 @@ If Layer 2 fails (glitch is to a non-zero position), Layer 3 catches it.
 ### 6.1 Make surgical changes
 
 - Change ONLY what needs to change
-- Don't refactor unrelated code in the same commit
-- Preserve all existing comments and documentation
-- Add NEW comments explaining the WHY of your fix, not the WHAT
+- Preserve all existing comments and documentation unrelated to the bug
+- Don't rename variables or restructure code unless directly required by the fix
+- Keep the diff as small and focused as possible
 
-### 6.2 Name things clearly
+### 6.2 Name new things clearly
+
+Variable and method names should describe their PURPOSE:
 
 ```csharp
-// BAD
-private int _counter = 0;
+// ❌ BAD — cryptic names
+private int _cnt = 0;
 private long _ts = 0;
+private bool _flag = false;
 
-// GOOD  
-private DateTimeOffset _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
-private long _seekRecoveryUntil = 0;
+// ✅ GOOD — self-documenting names
+private DateTimeOffset _lastAcceptedUpdateTime = DateTimeOffset.MinValue;
+private long _recoveryWindowExpiresAt = 0;
+private bool _isInSeekRecovery = false;
 ```
 
 ### 6.3 Handle ALL edge cases
 
 For every check you add, ask:
-- What if this value is null/default/zero?
+- What if this value is `null` / `default` / `0` / `empty`?
 - What if this is called from a different thread?
-- What if the session object is disposed mid-call?
+- What if the object is disposed mid-operation?
 - What if two events fire simultaneously?
+- What if the user does this action rapidly (spam-clicking)?
+- What if the data source is unavailable or returns an error?
 
-### 6.4 Reset state cleanly on track changes
+### 6.4 Reset state cleanly on context changes
 
-When the track changes (new song/video), ALL sync state must be reset:
+When context changes (new data source, new document, new session, navigation):
+ALL accumulated state from the previous context MUST be reset. Forgetting to reset even ONE field causes ghost state from the previous context to corrupt the new one.
+
+### 6.5 Add comments explaining WHY, not WHAT
+
 ```csharp
-_lastTimelinePosition = TimeSpan.Zero;
-_lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
-_suppressExternalPositionUpdatesUntil = 0;
-_seekRecoveryUntil = 0;
-```
+// ❌ BAD — restates the code
+// Check if position is less than 1.5 seconds
+if (incomingPos <= TimeSpan.FromSeconds(1.5))
 
-Forgetting to reset even ONE field causes ghost state from the previous track to corrupt the new one.
+// ✅ GOOD — explains the reasoning
+// Chromium emits transient 0:00 during seek/pause transitions.
+// Reject any position <1.5s when we were at ≥2.5s on a long track.
+if (incomingPos <= TimeSpan.FromSeconds(1.5) &&
+    _lastKnownPosition >= TimeSpan.FromSeconds(2.5))
+```
 
 ---
 
 ## Phase 7: VERIFY — Prove It Works
 
-### 7.1 Build first, test second
+### 7.1 Build / compile first
 
 ```bash
-dotnet build --no-restore -c Release
+dotnet build -c Release     # C#
+npm run build               # JS/TS
+cargo build                 # Rust
 ```
 
-Fix ALL warnings and errors before testing.
+Fix ALL warnings and errors. A fix that doesn't compile is not a fix.
 
 ### 7.2 Test the exact reproduction steps
 
-Go back to the user's original report and test EXACTLY what they described:
-1. Play a YouTube video
-2. Let it play for 10+ seconds
-3. Click YouTube's seekbar to jump to a different position
-4. Watch MetroHub's seekbar — does it track correctly?
-5. Pause on YouTube, then resume — does MetroHub sync?
+Go back to the user's original report and test EXACTLY what they described. Don't test something slightly different and assume it covers the case.
 
 ### 7.3 Test edge cases
 
-- Seek to the beginning (0:00)
-- Seek to near the end
-- Rapid successive seeks (click-click-click)
-- Seek while paused
-- Switch between YouTube tabs
-- Switch from YouTube to Spotify to VLC
-- Close the browser tab while playing
+Create a mental checklist based on the bug category:
 
-### 7.4 Test that you didn't break anything else
+**For data/sync bugs:**
+- Empty data, null data, maximum data
+- Rapid successive operations
+- Operation during state transition
+- Operation while disconnected/reconnected
 
-- Does play/pause still toggle correctly?
-- Does the seekbar still animate smoothly during normal playback?
-- Does scrubbing (dragging the seekbar) still work?
-- Does track change still show the new track info?
-- Does the glow effect still update?
+**For UI bugs:**
+- Different window sizes / DPI scales
+- Rapid clicking / keyboard mashing
+- Focus changes (alt-tab, minimize, restore)
+- Dark mode / light mode / high contrast
+
+**For performance bugs:**
+- Small dataset (1 item) vs large dataset (10,000 items)
+- Cold start vs warm cache
+- Single operation vs burst of operations
+
+**For crash bugs:**
+- Reproduce the original crash — it should no longer occur
+- Try adjacent scenarios that might trigger similar crashes
+- Verify error handling doesn't swallow important exceptions
+
+### 7.4 Test for regressions
+
+Your fix must not break anything that was previously working. Test:
+- The happy path (normal usage)
+- Features adjacent to the fix
+- Any feature that shares code/state with the fixed area
+
+### 7.5 Test on the user's environment
+
+If the bug was environment-specific, verify the fix works in that exact environment.
 
 ---
 
-## Phase 8: DOCUMENT — Update Standards and Rules
+## Phase 8: DOCUMENT — Update Standards, Code, and Rules
 
-### 8.1 Update the relevant standards doc
+### 8.1 Update standards docs
 
-If your fix establishes a new pattern or protocol, document it in `.agents/rules/WIDGET_LIFECYCLE_STANDARDS.md` or the relevant standards file so future code follows the same approach.
+If your fix establishes a new pattern, defensive technique, or protocol, document it in the relevant `.agents/rules/*.md` file so ALL future code follows the same approach.
 
 ### 8.2 Add inline code comments
 
-Explain the WHY, not the WHAT:
+Every non-obvious defensive check should have a comment explaining:
+- **What attack/failure it guards against**
+- **Why this specific threshold/value was chosen**
+- **What happens if this guard is removed** (so nobody "cleans it up" later)
 
-```csharp
-// BAD comment
-// Check if position is less than 1.5 seconds
-if (incomingPos <= TimeSpan.FromSeconds(1.5))
+### 8.3 Publish and inform the user
 
-// GOOD comment  
-// Chromium emits transient 0:00 during seek/pause transitions.
-// Reject any position <1.5s when we're already at ≥2.5s on a long track.
-if (incomingPos <= TimeSpan.FromSeconds(1.5) && 
-    _lastTimelinePosition >= TimeSpan.FromSeconds(2.5))
-```
+Deploy the fix and tell the user:
+- What the root cause was (briefly)
+- What you changed (files and concept)
+- How to test it
+- Any caveats or known limitations
 
 ---
 
-## Anti-Patterns — What NOT To Do
+## Anti-Patterns — What NOT To Do When Fixing Bugs
 
-### ❌ DON'T: Apply surface-level patches
-```
-"The position resets to 0? Just ignore zeros!"
-→ This breaks actual track-start detection and new track transitions.
-```
+### ❌ DON'T: Guess and patch
 
-### ❌ DON'T: Add arbitrary delays
 ```
-"Just add a 500ms delay before updating the UI"
-→ This makes the seekbar feel laggy and doesn't fix the root cause.
-```
-
-### ❌ DON'T: Bypass performance optimizations
-```
-"Just poll the OS every 50ms forever"
-→ This drains battery and wastes CPU. Use time-windowed recovery instead.
+"I think the problem might be here... let me try changing this value"
+→ You'll waste hours trying random changes. UNDERSTAND the root cause first.
 ```
 
 ### ❌ DON'T: Fix symptoms instead of causes
+
 ```
-"The UI flickers? Just add a debounce!"
-→ Find out WHY it flickers. The debounce masks a real data integrity issue.
+"The UI flickers? Just add a 200ms debounce!"
+→ The debounce masks a data integrity issue. Find WHY it flickers.
+```
+
+### ❌ DON'T: Add arbitrary delays/sleeps
+
+```
+"Just await Task.Delay(500) before updating"
+→ This makes the app feel sluggish and doesn't fix the root cause. 
+  The delay might work on your machine but fail on slower/faster ones.
+```
+
+### ❌ DON'T: Catch and swallow exceptions
+
+```csharp
+try { DoThing(); } catch { } // "Fixed the crash!"
+→ You silenced the symptom. The underlying corruption still happens.
+```
+
+### ❌ DON'T: Assume external data sources are correct
+
+```
+"The API says the value is 0, so it must be 0"
+→ APIs, OS events, and hardware can send transient, stale, or corrupted data.
+  Always validate with freshness checks, sanity bounds, and multi-sample verification.
 ```
 
 ### ❌ DON'T: Skip the research phase
+
 ```
 "I'll just try different approaches until something works"
-→ You'll waste hours and probably introduce new bugs. Read the source code
-  of the component causing the issue FIRST.
+→ Other developers have already solved this. Read their code. Read the 
+  source of the component causing the issue. 30 minutes of research 
+  saves 3 hours of trial-and-error.
 ```
 
-### ❌ DON'T: Assume the OS/browser is correct
+### ❌ DON'T: Make the fix bigger than it needs to be
+
 ```
-"The API says position is 0, so it must be 0"
-→ APIs can send transient, stale, or out-of-order data. Verify with 
-  multiple reads and freshness indicators.
+"While I'm in here, let me also refactor this and rename that..."
+→ Every line you change is a line that could introduce a new bug.
+  Fix the bug. Only the bug. Nothing else.
 ```
 
----
+### ❌ DON'T: Ignore thread safety
 
-## Real-World Case Study: GSMTC Media Seekbar Sync
-
-### The Bug
-When user seeks on YouTube, MetroHub's seekbar resets to 0:00 briefly, then recovers after 1-2 seconds.
-
-### Phase 1 — Read the Code
-Read all 1300+ lines of `MediaWidgetViewModel.cs`, the View code-behind, and the XAML. Mapped the complete data flow from OS events → ViewModel → View.
-
-### Phase 2 — Reproduce
-Identified that the issue was 100% reproducible: play YouTube video → seek → seekbar jumps to 0:00 → eventually recovers.
-
-### Phase 3 — Root Cause
-- Chromium's SMTC implementation sends transient `Position=0` during seek transitions
-- The old code used a `_consecutiveZeroCount` to detect this, but it had three fatal flaws:
-  1. Chromium doesn't always send exactly 0 — it sends stale old positions too
-  2. The verification poll could receive another stale update, creating a loop
-  3. No freshness ordering — couldn't tell if an update was newer or older
-
-### Phase 4 — Research
-- Read Chromium's `system_media_controls_win.cc` source to understand exactly what it sends
-- Studied ModernFlyouts' `GSMTCMediaSession.cs` for reference patterns
-- Searched GitHub, Stack Overflow, and Microsoft docs for GSMTC timeline sync approaches
-- Discovered that `LastUpdatedTime` is the canonical freshness signal most projects ignore
-
-### Phase 5 — Design
-Three-layer defense:
-1. **Freshness Gate**: Compare `LastUpdatedTime` — reject updates older than what we already have
-2. **Anti-Glitch**: Position threshold check for transient zeros
-3. **Seek Recovery**: Time-windowed aggressive polling after large position jumps
-
-### Phase 6 — Implement
-- Replaced `_consecutiveZeroCount` with `_lastAcceptedOsUpdateTime` (freshness tracking)
-- Added `_seekRecoveryUntil` for time-windowed recovery
-- Made timer tick do full OS sync during recovery window
-- Reset all freshness state on track change and user-initiated seek
-
-### Phase 7 — Verify
-- Built with 0 warnings, 0 errors
-- Published to Desktop folder
-- User tests: seek on YouTube, pause/resume, track change, scrubbing
-
-### Phase 8 — Document
-- Updated `WIDGET_LIFECYCLE_STANDARDS.md` Section 12 with the new protocol
-- Added comprehensive inline comments explaining the freshness gate and recovery logic
+```
+"It works in my tests so it's fine"
+→ Race conditions are intermittent by nature. If multiple threads 
+  touch the same state, add proper synchronization even if you 
+  can't reproduce a race in testing.
+```
 
 ---
 
 ## Quick Reference Checklist
 
 ```
-□ Read user's bug report carefully, ask clarifying questions
-□ Read the ENTIRE relevant source file(s), not just the "broken" function
-□ Map the complete data flow from input to output
-□ Add diagnostic logging to trace actual runtime behavior
-□ Write diagnostic scripts to isolate OS/API behavior from your code
-□ Ask "WHY?" five times to find the true root cause
-□ Search GitHub for open-source projects handling the same API/scenario
-□ Read the source code of the OS/browser component involved
-□ Design a multi-layer defense (never single-point-of-failure)
-□ Implement surgically — change only what needs changing
-□ Build and verify zero warnings/errors
-□ Test the exact reproduction steps from the user's report
-□ Test edge cases and regressions
-□ Update standards docs and inline comments
-□ Publish and inform user
+PHASE 0 — LISTEN
+  □ Extract precise symptom from user report
+  □ Ask clarifying questions if anything is vague
+  □ Write down expected vs. actual behavior
+
+PHASE 1 — READ
+  □ Read the ENTIRE relevant source file(s) top to bottom
+  □ Read connected files (View, Model, Service, Config)
+  □ Read existing standards/rules docs
+  □ Map the complete data flow from source to symptom
+
+PHASE 2 — REPRODUCE
+  □ Confirm you can trigger the bug
+  □ Add diagnostic logging at critical decision points
+  □ Write standalone diagnostic scripts to isolate the source
+  □ Use binary search to narrow down where data goes wrong
+
+PHASE 3 — ROOT CAUSE
+  □ Apply Five Whys to reach the fundamental cause
+  □ Search for ALL code paths that touch the broken state
+  □ Check for race conditions, stale data, missing resets
+  □ Classify the bug type (data, race, leak, UI, perf, crash)
+
+PHASE 4 — RESEARCH
+  □ Search GitHub for open-source projects handling the same scenario
+  □ Read the source code of any external component involved
+  □ Search Stack Overflow, Reddit, issue trackers for known issues
+  □ Study 2-3 reference implementations for their defensive patterns
+
+PHASE 5 — DESIGN
+  □ Write the fix strategy before writing code
+  □ Design defense-in-depth (multiple independent safety layers)
+  □ Consider blast radius — what else could this break?
+  □ Choose the minimal effective fix
+
+PHASE 6 — IMPLEMENT
+  □ Make surgical changes — only what's needed
+  □ Use clear, self-documenting names for new variables
+  □ Handle all edge cases (null, empty, concurrent, disposed)
+  □ Reset all accumulated state on context changes
+  □ Add comments explaining WHY, not WHAT
+
+PHASE 7 — VERIFY
+  □ Build with zero warnings/errors
+  □ Test the exact reproduction steps from user's report
+  □ Test edge cases relevant to the bug category
+  □ Test for regressions in adjacent features
+
+PHASE 8 — DOCUMENT
+  □ Update standards docs with new patterns/protocols
+  □ Add inline code comments on non-obvious defensive checks
+  □ Inform user of root cause, fix, and how to test
 ```
