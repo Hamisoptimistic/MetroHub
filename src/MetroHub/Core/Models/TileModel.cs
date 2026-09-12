@@ -162,6 +162,23 @@ public class TileModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// Cascades resource disposal down to any active widget ViewModel when the tile is unpinned or removed.
+    /// </summary>
+    public void Teardown()
+    {
+        if (_widgetViewModel is IDisposable d1)
+        {
+            d1.Dispose();
+        }
+        if (_stubWidgetViewModel is IDisposable d2)
+        {
+            d2.Dispose();
+        }
+        _widgetViewModel = null;
+        _stubWidgetViewModel = null;
+    }
+
     public int SpanX
     {
         get => _spanX;

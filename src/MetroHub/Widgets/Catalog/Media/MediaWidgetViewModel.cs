@@ -268,7 +268,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
 
     private void UpdatePlaybackInfo()
     {
-        if (_currentSession == null) return;
+        if (!_isHubVisible || _currentSession == null) return;
 
         try
         {
@@ -302,7 +302,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
 
     private void UpdateTimelineInfo()
     {
-        if (_currentSession == null) return;
+        if (!_isHubVisible || _currentSession == null) return;
 
         try
         {
@@ -1022,5 +1022,48 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     {
         GlowMode = mode;
         SaveSettings();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            if (_playbackTimer != null)
+            {
+                _playbackTimer.Stop();
+                _playbackTimer.Tick -= OnPlaybackTimerTick;
+                _playbackTimer = null;
+            }
+
+            if (_manager != null)
+            {
+                try
+                {
+                    _manager.CurrentSessionChanged -= Manager_CurrentSessionChanged;
+                }
+                catch { }
+                _manager = null;
+            }
+
+            if (_currentSession != null)
+            {
+                try
+                {
+                    _currentSession.MediaPropertiesChanged -= Session_MediaPropertiesChanged;
+                    _currentSession.PlaybackInfoChanged -= Session_PlaybackInfoChanged;
+                    _currentSession.TimelinePropertiesChanged -= Session_TimelinePropertiesChanged;
+                }
+                catch { }
+                _currentSession = null;
+            }
+
+            Thumbnail = null;
+            GlowBrush = null;
+            SensualRadialBrush = null;
+            FluidWaveBrush = null;
+            FluidSecondaryBrush = null;
+        }
+
+        base.Dispose(disposing);
     }
 }

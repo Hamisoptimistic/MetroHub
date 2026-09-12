@@ -14,6 +14,31 @@ public partial class PomodoroWidgetView : UserControl
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is PomodoroWidgetViewModel vm)
+        {
+            if (_vm != null && _vm != vm)
+            {
+                _vm.PropertyChanged -= OnViewModelPropertyChanged;
+            }
+            _vm = vm;
+            _vm.PropertyChanged -= OnViewModelPropertyChanged;
+            _vm.PropertyChanged += OnViewModelPropertyChanged;
+            UpdateVisuals(_vm);
+        }
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (_vm != null)
+        {
+            _vm.PropertyChanged -= OnViewModelPropertyChanged;
+        }
     }
 
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -26,8 +51,12 @@ public partial class PomodoroWidgetView : UserControl
         if (e.NewValue is PomodoroWidgetViewModel newVm)
         {
             _vm = newVm;
-            newVm.PropertyChanged += OnViewModelPropertyChanged;
-            UpdateVisuals(newVm);
+            if (IsLoaded)
+            {
+                newVm.PropertyChanged -= OnViewModelPropertyChanged;
+                newVm.PropertyChanged += OnViewModelPropertyChanged;
+                UpdateVisuals(newVm);
+            }
         }
         else
         {

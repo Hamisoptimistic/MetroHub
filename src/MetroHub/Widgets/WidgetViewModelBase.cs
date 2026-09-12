@@ -51,4 +51,33 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
     /// Lifecycle hook: resume timers/polling when MetroHub is visible.
     /// </summary>
     public virtual void Resume() { }
+
+    private bool _disposed;
+
+    /// <summary>
+    /// Explicit teardown invoked when the parent tile is unpinned or destroyed.
+    /// </summary>
+    public void Teardown()
+    {
+        Dispose();
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+
+        if (disposing)
+        {
+            Pause();
+            IsActive = false; // Deactivates CommunityToolkit messenger subscriptions cleanly
+        }
+
+        _disposed = true;
+    }
 }

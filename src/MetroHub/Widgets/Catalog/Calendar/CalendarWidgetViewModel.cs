@@ -159,4 +159,15 @@ public partial class CalendarWidgetViewModel : WidgetViewModelBase, IRecipient<H
 
         Days = daysList;
     }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _midnightTimer?.Stop();
+            _midnightTimer = null;
+        }
+
+        base.Dispose(disposing);
+    }
 }

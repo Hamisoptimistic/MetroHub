@@ -825,6 +825,7 @@ public partial class MainWindow : BorderlessFluentWindow
             _isDismissing = false;
             _isFullyActivated = false;
             Topmost = false;
+            NativeMethods.FlushMemory();
         }
     }
 
@@ -1122,6 +1123,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         var toRemove = currentTiles.Where(t => !targetDict.ContainsKey(t.Id)).ToList();
         foreach (var t in toRemove)
         {
+            t.Teardown();
             Tiles.Remove(t);
         }
 
@@ -2633,6 +2635,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
         foreach (var t in eligible)
         {
+            t.Teardown();
             Tiles.Remove(t);
         }
 
@@ -3740,6 +3743,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         var memberTiles = Tiles.Where(t => t.Group == group.Id).ToList();
         foreach (var t in memberTiles)
         {
+            t.Teardown();
             Tiles.Remove(t);
         }
 

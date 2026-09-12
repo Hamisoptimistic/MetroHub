@@ -362,7 +362,9 @@ public partial class PomodoroWidgetViewModel : WidgetViewModelBase, IRecipient<H
         };
 
         GlowColor = color;
-        GlowSolidBrush = new SolidColorBrush(color);
+        var solidBrush = new SolidColorBrush(color);
+        solidBrush.Freeze();
+        GlowSolidBrush = solidBrush;
         SensualRadialBrush = CreateSensualBrush(color);
     }
 
@@ -497,5 +499,22 @@ public partial class PomodoroWidgetViewModel : WidgetViewModelBase, IRecipient<H
         _uiTimer?.Stop();
         CancelDormantBackgroundTimer();
         base.OnDeactivated();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            if (_uiTimer != null)
+            {
+                _uiTimer.Stop();
+                _uiTimer.Tick -= OnUiTimerTick;
+                _uiTimer = null;
+            }
+
+            CancelDormantBackgroundTimer();
+        }
+
+        base.Dispose(disposing);
     }
 }

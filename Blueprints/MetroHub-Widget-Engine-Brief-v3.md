@@ -85,3 +85,15 @@ These are not "nice to have later" — build each one as part of the first widge
 2. **Core native layer** — `SystemMetricsService`, `AudioEndpointService`. Fully independent of Phase 0; can be built and unit-tested in isolation first if you want early momentum.
 3. **First widget suite** — Clock, Performance Monitor, Volume, Notes, Power Controls — now trivial to add since Phase 0 did the structural work once.
 4. **Lifecycle hookup + measurement** — wire `Resume()`/`Pause()` into `ShowScreen()`/`HideScreen()`, then actually publish a self-contained Release build and measure working set against the ~15–25MB target instead of assuming it.
+
+---
+
+## PHASE 4: MANDATORY WIDGET LIFECYCLE & RESOURCE HYGIENE (COMPULSORY)
+
+Every widget must adhere to `.agents/rules/WIDGET_LIFECYCLE_STANDARDS.md`:
+1. **`IDisposable` Implementation:** Must override `Dispose(bool disposing)` in ViewModel to halt all timers (`DispatcherTimer`, `Timer`) and unhook OS event listeners (e.g. WinRT Media session manager).
+2. **View-ViewModel Event Unhooking:** All code-behind subscribing to `PropertyChanged` must hook `Loaded`/`Unloaded` and detach on `Unloaded` to prevent visual tree memory retention.
+3. **Zero Background CPU:** Check `_isHubVisible` in any external callbacks; never dispatch UI updates when MetroHub is hidden in the tray.
+4. **WPF Freezable Hygiene:** Call `.Freeze()` on all created brushes, pens, and geometries.
+5. **Tile Removal Teardown:** Tile removal paths must call `tile.Teardown()` to cascade disposal.
+

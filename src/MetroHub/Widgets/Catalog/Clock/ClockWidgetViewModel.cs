@@ -205,4 +205,16 @@ public partial class ClockWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     {
         SetTimeFormat(!Is24HourFormat);
     }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            StopTimer();
+            _timer = null;
+            Model.PropertyChanged -= OnModelPropertyChanged;
+        }
+
+        base.Dispose(disposing);
+    }
 }
