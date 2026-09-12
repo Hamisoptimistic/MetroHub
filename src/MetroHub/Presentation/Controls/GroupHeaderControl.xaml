@@ -75,7 +75,7 @@
                 </MenuItem>
                 <MenuItem x:Name="TintColorMenuItem" Header="Group Tint Color">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="DarkTheme24" FontSize="18" />
+                        <ui:SymbolIcon Symbol="PaintBucket24" FontSize="18" Foreground="#D0FFFFFF" />
                     </MenuItem.Icon>
                     <MenuItem Header="None (Transparent)" Tag="None" Click="OnTintColorSelectClick">
                         <MenuItem.Icon><Border Width="12" Height="12" BorderThickness="1" BorderBrush="#80FFFFFF" Background="Transparent" CornerRadius="2"/></MenuItem.Icon>

@@ -372,7 +372,8 @@ public partial class TileControl : UserControl
                     Icon = new Wpf.Ui.Controls.SymbolIcon
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.Clock24,
-                        FontSize = 20
+                        FontSize = 20,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
                     }
                 };
 
@@ -403,7 +404,8 @@ public partial class TileControl : UserControl
                     Icon = new Wpf.Ui.Controls.SymbolIcon
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.TextFont24,
-                        FontSize = 20
+                        FontSize = 20,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
                     }
                 };
 
@@ -469,7 +471,8 @@ public partial class TileControl : UserControl
                     Icon = new Wpf.Ui.Controls.SymbolIcon
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.CalendarToday24,
-                        FontSize = 20
+                        FontSize = 20,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
                     }
                 };
                 todayItem.Click += (s, ev) => calVm.ResetToToday();
@@ -492,7 +495,8 @@ public partial class TileControl : UserControl
                     Icon = new Wpf.Ui.Controls.SymbolIcon
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.Wand24,
-                        FontSize = 20
+                        FontSize = 20,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
                     }
                 };
 

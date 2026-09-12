@@ -4616,7 +4616,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             var mi = new MenuItem
             {
                 Header = def.DisplayName,
-                Icon = new Wpf.Ui.Controls.SymbolIcon { Symbol = def.Icon, FontSize = 18, Foreground = new SolidColorBrush(Color.FromRgb(0x60, 0xCD, 0xFF)) },
+                Icon = new Wpf.Ui.Controls.SymbolIcon { Symbol = def.Icon, FontSize = 18, Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF)) },
                 Tag = def,
                 Cursor = Cursors.Hand,
                 MinHeight = 32,

@@ -168,7 +168,7 @@
             </MenuItem>
             <MenuItem Header="Run as administrator" Click="OnContextMenuRunAsAdminClick">
                 <MenuItem.Icon>
-                    <ui:SymbolIcon Symbol="Shield24" FontSize="18" />
+                    <ui:SymbolIcon Symbol="Shield32" FontSize="18" Foreground="#D0FFFFFF" />
                 </MenuItem.Icon>
             </MenuItem>
             <MenuItem x:Name="PinMenuItem" Header="Pin to Start" Click="OnContextMenuPinToggleClick">

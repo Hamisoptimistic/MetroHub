@@ -177,7 +177,7 @@
                                   Header="Apps"
                                   SubmenuOpened="OnAppsSubmenuOpened">
                             <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="Apps24" FontSize="20" />
+                                <ui:SymbolIcon Symbol="AppsAddIn24" FontSize="20" Foreground="#D0FFFFFF" />
                             </MenuItem.Icon>
                             <MenuItem.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -227,7 +227,7 @@
                                   Header="Widgets"
                                   SubmenuOpened="OnWidgetsSubmenuOpened">
                             <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="AppGeneric24" FontSize="20" />
+                                <ui:SymbolIcon Symbol="AppGeneric24" FontSize="20" Foreground="#D0FFFFFF" />
                             </MenuItem.Icon>
                             <MenuItem Header="Loading widgets..." IsEnabled="False" />
                         </MenuItem>
@@ -286,7 +286,7 @@
                                   Header="Group Tint Color"
                                   Visibility="Collapsed">
                             <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="DarkTheme24" FontSize="20" />
+                                <ui:SymbolIcon Symbol="PaintBucket24" FontSize="20" Foreground="#D0FFFFFF" />
                             </MenuItem.Icon>
                             <MenuItem Header="None (Transparent)" Tag="None" Click="OnCanvasGroupTintColorSelectClick">
                                 <MenuItem.Icon><Border Width="12" Height="12" BorderThickness="1" BorderBrush="#80FFFFFF" Background="Transparent" CornerRadius="2"/></MenuItem.Icon>
@@ -374,7 +374,7 @@
 
                         <MenuItem Header="Background">
                             <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="DarkTheme24" FontSize="20" />
+                                <ui:SymbolIcon Symbol="PaintBucket24" FontSize="20" Foreground="#D0FFFFFF" />
                             </MenuItem.Icon>
                             <MenuItem x:Name="BackdropMicaItem" Header="Mica (Windows 11)" IsCheckable="True" Click="OnBackdropMicaClick" />
                             <MenuItem x:Name="BackdropAcrylicItem" Header="Acrylic Obsidian" IsCheckable="True" Click="OnBackdropAcrylicClick" />

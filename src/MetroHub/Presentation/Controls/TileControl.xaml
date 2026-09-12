@@ -191,26 +191,45 @@
 
         <Border.ContextMenu>
             <ContextMenu x:Name="TileContextMenu">
-                <MenuItem x:Name="ResizeMenuItem" Header="Resize" />
+                <MenuItem x:Name="ResizeMenuItem" Header="Resize">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="ResizeLarge16" FontSize="18" Foreground="#D0FFFFFF" />
+                    </MenuItem.Icon>
+                </MenuItem>
                 <MenuItem x:Name="StyleMenuItem" Header="Style">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="PaintBrush16" FontSize="18" Foreground="#D0FFFFFF" />
+                    </MenuItem.Icon>
                     <MenuItem x:Name="StyleDefaultMenuItem" Header="Default" IsCheckable="True" Click="OnStyleDefaultClick" />
                     <MenuItem x:Name="StyleColourfulMenuItem" Header="Colourful" IsCheckable="True" Click="OnStyleColourfulClick" />
                 </MenuItem>
                 <MenuItem x:Name="GroupMenuItem" Header="Create Group from Tiles" Click="OnGroupTilesClick">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="FolderAdd24" FontSize="20" />
+                        <ui:SymbolIcon Symbol="FolderAdd24" FontSize="18" Foreground="#D0FFFFFF" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem x:Name="AddToGroupMenuItem" Header="Add to Group">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="FolderArrowRight24" FontSize="20" />
+                        <ui:SymbolIcon Symbol="FolderArrowRight24" FontSize="18" Foreground="#D0FFFFFF" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator x:Name="SingleAppSeparator" />
-                <MenuItem x:Name="RunAdminMenuItem" Header="Run as Administrator" Click="OnRunAsAdminClick" />
-                <MenuItem x:Name="OpenLocationMenuItem" Header="Open File Location" Click="OnOpenFileLocationClick" />
+                <MenuItem x:Name="RunAdminMenuItem" Header="Run as Administrator" Click="OnRunAsAdminClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="Shield32" FontSize="18" Foreground="#D0FFFFFF" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem x:Name="OpenLocationMenuItem" Header="Open File Location" Click="OnOpenFileLocationClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="FolderOpenVertical20" FontSize="18" Foreground="#D0FFFFFF" />
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator x:Name="UnpinSeparator" />
-                <MenuItem x:Name="UnpinMenuItem" Header="Unpin from MetroHub" Click="OnUnpinClick" Foreground="#FF6B6B" />
+                <MenuItem x:Name="UnpinMenuItem" Header="Unpin from MetroHub" Click="OnUnpinClick" Foreground="#FF6B6B">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="PinOff24" FontSize="18" Foreground="#FF6B6B" />
+                    </MenuItem.Icon>
+                </MenuItem>
             </ContextMenu>
         </Border.ContextMenu>
 

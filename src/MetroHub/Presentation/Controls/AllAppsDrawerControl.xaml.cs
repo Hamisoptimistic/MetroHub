@@ -621,7 +621,7 @@ namespace MetroHub.Presentation.Controls
                 pinItem.Header = "Unpin from Start";
                 if (pinItem.Icon is Wpf.Ui.Controls.SymbolIcon sym)
                 {
-                    sym.Symbol = Wpf.Ui.Controls.SymbolRegular.Pin24;
+                    sym.Symbol = Wpf.Ui.Controls.SymbolRegular.PinOff24;
                     sym.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x6B));
                 }
                 pinItem.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x6B));
