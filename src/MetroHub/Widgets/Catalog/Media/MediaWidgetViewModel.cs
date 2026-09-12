@@ -132,6 +132,9 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     [ObservableProperty]
     private double _progressRatio;
 
+    [ObservableProperty]
+    private string _timeDisplayString = string.Empty;
+
     private DispatcherTimer? _playbackTimer;
     private long _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
     private TimeSpan _lastTimelinePosition = TimeSpan.Zero;
@@ -244,6 +247,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 DurationSeconds = 0;
                 PositionSeconds = 0;
                 ProgressRatio = 0.0;
+                TimeDisplayString = string.Empty;
                 _playbackTimer?.Stop();
             });
         }
@@ -340,6 +344,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                     {
                         PositionSeconds = Math.Clamp(positionSec, 0, DurationSeconds);
                         ProgressRatio = Math.Clamp(PositionSeconds / DurationSeconds, 0.0, 1.0);
+                        UpdateTimeDisplay(PositionSeconds, DurationSeconds);
                     }
 
                     if (IsPlaying && HasMedia && _isHubVisible)
@@ -372,6 +377,21 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
         double currentPos = Math.Clamp(_lastTimelinePosition.TotalSeconds + elapsedSeconds, 0, DurationSeconds);
         PositionSeconds = currentPos;
         ProgressRatio = DurationSeconds > 0 ? Math.Clamp(currentPos / DurationSeconds, 0.0, 1.0) : 0.0;
+        UpdateTimeDisplay(PositionSeconds, DurationSeconds);
+    }
+
+    private void UpdateTimeDisplay(double pos, double dur)
+    {
+        if (dur > 0)
+        {
+            int p = (int)Math.Max(0, pos);
+            int d = (int)Math.Max(0, dur);
+            TimeDisplayString = $"{p / 60}:{p % 60:D2} / {d / 60}:{d % 60:D2}";
+        }
+        else
+        {
+            TimeDisplayString = string.Empty;
+        }
     }
 
     public void StartScrubbing()
@@ -402,6 +422,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
         ProgressRatio = ratio;
         _lastTimelinePosition = TimeSpan.FromSeconds(targetSeconds);
         _lastLocalTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+        UpdateTimeDisplay(PositionSeconds, DurationSeconds);
 
         try
         {
@@ -626,8 +647,8 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 byte avgB = (byte)Math.Clamp(accB / totalColorWeight, 0, 255);
 
                 var (h, s, v) = RgbToHsv(avgR, avgG, avgB);
-                s = Math.Clamp(s * 1.40, 0.52, 0.98);
-                v = Math.Clamp(v * 1.20, 0.62, 0.96);
+                s = Math.Clamp(s * 1.15, 0.45, 0.88);
+                v = Math.Clamp(v * 0.85, 0.42, 0.65);
                 accent = ColorFromHsv(h, s, v);
             }
             else
@@ -635,11 +656,11 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 double avgLum = validPixelCount > 0 ? totalLum / validPixelCount : 0.8;
                 if (avgLum > 0.4)
                 {
-                    accent = Color.FromRgb(242, 246, 255);
+                    accent = Color.FromRgb(180, 195, 215);
                 }
                 else
                 {
-                    accent = Color.FromRgb(215, 228, 245);
+                    accent = Color.FromRgb(140, 160, 190);
                 }
             }
 
@@ -656,7 +677,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 RadiusX = 0.95,
                 RadiusY = 1.15
             };
-            AddSmoothCosineStops(sensualBrush.GradientStops, accent, isMonochrome ? (byte)100 : (byte)140, 0, 16);
+            AddSmoothCosineStops(sensualBrush.GradientStops, accent, isMonochrome ? (byte)70 : (byte)95, 0, 16);
             sensualBrush.Freeze();
 
             // 2. Fluid Wave Stream Brush: Expansive radial stream emanating from album art in expanded overscan coords
@@ -669,7 +690,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 RadiusX = 1.35,
                 RadiusY = 1.15
             };
-            AddSmoothCosineStops(fluidWaveBrush.GradientStops, accent, isMonochrome ? (byte)150 : (byte)215, 0, 16);
+            AddSmoothCosineStops(fluidWaveBrush.GradientStops, accent, isMonochrome ? (byte)80 : (byte)115, 0, 16);
             fluidWaveBrush.Freeze();
 
             // 3. Fluid Secondary Undercurrent Brush: Horizontal linear gradient flowing smoothly right to left
@@ -678,14 +699,14 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 StartPoint = new Point(0.85, 0.35),
                 EndPoint = new Point(0.08, 0.65)
             };
-            AddSmoothCosineStops(fluidSecondaryBrush.GradientStops, accent, isMonochrome ? (byte)95 : (byte)140, 0, 14);
+            AddSmoothCosineStops(fluidSecondaryBrush.GradientStops, accent, isMonochrome ? (byte)50 : (byte)75, 0, 14);
             fluidSecondaryBrush.Freeze();
 
             return (accent, solidBrush, sensualBrush, fluidWaveBrush, fluidSecondaryBrush);
         }
         catch
         {
-            var fallbackColor = Color.FromRgb(0x3A, 0x82, 0xD4);
+            var fallbackColor = Color.FromRgb(0x24, 0x54, 0x94);
             var fallbackSolid = new SolidColorBrush(fallbackColor);
             fallbackSolid.Freeze();
 
@@ -697,7 +718,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 RadiusX = 0.95,
                 RadiusY = 1.15
             };
-            AddSmoothCosineStops(fallbackSensual.GradientStops, fallbackColor, 140, 0, 16);
+            AddSmoothCosineStops(fallbackSensual.GradientStops, fallbackColor, 95, 0, 16);
             fallbackSensual.Freeze();
 
             var fallbackWave = new RadialGradientBrush
@@ -708,7 +729,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 RadiusX = 1.35,
                 RadiusY = 1.15
             };
-            AddSmoothCosineStops(fallbackWave.GradientStops, fallbackColor, 215, 0, 16);
+            AddSmoothCosineStops(fallbackWave.GradientStops, fallbackColor, 115, 0, 16);
             fallbackWave.Freeze();
 
             var fallbackSecondary = new LinearGradientBrush
@@ -716,7 +737,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
                 StartPoint = new Point(0.85, 0.35),
                 EndPoint = new Point(0.08, 0.65)
             };
-            AddSmoothCosineStops(fallbackSecondary.GradientStops, fallbackColor, 140, 0, 14);
+            AddSmoothCosineStops(fallbackSecondary.GradientStops, fallbackColor, 75, 0, 14);
             fallbackSecondary.Freeze();
 
             return (fallbackColor, fallbackSolid, fallbackSensual, fallbackWave, fallbackSecondary);

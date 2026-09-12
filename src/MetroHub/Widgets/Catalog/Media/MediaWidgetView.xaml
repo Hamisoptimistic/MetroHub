@@ -193,7 +193,7 @@
             <Border Grid.RowSpan="2"
                     IsHitTestVisible="False"
                     CornerRadius="2"
-                    Opacity="0.045"
+                    Opacity="0.04"
                     SnapsToDevicePixels="True"
                     Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}">
                 <Border.Background>
@@ -201,6 +201,35 @@
                                 TileMode="Tile"
                                 Viewport="0,0,64,64"
                                 ViewportUnits="Absolute" />
+                </Border.Background>
+            </Border>
+
+            <!-- 4. Cinematic Depth Scrims: Dark gradient underlays preventing blinding glare & guaranteeing AAA contrast -->
+            <Border Grid.RowSpan="2"
+                    IsHitTestVisible="False"
+                    CornerRadius="2"
+                    SnapsToDevicePixels="True">
+                <Border.Background>
+                    <!-- Vertical Scrim: darkens slightly toward the bottom control area -->
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#15000000" Offset="0.0" />
+                        <GradientStop Color="#25000000" Offset="0.45" />
+                        <GradientStop Color="#7506080C" Offset="1.0" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <Border Grid.RowSpan="2"
+                    IsHitTestVisible="False"
+                    CornerRadius="2"
+                    SnapsToDevicePixels="True">
+                <Border.Background>
+                    <!-- Horizontal Scrim: darkens behind left text stack, lets right album art shine through -->
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="#50080A0E" Offset="0.0" />
+                        <GradientStop Color="#25080A0E" Offset="0.45" />
+                        <GradientStop Color="#00000000" Offset="0.75" />
+                    </LinearGradientBrush>
                 </Border.Background>
             </Border>
 
@@ -322,73 +351,100 @@
                 </Grid>
             </Grid>
 
-            <!-- Row 1: Bottom Docked Bar: Transport Controls Aligned with Title -->
+            <!-- Row 1: Bottom Docked Bar: Transport Controls + Live Playback Time -->
             <Border Grid.Row="1"
-                    Background="#14000000"
-                    BorderThickness="0"
+                    Background="#45080B10"
+                    BorderThickness="0,1,0,0"
+                    BorderBrush="#18FFFFFF"
                     CornerRadius="0,0,2,2"
                     SnapsToDevicePixels="True"
-                    Padding="8,0,28,0">
-                <!-- Transport Controls (< ▷ >) Aligned with Title Name on Left -->
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center">
-                    <!-- Previous Track (<) -->
-                    <Button Style="{StaticResource MediaTransportButtonStyle}"
-                            Command="{Binding SkipPreviousCommand}"
-                            IsEnabled="{Binding CanSkipPrevious}"
-                            ToolTip="Previous">
-                        <TextBlock Text="&#xE76B;"
-                                   FontFamily="Segoe MDL2 Assets"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center" />
-                    </Button>
+                    Padding="14,0,20,0">
+                <Grid>
+                    <!-- Transport Controls (< ▷ >) Aligned with Title Name on Left -->
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center">
+                        <!-- Previous Track (<) -->
+                        <Button Style="{StaticResource MediaTransportButtonStyle}"
+                                Command="{Binding SkipPreviousCommand}"
+                                IsEnabled="{Binding CanSkipPrevious}"
+                                ToolTip="Previous">
+                            <TextBlock Text="&#xE76B;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="13"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center" />
+                        </Button>
 
-                    <!-- Play / Pause (▷ or ||) -->
-                    <Button Style="{StaticResource MediaTransportButtonStyle}"
-                            Command="{Binding TogglePlayPauseCommand}"
-                            IsEnabled="{Binding CanPlayPause}"
-                            Margin="4,0"
-                            ToolTip="Play / Pause">
-                        <TextBlock x:Name="PlayPauseIcon"
-                                   FontFamily="Segoe MDL2 Assets"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Text" Value="&#xE768;" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                            <Setter Property="Text" Value="&#xE769;" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </Button>
+                        <!-- Play / Pause (▷ or ||) -->
+                        <Button Style="{StaticResource MediaTransportButtonStyle}"
+                                Command="{Binding TogglePlayPauseCommand}"
+                                IsEnabled="{Binding CanPlayPause}"
+                                Margin="4,0"
+                                ToolTip="Play / Pause">
+                            <TextBlock x:Name="PlayPauseIcon"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="13"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="&#xE768;" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                <Setter Property="Text" Value="&#xE769;" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Button>
 
-                    <!-- Next Track (>) -->
-                    <Button Style="{StaticResource MediaTransportButtonStyle}"
-                            Command="{Binding SkipNextCommand}"
-                            IsEnabled="{Binding CanSkipNext}"
-                            ToolTip="Next">
-                        <TextBlock Text="&#xE76C;"
-                                   FontFamily="Segoe MDL2 Assets"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center" />
-                    </Button>
-                </StackPanel>
+                        <!-- Next Track (>) -->
+                        <Button Style="{StaticResource MediaTransportButtonStyle}"
+                                Command="{Binding SkipNextCommand}"
+                                IsEnabled="{Binding CanSkipNext}"
+                                ToolTip="Next">
+                            <TextBlock Text="&#xE76C;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="13"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center" />
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Live Track Playback Time Readout (e.g. 1:24 / 3:45) on Right -->
+                    <TextBlock Text="{Binding TimeDisplayString}"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Center"
+                               FontSize="11"
+                               FontWeight="Normal"
+                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                               Foreground="#B8FFFFFF"
+                               SnapsToDevicePixels="True">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasMedia}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding TimeDisplayString}" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
             </Border>
 
             <!-- Edge-to-Edge Hairline Fluent Seekbar running along the top boundary of Row 1 -->
             <Grid x:Name="SeekbarContainer"
                   Grid.Row="1"
                   VerticalAlignment="Top"
-                  Height="14"
-                  Margin="0,-7,0,0"
+                  Height="16"
+                  Margin="0,-8,0,0"
                   Background="Transparent"
                   Cursor="Hand"
                   Focusable="False"
@@ -412,28 +468,35 @@
                     </Style>
                 </Grid.Style>
 
-                <!-- 1. Background Track: Hairline Divider Line (2px tall) -->
-                <Border x:Name="SeekTrackBg"
-                        Height="2"
+                <!-- 1. Background Track: Dark Glass Under-Groove + Frosted Track (3px tall) -->
+                <Border x:Name="SeekTrackTrough"
+                        Height="3"
                         VerticalAlignment="Center"
-                        Background="#14FFFFFF"
-                        CornerRadius="1"
+                        Background="#45000000"
+                        CornerRadius="1.5"
                         SnapsToDevicePixels="True" />
 
-                <!-- 2. Elapsed Progress Fill Track: Luminous Glowing Fill -->
+                <Border x:Name="SeekTrackBg"
+                        Height="3"
+                        VerticalAlignment="Center"
+                        Background="#35FFFFFF"
+                        CornerRadius="1.5"
+                        SnapsToDevicePixels="True" />
+
+                <!-- 2. Elapsed Progress Fill Track: Luminous Accent Color Bar -->
                 <Border x:Name="SeekProgressFill"
-                        Height="2"
+                        Height="3"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
                         Width="0"
                         Background="{Binding GlowSolidBrush}"
-                        CornerRadius="1"
+                        CornerRadius="1.5"
                         SnapsToDevicePixels="True">
                     <Border.Effect>
                         <DropShadowEffect BlurRadius="6"
                                           ShadowDepth="0"
                                           Color="{Binding GlowColor}"
-                                          Opacity="0.65" />
+                                          Opacity="0.75" />
                     </Border.Effect>
                 </Border>
 
@@ -455,10 +518,10 @@
                         <ScaleTransform x:Name="SeekThumbScale" ScaleX="0.6" ScaleY="0.7" />
                     </Border.RenderTransform>
                     <Border.Effect>
-                        <DropShadowEffect BlurRadius="8"
+                        <DropShadowEffect BlurRadius="10"
                                           ShadowDepth="0"
                                           Color="{Binding GlowColor}"
-                                          Opacity="0.9" />
+                                          Opacity="0.95" />
                     </Border.Effect>
                 </Border>
             </Grid>

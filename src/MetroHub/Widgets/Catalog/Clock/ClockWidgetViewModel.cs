@@ -137,8 +137,19 @@ public partial class ClockWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
     {
         var now = DateTime.Now;
 
-        HoursString = Is24HourFormat ? now.ToString("HH") : now.ToString("%h");
-        MinutesString = now.ToString("mm");
+        int hour = now.Hour;
+        if (!Is24HourFormat)
+        {
+            hour = hour % 12;
+            if (hour == 0) hour = 12;
+            HoursString = hour.ToString();
+        }
+        else
+        {
+            HoursString = hour.ToString("D2");
+        }
+
+        MinutesString = now.ToString("mm", CultureInfo.InvariantCulture);
         TimeString = $"{HoursString}:{MinutesString}";
         AmPmString = string.Empty;
         FullDateString = now.ToString("dddd, d MMMM", CultureInfo.InvariantCulture);
