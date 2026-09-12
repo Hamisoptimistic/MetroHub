@@ -360,10 +360,11 @@ public partial class TileControl : UserControl
             OpenLocationMenuItem.Visibility = Visibility.Collapsed;
             SingleAppSeparator.Visibility = Visibility.Collapsed;
             StyleMenuItem.Visibility = Visibility.Collapsed;
+            UnpinSeparator.Visibility = Visibility.Collapsed;
 
             if (tile.TileContent is Widgets.Catalog.Clock.ClockWidgetViewModel clockVm)
             {
-                // 1. Time Format Submenu (Replaces the single checkbox)
+                // 1. Time Format Submenu
                 var timeFormatItem = new MenuItem
                 {
                     Header = "Time Format",
@@ -394,7 +395,7 @@ public partial class TileControl : UserControl
                 timeFormatItem.Items.Add(item12Hr);
                 timeFormatItem.Items.Add(item24Hr);
 
-                // 3. Font Submenu (Segoe UI, Monoton, Pixelify Sans)
+                // 2. Font Submenu
                 var fontItem = new MenuItem
                 {
                     Header = "Font",
@@ -443,19 +444,19 @@ public partial class TileControl : UserControl
                 fontItem.Items.Add(itemPixelify);
                 fontItem.Items.Add(itemDoto);
 
-                // 4. Divider
+                // 3. Divider after widget features
                 var clockDivider = new Separator
                 {
                     Tag = "WidgetCustomMenu"
                 };
 
-                // Exact hierarchy:
-                // 0: Time Format
-                // 1: Resize (originally index 0, shifted by inserting at 0)
-                // 2: Font
-                // 3: Divider
-                // 4+: Other stuff (Group, Add to Group, Unpin)
-                TileContextMenu.Items.Insert(0, timeFormatItem);
+                // Universal Widget Hierarchy:
+                // Index 0: Resize
+                // Index 1: Time Format
+                // Index 2: Font
+                // Index 3: Separator
+                // Then: GroupMenuItem, AddToGroupMenuItem, UnpinMenuItem (UnpinSeparator collapsed)
+                TileContextMenu.Items.Insert(1, timeFormatItem);
                 TileContextMenu.Items.Insert(2, fontItem);
                 TileContextMenu.Items.Insert(3, clockDivider);
             }
@@ -475,18 +476,22 @@ public partial class TileControl : UserControl
 
                 var calDivider = new Separator { Tag = "WidgetCustomMenu" };
 
-                TileContextMenu.Items.Insert(0, todayItem);
-                TileContextMenu.Items.Insert(1, calDivider);
+                // Universal Widget Hierarchy:
+                // Index 0: Resize
+                // Index 1: Go to Today
+                // Index 2: Separator
+                TileContextMenu.Items.Insert(1, todayItem);
+                TileContextMenu.Items.Insert(2, calDivider);
             }
             else if (tile.TileContent is Widgets.Catalog.Media.MediaWidgetViewModel mediaVm)
             {
-                var glowItem = new MenuItem
+                var effectsItem = new MenuItem
                 {
-                    Header = "Ambient Glow",
+                    Header = "Effects",
                     Tag = "WidgetCustomMenu",
                     Icon = new Wpf.Ui.Controls.SymbolIcon
                     {
-                        Symbol = Wpf.Ui.Controls.SymbolRegular.Sparkle24,
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Wand24,
                         FontSize = 20
                     }
                 };
@@ -515,19 +520,28 @@ public partial class TileControl : UserControl
                 };
                 itemOff.Click += (s, ev) => mediaVm.SetGlowMode(Widgets.Catalog.Media.MediaGlowMode.Off);
 
-                glowItem.Items.Add(itemStatic);
-                glowItem.Items.Add(itemAnimated);
-                glowItem.Items.Add(itemOff);
+                effectsItem.Items.Add(itemStatic);
+                effectsItem.Items.Add(itemAnimated);
+                effectsItem.Items.Add(itemOff);
 
                 var mediaDivider = new Separator { Tag = "WidgetCustomMenu" };
 
-                TileContextMenu.Items.Insert(0, glowItem);
-                TileContextMenu.Items.Insert(1, mediaDivider);
+                // Universal Widget Hierarchy:
+                // Index 0: Resize
+                // Index 1: Effects
+                // Index 2: Separator
+                TileContextMenu.Items.Insert(1, effectsItem);
+                TileContextMenu.Items.Insert(2, mediaDivider);
             }
         }
         else
         {
+            SingleAppSeparator.Visibility = Visibility.Visible;
+            RunAdminMenuItem.Visibility = Visibility.Visible;
+            OpenLocationMenuItem.Visibility = Visibility.Visible;
             StyleMenuItem.Visibility = Visibility.Visible;
+            UnpinSeparator.Visibility = Visibility.Visible;
+
             bool isColourful = string.Equals(tile.TileStyle, "Colourful", StringComparison.OrdinalIgnoreCase);
             if (StyleDefaultMenuItem != null)
             {
@@ -558,7 +572,15 @@ public partial class TileControl : UserControl
                 ResizeMenuItem.Visibility = Visibility.Collapsed;
                 return;
             }
-            foreach (var size in widgetVm.AllowedSizes)
+
+            // Universal rule: Order resize submenu strictly from smallest to largest footprint
+            var sortedSizes = widgetVm.AllowedSizes
+                .OrderBy(s => s.SpanX * s.SpanY)
+                .ThenBy(s => s.SpanX)
+                .ThenBy(s => s.SpanY)
+                .ToList();
+
+            foreach (var size in sortedSizes)
             {
                 var item = new MenuItem
                 {
@@ -575,7 +597,8 @@ public partial class TileControl : UserControl
             return;
         }
 
-        // App tiles keep their existing three-option behavior unchanged (Small 1x1, Medium 2x2, Wide 4x2)
+        // App tiles keep their existing three-option behavior, strictly ordered from smallest to largest:
+        // Small (1x1 = 1) -> Medium (2x2 = 4) -> Wide (4x2 = 8)
         var smallItem = new MenuItem
         {
             Header = "Small (1x1)",

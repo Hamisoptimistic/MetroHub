@@ -25,8 +25,8 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase, IRecipient<HubV
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
-        WidgetSize.Mega,    // 8x4
-        WidgetSize.Banner3  // 8x3
+        WidgetSize.Banner3, // 8x3
+        WidgetSize.Mega     // 8x4
     };
 
     [ObservableProperty]

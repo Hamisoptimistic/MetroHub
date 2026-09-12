@@ -209,7 +209,7 @@
                 <Separator x:Name="SingleAppSeparator" />
                 <MenuItem x:Name="RunAdminMenuItem" Header="Run as Administrator" Click="OnRunAsAdminClick" />
                 <MenuItem x:Name="OpenLocationMenuItem" Header="Open File Location" Click="OnOpenFileLocationClick" />
-                <Separator />
+                <Separator x:Name="UnpinSeparator" />
                 <MenuItem x:Name="UnpinMenuItem" Header="Unpin from MetroHub" Click="OnUnpinClick" Foreground="#FF6B6B" />
             </ContextMenu>
         </Border.ContextMenu>
