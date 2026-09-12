@@ -53,3 +53,74 @@ MetroHub rests quietly in the Windows system tray when closed.
 ## 5. Tile Removal & Unpinning Teardown
 - Whenever a tile is removed from `Tiles` (unpin, group deletion, layout reset, undo/redo):
 - The removal logic **MUST** invoke `tile.Teardown()`, which cascades `Dispose()` into the widget's ViewModel and clears references.
+
+---
+
+## 6. Widget UI & Visual Consistency Standards (Transport Controls & Aesthetics)
+- **Transport Buttons (`<`, `>`, Play, Pause, Folder, etc.):**
+  - **NEVER** use boxed buttons with hard outline borders (`BorderThickness="1"`), solid grey backgrounds, or boxy frames.
+  - **MUST** match the sleek Media Player standard (`MediaTransportButtonStyle` pattern):
+    - `Background="Transparent"`
+    - `BorderThickness="0"`
+    - `Foreground="#E5E9F0"`
+    - `Width="32"`, `Height="28"`, `CornerRadius="2"`
+    - On hover (`IsMouseOver="True"`): `Background="#25FFFFFF"`, `Foreground="#FFFFFF"`
+    - On pressed: `Background="#45FFFFFF"`
+- **Clean Content-First Overlays:**
+  - Do NOT clutter live visual surfaces with arbitrary wallpaper/filename text blocks. Keep live surfaces pure, photographic, and focused on the artwork.
+  - Show minimal, elegant metadata with non-intrusive typography.
+- **Universal 14px Alignment Standard:**
+  - ALL bottom widget controls and transport bars MUST use 14px edge margin/padding (`Padding="14,0,14,0"` or `Margin="14,0,0,10"`).
+  - Left-aligned transport buttons (Media Player, Pomodoro, and Photo Stream) MUST start at exactly 14px from the left tile edge.
+  - This guarantees an identical horizontal baseline and left-margin alignment across all widgets on the dashboard.
+
+---
+
+## 7. High-Performance Image Decoding & Memory Guidelines
+- **NEVER copy files into in-memory `MemoryStream` buffers:**
+  - Copying 4K/8K images into a `MemoryStream` causes massive allocations on the Large Object Heap (LOH) which triggers RAM spikes (60MB+).
+  - Stream directly from `FileStream` into `BitmapImage` with `CacheOption = BitmapCacheOption.OnLoad` so the native WIC decoder decodes directly without duplicating raw file bytes in managed heap.
+- **Always Bound Decode Dimensions at the Decoder Level:**
+  - Tiles are at most 248px to 504px wide.
+  - Inspect image dimensions with `BitmapCreateOptions.DelayCreation` and set `DecodePixelWidth` or `DecodePixelHeight` to a max bounding size (e.g. 640px). This reduces an uncompressed 4K frame from 33 MB down to < 1 MB.
+- **Avoid WPF `BlurEffect` on Large Surfaces:**
+  - WPF software/GPU `BlurEffect` allocates unmanaged render targets and shader passes that bloat memory and cause lag.
+- **Living Ken Burns Motion:**
+  - Photo live tiles MUST feature slow, cinematic Ken Burns pan and zoom motion via hardware-accelerated `RenderTransform` (`ScaleTransform` and `TranslateTransform`), bringing the tile alive rather than leaving it as a dead static image.
+
+---
+
+## 8. Build & Deployment Execution Protocol
+- When compiling and publishing an update:
+  - Publish the Release build cleanly to `C:\Users\HamB\Desktop\MetroHubApp`.
+  - **DO NOT auto-launch the GUI application from the agent terminal / subshell.**
+  - **Reason:** Spawning the GUI from developer console subshells causes IDE process tree inheritance, bloated .NET JIT/diagnostic working sets (~100MB instead of ~20MB), and UIPI conflicts that break global hotkeys (`RegisterHotKey(Ctrl + ~)`).
+  - Inform the user that the publish is complete so they can launch it directly from their desktop folder in a clean Windows Explorer user session.
+
+---
+
+## 9. Universal Modal Dialog & Picker Protocol (Window Deactivation Prevention)
+- MetroHub's `OnWindowDeactivated` automatically calls `HideScreen()` whenever the window loses focus, UNLESS `IsDialogOpen == true`.
+- **MANDATORY PATTERN for ALL Dialogs & Pickers (`OpenFolderDialog`, `OpenFileDialog`, `SaveFileDialog`, etc.):**
+  ```csharp
+  var mainWindow = MainWindow.Current;
+  if (mainWindow != null) mainWindow.IsDialogOpen = true;
+  try
+  {
+      var dialog = new OpenFolderDialog { ... };
+      bool? result = mainWindow != null ? dialog.ShowDialog(mainWindow) : dialog.ShowDialog();
+      if (result == true) { ... }
+  }
+  finally
+  {
+      if (mainWindow != null)
+      {
+          mainWindow.IsDialogOpen = false;
+          mainWindow.Activate();
+      }
+  }
+  ```
+- **Rules:**
+  1. `IsDialogOpen = true` MUST be set BEFORE `ShowDialog()` to prevent premature window dismissal.
+  2. `mainWindow` MUST be passed as the owner to `ShowDialog(mainWindow)` so the dialog is modal and anchored to MetroHub.
+  3. In `finally`, `IsDialogOpen = false` must be reset AND `mainWindow.Activate()` invoked so keyboard/mouse focus returns cleanly to MetroHub.

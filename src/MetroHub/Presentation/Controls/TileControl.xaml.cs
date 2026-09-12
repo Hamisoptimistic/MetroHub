@@ -160,6 +160,18 @@ public partial class TileControl : UserControl
                     stubVm.CycleColor();
                     return;
                 }
+                if (tile.TileContent is Widgets.Catalog.Photos.PhotosWidgetViewModel photosVm)
+                {
+                    if (photosVm.IsEmpty)
+                    {
+                        photosVm.ChooseFolder();
+                    }
+                    else
+                    {
+                        photosVm.OpenCurrentPhoto();
+                    }
+                    return;
+                }
                 return;
             }
 
@@ -184,7 +196,7 @@ public partial class TileControl : UserControl
 
     public void AnimatePressDown()
     {
-        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" })
+        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" or "photos" })
         {
             return;
         }
@@ -591,6 +603,170 @@ public partial class TileControl : UserControl
                 // Then: AddToGroupMenuItem, UnpinMenuItem (GroupMenuItem & UnpinSeparator collapsed)
                 TileContextMenu.Items.Insert(1, presetItem);
                 TileContextMenu.Items.Insert(2, pomodoroDivider);
+            }
+            else if (tile.TileContent is Widgets.Catalog.Photos.PhotosWidgetViewModel photosVm)
+            {
+                // 1. Choose Photos Folder
+                var chooseFolderItem = new MenuItem
+                {
+                    Header = "Choose Photo Stream Folder...",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.FolderOpen24,
+                        FontSize = 20,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                    }
+                };
+                chooseFolderItem.Click += (s, ev) => photosVm.ChooseFolder();
+
+                // 2. Stream Interval Submenu
+                var intervalItem = new MenuItem
+                {
+                    Header = "Photo Stream Interval",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Timer24,
+                        FontSize = 20,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                    }
+                };
+
+                var item10s = new MenuItem
+                {
+                    Header = "10 Seconds",
+                    IsCheckable = true,
+                    IsChecked = photosVm.IntervalSeconds == 10
+                };
+                item10s.Click += (s, ev) => photosVm.SetInterval(10);
+
+                var item30s = new MenuItem
+                {
+                    Header = "30 Seconds (Default)",
+                    IsCheckable = true,
+                    IsChecked = photosVm.IntervalSeconds == 30
+                };
+                item30s.Click += (s, ev) => photosVm.SetInterval(30);
+
+                var item1m = new MenuItem
+                {
+                    Header = "1 Minute",
+                    IsCheckable = true,
+                    IsChecked = photosVm.IntervalSeconds == 60
+                };
+                item1m.Click += (s, ev) => photosVm.SetInterval(60);
+
+                var item5m = new MenuItem
+                {
+                    Header = "5 Minutes",
+                    IsCheckable = true,
+                    IsChecked = photosVm.IntervalSeconds == 300
+                };
+                item5m.Click += (s, ev) => photosVm.SetInterval(300);
+
+                intervalItem.Items.Add(item10s);
+                intervalItem.Items.Add(item30s);
+                intervalItem.Items.Add(item1m);
+                intervalItem.Items.Add(item5m);
+
+                // 3. Shuffle Stream Toggle
+                var shuffleItem = new MenuItem
+                {
+                    Header = "Shuffle Photo Stream",
+                    Tag = "WidgetCustomMenu",
+                    IsCheckable = true,
+                    IsChecked = photosVm.Shuffle,
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.ArrowShuffle24,
+                        FontSize = 20,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                    }
+                };
+                shuffleItem.Click += (s, ev) => photosVm.ToggleShuffle();
+
+                // 4. Include Subfolders Toggle
+                var subfoldersItem = new MenuItem
+                {
+                    Header = "Include Subfolders",
+                    Tag = "WidgetCustomMenu",
+                    IsCheckable = true,
+                    IsChecked = photosVm.IncludeSubfolders,
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Folder24,
+                        FontSize = 20,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                    }
+                };
+                subfoldersItem.Click += (s, ev) => photosVm.ToggleIncludeSubfolders();
+
+                // 5. Fit Mode Submenu (Smart Fit with Backdrop vs Fill)
+                var fitModeItem = new MenuItem
+                {
+                    Header = "Photo Stream Fit",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.SlideSize24,
+                        FontSize = 20,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                    }
+                };
+
+                var itemSmartFit = new MenuItem
+                {
+                    Header = "Smart Fit (With Backdrop)",
+                    IsCheckable = true,
+                    IsChecked = photosVm.FitMode == "FitWithBlur"
+                };
+                itemSmartFit.Click += (s, ev) => photosVm.SetFitMode("FitWithBlur");
+
+                var itemFill = new MenuItem
+                {
+                    Header = "Fill Tile (Crop)",
+                    IsCheckable = true,
+                    IsChecked = photosVm.FitMode == "Fill"
+                };
+                itemFill.Click += (s, ev) => photosVm.SetFitMode("Fill");
+
+                fitModeItem.Items.Add(itemSmartFit);
+                fitModeItem.Items.Add(itemFill);
+
+                // 6. Open in Windows Photos
+                var openPhotoItem = new MenuItem
+                {
+                    Header = "Open in Windows Photos",
+                    Tag = "WidgetCustomMenu",
+                    IsEnabled = !photosVm.IsEmpty,
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Image24,
+                        FontSize = 20,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                    }
+                };
+                openPhotoItem.Click += (s, ev) => photosVm.OpenCurrentPhoto();
+
+                var photosDivider = new Separator { Tag = "WidgetCustomMenu" };
+
+                // Universal Widget Hierarchy:
+                // Index 0: Resize
+                // Index 1: Open in Windows Photos
+                // Index 2: Choose Folder
+                // Index 3: Interval
+                // Index 4: Shuffle
+                // Index 5: Subfolders
+                // Index 6: Fit Mode
+                // Index 7: Separator
+                TileContextMenu.Items.Insert(1, openPhotoItem);
+                TileContextMenu.Items.Insert(2, chooseFolderItem);
+                TileContextMenu.Items.Insert(3, intervalItem);
+                TileContextMenu.Items.Insert(4, shuffleItem);
+                TileContextMenu.Items.Insert(5, subfoldersItem);
+                TileContextMenu.Items.Insert(6, fitModeItem);
+                TileContextMenu.Items.Insert(7, photosDivider);
             }
         }
         else

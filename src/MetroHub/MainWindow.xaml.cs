@@ -234,7 +234,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 Filter = "Image Files (*.png;*.jpg;*.jpeg;*.webp;*.bmp)|*.png;*.jpg;*.jpeg;*.webp;*.bmp|All Files (*.*)|*.*"
             };
 
-            if (dialog.ShowDialog() == true)
+            if (dialog.ShowDialog(this) == true)
             {
                 Settings.BackdropType = "Wallpaper";
                 Settings.CustomWallpaperPath = dialog.FileName;
@@ -242,9 +242,14 @@ public partial class MainWindow : BorderlessFluentWindow
                 ApplyConfiguredBackdrop();
             }
         }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] Failed to open custom wallpaper dialog: {ex.Message}");
+        }
         finally
         {
             IsDialogOpen = false;
+            Activate();
         }
     }
 
@@ -1374,7 +1379,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
             _isPotentialDrag = true;
             _isDragging = false;
-            if (!(tile.TileType == TileType.Widget && (tile.TargetPath == "calendar" || tile.TargetPath == "media" || tile.TargetPath == "pomodoro")))
+            if (!(tile.TileType == TileType.Widget && (tile.TargetPath == "calendar" || tile.TargetPath == "media" || tile.TargetPath == "pomodoro" || tile.TargetPath == "photos")))
             {
                 _draggedControl.AnimatePressDown();
             }
@@ -3975,7 +3980,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 Multiselect = true
             };
 
-            if (dialog.ShowDialog() == true && dialog.FileNames.Length > 0)
+            if (dialog.ShowDialog(this) == true && dialog.FileNames.Length > 0)
             {
                 string preAdd = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
                 _historyService.PushState(preAdd);
@@ -3986,9 +3991,14 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 }
             }
         }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] Failed to open add tile file dialog: {ex.Message}");
+        }
         finally
         {
             IsDialogOpen = false;
+            Activate();
         }
     }
 
@@ -4773,18 +4783,23 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 FileName = "MetroHub_Layout.json"
             };
 
-            if (sfd.ShowDialog() == true)
+            if (sfd.ShowDialog(this) == true)
             {
                 if (StorageService.ExportLayout(Tiles, sfd.FileName))
                 {
-                    System.Windows.MessageBox.Show("Layout exported successfully!", "MetroHub",
+                    System.Windows.MessageBox.Show(this, "Layout exported successfully!", "MetroHub",
                         System.Windows.MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
         }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] Failed to export layout: {ex.Message}");
+        }
         finally
         {
             IsDialogOpen = false;
+            Activate();
         }
     }
 

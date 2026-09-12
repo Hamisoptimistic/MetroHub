@@ -142,7 +142,7 @@
                                    Margin="0,0,0,6" />
 
                         <!-- Transport Controls Aligned with Text Above: Reset, Play/Pause, Skip -->
-                        <StackPanel Orientation="Horizontal" Margin="-9,0,0,0">
+                        <StackPanel Orientation="Horizontal" Margin="0">
                             <!-- Reset (↺) -->
                             <Button Style="{StaticResource PomodoroTransportButtonStyle}"
                                     Command="{Binding ResetCommand}"
@@ -303,7 +303,7 @@
                         BorderThickness="0"
                         CornerRadius="0,0,2,2"
                         SnapsToDevicePixels="True"
-                        Padding="8,0,20,0">
+                        Padding="14,0,14,0">
                     <Grid VerticalAlignment="Center">
                         <!-- Left: Transport Controls (Reset, Play/Pause, Skip) -->
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">

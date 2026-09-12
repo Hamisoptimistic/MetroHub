@@ -12,6 +12,7 @@
              xmlns:calendar="clr-namespace:MetroHub.Widgets.Catalog.Calendar"
              xmlns:media="clr-namespace:MetroHub.Widgets.Catalog.Media"
              xmlns:pomodoro="clr-namespace:MetroHub.Widgets.Catalog.Pomodoro"
+             xmlns:photos="clr-namespace:MetroHub.Widgets.Catalog.Photos"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -160,6 +161,11 @@
         <!-- 6. Pomodoro Focus Widget DataTemplate -->
         <DataTemplate DataType="{x:Type pomodoro:PomodoroWidgetViewModel}">
             <pomodoro:PomodoroWidgetView />
+        </DataTemplate>
+
+        <!-- 7. Photos / Slideshow Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type photos:PhotosWidgetViewModel}">
+            <photos:PhotosWidgetView />
         </DataTemplate>
     </UserControl.Resources>
 

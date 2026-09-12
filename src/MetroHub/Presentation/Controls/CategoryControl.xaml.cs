@@ -81,7 +81,8 @@ public partial class CategoryControl : UserControl
 
     private void PromptAddTile()
     {
-        if (MainWindow.Current != null) MainWindow.Current.IsDialogOpen = true;
+        var mainWindow = MainWindow.Current;
+        if (mainWindow != null) mainWindow.IsDialogOpen = true;
         try
         {
             var dialog = new OpenFileDialog
@@ -91,7 +92,8 @@ public partial class CategoryControl : UserControl
                 Multiselect = true
             };
 
-            if (dialog.ShowDialog() == true)
+            bool? result = mainWindow != null ? dialog.ShowDialog(mainWindow) : dialog.ShowDialog();
+            if (result == true)
             {
                 foreach (string file in dialog.FileNames)
                 {
@@ -99,9 +101,17 @@ public partial class CategoryControl : UserControl
                 }
             }
         }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[CategoryControl] Failed to open file dialog: {ex.Message}");
+        }
         finally
         {
-            if (MainWindow.Current != null) MainWindow.Current.IsDialogOpen = false;
+            if (mainWindow != null)
+            {
+                mainWindow.IsDialogOpen = false;
+                mainWindow.Activate();
+            }
         }
     }
 

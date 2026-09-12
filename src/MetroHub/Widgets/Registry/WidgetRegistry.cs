@@ -107,6 +107,24 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Mega,
             Factory: model => new MetroHub.Widgets.Catalog.Pomodoro.PomodoroWidgetViewModel(model)
         ));
+
+        // Register Photo Stream widget
+        Register(new WidgetDefinition(
+            Id: "photos",
+            DisplayName: "Photo Stream",
+            Description: "Displays a live shuffling stream of your favorite photos",
+            Icon: SymbolRegular.Image24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Large,   // 4x4
+                WidgetSize.Banner3, // 8x3
+                WidgetSize.Mega     // 8x4
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Photos.PhotosWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Photos.PhotosWidgetView),
+            DefaultSize: WidgetSize.Large,
+            Factory: model => new MetroHub.Widgets.Catalog.Photos.PhotosWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)
