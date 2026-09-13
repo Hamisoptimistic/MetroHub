@@ -12,7 +12,7 @@ public class NetworkHealthService
     private static readonly Lazy<NetworkHealthService> _instance = new(() => new NetworkHealthService());
     public static NetworkHealthService Instance => _instance.Value;
 
-    public NetworkHealthStatus CurrentStatus { get; private set; } = new();
+    public NetworkHealthStatus CurrentStatus { get; private set; } = new() { Connectivity = QueryFastConnectivity() };
     public event Action<NetworkHealthStatus>? HealthChanged;
 
     public NetworkHealthService()
@@ -22,6 +22,34 @@ public class NetworkHealthService
             Windows.Networking.Connectivity.NetworkInformation.NetworkStatusChanged += OnNetworkStatusChanged;
         }
         catch { }
+    }
+
+    public static ConnectivityLevel QueryFastConnectivity()
+    {
+        try
+        {
+            var profile = Windows.Networking.Connectivity.NetworkInformation.GetInternetConnectionProfile();
+            if (profile != null)
+            {
+                var level = profile.GetNetworkConnectivityLevel();
+                return level switch
+                {
+                    NetworkConnectivityLevel.InternetAccess => ConnectivityLevel.InternetAccess,
+                    NetworkConnectivityLevel.ConstrainedInternetAccess => ConnectivityLevel.ConstrainedInternet,
+                    NetworkConnectivityLevel.LocalAccess => ConnectivityLevel.LocalAccess,
+                    _ => ConnectivityLevel.None
+                };
+            }
+            return NetworkInterface.GetIsNetworkAvailable()
+                ? ConnectivityLevel.LocalAccess
+                : ConnectivityLevel.None;
+        }
+        catch
+        {
+            return NetworkInterface.GetIsNetworkAvailable()
+                ? ConnectivityLevel.LocalAccess
+                : ConnectivityLevel.None;
+        }
     }
 
     private async void OnNetworkStatusChanged(object sender)
@@ -34,33 +62,7 @@ public class NetworkHealthService
         var status = new NetworkHealthStatus();
 
         // 1. Windows NCSI (Network Connectivity Status Indicator)
-        try
-        {
-            var profile = Windows.Networking.Connectivity.NetworkInformation.GetInternetConnectionProfile();
-            if (profile != null)
-            {
-                var level = profile.GetNetworkConnectivityLevel();
-                status.Connectivity = level switch
-                {
-                    NetworkConnectivityLevel.InternetAccess => ConnectivityLevel.InternetAccess,
-                    NetworkConnectivityLevel.ConstrainedInternetAccess => ConnectivityLevel.ConstrainedInternet,
-                    NetworkConnectivityLevel.LocalAccess => ConnectivityLevel.LocalAccess,
-                    _ => ConnectivityLevel.None
-                };
-            }
-            else
-            {
-                status.Connectivity = NetworkInterface.GetIsNetworkAvailable()
-                    ? ConnectivityLevel.LocalAccess
-                    : ConnectivityLevel.None;
-            }
-        }
-        catch
-        {
-            status.Connectivity = NetworkInterface.GetIsNetworkAvailable()
-                ? ConnectivityLevel.LocalAccess
-                : ConnectivityLevel.None;
-        }
+        status.Connectivity = QueryFastConnectivity();
 
         // 2. DNS Resolution Diagnostic
         var sw = Stopwatch.StartNew();

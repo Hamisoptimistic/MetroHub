@@ -17,20 +17,34 @@ public class EthernetProvider
 
     public EthernetInfo GetActiveEthernetInfo()
     {
-        var interfaces = NetworkInterface.GetAllNetworkInterfaces();
+        try
+        {
+            var interfaces = NetworkInterface.GetAllNetworkInterfaces();
 
-        // 1. Find all candidate physical Ethernet interfaces
-        var ethernetCandidates = interfaces
-            .Where(IsCandidatePhysicalEthernet)
-            .ToList();
+            // 1. Find all candidate physical Ethernet interfaces
+            var ethernetCandidates = interfaces
+                .Where(IsCandidatePhysicalEthernet)
+                .ToList();
 
-        // Prioritize: (1) Connected with IPv4 Default Gateway, (2) Connected without Gateway, (3) Disconnected
-        var activeInterface = ethernetCandidates
-            .OrderByDescending(nic => nic.OperationalStatus == OperationalStatus.Up)
-            .ThenByDescending(nic => HasIpv4Gateway(nic))
-            .FirstOrDefault();
+            // Prioritize: (1) Connected with IPv4 Default Gateway, (2) Connected without Gateway, (3) Disconnected
+            var activeInterface = ethernetCandidates
+                .OrderByDescending(nic => nic.OperationalStatus == OperationalStatus.Up)
+                .ThenByDescending(nic => HasIpv4Gateway(nic))
+                .FirstOrDefault();
 
-        if (activeInterface == null)
+            if (activeInterface == null)
+            {
+                return new EthernetInfo
+                {
+                    Name = "Ethernet",
+                    Description = "No Ethernet adapter detected",
+                    IsConnected = false
+                };
+            }
+
+            return BuildEthernetInfo(activeInterface);
+        }
+        catch
         {
             return new EthernetInfo
             {
@@ -39,70 +53,86 @@ public class EthernetProvider
                 IsConnected = false
             };
         }
-
-        return BuildEthernetInfo(activeInterface);
     }
 
     public IReadOnlyList<EthernetInfo> GetAllEthernetInterfaces()
     {
-        var interfaces = NetworkInterface.GetAllNetworkInterfaces();
-        return interfaces
-            .Where(IsCandidatePhysicalEthernet)
-            .Select(BuildEthernetInfo)
-            .ToList();
+        try
+        {
+            var interfaces = NetworkInterface.GetAllNetworkInterfaces();
+            return interfaces
+                .Where(IsCandidatePhysicalEthernet)
+                .Select(BuildEthernetInfo)
+                .ToList();
+        }
+        catch
+        {
+            return Array.Empty<EthernetInfo>();
+        }
     }
 
     private EthernetInfo BuildEthernetInfo(NetworkInterface nic)
     {
-        var ipProps = nic.GetIPProperties();
-        var ipv4Unicast = ipProps.UnicastAddresses
-            .FirstOrDefault(ua => ua.Address.AddressFamily == AddressFamily.InterNetwork && !IsLinkLocalOrLoopback(ua.Address.ToString()));
-
-        bool isConnected = nic.OperationalStatus == OperationalStatus.Up && ipv4Unicast != null && nic.Speed > 0;
-
         var info = new EthernetInfo
         {
             Id = nic.Id,
             Name = nic.Name,
             Description = nic.Description,
-            IsConnected = isConnected,
-            MacAddress = FormatMacAddress(nic.GetPhysicalAddress().GetAddressBytes())
+            IsConnected = false
         };
 
-        if (ipv4Unicast != null)
-        {
-            info.IpAddress = ipv4Unicast.Address.ToString();
-            info.SubnetMask = ipv4Unicast.IPv4Mask?.ToString() ?? "--";
-        }
-
-        var gateway = ipProps.GatewayAddresses
-            .FirstOrDefault(ga => ga.Address.AddressFamily == AddressFamily.InterNetwork);
-        if (gateway != null)
-        {
-            info.Gateway = gateway.Address.ToString();
-        }
-
-        foreach (var dns in ipProps.DnsAddresses.Where(d => d.AddressFamily == AddressFamily.InterNetwork))
-        {
-            info.DnsServers.Add(dns.ToString());
-        }
-
-        // Link Speed
-        long speed = nic.Speed;
-        info.LinkSpeedBitsPerSecond = speed;
-        info.LinkSpeedString = FormatSpeed(speed);
-
-        // Bytes statistics
         try
         {
-            var stats = nic.GetIPStatistics();
-            info.BytesReceived = (ulong)stats.BytesReceived;
-            info.BytesSent = (ulong)stats.BytesSent;
+            var mac = nic.GetPhysicalAddress()?.GetAddressBytes();
+            if (mac != null)
+            {
+                info.MacAddress = FormatMacAddress(mac);
+            }
         }
         catch { }
 
-        // OS Link Uptime / Duration calculation via GetIfEntry2
-        info.LinkDuration = QueryLinkDuration(nic);
+        try
+        {
+            long speed = 0;
+            try { speed = nic.Speed; } catch { }
+            info.LinkSpeedBitsPerSecond = speed;
+            info.LinkSpeedString = FormatSpeed(speed);
+
+            var ipProps = nic.GetIPProperties();
+            var ipv4Unicast = ipProps.UnicastAddresses
+                .FirstOrDefault(ua => ua.Address.AddressFamily == AddressFamily.InterNetwork && !IsLinkLocalOrLoopback(ua.Address.ToString()));
+
+            info.IsConnected = nic.OperationalStatus == OperationalStatus.Up && ipv4Unicast != null && speed > 0;
+
+            if (ipv4Unicast != null)
+            {
+                info.IpAddress = ipv4Unicast.Address.ToString();
+                info.SubnetMask = ipv4Unicast.IPv4Mask?.ToString() ?? "--";
+            }
+
+            var gateway = ipProps.GatewayAddresses
+                .FirstOrDefault(ga => ga.Address.AddressFamily == AddressFamily.InterNetwork);
+            if (gateway != null)
+            {
+                info.Gateway = gateway.Address.ToString();
+            }
+
+            foreach (var dns in ipProps.DnsAddresses.Where(d => d.AddressFamily == AddressFamily.InterNetwork))
+            {
+                info.DnsServers.Add(dns.ToString());
+            }
+
+            try
+            {
+                var stats = nic.GetIPStatistics();
+                info.BytesReceived = (ulong)stats.BytesReceived;
+                info.BytesSent = (ulong)stats.BytesSent;
+            }
+            catch { }
+
+            info.LinkDuration = QueryLinkDuration(nic);
+        }
+        catch { }
 
         return info;
     }

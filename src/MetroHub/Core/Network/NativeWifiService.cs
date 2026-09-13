@@ -20,7 +20,26 @@ public class NativeWifiService : IDisposable
     private bool _hasWifiAdapter;
     private string _wifiStatusMessage = "Initializing Wi-Fi...";
 
-    public bool HasWifiAdapter => _hasWifiAdapter;
+    private readonly object _lock = new();
+    private DateTime _lastEnumTime = DateTime.MinValue;
+    private static readonly TimeSpan EnumThrottle = TimeSpan.FromMilliseconds(500);
+
+    public bool HasWifiAdapter
+    {
+        get
+        {
+            lock (_lock)
+            {
+                if (DateTime.UtcNow - _lastEnumTime > EnumThrottle)
+                {
+                    _lastEnumTime = DateTime.UtcNow;
+                    RefreshInterfaces();
+                }
+                return _hasWifiAdapter;
+            }
+        }
+    }
+
     public string WifiStatusMessage => _wifiStatusMessage;
     public Guid PrimaryInterfaceGuid => _primaryInterfaceGuid;
     public string PrimaryInterfaceDescription => _primaryInterfaceDescription;
@@ -57,55 +76,74 @@ public class NativeWifiService : IDisposable
 
     public bool RefreshInterfaces()
     {
-        if (_clientHandle == IntPtr.Zero && !EnsureClientHandle())
+        lock (_lock)
         {
-            return false;
-        }
+            _lastEnumTime = DateTime.UtcNow;
 
-        IntPtr pInterfaceList = IntPtr.Zero;
-        try
-        {
-            int result = WlanNative.WlanEnumInterfaces(_clientHandle, IntPtr.Zero, out pInterfaceList);
-            if (result != WlanNative.ERROR_SUCCESS || pInterfaceList == IntPtr.Zero)
+            if (_clientHandle == IntPtr.Zero && !EnsureClientHandle())
             {
                 _hasWifiAdapter = false;
-                _wifiStatusMessage = "No Wi-Fi interfaces found.";
-                return false;
-            }
-
-            // The header of WLAN_INTERFACE_INFO_LIST:
-            // uint dwNumberOfItems; uint dwIndex; WLAN_INTERFACE_INFO InterfaceInfo[1];
-            uint count = (uint)Marshal.ReadInt32(pInterfaceList);
-            if (count == 0)
-            {
-                _hasWifiAdapter = false;
-                _wifiStatusMessage = "No Wi-Fi adapter detected.";
                 _primaryInterfaceGuid = Guid.Empty;
+                _primaryInterfaceDescription = string.Empty;
                 return false;
             }
 
-            // Read the first interface
-            int infoSize = Marshal.SizeOf<WlanNative.WLAN_INTERFACE_INFO>();
-            IntPtr firstInterfacePtr = IntPtr.Add(pInterfaceList, 8); // Skip dwNumberOfItems (4) + dwIndex (4)
-            var info = Marshal.PtrToStructure<WlanNative.WLAN_INTERFACE_INFO>(firstInterfacePtr);
-
-            _primaryInterfaceGuid = info.InterfaceGuid;
-            _primaryInterfaceDescription = info.strInterfaceDescription;
-            _hasWifiAdapter = true;
-            _wifiStatusMessage = $"Wi-Fi Adapter Ready: {_primaryInterfaceDescription}";
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _hasWifiAdapter = false;
-            _wifiStatusMessage = $"Wi-Fi enumeration error: {ex.Message}";
-            return false;
-        }
-        finally
-        {
-            if (pInterfaceList != IntPtr.Zero)
+            IntPtr pInterfaceList = IntPtr.Zero;
+            try
             {
-                WlanNative.WlanFreeMemory(pInterfaceList);
+                int result = WlanNative.WlanEnumInterfaces(_clientHandle, IntPtr.Zero, out pInterfaceList);
+                if (result == 6) // ERROR_INVALID_HANDLE
+                {
+                    _clientHandle = IntPtr.Zero;
+                    if (EnsureClientHandle())
+                    {
+                        result = WlanNative.WlanEnumInterfaces(_clientHandle, IntPtr.Zero, out pInterfaceList);
+                    }
+                }
+
+                if (result != WlanNative.ERROR_SUCCESS || pInterfaceList == IntPtr.Zero)
+                {
+                    _hasWifiAdapter = false;
+                    _wifiStatusMessage = "No Wi-Fi interfaces found.";
+                    _primaryInterfaceGuid = Guid.Empty;
+                    _primaryInterfaceDescription = string.Empty;
+                    return false;
+                }
+
+                uint count = (uint)Marshal.ReadInt32(pInterfaceList);
+                if (count == 0)
+                {
+                    _hasWifiAdapter = false;
+                    _wifiStatusMessage = "No Wi-Fi adapter detected.";
+                    _primaryInterfaceGuid = Guid.Empty;
+                    _primaryInterfaceDescription = string.Empty;
+                    return false;
+                }
+
+                // Read the first interface
+                IntPtr firstInterfacePtr = IntPtr.Add(pInterfaceList, 8); // Skip dwNumberOfItems (4) + dwIndex (4)
+                var info = Marshal.PtrToStructure<WlanNative.WLAN_INTERFACE_INFO>(firstInterfacePtr);
+
+                _primaryInterfaceGuid = info.InterfaceGuid;
+                _primaryInterfaceDescription = info.strInterfaceDescription ?? string.Empty;
+                _hasWifiAdapter = true;
+                _wifiStatusMessage = $"Wi-Fi Adapter Ready: {_primaryInterfaceDescription}";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _hasWifiAdapter = false;
+                _wifiStatusMessage = $"Wi-Fi enumeration error: {ex.Message}";
+                _primaryInterfaceGuid = Guid.Empty;
+                _primaryInterfaceDescription = string.Empty;
+                return false;
+            }
+            finally
+            {
+                if (pInterfaceList != IntPtr.Zero)
+                {
+                    try { WlanNative.WlanFreeMemory(pInterfaceList); } catch { }
+                }
             }
         }
     }
@@ -205,6 +243,7 @@ public class NativeWifiService : IDisposable
             }
 
             uint count = (uint)Marshal.ReadInt32(ppList);
+            if (count > 200) count = 200;
             int networkStructSize = Marshal.SizeOf<WlanNative.WLAN_AVAILABLE_NETWORK>();
             IntPtr currentPtr = IntPtr.Add(ppList, 8); // Skip dwNumberOfItems + dwIndex
 

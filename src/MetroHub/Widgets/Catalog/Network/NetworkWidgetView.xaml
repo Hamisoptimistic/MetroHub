@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:widgets="clr-namespace:MetroHub.Widgets"
              xmlns:network="clr-namespace:MetroHub.Widgets.Catalog.Network"
+             xmlns:conv="clr-namespace:MetroHub.Presentation.Converters"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=network:NetworkWidgetViewModel}"
@@ -19,6 +20,7 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <conv:StringToBrushConverter x:Key="StringToBrush" />
 
         <!-- Strips default dotted focus border across all controls -->
         <Style TargetType="{x:Type Control}">
@@ -125,6 +127,10 @@
                 <DataTrigger Binding="{Binding IsEthernetPanel}" Value="True">
                     <Setter Property="Tag" Value="GlowGreen" />
                 </DataTrigger>
+                <DataTrigger Binding="{Binding HasEthernetAdapter}" Value="False">
+                    <Setter Property="Opacity" Value="0.3" />
+                    <Setter Property="IsEnabled" Value="False" />
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -133,6 +139,10 @@
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsWifiPanel}" Value="True">
                     <Setter Property="Tag" Value="GlowGreen" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding HasWifiAdapter}" Value="False">
+                    <Setter Property="Opacity" Value="0.3" />
+                    <Setter Property="IsEnabled" Value="False" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -401,53 +411,21 @@
                         <Border HorizontalAlignment="Right"
                                 VerticalAlignment="Center"
                                 CornerRadius="10"
-                                Padding="10,3">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <!-- Default: Disconnected / Cable Unplugged -->
-                                    <Setter Property="Background" Value="#12FFFFFF" />
-                                    <Setter Property="BorderBrush" Value="#1AFFFFFF" />
-                                    <Setter Property="BorderThickness" Value="1" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Ethernet.IsConnected}" Value="True">
-                                            <Setter Property="Background" Value="#2500CC66" />
-                                            <Setter Property="BorderBrush" Value="#5000CC66" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
+                                Padding="10,3"
+                                Background="{Binding EthernetStatusBackground, Converter={StaticResource StringToBrush}}"
+                                BorderBrush="{Binding EthernetStatusBorderBrush, Converter={StaticResource StringToBrush}}"
+                                BorderThickness="1">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <!-- Dot indicator -->
-                                <Ellipse Width="6" Height="6" Margin="0,0,6,0" VerticalAlignment="Center">
-                                    <Ellipse.Style>
-                                        <Style TargetType="Ellipse">
-                                            <Setter Property="Fill" Value="#75FFFFFF" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Ethernet.IsConnected}" Value="True">
-                                                    <Setter Property="Fill" Value="#00CC66" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Ellipse.Style>
-                                </Ellipse>
+                                <Ellipse Width="6" Height="6" Margin="0,0,6,0" VerticalAlignment="Center"
+                                         Fill="{Binding EthernetStatusDotColor, Converter={StaticResource StringToBrush}}" />
                                 <!-- Status Text -->
-                                <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                <TextBlock Text="{Binding EthernetStatusText}"
+                                           Foreground="{Binding EthernetStatusTextColor, Converter={StaticResource StringToBrush}}"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="11"
                                            FontWeight="SemiBold"
-                                           VerticalAlignment="Center">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Text" Value="Cable Unplugged" />
-                                            <Setter Property="Foreground" Value="#85FFFFFF" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Ethernet.IsConnected}" Value="True">
-                                                    <Setter Property="Text" Value="Connected" />
-                                                    <Setter Property="Foreground" Value="#FFFFFF" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
+                                           VerticalAlignment="Center" />
                             </StackPanel>
                         </Border>
                     </Grid>

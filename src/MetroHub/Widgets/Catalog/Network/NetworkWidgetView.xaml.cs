@@ -28,7 +28,7 @@ public partial class NetworkWidgetView : UserControl
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        UpdateSlidingIndicator(false);
+        Dispatcher.InvokeAsync(() => UpdateSlidingIndicator(false), System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
     private System.ComponentModel.INotifyPropertyChanged? _viewModel;
@@ -44,75 +44,169 @@ public partial class NetworkWidgetView : UserControl
         {
             _viewModel = vm;
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
-            UpdateSlidingIndicator(false);
+            Dispatcher.InvokeAsync(() => UpdateSlidingIndicator(false), System.Windows.Threading.DispatcherPriority.Loaded);
         }
     }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == "CurrentPanel")
+        if (e.PropertyName is "CurrentPanel" or "IsInternetDisconnected" or "IsEthernetConnected" or "IsWifiConnected" or "HasEthernetAdapter" or "HasWifiAdapter" or "IsLocalOnlyNoInternet" or "Health")
         {
-            UpdateSlidingIndicator(true);
+            Dispatcher.InvokeAsync(() => UpdateSlidingIndicator(true));
         }
     }
 
     private void UpdateSlidingIndicator(bool animate)
     {
-        if (TopTilesGrid == null || SlidingActiveIndicator == null || SlidingIndicatorTransform == null || SlidingIndicatorShadow == null) return;
-        
-        if (DataContext is not NetworkWidgetViewModel vm) return;
-
-        int columnIndex = -1;
-        string colorHex = "#00E676"; // Green by default
-
-        if (vm.IsEthernetPanel) { columnIndex = 0; }
-        else if (vm.IsWifiPanel) { columnIndex = 1; }
-        else if (vm.IsKillNetPanel) { columnIndex = 2; colorHex = "#FF3B30"; } // Red for kill net
-        else if (vm.IsSpeedPanel) { columnIndex = 3; }
-        else if (vm.IsHotspotPanel) { columnIndex = 4; }
-
-        if (columnIndex >= 0)
+        try
         {
-            double columnWidth = TopTilesGrid.ActualWidth / 5.0;
-            if (columnWidth <= 0 || double.IsNaN(columnWidth)) 
-            {
-                // Fallback if layout hasn't run yet
-                SlidingActiveIndicator.Opacity = 0;
-                return;
+            if (TopTilesGrid == null || SlidingActiveIndicator == null || SlidingIndicatorTransform == null || SlidingIndicatorShadow == null) return;
+            
+            if (DataContext is not NetworkWidgetViewModel vm) return;
+
+            int columnIndex = -1;
+            double widthMultiplier = 1.0;
+            string colorHex = "#00E676"; // Green by default
+
+            bool isLinked = vm.IsEthernetConnected || vm.IsWifiConnected;
+            bool isDisconnected = vm.IsInternetDisconnected || !isLinked;
+            bool isLocalOnly = vm.IsLocalOnlyNoInternet;
+
+            if (vm.IsEthernetPanel || vm.IsWifiPanel) 
+            { 
+                if (isDisconnected)
+                {
+                    // NO CONNECTION / UNPLUGGED / DISCONNECTED:
+                    // Check for WIFI and ETHERNET. If both are there, both indicators are RED.
+                    // If WIFI adapter is not there, only Ethernet is RED.
+                    // If Ethernet adapter is not there, only WIFI is RED.
+                    colorHex = "#FF3B30"; // Red
+                    if (vm.HasEthernetAdapter && vm.HasWifiAdapter)
+                    {
+                        columnIndex = 0;
+                        widthMultiplier = 2.0; // Stretches across both Ethernet and WiFi
+                    }
+                    else if (vm.HasEthernetAdapter)
+                    {
+                        columnIndex = 0;
+                        widthMultiplier = 1.0;
+                    }
+                    else if (vm.HasWifiAdapter)
+                    {
+                        columnIndex = 1;
+                        widthMultiplier = 1.0;
+                    }
+                    else
+                    {
+                        columnIndex = 0;
+                        widthMultiplier = 1.0;
+                    }
+                }
+                else
+                {
+                    // Connected to router/switch
+                    if (vm.IsEthernetPanel)
+                    {
+                        columnIndex = 0;
+                        widthMultiplier = 1.0;
+                        if (!vm.IsEthernetConnected)
+                        {
+                            colorHex = "#FF3B30"; // Red (cable unplugged)
+                        }
+                        else if (isLocalOnly)
+                        {
+                            colorHex = "#FFB703"; // Warning Amber/Yellow (connected to router, no internet)
+                        }
+                        else
+                        {
+                            colorHex = "#00E676"; // Green (verified internet access)
+                        }
+                    }
+                    else // IsWifiPanel
+                    {
+                        columnIndex = 1;
+                        widthMultiplier = 1.0;
+                        if (!vm.IsWifiConnected)
+                        {
+                            colorHex = "#FF3B30"; // Red (Wi-Fi disconnected)
+                        }
+                        else if (isLocalOnly)
+                        {
+                            colorHex = "#FFB703"; // Warning Amber/Yellow (connected to router, no internet)
+                        }
+                        else
+                        {
+                            colorHex = "#00E676"; // Green (verified internet access)
+                        }
+                    }
+                }
+            }
+            else if (vm.IsKillNetPanel) 
+            { 
+                columnIndex = 2; 
+                widthMultiplier = 1.0;
+                colorHex = "#FF3B30"; // Red for kill net
+            }
+            else if (vm.IsSpeedPanel) 
+            { 
+                columnIndex = 3; 
+                widthMultiplier = 1.0;
+                colorHex = isDisconnected ? "#FF3B30" : (isLocalOnly ? "#FFB703" : "#00E676"); 
+            }
+            else if (vm.IsHotspotPanel) 
+            { 
+                columnIndex = 4; 
+                widthMultiplier = 1.0;
+                colorHex = "#00E676"; 
             }
 
-            double targetX = columnIndex * columnWidth;
-            var targetColor = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colorHex);
-            var targetBrush = new System.Windows.Media.SolidColorBrush(targetColor);
-
-            if (animate)
+            if (columnIndex >= 0)
             {
-                var xAnim = new DoubleAnimation(targetX, TimeSpan.FromMilliseconds(300)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
-                var opAnim = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(200));
-                
-                // Color animation requires brushing
-                SlidingActiveIndicator.Background = targetBrush;
-                SlidingIndicatorShadow.Color = targetColor;
+                double columnWidth = TopTilesGrid.ActualWidth / 5.0;
+                if (columnWidth <= 0 || double.IsNaN(columnWidth)) 
+                {
+                    // Re-attempt once layout finishes
+                    Dispatcher.InvokeAsync(() => UpdateSlidingIndicator(false), System.Windows.Threading.DispatcherPriority.Loaded);
+                    return;
+                }
 
-                SlidingIndicatorTransform.BeginAnimation(TranslateTransform.XProperty, xAnim);
-                SlidingActiveIndicator.BeginAnimation(UIElement.OpacityProperty, opAnim);
-                SlidingActiveIndicator.Width = columnWidth;
+                double targetX = columnIndex * columnWidth;
+                double targetWidth = columnWidth * widthMultiplier;
+                var targetColor = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colorHex);
+                var targetBrush = new System.Windows.Media.SolidColorBrush(targetColor);
+
+                if (animate)
+                {
+                    var xAnim = new DoubleAnimation(targetX, TimeSpan.FromMilliseconds(300)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+                    var wAnim = new DoubleAnimation(targetWidth, TimeSpan.FromMilliseconds(300)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } };
+                    var opAnim = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(200));
+                    
+                    // Color animation requires brushing
+                    SlidingActiveIndicator.Background = targetBrush;
+                    SlidingIndicatorShadow.Color = targetColor;
+
+                    SlidingIndicatorTransform.BeginAnimation(TranslateTransform.XProperty, xAnim);
+                    SlidingActiveIndicator.BeginAnimation(FrameworkElement.WidthProperty, wAnim);
+                    SlidingActiveIndicator.BeginAnimation(UIElement.OpacityProperty, opAnim);
+                }
+                else
+                {
+                    SlidingIndicatorTransform.BeginAnimation(TranslateTransform.XProperty, null);
+                    SlidingActiveIndicator.BeginAnimation(FrameworkElement.WidthProperty, null);
+                    SlidingActiveIndicator.BeginAnimation(UIElement.OpacityProperty, null);
+                    SlidingIndicatorTransform.X = targetX;
+                    SlidingActiveIndicator.Opacity = 1.0;
+                    SlidingActiveIndicator.Width = targetWidth;
+                    SlidingActiveIndicator.Background = targetBrush;
+                    SlidingIndicatorShadow.Color = targetColor;
+                }
             }
             else
             {
-                SlidingIndicatorTransform.BeginAnimation(TranslateTransform.XProperty, null);
-                SlidingActiveIndicator.BeginAnimation(UIElement.OpacityProperty, null);
-                SlidingIndicatorTransform.X = targetX;
-                SlidingActiveIndicator.Opacity = 1.0;
-                SlidingActiveIndicator.Width = columnWidth;
-                SlidingActiveIndicator.Background = targetBrush;
-                SlidingIndicatorShadow.Color = targetColor;
+                SlidingActiveIndicator.Opacity = 0;
             }
         }
-        else
-        {
-            SlidingActiveIndicator.Opacity = 0;
-        }
+        catch { }
     }
 
     private void OnMouseMove(object sender, MouseEventArgs e)
