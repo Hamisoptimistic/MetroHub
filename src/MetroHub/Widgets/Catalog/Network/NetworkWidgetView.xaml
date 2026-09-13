@@ -182,27 +182,33 @@
             <!-- ROW 0: TOP 5-TILE REGION (Transparent Acrylic Backdrop)                   -->
             <!-- [ Ethernet ] | [ WIFI ] | [ Kill Net ] | [ Speed ] | [ Hotspot ]          -->
             <!-- ========================================================================= -->
-            <Grid Grid.Row="0" SnapsToDevicePixels="True" Background="Transparent">
+            <Grid Grid.Row="0" SnapsToDevicePixels="True" Background="Transparent" MouseMove="OnMouseMove" MouseEnter="OnMouseEnter" MouseLeave="OnMouseLeave">
                 <Grid.ColumnDefinitions>
                     <!-- Col 0: Ethernet -->
                     <ColumnDefinition Width="*" />
-                        <!-- Col 1: WIFI -->
-                        <ColumnDefinition Width="*" />
-                        <!-- Col 2: Kill Net -->
-                        <ColumnDefinition Width="*" />
-                        <!-- Col 3: Speed -->
-                        <ColumnDefinition Width="*" />
-                        <!-- Col 4: Hotspot -->
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                    <!-- Col 1: WIFI -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Col 2: Kill Net -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Col 3: Speed -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Col 4: Hotspot -->
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-                <!-- Continuous 1px bottom border across all 5 tiles (identical to continuous top border) -->
-                <Border Grid.Column="0"
-                        Grid.ColumnSpan="5"
-                        VerticalAlignment="Bottom"
-                        Height="1"
-                        Background="#22FFFFFF"
-                        SnapsToDevicePixels="True" />
+                <!-- Continuous 1px bottom border across all 5 tiles with Fluent Reveal mouse tracking -->
+                <Grid Grid.Column="0" Grid.ColumnSpan="5" VerticalAlignment="Bottom" Height="1" SnapsToDevicePixels="True">
+                    <Border Background="#22FFFFFF" SnapsToDevicePixels="True" />
+                    <Border x:Name="BottomRevealBorder" SnapsToDevicePixels="True" Opacity="0">
+                        <Border.Background>
+                            <RadialGradientBrush x:Name="BottomRevealBrush" MappingMode="Absolute" RadiusX="160" RadiusY="160">
+                                <GradientStop Color="#FFFFFFFF" Offset="0.0" />
+                                <GradientStop Color="#60FFFFFF" Offset="0.5" />
+                                <GradientStop Color="#00000000" Offset="1.0" />
+                            </RadialGradientBrush>
+                        </Border.Background>
+                    </Border>
+                </Grid>
 
                     <!-- ==================== 1. ETHERNET TILE ==================== -->
                     <Button Grid.Column="0"
