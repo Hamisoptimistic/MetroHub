@@ -63,16 +63,16 @@
                                               Margin="0,0,0,2"
                                               SnapsToDevicePixels="True" />
 
-                            <!-- Layer 3: Edge-to-Edge Active Bottom Glow Bar (3px bold Game Bar line) -->
-                            <!-- Default: Null background renders zero pixels, preventing overlapping dot artifacts. Only lights up on active tile. -->
+                            <!-- Layer 3: Tile Bottom Border taking over the separator -->
                             <Border x:Name="BottomLine"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Bottom"
-                                    Height="3"
+                                    Height="1.5"
+                                    Background="#18FFFFFF"
                                     SnapsToDevicePixels="True" />
                         </Grid>
                         <ControlTemplate.Triggers>
-                            <!-- GlowGreen: Vivid emerald green bottom border glow for active selected tile -->
+                            <!-- Active glow commented out (to be implemented later)
                             <Trigger Property="Tag" Value="GlowGreen">
                                 <Setter TargetName="BottomLine" Property="Background" Value="#00E676" />
                                 <Setter TargetName="BottomLine" Property="Effect">
@@ -83,7 +83,6 @@
                                 <Setter Property="Panel.ZIndex" Value="20" />
                             </Trigger>
 
-                            <!-- GlowRed: Warning Red bottom border glow for kill-net or disconnected state -->
                             <Trigger Property="Tag" Value="GlowRed">
                                 <Setter TargetName="BottomLine" Property="Background" Value="#FF4C4C" />
                                 <Setter TargetName="BottomLine" Property="Effect">
@@ -93,6 +92,7 @@
                                 </Setter>
                                 <Setter Property="Panel.ZIndex" Value="20" />
                             </Trigger>
+                            -->
 
                             <!-- Hover state: illuminates dividing borders and subtle glass sheen, Panel.ZIndex=10 ensures top rendering -->
                             <Trigger Property="IsMouseOver" Value="True">
@@ -220,17 +220,9 @@
             <!-- [ Ethernet ] | [ WIFI ] | [ Kill Net ] | [ Speed ] | [ Hotspot ]          -->
             <!-- ========================================================================= -->
             <Grid Grid.Row="0" SnapsToDevicePixels="True" Background="Transparent">
-                <!-- Universal Single Continuous Hairline Separator across entire row (100% smooth, ZERO dots) -->
-                <Border VerticalAlignment="Bottom"
-                        Height="1.5"
-                        Background="#16FFFFFF"
-                        SnapsToDevicePixels="True" />
-
-                <!-- 5-Column Segmented Tile Strip -->
-                <Grid SnapsToDevicePixels="True" Background="Transparent">
-                    <Grid.ColumnDefinitions>
-                        <!-- Col 0: Ethernet -->
-                        <ColumnDefinition Width="*" />
+                <Grid.ColumnDefinitions>
+                    <!-- Col 0: Ethernet -->
+                    <ColumnDefinition Width="*" />
                         <!-- Col 1: WIFI -->
                         <ColumnDefinition Width="*" />
                         <!-- Col 2: Kill Net -->
@@ -374,7 +366,6 @@
                     </StackPanel>
                 </Button>
             </Grid>
-        </Grid>
 
             <!-- ========================================================================= -->
             <!-- ROW 1: LOWER PANEL REGION                                                 -->
