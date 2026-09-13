@@ -196,6 +196,14 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
+                <!-- Continuous 1px bottom border across all 5 tiles (identical to continuous top border) -->
+                <Border Grid.Column="0"
+                        Grid.ColumnSpan="5"
+                        VerticalAlignment="Bottom"
+                        Height="1"
+                        Background="#22FFFFFF"
+                        SnapsToDevicePixels="True" />
+
                     <!-- ==================== 1. ETHERNET TILE ==================== -->
                     <Button Grid.Column="0"
                         Style="{StaticResource EthernetTileStyle}"
