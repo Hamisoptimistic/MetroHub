@@ -223,10 +223,9 @@ public partial class MediaWidgetView : UserControl
         SeekThumbScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
         SeekThumbScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
 
-        // 3. Track Height: 3px resting -> 5px on hover/drag
-        double targetHeight = (isHovered || isDragging) ? 5.0 : 3.0;
+        // 3. Track Height: 2px resting -> 4px on hover/drag
+        double targetHeight = (isHovered || isDragging) ? 4.0 : 2.0;
         var trackHeightAnim = new DoubleAnimation(targetHeight, duration) { EasingFunction = easing };
-        SeekTrackTrough?.BeginAnimation(HeightProperty, trackHeightAnim);
         SeekTrackBg?.BeginAnimation(HeightProperty, trackHeightAnim);
         SeekProgressFill?.BeginAnimation(HeightProperty, trackHeightAnim);
     }

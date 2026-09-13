@@ -51,57 +51,6 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
     [ObservableProperty]
     private bool _hasThumbnail;
 
-    private bool _isSettingsLoaded;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsStaticGlowVisible))]
-    [NotifyPropertyChangedFor(nameof(IsAnimatedGlowVisible))]
-    [NotifyPropertyChangedFor(nameof(IsGlowAnimated))]
-    private MediaGlowMode _glowMode = MediaGlowMode.Static;
-
-    partial void OnGlowModeChanged(MediaGlowMode value)
-    {
-        if (_isSettingsLoaded)
-        {
-            SaveSettings();
-        }
-    }
-
-    partial void OnHasThumbnailChanged(bool value)
-    {
-        OnPropertyChanged(nameof(IsStaticGlowVisible));
-        OnPropertyChanged(nameof(IsAnimatedGlowVisible));
-    }
-
-    partial void OnIsPlayingChanged(bool value)
-    {
-        OnPropertyChanged(nameof(IsGlowAnimated));
-    }
-
-    public bool IsStaticGlowVisible => GlowMode == MediaGlowMode.Static && HasThumbnail;
-
-    public bool IsAnimatedGlowVisible => GlowMode == MediaGlowMode.Animated && HasThumbnail;
-
-    public bool IsGlowAnimated => GlowMode == MediaGlowMode.Animated && IsPlaying;
-
-    [ObservableProperty]
-    private Brush? _glowBrush;
-
-    [ObservableProperty]
-    private Brush? _sensualRadialBrush;
-
-    [ObservableProperty]
-    private Brush? _fluidWaveBrush;
-
-    [ObservableProperty]
-    private Brush? _fluidSecondaryBrush;
-
-    [ObservableProperty]
-    private SolidColorBrush _glowSolidBrush = new SolidColorBrush(Color.FromRgb(0x3A, 0x82, 0xD4));
-
-    [ObservableProperty]
-    private Color _glowColor = Color.FromRgb(0x3A, 0x82, 0xD4);
-
     [ObservableProperty]
     private SolidColorBrush _seekbarBrush = new SolidColorBrush(Color.FromRgb(0x4C, 0x9E, 0xFF));
 
@@ -110,7 +59,6 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public double AlbumArtSize => Model.SpanY >= 4 ? 132.0 : 104.0;
 
-    public double GlowBlurRadius => Model.SpanY >= 4 ? 30.0 : 20.0;
 
     [ObservableProperty]
     private bool _isPlaying;
@@ -180,12 +128,10 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
             if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
             {
                 OnPropertyChanged(nameof(AlbumArtSize));
-                OnPropertyChanged(nameof(GlowBlurRadius));
             }
         };
 
         LoadSettings(model.SettingsJson);
-        _isSettingsLoaded = true;
 
         _playbackTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
@@ -273,14 +219,6 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 SourceName = "Media Player";
                 Thumbnail = null;
                 HasThumbnail = false;
-                GlowBrush = null;
-                SensualRadialBrush = null;
-                FluidWaveBrush = null;
-                FluidSecondaryBrush = null;
-                GlowColor = Color.FromRgb(0x3A, 0x82, 0xD4);
-                var fallbackBrush = new SolidColorBrush(Color.FromRgb(0x3A, 0x82, 0xD4));
-                fallbackBrush.Freeze();
-                GlowSolidBrush = fallbackBrush;
                 var fallbackSeekColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
                 var fallbackSeekBrush = new SolidColorBrush(fallbackSeekColor);
                 fallbackSeekBrush.Freeze();
@@ -761,17 +699,11 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                     SourceName = ResolveSourceName(rawSource, null, null);
                     Thumbnail = null;
                     HasThumbnail = false;
-                    var fallbackBrush = new SolidColorBrush(Color.FromRgb(0x3A, 0x82, 0xD4));
-                    fallbackBrush.Freeze();
-                    GlowSolidBrush = fallbackBrush;
                     var fallbackSeekColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
                     var fallbackSeekBrush = new SolidColorBrush(fallbackSeekColor);
                     fallbackSeekBrush.Freeze();
                     SeekbarBrush = fallbackSeekBrush;
                     SeekbarGlowColor = fallbackSeekColor;
-                    SensualRadialBrush = null;
-                    GlowBrush = null;
-                    GlowColor = Color.FromRgb(0x3A, 0x82, 0xD4);
                     IsPlaying = false;
                     _playbackTimer?.Stop();
                 });
@@ -830,15 +762,9 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
             bool hasAlbum = !string.IsNullOrWhiteSpace(cleanAlbum);
 
             ImageSource? bmp = null;
-            Color glowColor = Color.FromRgb(0x3A, 0x82, 0xD4);
-            var glowSolidBrush = new SolidColorBrush(glowColor);
-            glowSolidBrush.Freeze();
             Color seekbarColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
             var seekbarBrush = new SolidColorBrush(seekbarColor);
             seekbarBrush.Freeze();
-            RadialGradientBrush? sensualRadialBrush = null;
-            RadialGradientBrush? fluidWaveBrush = null;
-            LinearGradientBrush? fluidSecondaryBrush = null;
 
             if (props.Thumbnail != null)
             {
@@ -846,7 +772,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 if (epoch != _updateEpoch) return;
                 if (bmp is BitmapSource bs)
                 {
-                    (glowColor, glowSolidBrush, sensualRadialBrush, fluidWaveBrush, fluidSecondaryBrush, seekbarBrush, seekbarColor) = CreateGlow(bs);
+                    (seekbarBrush, seekbarColor) = ExtractSeekbarBrush(bs);
                 }
             }
 
@@ -861,12 +787,6 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 SourceName = cleanSource;
                 Thumbnail = bmp;
                 HasThumbnail = bmp != null;
-                GlowSolidBrush = glowSolidBrush;
-                SensualRadialBrush = sensualRadialBrush;
-                FluidWaveBrush = fluidWaveBrush;
-                FluidSecondaryBrush = fluidSecondaryBrush;
-                GlowBrush = sensualRadialBrush;
-                GlowColor = glowColor;
                 SeekbarBrush = seekbarBrush;
                 SeekbarGlowColor = seekbarColor;
                 HasMedia = true;
@@ -917,7 +837,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    private static (Color, SolidColorBrush, RadialGradientBrush, RadialGradientBrush, LinearGradientBrush, SolidColorBrush, Color) CreateGlow(BitmapSource bitmap)
+    private static (SolidColorBrush, Color) ExtractSeekbarBrush(BitmapSource bitmap)
     {
         try
         {
@@ -960,7 +880,6 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 }
             }
 
-            Color accent;
             Color seekbarColor;
             bool isMonochrome = totalColorWeight < 0.05;
 
@@ -972,19 +891,11 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
                 var (h, s, v) = RgbToHsv(avgR, avgG, avgB);
 
-                // 1. Ambient Background Aura (Moody, deeper, non-glaring)
-                double ambientS = Math.Clamp(s * 1.15, 0.45, 0.88);
-                double ambientV = Math.Clamp(v * 0.85, 0.42, 0.65);
-                accent = ColorFromHsv(h, ambientS, ambientV);
-
-                // 2. Interactive Foreground Seekbar (Luminous, electric, guaranteed high-contrast)
                 double seekH = h;
                 double seekS = s;
                 double seekV = v;
 
                 // Blue-Indigo-Violet Range (195° - 275°) Compensation:
-                // Human eye perceives blue at only ~7% luminance. Deep navy blues (e.g. #1E3A8A) look like black on dark acrylic.
-                // If hue is in the blue/indigo zone, lift brightness significantly and reduce overly dark saturation.
                 if (seekH >= 195.0 && seekH <= 275.0)
                 {
                     seekV = Math.Clamp(seekV * 1.60, 0.88, 1.0);
@@ -1002,144 +913,24 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 double avgLum = validPixelCount > 0 ? totalLum / validPixelCount : 0.8;
                 if (avgLum > 0.4)
                 {
-                    accent = Color.FromRgb(180, 195, 215);
                     seekbarColor = Color.FromRgb(240, 244, 255); // Crisp moonlight pearl-white
                 }
                 else
                 {
-                    accent = Color.FromRgb(140, 160, 190);
                     seekbarColor = Color.FromRgb(180, 215, 255); // Electric ice-blue
                 }
             }
 
-            var solidBrush = new SolidColorBrush(accent);
-            solidBrush.Freeze();
-
             var seekbarBrush = new SolidColorBrush(seekbarColor);
             seekbarBrush.Freeze();
-
-            // 1. Sensual Static Brush: EXACT classic localized halo behind the album art
-            // Confined to the right side of the card without covering the entire tile!
-            var sensualBrush = new RadialGradientBrush
-            {
-                MappingMode = BrushMappingMode.RelativeToBoundingBox,
-                Center = new Point(0.80, 0.42),
-                GradientOrigin = new Point(0.80, 0.42),
-                RadiusX = 0.95,
-                RadiusY = 1.15
-            };
-            AddSmoothCosineStops(sensualBrush.GradientStops, accent, isMonochrome ? (byte)70 : (byte)95, 0, 16);
-            sensualBrush.Freeze();
-
-            // 2. Fluid Wave Stream Brush: Expansive radial stream emanating from album art in expanded overscan coords
-            // and washing across toward the left, covering the entire tile with zero boundary cliff
-            var fluidWaveBrush = new RadialGradientBrush
-            {
-                MappingMode = BrushMappingMode.RelativeToBoundingBox,
-                Center = new Point(0.656, 0.470),
-                GradientOrigin = new Point(0.656, 0.470),
-                RadiusX = 1.35,
-                RadiusY = 1.15
-            };
-            AddSmoothCosineStops(fluidWaveBrush.GradientStops, accent, isMonochrome ? (byte)80 : (byte)115, 0, 16);
-            fluidWaveBrush.Freeze();
-
-            // 3. Fluid Secondary Undercurrent Brush: Horizontal linear gradient flowing smoothly right to left
-            var fluidSecondaryBrush = new LinearGradientBrush
-            {
-                StartPoint = new Point(0.85, 0.35),
-                EndPoint = new Point(0.08, 0.65)
-            };
-            AddSmoothCosineStops(fluidSecondaryBrush.GradientStops, accent, isMonochrome ? (byte)50 : (byte)75, 0, 14);
-            fluidSecondaryBrush.Freeze();
-
-            return (accent, solidBrush, sensualBrush, fluidWaveBrush, fluidSecondaryBrush, seekbarBrush, seekbarColor);
+            return (seekbarBrush, seekbarColor);
         }
         catch
         {
-            var fallbackColor = Color.FromRgb(0x24, 0x54, 0x94);
-            var fallbackSolid = new SolidColorBrush(fallbackColor);
-            fallbackSolid.Freeze();
-
             var fallbackSeekColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
             var fallbackSeekbarBrush = new SolidColorBrush(fallbackSeekColor);
             fallbackSeekbarBrush.Freeze();
-
-            var fallbackSensual = new RadialGradientBrush
-            {
-                MappingMode = BrushMappingMode.RelativeToBoundingBox,
-                Center = new Point(0.80, 0.42),
-                GradientOrigin = new Point(0.80, 0.42),
-                RadiusX = 0.95,
-                RadiusY = 1.15
-            };
-            AddSmoothCosineStops(fallbackSensual.GradientStops, fallbackColor, 95, 0, 16);
-            fallbackSensual.Freeze();
-
-            var fallbackWave = new RadialGradientBrush
-            {
-                MappingMode = BrushMappingMode.RelativeToBoundingBox,
-                Center = new Point(0.656, 0.470),
-                GradientOrigin = new Point(0.656, 0.470),
-                RadiusX = 1.35,
-                RadiusY = 1.15
-            };
-            AddSmoothCosineStops(fallbackWave.GradientStops, fallbackColor, 115, 0, 16);
-            fallbackWave.Freeze();
-
-            var fallbackSecondary = new LinearGradientBrush
-            {
-                StartPoint = new Point(0.85, 0.35),
-                EndPoint = new Point(0.08, 0.65)
-            };
-            AddSmoothCosineStops(fallbackSecondary.GradientStops, fallbackColor, 75, 0, 14);
-            fallbackSecondary.Freeze();
-
-            return (fallbackColor, fallbackSolid, fallbackSensual, fallbackWave, fallbackSecondary, fallbackSeekbarBrush, fallbackSeekColor);
-        }
-    }
-
-    public static ImageSource DitherNoiseTexture { get; } = CreateDitherNoiseBitmap();
-
-    private static ImageSource CreateDitherNoiseBitmap()
-    {
-        int width = 64;
-        int height = 64;
-        byte[] pixels = new byte[width * height * 4];
-        var rand = new Random(1337);
-
-        for (int i = 0; i < pixels.Length; i += 4)
-        {
-            byte v = (byte)rand.Next(0, 256);
-            pixels[i] = v;     // B
-            pixels[i + 1] = v; // G
-            pixels[i + 2] = v; // R
-            pixels[i + 3] = (byte)rand.Next(10, 26); // subtle ~4-10% dither alpha
-        }
-
-        var bitmap = BitmapSource.Create(
-            width, height,
-            96, 96,
-            PixelFormats.Bgra32,
-            null,
-            pixels,
-            width * 4
-        );
-        bitmap.Freeze();
-        return bitmap;
-    }
-
-    public ImageSource DitherNoise => DitherNoiseTexture;
-
-    private static void AddSmoothCosineStops(GradientStopCollection collection, Color color, byte maxAlpha, byte minAlpha, int stopCount = 16)
-    {
-        for (int i = 0; i <= stopCount; i++)
-        {
-            double t = (double)i / stopCount;
-            // Cosine smooth curve with zero derivative at both ends (C^1 continuous, eliminating Mach bands)
-            double factor = (1.0 + Math.Cos(Math.PI * t)) / 2.0;
-            byte a = (byte)Math.Round(minAlpha + (maxAlpha - minAlpha) * factor);
-            collection.Add(new GradientStop(Color.FromArgb(a, color.R, color.G, color.B), t));
+            return (fallbackSeekbarBrush, fallbackSeekColor);
         }
     }
 
@@ -1426,28 +1217,14 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
     protected override void LoadSettings(string? settingsJson)
     {
-        var settings = WidgetSerializer.Deserialize<MediaWidgetSettings>(settingsJson);
-        if (settings != null)
-        {
-            GlowMode = settings.GlowMode;
-        }
     }
 
     public override void SaveSettings()
     {
-        var settings = new MediaWidgetSettings
-        {
-            GlowMode = GlowMode
-        };
+        var settings = new MediaWidgetSettings();
         Model.TargetPath = "media";
         Model.SettingsJson = WidgetSerializer.Serialize(settings);
         MainWindow.Current?.SaveGroupsAndLayout();
-    }
-
-    public void SetGlowMode(MediaGlowMode mode)
-    {
-        GlowMode = mode;
-        SaveSettings();
     }
 
     protected override void Dispose(bool disposing)
@@ -1488,10 +1265,6 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
             }
 
             Thumbnail = null;
-            GlowBrush = null;
-            SensualRadialBrush = null;
-            FluidWaveBrush = null;
-            FluidSecondaryBrush = null;
         }
 
         base.Dispose(disposing);

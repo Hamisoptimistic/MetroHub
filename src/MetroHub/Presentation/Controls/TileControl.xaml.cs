@@ -512,58 +512,7 @@ public partial class TileControl : UserControl
                 TileContextMenu.Items.Insert(1, todayItem);
                 TileContextMenu.Items.Insert(2, calDivider);
             }
-            else if (tile.TileContent is Widgets.Catalog.Media.MediaWidgetViewModel mediaVm)
-            {
-                var effectsItem = new MenuItem
-                {
-                    Header = "Effects",
-                    Tag = "WidgetCustomMenu",
-                    Icon = new Wpf.Ui.Controls.SymbolIcon
-                    {
-                        Symbol = Wpf.Ui.Controls.SymbolRegular.Wand24,
-                        FontSize = 20,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
-                    }
-                };
 
-                var itemStatic = new MenuItem
-                {
-                    Header = "Sensual Static (Default)",
-                    IsCheckable = true,
-                    IsChecked = mediaVm.GlowMode == Widgets.Catalog.Media.MediaGlowMode.Static
-                };
-                itemStatic.Click += (s, ev) => mediaVm.SetGlowMode(Widgets.Catalog.Media.MediaGlowMode.Static);
-
-                var itemAnimated = new MenuItem
-                {
-                    Header = "Fluid Breathing (Animated)",
-                    IsCheckable = true,
-                    IsChecked = mediaVm.GlowMode == Widgets.Catalog.Media.MediaGlowMode.Animated
-                };
-                itemAnimated.Click += (s, ev) => mediaVm.SetGlowMode(Widgets.Catalog.Media.MediaGlowMode.Animated);
-
-                var itemOff = new MenuItem
-                {
-                    Header = "Off (Clean Minimal)",
-                    IsCheckable = true,
-                    IsChecked = mediaVm.GlowMode == Widgets.Catalog.Media.MediaGlowMode.Off
-                };
-                itemOff.Click += (s, ev) => mediaVm.SetGlowMode(Widgets.Catalog.Media.MediaGlowMode.Off);
-
-                effectsItem.Items.Add(itemStatic);
-                effectsItem.Items.Add(itemAnimated);
-                effectsItem.Items.Add(itemOff);
-
-                var mediaDivider = new Separator { Tag = "WidgetCustomMenu" };
-
-                // Universal Widget Hierarchy:
-                // Index 0: Resize
-                // Index 1: Effects
-                // Index 2: Separator
-                // Then: AddToGroupMenuItem, UnpinMenuItem (GroupMenuItem & UnpinSeparator collapsed)
-                TileContextMenu.Items.Insert(1, effectsItem);
-                TileContextMenu.Items.Insert(2, mediaDivider);
-            }
             else if (tile.TileContent is Widgets.Catalog.Pomodoro.PomodoroWidgetViewModel pomodoroVm)
             {
                 var presetItem = new MenuItem

@@ -98,10 +98,23 @@ Replace software `DropShadowEffect` with lightweight painted borders or GPU radi
    * DirectWrite grayscale sub-pixel anti-aliasing renders ultra-clean vector curves without chromatic color fringing on dark/Mica backgrounds, avoiding chunky GDI pixel snapping.
 2. When large element trees or icon lists slide or animate, use **`CacheMode="BitmapCache"`** during motion so the GPU translates a single baked texture quad, maintaining 100 FPS without sacrificing font or icon quality.
 3. Defer `TextBox.Focus()` to `anim.Completed` rather than on frame 0 to prevent Windows IME message pump initialization from blocking the start of animations.
+4. **Optical Centroid & Metric Alignment for Transport Glyphs**:
+   * Right-pointing triangle glyphs (e.g. `Segoe MDL2 Assets` Play `&#xE768;`) naturally concentrate their visual mass along their flat left base. Centering the font bounding box directly within a button causes the glyph to appear shifted left by ~1.5px to 2px, ruining perceived symmetry between adjacent chevrons (`<` and `>`). Add a compensatory `Margin="1.5,0,0,0"` to the Play glyph and `Margin="0"` when displaying symmetric states like Pause (`&#xE769;`).
+   * Standardize icon heights across states: if Pause bars (`&#xE769;`) appear physically shorter than adjacent chevrons at default sizes, scale the active pause glyph (e.g. `FontSize="15.5"` vs `13`) via style triggers to equalize visual heights.
 
 ---
 
-## 5. Summary Checklist Before Merging Any UI Code
+## 5. Tile & Widget Background Transparency Standards
+
+1. **Total Background Transparency (No Artificial Glow/Scrim Overlays)**:
+   * Widget views (e.g. `MediaWidgetView`, `PomodoroWidgetView`, `VolumeWidgetView`) MUST NOT inject full-card background overlays (such as ambient radial glows, fluid drift washes, dither film grain, or depth scrims).
+   * These opaque stacked layers destroy the native Windows 11 Fluent/Mica translucency of the tile shell (`TileControl`), turning cards into dark, muddy, opaque boxes that clash with the rest of the canvas.
+   * All widgets MUST use a clean transparent `WidgetCard` (`Background="Transparent"` with zero background child layers), allowing the desktop wallpaper and system acrylic glass to shine through with 100% cohesion across every tile.
+   * Docked bottom bars must use uniform subtle `#14000000` with borderless 2px `#14FFFFFF` hairline tracks.
+
+---
+
+## 6. Summary Checklist Before Merging Any UI Code
 
 - [ ] Scissor curtain clips `MainContentAreaGrid` to prevent canvas & footer text collisions.
 - [ ] Scissor curtain animates `TranslateTransform.XProperty` on a reusable `RectangleGeometry` (never `RectAnimation`).
@@ -110,3 +123,5 @@ Replace software `DropShadowEffect` with lightweight painted borders or GPU radi
 - [ ] `SearchBox.Focus()` is deferred to `anim.Completed`.
 - [ ] Every `<DropShadowEffect>` is accompanied by `CacheMode="BitmapCache"` or replaced with GPU borders.
 - [ ] Window, styles, and controls specify `TextFormattingMode="Ideal"` and `TextRenderingMode="Grayscale"`.
+- [ ] Dynamic media/photo scrims are conditional on thumbnail presence and avoid muddy tinting.
+- [ ] Asymmetric glyphs (Play triangle, Pause height) use optical centroid and height compensation.
