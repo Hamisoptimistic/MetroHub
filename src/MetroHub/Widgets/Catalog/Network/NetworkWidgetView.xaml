@@ -38,6 +38,7 @@
         <Style x:Key="TopTileButtonBaseStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Height" Value="76" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
@@ -53,24 +54,25 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                SnapsToDevicePixels="True">
+                                SnapsToDevicePixels="True"
+                                UseLayoutRounding="True">
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
                                               Margin="0,0,0,2"
                                               SnapsToDevicePixels="True" />
                         </Border>
                         <ControlTemplate.Triggers>
-                            <!-- Hover state: illuminates tile borders and subtle glass sheen -->
+                            <!-- Hover state: illuminates full continuous tile border and subtle glass sheen -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#45FFFFFF" />
-                                <Setter TargetName="TileBorder" Property="Background" Value="#0AFFFFFF" />
+                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#55FFFFFF" />
+                                <Setter TargetName="TileBorder" Property="Background" Value="#0DFFFFFF" />
                                 <Setter Property="Panel.ZIndex" Value="10" />
                             </Trigger>
 
                             <!-- Pressed state -->
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#65FFFFFF" />
-                                <Setter TargetName="TileBorder" Property="Background" Value="#14FFFFFF" />
+                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#75FFFFFF" />
+                                <Setter TargetName="TileBorder" Property="Background" Value="#18FFFFFF" />
                                 <Setter Property="Panel.ZIndex" Value="10" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -119,7 +121,6 @@
 
         <!-- 1. Ethernet Tile Style -->
         <Style x:Key="EthernetTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
-            <Setter Property="BorderThickness" Value="0,0,1,1" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsEthernetPanel}" Value="True">
                     <Setter Property="Tag" Value="GlowGreen" />
@@ -129,7 +130,6 @@
 
         <!-- 2. WIFI Tile Style -->
         <Style x:Key="WifiTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
-            <Setter Property="BorderThickness" Value="0,0,1,1" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsWifiPanel}" Value="True">
                     <Setter Property="Tag" Value="GlowGreen" />
@@ -139,7 +139,6 @@
 
         <!-- 3. Kill Net Tile Style -->
         <Style x:Key="KillNetTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
-            <Setter Property="BorderThickness" Value="0,0,1,1" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsKillNetPanel}" Value="True">
                     <Setter Property="Tag" Value="GlowRed" />
@@ -152,7 +151,6 @@
 
         <!-- 4. Speed Tile Style -->
         <Style x:Key="SpeedTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
-            <Setter Property="BorderThickness" Value="0,0,1,1" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsSpeedPanel}" Value="True">
                     <Setter Property="Tag" Value="GlowGreen" />
@@ -162,7 +160,6 @@
 
         <!-- 5. Hotspot Tile Style -->
         <Style x:Key="HotspotTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
-            <Setter Property="BorderThickness" Value="0,0,0,1" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsHotspotPanel}" Value="True">
                     <Setter Property="Tag" Value="GlowGreen" />
@@ -227,6 +224,7 @@
 
                 <!-- ==================== 2. WIFI TILE ==================== -->
                 <Button Grid.Column="1"
+                        Margin="-1,0,0,0"
                         Style="{StaticResource WifiTileStyle}"
                         Command="{Binding SelectPanelCommand}"
                         CommandParameter="Wifi"
@@ -253,6 +251,7 @@
 
                 <!-- ==================== 3. DISABLE INTERNET TILE ==================== -->
                 <Button Grid.Column="2"
+                        Margin="-1,0,0,0"
                         Style="{StaticResource KillNetTileStyle}"
                         Command="{Binding SelectPanelCommand}"
                         CommandParameter="KillNet"
@@ -279,6 +278,7 @@
 
                 <!-- ==================== 4. SPEED TILE ==================== -->
                 <Button Grid.Column="3"
+                        Margin="-1,0,0,0"
                         Style="{StaticResource SpeedTileStyle}"
                         Command="{Binding SelectPanelCommand}"
                         CommandParameter="Speed"
@@ -304,6 +304,7 @@
 
                 <!-- ==================== 5. HOTSPOT TILE ==================== -->
                 <Button Grid.Column="4"
+                        Margin="-1,0,0,0"
                         Style="{StaticResource HotspotTileStyle}"
                         Command="{Binding SelectPanelCommand}"
                         CommandParameter="Hotspot"
