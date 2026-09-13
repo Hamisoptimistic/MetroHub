@@ -173,3 +173,38 @@ public class LatencyMetrics
     };
 }
 
+public enum ConnectivityLevel
+{
+    None,
+    LocalAccess,
+    ConstrainedInternet,
+    InternetAccess
+}
+
+public class NetworkHealthStatus
+{
+    public ConnectivityLevel Connectivity { get; set; } = ConnectivityLevel.None;
+    public string ConnectivityLabel => Connectivity switch
+    {
+        ConnectivityLevel.InternetAccess => "Internet Access",
+        ConnectivityLevel.ConstrainedInternet => "Captive Portal (Login Required)",
+        ConnectivityLevel.LocalAccess => "Local Only (No Internet)",
+        _ => "Disconnected"
+    };
+
+    public string StatusBadgeColorHex => Connectivity switch
+    {
+        ConnectivityLevel.InternetAccess => "#28D77B",
+        ConnectivityLevel.ConstrainedInternet => "#FFB703",
+        ConnectivityLevel.LocalAccess => "#FB8500",
+        _ => "#FF4C4C"
+    };
+
+    public bool HasInternet => Connectivity == ConnectivityLevel.InternetAccess;
+    public bool HasDnsResolution { get; set; }
+    public double DnsResolutionTimeMs { get; set; }
+    public double PacketLossPercent { get; set; }
+    public long LatencyMs { get; set; }
+    public string HealthSummary { get; set; } = "Checking connectivity...";
+}
+
