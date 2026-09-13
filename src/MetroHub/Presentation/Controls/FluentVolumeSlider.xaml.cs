@@ -120,7 +120,7 @@ public partial class FluentVolumeSlider : UserControl
 
     private void UpdateVisuals()
     {
-        if (RootContainer == null || ProgressFill == null || SliderThumb == null) return;
+        if (RootContainer == null || ProgressClip == null || ThumbTranslate == null) return;
 
         double width = RootContainer.ActualWidth;
         if (width <= 0) return;
@@ -130,13 +130,13 @@ public partial class FluentVolumeSlider : UserControl
 
         double ratio = Math.Clamp((Value - Minimum) / range, 0.0, 1.0);
 
-        ProgressFill.Width = ratio * width;
+        ProgressClip.Rect = new Rect(0, -5, ratio * width, 24);
 
         double thumbWidth = SliderThumb.ActualWidth > 0 ? SliderThumb.ActualWidth : 5;
         double maxThumbLeft = Math.Max(0, width - thumbWidth);
         double thumbLeft = ratio * maxThumbLeft;
 
-        SliderThumb.Margin = new Thickness(thumbLeft, 0, 0, 0);
+        ThumbTranslate.X = thumbLeft;
     }
 
     private void UpdateValueFromPosition(Point pos)

@@ -20,8 +20,9 @@
         Topmost="True"
         FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
         FontSize="14"
-        TextOptions.TextFormattingMode="Ideal"
-        TextOptions.TextRenderingMode="Auto"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        RenderOptions.ClearTypeHint="Enabled"
         SnapsToDevicePixels="True"
         UseLayoutRounding="True"
         PreviewKeyDown="OnWindowPreviewKeyDown"
@@ -89,6 +90,8 @@
           RenderTransformOrigin="0.5, 0.5"
           UseLayoutRounding="True"
           SnapsToDevicePixels="True"
+          TextOptions.TextFormattingMode="Display"
+          TextOptions.TextRenderingMode="ClearType"
           PreviewMouseLeftButtonDown="OnCanvasPreviewMouseDown"
           PreviewMouseMove="OnCanvasPreviewMouseMove"
           PreviewMouseLeftButtonUp="OnCanvasPreviewMouseUp"
@@ -128,6 +131,7 @@
         <controls:SidebarRailControl x:Name="SidebarRail"
                                      Grid.Column="0"
                                      VerticalAlignment="Stretch"
+                                     Panel.ZIndex="2000"
                                      AppsToggleRequested="OnSidebarAppsToggleRequested" />
 
         <!-- Main Application Content Area (Header + Canvas + Footer) in Column 1 -->
@@ -402,7 +406,8 @@
                             CornerRadius="2"
                             BorderThickness="1.5"
                             BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
-                            Background="#3060CDFF">
+                            Background="#3060CDFF"
+                            CacheMode="BitmapCache">
                         <Border.Effect>
                             <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.6" Color="#60CDFF" />
                         </Border.Effect>
@@ -428,7 +433,8 @@
                             BorderThickness="1"
                             BorderBrush="#60CDFF"
                             Background="#1060CDFF"
-                            RenderTransformOrigin="0.5,0.5">
+                            RenderTransformOrigin="0.5,0.5"
+                            CacheMode="BitmapCache">
                         <Border.RenderTransform>
                             <TranslateTransform x:Name="GroupDropPerimeterTranslate" X="0" Y="0" />
                         </Border.RenderTransform>
@@ -449,7 +455,8 @@
                             BorderThickness="1.5"
                             BorderBrush="#FF4343"
                             Background="#22FF4343"
-                            IsHitTestVisible="False">
+                            IsHitTestVisible="False"
+                            CacheMode="BitmapCache">
                         <Border.Effect>
                             <DropShadowEffect x:Name="GapDropWarningGlow"
                                               BlurRadius="16"
@@ -466,7 +473,8 @@
                             Background="#F0202022"
                             BorderThickness="1"
                             BorderBrush="#25FFFFFF"
-                            Padding="10,6,12,6">
+                            Padding="10,6,12,6"
+                            CacheMode="BitmapCache">
                         <Border.Effect>
                             <DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.45" Direction="270" Color="#000000" />
                         </Border.Effect>
@@ -492,7 +500,8 @@
                             Visibility="Collapsed"
                             Height="3"
                             CornerRadius="1.5"
-                            Background="{DynamicResource SystemAccentColorPrimaryBrush}">
+                            Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                            CacheMode="BitmapCache">
                         <Border.Effect>
                             <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.8" Color="#60CDFF" />
                         </Border.Effect>
@@ -621,18 +630,20 @@
         </Grid>
         </Grid>
 
-        <!-- All Apps Slide-out Drawer Overlay (Overlays Canvas in Column 1) -->
-        <controls:AllAppsDrawerControl x:Name="AllAppsDrawer"
-                                       Grid.Column="1"
-                                       Grid.Row="0"
-                                       Grid.RowSpan="2"
-                                       HorizontalAlignment="Left"
-                                       VerticalAlignment="Stretch"
-                                       Panel.ZIndex="1500"
-                                       AppPinRequested="OnDrawerAppPinRequested"
-                                       AppLaunchRequested="OnDrawerAppLaunchRequested"
-                                       Opened="OnDrawerOpened"
-                                       Closing="OnDrawerClosing"
-                                       Closed="OnDrawerClosed" />
+        <!-- All Apps Slide-out Drawer Host (Clipped to Column 1 so it cannot bleed over Sidebar Rail) -->
+        <Grid Grid.Column="1"
+              Grid.Row="0"
+              Grid.RowSpan="2"
+              ClipToBounds="True"
+              Panel.ZIndex="1500">
+            <controls:AllAppsDrawerControl x:Name="AllAppsDrawer"
+                                           HorizontalAlignment="Left"
+                                           VerticalAlignment="Stretch"
+                                           AppPinRequested="OnDrawerAppPinRequested"
+                                           AppLaunchRequested="OnDrawerAppLaunchRequested"
+                                           Opened="OnDrawerOpened"
+                                           Closing="OnDrawerClosing"
+                                           Closed="OnDrawerClosed" />
+        </Grid>
     </Grid>
 </controls:BorderlessFluentWindow>

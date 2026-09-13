@@ -249,13 +249,6 @@
                             SnapsToDevicePixels="True"
                             UseLayoutRounding="True"
                             Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}">
-                        <Border.Effect>
-                            <DropShadowEffect BlurRadius="16"
-                                              ShadowDepth="3"
-                                              Direction="270"
-                                              Opacity="0.35"
-                                              Color="#000000" />
-                        </Border.Effect>
                         <Border.Background>
                             <ImageBrush ImageSource="{Binding Thumbnail}" Stretch="UniformToFill" />
                         </Border.Background>
@@ -484,21 +477,17 @@
                         CornerRadius="1.5"
                         SnapsToDevicePixels="True" />
 
-                <!-- 2. Elapsed Progress Fill Track: Luminous Accent Color Bar -->
+                <!-- 2. Elapsed Progress Fill Track: Accent Color Bar -->
                 <Border x:Name="SeekProgressFill"
                         Height="3"
-                        HorizontalAlignment="Left"
+                        HorizontalAlignment="Stretch"
                         VerticalAlignment="Center"
-                        Width="0"
                         Background="{Binding SeekbarBrush}"
                         CornerRadius="1.5"
                         SnapsToDevicePixels="True">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="6"
-                                          ShadowDepth="0"
-                                          Color="{Binding SeekbarGlowColor}"
-                                          Opacity="0.75" />
-                    </Border.Effect>
+                    <Border.Clip>
+                        <RectangleGeometry x:Name="SeekProgressClip" Rect="0,-5,0,14" />
+                    </Border.Clip>
                 </Border>
 
                 <!-- 3. Sleek Fluent Vertical Pill Thumb (Appears on Hover/Scrubbing) -->
@@ -516,14 +505,11 @@
                         IsHitTestVisible="False"
                         RenderTransformOrigin="0.5,0.5">
                     <Border.RenderTransform>
-                        <ScaleTransform x:Name="SeekThumbScale" ScaleX="0.6" ScaleY="0.7" />
+                        <TransformGroup>
+                            <ScaleTransform x:Name="SeekThumbScale" ScaleX="0.6" ScaleY="0.7" />
+                            <TranslateTransform x:Name="SeekThumbTranslate" X="0" />
+                        </TransformGroup>
                     </Border.RenderTransform>
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="10"
-                                          ShadowDepth="0"
-                                          Color="{Binding SeekbarGlowColor}"
-                                          Opacity="0.95" />
-                    </Border.Effect>
                 </Border>
             </Grid>
         </Grid>

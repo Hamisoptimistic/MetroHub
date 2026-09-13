@@ -129,7 +129,7 @@ public partial class PomodoroWidgetViewModel : WidgetViewModelBase
         UpdateVisualState();
         UpdateColorTheme();
 
-        _uiTimer = new DispatcherTimer(DispatcherPriority.Render)
+        _uiTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
             Interval = TimeSpan.FromMilliseconds(100)
         };

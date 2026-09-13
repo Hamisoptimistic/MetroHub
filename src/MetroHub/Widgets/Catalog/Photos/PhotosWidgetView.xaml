@@ -234,7 +234,8 @@
                         <Image x:Name="PhotoImageA"
                                Source="{Binding PhotoLayerA}"
                                RenderTransformOrigin="0.5,0.5"
-                               SnapsToDevicePixels="True">
+                               SnapsToDevicePixels="True"
+                               CacheMode="BitmapCache">
                             <Image.Style>
                                 <Style TargetType="Image">
                                     <Setter Property="Stretch" Value="UniformToFill" />
@@ -246,11 +247,6 @@
                                                 <Condition Binding="{Binding FitMode}" Value="FitWithBlur" />
                                             </MultiDataTrigger.Conditions>
                                             <Setter Property="Stretch" Value="Uniform" />
-                                            <Setter Property="Effect">
-                                                <Setter.Value>
-                                                    <DropShadowEffect BlurRadius="20" ShadowDepth="0" Color="Black" Opacity="0.65" />
-                                                </Setter.Value>
-                                            </Setter>
                                         </MultiDataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -298,7 +294,8 @@
                         <Image x:Name="PhotoImageB"
                                Source="{Binding PhotoLayerB}"
                                RenderTransformOrigin="0.5,0.5"
-                               SnapsToDevicePixels="True">
+                               SnapsToDevicePixels="True"
+                               CacheMode="BitmapCache">
                             <Image.Style>
                                 <Style TargetType="Image">
                                     <Setter Property="Stretch" Value="UniformToFill" />
@@ -310,11 +307,6 @@
                                                 <Condition Binding="{Binding FitMode}" Value="FitWithBlur" />
                                             </MultiDataTrigger.Conditions>
                                             <Setter Property="Stretch" Value="Uniform" />
-                                            <Setter Property="Effect">
-                                                <Setter.Value>
-                                                    <DropShadowEffect BlurRadius="20" ShadowDepth="0" Color="Black" Opacity="0.65" />
-                                                </Setter.Value>
-                                            </Setter>
                                         </MultiDataTrigger>
                                     </Style.Triggers>
                                 </Style>

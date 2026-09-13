@@ -101,14 +101,7 @@
                               StrokeThickness="6"
                               StrokeStartLineCap="Round"
                               StrokeEndLineCap="Round"
-                              SnapsToDevicePixels="True">
-                            <Path.Effect>
-                                <DropShadowEffect BlurRadius="8"
-                                                  ShadowDepth="0"
-                                                  Color="{Binding GlowColor}"
-                                                  Opacity="0.8" />
-                            </Path.Effect>
-                        </Path>
+                              SnapsToDevicePixels="True" />
 
                         <!-- Phase Icon in Center of Ring -->
                         <TextBlock Text="&#xE916;"
@@ -116,11 +109,7 @@
                                    FontSize="24"
                                    Foreground="{Binding GlowSolidBrush}"
                                    HorizontalAlignment="Center"
-                                   VerticalAlignment="Center">
-                            <TextBlock.Effect>
-                                <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="{Binding GlowColor}" Opacity="0.5" />
-                            </TextBlock.Effect>
-                        </TextBlock>
+                                   VerticalAlignment="Center" />
                     </Grid>
 
                     <!-- Right of Ring: Time, Phase & Transport Controls -->
@@ -272,14 +261,7 @@
                                       StrokeThickness="6"
                                       StrokeStartLineCap="Round"
                                       StrokeEndLineCap="Round"
-                                      SnapsToDevicePixels="True">
-                                    <Path.Effect>
-                                        <DropShadowEffect BlurRadius="10"
-                                                          ShadowDepth="0"
-                                                          Color="{Binding GlowColor}"
-                                                          Opacity="0.85" />
-                                    </Path.Effect>
-                                </Path>
+                                      SnapsToDevicePixels="True" />
 
                                 <!-- Center Icon / Status inside Hero Ring -->
                                 <TextBlock Text="&#xE916;"
@@ -287,11 +269,7 @@
                                            FontSize="28"
                                            Foreground="{Binding GlowSolidBrush}"
                                            HorizontalAlignment="Center"
-                                           VerticalAlignment="Center">
-                                    <TextBlock.Effect>
-                                        <DropShadowEffect BlurRadius="8" ShadowDepth="0" Color="{Binding GlowColor}" Opacity="0.6" />
-                                    </TextBlock.Effect>
-                                </TextBlock>
+                                           VerticalAlignment="Center" />
                             </Grid>
                         </Border>
                     </Grid>
@@ -429,18 +407,14 @@
                     <!-- 2. Elapsed Progress Fill Track: Luminous Glowing Fill in Phase Color -->
                     <Border x:Name="ProgressFill"
                             Height="2"
-                            HorizontalAlignment="Left"
+                            HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"
-                            Width="0"
                             Background="{Binding GlowSolidBrush}"
                             CornerRadius="1"
                             SnapsToDevicePixels="True">
-                        <Border.Effect>
-                            <DropShadowEffect BlurRadius="6"
-                                              ShadowDepth="0"
-                                              Color="{Binding GlowColor}"
-                                              Opacity="0.75" />
-                        </Border.Effect>
+                        <Border.Clip>
+                            <RectangleGeometry x:Name="ProgressClip" Rect="0,-5,0,12" />
+                        </Border.Clip>
                     </Border>
                 </Grid>
             </Grid>

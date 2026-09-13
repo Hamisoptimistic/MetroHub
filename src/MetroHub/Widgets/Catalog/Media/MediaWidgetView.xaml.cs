@@ -97,11 +97,17 @@ public partial class MediaWidgetView : UserControl
 
         ratio = Math.Clamp(ratio, 0.0, 1.0);
         double fillWidth = totalWidth * ratio;
-        SeekProgressFill.Width = fillWidth;
+        
+        if (SeekProgressClip != null)
+        {
+            SeekProgressClip.Rect = new Rect(0, -5, fillWidth, 24);
+        }
 
-        // Center 5px sleek vertical pill thumb on the progress edge
-        double thumbLeft = Math.Clamp(fillWidth - 2.5, 0, Math.Max(0, totalWidth - 5.0));
-        SeekThumb.Margin = new Thickness(thumbLeft, 0, 0, 0);
+        if (SeekThumbTranslate != null)
+        {
+            double thumbLeft = Math.Clamp(fillWidth - 2.5, 0, Math.Max(0, totalWidth - 5.0));
+            SeekThumbTranslate.X = thumbLeft;
+        }
     }
 
     private void Seekbar_SizeChanged(object sender, SizeChangedEventArgs e)

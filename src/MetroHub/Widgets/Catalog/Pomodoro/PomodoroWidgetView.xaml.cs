@@ -103,13 +103,13 @@ public partial class PomodoroWidgetView : UserControl
 
     private void UpdateProgressBar(double ratio)
     {
-        if (ProgressBarContainer == null || ProgressFill == null) return;
+        if (ProgressBarContainer == null || ProgressClip == null) return;
 
         double totalWidth = ProgressBarContainer.ActualWidth;
         if (totalWidth <= 0) return;
 
         ratio = Math.Clamp(ratio, 0.0, 1.0);
-        ProgressFill.Width = totalWidth * ratio;
+        ProgressClip.Rect = new Rect(0, -5, totalWidth * ratio, 12);
     }
 
     private void ProgressBarContainer_SizeChanged(object sender, SizeChangedEventArgs e)

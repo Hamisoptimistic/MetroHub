@@ -226,6 +226,7 @@ public partial class TileControl : UserControl
             Opacity = 0.45,
             Color = Colors.Black
         };
+        RootBorder.CacheMode = new BitmapCache();
         RootBorder.Effect = shadow;
     }
 
@@ -251,6 +252,7 @@ public partial class TileControl : UserControl
             TileScale.ScaleX = 1.0;
             TileScale.ScaleY = 1.0;
             RootBorder.Effect = null;
+            RootBorder.CacheMode = null;
             onCompleted?.Invoke();
         }
 

@@ -438,4 +438,81 @@ public static class NativeMethods
     public const uint WINEVENT_OUTOFCONTEXT = 0x0000;
 
     #endregion
+
+    #region Display Refresh Rate
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+    public struct DEVMODE
+    {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+        public string dmDeviceName;
+        public short dmSpecVersion;
+        public short dmDriverVersion;
+        public short dmSize;
+        public short dmDriverExtra;
+        public int dmFields;
+        public int dmPositionX;
+        public int dmPositionY;
+        public int dmDisplayOrientation;
+        public int dmDisplayFixedOutput;
+        public short dmColor;
+        public short dmDuplex;
+        public short dmYResolution;
+        public short dmTTOption;
+        public short dmCollate;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+        public string dmFormName;
+        public short dmLogPixels;
+        public short dmBitsPerPel;
+        public int dmPelsWidth;
+        public int dmPelsHeight;
+        public int dmDisplayFlags;
+        public int dmDisplayFrequency;
+        public int dmICMMethod;
+        public int dmICMIntent;
+        public int dmMediaType;
+        public int dmDitherType;
+        public int dmReserved1;
+        public int dmReserved2;
+        public int dmPanningWidth;
+        public int dmPanningHeight;
+    }
+
+    [DllImport("user32.dll", CharSet = CharSet.Ansi)]
+    public static extern bool EnumDisplaySettings(string? lpszDeviceName, int iModeNum, ref DEVMODE lpDevMode);
+
+    public const int ENUM_CURRENT_SETTINGS = -1;
+
+    private static int _cachedRefreshRate = 0;
+    private static DateTime _lastRefreshRateQuery = DateTime.MinValue;
+
+    public static int GetScreenRefreshRate()
+    {
+        if (_cachedRefreshRate > 0 && (DateTime.UtcNow - _lastRefreshRateQuery).TotalSeconds < 5)
+        {
+            return _cachedRefreshRate;
+        }
+
+        try
+        {
+            var devMode = new DEVMODE();
+            devMode.dmSize = (short)Marshal.SizeOf(typeof(DEVMODE));
+            if (EnumDisplaySettings(null, ENUM_CURRENT_SETTINGS, ref devMode))
+            {
+                if (devMode.dmDisplayFrequency >= 30 && devMode.dmDisplayFrequency <= 360)
+                {
+                    _cachedRefreshRate = devMode.dmDisplayFrequency;
+                    _lastRefreshRateQuery = DateTime.UtcNow;
+                    return _cachedRefreshRate;
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        return 60; // Safe fallback
+    }
+
+    #endregion
 }

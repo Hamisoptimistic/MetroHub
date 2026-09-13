@@ -43,18 +43,14 @@
         <!-- 3. Active Luminous Accent Progress Fill (3px tall) -->
         <Border x:Name="ProgressFill"
                 Height="3"
-                HorizontalAlignment="Left"
+                HorizontalAlignment="Stretch"
                 VerticalAlignment="Center"
-                Width="0"
                 Background="{DynamicResource SystemAccentColorPrimaryBrush}"
                 CornerRadius="1.5"
                 SnapsToDevicePixels="True">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="6"
-                                  ShadowDepth="0"
-                                  Color="{DynamicResource SystemAccentColor}"
-                                  Opacity="0.75" />
-            </Border.Effect>
+            <Border.Clip>
+                <RectangleGeometry x:Name="ProgressClip" Rect="0,-5,0,14" />
+            </Border.Clip>
         </Border>
 
         <!-- 4. Sleek Fluent Vertical Pill Thumb (5x14px, appears on hover/drag, matching Media Player) -->
@@ -72,14 +68,11 @@
                 IsHitTestVisible="False"
                 RenderTransformOrigin="0.5,0.5">
             <Border.RenderTransform>
-                <ScaleTransform x:Name="ThumbScale" ScaleX="0.6" ScaleY="0.7" />
+                <TransformGroup>
+                    <ScaleTransform x:Name="ThumbScale" ScaleX="0.6" ScaleY="0.7" />
+                    <TranslateTransform x:Name="ThumbTranslate" X="0" />
+                </TransformGroup>
             </Border.RenderTransform>
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="8"
-                                  ShadowDepth="0"
-                                  Color="{DynamicResource SystemAccentColor}"
-                                  Opacity="0.85" />
-            </Border.Effect>
         </Border>
 
     </Grid>

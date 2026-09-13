@@ -79,9 +79,9 @@ public partial class MainWindow : BorderlessFluentWindow
             UpdateLayoutMetrics();
             UpdateCanvasHeight();
             UpdateExposedAddSlots();
-            if (AllAppsDrawer != null && AllAppsDrawer.IsOpen && MainContentAreaGrid?.Clip is RectangleGeometry rg)
+            if (AllAppsDrawer != null && AllAppsDrawer.IsOpen && _canvasScissorTranslate != null)
             {
-                rg.Rect = new Rect(320, 0, 50000, 50000);
+                _canvasScissorTranslate.X = AllAppsDrawer.DrawerWidth;
             }
         };
 
@@ -804,6 +804,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 }
             }
 
+            Timeline.SetDesiredFrameRate(sb, NativeMethods.GetScreenRefreshRate());
             sb.Begin(this);
         }
         else
@@ -865,6 +866,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 }
             }
 
+            Timeline.SetDesiredFrameRate(sb, NativeMethods.GetScreenRefreshRate());
             sb.Completed += (s, e) =>
             {
                 Hide();
@@ -1020,7 +1022,18 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
             AllAppsDrawer.Close();
             SidebarRail?.SetAppsDrawerActive(false);
-            if (MainContentAreaGrid != null) MainContentAreaGrid.Clip = null;
+            if (MainContentAreaGrid != null)
+            {
+                MainContentAreaGrid.Clip = null;
+                MainContentAreaGrid.BeginAnimation(UIElement.OpacityProperty, null);
+                MainContentAreaGrid.Opacity = 1.0;
+            }
+            if (ContentScrollViewer != null) ContentScrollViewer.Clip = null;
+            if (FooterGrid != null)
+            {
+                FooterGrid.BeginAnimation(UIElement.OpacityProperty, null);
+                FooterGrid.Opacity = 1.0;
+            }
         }
         MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(false));
         DismissWithAnimation();
@@ -4969,6 +4982,9 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         }
     }
 
+    private RectangleGeometry? _canvasScissorGeom;
+    private TranslateTransform? _canvasScissorTranslate;
+
     private void OnSidebarAppsToggleRequested(object? sender, EventArgs e)
     {
         AllAppsDrawer?.Toggle();
@@ -4977,52 +4993,93 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     private void OnDrawerOpened(object? sender, EventArgs e)
     {
         SidebarRail?.SetAppsDrawerActive(true);
-        AnimateCanvasMask(true);
+        AnimateCanvasScissor(true);
     }
 
     private void OnDrawerClosing(object? sender, EventArgs e)
     {
         SidebarRail?.SetAppsDrawerActive(false);
-        AnimateCanvasMask(false);
+        AnimateCanvasScissor(false);
     }
 
     private void OnDrawerClosed(object? sender, EventArgs e)
     {
         SidebarRail?.SetAppsDrawerActive(false);
+        if (MainContentAreaGrid != null)
+        {
+            MainContentAreaGrid.Clip = null;
+            MainContentAreaGrid.BeginAnimation(UIElement.OpacityProperty, null);
+            MainContentAreaGrid.Opacity = 1.0;
+        }
+        if (ContentScrollViewer != null)
+        {
+            ContentScrollViewer.Clip = null;
+        }
+        if (_canvasScissorTranslate != null)
+        {
+            _canvasScissorTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+            _canvasScissorTranslate.X = 0;
+        }
     }
 
-    private void AnimateCanvasMask(bool drawerOpening)
+    private void AnimateCanvasScissor(bool drawerOpening)
     {
         if (MainContentAreaGrid == null) return;
 
-        double targetWidth = drawerOpening ? 320 : 0;
-        double fromWidth = drawerOpening ? 0 : 320;
+        double drawerWidth = AllAppsDrawer?.DrawerWidth ?? 320.0;
+        if (drawerWidth <= 0) drawerWidth = 320.0;
 
-        var areaGeom = new RectangleGeometry();
-        MainContentAreaGrid.Clip = areaGeom;
-
-        var areaAnim = new RectAnimation
+        if (_canvasScissorGeom == null || _canvasScissorTranslate == null)
         {
-            From = new Rect(fromWidth, 0, 50000, 50000),
-            To = new Rect(targetWidth, 0, 50000, 50000),
-            Duration = TimeSpan.FromMilliseconds(drawerOpening ? 220 : 180),
-            EasingFunction = drawerOpening
-                ? new CubicEase { EasingMode = EasingMode.EaseOut }
-                : new CubicEase { EasingMode = EasingMode.EaseIn }
+            _canvasScissorTranslate = new TranslateTransform(0, 0);
+            _canvasScissorGeom = new RectangleGeometry
+            {
+                Transform = _canvasScissorTranslate
+            };
+        }
+
+        double clipWidth = Math.Max(5000, (ActualWidth > 0 ? ActualWidth : 1920) + 1000);
+        double clipHeight = Math.Max(5000, (ActualHeight > 0 ? ActualHeight : 1080) + 1000);
+        _canvasScissorGeom.Rect = new Rect(0, 0, clipWidth, clipHeight);
+
+        MainContentAreaGrid.Clip = _canvasScissorGeom;
+
+        double fromX = drawerOpening ? 0 : (_canvasScissorTranslate.X > 0 ? _canvasScissorTranslate.X : drawerWidth);
+        double toX = drawerOpening ? drawerWidth : 0;
+        double durationMs = drawerOpening ? 220 : 180;
+        var easing = drawerOpening
+            ? (IEasingFunction)new CubicEase { EasingMode = EasingMode.EaseOut }
+            : (IEasingFunction)new CubicEase { EasingMode = EasingMode.EaseIn };
+
+        var anim = new DoubleAnimation
+        {
+            From = fromX,
+            To = toX,
+            Duration = TimeSpan.FromMilliseconds(durationMs),
+            EasingFunction = easing
         };
+
+        int refreshRate = NativeMethods.GetScreenRefreshRate();
+        Timeline.SetDesiredFrameRate(anim, refreshRate > 0 ? refreshRate : 100);
 
         if (!drawerOpening)
         {
-            areaAnim.Completed += (s, e) =>
+            anim.Completed += (s, e) =>
             {
                 if (AllAppsDrawer == null || !AllAppsDrawer.IsOpen)
                 {
-                    MainContentAreaGrid.Clip = null;
+                    if (MainContentAreaGrid != null) MainContentAreaGrid.Clip = null;
+                    if (ContentScrollViewer != null) ContentScrollViewer.Clip = null;
+                    if (_canvasScissorTranslate != null)
+                    {
+                        _canvasScissorTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+                        _canvasScissorTranslate.X = 0;
+                    }
                 }
             };
         }
 
-        areaGeom.BeginAnimation(RectangleGeometry.RectProperty, areaAnim);
+        _canvasScissorTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
     }
 
     private void OnDrawerAppPinRequested(object? sender, CatalogItemModel item)

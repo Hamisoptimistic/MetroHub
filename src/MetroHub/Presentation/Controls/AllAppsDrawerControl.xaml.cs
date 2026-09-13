@@ -29,6 +29,8 @@ namespace MetroHub.Presentation.Controls
 
         public bool IsOpen { get; private set; } = false;
 
+        public double DrawerWidth => ActualWidth > 0 ? ActualWidth : (Width > 0 && !double.IsNaN(Width) ? Width : 320);
+
         private List<CatalogItemModel> _allApps = new();
         private Point _dragStartPoint;
         private CatalogItemModel? _draggedItem;
@@ -40,6 +42,13 @@ namespace MetroHub.Presentation.Controls
         {
             InitializeComponent();
             Visibility = Visibility.Collapsed;
+            Loaded += (s, e) =>
+            {
+                if (!IsOpen)
+                {
+                    DrawerTranslate.X = -DrawerWidth;
+                }
+            };
         }
 
         public void Open()
@@ -48,28 +57,47 @@ namespace MetroHub.Presentation.Controls
 
             IsOpen = true;
             Visibility = Visibility.Visible;
-            Opened?.Invoke(this, EventArgs.Empty);
 
             if (!_isAppsLoaded || _allApps.Count == 0)
             {
                 LoadApps();
             }
 
-            // Animate smooth slide in
+            double slideWidth = DrawerWidth;
+            double startX = DrawerTranslate.X;
+            if (Math.Abs(startX) < 0.001)
+            {
+                startX = -slideWidth;
+                DrawerTranslate.X = startX;
+            }
+
+            int refreshRate = NativeMethods.GetScreenRefreshRate();
+            if (refreshRate <= 0) refreshRate = 100;
+
+            // GPU Hardware Texture Cache: bakes the drawer once into a GPU surface for silky 100 FPS slide
+            CacheMode = new BitmapCache { RenderAtScale = 1.0, SnapsToDevicePixels = true };
+
+            // Fire event so scissor clip is launched in exact frame synchronization
+            Opened?.Invoke(this, EventArgs.Empty);
+
+            // Animate smooth GPU slide in
             var anim = new DoubleAnimation
             {
-                From = DrawerTranslate.X,
+                From = startX,
                 To = 0,
                 Duration = TimeSpan.FromMilliseconds(220),
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
-            DrawerTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
+            Timeline.SetDesiredFrameRate(anim, refreshRate);
 
-            // Focus search box smoothly when opening
-            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
+            anim.Completed += (s, e) =>
             {
+                // Restore live ClearType rendering after slide finishes
+                CacheMode = null;
                 SearchBox.Focus();
-            }));
+            };
+
+            DrawerTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
         }
 
         public void Close()
@@ -77,24 +105,34 @@ namespace MetroHub.Presentation.Controls
             if (!IsOpen && Visibility != Visibility.Visible) return;
 
             IsOpen = false;
-            Closing?.Invoke(this, EventArgs.Empty);
-            Closed?.Invoke(this, EventArgs.Empty);
+            double slideWidth = DrawerWidth;
 
-            // Animate smooth slide out
+            int refreshRate = NativeMethods.GetScreenRefreshRate();
+            if (refreshRate <= 0) refreshRate = 100;
+
+            // GPU Hardware Texture Cache during slide out
+            CacheMode = new BitmapCache { RenderAtScale = 1.0, SnapsToDevicePixels = true };
+
+            Closing?.Invoke(this, EventArgs.Empty);
+
+            // Animate smooth GPU slide out
             var anim = new DoubleAnimation
             {
                 From = DrawerTranslate.X,
-                To = -320,
+                To = -slideWidth,
                 Duration = TimeSpan.FromMilliseconds(180),
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
             };
+            Timeline.SetDesiredFrameRate(anim, refreshRate);
 
             anim.Completed += (s, e) =>
             {
+                CacheMode = null;
                 if (!IsOpen)
                 {
                     Visibility = Visibility.Collapsed;
                     ClearSearch();
+                    Closed?.Invoke(this, EventArgs.Empty);
                 }
             };
             DrawerTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
