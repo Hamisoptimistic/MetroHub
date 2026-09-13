@@ -78,6 +78,21 @@ public partial class NotepadWidgetView : UserControl
                 }
             }
         }
+        else if (e.Key == Key.Tab)
+        {
+            if (DataContext is NotepadWidgetViewModel vm)
+            {
+                int caret = NotesEditorTextBox.SelectionStart;
+                int len = NotesEditorTextBox.SelectionLength;
+                bool isShift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+                if (vm.HandleTabKeyPress(ref caret, ref len, isShift))
+                {
+                    e.Handled = true;
+                    NotesEditorTextBox.Focus();
+                    NotesEditorTextBox.Select(Math.Clamp(caret, 0, NotesEditorTextBox.Text.Length), len);
+                }
+            }
+        }
     }
 
     private void NotesEditorTextBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)

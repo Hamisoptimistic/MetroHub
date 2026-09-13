@@ -384,38 +384,55 @@ public partial class NotepadWidgetViewModel : WidgetViewModelBase
         string lineBeforeCaret = text.Substring(lineStart, caret - lineStart);
 
         // Check if line before caret is a bullet item
-        var bulletMatch = Regex.Match(lineBeforeCaret, @"^(\s*)([●•\-\*])\s*(.*)$");
+        var bulletMatch = Regex.Match(lineBeforeCaret, @"^(\s*)([●•\-\*○■▪])\s*(.*)$");
         if (bulletMatch.Success)
         {
             string indent = bulletMatch.Groups[1].Value;
+            string symbol = bulletMatch.Groups[2].Value;
             string content = bulletMatch.Groups[3].Value;
 
             if (string.IsNullOrWhiteSpace(content))
             {
-                // Empty bullet line -> user pressed Enter on an empty bullet: erase bullet and exit list mode
-                int removeStart = lineStart;
-                int removeLength = caret - lineStart;
-                if (removeStart > 0 && text[removeStart - 1] == '\n')
+                // If line has indentation, outdent one level (4 spaces) rather than exiting completely
+                if (indent.Length >= 4)
                 {
-                    removeStart--;
-                    removeLength++;
-                    if (removeStart > 0 && text[removeStart - 1] == '\r')
+                    string newIndent = indent.Substring(4);
+                    string newSymbol = newIndent.Length >= 4 ? "○ " : "● ";
+                    string newBulletLine = newIndent + newSymbol;
+                    int removeStart = lineStart;
+                    int removeLength = caret - lineStart;
+                    string newText = text.Remove(removeStart, removeLength).Insert(removeStart, newBulletLine);
+                    NoteText = newText;
+                    caretIndex = removeStart + newBulletLine.Length;
+                    return true;
+                }
+                else
+                {
+                    // Level-0 bullet -> erase bullet and exit list mode
+                    int removeStart = lineStart;
+                    int removeLength = caret - lineStart;
+                    if (removeStart > 0 && text[removeStart - 1] == '\n')
                     {
                         removeStart--;
                         removeLength++;
+                        if (removeStart > 0 && text[removeStart - 1] == '\r')
+                        {
+                            removeStart--;
+                            removeLength++;
+                        }
                     }
-                }
 
-                string newText = text.Remove(removeStart, removeLength);
-                NoteText = newText;
-                caretIndex = removeStart;
-                ActiveListType = "None";
-                return true;
+                    string newText = text.Remove(removeStart, removeLength);
+                    NoteText = newText;
+                    caretIndex = removeStart;
+                    ActiveListType = "None";
+                    return true;
+                }
             }
             else
             {
-                // Auto-continue bullet on next line
-                string insert = "\n" + indent + "● ";
+                // Auto-continue bullet on next line with matching indent and symbol
+                string insert = "\n" + indent + symbol + " ";
                 string newText = text.Insert(caret, insert);
                 NoteText = newText;
                 caretIndex = caret + insert.Length;
@@ -434,25 +451,40 @@ public partial class NotepadWidgetViewModel : WidgetViewModelBase
 
             if (string.IsNullOrWhiteSpace(content))
             {
-                // Empty numbered line -> erase number and exit list mode
-                int removeStart = lineStart;
-                int removeLength = caret - lineStart;
-                if (removeStart > 0 && text[removeStart - 1] == '\n')
+                // If line has indentation, outdent one level
+                if (indent.Length >= 4)
                 {
-                    removeStart--;
-                    removeLength++;
-                    if (removeStart > 0 && text[removeStart - 1] == '\r')
+                    string newIndent = indent.Substring(4);
+                    string newNumberLine = newIndent + "1. ";
+                    int removeStart = lineStart;
+                    int removeLength = caret - lineStart;
+                    string newText = text.Remove(removeStart, removeLength).Insert(removeStart, newNumberLine);
+                    NoteText = newText;
+                    caretIndex = removeStart + newNumberLine.Length;
+                    return true;
+                }
+                else
+                {
+                    // Empty numbered line -> erase number and exit list mode
+                    int removeStart = lineStart;
+                    int removeLength = caret - lineStart;
+                    if (removeStart > 0 && text[removeStart - 1] == '\n')
                     {
                         removeStart--;
                         removeLength++;
+                        if (removeStart > 0 && text[removeStart - 1] == '\r')
+                        {
+                            removeStart--;
+                            removeLength++;
+                        }
                     }
-                }
 
-                string newText = text.Remove(removeStart, removeLength);
-                NoteText = newText;
-                caretIndex = removeStart;
-                ActiveListType = "None";
-                return true;
+                    string newText = text.Remove(removeStart, removeLength);
+                    NoteText = newText;
+                    caretIndex = removeStart;
+                    ActiveListType = "None";
+                    return true;
+                }
             }
             else
             {
@@ -489,6 +521,144 @@ public partial class NotepadWidgetViewModel : WidgetViewModelBase
     }
 
     /// <summary>
+    /// Handles Tab (indent) and Shift+Tab (outdent) for lists and text.
+    /// Supports single-line and multi-line selections.
+    /// Updates nested bullet markers (● -> ○ -> ▪) and resets sub-numbers appropriately.
+    /// </summary>
+    public bool HandleTabKeyPress(ref int caretIndex, ref int selectionLength, bool isShiftTab)
+    {
+        string text = NoteText ?? string.Empty;
+        int selStart = Math.Clamp(caretIndex, 0, text.Length);
+        int selLen = Math.Clamp(selectionLength, 0, text.Length - selStart);
+        int selEnd = selStart + selLen;
+
+        // Find the start of the first line
+        int firstLineStart = selStart > 0 ? text.LastIndexOf('\n', selStart - 1) + 1 : 0;
+
+        // Find the end of the last line
+        int lastLineEnd;
+        if (selLen > 0 && selEnd > firstLineStart && text[selEnd - 1] == '\n')
+        {
+            lastLineEnd = selEnd - 1;
+            if (lastLineEnd > 0 && text[lastLineEnd - 1] == '\r')
+                lastLineEnd--;
+        }
+        else
+        {
+            lastLineEnd = text.IndexOf('\n', selEnd);
+            if (lastLineEnd == -1) lastLineEnd = text.Length;
+        }
+
+        if (lastLineEnd < firstLineStart) lastLineEnd = firstLineStart;
+
+        string rangeText = text.Substring(firstLineStart, lastLineEnd - firstLineStart);
+        string[] lines = rangeText.Split('\n');
+        var newLines = new List<string>();
+        int firstLineDelta = 0;
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string rawLine = lines[i];
+            bool hasCarriageReturn = rawLine.EndsWith('\r');
+            string line = hasCarriageReturn ? rawLine.Substring(0, rawLine.Length - 1) : rawLine;
+
+            string transformedLine;
+            int delta;
+
+            if (!isShiftTab)
+            {
+                // INDENT (Tab)
+                var bulletMatch = Regex.Match(line, @"^(\s*)([●•\-\*○■▪])\s*(.*)$");
+                if (bulletMatch.Success)
+                {
+                    string indent = bulletMatch.Groups[1].Value + "    ";
+                    string content = bulletMatch.Groups[3].Value;
+                    string symbol = indent.Length >= 8 ? "▪ " : "○ ";
+                    transformedLine = indent + symbol + content;
+                    delta = transformedLine.Length - line.Length;
+                }
+                else
+                {
+                    var numMatch = Regex.Match(line, @"^(\s*)(\d+)\.\s*(.*)$");
+                    if (numMatch.Success)
+                    {
+                        string indent = numMatch.Groups[1].Value + "    ";
+                        string content = numMatch.Groups[3].Value;
+                        transformedLine = indent + "1. " + content;
+                        delta = transformedLine.Length - line.Length;
+                    }
+                    else
+                    {
+                        transformedLine = "    " + line;
+                        delta = 4;
+                    }
+                }
+            }
+            else
+            {
+                // OUTDENT (Shift + Tab)
+                var bulletMatch = Regex.Match(line, @"^(\s*)([●•\-\*○■▪])\s*(.*)$");
+                if (bulletMatch.Success)
+                {
+                    string oldIndent = bulletMatch.Groups[1].Value;
+                    int spacesToRemove = Math.Min(4, oldIndent.Length);
+                    string newIndent = oldIndent.Substring(spacesToRemove);
+                    string content = bulletMatch.Groups[3].Value;
+                    string symbol = newIndent.Length >= 8 ? "▪ " : (newIndent.Length >= 4 ? "○ " : "● ");
+                    transformedLine = newIndent + symbol + content;
+                    delta = transformedLine.Length - line.Length;
+                }
+                else
+                {
+                    var numMatch = Regex.Match(line, @"^(\s*)(\d+)\.\s*(.*)$");
+                    if (numMatch.Success)
+                    {
+                        string oldIndent = numMatch.Groups[1].Value;
+                        int spacesToRemove = Math.Min(4, oldIndent.Length);
+                        string newIndent = oldIndent.Substring(spacesToRemove);
+                        string content = numMatch.Groups[3].Value;
+                        transformedLine = newIndent + numMatch.Groups[2].Value + ". " + content;
+                        delta = transformedLine.Length - line.Length;
+                    }
+                    else
+                    {
+                        int spacesToRemove = 0;
+                        if (line.StartsWith("    ")) spacesToRemove = 4;
+                        else if (line.StartsWith("\t")) spacesToRemove = 1;
+                        else
+                        {
+                            while (spacesToRemove < line.Length && line[spacesToRemove] == ' ' && spacesToRemove < 4)
+                                spacesToRemove++;
+                        }
+                        transformedLine = line.Substring(spacesToRemove);
+                        delta = -spacesToRemove;
+                    }
+                }
+            }
+
+            if (i == 0) firstLineDelta = delta;
+            newLines.Add(hasCarriageReturn ? transformedLine + "\r" : transformedLine);
+        }
+
+        string replacementBlock = string.Join("\n", newLines);
+        string newFullText = text.Substring(0, firstLineStart) + replacementBlock + text.Substring(lastLineEnd);
+        NoteText = newFullText;
+
+        if (selLen == 0)
+        {
+            caretIndex = Math.Clamp(selStart + firstLineDelta, firstLineStart, firstLineStart + replacementBlock.Length);
+            selectionLength = 0;
+        }
+        else
+        {
+            caretIndex = firstLineStart;
+            selectionLength = replacementBlock.Length;
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Transforms the current line or selected lines to Bullet or Numbered list.
     /// Replaces any existing list prefixes cleanly without appending or duplicating.
     /// Toggles the formatting off if the target format is already active on the line(s).
@@ -509,8 +679,8 @@ public partial class NotepadWidgetViewModel : WidgetViewModelBase
         string rangeText = text.Substring(firstLineStart, lastLineEnd - firstLineStart);
         string[] lines = rangeText.Split('\n');
 
-        // Regex for stripping list prefixes: bullets (●, •, -, *) or numbered items (1., 2., etc.)
-        var prefixRegex = new Regex(@"^(\s*)([●•\-\*]|\d+\.)\s*");
+        // Regex for stripping list prefixes: bullets (●, •, -, *, ○, ■, ▪) or numbered items (1., 2., etc.)
+        var prefixRegex = new Regex(@"^(\s*)([●•\-\*○■▪]|\d+\.)\s*");
 
         // Check if all non-empty lines already have the target format
         bool allAlreadyHaveTarget = true;
@@ -523,7 +693,7 @@ public partial class NotepadWidgetViewModel : WidgetViewModelBase
 
             if (targetType == "Bullet")
             {
-                if (!Regex.IsMatch(trimmedLine, @"^\s*[●•\-\*]\s+"))
+                if (!Regex.IsMatch(trimmedLine, @"^\s*[●•\-\*○■▪]\s+"))
                 {
                     allAlreadyHaveTarget = false;
                     break;
