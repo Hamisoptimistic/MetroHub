@@ -85,6 +85,39 @@ MetroHub rests quietly in the Windows system tray when closed.
   - Readouts (such as track playback time `TimeDisplayString`) must be hosted in a container with `Height="28"` and `VerticalAlignment="Center"` to match the exact 28px height footprint and vertical center axis of the transport buttons.
   - Typography: `FontSize="13"`, `FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"`, `Foreground="#D0FFFFFF"`.
 
+- **Universal Edge-to-Edge Separator & Progress Divider Standard:**
+  - Separators between Row 0 (content) and Row 1 (docked bar) **MUST AUTOMATICALLY** use an edge-to-edge 2px hairline hosted in a centered 14px container (`Margin="0,-7,0,0"` on `Grid.Row="1"`):
+    ```xml
+    <!-- Universal Fluent Edge-to-Edge Hairline Divider -->
+    <Grid Grid.Row="1"
+          VerticalAlignment="Top"
+          Height="14"
+          Margin="0,-7,0,0"
+          Background="Transparent"
+          SnapsToDevicePixels="True">
+        <Border Height="2"
+                VerticalAlignment="Center"
+                Background="#14FFFFFF"
+                CornerRadius="1"
+                SnapsToDevicePixels="True" />
+    </Grid>
+    ```
+  - **Subpixel Centering Rationale:** The 14px container with `Margin="0,-7,0,0"` centers the 2px line at $Y = 0$ (the boundary line between Row 0 and Row 1). It also provides a generous 14px hit-test target for interactive seekbars/progress scrubbers without altering the 2px visual footprint.
+  - **Progress / Seekbar Dynamic Dividers:**
+    - Background Track: `Height="2"`, `CornerRadius="1"`, `Background="#14FFFFFF"`, `VerticalAlignment="Center"`.
+    - Elapsed Fill: `Border` `Height="2"`, `CornerRadius="1"`, `Background="{Binding AccentBrush}"`, dynamically clipped via `RectangleGeometry`.
+    - Scrubbing Pill Thumb: `Width="4"`, `Height="12"`, `CornerRadius="2"`, `Background="#FFFFFF"`, `BorderThickness="1"`, fades in to `Opacity="1"` on hover/drag.
+  - **Dedicated Grid Row Separators (Top Toolbars, e.g. Notepad):**
+    - `Border Grid.Row="1"` with `Height="2"`, `CornerRadius="1"`, `Background="#14FFFFFF"`, `HorizontalAlignment="Stretch"`, `Margin="0"`.
+  - **Vertical Toolbar Dividers:** `Border Width="1"`, `Height="16"`, `Background="#1FFFFFFF"`, `Margin="6,0"`.
+  - **Context Menu Separators:** Handled globally by `App.xaml` template (`Height="1"`, `Margin="8,3,8,3"`, `Background="#1FFFFFFF"`).
+  - **Mandatory Anti-Patterns (NEVER DO THIS):**
+    1. **NEVER** use WPF's default `<Separator />` inside widget surfaces.
+    2. **NEVER** set `BorderThickness="0,1,0,0"` on `<Border Grid.Row="1">`.
+    3. **NEVER** use opaque grey hex codes (`#333333`, `#444444`, etc.); always use `#14FFFFFF` (~8% white) to blend with Mica/Acrylic.
+    4. **NEVER** indent horizontal separators; they must run 100% seamlessly edge-to-edge across the entire tile width (`Margin="0"`).
+    5. **NEVER** show separators in 1-row compact mode (`SpanY <= 1`) — collapse them along with the docked tier.
+
 - **Context Menu Purity:**
   - Widget right-click context menus must stay clean and minimal (Resize, Add to Group, Unpin).
   - Do NOT clutter menus with redundant "Effects" submenus or decorative toggles. Keep controls direct, sleek, and functional.

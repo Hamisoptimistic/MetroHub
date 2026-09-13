@@ -17,6 +17,7 @@ Today `TileControl.xaml` is one monolithic `UserControl`. The background fill is
 ### 0.2 Build one shared `WidgetCard` shell style [NEW]
 Without this, every widget author freelances their own border radius, background, padding — visual drift within a few widgets. Build a single reusable style/base template (dark card, hairline border, consistent corner radius, consistent internal padding) that every widget `DataTemplate` wraps its content in. Individual widgets only ever supply *interior* content, never re-define the card chrome.
 - **Definition of done:** Clock and one other stub widget both visually share identical card chrome despite different interior content.
+- **Mandatory Grid & Separator Standards:** Interior layout for all multi-tier widgets must automatically conform to the 20px symmetrical grid system and the edge-to-edge 2px `#14FFFFFF` hairline divider standard (see [DESIGN_SYSTEM.md](file:///d:/MetroHub/.agents/rules/DESIGN_SYSTEM.md) Section 9 & 15, and [WIDGET_LIFECYCLE_STANDARDS.md](file:///d:/MetroHub/.agents/rules/WIDGET_LIFECYCLE_STANDARDS.md) Section 6).
 
 ### 0.3 Generalize the resize system [NEW]
 Today's resize menu is three hardcoded items — `OnResizeSmallClick`/`OnResizeMediumClick`/`OnResizeWideClick` — each a fixed literal size. `SpanX`/`SpanY` on `TileModel` are already free-form ints (no model change needed), but there's no mechanism for a tile/widget to declare *which* sizes it supports.

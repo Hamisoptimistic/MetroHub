@@ -136,19 +136,52 @@ MetroHub uses Windows 11's **Segoe UI Variable** type ramp with ClearType render
 
 ---
 
-## 9. Widget Edge-to-Edge Hairline Dividers & Docked Containers
+## 9. Universal Separator & Hairline Divider System
 
-MetroHub widgets with multi-tier sections (such as Focus Timer and Volume Widget) must use the standardized edge-to-edge hairline separator and docked bottom container pattern:
+> **COMPULSORY ARCHITECTURAL CONTRACT**: Every current and future widget in MetroHub **MUST AUTOMATICALLY ADHERE** to these separator specifications. Never freelance separator styling, colors, thicknesses, or container placements.
 
-### 9.1 Docked Container Specification
-- **Row Grid Assignment:** `Grid.Row="1"`
-- **Background Fill:** `#14000000` (~8% black tint)
-- **Border:** `BorderThickness="0"` (Never draw top border directly on the container to avoid WPF subpixel arc/border rendering artifacts)
-- **Corner Radius:** `CornerRadius="0,0,2,2"` (Blends with tile's bottom 2px corners)
-- **Padding:** `Padding="20,0,20,0"` (Universal 20px horizontal gutter; see Section 15 for full alignment contract)
+### 9.1 Universal Separator Specification Matrix
 
-### 9.2 Edge-to-Edge Hairline Divider Track
-The divider runs completely edge-to-edge with subpixel centering on the row boundary:
+| Separator Type | Element & Geometry | Color / Brush | Position & Centering | Margin / Span |
+| :--- | :--- | :--- | :--- | :--- |
+| **Docked Tier Divider (Static)** | `Border` (`Height="2"`, `CornerRadius="1"`) | `#14FFFFFF` (~8% White) | Inside 14px container (`Grid.Row="1"`, `Margin="0,-7,0,0"`, `VerticalAlignment="Top"`) | Full Edge-to-Edge (`Margin="0"`) |
+| **Docked Tier Divider (Progress/Seekbar)** | Track: `Height="2"`, `#14FFFFFF`<br/>Fill: `Height="2"`, `{Binding AccentBrush}`<br/>Thumb: `4x12px`, `CornerRadius="2"` | Background: `#14FFFFFF`<br/>Fill: Accent<br/>Thumb: `#FFFFFF` | Inside 14px container (`Grid.Row="1"`, `Margin="0,-7,0,0"`, `VerticalAlignment="Top"`) | Full Edge-to-Edge (`Margin="0"`) |
+| **Dedicated Grid Row Separator** | `Border` (`Height="2"`, `CornerRadius="1"`) | `#14FFFFFF` (~8% White) | Standalone `<RowDefinition Height="Auto" />` between content tiers | Full Edge-to-Edge (`Margin="0"`) |
+| **Vertical Toolbar / Button Divider** | `Border` (`Width="1"`, `Height="16"`) | `#1FFFFFFF` (~12% White) | `VerticalAlignment="Center"`, centered between button groups | `Margin="6,0"` |
+| **Context Menu Separator** | Global `<Separator />` template | `#1FFFFFFF` (~12% White) | `Height="1"`, `SnapsToDevicePixels="True"` | `Margin="8,3,8,3"` |
+
+---
+
+### 9.2 Docked Bottom Tier Layout & Boundary Specification
+Widgets with multi-tier sections (such as Focus Timer, Media Player, and Volume Widget) must use the standardized docked bottom container pattern:
+- **Grid Row Definitions**:
+  ```xml
+  <Grid.RowDefinitions>
+      <!-- Row 0: Top Primary Content / Hero Tier -->
+      <RowDefinition Height="*" />
+      <!-- Row 1: Bottom Docked Controls / Transport Tier -->
+      <RowDefinition Height="Auto" />
+  </Grid.RowDefinitions>
+  ```
+- **Docked Container Styling**:
+  ```xml
+  <Border Grid.Row="1"
+          Background="#14000000"
+          BorderThickness="0"
+          CornerRadius="0,0,2,2"
+          SnapsToDevicePixels="True"
+          Padding="20,0,20,0">
+  ```
+- **Key Rules**:
+  - `Background="#14000000"` (~8% black tint) gives subtle depth over Mica/Acrylic.
+  - `BorderThickness="0"` is **mandatory**: Never set `BorderThickness="0,1,0,0"` on the docked container.
+  - `CornerRadius="0,0,2,2"` matches the tile's bottom rounded corners.
+  - `Padding="20,0,20,0"` establishes the universal 20px horizontal alignment gutter.
+
+---
+
+### 9.3 Horizontal Edge-to-Edge Static Hairline Divider (The Golden Standard)
+For widgets requiring a clean visual boundary separation between top content and bottom controls:
 ```xml
 <Grid Grid.Row="1"
       VerticalAlignment="Top"
@@ -163,8 +196,143 @@ The divider runs completely edge-to-edge with subpixel centering on the row boun
             SnapsToDevicePixels="True" />
 </Grid>
 ```
-- **Track Height & Geometry:** `Height="2"`, `CornerRadius="1"`, `Background="#14FFFFFF"` (~8% white).
-- **Subpixel Centering:** The 14px container with `Margin="0,-7,0,0"` places the vertical center exactly at Y=0 (the boundary between Row 0 and Row 1).
+- **Geometry**: `Height="2"`, `CornerRadius="1"` (creates a sleek subpixel hairline with soft rounded ends).
+- **Color**: `#14FFFFFF` (~8% opacity translucent white). Never use solid grey or opaque brushes.
+- **Subpixel Centering Math**:
+  - The outer `Grid` has `Height="14"` and `VerticalAlignment="Top"`.
+  - Setting `Margin="0,-7,0,0"` offsets the container upward by half its height ($14 / 2 = 7\text{px}$).
+  - The inner `Border` with `VerticalAlignment="Center"` and `Height="2"` is centered at $Y = 7\text{px}$ within the container.
+  - With the -7px offset, the 2px hairline's vertical center lands at **precisely $Y = 0\text{px}$** (the exact mathematical seam between Row 0 and Row 1). 1px rests in Row 0, and 1px rests in Row 1.
+- **Edge-to-Edge Span**: Must span the entire width of the card (`Margin="0"` left and right, `HorizontalAlignment="Stretch"`). Never indent horizontal dividers.
+
+---
+
+### 9.4 Horizontal Edge-to-Edge Dynamic Progress / Seekbar Separator
+For widgets that display elapsed progress or allow scrubbing (such as Focus Timer and Media Player):
+```xml
+<!-- Edge-to-Edge Hairline Progress / Seekbar running along Row 1 top boundary -->
+<Grid Grid.Row="1"
+      VerticalAlignment="Top"
+      Height="14"
+      Margin="0,-7,0,0"
+      Background="Transparent"
+      Cursor="Hand"
+      Tag="InteractiveControl"
+      SnapsToDevicePixels="True">
+
+    <!-- 1. Background Hairline Track (Universal Fluent #14FFFFFF) -->
+    <Border Height="2"
+            VerticalAlignment="Center"
+            Background="#14FFFFFF"
+            CornerRadius="1"
+            SnapsToDevicePixels="True" />
+
+    <!-- 2. Elapsed Progress / Seek Fill: Accent Color Bar -->
+    <Border Height="2"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Center"
+            Background="{Binding AccentOrSeekbarBrush}"
+            CornerRadius="1"
+            SnapsToDevicePixels="True">
+        <Border.Clip>
+            <!-- Clipped dynamically in code-behind / SizeChanged -->
+            <RectangleGeometry Rect="0,-5,0,14" />
+        </Border.Clip>
+    </Border>
+
+    <!-- 3. Scrubbing Pill Thumb (Appears on Hover/Drag) -->
+    <Border Width="4"
+            Height="12"
+            CornerRadius="2"
+            Background="#FFFFFF"
+            BorderBrush="{Binding AccentOrSeekbarBrush}"
+            BorderThickness="1"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Center"
+            Opacity="0"
+            SnapsToDevicePixels="True"
+            IsHitTestVisible="False" />
+</Grid>
+```
+- **Hit-Test Ergonomics**: The 14px container (`Height="14"`, `Background="Transparent"`, `Tag="InteractiveControl"`, `Cursor="Hand"`) provides a generous 14px click/scrub hit-target while maintaining an ultra-sleek 2px visual footprint. Users never have to hunt for a 2px sliver.
+- **Track & Fill**: Both the background track and progress fill are `Height="2"` with `CornerRadius="1"`.
+- **Pill Thumb**: `Width="4"`, `Height="12"`, `CornerRadius="2"`, `Background="#FFFFFF"`. Smoothly transitions to `Opacity="1"` on mouse hover or drag.
+
+---
+
+### 9.5 Dedicated Grid Row Separator (Top Toolbars & Multi-Tier Content)
+When a widget features a top-mounted toolbar (e.g. Notepad / Notes) where the divider sits between Row 0 (toolbar) and Row 2 (editor/canvas):
+```xml
+<Grid.RowDefinitions>
+    <RowDefinition Height="Auto" />  <!-- Row 0: Top Toolbar -->
+    <RowDefinition Height="Auto" />  <!-- Row 1: Dedicated Separator Row -->
+    <RowDefinition Height="*" />     <!-- Row 2: Main Content Area -->
+</Grid.RowDefinitions>
+
+<!-- ROW 1: Dedicated Border-to-Border Hairline Separator -->
+<Border Grid.Row="1"
+        Height="2"
+        HorizontalAlignment="Stretch"
+        Background="#14FFFFFF"
+        CornerRadius="1"
+        Margin="0"
+        SnapsToDevicePixels="True" />
+```
+- Exactly identical geometry (`Height="2"`, `CornerRadius="1"`) and color (`#14FFFFFF`).
+- Runs border-to-border (`Margin="0"`).
+
+---
+
+### 9.6 Vertical Button Group & Toolbar Dividers
+When separating groups of buttons or toolbar sections vertically:
+```xml
+<Border Width="1"
+        Height="16"
+        VerticalAlignment="Center"
+        Background="#1FFFFFFF"
+        Margin="6,0"
+        SnapsToDevicePixels="True" />
+```
+- **Width & Height**: `Width="1"`, `Height="16"`, `VerticalAlignment="Center"`.
+- **Color**: `#1FFFFFFF` (~12% translucent white).
+- **Margins**: `Margin="6,0"` (6px breathing room on both sides).
+
+---
+
+### 9.7 Context Menu Separators
+Context menus across the entire application automatically inherit the global style from `App.xaml`:
+```xml
+<Style TargetType="{x:Type Separator}">
+    <Setter Property="OverridesDefaultStyle" Value="True" />
+    <Setter Property="SnapsToDevicePixels" Value="True" />
+    <Setter Property="Template">
+        <Setter.Value>
+            <ControlTemplate TargetType="{x:Type Separator}">
+                <Border Height="1" Margin="8,3,8,3" Background="#1FFFFFFF" SnapsToDevicePixels="True" />
+            </ControlTemplate>
+        </Setter.Value>
+    </Setter>
+</Style>
+```
+- Height: `1px`.
+- Margin: `8,3,8,3` (8px horizontal indent from menu edges, 3px vertical spacing).
+- Background: `#1FFFFFFF` (~12% translucent white).
+
+---
+
+### 9.8 Mandatory Separator Rules & Anti-Patterns (NEVER DO THIS)
+1. **NEVER use WPF's default `<Separator />` inside widget surfaces:**
+   - WPF's unstyled `<Separator />` draws a legacy 1px blurry grey box with system margins and subpixel rendering artifacts.
+2. **NEVER use `BorderThickness="0,1,0,0"` on the docked container:**
+   - Setting a top border directly on `<Border Grid.Row="1">` causes clipping at tile boundaries, subpixel bleeding, and inconsistent corner blending.
+3. **NEVER use opaque or grey hex values (`#333333`, `#444444`, `#808080`, etc.):**
+   - MetroHub tiles sit on dynamic Windows 11 Mica and Acrylic backdrops. Always use translucent white (`#14FFFFFF` for horizontal tile dividers, `#1FFFFFFF` for vertical/menu dividers) so dividers adapt dynamically to any background tint.
+4. **NEVER indent or add horizontal margins to horizontal tile dividers:**
+   - Separators must always span 100% seamlessly edge-to-edge from the extreme left border to the extreme right border of the tile (`Margin="0"`).
+5. **NEVER omit `SnapsToDevicePixels="True"`:**
+   - Subpixel hairline rendering requires pixel snapping to remain razor-sharp across 100%, 125%, 150%, and 200% Windows display scaling factors.
+6. **NEVER display hairline separators in 1-Row Compact Modes (`SpanY <= 1`):**
+   - When a tile is resized to 1-row height (64px), separators and docked containers MUST be collapsed (`Visibility="Collapsed"`). Hairline separators are strictly for multi-row widgets.
 
 ---
 
