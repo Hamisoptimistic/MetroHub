@@ -29,6 +29,8 @@ public record WidgetSize(int SpanX, int SpanY, string DisplayName)
     public static readonly WidgetSize LargeWide = new(6, 4, "Large Wide (6x4)");
     public static readonly WidgetSize Mega = new(8, 4, "Mega (8x4)");
     public static readonly WidgetSize Huge = new(8, 6, "Huge (8x6)");
+    public static readonly WidgetSize Canvas = new(8, 8, "Canvas (8x8)");
+    public static readonly WidgetSize Full = new(8, 10, "Full (8x10)");
 
     public override string ToString() => DisplayName;
 }

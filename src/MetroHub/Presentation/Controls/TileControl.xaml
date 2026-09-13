@@ -14,6 +14,7 @@
              xmlns:pomodoro="clr-namespace:MetroHub.Widgets.Catalog.Pomodoro"
              xmlns:photos="clr-namespace:MetroHub.Widgets.Catalog.Photos"
              xmlns:volume="clr-namespace:MetroHub.Widgets.Catalog.Volume"
+             xmlns:notepad="clr-namespace:MetroHub.Widgets.Catalog.Notepad"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -173,6 +174,11 @@
         <DataTemplate DataType="{x:Type volume:VolumeWidgetViewModel}">
             <volume:VolumeWidgetView />
         </DataTemplate>
+
+        <!-- 9. Notes & Tasks (Notepad / To-Do) Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type notepad:NotepadWidgetViewModel}">
+            <notepad:NotepadWidgetView />
+        </DataTemplate>
     </UserControl.Resources>
 
     <Border x:Name="RootBorder"
@@ -258,6 +264,16 @@
                     CornerRadius="2"
                     IsHitTestVisible="False"
                     Opacity="0">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding TargetPath}" Value="notepad">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <Border.Background>
                     <RadialGradientBrush x:Name="RevealFillBrush" MappingMode="Absolute" RadiusX="200" RadiusY="200">
                         <GradientStop Color="#35FFFFFF" Offset="0.0" />

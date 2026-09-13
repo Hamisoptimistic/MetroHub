@@ -144,6 +144,25 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Mega,
             Factory: model => new MetroHub.Widgets.Catalog.Volume.VolumeWidgetViewModel(model)
         ));
+
+        // Register Notes & Tasks (Notepad / Todo) widget
+        Register(new WidgetDefinition(
+            Id: "notepad",
+            DisplayName: "Notes & Tasks",
+            Description: "Quick text notepad with bullet lists, numbered lists, and interactive to-do checklists",
+            Icon: SymbolRegular.Notepad24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Mega,   // 8x4
+                WidgetSize.Huge,   // 8x6
+                WidgetSize.Canvas, // 8x8
+                WidgetSize.Full    // 8x10
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetView),
+            DefaultSize: WidgetSize.Mega,
+            Factory: model => new MetroHub.Widgets.Catalog.Notepad.NotepadWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)

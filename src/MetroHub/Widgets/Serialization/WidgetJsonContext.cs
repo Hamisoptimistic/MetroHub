@@ -22,6 +22,8 @@ namespace MetroHub.Widgets.Serialization;
 [JsonSerializable(typeof(PomodoroWidgetSettings))]
 [JsonSerializable(typeof(PhotosWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Volume.VolumeWidgetSettings))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetSettings))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.Notepad.TodoTaskItem))]
 public partial class WidgetJsonContext : JsonSerializerContext
 {
 }

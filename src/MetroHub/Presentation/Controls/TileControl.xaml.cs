@@ -69,6 +69,11 @@ public partial class TileControl : UserControl
 
     private void OnMouseEnter(object sender, MouseEventArgs e)
     {
+        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "notepad" })
+        {
+            return;
+        }
+
         Point pos = e.GetPosition(RootBorder);
         UpdateRevealPositions(pos);
         AnimateRevealFill(1.0, 100);
@@ -102,6 +107,11 @@ public partial class TileControl : UserControl
 
     private void AnimateRevealFill(double targetOpacity, int durationMs)
     {
+        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "notepad" })
+        {
+            RevealFillBorder.Opacity = 0.0;
+            return;
+        }
         var anim = new DoubleAnimation(targetOpacity, TimeSpan.FromMilliseconds(durationMs))
         {
             EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
@@ -196,7 +206,7 @@ public partial class TileControl : UserControl
 
     public void AnimatePressDown()
     {
-        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" or "photos" or "volume" })
+        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" or "photos" or "volume" or "notepad" })
         {
             return;
         }
@@ -769,6 +779,65 @@ public partial class TileControl : UserControl
                 TileContextMenu.Items.Insert(5, subfoldersItem);
                 TileContextMenu.Items.Insert(6, fitModeItem);
                 TileContextMenu.Items.Insert(7, photosDivider);
+            }
+
+            if (tile.TileContent is Widgets.Catalog.Notepad.NotepadWidgetViewModel notepadVm)
+            {
+                var viewModeItem = new MenuItem
+                {
+                    Header = "View Mode",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Notepad24,
+                        FontSize = 20,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                    }
+                };
+
+                var notesMode = new MenuItem
+                {
+                    Header = "Notes",
+                    IsCheckable = true,
+                    IsChecked = notepadVm.IsNotesView
+                };
+                notesMode.Click += (s, ev) => notepadVm.SwitchToNotes();
+
+                var todoMode = new MenuItem
+                {
+                    Header = "To-Do Tasks",
+                    IsCheckable = true,
+                    IsChecked = notepadVm.IsTodoView
+                };
+                todoMode.Click += (s, ev) => notepadVm.SwitchToTodo();
+
+                viewModeItem.Items.Add(notesMode);
+                viewModeItem.Items.Add(todoMode);
+
+                var notepadDivider = new Separator { Tag = "WidgetCustomMenu" };
+                TileContextMenu.Items.Insert(1, viewModeItem);
+
+                if (notepadVm.HasCompletedTasks)
+                {
+                    var clearCompletedItem = new MenuItem
+                    {
+                        Header = "Clear Completed Tasks",
+                        Tag = "WidgetCustomMenu",
+                        Icon = new Wpf.Ui.Controls.SymbolIcon
+                        {
+                            Symbol = Wpf.Ui.Controls.SymbolRegular.DismissCircle20,
+                            FontSize = 20,
+                            Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                        }
+                    };
+                    clearCompletedItem.Click += (s, ev) => notepadVm.ClearCompleted();
+                    TileContextMenu.Items.Insert(2, clearCompletedItem);
+                    TileContextMenu.Items.Insert(3, notepadDivider);
+                }
+                else
+                {
+                    TileContextMenu.Items.Insert(2, notepadDivider);
+                }
             }
         }
         else
