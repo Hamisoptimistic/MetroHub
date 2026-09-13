@@ -182,7 +182,7 @@
             <!-- ROW 0: TOP 5-TILE REGION (Transparent Acrylic Backdrop)                   -->
             <!-- [ Ethernet ] | [ WIFI ] | [ Kill Net ] | [ Speed ] | [ Hotspot ]          -->
             <!-- ========================================================================= -->
-            <Grid Grid.Row="0" SnapsToDevicePixels="True" Background="Transparent" MouseMove="OnMouseMove" MouseEnter="OnMouseEnter" MouseLeave="OnMouseLeave">
+            <Grid x:Name="TopTilesGrid" Grid.Row="0" SnapsToDevicePixels="True" Background="Transparent" MouseMove="OnMouseMove" MouseEnter="OnMouseEnter" MouseLeave="OnMouseLeave">
                 <Grid.ColumnDefinitions>
                     <!-- Col 0: Ethernet -->
                     <ColumnDefinition Width="*" />
@@ -209,6 +209,26 @@
                         </Border.Background>
                     </Border>
                 </Grid>
+
+                <!-- Sliding Active Indicator -->
+                <Border x:Name="SlidingActiveIndicator"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="5"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        Height="2"
+                        Width="0"
+                        Background="#00E676"
+                        Opacity="0"
+                        Panel.ZIndex="25"
+                        SnapsToDevicePixels="True">
+                    <Border.RenderTransform>
+                        <TranslateTransform x:Name="SlidingIndicatorTransform" X="0" />
+                    </Border.RenderTransform>
+                    <Border.Effect>
+                        <DropShadowEffect x:Name="SlidingIndicatorShadow" Color="#00E676" BlurRadius="8" ShadowDepth="0" Opacity="0.8" />
+                    </Border.Effect>
+                </Border>
 
                     <!-- ==================== 1. ETHERNET TILE ==================== -->
                     <Button Grid.Column="0"
