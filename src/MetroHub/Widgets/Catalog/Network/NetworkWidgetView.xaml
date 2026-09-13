@@ -27,6 +27,14 @@
 
         <!-- Base Top Tile Button Style -->
         <!-- Seamless: default no border visible, hover illuminates only vertical side dividers, NO top/bottom borders, NO background fill on hover -->
+        <!-- Base Top Tile Button Style -->
+        <!-- Seamless edge-to-edge: hover illuminates side dividing borders, no background fill, Panel.ZIndex=10 ensures top rendering -->
+        <!-- Base Top Tile Button Style -->
+        <!-- Apple VisionOS Smoked Glass: edge-to-edge dividing borders, luminosity scrim + smoked glass gradient + specular top lip -->
+        <!-- Base Top Tile Button Style -->
+        <!-- Mica Top Bar: clean edge-to-edge dividing borders, illuminates on hover with Panel.ZIndex=10 -->
+        <!-- Base Top Tile Button Style -->
+        <!-- Acrylic Top Bar: edge-to-edge dividing borders on hover, full-width bottom separator with active glow -->
         <Style x:Key="TopTileButtonBaseStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
@@ -36,23 +44,71 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="UseLayoutRounding" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="TileBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
+                        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
+                            <!-- Layer 1: Tile Border (Interior vertical divider lines on hover) -->
+                            <Border x:Name="TileBorder"
+                                    Background="Transparent"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    SnapsToDevicePixels="True" />
+
+                            <!-- Layer 2: Content Presenter (Icon + Text) -->
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="0,0,0,2"
+                                              SnapsToDevicePixels="True" />
+
+                            <!-- Layer 3: Edge-to-Edge Bottom Separator Segment (Height 2px) -->
+                            <!-- Default: standard subtle separator (#18FFFFFF). Active: Green/Red Glow replacing the separator -->
+                            <Border x:Name="BottomLine"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Bottom"
+                                    Height="2"
+                                    Background="#18FFFFFF"
+                                    SnapsToDevicePixels="True" />
+                        </Grid>
                         <ControlTemplate.Triggers>
-                            <!-- Hover state: illuminates side dividing borders, no background fill -->
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#35FFFFFF" />
+                            <!-- GlowGreen: Emerald green bottom border glow for connected state -->
+                            <Trigger Property="Tag" Value="GlowGreen">
+                                <Setter TargetName="BottomLine" Property="Height" Value="2.5" />
+                                <Setter TargetName="BottomLine" Property="Background" Value="#00E676" />
+                                <Setter TargetName="BottomLine" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#00E676" BlurRadius="8" ShadowDepth="0" Opacity="0.95" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Panel.ZIndex" Value="5" />
                             </Trigger>
+
+                            <!-- GlowRed: Warning Red bottom border glow for disconnected state -->
+                            <Trigger Property="Tag" Value="GlowRed">
+                                <Setter TargetName="BottomLine" Property="Height" Value="2.5" />
+                                <Setter TargetName="BottomLine" Property="Background" Value="#FF4C4C" />
+                                <Setter TargetName="BottomLine" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#FF4C4C" BlurRadius="8" ShadowDepth="0" Opacity="0.95" />
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Panel.ZIndex" Value="5" />
+                            </Trigger>
+
+                            <!-- Hover state: illuminates dividing borders and subtle glass sheen, Panel.ZIndex=10 ensures top rendering -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#45FFFFFF" />
+                                <Setter TargetName="TileBorder" Property="Background" Value="#0AFFFFFF" />
+                                <Setter Property="Panel.ZIndex" Value="10" />
+                            </Trigger>
+
+                            <!-- Pressed state -->
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#55FFFFFF" />
+                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#65FFFFFF" />
+                                <Setter TargetName="TileBorder" Property="Background" Value="#14FFFFFF" />
+                                <Setter Property="Panel.ZIndex" Value="10" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -98,32 +154,32 @@
             </Setter>
         </Style>
 
-        <!-- 1. Ethernet Tile Style: Only right dividing border on hover, translucent emerald green background when connected -->
+        <!-- 1. Ethernet Tile Style: Left and right dividing borders on hover, glowing bottom border when connected -->
         <Style x:Key="EthernetTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
-            <Setter Property="BorderThickness" Value="0,0,1,0" />
+            <Setter Property="BorderThickness" Value="1,0,1,0" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsEthernetConnected}" Value="True">
-                    <Setter Property="Background" Value="#4000CC66" />
+                    <Setter Property="Tag" Value="GlowGreen" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
 
-        <!-- 2. WIFI Tile Style: Left and right dividing borders on hover, translucent emerald green background when connected -->
+        <!-- 2. WIFI Tile Style: Left and right dividing borders on hover, glowing bottom border when connected -->
         <Style x:Key="WifiTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
             <Setter Property="BorderThickness" Value="1,0,1,0" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsWifiConnected}" Value="True">
-                    <Setter Property="Background" Value="#4000CC66" />
+                    <Setter Property="Tag" Value="GlowGreen" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
 
-        <!-- 3. Kill Net Tile Style: Left and right dividing borders on hover, translucent red background when disconnected -->
+        <!-- 3. Kill Net Tile Style: Left and right dividing borders on hover, red glowing bottom border when disconnected -->
         <Style x:Key="KillNetTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
             <Setter Property="BorderThickness" Value="1,0,1,0" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsInternetDisconnected}" Value="True">
-                    <Setter Property="Background" Value="#22FF4C4C" />
+                    <Setter Property="Tag" Value="GlowRed" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -133,12 +189,12 @@
             <Setter Property="BorderThickness" Value="1,0,1,0" />
         </Style>
 
-        <!-- 5. Hotspot Tile Style: Only left dividing border on hover, translucent emerald green background when connected -->
+        <!-- 5. Hotspot Tile Style: Left and right dividing borders on hover, glowing bottom border when connected -->
         <Style x:Key="HotspotTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
-            <Setter Property="BorderThickness" Value="1,0,0,0" />
+            <Setter Property="BorderThickness" Value="1,0,1,0" />
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsHotspotConnected}" Value="True">
-                    <Setter Property="Background" Value="#4000CC66" />
+                    <Setter Property="Tag" Value="GlowGreen" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -148,40 +204,38 @@
     <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True" Background="Transparent">
             <Grid.RowDefinitions>
-                <!-- Row 0: Top 5-Tile Segmented Region (Height 76px) -->
+                <!-- Row 0: Top 5-Tile Segmented Region (Height 76px, with seamless bottom separator) -->
                 <RowDefinition Height="76" />
-                <!-- Row 1: Universal 2px Edge-to-Edge Separator (#14FFFFFF) -->
-                <RowDefinition Height="Auto" />
-                <!-- Row 2: Lower Panel Region (To be designed in next phase) -->
+                <!-- Row 1: Lower Panel Region -->
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
             <!-- ========================================================================= -->
-            <!-- ROW 0: TOP 5-TILE REGION                                                  -->
+            <!-- ROW 0: TOP 5-TILE REGION (Transparent Acrylic Backdrop)                   -->
             <!-- [ Ethernet ] | [ WIFI ] | [ Kill Net ] | [ Speed ] | [ Hotspot ]          -->
             <!-- ========================================================================= -->
             <Grid Grid.Row="0" SnapsToDevicePixels="True" Background="Transparent">
                 <Grid.ColumnDefinitions>
-                    <!-- Col 0: Ethernet -->
-                    <ColumnDefinition Width="*" />
-                    <!-- Col 1: WIFI -->
-                    <ColumnDefinition Width="*" />
-                    <!-- Col 2: Kill Net -->
-                    <ColumnDefinition Width="*" />
-                    <!-- Col 3: Speed -->
-                    <ColumnDefinition Width="*" />
-                    <!-- Col 4: Hotspot -->
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+                        <!-- Col 0: Ethernet -->
+                        <ColumnDefinition Width="*" />
+                        <!-- Col 1: WIFI -->
+                        <ColumnDefinition Width="*" />
+                        <!-- Col 2: Kill Net -->
+                        <ColumnDefinition Width="*" />
+                        <!-- Col 3: Speed -->
+                        <ColumnDefinition Width="*" />
+                        <!-- Col 4: Hotspot -->
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-                <!-- ==================== 1. ETHERNET TILE ==================== -->
-                <Button Grid.Column="0"
+                    <!-- ==================== 1. ETHERNET TILE ==================== -->
+                    <Button Grid.Column="0"
                         Style="{StaticResource EthernetTileStyle}"
                         Command="{Binding SelectPanelCommand}"
                         CommandParameter="Ethernet"
                         ToolTip="Ethernet Settings &amp; Telemetry">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- Icon: Monitor with Cable (\uE839) in bright White -->
+                        <!-- Icon: Monitor with Cable (\uE839) - Always pure white -->
                         <TextBlock Text="&#xE839;"
                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                    FontSize="22"
@@ -202,12 +256,13 @@
 
                 <!-- ==================== 2. WIFI TILE ==================== -->
                 <Button Grid.Column="1"
+                        Margin="-1,0,0,0"
                         Style="{StaticResource WifiTileStyle}"
                         Command="{Binding SelectPanelCommand}"
                         CommandParameter="Wifi"
                         ToolTip="Wi-Fi Networks &amp; Details">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- Icon: Wi-Fi Waves (\uE701) in bright White -->
+                        <!-- Icon: Wi-Fi Waves (\uE701) - Always pure white -->
                         <TextBlock Text="&#xE701;"
                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                    FontSize="22"
@@ -228,12 +283,13 @@
 
                 <!-- ==================== 3. DISABLE INTERNET TILE ==================== -->
                 <Button Grid.Column="2"
+                        Margin="-1,0,0,0"
                         Style="{StaticResource KillNetTileStyle}"
                         Command="{Binding SelectPanelCommand}"
                         CommandParameter="KillNet"
                         ToolTip="Disconnect / Disable Internet Connection">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- Icon: Plug Disconnected / Cable Off (\uEB55) in bright White -->
+                        <!-- Icon: Plug Disconnected / Cable Off (\uEB55) - Always pure white -->
                         <TextBlock Text="&#xEB55;"
                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                    FontSize="22"
@@ -254,12 +310,13 @@
 
                 <!-- ==================== 4. SPEED TILE ==================== -->
                 <Button Grid.Column="3"
+                        Margin="-1,0,0,0"
                         Style="{StaticResource SpeedTileStyle}"
                         Command="{Binding SelectPanelCommand}"
                         CommandParameter="Speed"
                         ToolTip="Live Throughput &amp; Bandwidth Diagnostics">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- Icon: TopSpeed24 Speedometer in bright White -->
+                        <!-- Icon: TopSpeed24 Speedometer - Always pure white -->
                         <ui:SymbolIcon Symbol="TopSpeed24"
                                        FontSize="22"
                                        Foreground="#FFFFFF"
@@ -279,12 +336,13 @@
 
                 <!-- ==================== 5. HOTSPOT TILE ==================== -->
                 <Button Grid.Column="4"
+                        Margin="-1,0,0,0"
                         Style="{StaticResource HotspotTileStyle}"
                         Command="{Binding SelectPanelCommand}"
                         CommandParameter="Hotspot"
                         ToolTip="Windows Mobile Hotspot Settings">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- Icon: Mobile Hotspot (\uE88E) in bright White -->
+                        <!-- Icon: Mobile Hotspot (\uE88E) - Always pure white -->
                         <TextBlock Text="&#xE88E;"
                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                    FontSize="22"
@@ -305,21 +363,9 @@
             </Grid>
 
             <!-- ========================================================================= -->
-            <!-- ROW 1: UNIVERSAL 2PX EDGE-TO-EDGE HAIRLINE SEPARATOR (#14FFFFFF)           -->
-            <!-- Runs border-to-border (100% full width, Margin="0")                        -->
+            <!-- ROW 1: LOWER PANEL REGION                                                 -->
             <!-- ========================================================================= -->
-            <Border Grid.Row="1"
-                    Height="2"
-                    HorizontalAlignment="Stretch"
-                    Background="#14FFFFFF"
-                    CornerRadius="1"
-                    Margin="0"
-                    SnapsToDevicePixels="True" />
-
-            <!-- ========================================================================= -->
-            <!-- ROW 2: LOWER PANEL REGION                                                 -->
-            <!-- ========================================================================= -->
-            <Grid Grid.Row="2" Background="Transparent" SnapsToDevicePixels="True">
+            <Grid Grid.Row="1" Background="Transparent" SnapsToDevicePixels="True">
 
                 <!-- ==================== 1. ETHERNET PANEL ==================== -->
                 <Grid Visibility="{Binding IsEthernetPanel, Converter={StaticResource BoolToVis}}"
