@@ -30,6 +30,7 @@ public class EthernetInfo
     public string SubnetMask { get; set; } = "--";
     public string Gateway { get; set; } = "--";
     public List<string> DnsServers { get; set; } = new();
+    public string DnsServersString => DnsServers != null && DnsServers.Count > 0 ? string.Join(", ", DnsServers) : "--";
     public long LinkSpeedBitsPerSecond { get; set; }
     public string LinkSpeedString { get; set; } = "--";
     public TimeSpan LinkDuration { get; set; } = TimeSpan.Zero;

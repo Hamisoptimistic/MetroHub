@@ -15,6 +15,7 @@
              xmlns:photos="clr-namespace:MetroHub.Widgets.Catalog.Photos"
              xmlns:volume="clr-namespace:MetroHub.Widgets.Catalog.Volume"
              xmlns:notepad="clr-namespace:MetroHub.Widgets.Catalog.Notepad"
+             xmlns:network="clr-namespace:MetroHub.Widgets.Catalog.Network"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -179,6 +180,11 @@
         <DataTemplate DataType="{x:Type notepad:NotepadWidgetViewModel}">
             <notepad:NotepadWidgetView />
         </DataTemplate>
+
+        <!-- 10. Network & Internet Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type network:NetworkWidgetViewModel}">
+            <network:NetworkWidgetView />
+        </DataTemplate>
     </UserControl.Resources>
 
     <Border x:Name="RootBorder"
@@ -269,6 +275,9 @@
                         <Setter Property="Visibility" Value="Visible" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding TargetPath}" Value="notepad">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding TargetPath}" Value="network">
                                 <Setter Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
                         </Style.Triggers>

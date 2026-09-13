@@ -163,6 +163,22 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Mega,
             Factory: model => new MetroHub.Widgets.Catalog.Notepad.NotepadWidgetViewModel(model)
         ));
+
+        // Register Network & Internet widget
+        Register(new WidgetDefinition(
+            Id: "network",
+            DisplayName: "Network & Internet",
+            Description: "Real-time Ethernet, Wi-Fi, live bandwidth telemetry, and diagnostics",
+            Icon: SymbolRegular.Globe24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Huge // 8x6 (Default size)
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Network.NetworkWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Network.NetworkWidgetView),
+            DefaultSize: WidgetSize.Huge,
+            Factory: model => new MetroHub.Widgets.Catalog.Network.NetworkWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)

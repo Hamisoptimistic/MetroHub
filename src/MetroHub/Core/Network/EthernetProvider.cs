@@ -54,18 +54,20 @@ public class EthernetProvider
 
     private EthernetInfo BuildEthernetInfo(NetworkInterface nic)
     {
+        var ipProps = nic.GetIPProperties();
+        var ipv4Unicast = ipProps.UnicastAddresses
+            .FirstOrDefault(ua => ua.Address.AddressFamily == AddressFamily.InterNetwork && !IsLinkLocalOrLoopback(ua.Address.ToString()));
+
+        bool isConnected = nic.OperationalStatus == OperationalStatus.Up && ipv4Unicast != null && nic.Speed > 0;
+
         var info = new EthernetInfo
         {
             Id = nic.Id,
             Name = nic.Name,
             Description = nic.Description,
-            IsConnected = nic.OperationalStatus == OperationalStatus.Up,
+            IsConnected = isConnected,
             MacAddress = FormatMacAddress(nic.GetPhysicalAddress().GetAddressBytes())
         };
-
-        var ipProps = nic.GetIPProperties();
-        var ipv4Unicast = ipProps.UnicastAddresses
-            .FirstOrDefault(ua => ua.Address.AddressFamily == AddressFamily.InterNetwork && !IsLinkLocalOrLoopback(ua.Address.ToString()));
 
         if (ipv4Unicast != null)
         {
@@ -173,17 +175,36 @@ public class EthernetProvider
         string desc = nic.Description.ToLowerInvariant();
         string name = nic.Name.ToLowerInvariant();
 
-        // Filter out virtual/software adapters
+        // Filter out virtual/software adapters and NDIS miniports
         if (desc.Contains("virtual") || desc.Contains("hyper-v") || desc.Contains("vmware") ||
             desc.Contains("virtualbox") || desc.Contains("tap-") || desc.Contains("vpn") ||
             desc.Contains("npcap") || desc.Contains("wsl") || desc.Contains("pseudo") ||
             desc.Contains("bluetooth") || desc.Contains("loopback") || desc.Contains("tailscale") ||
-            desc.Contains("zerotier") || desc.Contains("wireguard"))
+            desc.Contains("zerotier") || desc.Contains("wireguard") || desc.Contains("wan miniport") ||
+            desc.Contains("miniport") || desc.Contains("lightweight filter") || desc.Contains("native mac layer") ||
+            desc.Contains("kernel debug") || desc.Contains("packet scheduler") || desc.Contains("ndis") ||
+            desc.Contains("multiplexor") || desc.Contains("teredo") || desc.Contains("isatap") ||
+            desc.Contains("6to4") || desc.Contains("tunnel") || desc.Contains("pacer"))
         {
             return false;
         }
 
-        if (name.Contains("vethernet") || name.Contains("wsl") || name.Contains("loopback"))
+        if (name.Contains("vethernet") || name.Contains("wsl") || name.Contains("loopback") ||
+            name.Contains("wan miniport") || name.Contains("miniport") || name.Contains("vpn"))
+        {
+            return false;
+        }
+
+        // Must have a real physical MAC address
+        try
+        {
+            var macBytes = nic.GetPhysicalAddress()?.GetAddressBytes();
+            if (macBytes == null || macBytes.Length < 6)
+            {
+                return false;
+            }
+        }
+        catch
         {
             return false;
         }
