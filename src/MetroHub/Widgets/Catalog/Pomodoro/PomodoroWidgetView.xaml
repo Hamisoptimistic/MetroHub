@@ -149,15 +149,18 @@
                                     Margin="4,0"
                                     ToolTip="{Binding PlayPauseTooltip}">
                                 <TextBlock FontFamily="Segoe MDL2 Assets"
-                                           FontSize="13"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Center">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Text" Value="&#xE768;" />
+                                            <Setter Property="FontSize" Value="13" />
+                                            <Setter Property="Margin" Value="1.5,0,0,0" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsRunning}" Value="True">
                                                     <Setter Property="Text" Value="&#xE769;" />
+                                                    <Setter Property="FontSize" Value="15.5" />
+                                                    <Setter Property="Margin" Value="0" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -236,7 +239,7 @@
                     <!-- Right Content: Elevated Circular Progress Ring (Matches Album Art position) -->
                     <Grid HorizontalAlignment="Right"
                           VerticalAlignment="Center"
-                          Margin="0,0,28,0">
+                          Margin="0,0,20,0">
 
                         <Border Width="{Binding RingSize}"
                                 Height="{Binding RingSize}"
@@ -281,10 +284,13 @@
                         BorderThickness="0"
                         CornerRadius="0,0,2,2"
                         SnapsToDevicePixels="True"
-                        Padding="14,0,14,0">
-                    <Grid VerticalAlignment="Center">
+                        Padding="20,0,20,0">
+                    <Grid>
                         <!-- Left: Transport Controls (Reset, Play/Pause, Skip) -->
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Margin="-9.5,0,0,0">
                             <!-- Reset (↺) -->
                             <Button Style="{StaticResource PomodoroTransportButtonStyle}"
                                     Command="{Binding ResetCommand}"
@@ -302,15 +308,18 @@
                                     Margin="4,0"
                                     ToolTip="{Binding PlayPauseTooltip}">
                                 <TextBlock FontFamily="Segoe MDL2 Assets"
-                                           FontSize="13"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Center">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Text" Value="&#xE768;" />
+                                            <Setter Property="FontSize" Value="13" />
+                                            <Setter Property="Margin" Value="1.5,0,0,0" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsRunning}" Value="True">
                                                     <Setter Property="Text" Value="&#xE769;" />
+                                                    <Setter Property="FontSize" Value="15.5" />
+                                                    <Setter Property="Margin" Value="0" />
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -331,7 +340,7 @@
                         </StackPanel>
 
                         <!-- Right: Cycle Tracker Dots (● ● ○ ○) -->
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,-2.5,0">
                             <!-- Dot 1 -->
                             <Border>
                                 <Border.Style>

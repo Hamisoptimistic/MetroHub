@@ -145,7 +145,7 @@ MetroHub widgets with multi-tier sections (such as Focus Timer and Volume Widget
 - **Background Fill:** `#14000000` (~8% black tint)
 - **Border:** `BorderThickness="0"` (Never draw top border directly on the container to avoid WPF subpixel arc/border rendering artifacts)
 - **Corner Radius:** `CornerRadius="0,0,2,2"` (Blends with tile's bottom 2px corners)
-- **Padding:** `Padding="14,14,14,12"` (Standard 14px horizontal gutter; ample breathing room below the divider)
+- **Padding:** `Padding="20,0,20,0"` (Universal 20px horizontal gutter; see Section 15 for full alignment contract)
 
 ### 9.2 Edge-to-Edge Hairline Divider Track
 The divider runs completely edge-to-edge with subpixel centering on the row boundary:
@@ -243,5 +243,80 @@ To guarantee bulletproof synchronization with Windows System Media Transport Con
 6. **Thread Synchronization & Epoch Tokens:**
    - Marshal WinRT callbacks onto the UI Dispatcher under a dedicated synchronization lock (`_stateLock`).
    - Use a monotonic `_updateEpoch` counter so delayed thumbnail loads or background tasks never overwrite newer state.
+
+---
+
+## 15. Universal Symmetrical 20px Widget Grid & Control Alignment Standard
+
+> **COMPULSORY ARCHITECTURAL CONTRACT**: Every current and future widget in MetroHub (Media Player, Focus Timer, Photo Stream, Weather, Volume, Notes, Clock, etc.) **MUST AUTOMATICALLY ADHERE** to this symmetrical grid system. Never freelance margins, button paddings, or icon scales on new widgets.
+
+### 15.1 The 20px Symmetrical Clearance Rule
+All widgets must enforce an exact, symmetrical **20px margin from both the left and right tile boundaries**:
+- **Left Margin from Border:** Exactly `20px`.
+- **Right Margin from Border:** Exactly `20px`.
+
+### 15.2 Left-Edge Optical Alignment Axis (X = 20px)
+- **Top Row Header Content:** The primary text block (Track Title, Focus Phase Title, Widget Heading) must declare `Margin="20,0,..."`, starting precisely at `X = 20px`.
+- **Bottom Docked Bar Transport Controls:** The button group `StackPanel` inside `<Border Grid.Row="1" ... Padding="20,0,20,0">` **MUST declare `Margin="-9.5,0,0,0"`**:
+  ```xml
+  <Border Grid.Row="1"
+          Background="#14000000"
+          BorderThickness="0"
+          CornerRadius="0,0,2,2"
+          SnapsToDevicePixels="True"
+          Padding="20,0,20,0">
+      <Grid>
+          <!-- Left: Transport Controls (Aligned with Title at X = 20px) -->
+          <StackPanel Orientation="Horizontal"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Center"
+                      Margin="-9.5,0,0,0">
+              <!-- First button (Previous, Reset, etc.) starts at X = 20px -->
+  ```
+  - **The Mathematical Rationale:** The standard transparent button has `Width="32"` and centers its `13px` icon glyph (`(32 - 13) / 2 = 9.5px`). Setting `Margin="-9.5,0,0,0"` offsets the button's internal padding so that the first visible icon glyph (e.g. `<` chevron or `↺` reset) begins at **precisely X = 20px**, creating an unbroken, pixel-perfect vertical alignment line straight down from the first letter of the title text.
+
+### 15.3 Right-Edge Optical Alignment Axis (X = Width - 20px)
+- **Top Row Hero Visuals:** Primary visual elements (Album Cover Art, Circular Progress Ring Gauge, Hero Cards) **MUST declare `Margin="0,0,20,0"`**:
+  ```xml
+  <Grid HorizontalAlignment="Right"
+        VerticalAlignment="Center"
+        Margin="0,0,20,0">
+      <!-- Album Art or Circular Gauge terminates flush at X = Width - 20px -->
+  </Grid>
+  ```
+- **Bottom Docked Bar Secondary Elements:** Live readouts (Playback timing `3:05 / 5:21`, status indicators, cycle tracker dots) must terminate at **precisely X = Width - 20px**:
+  ```xml
+  <!-- Live Playback Time Readout: Matches 28px height footprint and aligns flush right -->
+  <Border HorizontalAlignment="Right"
+          VerticalAlignment="Center"
+          Height="28"
+          SnapsToDevicePixels="True">
+      <TextBlock Text="{Binding TimeDisplayString}"
+                 VerticalAlignment="Center"
+                 HorizontalAlignment="Right"
+                 FontSize="13"
+                 FontWeight="Normal"
+                 FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                 Foreground="#D0FFFFFF"
+                 SnapsToDevicePixels="True" />
+  </Border>
+  ```
+- **Indicator Dot Margins:** When using multi-dot progress indicators (e.g. Cycle Tracker Dots with `Margin="2.5,0"`), the container `StackPanel` **MUST declare `Margin="0,0,-2.5,0"`** so that the rightmost edge of the final dot aligns flush with the 20px line.
+
+### 15.4 Transport Button Style & Play/Pause Symmetry Standard
+All widgets with media or timer playback controls must share the identical button footprint:
+- **Button Footprint:** `Width="32"`, `Height="28"`, `CornerRadius="2"`, `Background="Transparent"`, `Margin="4,0"`.
+- **Hover Feedback:** `Background="#25FFFFFF"`, `Foreground="#FFFFFF"`.
+- **Play Icon:** `FontSize="13"`, `Text="&#xE768;"`, `Margin="1.5,0,0,0"` (optical centering adjustment).
+- **Pause Icon:** `FontSize="15.5"`, `Text="&#xE769;"`, `Margin="0"` (scaled to 15.5px so its optical height and visual weight match adjacent 13px chevrons / skip buttons).
+
+### 15.5 Timing & Numerical Readout Containers
+- **Height Footprint:** Must be wrapped in a container with `Height="28"` and `VerticalAlignment="Center"` to match the 28px height and vertical center axis of the adjacent transport buttons.
+- **Typography:** `FontSize="13"`, `FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"`, `Foreground="#D0FFFFFF"`.
+
+### 15.6 Right-Click Context Menu Purity
+- **Minimalist Standard:** Right-clicking any widget tile must show only universal tile actions (Resize, Add to Group, Unpin).
+- **Zero Effect Bloat:** Never inject redundant "Effects", glow mode toggles, or decorative gimmick submenus into tile context menus. Keep controls clean, direct, and distraction-free.
+
 
 

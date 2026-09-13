@@ -56,23 +56,38 @@ MetroHub rests quietly in the Windows system tray when closed.
 
 ---
 
-## 6. Widget UI & Visual Consistency Standards (Transport Controls & Aesthetics)
-- **Transport Buttons (`<`, `>`, Play, Pause, Folder, etc.):**
+## 6. Widget UI & Visual Consistency Standards (The Universal 20px Symmetrical Grid)
+
+> **MANDATORY FOR ALL CURRENT & FUTURE WIDGETS**: Every widget created or updated in MetroHub (Media Player, Focus Timer, Photo Stream, Weather, Volume, Notes, etc.) **MUST** automatically conform to this symmetrical grid system.
+
+- **Universal 20px Symmetrical Margin / Padding:**
+  - ALL widgets must maintain an exact **20px clearance** from the left and right tile borders.
+  - Left margin from tile border: **20px**.
+  - Right margin from tile border: **20px**.
+
+- **Left-Edge Alignment Axis (X = 20px):**
+  - Top-tier primary text (Track Title, Phase Title, Widget Header) MUST start at **20px** from the left border (`Margin="20,0,..."`).
+  - Bottom docked transport controls (`StackPanel`) MUST declare `Margin="-9.5,0,0,0"` inside `Padding="20,0,20,0"`.
+  - **Reason / Math:** The standard 32px-wide transparent transport button (`MediaTransportButtonStyle`) centers its 13px icon (`(32 - 13) / 2 = 9.5px`). Setting `Margin="-9.5,0,0,0"` cancels this internal button padding so the very first glyph (e.g. `<` chevron or `↺` reset) starts at **precisely X = 20px**, forming an unbroken vertical alignment line with the title text above.
+
+- **Right-Edge Alignment Axis (X = Width - 20px):**
+  - Top-tier hero visuals (Album Art Cover, Circular Progress Ring Gauge, Hero Cards) MUST terminate at **20px** from the right border (`Margin="0,0,20,0"`).
+  - Bottom docked secondary readouts (Live Playback Time `3:05 / 5:21`, Status Badges, Cycle Tracker Dots) MUST terminate at **20px** from the right border.
+  - When using indicator dots with internal spacing (`Margin="2.5,0"`), offset the StackPanel by `Margin="0,0,-2.5,0"` so the outer edge of the final dot aligns flush with the 20px right margin.
+
+- **Transport Controls & Play/Pause Symmetry (`MediaTransportButtonStyle`):**
   - **NEVER** use boxed buttons with hard outline borders (`BorderThickness="1"`), solid grey backgrounds, or boxy frames.
-  - **MUST** match the sleek Media Player standard (`MediaTransportButtonStyle` pattern):
-    - `Background="Transparent"`
-    - `BorderThickness="0"`
-    - `Foreground="#E5E9F0"`
-    - `Width="32"`, `Height="28"`, `CornerRadius="2"`
-    - On hover (`IsMouseOver="True"`): `Background="#25FFFFFF"`, `Foreground="#FFFFFF"`
-    - On pressed: `Background="#45FFFFFF"`
-- **Clean Content-First Overlays:**
-  - Do NOT clutter live visual surfaces with arbitrary wallpaper/filename text blocks. Keep live surfaces pure, photographic, and focused on the artwork.
-  - Show minimal, elegant metadata with non-intrusive typography.
-- **Universal 14px Alignment Standard:**
-  - ALL bottom widget controls and transport bars MUST use 14px edge margin/padding (`Padding="14,0,14,0"` or `Margin="14,0,0,10"`).
-  - Left-aligned transport buttons (Media Player, Pomodoro, and Photo Stream) MUST start at exactly 14px from the left tile edge.
-  - This guarantees an identical horizontal baseline and left-margin alignment across all widgets on the dashboard.
+  - **Button Dimensions:** `Width="32"`, `Height="28"`, `CornerRadius="2"`, `Background="Transparent"`, `Margin="4,0"`.
+  - **Play Icon:** `FontSize="13"`, `Text="&#xE768;"`, `Margin="1.5,0,0,0"` (optical centering adjustment).
+  - **Pause Icon:** `FontSize="15.5"`, `Text="&#xE769;"`, `Margin="0"` (scaled to 15.5px so its optical height and visual weight match adjacent 13px chevrons and skip buttons).
+
+- **Timing & Secondary Readout Containers:**
+  - Readouts (such as track playback time `TimeDisplayString`) must be hosted in a container with `Height="28"` and `VerticalAlignment="Center"` to match the exact 28px height footprint and vertical center axis of the transport buttons.
+  - Typography: `FontSize="13"`, `FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"`, `Foreground="#D0FFFFFF"`.
+
+- **Context Menu Purity:**
+  - Widget right-click context menus must stay clean and minimal (Resize, Add to Group, Unpin).
+  - Do NOT clutter menus with redundant "Effects" submenus or decorative toggles. Keep controls direct, sleek, and functional.
 
 ---
 
