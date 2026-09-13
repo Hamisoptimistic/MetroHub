@@ -106,3 +106,70 @@ public class WifiConnectionDetails
     public long TransmitLinkSpeedBps { get; set; }
     public string LinkSpeedString { get; set; } = "--";
 }
+
+public class ThroughputMetrics
+{
+    public double DownloadBytesPerSec { get; set; }
+    public double UploadBytesPerSec { get; set; }
+    public double DownloadBitsPerSec => DownloadBytesPerSec * 8.0;
+    public double UploadBitsPerSec => UploadBytesPerSec * 8.0;
+
+    public string DownloadSpeedBytesString => FormatBytesSpeed(DownloadBytesPerSec);
+    public string UploadSpeedBytesString => FormatBytesSpeed(UploadBytesPerSec);
+
+    public string DownloadSpeedBitsString => FormatBitsSpeed(DownloadBitsPerSec);
+    public string UploadSpeedBitsString => FormatBitsSpeed(UploadBitsPerSec);
+
+    public ulong TotalBytesReceived { get; set; }
+    public ulong TotalBytesSent { get; set; }
+
+    public static string FormatBytesSpeed(double bytesPerSec)
+    {
+        if (bytesPerSec <= 0) return "0 KB/s";
+        if (bytesPerSec >= 1_000_000_000) return $"{bytesPerSec / 1_000_000_000.0:0.##} GB/s";
+        if (bytesPerSec >= 1_000_000) return $"{bytesPerSec / 1_000_000.0:0.#} MB/s";
+        if (bytesPerSec >= 1_000) return $"{bytesPerSec / 1_000.0:0.#} KB/s";
+        return $"{(int)bytesPerSec} B/s";
+    }
+
+    public static string FormatBitsSpeed(double bitsPerSec)
+    {
+        if (bitsPerSec <= 0) return "0 Kbps";
+        if (bitsPerSec >= 1_000_000_000) return $"{bitsPerSec / 1_000_000_000.0:0.##} Gbps";
+        if (bitsPerSec >= 1_000_000) return $"{bitsPerSec / 1_000_000.0:0.#} Mbps";
+        if (bitsPerSec >= 1_000) return $"{bitsPerSec / 1_000.0:0.#} Kbps";
+        return $"{(int)bitsPerSec} bps";
+    }
+}
+
+public class ThroughputSample
+{
+    public double DownloadBytesPerSec { get; init; }
+    public double UploadBytesPerSec { get; init; }
+    public DateTime Timestamp { get; init; } = DateTime.UtcNow;
+}
+
+public class LatencyMetrics
+{
+    public long PingMs { get; set; } = -1;
+    public string TargetHost { get; set; } = "1.1.1.1";
+    public bool IsSuccess => PingMs >= 0;
+    public string LatencyString => PingMs >= 0 ? $"{PingMs} ms" : "Timeout";
+    public string QualityLabel => PingMs switch
+    {
+        < 0 => "Offline",
+        <= 25 => "Excellent",
+        <= 60 => "Good",
+        <= 120 => "Fair",
+        _ => "Poor"
+    };
+    public string QualityColorHex => PingMs switch
+    {
+        < 0 => "#FF4C4C",
+        <= 25 => "#28D77B",
+        <= 60 => "#3A86FF",
+        <= 120 => "#FFB703",
+        _ => "#FB8500"
+    };
+}
+
