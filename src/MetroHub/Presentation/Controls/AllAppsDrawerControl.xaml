@@ -343,7 +343,7 @@
                                                            Height="22"
                                                            HorizontalAlignment="Center"
                                                            VerticalAlignment="Center"
-                                                           RenderOptions.BitmapScalingMode="LowQuality" />
+                                                           RenderOptions.BitmapScalingMode="HighQuality" />
 
                                                     <TextBlock Grid.Column="1"
                                                                Text="{Binding Name}"
@@ -414,7 +414,7 @@
                                            Height="22"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
-                                           RenderOptions.BitmapScalingMode="LowQuality" />
+                                           RenderOptions.BitmapScalingMode="HighQuality" />
 
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding Name}"

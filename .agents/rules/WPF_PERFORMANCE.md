@@ -93,13 +93,10 @@ Replace software `DropShadowEffect` with lightweight painted borders or GPU radi
 
 ## 4. Text Formatting & Icon Scaling Standards
 
-### The Problem
-1. `TextOptions.TextFormattingMode="Ideal"` calculates glyph positions using sub-pixel precision and float metrics designed for print layout. During any motion, WPF re-computes sub-pixel font anti-aliasing on every single frame on the CPU.
-2. `RenderOptions.BitmapScalingMode="HighQuality"` forces high-order bicubic/Fant filtering across hundreds of app icons, exhausting GPU fill-rate on integrated APUs (AMD Vega 8, Intel Iris).
-
-### The Mandatory Standards
-1. Always use **`TextFormattingMode="Display"`** on the Window, Root Grid, and all TextBlock styles.
-2. Use **`RenderOptions.BitmapScalingMode="LowQuality"`** (hardware bilinear filtering) on icons inside dense lists or sliding drawers.
+### The Universal Standard
+1. Use **`TextFormattingMode="Ideal"`**, **`TextRenderingMode="Grayscale"`**, and **`TextHintingMode="Animated"`** universally across the Window, Root Grid, TextBlocks, Controls, and `ui:SymbolIcon`s.
+   * DirectWrite grayscale sub-pixel anti-aliasing renders ultra-clean vector curves without chromatic color fringing on dark/Mica backgrounds, avoiding chunky GDI pixel snapping.
+2. When large element trees or icon lists slide or animate, use **`CacheMode="BitmapCache"`** during motion so the GPU translates a single baked texture quad, maintaining 100 FPS without sacrificing font or icon quality.
 3. Defer `TextBox.Focus()` to `anim.Completed` rather than on frame 0 to prevent Windows IME message pump initialization from blocking the start of animations.
 
 ---
@@ -111,6 +108,5 @@ Replace software `DropShadowEffect` with lightweight painted borders or GPU radi
 - [ ] Both drawer and scissor animations share `Timeline.SetDesiredFrameRate(anim, refreshRate)`.
 - [ ] Sliding panels with dense item lists use `BitmapCache` during motion.
 - [ ] `SearchBox.Focus()` is deferred to `anim.Completed`.
-- [ ] Dense list icons use `BitmapScalingMode="LowQuality"`.
 - [ ] Every `<DropShadowEffect>` is accompanied by `CacheMode="BitmapCache"` or replaced with GPU borders.
-- [ ] Window and root containers specify `TextFormattingMode="Display"` and `TextRenderingMode="ClearType"`.
+- [ ] Window, styles, and controls specify `TextFormattingMode="Ideal"` and `TextRenderingMode="Grayscale"`.

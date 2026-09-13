@@ -110,19 +110,19 @@
                 </Style.Triggers>
             </Style>
 
-            <!-- Universal DirectWrite Typography & Icon Defaults: ClearType Display mode for GPU-accelerated rendering -->
+            <!-- Universal DirectWrite Typography & Icon Defaults: Crisp vector outlines, zero color fringing across all future UI -->
             <Style TargetType="{x:Type TextBlock}">
-                <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
-                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
-                <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+                <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
                 <Setter Property="SnapsToDevicePixels" Value="True" />
                 <Setter Property="UseLayoutRounding" Value="True" />
             </Style>
 
             <Style TargetType="{x:Type Control}">
-                <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
-                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
-                <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+                <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
             </Style>
 
             <!-- Global Crisp DirectWrite Vector Styling for all current and future WPF-UI Icons -->
@@ -130,8 +130,8 @@
                 <Setter Property="SnapsToDevicePixels" Value="True" />
                 <Setter Property="UseLayoutRounding" Value="True" />
                 <Setter Property="Focusable" Value="False" />
-                <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
-                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
                 <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
             </Style>
 
@@ -140,8 +140,9 @@
                 <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif" />
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="FontWeight" Value="Normal" />
-                <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
-                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+                <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
                 <Setter Property="LayoutTransform">
                     <Setter.Value>
                         <ScaleTransform ScaleX="{Binding Source={x:Static local:MainWindow.Current}, Path=CurrentScale, FallbackValue=1.0}"
@@ -436,8 +437,9 @@
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="FontWeight" Value="Normal" />
                 <Setter Property="Foreground" Value="{DynamicResource ContextMenuForeground}" />
-                <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
-                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+                <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
                 <Setter Property="SnapsToDevicePixels" Value="True" />
                 <Setter Property="UseLayoutRounding" Value="True" />
                 <Setter Property="MinHeight" Value="32" />
