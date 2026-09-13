@@ -63,38 +63,35 @@
                                               Margin="0,0,0,2"
                                               SnapsToDevicePixels="True" />
 
-                            <!-- Layer 3: Edge-to-Edge Bottom Separator Segment (Height 2px) -->
-                            <!-- Default: standard subtle separator (#18FFFFFF). Active: Green/Red Glow replacing the separator -->
+                            <!-- Layer 3: Edge-to-Edge Active Bottom Glow Bar (3px bold Game Bar line) -->
+                            <!-- Default: Null background renders zero pixels, preventing overlapping dot artifacts. Only lights up on active tile. -->
                             <Border x:Name="BottomLine"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Bottom"
-                                    Height="2"
-                                    Background="#18FFFFFF"
+                                    Height="3"
                                     SnapsToDevicePixels="True" />
                         </Grid>
                         <ControlTemplate.Triggers>
-                            <!-- GlowGreen: Emerald green bottom border glow for connected state -->
+                            <!-- GlowGreen: Vivid emerald green bottom border glow for active selected tile -->
                             <Trigger Property="Tag" Value="GlowGreen">
-                                <Setter TargetName="BottomLine" Property="Height" Value="2.5" />
                                 <Setter TargetName="BottomLine" Property="Background" Value="#00E676" />
                                 <Setter TargetName="BottomLine" Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="#00E676" BlurRadius="8" ShadowDepth="0" Opacity="0.95" />
+                                        <DropShadowEffect Color="#00E676" BlurRadius="12" ShadowDepth="0" Opacity="1" />
                                     </Setter.Value>
                                 </Setter>
-                                <Setter Property="Panel.ZIndex" Value="5" />
+                                <Setter Property="Panel.ZIndex" Value="20" />
                             </Trigger>
 
-                            <!-- GlowRed: Warning Red bottom border glow for disconnected state -->
+                            <!-- GlowRed: Warning Red bottom border glow for kill-net or disconnected state -->
                             <Trigger Property="Tag" Value="GlowRed">
-                                <Setter TargetName="BottomLine" Property="Height" Value="2.5" />
                                 <Setter TargetName="BottomLine" Property="Background" Value="#FF4C4C" />
                                 <Setter TargetName="BottomLine" Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="#FF4C4C" BlurRadius="8" ShadowDepth="0" Opacity="0.95" />
+                                        <DropShadowEffect Color="#FF4C4C" BlurRadius="12" ShadowDepth="0" Opacity="1" />
                                     </Setter.Value>
                                 </Setter>
-                                <Setter Property="Panel.ZIndex" Value="5" />
+                                <Setter Property="Panel.ZIndex" Value="20" />
                             </Trigger>
 
                             <!-- Hover state: illuminates dividing borders and subtle glass sheen, Panel.ZIndex=10 ensures top rendering -->
@@ -154,46 +151,54 @@
             </Setter>
         </Style>
 
-        <!-- 1. Ethernet Tile Style: Left and right dividing borders on hover, glowing bottom border when connected -->
+        <!-- 1. Ethernet Tile Style: GlowGreen when Ethernet panel is selected -->
         <Style x:Key="EthernetTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
             <Setter Property="BorderThickness" Value="1,0,1,0" />
             <Style.Triggers>
-                <DataTrigger Binding="{Binding IsEthernetConnected}" Value="True">
+                <DataTrigger Binding="{Binding IsEthernetPanel}" Value="True">
                     <Setter Property="Tag" Value="GlowGreen" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
 
-        <!-- 2. WIFI Tile Style: Left and right dividing borders on hover, glowing bottom border when connected -->
+        <!-- 2. WIFI Tile Style: GlowGreen when Wi-Fi panel is selected -->
         <Style x:Key="WifiTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
             <Setter Property="BorderThickness" Value="1,0,1,0" />
             <Style.Triggers>
-                <DataTrigger Binding="{Binding IsWifiConnected}" Value="True">
+                <DataTrigger Binding="{Binding IsWifiPanel}" Value="True">
                     <Setter Property="Tag" Value="GlowGreen" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
 
-        <!-- 3. Kill Net Tile Style: Left and right dividing borders on hover, red glowing bottom border when disconnected -->
+        <!-- 3. Kill Net Tile Style: GlowRed when KillNet panel is selected OR internet disconnected -->
         <Style x:Key="KillNetTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
             <Setter Property="BorderThickness" Value="1,0,1,0" />
             <Style.Triggers>
+                <DataTrigger Binding="{Binding IsKillNetPanel}" Value="True">
+                    <Setter Property="Tag" Value="GlowRed" />
+                </DataTrigger>
                 <DataTrigger Binding="{Binding IsInternetDisconnected}" Value="True">
                     <Setter Property="Tag" Value="GlowRed" />
                 </DataTrigger>
             </Style.Triggers>
         </Style>
 
-        <!-- 4. Speed Tile Style: Left and right dividing borders on hover -->
+        <!-- 4. Speed Tile Style: GlowGreen when Speed panel is selected -->
         <Style x:Key="SpeedTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
             <Setter Property="BorderThickness" Value="1,0,1,0" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSpeedPanel}" Value="True">
+                    <Setter Property="Tag" Value="GlowGreen" />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
-        <!-- 5. Hotspot Tile Style: Left and right dividing borders on hover, glowing bottom border when connected -->
+        <!-- 5. Hotspot Tile Style: GlowGreen when Hotspot panel is selected -->
         <Style x:Key="HotspotTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
             <Setter Property="BorderThickness" Value="1,0,1,0" />
             <Style.Triggers>
-                <DataTrigger Binding="{Binding IsHotspotConnected}" Value="True">
+                <DataTrigger Binding="{Binding IsHotspotPanel}" Value="True">
                     <Setter Property="Tag" Value="GlowGreen" />
                 </DataTrigger>
             </Style.Triggers>
@@ -215,7 +220,15 @@
             <!-- [ Ethernet ] | [ WIFI ] | [ Kill Net ] | [ Speed ] | [ Hotspot ]          -->
             <!-- ========================================================================= -->
             <Grid Grid.Row="0" SnapsToDevicePixels="True" Background="Transparent">
-                <Grid.ColumnDefinitions>
+                <!-- Universal Single Continuous Hairline Separator across entire row (100% smooth, ZERO dots) -->
+                <Border VerticalAlignment="Bottom"
+                        Height="1.5"
+                        Background="#16FFFFFF"
+                        SnapsToDevicePixels="True" />
+
+                <!-- 5-Column Segmented Tile Strip -->
+                <Grid SnapsToDevicePixels="True" Background="Transparent">
+                    <Grid.ColumnDefinitions>
                         <!-- Col 0: Ethernet -->
                         <ColumnDefinition Width="*" />
                         <!-- Col 1: WIFI -->
@@ -361,6 +374,7 @@
                     </StackPanel>
                 </Button>
             </Grid>
+        </Grid>
 
             <!-- ========================================================================= -->
             <!-- ROW 1: LOWER PANEL REGION                                                 -->
