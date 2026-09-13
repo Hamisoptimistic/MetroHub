@@ -1357,17 +1357,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         Point canvasMouse = TilesListBox != null ? e.GetPosition(TilesListBox) : e.GetPosition(this);
         bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
 
-        if (FindParent<System.Windows.Controls.Button>(dep) != null ||
-            FindParent<System.Windows.Controls.Primitives.Thumb>(dep) != null ||
-            FindParent<System.Windows.Controls.Primitives.RangeBase>(dep) != null ||
-            FindParent<System.Windows.Controls.Slider>(dep) != null ||
-            FindParent<System.Windows.Controls.ProgressBar>(dep) != null ||
-            FindParent<FrameworkElement>(dep)?.Name == "SeekbarContainer" ||
-            FindParent<FrameworkElement>(dep)?.Name == "SeekThumb" ||
-            FindParent<FrameworkElement>(dep)?.Name == "SeekTrackBg" ||
-            FindParent<FrameworkElement>(dep)?.Name == "SeekProgressFill" ||
-            FindParent<Presentation.Controls.FluentVolumeSlider>(dep) != null ||
-            FindParent<FrameworkElement>(dep)?.Tag as string == "InteractiveControl")
+        if (IsInteractiveElement(dep))
         {
             _isPotentialDrag = false;
             _isDragging = false;
@@ -1466,14 +1456,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             _draggedControl = null;
             _draggedCluster.Clear();
 
-            if (FindParent<System.Windows.Controls.Button>(dep) != null ||
-                FindParent<System.Windows.Controls.Primitives.Thumb>(dep) != null ||
-                FindParent<ContextMenu>(dep) != null ||
-                FindParent<FrameworkElement>(dep)?.Name == "SeekbarContainer" ||
-                FindParent<FrameworkElement>(dep)?.Name == "SeekThumb" ||
-                FindParent<FrameworkElement>(dep)?.Name == "SeekTrackBg" ||
-                FindParent<FrameworkElement>(dep)?.Name == "SeekProgressFill" ||
-                FindParent<FrameworkElement>(dep)?.Tag as string == "InteractiveControl")
+            if (IsInteractiveElement(dep))
             {
                 return;
             }
@@ -2500,6 +2483,42 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
             control.ClearAmbientReveal();
         }
+    }
+
+    private static bool IsInteractiveElement(DependencyObject? dep)
+    {
+        DependencyObject? current = dep;
+        while (current != null)
+        {
+            if (current is System.Windows.Controls.Primitives.TextBoxBase ||
+                current is System.Windows.Controls.PasswordBox ||
+                current is System.Windows.Controls.Button ||
+                current is System.Windows.Controls.Primitives.Thumb ||
+                current is System.Windows.Controls.Primitives.RangeBase ||
+                current is System.Windows.Controls.Slider ||
+                current is System.Windows.Controls.ProgressBar ||
+                current is ContextMenu ||
+                current is Presentation.Controls.FluentVolumeSlider)
+            {
+                return true;
+            }
+
+            if (current is FrameworkElement fe)
+            {
+                if (fe.Tag as string == "InteractiveControl" ||
+                    fe.Name == "SeekbarContainer" ||
+                    fe.Name == "SeekThumb" ||
+                    fe.Name == "SeekTrackBg" ||
+                    fe.Name == "SeekProgressFill")
+                {
+                    return true;
+                }
+            }
+
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        return false;
     }
 
     private static T? FindParent<T>(DependencyObject? child) where T : DependencyObject

@@ -10,6 +10,7 @@
              d:DataContext="{d:DesignInstance Type=notepad:NotepadWidgetViewModel}"
              Focusable="False"
              FocusVisualStyle="{x:Null}"
+             ClipToBounds="True"
              SnapsToDevicePixels="True"
              UseLayoutRounding="True"
              TextOptions.TextFormattingMode="Ideal"
@@ -103,8 +104,10 @@
         <Style x:Key="CircularTodoCheckboxStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Width" Value="20" />
-            <Setter Property="Height" Value="20" />
+            <Setter Property="Width" Value="18" />
+            <Setter Property="Height" Value="18" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -116,7 +119,7 @@
                                 Height="18"
                                 CornerRadius="9"
                                 BorderThickness="1.5"
-                                BorderBrush="#65FFFFFF"
+                                BorderBrush="#60FFFFFF"
                                 Background="Transparent"
                                 SnapsToDevicePixels="True">
                             <TextBlock x:Name="CheckIcon"
@@ -203,10 +206,46 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Clean To-Do Task Input TextBox Style (Overrides default WPF-UI styling to remove dark box and blue underline) -->
+        <Style x:Key="CleanTaskTextBoxStyle" TargetType="TextBox">
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="SelectionBrush" Value="#503A86FF" />
+            <Setter Property="SelectionOpacity" Value="0.6" />
+            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, sans-serif" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Focusable="False"
+                                          FocusVisualStyle="{x:Null}"
+                                          VerticalAlignment="Center"
+                                          HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Disabled"
+                                          Padding="0"
+                                          Margin="0" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <!-- Root Grid (Zero padding so separator runs border-to-border like Focus Timer & Volume) -->
-    <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
+    <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" Tag="InteractiveControl">
         <Grid.RowDefinitions>
             <!-- Row 0: Centered Top Menu Toolbar -->
             <RowDefinition Height="Auto" />
@@ -303,9 +342,9 @@
             <!-- ROW 2: CONTENT AREA (NOTES OR TO-DO)                                      -->
             <!-- Padded 14px horizontally away from edges                                  -->
             <!-- ========================================================================= -->
-            <Grid Grid.Row="2" Margin="14,10,14,12">
+            <Grid Grid.Row="2" Margin="14,10,14,12" Tag="InteractiveControl">
                 <!-- MODE 1: SIMPLE TEXT WRITING (NOTEPAD) -->
-                <Grid Visibility="{Binding IsNotesView, Converter={StaticResource BoolToVis}}">
+                <Grid Visibility="{Binding IsNotesView, Converter={StaticResource BoolToVis}}" Tag="InteractiveControl">
                     <TextBox x:Name="NotesEditorTextBox"
                              Style="{StaticResource NotesTextBoxStyle}"
                              Text="{Binding NoteText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -315,16 +354,17 @@
                              VerticalScrollBarVisibility="Auto"
                              HorizontalScrollBarVisibility="Disabled"
                              FocusVisualStyle="{x:Null}"
+                             Tag="InteractiveControl"
                              PreviewKeyDown="NotesEditorTextBox_PreviewKeyDown"
                              GotKeyboardFocus="NotesEditorTextBox_GotKeyboardFocus" />
 
                     <!-- Watermark Placeholder (Hidden immediately when typing) -->
-                    <TextBlock Text="Take notes, thoughts, or ideas..."
+                    <TextBlock Text="Note it down, you know you'll forget"
                                Foreground="#35FFFFFF"
                                FontSize="15"
                                FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                IsHitTestVisible="False"
-                               Margin="2,2,0,0">
+                               Margin="4,2,0,0">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Visibility" Value="Collapsed" />
@@ -338,8 +378,8 @@
                     </TextBlock>
                 </Grid>
 
-                <!-- MODE 2: TO-DO CHECKLIST (MICROSOFT TO-DO ACRYLIC FLUENT DESIGN) -->
-                <Grid Visibility="{Binding IsTodoView, Converter={StaticResource BoolToVis}}">
+                <!-- MODE 2: TO-DO CHECKLIST (CLEAN DESIGN MATCHING USER REFERENCE) -->
+                <Grid Visibility="{Binding IsTodoView, Converter={StaticResource BoolToVis}}" Tag="InteractiveControl">
                     <Grid.RowDefinitions>
                         <!-- Row 0: Quick Task Input (Acrylic Pill) -->
                         <RowDefinition Height="Auto" />
@@ -352,12 +392,13 @@
                     <!-- Microsoft To-Do Style Acrylic Input Bar -->
                     <Border Grid.Row="0"
                             Background="#14FFFFFF"
-                            BorderBrush="#1EFFFFFF"
+                            BorderBrush="#18FFFFFF"
                             BorderThickness="1"
                             CornerRadius="4"
                             Height="38"
                             Margin="0,0,0,10"
-                            Padding="12,0,10,0"
+                            Padding="10,0,10,0"
+                            Tag="InteractiveControl"
                             SnapsToDevicePixels="True">
                         <Grid VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
@@ -365,42 +406,36 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
-                            <!-- Hollow Circular Ring Indicator (Matching Reference Image) -->
+                            <!-- Hollow Circular Ring Indicator (18x18, vertically centered, matches tasks below) -->
                             <Border Grid.Column="0"
                                     Width="18"
                                     Height="18"
                                     CornerRadius="9"
                                     BorderThickness="1.5"
-                                    BorderBrush="#65FFFFFF"
+                                    BorderBrush="#60FFFFFF"
                                     Background="Transparent"
                                     Margin="0,0,10,0"
                                     VerticalAlignment="Center"
                                     SnapsToDevicePixels="True" />
 
-                            <!-- Input TextBox & Non-Overlapping Watermark -->
+                            <!-- Input TextBox & Non-Overlapping Watermark perfectly centered on horizontal axis -->
                             <Grid Grid.Column="1" VerticalAlignment="Center">
                                 <TextBox x:Name="NewTaskTextBox"
+                                         Style="{StaticResource CleanTaskTextBoxStyle}"
                                          Text="{Binding NewTaskText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         Background="Transparent"
-                                         BorderThickness="0"
-                                         Foreground="#FFFFFF"
-                                         CaretBrush="#FFFFFF"
-                                         FontSize="13.5"
-                                         FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                         VerticalAlignment="Center"
-                                         FocusVisualStyle="{x:Null}"
-                                         Padding="0"
+                                         Tag="InteractiveControl"
                                          KeyDown="NewTaskTextBox_KeyDown"
                                          GotKeyboardFocus="NewTaskTextBox_GotKeyboardFocus" />
 
-                                <!-- Watermark Placeholder -->
-                                <TextBlock Text="Try typing 'Pay utilities bill by Friday 6pm'"
-                                           Foreground="#45FFFFFF"
+                                <!-- Watermark Placeholder with clean breathing room from caret -->
+                                <TextBlock Text="Touch Grass"
+                                           Foreground="#50FFFFFF"
                                            FontSize="13.5"
                                            FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            VerticalAlignment="Center"
                                            IsHitTestVisible="False"
-                                           Padding="0">
+                                           Padding="0"
+                                           Margin="4,0,0,0">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Visibility" Value="Collapsed" />
@@ -416,40 +451,43 @@
                         </Grid>
                     </Border>
 
-                    <!-- Floating Infinite Scrolling Task Items (No Enclosing Border) -->
+                    <!-- Floating Infinite Scrolling Task Items (Clean transparent rows, zero ugly gray boxes) -->
                     <ScrollViewer Grid.Row="1"
                                   Focusable="False"
                                   FocusVisualStyle="{x:Null}"
+                                  Tag="InteractiveControl"
                                   VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled">
-                        <ItemsControl ItemsSource="{Binding Tasks}">
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  CanContentScroll="True">
+                        <ItemsControl ItemsSource="{Binding Tasks}"
+                                      Tag="InteractiveControl"
+                                      VirtualizingPanel.IsVirtualizing="True"
+                                      VirtualizingPanel.VirtualizationMode="Recycling"
+                                      VirtualizingPanel.ScrollUnit="Pixel">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VirtualizingStackPanel />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type notepad:TodoTaskItem}">
                                     <Border CornerRadius="4"
-                                            Margin="0,1,2,1"
-                                            Padding="8,6"
+                                            Margin="0,1,0,1"
+                                            Padding="10,6,10,6"
+                                            Background="Transparent"
                                             SnapsToDevicePixels="True">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Background" Value="Transparent" />
-                                                <Style.Triggers>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="#12FFFFFF" />
-                                                    </Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                        <Grid>
+                                        <Grid VerticalAlignment="Center">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- Circular Checkbox Button -->
+                                            <!-- Circular Checkbox Button: 18x18, Margin="0,0,10,0" (100% aligned with input bar circle) -->
                                             <Button Grid.Column="0"
                                                     Style="{StaticResource CircularTodoCheckboxStyle}"
                                                     VerticalAlignment="Center"
+                                                    Margin="0,0,10,0"
                                                     Command="{Binding DataContext.ToggleTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip="Toggle Complete" />
@@ -459,7 +497,7 @@
                                                        Text="{Binding Text}"
                                                        TextWrapping="Wrap"
                                                        VerticalAlignment="Center"
-                                                       Margin="10,0,8,0"
+                                                       Margin="0,0,8,0"
                                                        FontSize="14"
                                                        FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif">
                                                 <TextBlock.Style>
