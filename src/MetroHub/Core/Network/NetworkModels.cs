@@ -25,6 +25,7 @@ public class EthernetInfo
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
+    public bool IsUsbTethering { get; set; }
     public bool IsConnected { get; set; }
     public string IpAddress { get; set; } = "--";
     public string SubnetMask { get; set; } = "--";

@@ -26,10 +26,11 @@ public class EthernetProvider
                 .Where(IsCandidatePhysicalEthernet)
                 .ToList();
 
-            // Prioritize: (1) Connected with IPv4 Default Gateway, (2) Connected without Gateway, (3) Disconnected
+            // Prioritize: (1) Connected with IPv4 Default Gateway, (2) Active USB Tethering, (3) Connected without Gateway, (4) Disconnected
             var activeInterface = ethernetCandidates
                 .OrderByDescending(nic => nic.OperationalStatus == OperationalStatus.Up)
                 .ThenByDescending(nic => HasIpv4Gateway(nic))
+                .ThenByDescending(nic => IsUsbTetheringInterface(nic))
                 .FirstOrDefault();
 
             if (activeInterface == null)
@@ -78,6 +79,7 @@ public class EthernetProvider
             Id = nic.Id,
             Name = nic.Name,
             Description = nic.Description,
+            IsUsbTethering = IsUsbTetheringInterface(nic),
             IsConnected = false
         };
 
@@ -102,7 +104,7 @@ public class EthernetProvider
             var ipv4Unicast = ipProps.UnicastAddresses
                 .FirstOrDefault(ua => ua.Address.AddressFamily == AddressFamily.InterNetwork && !IsLinkLocalOrLoopback(ua.Address.ToString()));
 
-            info.IsConnected = nic.OperationalStatus == OperationalStatus.Up && ipv4Unicast != null && speed > 0;
+            info.IsConnected = nic.OperationalStatus == OperationalStatus.Up && ipv4Unicast != null;
 
             if (ipv4Unicast != null)
             {
@@ -191,8 +193,28 @@ public class EthernetProvider
         return elapsed >= TimeSpan.Zero ? elapsed : TimeSpan.Zero;
     }
 
+    public static bool IsUsbTetheringInterface(NetworkInterface nic)
+    {
+        string desc = nic.Description.ToLowerInvariant();
+        string name = nic.Name.ToLowerInvariant();
+        return desc.Contains("remote ndis") ||
+               desc.Contains("rndis") ||
+               desc.Contains("apple mobile device") ||
+               desc.Contains("samsung mobile usb") ||
+               desc.Contains("google usb") ||
+               desc.Contains("usb ethernet") ||
+               desc.Contains("tethering") ||
+               name.Contains("tether");
+    }
+
     private static bool IsCandidatePhysicalEthernet(NetworkInterface nic)
     {
+        // Always accept USB tethering interfaces from Android / iPhone
+        if (IsUsbTetheringInterface(nic))
+        {
+            return true;
+        }
+
         // Must be Ethernet type
         if (nic.NetworkInterfaceType != NetworkInterfaceType.Ethernet &&
             nic.NetworkInterfaceType != NetworkInterfaceType.GigabitEthernet &&
@@ -212,7 +234,7 @@ public class EthernetProvider
             desc.Contains("bluetooth") || desc.Contains("loopback") || desc.Contains("tailscale") ||
             desc.Contains("zerotier") || desc.Contains("wireguard") || desc.Contains("wan miniport") ||
             desc.Contains("miniport") || desc.Contains("lightweight filter") || desc.Contains("native mac layer") ||
-            desc.Contains("kernel debug") || desc.Contains("packet scheduler") || desc.Contains("ndis") ||
+            desc.Contains("kernel debug") || desc.Contains("packet scheduler") ||
             desc.Contains("multiplexor") || desc.Contains("teredo") || desc.Contains("isatap") ||
             desc.Contains("6to4") || desc.Contains("tunnel") || desc.Contains("pacer"))
         {

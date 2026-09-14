@@ -157,8 +157,7 @@ public partial class PhotosWidgetViewModel : WidgetViewModelBase
     [RelayCommand]
     public void ChooseFolder()
     {
-        var mainWindow = MainWindow.Current;
-        if (mainWindow != null) mainWindow.IsDialogOpen = true;
+        using var _ = MainWindow.EnterDialogScope();
 
         try
         {
@@ -173,6 +172,7 @@ public partial class PhotosWidgetViewModel : WidgetViewModelBase
                 dialog.InitialDirectory = FolderPath;
             }
 
+            var mainWindow = MainWindow.Current;
             bool? result = mainWindow != null ? dialog.ShowDialog(mainWindow) : dialog.ShowDialog();
 
             if (result == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
@@ -183,14 +183,6 @@ public partial class PhotosWidgetViewModel : WidgetViewModelBase
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[PhotosWidget] Failed to open folder picker: {ex.Message}");
-        }
-        finally
-        {
-            if (mainWindow != null)
-            {
-                mainWindow.IsDialogOpen = false;
-                mainWindow.Activate();
-            }
         }
     }
 

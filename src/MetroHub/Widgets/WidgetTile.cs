@@ -37,7 +37,39 @@ public class WidgetTile : ListBoxItem
             nameof(IndicatorBrush),
             typeof(Brush),
             typeof(WidgetTile),
-            new PropertyMetadata(new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00E676"))));
+            new PropertyMetadata(
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00E676")),
+                OnIndicatorBrushChanged));
+
+    private static void OnIndicatorBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is WidgetTile tile)
+        {
+            WidgetTiles? parent = ItemsControl.ItemsControlFromItemContainer(tile) as WidgetTiles
+                ?? tile.Parent as WidgetTiles;
+            if (parent == null)
+            {
+                DependencyObject current = tile;
+                while (current != null && parent == null)
+                {
+                    current = VisualTreeHelper.GetParent(current);
+                    parent = current as WidgetTiles;
+                }
+            }
+
+            if (parent != null)
+            {
+                bool isSelected = tile.IsSelected ||
+                    (parent.SelectedIndex >= 0 && parent.SelectedIndex < parent.Items.Count && parent.Items[parent.SelectedIndex] == tile) ||
+                    (parent.SelectedValue != null && Equals(parent.SelectedValue, tile.Value));
+
+                if (isSelected)
+                {
+                    parent.UpdateIndicatorBrush(e.NewValue as Brush);
+                }
+            }
+        }
+    }
 
     private static readonly DependencyPropertyKey IsPressedPropertyKey =
         DependencyProperty.RegisterReadOnly(

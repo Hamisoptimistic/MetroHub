@@ -30,7 +30,109 @@ public partial class MainWindow : BorderlessFluentWindow
     public AppSettings Settings { get; set; } = new();
 
     public static MainWindow? Current { get; private set; }
-    public bool IsDialogOpen { get; set; } = false;
+    
+    private int _dialogOpenCount = 0;
+    public bool IsDialogOpen
+    {
+        get => _dialogOpenCount > 0;
+        set
+        {
+            if (value)
+                System.Threading.Interlocked.Increment(ref _dialogOpenCount);
+            else
+            {
+                int current;
+                do
+                {
+                    current = _dialogOpenCount;
+                    if (current <= 0) break;
+                } while (System.Threading.Interlocked.CompareExchange(ref _dialogOpenCount, current - 1, current) != current);
+            }
+        }
+    }
+
+    /// <summary>
+    private static int _dialogScopeDepth;
+
+    /// <summary>
+    /// Universally keeps MetroHub open and suppresses auto-dismiss when an external modal,
+    /// file picker, or UAC elevation prompt is active, then automatically restores foreground focus.
+    /// </summary>
+    public static IDisposable EnterDialogScope()
+    {
+        var win = Current;
+        if (win == null) return ActionDisposable.Empty;
+
+        Interlocked.Increment(ref _dialogScopeDepth);
+        if (win.Dispatcher.CheckAccess())
+        {
+            win.IsDialogOpen = true;
+        }
+        else
+        {
+            win.Dispatcher.Invoke(() => win.IsDialogOpen = true);
+        }
+
+        return new ActionDisposable(() =>
+        {
+            if (win == null) return;
+            if (Interlocked.Decrement(ref _dialogScopeDepth) <= 0)
+            {
+                Interlocked.Exchange(ref _dialogScopeDepth, 0);
+                win.Dispatcher.InvokeAsync(() =>
+                {
+                    win.IsDialogOpen = false;
+                    try
+                    {
+                        win.Activate();
+                        win.Focus();
+                    }
+                    catch { }
+                });
+            }
+        });
+    }
+
+    /// <summary>
+    /// Explicitly sets the dialog state and brings MetroHub to foreground upon closing.
+    /// </summary>
+    public static void SetDialogOpen(bool isOpen)
+    {
+        var win = Current;
+        if (win == null) return;
+
+        if (win.Dispatcher.CheckAccess())
+        {
+            win.IsDialogOpen = isOpen;
+            if (!isOpen)
+            {
+                try { win.Activate(); win.Focus(); } catch { }
+            }
+        }
+        else
+        {
+            win.Dispatcher.InvokeAsync(() =>
+            {
+                win.IsDialogOpen = isOpen;
+                if (!isOpen)
+                {
+                    try { win.Activate(); win.Focus(); } catch { }
+                }
+            });
+        }
+    }
+
+    private sealed class ActionDisposable : IDisposable
+    {
+        public static readonly ActionDisposable Empty = new(null);
+        private Action? _action;
+        public ActionDisposable(Action? action) => _action = action;
+        public void Dispose()
+        {
+            var a = System.Threading.Interlocked.Exchange(ref _action, null);
+            a?.Invoke();
+        }
+    }
 
     public static readonly DependencyProperty CurrentScaleProperty =
         DependencyProperty.Register(nameof(CurrentScale), typeof(double), typeof(MainWindow), new PropertyMetadata(1.0));

@@ -53,6 +53,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     private bool _isHubVisible = true;
     private bool _hasInitializedPanel;
     private CancellationTokenSource? _toastCts;
+    private CancellationTokenSource? _reconnectCts;
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
@@ -74,15 +75,22 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public bool IsHotspotPanel => string.Equals(CurrentPanel, "Hotspot", StringComparison.OrdinalIgnoreCase);
 
     // --- Dynamic Status Brushes for Modular WidgetTiles ---
-    private static readonly Brush GreenIndicatorBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00E676"));
-    private static readonly Brush RedIndicatorBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF3B30"));
-    private static readonly Brush AmberIndicatorBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFB703"));
+    private static readonly Brush GreenIndicatorBrush = CreateFrozenBrush("#00E676");
+    private static readonly Brush RedIndicatorBrush = CreateFrozenBrush("#FF3B30");
+    private static readonly Brush AmberIndicatorBrush = CreateFrozenBrush("#FFB703");
+
+    private static Brush CreateFrozenBrush(string hex)
+    {
+        var b = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
+        b.Freeze();
+        return b;
+    }
 
     public Brush EthernetStatusBrush
     {
         get
         {
-            if (IsInternetDisconnected || !IsEthernetConnected)
+            if (IsEthernetAdapterDisabled || !IsEthernetConnected)
                 return RedIndicatorBrush;
             if (IsLocalOnlyNoInternet)
                 return AmberIndicatorBrush;
@@ -94,7 +102,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     {
         get
         {
-            if (IsInternetDisconnected || !IsWifiConnected)
+            if (!HasWifiAdapter || !IsWifiConnected)
                 return RedIndicatorBrush;
             if (IsLocalOnlyNoInternet)
                 return AmberIndicatorBrush;
@@ -102,14 +110,14 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    public Brush KillNetStatusBrush => RedIndicatorBrush;
+    public Brush KillNetStatusBrush => IsInternetDisconnected ? RedIndicatorBrush : GreenIndicatorBrush;
 
     public Brush SpeedStatusBrush
     {
         get
         {
             bool isLinked = IsEthernetConnected || IsWifiConnected;
-            if (IsInternetDisconnected || !isLinked)
+            if (!isLinked)
                 return RedIndicatorBrush;
             if (IsLocalOnlyNoInternet)
                 return AmberIndicatorBrush;
@@ -161,6 +169,14 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(SpeedStatusBrush))]
     [NotifyPropertyChangedFor(nameof(EthernetActionText))]
     [NotifyPropertyChangedFor(nameof(EthernetActionSubtext))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelTitle))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelIcon))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelTitleColor))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileHeader))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileIcon))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileTooltip))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelName))]
+    [NotifyPropertyChangedFor(nameof(EthernetTurnedOffBannerTitle))]
     private bool _isEthernetConnected;
 
     [ObservableProperty]
@@ -209,6 +225,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(HasNoWifiAdapter))]
     [NotifyPropertyChangedFor(nameof(WifiActionText))]
     [NotifyPropertyChangedFor(nameof(WifiActionSubtext))]
+    [NotifyPropertyChangedFor(nameof(WifiStatusBrush))]
     private bool _hasWifiAdapter;
 
     public bool HasNoWifiAdapter => !HasWifiAdapter;
@@ -222,6 +239,13 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetStatusBorderBrush))]
     [NotifyPropertyChangedFor(nameof(EthernetActionText))]
     [NotifyPropertyChangedFor(nameof(EthernetActionSubtext))]
+    [NotifyPropertyChangedFor(nameof(EthernetStatusBrush))]
+    [NotifyPropertyChangedFor(nameof(CanToggleEthernet))]
+    [NotifyPropertyChangedFor(nameof(IsEthernetEnabled))]
+    [NotifyPropertyChangedFor(nameof(IsEthernetDisabled))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelTitle))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelIcon))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelTitleColor))]
     private bool _hasEthernetAdapter;
 
     public bool HasNoEthernetAdapter => !HasEthernetAdapter;
@@ -235,6 +259,16 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(DataUsageTotalDisplay))]
     [NotifyPropertyChangedFor(nameof(DataUsageDetailDisplay))]
     [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileHeader))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileIcon))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileTooltip))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelName))]
+    [NotifyPropertyChangedFor(nameof(EthernetTurnedOffBannerTitle))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelIcon))]
+    [NotifyPropertyChangedFor(nameof(EthernetActionSubtext))]
+    [NotifyPropertyChangedFor(nameof(HeroGlyph))]
+    [NotifyPropertyChangedFor(nameof(HeroTitle))]
+    [NotifyPropertyChangedFor(nameof(HeroSubtitle))]
     private EthernetInfo _ethernet = new();
 
     [ObservableProperty]
@@ -258,6 +292,9 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetStatusBrush))]
     [NotifyPropertyChangedFor(nameof(WifiStatusBrush))]
     [NotifyPropertyChangedFor(nameof(SpeedStatusBrush))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelTitle))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelIcon))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelTitleColor))]
     private NetworkHealthStatus _health = new();
 
     [ObservableProperty]
@@ -279,7 +316,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         {
             if (IsInternetDisconnected) return "\uE774"; // Globe prohibited
             if (IsWifiConnected) return "\uE701";       // Wi-Fi signal
-            if (IsEthernetConnected) return "\uE839";   // Ethernet Monitor
+            if (IsEthernetConnected) return (Ethernet != null && Ethernet.IsUsbTethering) ? "\uE8EA" : "\uE839";
             return "\uE774";
         }
     }
@@ -312,7 +349,11 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         {
             if (IsInternetDisconnected) return "Internet Disconnected";
             if (IsWifiConnected) return string.IsNullOrWhiteSpace(WifiConnection.Ssid) ? "Wi-Fi" : WifiConnection.Ssid;
-            if (IsEthernetConnected) return string.IsNullOrWhiteSpace(Ethernet.Description) ? "Ethernet" : Ethernet.Description;
+            if (IsEthernetConnected)
+            {
+                if (Ethernet != null && Ethernet.IsUsbTethering) return "USB Tethering";
+                return string.IsNullOrWhiteSpace(Ethernet?.Description) ? "Ethernet" : Ethernet.Description;
+            }
             return "No Active Connection";
         }
     }
@@ -330,8 +371,9 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             }
             if (IsEthernetConnected)
             {
-                string speedInfo = !string.IsNullOrWhiteSpace(Ethernet.LinkSpeedString) && Ethernet.LinkSpeedString != "--" ? $"  •  {Ethernet.LinkSpeedString}" : "";
-                return $"Connected{speedInfo}  •  {internetSuffix}";
+                string prefix = (Ethernet != null && Ethernet.IsUsbTethering) ? "USB Connected" : "Connected";
+                string speedInfo = !string.IsNullOrWhiteSpace(Ethernet?.LinkSpeedString) && Ethernet.LinkSpeedString != "--" ? $"  •  {Ethernet.LinkSpeedString}" : "";
+                return $"{prefix}{speedInfo}  •  {internetSuffix}";
             }
             return "Not connected to any network";
         }
@@ -343,7 +385,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         get
         {
             if (!HasEthernetAdapter) return "No Adapter";
-            if (!Ethernet.IsConnected) return "Cable Unplugged";
+            if (Ethernet == null || !Ethernet.IsConnected) return (Ethernet != null && Ethernet.IsUsbTethering) ? "Device Unplugged" : "Cable Unplugged";
             if (IsLocalOnlyNoInternet) return "No Internet";
             return "Connected";
         }
@@ -353,7 +395,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     {
         get
         {
-            if (!HasEthernetAdapter || !Ethernet.IsConnected) return "#85FFFFFF";
+            if (!HasEthernetAdapter || Ethernet == null || !Ethernet.IsConnected) return "#85FFFFFF";
             if (IsLocalOnlyNoInternet) return "#FFB703";
             return "#FFFFFF";
         }
@@ -671,7 +713,91 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetActionText))]
     [NotifyPropertyChangedFor(nameof(EthernetActionSubtext))]
     [NotifyPropertyChangedFor(nameof(EthernetIndicatorDotBrush))]
+    [NotifyPropertyChangedFor(nameof(EthernetStatusBrush))]
+    [NotifyPropertyChangedFor(nameof(CanToggleEthernet))]
+    [NotifyPropertyChangedFor(nameof(IsEthernetEnabled))]
+    [NotifyPropertyChangedFor(nameof(IsEthernetDisabled))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelTitle))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelIcon))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelTitleColor))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileHeader))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileIcon))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileTooltip))]
+    [NotifyPropertyChangedFor(nameof(EthernetPanelName))]
+    [NotifyPropertyChangedFor(nameof(EthernetTurnedOffBannerTitle))]
     private bool _isEthernetAdapterDisabled;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanToggleEthernet))]
+    private bool _isEthernetBusy;
+
+    public bool CanToggleEthernet => (HasEthernetAdapter || IsEthernetAdapterDisabled) && !IsEthernetBusy;
+
+    public bool IsEthernetEnabled
+    {
+        get => HasEthernetAdapter && !IsEthernetAdapterDisabled;
+        set
+        {
+            if (value == (HasEthernetAdapter && !IsEthernetAdapterDisabled)) return;
+            _ = HandleEthernetToggleAsync(value);
+        }
+    }
+
+    public bool IsEthernetDisabled => !IsEthernetEnabled;
+
+    public bool IsEthernetNoInternet =>
+        IsEthernetConnected &&
+        Health != null &&
+        Health.Connectivity is ConnectivityLevel.LocalAccess or ConnectivityLevel.ConstrainedInternet;
+
+    // --- Dynamic USB Tethering & Ethernet Properties for Tile and Panel ---
+    public string EthernetTileHeader => (Ethernet != null && Ethernet.IsUsbTethering) ? "USB Tether" : "Ethernet";
+
+    public string EthernetTileIcon => (Ethernet != null && Ethernet.IsUsbTethering) ? "\uE8EA" : "\uE839";
+
+    public string EthernetTileTooltip => (Ethernet != null && Ethernet.IsUsbTethering)
+        ? "USB Tethering Settings & Telemetry"
+        : "Ethernet Settings & Telemetry";
+
+    public string EthernetPanelName => (Ethernet != null && Ethernet.IsUsbTethering) ? "USB Tethering" : "Ethernet";
+
+    public string EthernetTurnedOffBannerTitle => $"{EthernetPanelName} is turned off";
+
+    public string EthernetPanelIcon
+    {
+        get
+        {
+            if (!HasEthernetAdapter || IsEthernetDisabled || !IsEthernetConnected)
+                return "\uEB55"; // Disconnected
+            if (IsEthernetNoInternet)
+                return "\uE774"; // Globe No Internet
+            return (Ethernet != null && Ethernet.IsUsbTethering) ? "\uE8EA" : "\uE839"; // Connected
+        }
+    }
+
+    public string EthernetPanelTitle
+    {
+        get
+        {
+            if (!HasEthernetAdapter || IsEthernetDisabled || !IsEthernetConnected)
+                return "Disconnected";
+            if (IsEthernetNoInternet)
+                return "No Internet";
+            return "Connected";
+        }
+    }
+
+    public string EthernetPanelTitleColor
+    {
+        get
+        {
+            if (IsEthernetNoInternet)
+                return "#FFB703"; // Warning Amber
+            if (!HasEthernetAdapter || IsEthernetDisabled || !IsEthernetConnected)
+                return "#85FFFFFF";
+            return "#FFFFFF";
+        }
+    }
 
     public string EthernetActionText => IsEthernetAdapterDisabled ? "Enable" : "Disable";
 
@@ -679,13 +805,16 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     {
         get
         {
+            string name = (Ethernet != null && Ethernet.IsUsbTethering) ? "USB Tethering" : "Ethernet";
             if (!HasEthernetAdapter)
-                return "No Ethernet adapter detected on this PC";
+                return $"No {name} adapter detected on this PC";
             if (IsEthernetAdapterDisabled)
-                return "Ethernet adapter is disabled • Click Enable to restore";
+                return $"{name} adapter is disabled • Click Enable to restore";
             if (IsEthernetConnected)
-                return "Disable / disconnect Ethernet (Requires Admin privilege)";
-            return "Cable unplugged • Disabling requires Admin privilege";
+                return $"Disable / disconnect {name} (Requires Admin privilege)";
+            return (Ethernet != null && Ethernet.IsUsbTethering)
+                ? "USB device disconnected • Disabling requires Admin privilege"
+                : "Cable unplugged • Disabling requires Admin privilege";
         }
     }
 
@@ -713,8 +842,41 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             ? RedIndicatorBrush
             : GreenIndicatorBrush;
 
+    public bool IsWifiNoInternet =>
+        IsWifiConnected &&
+        Health != null &&
+        Health.Connectivity is ConnectivityLevel.LocalAccess or ConnectivityLevel.ConstrainedInternet;
+
+    public string WifiPanelIcon => IsWifiConnected ? "\uE701" : "\uEB55";
+
+    public string WifiPanelTitle
+    {
+        get
+        {
+            if (!HasWifiAdapter || !IsWifiConnected)
+                return "Disconnected";
+            if (IsWifiNoInternet)
+                return "No Internet";
+            return "Connected";
+        }
+    }
+
+    public string WifiPanelTitleColor
+    {
+        get
+        {
+            if (IsWifiNoInternet)
+                return "#FFB703"; // Warning Amber
+            if (!HasWifiAdapter || !IsWifiConnected)
+                return "#85FFFFFF";
+            return "#FFFFFF";
+        }
+    }
+
     [RelayCommand]
-    public async Task ToggleEthernet()
+    public async Task ToggleEthernet() => await HandleEthernetToggleAsync(!IsEthernetEnabled);
+
+    private async Task HandleEthernetToggleAsync(bool targetEnabled)
     {
         if (!HasEthernetAdapter && !IsEthernetAdapterDisabled)
         {
@@ -722,21 +884,66 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             return;
         }
 
-        string actionName = IsEthernetAdapterDisabled ? "restore" : "suspend";
-        ShowToast($"Requesting Windows authorization to {actionName} Ethernet adapter...");
+        if (IsEthernetBusy) return;
+        IsEthernetBusy = true;
 
-        bool success = await _disconnectService.ToggleEthernetAdapterAsync(Ethernet.Name);
-        if (success)
+        try
         {
-            IsEthernetAdapterDisabled = _disconnectService.IsEthernetDisabled;
-            ShowToast(IsEthernetAdapterDisabled 
-                ? "Ethernet adapter suspended via administrative policy." 
-                : "Ethernet adapter re-enabled. Connectivity restored.");
-            RefreshAll();
+            using var _ = MainWindow.EnterDialogScope();
+
+            string name = (Ethernet != null && Ethernet.IsUsbTethering) ? "USB Tethering" : "Ethernet";
+            string actionName = targetEnabled ? "restore" : "suspend";
+            ShowToast($"Requesting Windows authorization to {actionName} {name} adapter...");
+
+            string targetAdapter = !string.IsNullOrWhiteSpace(Ethernet?.Name) && Ethernet.Name != "Ethernet"
+                ? Ethernet.Name
+                : (_disconnectService.LastDisabledAdapterName ?? "Ethernet");
+
+            bool success = await _disconnectService.ToggleEthernetAdapterAsync(targetAdapter);
+            if (success)
+            {
+                IsEthernetAdapterDisabled = _disconnectService.IsEthernetDisabled;
+                if (IsEthernetAdapterDisabled)
+                {
+                    IsEthernetConnected = false;
+                }
+                OnPropertyChanged(nameof(IsEthernetEnabled));
+                OnPropertyChanged(nameof(IsEthernetDisabled));
+                OnPropertyChanged(nameof(EthernetStatusBrush));
+                OnPropertyChanged(nameof(EthernetActionText));
+                OnPropertyChanged(nameof(EthernetActionSubtext));
+                OnPropertyChanged(nameof(EthernetPanelTitle));
+                OnPropertyChanged(nameof(EthernetPanelIcon));
+                OnPropertyChanged(nameof(EthernetPanelTitleColor));
+                OnPropertyChanged(nameof(EthernetTileHeader));
+                OnPropertyChanged(nameof(EthernetTileIcon));
+                OnPropertyChanged(nameof(EthernetTileTooltip));
+                OnPropertyChanged(nameof(EthernetPanelName));
+                OnPropertyChanged(nameof(EthernetTurnedOffBannerTitle));
+
+                ShowToast(IsEthernetAdapterDisabled 
+                    ? $"{name} adapter disabled." 
+                    : $"{name} adapter enabled.");
+
+                await Task.Delay(100);
+                RefreshAll();
+
+                if (!IsEthernetAdapterDisabled)
+                {
+                    StartReconnectionMonitoring(10, 500);
+                }
+            }
+            else
+            {
+                // Authorization declined - switch stays in its authentic original state
+                OnPropertyChanged(nameof(IsEthernetEnabled));
+                OnPropertyChanged(nameof(IsEthernetDisabled));
+                ShowToast("Action canceled: Administrative authorization was declined.");
+            }
         }
-        else
+        finally
         {
-            ShowToast("Action canceled: Administrative authorization was declined.");
+            IsEthernetBusy = false;
         }
     }
 
@@ -758,6 +965,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             {
                 ShowToast("Wi-Fi disconnected.");
                 RefreshAll();
+                StartReconnectionMonitoring(5, 500);
             }
             else
             {
@@ -771,8 +979,9 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             bool success = await _disconnectService.ToggleWifiConnectionAsync();
             if (success)
             {
-                ShowToast("Wi-Fi connected.");
+                ShowToast("Wi-Fi connection requested.");
                 RefreshAll();
+                StartReconnectionMonitoring(10, 500);
             }
             else
             {
@@ -784,6 +993,36 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             }
         }
     }
+
+    private void StartReconnectionMonitoring(int maxAttempts = 10, int intervalMs = 500)
+    {
+        _reconnectCts?.Cancel();
+        _reconnectCts?.Dispose();
+        _reconnectCts = new CancellationTokenSource();
+        var token = _reconnectCts.Token;
+
+        Task.Run(async () =>
+        {
+            for (int i = 0; i < maxAttempts; i++)
+            {
+                await Task.Delay(intervalMs, token);
+                if (token.IsCancellationRequested) return;
+
+                bool isConnected = false;
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    RefreshAll();
+                    if (IsEthernetConnected || IsWifiConnected)
+                    {
+                        isConnected = true;
+                    }
+                });
+
+                if (isConnected) break;
+            }
+        }, token);
+    }
+
 
     public void ShowToast(string message)
     {
@@ -804,7 +1043,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     }
 
     [RelayCommand]
-    public async Task ConnectWifi(WifiNetworkItemViewModel? item)
+    public void ConnectWifi(WifiNetworkItemViewModel? item)
     {
         if (item == null || !HasWifiAdapter) return;
 
@@ -814,8 +1053,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             bool success = _wifiService.QuickConnect(item.Ssid);
             if (success)
             {
-                await Task.Delay(1500);
-                RefreshAll();
+                StartReconnectionMonitoring(10, 500);
                 ShowToast($"Connected to {item.Ssid}.");
             }
             else
@@ -915,11 +1153,34 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
 
         try
         {
-            // 1. Ethernet Info
+            // 1. Authoritative Windows Interface Status via cached netsh (non-blocking)
+            var ifStatuses = DisconnectService.GetCachedInterfaceStatuses(TimeSpan.FromSeconds(3));
+
+            string ethName = !string.IsNullOrWhiteSpace(Ethernet.Name) && Ethernet.Name != "Ethernet"
+                ? Ethernet.Name
+                : (_disconnectService.LastDisabledAdapterName ?? "Ethernet");
+
+            bool ethFoundInNetsh = ifStatuses.TryGetValue(ethName, out var ethStatus) ||
+                                  ifStatuses.TryGetValue("Ethernet", out ethStatus);
+
+            if (ethFoundInNetsh && ethStatus != null)
+            {
+                HasEthernetAdapter = true;
+                IsEthernetAdapterDisabled = !ethStatus.IsAdminEnabled;
+                _disconnectService.SetEthernetDisabledState(IsEthernetAdapterDisabled);
+            }
+            else
+            {
+                // Fallback to active interface detection
+                var ethCandidates = _ethernetProvider.GetAllEthernetInterfaces();
+                HasEthernetAdapter = ethCandidates.Count > 0;
+                IsEthernetAdapterDisabled = _disconnectService.IsEthernetDisabled;
+            }
+
+            // 2. Ethernet Info
             var eth = _ethernetProvider.GetActiveEthernetInfo();
             Ethernet = eth;
-            IsEthernetConnected = eth.IsConnected;
-            HasEthernetAdapter = eth.Description != "No Ethernet adapter detected";
+            IsEthernetConnected = !IsEthernetAdapterDisabled && eth.IsConnected;
 
             // 2. Wi-Fi Info
             HasWifiAdapter = _wifiService.HasWifiAdapter;
@@ -936,8 +1197,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 RefreshWifiNetworks();
             }
 
-            // 3. Disconnect state
-            IsInternetDisconnected = _disconnectService.IsDisconnected;
+            // 3. Disconnect state: True only if neither Ethernet nor Wi-Fi is actively connected
+            IsInternetDisconnected = !IsEthernetConnected && !IsWifiConnected;
 
             // 4. Smart Panel default on first load
             if (!_hasInitializedPanel)
@@ -995,6 +1256,16 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             OnPropertyChanged(nameof(WifiStatusBrush));
             OnPropertyChanged(nameof(KillNetStatusBrush));
             OnPropertyChanged(nameof(SpeedStatusBrush));
+            OnPropertyChanged(nameof(IsEthernetEnabled));
+            OnPropertyChanged(nameof(IsEthernetDisabled));
+            OnPropertyChanged(nameof(EthernetPanelTitle));
+            OnPropertyChanged(nameof(EthernetPanelIcon));
+            OnPropertyChanged(nameof(EthernetPanelTitleColor));
+            OnPropertyChanged(nameof(EthernetTileHeader));
+            OnPropertyChanged(nameof(EthernetTileIcon));
+            OnPropertyChanged(nameof(EthernetTileTooltip));
+            OnPropertyChanged(nameof(EthernetPanelName));
+            OnPropertyChanged(nameof(EthernetTurnedOffBannerTitle));
         }
         catch { }
     }
@@ -1074,17 +1345,73 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 bool hasEth = eth.Description != "No Ethernet adapter detected";
                 if (hasEth != HasEthernetAdapter || eth.IsConnected != IsEthernetConnected)
                 {
-                    Ethernet = eth;
-                    HasEthernetAdapter = hasEth;
-                    IsEthernetConnected = eth.IsConnected;
+                    RefreshAll();
                 }
                 else if (IsEthernetPanel && eth.IsConnected)
                 {
                     Ethernet = eth;
                 }
+
+                // Modular, zero-overhead internet reachability check (Smart Passive + gentle 10s fallback)
+                if ((IsEthernetConnected || IsWifiConnected) && !IsInternetDisconnected)
+                {
+                    double currentBps = metrics.DownloadBytesPerSec;
+                    bool currentHasInternet = Health != null && Health.Connectivity == ConnectivityLevel.InternetAccess;
+                    _ = Task.Run(async () =>
+                    {
+                        bool reachable = await _healthService.CheckPassiveOrActiveReachabilityAsync(currentBps, _isHubVisible, currentHasInternet);
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            if (!reachable)
+                            {
+                                if (Health == null || Health.Connectivity != ConnectivityLevel.LocalAccess)
+                                {
+                                    Health = new NetworkHealthStatus
+                                    {
+                                        Connectivity = ConnectivityLevel.LocalAccess,
+                                        HasDnsResolution = false,
+                                        PacketLossPercent = 100,
+                                        LatencyMs = -1,
+                                        HealthSummary = "Connected to Local Network. No Internet Gateway."
+                                    };
+                                    NotifyReachabilityChanged();
+                                }
+                            }
+                            else if (Health != null && Health.Connectivity == ConnectivityLevel.LocalAccess)
+                            {
+                                Health.Connectivity = ConnectivityLevel.InternetAccess;
+                                NotifyReachabilityChanged();
+                            }
+                        });
+                    });
+                }
             }
             catch { }
         });
+    }
+
+    private void NotifyReachabilityChanged()
+    {
+        OnPropertyChanged(nameof(IsLocalOnlyNoInternet));
+        OnPropertyChanged(nameof(HasVerifiedInternet));
+        OnPropertyChanged(nameof(EthernetPanelTitle));
+        OnPropertyChanged(nameof(EthernetPanelIcon));
+        OnPropertyChanged(nameof(EthernetPanelTitleColor));
+        OnPropertyChanged(nameof(WifiPanelTitle));
+        OnPropertyChanged(nameof(WifiPanelTitleColor));
+        OnPropertyChanged(nameof(HeroGlyph));
+        OnPropertyChanged(nameof(HeroGlyphColor));
+        OnPropertyChanged(nameof(HeroSubtitle));
+        OnPropertyChanged(nameof(EthernetStatusText));
+        OnPropertyChanged(nameof(EthernetStatusTextColor));
+        OnPropertyChanged(nameof(EthernetStatusDotColor));
+        OnPropertyChanged(nameof(EthernetStatusBrush));
+        OnPropertyChanged(nameof(WifiStatusBrush));
+        OnPropertyChanged(nameof(EthernetTileHeader));
+        OnPropertyChanged(nameof(EthernetTileIcon));
+        OnPropertyChanged(nameof(EthernetTileTooltip));
+        OnPropertyChanged(nameof(EthernetPanelName));
+        OnPropertyChanged(nameof(EthernetTurnedOffBannerTitle));
     }
 
     private void OnLatencyUpdated(LatencyMetrics latency)
@@ -1194,6 +1521,9 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         {
             _toastCts?.Cancel();
             _toastCts?.Dispose();
+
+            _reconnectCts?.Cancel();
+            _reconnectCts?.Dispose();
 
             _networkRefreshCts?.Cancel();
             _networkRefreshCts?.Dispose();

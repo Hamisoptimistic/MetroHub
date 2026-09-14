@@ -361,4 +361,16 @@ public class WidgetTiles : Selector
             }
         }
     }
+
+    internal void UpdateIndicatorBrush(Brush? brush)
+    {
+        if (_slidingIndicator == null || brush == null) return;
+        _slidingIndicator.Background = brush;
+        if (_indicatorShadow != null)
+        {
+            Color targetColor = (brush as SolidColorBrush)?.Color ?? (Color)ColorConverter.ConvertFromString("#00E676");
+            _indicatorShadow.Color = targetColor;
+        }
+        _slidingIndicator.InvalidateVisual();
+    }
 }

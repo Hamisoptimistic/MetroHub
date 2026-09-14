@@ -302,9 +302,6 @@
                                 Opacity="0"
                                 Panel.ZIndex="25"
                                 SnapsToDevicePixels="True">
-                            <Border.CacheMode>
-                                <BitmapCache EnableClearType="False" RenderAtScale="1" SnapsToDevicePixels="True" />
-                            </Border.CacheMode>
                             <Border.RenderTransform>
                                 <TranslateTransform x:Name="PART_IndicatorTransform" X="0" />
                             </Border.RenderTransform>
