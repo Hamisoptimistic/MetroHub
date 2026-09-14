@@ -106,6 +106,21 @@ public static class WlanNative
         DOT11_CIPHER_ALGO_BIP_CMAC_256 = 0x0d
     }
 
+    public enum DOT11_RADIO_STATE
+    {
+        dot11_radio_state_unknown = 0,
+        dot11_radio_state_on,
+        dot11_radio_state_off
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct WLAN_PHY_RADIO_STATE
+    {
+        public uint dwPhyIndex;
+        public DOT11_RADIO_STATE dot11SoftwareRadioState;
+        public DOT11_RADIO_STATE dot11HardwareRadioState;
+    }
+
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct WLAN_INTERFACE_INFO
     {
@@ -252,6 +267,28 @@ public static class WlanNative
         ref Guid pInterfaceGuid,
         ref WLAN_CONNECTION_PARAMETERS pConnectionParameters,
         IntPtr pReserved);
+
+    [DllImport(WlanApi, SetLastError = true)]
+    public static extern int WlanSetInterface(
+        IntPtr hClientHandle,
+        ref Guid pInterfaceGuid,
+        WLAN_INTF_OPCODE OpCode,
+        uint dwDataSize,
+        IntPtr pData,
+        IntPtr pReserved);
+
+    public const uint WLAN_PROFILE_USER = 0x00000001;
+
+    [DllImport(WlanApi, CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern int WlanSetProfile(
+        IntPtr hClientHandle,
+        ref Guid pInterfaceGuid,
+        uint dwFlags,
+        string strProfileXml,
+        [MarshalAs(UnmanagedType.LPWStr)] string? strAllUserProfileSecurity,
+        bool bOverwrite,
+        IntPtr pReserved,
+        out uint pdwReasonCode);
 
     [DllImport(WlanApi)]
     public static extern void WlanFreeMemory(IntPtr pMemory);

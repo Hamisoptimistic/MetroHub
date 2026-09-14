@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MetroHub.Core.Network.Interop;
 
 namespace MetroHub.Core.Network;
 
@@ -85,6 +86,17 @@ public class WifiNetworkItem
         _ => 0
     };
     public string SecurityType { get; set; } = "Open";
+    public WlanNative.DOT11_AUTH_ALGORITHM AuthAlgorithm { get; set; }
+    public WlanNative.DOT11_CIPHER_ALGORITHM CipherAlgorithm { get; set; }
+    public bool IsSecured => SecurityType != "Open" && AuthAlgorithm != WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_80211_OPEN;
+    public bool IsEnterprise => AuthAlgorithm switch
+    {
+        WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_RSNA or
+        WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA or
+        WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3 or
+        WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3_ENT_192 => true,
+        _ => false
+    };
     public bool IsConnected { get; set; }
     public bool IsProfileKnown { get; set; }
     public string Bssid { get; set; } = string.Empty;
