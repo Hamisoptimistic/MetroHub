@@ -357,7 +357,52 @@ public class NativeWifiService : IDisposable
         }
     }
 
-    public IReadOnlyList<WifiNetworkItem> ScanAndGetAvailableNetworks()
+    public string? GetConnectedSsidFast()
+    {
+        if (!_hasWifiAdapter || _primaryInterfaceGuid == Guid.Empty || _clientHandle == IntPtr.Zero)
+        {
+            return null;
+        }
+
+        IntPtr ppData = IntPtr.Zero;
+        try
+        {
+            int result = WlanNative.WlanQueryInterface(
+                _clientHandle,
+                ref _primaryInterfaceGuid,
+                WlanNative.WLAN_INTF_OPCODE.wlan_intf_opcode_current_connection,
+                IntPtr.Zero,
+                out _,
+                out ppData,
+                out _);
+
+            if (result != WlanNative.ERROR_SUCCESS || ppData == IntPtr.Zero)
+            {
+                return null;
+            }
+
+            var conn = Marshal.PtrToStructure<WlanNative.WLAN_CONNECTION_ATTRIBUTES>(ppData);
+            if (conn.isState == WlanNative.WLAN_INTERFACE_STATE.wlan_interface_state_connected)
+            {
+                return FormatSsid(conn.wlanAssociationAttributes.dot11Ssid);
+            }
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+        finally
+        {
+            if (ppData != IntPtr.Zero)
+            {
+                WlanNative.WlanFreeMemory(ppData);
+            }
+        }
+    }
+
+    public IReadOnlyList<WifiNetworkItem> ScanAndGetAvailableNetworks(bool triggerScan = false)
     {
         var items = new List<WifiNetworkItem>();
 
@@ -366,12 +411,15 @@ public class NativeWifiService : IDisposable
             return items;
         }
 
-        // Trigger scan
-        try
+        // Only trigger active radio frequency probe scan if explicitly requested (e.g. user clicked Refresh)
+        if (triggerScan)
         {
-            WlanNative.WlanScan(_clientHandle, ref _primaryInterfaceGuid, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+            try
+            {
+                WlanNative.WlanScan(_clientHandle, ref _primaryInterfaceGuid, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+            }
+            catch { }
         }
-        catch { }
 
         IntPtr ppList = IntPtr.Zero;
         try
@@ -393,7 +441,7 @@ public class NativeWifiService : IDisposable
             int networkStructSize = Marshal.SizeOf<WlanNative.WLAN_AVAILABLE_NETWORK>();
             IntPtr currentPtr = IntPtr.Add(ppList, 8); // Skip dwNumberOfItems + dwIndex
 
-            var currentConn = GetCurrentConnectionDetails();
+            string? connectedSsid = GetConnectedSsidFast();
             var dict = new Dictionary<string, WifiNetworkItem>(StringComparer.OrdinalIgnoreCase);
 
             for (int i = 0; i < count; i++)
@@ -408,7 +456,7 @@ public class NativeWifiService : IDisposable
                 }
 
                 int quality = (int)net.wlanSignalQuality;
-                bool isConnected = currentConn.IsConnected && string.Equals(currentConn.Ssid, ssid, StringComparison.OrdinalIgnoreCase);
+                bool isConnected = !string.IsNullOrEmpty(connectedSsid) && string.Equals(connectedSsid, ssid, StringComparison.OrdinalIgnoreCase);
                 bool hasProfile = !string.IsNullOrWhiteSpace(net.strProfileName);
 
                 if (!dict.TryGetValue(ssid, out var existing) || quality > existing.SignalQuality || isConnected)

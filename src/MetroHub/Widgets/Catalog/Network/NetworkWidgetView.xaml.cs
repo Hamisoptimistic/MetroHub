@@ -30,4 +30,25 @@ public partial class NetworkWidgetView : UserControl
             }
         }
     }
+
+
+    private void WifiPasswordBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            e.Handled = true;
+            if (sender is PasswordBox pb && DataContext is NetworkWidgetViewModel vm)
+            {
+                vm.ConnectWithPasswordCommand.Execute(pb);
+            }
+        }
+        else if (e.Key == Key.Escape)
+        {
+            e.Handled = true;
+            if (sender is PasswordBox pb && DataContext is NetworkWidgetViewModel vm)
+            {
+                vm.CancelWifiPasswordCommand.Execute(pb);
+            }
+        }
+    }
 }

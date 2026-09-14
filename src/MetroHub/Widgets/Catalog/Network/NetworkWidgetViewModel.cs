@@ -14,6 +14,7 @@ using MetroHub.Core.Models;
 using MetroHub.Core.Network;
 using MetroHub.Core.Network.Interop;
 using MetroHub.Widgets.Serialization;
+using Wpf.Ui.Controls;
 
 namespace MetroHub.Widgets.Catalog.Network;
 
@@ -64,15 +65,29 @@ public partial class WifiNetworkItemViewModel : ObservableObject
 
     public string StatusBadgeText => IsConnected ? "Connected" : (IsProfileKnown ? "Saved" : (IsEnterprise ? "Enterprise" : (IsSecured ? "Secured" : "Open")));
 
-    public string WifiGlyph => SignalBars switch
+    public string SubtitleText
     {
-        1 => "\uE872",
-        2 => "\uE873",
-        3 => "\uE874",
-        _ => "\uE701"
+        get
+        {
+            if (IsConnected) return "Connected";
+            if (IsProfileKnown) return $"Saved  •  {SecurityType}";
+            if (IsEnterprise) return $"Enterprise  •  {SecurityType}";
+            return SecurityType;
+        }
+    }
+
+    public SymbolRegular WifiSymbol => SignalBars switch
+    {
+        1 => SymbolRegular.Wifi424,
+        2 => SymbolRegular.Wifi324,
+        3 => SymbolRegular.Wifi224,
+        _ => SymbolRegular.Wifi124
     };
 
-    public string LockGlyph => "\uE72E";
+    public string WifiIconColor => IsConnected ? "#00E676" : "#D0FFFFFF";
+    public string SubtitleColor => IsConnected ? "#00E676" : "#80FFFFFF";
+    public string StatusBadgeColor => IsConnected ? "#00E676" : (IsProfileKnown ? "#0091FF" : (IsEnterprise ? "#FFB703" : "#B0FFFFFF"));
+    public string StatusBadgeBackground => IsConnected ? "#1A00E676" : (IsProfileKnown ? "#1A0091FF" : (IsEnterprise ? "#1AFFB703" : "#12FFFFFF"));
 }
 
 public partial class NetworkWidgetViewModel : WidgetViewModelBase
@@ -230,6 +245,10 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(SpeedStatusBrush))]
     [NotifyPropertyChangedFor(nameof(WifiActionText))]
     [NotifyPropertyChangedFor(nameof(WifiActionSubtext))]
+    [NotifyPropertyChangedFor(nameof(WifiPanelTitle))]
+    [NotifyPropertyChangedFor(nameof(WifiPanelSymbol))]
+    [NotifyPropertyChangedFor(nameof(WifiPanelIcon))]
+    [NotifyPropertyChangedFor(nameof(WifiPanelTitleColor))]
     private bool _isWifiConnected;
 
     [ObservableProperty]
@@ -591,9 +610,17 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         : Throughput.UploadSpeedBytesString;
 
     public ObservableCollection<WifiNetworkItemViewModel> AvailableNetworks { get; } = new();
+    public bool HasAvailableNetworks => AvailableNetworks.Count > 0;
+    public bool HasNoAvailableNetworks => HasWifiAdapter && IsWifiRadioOn && AvailableNetworks.Count == 0;
 
     public NetworkWidgetViewModel(TileModel model) : base(model)
     {
+        AvailableNetworks.CollectionChanged += (s, e) =>
+        {
+            OnPropertyChanged(nameof(HasAvailableNetworks));
+            OnPropertyChanged(nameof(HasNoAvailableNetworks));
+        };
+
         _throughputService.ThroughputUpdated += OnThroughputUpdated;
         _throughputService.LatencyUpdated += OnLatencyUpdated;
         _disconnectService.DisconnectStateChanged += OnDisconnectStateChanged;
@@ -862,6 +889,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(IsWifiRadioDisabled))]
     [NotifyPropertyChangedFor(nameof(IsWifiRadioEnabled))]
     [NotifyPropertyChangedFor(nameof(WifiPanelTitle))]
+    [NotifyPropertyChangedFor(nameof(WifiPanelSymbol))]
     [NotifyPropertyChangedFor(nameof(WifiPanelIcon))]
     [NotifyPropertyChangedFor(nameof(WifiPanelTitleColor))]
     [NotifyPropertyChangedFor(nameof(WifiTurnedOffBannerTitle))]
@@ -913,6 +941,20 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         IsWifiConnected &&
         Health != null &&
         Health.Connectivity is ConnectivityLevel.LocalAccess or ConnectivityLevel.ConstrainedInternet;
+
+    public SymbolRegular WifiPanelSymbol
+    {
+        get
+        {
+            if (!HasWifiAdapter || IsWifiRadioDisabled)
+                return SymbolRegular.WifiOff24;
+            if (!IsWifiConnected)
+                return SymbolRegular.WifiOff24;
+            if (IsWifiNoInternet)
+                return SymbolRegular.Globe24;
+            return SymbolRegular.Wifi124;
+        }
+    }
 
     public string WifiPanelIcon
     {
@@ -1089,36 +1131,59 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         if (IsWifiRadioBusy) return;
         IsWifiRadioBusy = true;
 
+        // 1. Instant optimistic visual update (0ms UI latency!)
+        IsWifiRadioOn = targetEnabled;
+        if (!targetEnabled)
+        {
+            IsWifiConnected = false;
+            AvailableNetworks.Clear();
+        }
+
+        OnPropertyChanged(nameof(IsWifiRadioOn));
+        OnPropertyChanged(nameof(IsWifiRadioEnabled));
+        OnPropertyChanged(nameof(IsWifiRadioDisabled));
+        OnPropertyChanged(nameof(WifiPanelTitle));
+        OnPropertyChanged(nameof(WifiPanelSymbol));
+        OnPropertyChanged(nameof(WifiPanelIcon));
+        OnPropertyChanged(nameof(WifiPanelTitleColor));
+        OnPropertyChanged(nameof(WifiTurnedOffBannerTitle));
+        OnPropertyChanged(nameof(HasNoAvailableNetworks));
+        OnPropertyChanged(nameof(HasAvailableNetworks));
+
+        ShowToast(targetEnabled ? "Turning on Wi-Fi..." : "Turning off Wi-Fi...");
+
         try
         {
-            ShowToast(targetEnabled ? "Turning on Wi-Fi..." : "Turning off Wi-Fi...");
             bool success = await Task.Run(() => _wifiService.SetRadioState(targetEnabled));
 
             if (success)
             {
-                IsWifiRadioOn = targetEnabled;
                 ShowToast(targetEnabled ? "Wi-Fi turned on." : "Wi-Fi turned off.");
 
                 if (targetEnabled)
                 {
-                    await Task.Delay(300);
-                    RefreshWifiNetworks();
+                    // Delay slightly to let the driver initialize before querying BSS cache
+                    await Task.Delay(200);
+                    RefreshWifiNetworks(triggerScan: false);
                 }
-                else
-                {
-                    IsWifiConnected = false;
-                    AvailableNetworks.Clear();
-                }
-                RefreshAll();
             }
             else
             {
+                // Revert state on failure
                 IsWifiRadioOn = _wifiService.IsRadioOn;
+                OnPropertyChanged(nameof(IsWifiRadioOn));
+                OnPropertyChanged(nameof(IsWifiRadioEnabled));
+                OnPropertyChanged(nameof(IsWifiRadioDisabled));
+                OnPropertyChanged(nameof(WifiPanelTitle));
+                OnPropertyChanged(nameof(WifiPanelSymbol));
+                OnPropertyChanged(nameof(WifiPanelTitleColor));
                 ShowToast("Failed to update Wi-Fi radio state.");
             }
         }
         catch (Exception ex)
         {
+            IsWifiRadioOn = _wifiService.IsRadioOn;
+            OnPropertyChanged(nameof(IsWifiRadioOn));
             ShowToast($"Wi-Fi error: {ex.Message}");
         }
         finally
@@ -1433,7 +1498,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [RelayCommand]
     public void RefreshWifi()
     {
-        RefreshWifiNetworks();
+        RefreshWifiNetworks(triggerScan: true);
         ShowToast("Scanning for networks...");
     }
 
@@ -1486,17 +1551,31 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             else
             {
                 IsWifiRadioOn = _wifiService.IsRadioOn;
-                var wifiConn = _wifiService.GetCurrentConnectionDetails();
-                WifiConnection = wifiConn;
-                IsWifiConnected = IsWifiRadioOn && wifiConn.IsConnected;
+                string? fastSsid = _wifiService.GetConnectedSsidFast();
+                IsWifiConnected = IsWifiRadioOn && !string.IsNullOrEmpty(fastSsid);
+
                 if (IsWifiRadioOn)
                 {
-                    RefreshWifiNetworks();
+                    RefreshWifiNetworks(triggerScan: false);
                 }
                 else
                 {
                     AvailableNetworks.Clear();
                 }
+
+                // Hydrate full IP properties in background to never stall UI thread
+                Task.Run(() =>
+                {
+                    var wifiConn = _wifiService.GetCurrentConnectionDetails();
+                    Application.Current?.Dispatcher.InvokeAsync(() =>
+                    {
+                        WifiConnection = wifiConn;
+                        IsWifiConnected = IsWifiRadioOn && wifiConn.IsConnected;
+                        OnPropertyChanged(nameof(WifiPanelTitle));
+                        OnPropertyChanged(nameof(WifiPanelSymbol));
+                        OnPropertyChanged(nameof(WifiPanelTitleColor));
+                    });
+                });
             }
 
             // 3. Disconnect state: True only if neither Ethernet nor Wi-Fi is actively connected
@@ -1580,7 +1659,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         catch { }
     }
 
-    private void RefreshWifiNetworks()
+    private void RefreshWifiNetworks(bool triggerScan = false)
     {
         if (!HasWifiAdapter || !IsWifiRadioOn) return;
         if (Interlocked.CompareExchange(ref _isScanningWifi, 1, 0) != 0) return;
@@ -1589,7 +1668,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         {
             try
             {
-                var rawList = _wifiService.ScanAndGetAvailableNetworks();
+                var rawList = _wifiService.ScanAndGetAvailableNetworks(triggerScan);
                 Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
                     try
@@ -1613,6 +1692,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                                 IsPasswordPromptOpen = string.Equals(activePasswordPromptSsid, net.Ssid, StringComparison.OrdinalIgnoreCase)
                             });
                         }
+                        OnPropertyChanged(nameof(HasAvailableNetworks));
+                        OnPropertyChanged(nameof(HasNoAvailableNetworks));
                     }
                     catch { }
                 });
