@@ -15,9 +15,14 @@ public partial class NetworkWidgetView : UserControl
         InitializeComponent();
         this.DataContextChanged += OnDataContextChanged;
         this.Loaded += OnLoaded;
+        this.Unloaded += OnUnloaded;
         if (TopTilesGrid != null)
         {
             TopTilesGrid.SizeChanged += OnTopTilesGridSizeChanged;
+        }
+        if (TimeframeHostGrid != null)
+        {
+            TimeframeHostGrid.SizeChanged += (s, e) => UpdateTimeframeSlidingIndicator(false);
         }
     }
 
@@ -28,7 +33,24 @@ public partial class NetworkWidgetView : UserControl
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        Dispatcher.InvokeAsync(() => UpdateSlidingIndicator(false), System.Windows.Threading.DispatcherPriority.Loaded);
+        if (_viewModel != null)
+        {
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        }
+        Dispatcher.InvokeAsync(() =>
+        {
+            UpdateSlidingIndicator(false);
+            UpdateTimeframeSlidingIndicator(false);
+        }, System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
+        {
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+        }
     }
 
     private System.ComponentModel.INotifyPropertyChanged? _viewModel;
@@ -44,7 +66,11 @@ public partial class NetworkWidgetView : UserControl
         {
             _viewModel = vm;
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
-            Dispatcher.InvokeAsync(() => UpdateSlidingIndicator(false), System.Windows.Threading.DispatcherPriority.Loaded);
+            Dispatcher.InvokeAsync(() =>
+            {
+                UpdateSlidingIndicator(false);
+                UpdateTimeframeSlidingIndicator(false);
+            }, System.Windows.Threading.DispatcherPriority.Loaded);
         }
     }
 
@@ -53,6 +79,10 @@ public partial class NetworkWidgetView : UserControl
         if (e.PropertyName is "CurrentPanel" or "IsInternetDisconnected" or "IsEthernetConnected" or "IsWifiConnected" or "HasEthernetAdapter" or "HasWifiAdapter" or "IsLocalOnlyNoInternet" or "Health")
         {
             Dispatcher.InvokeAsync(() => UpdateSlidingIndicator(true));
+        }
+        if (e.PropertyName == nameof(NetworkWidgetViewModel.SelectedDataUsageTimeframe))
+        {
+            Dispatcher.InvokeAsync(() => UpdateTimeframeSlidingIndicator(true));
         }
     }
 
@@ -204,6 +234,58 @@ public partial class NetworkWidgetView : UserControl
             else
             {
                 SlidingActiveIndicator.Opacity = 0;
+            }
+        }
+        catch { }
+    }
+
+    private void UpdateTimeframeSlidingIndicator(bool animate)
+    {
+        try
+        {
+            if (TimeframeHostGrid == null || SlidingTimeframeIndicator == null || SlidingTimeframeTransform == null) return;
+            if (DataContext is not NetworkWidgetViewModel vm) return;
+
+            int index = 0;
+            if (vm.IsSessionTimeframe) index = 0;
+            else if (vm.Is24HoursTimeframe) index = 1;
+            else if (vm.Is7DaysTimeframe) index = 2;
+            else if (vm.Is30DaysTimeframe) index = 3;
+
+            double totalWidth = TimeframeHostGrid.ActualWidth;
+            if (totalWidth <= 0 || double.IsNaN(totalWidth))
+            {
+                totalWidth = 240.0;
+            }
+
+            double slotWidth = totalWidth / 4.0;
+            double targetX = index * slotWidth;
+            double targetWidth = slotWidth;
+
+            if (animate)
+            {
+                var xAnim = new DoubleAnimation(targetX, TimeSpan.FromMilliseconds(300))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+                var wAnim = new DoubleAnimation(targetWidth, TimeSpan.FromMilliseconds(300))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+                var opAnim = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(200));
+
+                SlidingTimeframeTransform.BeginAnimation(TranslateTransform.XProperty, xAnim);
+                SlidingTimeframeIndicator.BeginAnimation(FrameworkElement.WidthProperty, wAnim);
+                SlidingTimeframeIndicator.BeginAnimation(UIElement.OpacityProperty, opAnim);
+            }
+            else
+            {
+                SlidingTimeframeTransform.BeginAnimation(TranslateTransform.XProperty, null);
+                SlidingTimeframeIndicator.BeginAnimation(FrameworkElement.WidthProperty, null);
+                SlidingTimeframeIndicator.BeginAnimation(UIElement.OpacityProperty, null);
+                SlidingTimeframeTransform.X = targetX;
+                SlidingTimeframeIndicator.Width = targetWidth;
+                SlidingTimeframeIndicator.Opacity = 1.0;
             }
         }
         catch { }

@@ -100,25 +100,119 @@
                                 Background="{TemplateBinding Background}"
                                 CornerRadius="4"
                                 SnapsToDevicePixels="True">
-                            <TextBlock Text="&#xE8C8;"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                       FontSize="11"
-                                       Foreground="#80FFFFFF"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
+                            <ui:SymbolIcon x:Name="CopyIcon"
+                                           Symbol="Copy16"
+                                           FontSize="13"
+                                           Foreground="#80FFFFFF"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="#1CFFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="CopyIcon" Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="#2EFFFFFF" />
+                                <Setter TargetName="CopyIcon" Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Clean Timeframe Toggle Button Style (Zero borders, animated sliding indicator host) -->
+        <Style x:Key="TimeframeToggleButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Foreground" Value="#70FFFFFF" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, sans-serif" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBackground"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="2"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"
+                                              SnapsToDevicePixels="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Hover state: soft text brighten, subtle glass sheen, zero borders -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBackground" Property="Background" Value="#0DFFFFFF" />
+                                <Setter Property="Foreground" Value="#E0FFFFFF" />
+                            </Trigger>
+
+                            <!-- Pressed state -->
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBackground" Property="Background" Value="#18FFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+
+                            <!-- Active (Selected) state: bright pure white text (sliding indicator glides beneath) -->
+                            <Trigger Property="Tag" Value="Active">
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+
+                            <!-- Active + Hover -->
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                    <Condition Property="Tag" Value="Active" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="ButtonBackground" Property="Background" Value="#0DFFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TimeframeSessionButtonStyle" TargetType="Button" BasedOn="{StaticResource TimeframeToggleButtonStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSessionTimeframe}" Value="True">
+                    <Setter Property="Tag" Value="Active" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="Timeframe24hButtonStyle" TargetType="Button" BasedOn="{StaticResource TimeframeToggleButtonStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Is24HoursTimeframe}" Value="True">
+                    <Setter Property="Tag" Value="Active" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="Timeframe7dButtonStyle" TargetType="Button" BasedOn="{StaticResource TimeframeToggleButtonStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Is7DaysTimeframe}" Value="True">
+                    <Setter Property="Tag" Value="Active" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="Timeframe30dButtonStyle" TargetType="Button" BasedOn="{StaticResource TimeframeToggleButtonStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Is30DaysTimeframe}" Value="True">
+                    <Setter Property="Tag" Value="Active" />
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
 
         <!-- 1. Ethernet Tile Style -->
@@ -381,244 +475,237 @@
 
                 <!-- ==================== 1. ETHERNET PANEL ==================== -->
                 <Grid Visibility="{Binding IsEthernetPanel, Converter={StaticResource BoolToVis}}"
-                      Margin="18,14,18,14"
+                      Margin="24,14,24,14"
                       SnapsToDevicePixels="True">
                     <Grid.RowDefinitions>
-                        <!-- Top Status Bar: Adapter Name + Status Badge -->
+                        <!-- Properties Header -->
                         <RowDefinition Height="Auto" />
-                        <!-- 2-Column Spec Grid -->
+                        <!-- 5 Core Specs Grid -->
                         <RowDefinition Height="*" />
+                        <!-- Subtle Hairline Separator -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Bottom Data Usage Row -->
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <!-- Status Header Row -->
-                    <Grid Grid.Row="0" Margin="0,0,0,12">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="&#xE839;"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                       FontSize="17"
-                                       Foreground="#FFFFFF"
-                                       VerticalAlignment="Center"
-                                       Margin="0,0,8,0" />
-                            <TextBlock Text="{Binding Ethernet.Name, FallbackValue='Ethernet'}"
-                                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                       FontSize="15"
-                                       FontWeight="SemiBold"
-                                       Foreground="#FFFFFF"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-
-                        <!-- Status Badge Pill (Right Aligned) -->
-                        <Border HorizontalAlignment="Right"
+                    <!-- Header: [ ℹ ] Properties -->
+                    <StackPanel Grid.Row="0"
+                                Orientation="Horizontal"
                                 VerticalAlignment="Center"
-                                CornerRadius="10"
-                                Padding="10,3"
-                                Background="{Binding EthernetStatusBackground, Converter={StaticResource StringToBrush}}"
-                                BorderBrush="{Binding EthernetStatusBorderBrush, Converter={StaticResource StringToBrush}}"
-                                BorderThickness="1">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <!-- Dot indicator -->
-                                <Ellipse Width="6" Height="6" Margin="0,0,6,0" VerticalAlignment="Center"
-                                         Fill="{Binding EthernetStatusDotColor, Converter={StaticResource StringToBrush}}" />
-                                <!-- Status Text -->
-                                <TextBlock Text="{Binding EthernetStatusText}"
-                                           Foreground="{Binding EthernetStatusTextColor, Converter={StaticResource StringToBrush}}"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
-                                           VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Border>
-                    </Grid>
+                                Margin="0,0,0,16">
+                        <ui:SymbolIcon Symbol="Info20"
+                                       FontSize="15"
+                                       Foreground="#A0FFFFFF"
+                                       Margin="0,0,8,0"
+                                       VerticalAlignment="Center" />
+                        <TextBlock Text="Properties"
+                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"
+                                   Foreground="#FFFFFF"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
 
-                    <!-- 2-Column Spec Grid -->
+                    <!-- 2-Column Clean Spec Grid (5 Core Specs) -->
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
-                            <!-- Left: Network IP Configuration -->
+                            <!-- Left Column: Adapter, IPv4, MAC -->
                             <ColumnDefinition Width="*" />
-                            <!-- Center Gap -->
-                            <ColumnDefinition Width="12" />
-                            <!-- Right: Hardware & Telemetry -->
+                            <!-- Clean Separation Gap -->
+                            <ColumnDefinition Width="32" />
+                            <!-- Right Column: DNS, Session Uptime -->
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <!-- LEFT CARD: IP CONFIGURATION -->
-                        <Border Grid.Column="0"
-                                Background="#07FFFFFF"
-                                BorderBrush="#14FFFFFF"
-                                BorderThickness="1"
-                                CornerRadius="6"
-                                Padding="14,12">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                </Grid.RowDefinitions>
-
-                                <!-- Card Header -->
-                                <TextBlock Grid.Row="0"
-                                           Text="NETWORK CONFIGURATION"
+                        <!-- LEFT COLUMN -->
+                        <StackPanel Grid.Column="0">
+                            <!-- 1. ADAPTER -->
+                            <StackPanel Margin="0,0,0,14">
+                                <TextBlock Text="ADAPTER"
                                            FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="10"
-                                           FontWeight="Bold"
-                                           Foreground="#60FFFFFF"
-                                           Margin="0,0,0,10" />
-
-                                <!-- IPv4 Row -->
-                                <Grid Grid.Row="1" Margin="0,0,0,8">
-                                    <StackPanel>
-                                        <TextBlock Text="IPv4 Address"
-                                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                                   FontSize="10.5"
-                                                   Foreground="#70FFFFFF" />
-                                        <TextBlock Text="{Binding Ethernet.IpAddress}"
-                                                   FontFamily="Consolas, Segoe UI Variable Text"
-                                                   FontSize="13"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="#FFFFFF"
-                                                   Margin="0,2,0,0" />
-                                    </StackPanel>
-                                    <Button HorizontalAlignment="Right"
-                                            VerticalAlignment="Bottom"
-                                            Style="{StaticResource MicroCopyButtonStyle}"
-                                            Command="{Binding CopyEthernetIpCommand}"
-                                            ToolTip="{Binding CopyEthernetIpTooltip}" />
-                                </Grid>
-
-                                <!-- Subnet Mask Row -->
-                                <StackPanel Grid.Row="2" Margin="0,0,0,8">
-                                    <TextBlock Text="Subnet Mask"
-                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                               FontSize="10.5"
-                                               Foreground="#70FFFFFF" />
-                                    <TextBlock Text="{Binding Ethernet.SubnetMask}"
-                                               FontFamily="Consolas, Segoe UI Variable Text"
-                                               FontSize="12"
-                                               Foreground="#D0FFFFFF"
-                                               Margin="0,2,0,0" />
-                                </StackPanel>
-
-                                <!-- Default Gateway Row -->
-                                <StackPanel Grid.Row="3" Margin="0,0,0,8">
-                                    <TextBlock Text="Default Gateway"
-                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                               FontSize="10.5"
-                                               Foreground="#70FFFFFF" />
-                                    <TextBlock Text="{Binding Ethernet.Gateway}"
-                                               FontFamily="Consolas, Segoe UI Variable Text"
-                                               FontSize="12"
-                                               Foreground="#D0FFFFFF"
-                                               Margin="0,2,0,0" />
-                                </StackPanel>
-
-                                <!-- DNS Servers Row -->
-                                <StackPanel Grid.Row="4" VerticalAlignment="Top">
-                                    <TextBlock Text="DNS Servers"
-                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                               FontSize="10.5"
-                                               Foreground="#70FFFFFF" />
-                                    <TextBlock Text="{Binding Ethernet.DnsServersString}"
-                                               FontFamily="Consolas, Segoe UI Variable Text"
-                                               FontSize="11.5"
-                                               Foreground="#B0FFFFFF"
-                                               TextTrimming="CharacterEllipsis"
-                                               ToolTip="{Binding Ethernet.DnsServersString}"
-                                               Margin="0,2,0,0" />
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <!-- RIGHT CARD: HARDWARE & TELEMETRY -->
-                        <Border Grid.Column="2"
-                                Background="#07FFFFFF"
-                                BorderBrush="#14FFFFFF"
-                                BorderThickness="1"
-                                CornerRadius="6"
-                                Padding="14,12">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                </Grid.RowDefinitions>
-
-                                <!-- Card Header -->
-                                <TextBlock Grid.Row="0"
-                                           Text="HARDWARE &amp; TELEMETRY"
+                                           FontWeight="SemiBold"
+                                           Foreground="#60FFFFFF" />
+                                <TextBlock Text="{Binding Ethernet.Description}"
                                            FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                           FontSize="10"
-                                           FontWeight="Bold"
-                                           Foreground="#60FFFFFF"
-                                           Margin="0,0,0,10" />
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="#FFFFFF"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding Ethernet.Description}"
+                                           Margin="0,3,0,0" />
+                            </StackPanel>
 
-                                <!-- Adapter Description -->
-                                <StackPanel Grid.Row="1" Margin="0,0,0,8">
-                                    <TextBlock Text="Adapter"
+                            <!-- 2. IPV4 -->
+                            <Grid Margin="0,0,0,14">
+                                <StackPanel>
+                                    <TextBlock Text="IPV4"
                                                FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                               FontSize="10.5"
-                                               Foreground="#70FFFFFF" />
-                                    <TextBlock Text="{Binding Ethernet.Description}"
-                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                               FontSize="12"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Foreground="#60FFFFFF" />
+                                    <TextBlock Text="{Binding Ethernet.IpAddress}"
+                                               FontFamily="Consolas, Segoe UI Variable Text"
+                                               FontSize="13"
                                                FontWeight="SemiBold"
                                                Foreground="#FFFFFF"
-                                               TextTrimming="CharacterEllipsis"
-                                               ToolTip="{Binding Ethernet.Description}"
-                                               Margin="0,2,0,0" />
+                                               Margin="0,3,0,0" />
                                 </StackPanel>
-
-                                <!-- Link Speed Row -->
-                                <StackPanel Grid.Row="2" Margin="0,0,0,8">
-                                    <TextBlock Text="Link Speed"
-                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                               FontSize="10.5"
-                                               Foreground="#70FFFFFF" />
-                                    <TextBlock Text="{Binding Ethernet.LinkSpeedString}"
-                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                               FontSize="12"
-                                               FontWeight="SemiBold"
-                                               Foreground="#00CC66"
-                                               Margin="0,2,0,0" />
-                                </StackPanel>
-
-                                <!-- MAC Address Row -->
-                                <Grid Grid.Row="3" Margin="0,0,0,8">
-                                    <StackPanel>
-                                        <TextBlock Text="Physical Address (MAC)"
-                                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                                   FontSize="10.5"
-                                                   Foreground="#70FFFFFF" />
-                                        <TextBlock Text="{Binding Ethernet.MacAddress}"
-                                                   FontFamily="Consolas, Segoe UI Variable Text"
-                                                   FontSize="12"
-                                                   Foreground="#D0FFFFFF"
-                                                   Margin="0,2,0,0" />
-                                    </StackPanel>
-                                    <Button HorizontalAlignment="Right"
-                                            VerticalAlignment="Bottom"
-                                            Style="{StaticResource MicroCopyButtonStyle}"
-                                            Command="{Binding CopyEthernetMacCommand}"
-                                            ToolTip="{Binding CopyEthernetMacTooltip}" />
-                                </Grid>
-
-                                <!-- Connection Duration Row -->
-                                <StackPanel Grid.Row="4" VerticalAlignment="Top">
-                                    <TextBlock Text="Session Uptime"
-                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                               FontSize="10.5"
-                                               Foreground="#70FFFFFF" />
-                                    <TextBlock Text="{Binding Ethernet.DurationString}"
-                                               FontFamily="Consolas, Segoe UI Variable Text"
-                                               FontSize="12"
-                                               Foreground="#B0FFFFFF"
-                                               Margin="0,2,0,0" />
-                                </StackPanel>
+                                <Button HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Style="{StaticResource MicroCopyButtonStyle}"
+                                        Command="{Binding CopyEthernetIpCommand}"
+                                        ToolTip="{Binding CopyEthernetIpTooltip}" />
                             </Grid>
-                        </Border>
+
+                            <!-- 3. MAC -->
+                            <Grid Margin="0,0,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="MAC"
+                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                               FontSize="10"
+                                               FontWeight="SemiBold"
+                                               Foreground="#60FFFFFF" />
+                                    <TextBlock Text="{Binding Ethernet.MacAddress}"
+                                               FontFamily="Consolas, Segoe UI Variable Text"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               Foreground="#D0FFFFFF"
+                                               Margin="0,3,0,0" />
+                                </StackPanel>
+                                <Button HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Style="{StaticResource MicroCopyButtonStyle}"
+                                        Command="{Binding CopyEthernetMacCommand}"
+                                        ToolTip="{Binding CopyEthernetMacTooltip}" />
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- RIGHT COLUMN -->
+                        <StackPanel Grid.Column="2">
+                            <!-- 4. DNS -->
+                            <StackPanel Margin="0,0,0,14">
+                                <TextBlock Text="DNS"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="10"
+                                           FontWeight="SemiBold"
+                                           Foreground="#60FFFFFF" />
+                                <TextBlock Text="{Binding Ethernet.DnsServersString}"
+                                           FontFamily="Consolas, Segoe UI Variable Text"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="#D0FFFFFF"
+                                           TextTrimming="CharacterEllipsis"
+                                           ToolTip="{Binding Ethernet.DnsServersString}"
+                                           Margin="0,3,0,0" />
+                            </StackPanel>
+
+                            <!-- 5. SESSION UPTIME -->
+                            <StackPanel Margin="0,0,0,0">
+                                <TextBlock Text="SESSION UPTIME"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="10"
+                                           FontWeight="SemiBold"
+                                           Foreground="#60FFFFFF" />
+                                <TextBlock Text="{Binding Ethernet.DurationString}"
+                                           FontFamily="Consolas, Segoe UI Variable Text"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="#FFFFFF"
+                                           Margin="0,3,0,0" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Hairline Divider -->
+                    <Border Grid.Row="2"
+                            Height="1"
+                            Background="#14FFFFFF"
+                            Margin="0,14,0,12"
+                            SnapsToDevicePixels="True" />
+
+                    <!-- 6. DATA USAGE DEDICATED BOTTOM ROW -->
+                    <Grid Grid.Row="3" SnapsToDevicePixels="True">
+                        <Grid.ColumnDefinitions>
+                            <!-- Left: Timeframe Segmented Toggle Buttons -->
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <!-- Right: Accurate Data Usage Readout -->
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left: Timeframe Buttons with Smooth Sliding Active Indicator (Uniform 4-column layout) -->
+                        <Grid x:Name="TimeframeHostGrid" Grid.Column="0" Width="240" VerticalAlignment="Center" SnapsToDevicePixels="True">
+                            <UniformGrid Rows="1" Columns="4">
+                                <Button x:Name="TimeframeSessionBtn"
+                                        Content="Session"
+                                        Style="{StaticResource TimeframeSessionButtonStyle}"
+                                        Command="{Binding SelectDataUsageTimeframeCommand}"
+                                        CommandParameter="session" />
+                                <Button x:Name="Timeframe24hBtn"
+                                        Content="24h"
+                                        Style="{StaticResource Timeframe24hButtonStyle}"
+                                        Command="{Binding SelectDataUsageTimeframeCommand}"
+                                        CommandParameter="24h" />
+                                <Button x:Name="Timeframe7dBtn"
+                                        Content="7d"
+                                        Style="{StaticResource Timeframe7dButtonStyle}"
+                                        Command="{Binding SelectDataUsageTimeframeCommand}"
+                                        CommandParameter="7d" />
+                                <Button x:Name="Timeframe30dBtn"
+                                        Content="30d"
+                                        Style="{StaticResource Timeframe30dButtonStyle}"
+                                        Command="{Binding SelectDataUsageTimeframeCommand}"
+                                        CommandParameter="30d" />
+                            </UniformGrid>
+
+                            <!-- Sliding Active Timeframe Indicator (Pure white, identical motion to top tiles) -->
+                            <Border x:Name="SlidingTimeframeIndicator"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Bottom"
+                                    Height="2"
+                                    Width="0"
+                                    Background="#FFFFFF"
+                                    CornerRadius="1"
+                                    Opacity="0"
+                                    Panel.ZIndex="25"
+                                    SnapsToDevicePixels="True">
+                                <Border.RenderTransform>
+                                    <TranslateTransform x:Name="SlidingTimeframeTransform" X="0" />
+                                </Border.RenderTransform>
+                                <Border.Effect>
+                                    <DropShadowEffect x:Name="SlidingTimeframeShadow" Color="#FFFFFF" BlurRadius="6" ShadowDepth="0" Opacity="0.8" />
+                                </Border.Effect>
+                            </Border>
+                        </Grid>
+
+                        <!-- Right: Accurate Readout (Large bold total + prominent up/down telemetry) -->
+                        <StackPanel Grid.Column="2"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <TextBlock Text="DATA USAGE"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="10"
+                                           FontWeight="SemiBold"
+                                           Foreground="#65FFFFFF"
+                                           VerticalAlignment="Bottom"
+                                           Margin="0,0,8,2" />
+                                <TextBlock Text="{Binding DataUsageTotalDisplay}"
+                                           FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                           FontSize="18"
+                                           FontWeight="Bold"
+                                           Foreground="#FFFFFF"
+                                           VerticalAlignment="Bottom" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding DataUsageDetailDisplay}"
+                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Foreground="#E0FFFFFF"
+                                       HorizontalAlignment="Right"
+                                       Margin="0,3,0,0" />
+                        </StackPanel>
                     </Grid>
                 </Grid>
 

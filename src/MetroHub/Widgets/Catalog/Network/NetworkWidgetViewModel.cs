@@ -47,6 +47,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     private readonly ThroughputService _throughputService = ThroughputService.Instance;
     private readonly DisconnectService _disconnectService = DisconnectService.Instance;
     private readonly NetworkHealthService _healthService = NetworkHealthService.Instance;
+    private readonly NetworkDataUsageService _dataUsageService = NetworkDataUsageService.Instance;
 
     private bool _isHubVisible = true;
     private bool _hasInitializedPanel;
@@ -169,6 +170,9 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetStatusDotColor))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBackground))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBorderBrush))]
+    [NotifyPropertyChangedFor(nameof(DataUsageTotalDisplay))]
+    [NotifyPropertyChangedFor(nameof(DataUsageDetailDisplay))]
+    [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
     private EthernetInfo _ethernet = new();
 
     [ObservableProperty]
@@ -344,6 +348,94 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public string ActiveLinkSpeed => IsWifiConnected ? WifiConnection.LinkSpeedString : Ethernet.LinkSpeedString;
     public string ActiveUptime => IsWifiConnected ? WifiConnection.DurationString : Ethernet.DurationString;
     public string ActiveMacAddress => IsWifiConnected ? "--" : Ethernet.MacAddress;
+
+    // --- Accurate Data Usage Properties (Windows Settings Sync) ---
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSessionTimeframe))]
+    [NotifyPropertyChangedFor(nameof(Is24HoursTimeframe))]
+    [NotifyPropertyChangedFor(nameof(Is7DaysTimeframe))]
+    [NotifyPropertyChangedFor(nameof(Is30DaysTimeframe))]
+    [NotifyPropertyChangedFor(nameof(DataUsageTotalDisplay))]
+    [NotifyPropertyChangedFor(nameof(DataUsageDetailDisplay))]
+    [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
+    private DataUsageTimeframe _selectedDataUsageTimeframe = DataUsageTimeframe.Session;
+
+    public bool IsSessionTimeframe => SelectedDataUsageTimeframe == DataUsageTimeframe.Session;
+    public bool Is24HoursTimeframe => SelectedDataUsageTimeframe == DataUsageTimeframe.Last24Hours;
+    public bool Is7DaysTimeframe => SelectedDataUsageTimeframe == DataUsageTimeframe.Last7Days;
+    public bool Is30DaysTimeframe => SelectedDataUsageTimeframe == DataUsageTimeframe.Last30Days;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DataUsageTotalDisplay))]
+    [NotifyPropertyChangedFor(nameof(DataUsageDetailDisplay))]
+    [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
+    private DataUsageResult _historicalDataUsage = new();
+
+    public string DataUsageTotalDisplay
+    {
+        get
+        {
+            if (SelectedDataUsageTimeframe == DataUsageTimeframe.Session)
+            {
+                return Ethernet != null && (Ethernet.BytesReceived > 0 || Ethernet.BytesSent > 0)
+                    ? DataUsageResult.FormatWindowsSettingsGigabytes(Ethernet.BytesReceived + Ethernet.BytesSent)
+                    : "--";
+            }
+            return HistoricalDataUsage.TotalBytes > 0 ? HistoricalDataUsage.FormattedTotal : "--";
+        }
+    }
+
+    public string DataUsageDetailDisplay
+    {
+        get
+        {
+            if (SelectedDataUsageTimeframe == DataUsageTimeframe.Session)
+            {
+                return Ethernet != null && (Ethernet.BytesReceived > 0 || Ethernet.BytesSent > 0)
+                    ? $"↓ {DataUsageResult.FormatWindowsSettingsGigabytes(Ethernet.BytesReceived)}   ↑ {DataUsageResult.FormatWindowsSettingsGigabytes(Ethernet.BytesSent)}"
+                    : "--";
+            }
+            return HistoricalDataUsage.TotalBytes > 0 ? HistoricalDataUsage.FormattedDetail : "--";
+        }
+    }
+
+    public string DataUsageFullDisplay
+    {
+        get
+        {
+            if (SelectedDataUsageTimeframe == DataUsageTimeframe.Session)
+            {
+                return Ethernet?.DataUsageString ?? "--";
+            }
+            return HistoricalDataUsage.FormattedFull;
+        }
+    }
+
+    [RelayCommand]
+    public void SelectDataUsageTimeframe(string timeframeStr)
+    {
+        var timeframe = timeframeStr?.ToLowerInvariant() switch
+        {
+            "24h" or "last24hours" => DataUsageTimeframe.Last24Hours,
+            "7d" or "last7days" => DataUsageTimeframe.Last7Days,
+            "30d" or "last30days" => DataUsageTimeframe.Last30Days,
+            _ => DataUsageTimeframe.Session
+        };
+
+        SelectedDataUsageTimeframe = timeframe;
+
+        if (timeframe != DataUsageTimeframe.Session)
+        {
+            Task.Run(async () =>
+            {
+                var usage = await _dataUsageService.QueryUsageAsync(NetworkKind.Ethernet, timeframe);
+                Application.Current?.Dispatcher.InvokeAsync(() =>
+                {
+                    HistoricalDataUsage = usage;
+                });
+            });
+        }
+    }
 
     // --- Formatted Speeds ---
     public string FormattedDownloadSpeed => IsBitsMode
@@ -705,6 +797,9 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             OnPropertyChanged(nameof(ActiveLinkSpeed));
             OnPropertyChanged(nameof(ActiveUptime));
             OnPropertyChanged(nameof(ActiveMacAddress));
+            OnPropertyChanged(nameof(DataUsageTotalDisplay));
+            OnPropertyChanged(nameof(DataUsageDetailDisplay));
+            OnPropertyChanged(nameof(DataUsageFullDisplay));
         }
         catch { }
     }
@@ -787,6 +882,10 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                     Ethernet = eth;
                     HasEthernetAdapter = hasEth;
                     IsEthernetConnected = eth.IsConnected;
+                }
+                else if (IsEthernetPanel && eth.IsConnected)
+                {
+                    Ethernet = eth;
                 }
             }
             catch { }

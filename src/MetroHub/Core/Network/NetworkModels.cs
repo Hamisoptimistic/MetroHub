@@ -38,6 +38,27 @@ public class EthernetInfo
     public string MacAddress { get; set; } = "--";
     public ulong BytesReceived { get; set; }
     public ulong BytesSent { get; set; }
+    public string DataUsageString => FormatDataUsage(BytesReceived, BytesSent);
+
+    public static string FormatDataUsage(ulong rx, ulong tx)
+    {
+        if (rx == 0 && tx == 0) return "--";
+        ulong total = rx + tx;
+        return $"{FormatBytes(total)} (↓ {FormatBytes(rx)}  ↑ {FormatBytes(tx)})";
+    }
+
+    public static string FormatBytes(ulong bytes)
+    {
+        if (bytes >= 1024UL * 1024 * 1024 * 1024)
+            return $"{(double)bytes / (1024UL * 1024 * 1024 * 1024):0.00} TB";
+        if (bytes >= 1024UL * 1024 * 1024)
+            return $"{(double)bytes / (1024UL * 1024 * 1024):0.00} GB";
+        if (bytes >= 1024UL * 1024)
+            return $"{(double)bytes / (1024UL * 1024):0.0} MB";
+        if (bytes >= 1024UL)
+            return $"{(double)bytes / 1024UL:0} KB";
+        return $"{bytes} B";
+    }
 
     public static string FormatDuration(TimeSpan duration)
     {
