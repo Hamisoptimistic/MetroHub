@@ -12,6 +12,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
 using MetroHub.Core.Network;
+using MetroHub.Core.Network.Interop;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Network;
@@ -22,15 +23,46 @@ public partial class WifiNetworkItemViewModel : ObservableObject
     public int SignalQuality { get; init; }
     public int SignalBars { get; init; }
     public string SecurityType { get; init; } = "Open";
+    public WlanNative.DOT11_AUTH_ALGORITHM AuthAlgorithm { get; init; }
+    public WlanNative.DOT11_CIPHER_ALGORITHM CipherAlgorithm { get; init; }
     public bool IsProfileKnown { get; init; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsNotConnected))]
+    [NotifyPropertyChangedFor(nameof(CanConnect))]
+    [NotifyPropertyChangedFor(nameof(StatusBadgeText))]
     private bool _isConnected;
 
     public bool IsNotConnected => !IsConnected;
 
-    public bool IsSecured => !string.Equals(SecurityType, "Open", StringComparison.OrdinalIgnoreCase);
+    public bool IsSecured => !string.Equals(SecurityType, "Open", StringComparison.OrdinalIgnoreCase) &&
+                             AuthAlgorithm != WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_80211_OPEN;
+
+    public bool IsEnterprise => AuthAlgorithm switch
+    {
+        WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_RSNA or
+        WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA or
+        WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3 or
+        WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3_ENT_192 => true,
+        _ => false
+    };
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanConnect))]
+    private bool _isConnecting;
+
+    [ObservableProperty]
+    private bool _isPasswordPromptOpen;
+
+    [ObservableProperty]
+    private string _connectionErrorMessage = string.Empty;
+
+    [ObservableProperty]
+    private bool _hasConnectionError;
+
+    public bool CanConnect => !IsConnecting && !IsConnected;
+
+    public string StatusBadgeText => IsConnected ? "Connected" : (IsProfileKnown ? "Saved" : (IsEnterprise ? "Enterprise" : (IsSecured ? "Secured" : "Open")));
 
     public string WifiGlyph => SignalBars switch
     {
@@ -39,6 +71,8 @@ public partial class WifiNetworkItemViewModel : ObservableObject
         3 => "\uE874",
         _ => "\uE701"
     };
+
+    public string LockGlyph => "\uE72E";
 }
 
 public partial class NetworkWidgetViewModel : WidgetViewModelBase
@@ -823,6 +857,37 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             ? RedIndicatorBrush
             : GreenIndicatorBrush;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanToggleWifiRadio))]
+    [NotifyPropertyChangedFor(nameof(IsWifiRadioDisabled))]
+    [NotifyPropertyChangedFor(nameof(IsWifiRadioEnabled))]
+    [NotifyPropertyChangedFor(nameof(WifiPanelTitle))]
+    [NotifyPropertyChangedFor(nameof(WifiPanelIcon))]
+    [NotifyPropertyChangedFor(nameof(WifiPanelTitleColor))]
+    [NotifyPropertyChangedFor(nameof(WifiTurnedOffBannerTitle))]
+    [NotifyPropertyChangedFor(nameof(WifiActionText))]
+    [NotifyPropertyChangedFor(nameof(WifiActionSubtext))]
+    [NotifyPropertyChangedFor(nameof(WifiStatusBrush))]
+    private bool _isWifiRadioOn = true;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanToggleWifiRadio))]
+    private bool _isWifiRadioBusy;
+
+    public bool CanToggleWifiRadio => HasWifiAdapter && !IsWifiRadioBusy;
+    public bool IsWifiRadioDisabled => !IsWifiRadioOn;
+    public string WifiTurnedOffBannerTitle => "Wi-Fi is turned off";
+
+    public bool IsWifiRadioEnabled
+    {
+        get => HasWifiAdapter && IsWifiRadioOn;
+        set
+        {
+            if (value == (HasWifiAdapter && IsWifiRadioOn)) return;
+            _ = HandleWifiRadioToggleAsync(value);
+        }
+    }
+
     public string WifiActionText => IsWifiConnected ? "Disconnect" : "Connect";
 
     public string WifiActionSubtext
@@ -831,14 +896,16 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         {
             if (!HasWifiAdapter)
                 return "No Wi-Fi adapter detected on this PC";
+            if (IsWifiRadioDisabled)
+                return "Wi-Fi is turned off • Toggle to turn on";
             if (IsWifiConnected)
-                return $"Connected to {WifiConnection.Ssid} • Click to disconnect";
+                return $"Connected to {WifiConnection.Ssid}";
             return "Not connected to any Wi-Fi network";
         }
     }
 
     public Brush WifiIndicatorDotBrush =>
-        (!HasWifiAdapter || !IsWifiConnected)
+        (!HasWifiAdapter || IsWifiRadioDisabled || !IsWifiConnected)
             ? RedIndicatorBrush
             : GreenIndicatorBrush;
 
@@ -847,13 +914,27 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         Health != null &&
         Health.Connectivity is ConnectivityLevel.LocalAccess or ConnectivityLevel.ConstrainedInternet;
 
-    public string WifiPanelIcon => IsWifiConnected ? "\uE701" : "\uEB55";
+    public string WifiPanelIcon
+    {
+        get
+        {
+            if (!HasWifiAdapter || IsWifiRadioDisabled || !IsWifiConnected)
+                return "\uEB55"; // Disconnected
+            if (IsWifiNoInternet)
+                return "\uE774"; // Globe No Internet
+            return "\uE701";    // Wi-Fi signal
+        }
+    }
 
     public string WifiPanelTitle
     {
         get
         {
-            if (!HasWifiAdapter || !IsWifiConnected)
+            if (!HasWifiAdapter)
+                return "No Adapter";
+            if (IsWifiRadioDisabled)
+                return "Turned Off";
+            if (!IsWifiConnected)
                 return "Disconnected";
             if (IsWifiNoInternet)
                 return "No Internet";
@@ -867,7 +948,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         {
             if (IsWifiNoInternet)
                 return "#FFB703"; // Warning Amber
-            if (!HasWifiAdapter || !IsWifiConnected)
+            if (!HasWifiAdapter || IsWifiRadioDisabled || !IsWifiConnected)
                 return "#85FFFFFF";
             return "#FFFFFF";
         }
@@ -991,6 +1072,218 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 }
                 catch { }
             }
+        }
+    }
+
+    [RelayCommand]
+    public async Task ToggleWifiRadio() => await HandleWifiRadioToggleAsync(!IsWifiRadioOn);
+
+    public async Task HandleWifiRadioToggleAsync(bool targetEnabled)
+    {
+        if (!HasWifiAdapter)
+        {
+            ShowToast("No Wi-Fi adapter detected.");
+            return;
+        }
+
+        if (IsWifiRadioBusy) return;
+        IsWifiRadioBusy = true;
+
+        try
+        {
+            ShowToast(targetEnabled ? "Turning on Wi-Fi..." : "Turning off Wi-Fi...");
+            bool success = await Task.Run(() => _wifiService.SetRadioState(targetEnabled));
+
+            if (success)
+            {
+                IsWifiRadioOn = targetEnabled;
+                ShowToast(targetEnabled ? "Wi-Fi turned on." : "Wi-Fi turned off.");
+
+                if (targetEnabled)
+                {
+                    await Task.Delay(300);
+                    RefreshWifiNetworks();
+                }
+                else
+                {
+                    IsWifiConnected = false;
+                    AvailableNetworks.Clear();
+                }
+                RefreshAll();
+            }
+            else
+            {
+                IsWifiRadioOn = _wifiService.IsRadioOn;
+                ShowToast("Failed to update Wi-Fi radio state.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowToast($"Wi-Fi error: {ex.Message}");
+        }
+        finally
+        {
+            IsWifiRadioBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task ConnectWifiNetwork(WifiNetworkItemViewModel? item)
+    {
+        if (item == null) return;
+
+        if (item.IsConnected)
+        {
+            await DisconnectWifiNetwork(item);
+            return;
+        }
+
+        if (item.IsEnterprise)
+        {
+            ShowToast("Opening Windows network settings for 802.1X authentication...");
+            try
+            {
+                Process.Start(new ProcessStartInfo("ms-availablenetworks:") { UseShellExecute = true });
+            }
+            catch { }
+            return;
+        }
+
+        if (item.IsProfileKnown || !item.IsSecured)
+        {
+            await ExecuteWifiConnectAsync(item, null);
+            return;
+        }
+
+        // Toggle inline password prompt for secured unknown network
+        foreach (var net in AvailableNetworks)
+        {
+            if (!ReferenceEquals(net, item))
+            {
+                net.IsPasswordPromptOpen = false;
+                net.HasConnectionError = false;
+                net.ConnectionErrorMessage = string.Empty;
+            }
+        }
+
+        item.IsPasswordPromptOpen = !item.IsPasswordPromptOpen;
+        item.HasConnectionError = false;
+        item.ConnectionErrorMessage = string.Empty;
+    }
+
+    [RelayCommand]
+    public async Task ConnectWithPassword(object? parameter)
+    {
+        if (parameter is not System.Windows.Controls.PasswordBox pb) return;
+        if (pb.DataContext is not WifiNetworkItemViewModel targetItem) return;
+
+        var securePassword = pb.SecurePassword;
+        if (securePassword == null || securePassword.Length == 0)
+        {
+            targetItem.HasConnectionError = true;
+            targetItem.ConnectionErrorMessage = "Password cannot be empty.";
+            return;
+        }
+
+        await ExecuteWifiConnectAsync(targetItem, securePassword);
+
+        if (!targetItem.HasConnectionError && targetItem.IsConnected)
+        {
+            pb.Clear();
+            targetItem.IsPasswordPromptOpen = false;
+        }
+    }
+
+    [RelayCommand]
+    public void CancelWifiPassword(object? parameter)
+    {
+        if (parameter is System.Windows.Controls.PasswordBox pb)
+        {
+            pb.Clear();
+            if (pb.DataContext is WifiNetworkItemViewModel vm)
+            {
+                vm.IsPasswordPromptOpen = false;
+                vm.HasConnectionError = false;
+                vm.ConnectionErrorMessage = string.Empty;
+            }
+        }
+        else if (parameter is WifiNetworkItemViewModel vm)
+        {
+            vm.IsPasswordPromptOpen = false;
+            vm.HasConnectionError = false;
+            vm.ConnectionErrorMessage = string.Empty;
+        }
+    }
+
+    [RelayCommand]
+    public async Task DisconnectWifiNetwork(WifiNetworkItemViewModel? item)
+    {
+        ShowToast("Disconnecting from Wi-Fi...");
+        bool res = await Task.Run(() => _wifiService.Disconnect());
+        if (res)
+        {
+            ShowToast("Disconnected from Wi-Fi.");
+            if (item != null) item.IsConnected = false;
+            IsWifiConnected = false;
+            RefreshAll();
+        }
+        else
+        {
+            ShowToast("Failed to disconnect Wi-Fi.");
+        }
+    }
+
+    private async Task ExecuteWifiConnectAsync(WifiNetworkItemViewModel item, System.Security.SecureString? securePassword)
+    {
+        item.IsConnecting = true;
+        item.HasConnectionError = false;
+        item.ConnectionErrorMessage = string.Empty;
+        ShowToast($"Connecting to {item.Ssid}...");
+
+        try
+        {
+            var (success, message) = await _wifiService.ConnectAsync(
+                item.Ssid,
+                securePassword,
+                item.AuthAlgorithm,
+                item.CipherAlgorithm,
+                item.IsProfileKnown);
+
+            if (success)
+            {
+                item.IsConnected = true;
+                item.IsPasswordPromptOpen = false;
+                ShowToast($"Connected to {item.Ssid}.");
+                RefreshAll();
+            }
+            else
+            {
+                if (message == "ENTERPRISE_DELEGATION")
+                {
+                    ShowToast("Opening Windows network settings for 802.1X authentication...");
+                    try
+                    {
+                        Process.Start(new ProcessStartInfo("ms-availablenetworks:") { UseShellExecute = true });
+                    }
+                    catch { }
+                }
+                else
+                {
+                    item.HasConnectionError = true;
+                    item.ConnectionErrorMessage = message;
+                    ShowToast($"Connection failed: {message}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            item.HasConnectionError = true;
+            item.ConnectionErrorMessage = ex.Message;
+            ShowToast($"Connection error: {ex.Message}");
+        }
+        finally
+        {
+            item.IsConnecting = false;
         }
     }
 
@@ -1187,14 +1480,23 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             if (!HasWifiAdapter)
             {
                 IsWifiConnected = false;
+                IsWifiRadioOn = false;
                 AvailableNetworks.Clear();
             }
             else
             {
+                IsWifiRadioOn = _wifiService.IsRadioOn;
                 var wifiConn = _wifiService.GetCurrentConnectionDetails();
                 WifiConnection = wifiConn;
-                IsWifiConnected = wifiConn.IsConnected;
-                RefreshWifiNetworks();
+                IsWifiConnected = IsWifiRadioOn && wifiConn.IsConnected;
+                if (IsWifiRadioOn)
+                {
+                    RefreshWifiNetworks();
+                }
+                else
+                {
+                    AvailableNetworks.Clear();
+                }
             }
 
             // 3. Disconnect state: True only if neither Ethernet nor Wi-Fi is actively connected
@@ -1266,13 +1568,21 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             OnPropertyChanged(nameof(EthernetTileTooltip));
             OnPropertyChanged(nameof(EthernetPanelName));
             OnPropertyChanged(nameof(EthernetTurnedOffBannerTitle));
+            OnPropertyChanged(nameof(IsWifiRadioOn));
+            OnPropertyChanged(nameof(IsWifiRadioDisabled));
+            OnPropertyChanged(nameof(IsWifiRadioEnabled));
+            OnPropertyChanged(nameof(CanToggleWifiRadio));
+            OnPropertyChanged(nameof(WifiPanelTitle));
+            OnPropertyChanged(nameof(WifiPanelIcon));
+            OnPropertyChanged(nameof(WifiPanelTitleColor));
+            OnPropertyChanged(nameof(WifiTurnedOffBannerTitle));
         }
         catch { }
     }
 
     private void RefreshWifiNetworks()
     {
-        if (!HasWifiAdapter) return;
+        if (!HasWifiAdapter || !IsWifiRadioOn) return;
         if (Interlocked.CompareExchange(ref _isScanningWifi, 1, 0) != 0) return;
 
         Task.Run(() =>
@@ -1284,6 +1594,9 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 {
                     try
                     {
+                        string? activePasswordPromptSsid = AvailableNetworks
+                            .FirstOrDefault(n => n.IsPasswordPromptOpen)?.Ssid;
+
                         AvailableNetworks.Clear();
                         foreach (var net in rawList)
                         {
@@ -1293,8 +1606,11 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                                 SignalQuality = net.SignalQuality,
                                 SignalBars = net.SignalBars,
                                 SecurityType = net.SecurityType,
+                                AuthAlgorithm = net.AuthAlgorithm,
+                                CipherAlgorithm = net.CipherAlgorithm,
                                 IsProfileKnown = net.IsProfileKnown,
-                                IsConnected = net.IsConnected
+                                IsConnected = net.IsConnected,
+                                IsPasswordPromptOpen = string.Equals(activePasswordPromptSsid, net.Ssid, StringComparison.OrdinalIgnoreCase)
                             });
                         }
                     }
@@ -1328,6 +1644,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                     if (!currentWifi)
                     {
                         IsWifiConnected = false;
+                        IsWifiRadioOn = false;
                         AvailableNetworks.Clear();
                         if (IsWifiPanel)
                         {
@@ -1337,6 +1654,23 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                     else
                     {
                         RefreshAll();
+                    }
+                }
+                else if (HasWifiAdapter && IsWifiPanel)
+                {
+                    bool radioState = _wifiService.IsRadioOn;
+                    if (radioState != IsWifiRadioOn)
+                    {
+                        IsWifiRadioOn = radioState;
+                        if (!radioState)
+                        {
+                            IsWifiConnected = false;
+                            AvailableNetworks.Clear();
+                        }
+                        else
+                        {
+                            RefreshWifiNetworks();
+                        }
                     }
                 }
 
