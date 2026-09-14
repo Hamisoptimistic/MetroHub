@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:widgets="clr-namespace:MetroHub.Widgets"
              xmlns:network="clr-namespace:MetroHub.Widgets.Catalog.Network"
+             xmlns:corenet="clr-namespace:MetroHub.Core.Network"
              xmlns:conv="clr-namespace:MetroHub.Presentation.Converters"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" 
@@ -25,62 +26,6 @@
         <!-- Strips default dotted focus border across all controls -->
         <Style TargetType="{x:Type Control}">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        </Style>
-
-        <!-- Base Top Tile Button Style -->
-        <!-- Seamless: default no border visible, hover illuminates only vertical side dividers, NO top/bottom borders, NO background fill on hover -->
-        <!-- Base Top Tile Button Style -->
-        <!-- Seamless edge-to-edge: hover illuminates side dividing borders, no background fill, Panel.ZIndex=10 ensures top rendering -->
-        <!-- Base Top Tile Button Style -->
-        <!-- Apple VisionOS Smoked Glass: edge-to-edge dividing borders, luminosity scrim + smoked glass gradient + specular top lip -->
-        <!-- Base Top Tile Button Style -->
-        <!-- Mica Top Bar: clean edge-to-edge dividing borders, illuminates on hover with Panel.ZIndex=10 -->
-        <!-- Base Top Tile Button Style -->
-        <!-- Acrylic Top Bar: edge-to-edge dividing borders on hover, full-width bottom separator with active glow -->
-        <Style x:Key="TopTileButtonBaseStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="1,0,1,0" />
-            <Setter Property="Height" Value="76" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Setter Property="VerticalContentAlignment" Value="Stretch" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-            <Setter Property="UseLayoutRounding" Value="True" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="TileBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                SnapsToDevicePixels="True"
-                                UseLayoutRounding="True">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Margin="0,0,0,2"
-                                              SnapsToDevicePixels="True" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <!-- Hover state: illuminates full continuous tile border and subtle glass sheen -->
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#55FFFFFF" />
-                                <Setter TargetName="TileBorder" Property="Background" Value="#0DFFFFFF" />
-                                <Setter Property="Panel.ZIndex" Value="10" />
-                            </Trigger>
-
-                            <!-- Pressed state -->
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#75FFFFFF" />
-                                <Setter TargetName="TileBorder" Property="Background" Value="#18FFFFFF" />
-                                <Setter Property="Panel.ZIndex" Value="10" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
         <!-- Sleek Micro Copy Button Style -->
@@ -121,155 +66,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <!-- Clean Timeframe Toggle Button Style (Zero borders, animated sliding indicator host) -->
-        <Style x:Key="TimeframeToggleButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Height" Value="28" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Foreground" Value="#70FFFFFF" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, sans-serif" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-            <Setter Property="UseLayoutRounding" Value="True" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBackground"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="2"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Margin="{TemplateBinding Padding}"
-                                              SnapsToDevicePixels="True" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <!-- Hover state: soft text brighten, subtle glass sheen, zero borders -->
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBackground" Property="Background" Value="#0DFFFFFF" />
-                                <Setter Property="Foreground" Value="#E0FFFFFF" />
-                            </Trigger>
-
-                            <!-- Pressed state -->
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBackground" Property="Background" Value="#18FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                            </Trigger>
-
-                            <!-- Active (Selected) state: bright pure white text (sliding indicator glides beneath) -->
-                            <Trigger Property="Tag" Value="Active">
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                            </Trigger>
-
-                            <!-- Active + Hover -->
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="IsMouseOver" Value="True" />
-                                    <Condition Property="Tag" Value="Active" />
-                                </MultiTrigger.Conditions>
-                                <Setter TargetName="ButtonBackground" Property="Background" Value="#0DFFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                            </MultiTrigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="TimeframeSessionButtonStyle" TargetType="Button" BasedOn="{StaticResource TimeframeToggleButtonStyle}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding IsSessionTimeframe}" Value="True">
-                    <Setter Property="Tag" Value="Active" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="Timeframe24hButtonStyle" TargetType="Button" BasedOn="{StaticResource TimeframeToggleButtonStyle}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding Is24HoursTimeframe}" Value="True">
-                    <Setter Property="Tag" Value="Active" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="Timeframe7dButtonStyle" TargetType="Button" BasedOn="{StaticResource TimeframeToggleButtonStyle}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding Is7DaysTimeframe}" Value="True">
-                    <Setter Property="Tag" Value="Active" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="Timeframe30dButtonStyle" TargetType="Button" BasedOn="{StaticResource TimeframeToggleButtonStyle}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding Is30DaysTimeframe}" Value="True">
-                    <Setter Property="Tag" Value="Active" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- 1. Ethernet Tile Style -->
-        <Style x:Key="EthernetTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding IsEthernetPanel}" Value="True">
-                    <Setter Property="Tag" Value="GlowGreen" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding HasEthernetAdapter}" Value="False">
-                    <Setter Property="Opacity" Value="0.3" />
-                    <Setter Property="IsEnabled" Value="False" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- 2. WIFI Tile Style -->
-        <Style x:Key="WifiTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding IsWifiPanel}" Value="True">
-                    <Setter Property="Tag" Value="GlowGreen" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding HasWifiAdapter}" Value="False">
-                    <Setter Property="Opacity" Value="0.3" />
-                    <Setter Property="IsEnabled" Value="False" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- 3. Kill Net Tile Style -->
-        <Style x:Key="KillNetTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding IsKillNetPanel}" Value="True">
-                    <Setter Property="Tag" Value="GlowRed" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding IsInternetDisconnected}" Value="True">
-                    <Setter Property="Tag" Value="GlowRed" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- 4. Speed Tile Style -->
-        <Style x:Key="SpeedTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding IsSpeedPanel}" Value="True">
-                    <Setter Property="Tag" Value="GlowGreen" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
-        <!-- 5. Hotspot Tile Style -->
-        <Style x:Key="HotspotTileStyle" TargetType="Button" BasedOn="{StaticResource TopTileButtonBaseStyle}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding IsHotspotPanel}" Value="True">
-                    <Setter Property="Tag" Value="GlowGreen" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
     </UserControl.Resources>
 
     <!-- Outer Widget Card with Padding="0" so dividing borders run border-to-border -->
@@ -286,187 +82,37 @@
             <!-- ROW 0: TOP 5-TILE REGION (Transparent Acrylic Backdrop)                   -->
             <!-- [ Ethernet ] | [ WIFI ] | [ Kill Net ] | [ Speed ] | [ Hotspot ]          -->
             <!-- ========================================================================= -->
-            <Grid x:Name="TopTilesGrid" Grid.Row="0" SnapsToDevicePixels="True" Background="Transparent" MouseMove="OnMouseMove" MouseEnter="OnMouseEnter" MouseLeave="OnMouseLeave">
-                <Grid.ColumnDefinitions>
-                    <!-- Col 0: Ethernet -->
-                    <ColumnDefinition Width="*" />
-                    <!-- Col 1: WIFI -->
-                    <ColumnDefinition Width="*" />
-                    <!-- Col 2: Kill Net -->
-                    <ColumnDefinition Width="*" />
-                    <!-- Col 3: Speed -->
-                    <ColumnDefinition Width="*" />
-                    <!-- Col 4: Hotspot -->
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <!-- Continuous 1px bottom border across all 5 tiles with Fluent Reveal mouse tracking -->
-                <Grid Grid.Column="0" Grid.ColumnSpan="5" VerticalAlignment="Bottom" Height="1" SnapsToDevicePixels="True">
-                    <Border Background="#22FFFFFF" SnapsToDevicePixels="True" />
-                    <Border x:Name="BottomRevealBorder" SnapsToDevicePixels="True" Opacity="0">
-                        <Border.Background>
-                            <RadialGradientBrush x:Name="BottomRevealBrush" MappingMode="Absolute" RadiusX="160" RadiusY="160">
-                                <GradientStop Color="#FFFFFFFF" Offset="0.0" />
-                                <GradientStop Color="#60FFFFFF" Offset="0.5" />
-                                <GradientStop Color="#00000000" Offset="1.0" />
-                            </RadialGradientBrush>
-                        </Border.Background>
-                    </Border>
-                </Grid>
-
-                <!-- Sliding Active Indicator -->
-                <Border x:Name="SlidingActiveIndicator"
-                        Grid.Column="0"
-                        Grid.ColumnSpan="5"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Bottom"
-                        Height="2"
-                        Width="0"
-                        Background="#00E676"
-                        Opacity="0"
-                        Panel.ZIndex="25"
-                        SnapsToDevicePixels="True">
-                    <Border.RenderTransform>
-                        <TranslateTransform x:Name="SlidingIndicatorTransform" X="0" />
-                    </Border.RenderTransform>
-                    <Border.Effect>
-                        <DropShadowEffect x:Name="SlidingIndicatorShadow" Color="#00E676" BlurRadius="8" ShadowDepth="0" Opacity="0.8" />
-                    </Border.Effect>
-                </Border>
-
-                    <!-- ==================== 1. ETHERNET TILE ==================== -->
-                    <Button Grid.Column="0"
-                        Style="{StaticResource EthernetTileStyle}"
-                        Command="{Binding SelectPanelCommand}"
-                        CommandParameter="Ethernet"
-                        ToolTip="Ethernet Settings &amp; Telemetry">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- Icon: Monitor with Cable (\uE839) - Always pure white -->
-                        <TextBlock Text="&#xE839;"
-                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                   FontSize="22"
-                                   Foreground="#FFFFFF"
-                                   HorizontalAlignment="Center"
-                                   SnapsToDevicePixels="True" />
-                        <!-- Label: Ethernet -->
-                        <TextBlock Text="Ethernet"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   FontSize="11.5"
-                                   FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,5,0,0"
-                                   SnapsToDevicePixels="True" />
-                    </StackPanel>
-                </Button>
-
-                <!-- ==================== 2. WIFI TILE ==================== -->
-                <Button Grid.Column="1"
-                        Margin="-1,0,0,0"
-                        Style="{StaticResource WifiTileStyle}"
-                        Command="{Binding SelectPanelCommand}"
-                        CommandParameter="Wifi"
-                        ToolTip="Wi-Fi Networks &amp; Details">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- Icon: Wi-Fi Waves (\uE701) - Always pure white -->
-                        <TextBlock Text="&#xE701;"
-                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                   FontSize="22"
-                                   Foreground="#FFFFFF"
-                                   HorizontalAlignment="Center"
-                                   SnapsToDevicePixels="True" />
-                        <!-- Label: WIFI -->
-                        <TextBlock Text="WIFI"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   FontSize="11.5"
-                                   FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,5,0,0"
-                                   SnapsToDevicePixels="True" />
-                    </StackPanel>
-                </Button>
-
-                <!-- ==================== 3. DISABLE INTERNET TILE ==================== -->
-                <Button Grid.Column="2"
-                        Margin="-1,0,0,0"
-                        Style="{StaticResource KillNetTileStyle}"
-                        Command="{Binding SelectPanelCommand}"
-                        CommandParameter="KillNet"
-                        ToolTip="Disconnect / Disable Internet Connection">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- Icon: Plug Disconnected / Cable Off (\uEB55) - Always pure white -->
-                        <TextBlock Text="&#xEB55;"
-                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                   FontSize="22"
-                                   Foreground="#FFFFFF"
-                                   HorizontalAlignment="Center"
-                                   SnapsToDevicePixels="True" />
-                        <!-- Label: Disable Internet -->
-                        <TextBlock Text="Disable Internet"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   FontSize="10.5"
-                                   FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,5,0,0"
-                                   SnapsToDevicePixels="True" />
-                    </StackPanel>
-                </Button>
-
-                <!-- ==================== 4. SPEED TILE ==================== -->
-                <Button Grid.Column="3"
-                        Margin="-1,0,0,0"
-                        Style="{StaticResource SpeedTileStyle}"
-                        Command="{Binding SelectPanelCommand}"
-                        CommandParameter="Speed"
-                        ToolTip="Live Throughput &amp; Bandwidth Diagnostics">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- Icon: TopSpeed24 Speedometer - Always pure white -->
-                        <ui:SymbolIcon Symbol="TopSpeed24"
-                                       FontSize="22"
-                                       Foreground="#FFFFFF"
-                                       HorizontalAlignment="Center"
-                                       SnapsToDevicePixels="True" />
-                        <!-- Label: Speed -->
-                        <TextBlock Text="Speed"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   FontSize="11.5"
-                                   FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,5,0,0"
-                                   SnapsToDevicePixels="True" />
-                    </StackPanel>
-                </Button>
-
-                <!-- ==================== 5. HOTSPOT TILE ==================== -->
-                <Button Grid.Column="4"
-                        Margin="-1,0,0,0"
-                        Style="{StaticResource HotspotTileStyle}"
-                        Command="{Binding SelectPanelCommand}"
-                        CommandParameter="Hotspot"
-                        ToolTip="Windows Mobile Hotspot Settings">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- Icon: Mobile Hotspot (\uE88E) - Always pure white -->
-                        <TextBlock Text="&#xE88E;"
-                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                   FontSize="22"
-                                   Foreground="#FFFFFF"
-                                   HorizontalAlignment="Center"
-                                   SnapsToDevicePixels="True" />
-                        <!-- Label: Hotspot -->
-                        <TextBlock Text="Hotspot"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   FontSize="11.5"
-                                   FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,5,0,0"
-                                   SnapsToDevicePixels="True" />
-                    </StackPanel>
-                </Button>
-            </Grid>
+            <widgets:WidgetTiles Grid.Row="0"
+                                 SelectedValue="{Binding CurrentPanel, Mode=TwoWay}"
+                                 Height="76">
+                <widgets:WidgetTile Value="Ethernet"
+                                    Icon="&#xE839;"
+                                    Header="Ethernet"
+                                    IndicatorBrush="{Binding EthernetStatusBrush}"
+                                    IsEnabled="{Binding HasEthernetAdapter}"
+                                    ToolTip="Ethernet Settings &amp; Telemetry" />
+                <widgets:WidgetTile Value="Wifi"
+                                    Icon="&#xE701;"
+                                    Header="WIFI"
+                                    IndicatorBrush="{Binding WifiStatusBrush}"
+                                    IsEnabled="{Binding HasWifiAdapter}"
+                                    ToolTip="Wi-Fi Networks &amp; Details" />
+                <widgets:WidgetTile Value="KillNet"
+                                    Icon="&#xEB55;"
+                                    Header="Disable Internet"
+                                    IndicatorBrush="{Binding KillNetStatusBrush}"
+                                    ToolTip="Disconnect / Disable Internet Connection" />
+                <widgets:WidgetTile Value="Speed"
+                                    Icon="&#xE9F5;"
+                                    Header="Speed"
+                                    IndicatorBrush="{Binding SpeedStatusBrush}"
+                                    ToolTip="Live Throughput &amp; Bandwidth Diagnostics" />
+                <widgets:WidgetTile Value="Hotspot"
+                                    Icon="&#xE88E;"
+                                    Header="Hotspot"
+                                    IndicatorBrush="{Binding HotspotStatusBrush}"
+                                    ToolTip="Windows Mobile Hotspot Settings" />
+            </widgets:WidgetTiles>
 
             <!-- ========================================================================= -->
             <!-- ROW 1: LOWER PANEL REGION                                                 -->
@@ -634,50 +280,16 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <!-- Left: Timeframe Buttons with Smooth Sliding Active Indicator (Uniform 4-column layout) -->
-                        <Grid x:Name="TimeframeHostGrid" Grid.Column="0" Width="240" VerticalAlignment="Center" SnapsToDevicePixels="True">
-                            <UniformGrid Rows="1" Columns="4">
-                                <Button x:Name="TimeframeSessionBtn"
-                                        Content="Session"
-                                        Style="{StaticResource TimeframeSessionButtonStyle}"
-                                        Command="{Binding SelectDataUsageTimeframeCommand}"
-                                        CommandParameter="session" />
-                                <Button x:Name="Timeframe24hBtn"
-                                        Content="24h"
-                                        Style="{StaticResource Timeframe24hButtonStyle}"
-                                        Command="{Binding SelectDataUsageTimeframeCommand}"
-                                        CommandParameter="24h" />
-                                <Button x:Name="Timeframe7dBtn"
-                                        Content="7d"
-                                        Style="{StaticResource Timeframe7dButtonStyle}"
-                                        Command="{Binding SelectDataUsageTimeframeCommand}"
-                                        CommandParameter="7d" />
-                                <Button x:Name="Timeframe30dBtn"
-                                        Content="30d"
-                                        Style="{StaticResource Timeframe30dButtonStyle}"
-                                        Command="{Binding SelectDataUsageTimeframeCommand}"
-                                        CommandParameter="30d" />
-                            </UniformGrid>
-
-                            <!-- Sliding Active Timeframe Indicator (Pure white, identical motion to top tiles) -->
-                            <Border x:Name="SlidingTimeframeIndicator"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Bottom"
-                                    Height="2"
-                                    Width="0"
-                                    Background="#FFFFFF"
-                                    CornerRadius="1"
-                                    Opacity="0"
-                                    Panel.ZIndex="25"
-                                    SnapsToDevicePixels="True">
-                                <Border.RenderTransform>
-                                    <TranslateTransform x:Name="SlidingTimeframeTransform" X="0" />
-                                </Border.RenderTransform>
-                                <Border.Effect>
-                                    <DropShadowEffect x:Name="SlidingTimeframeShadow" Color="#FFFFFF" BlurRadius="6" ShadowDepth="0" Opacity="0.8" />
-                                </Border.Effect>
-                            </Border>
-                        </Grid>
+                        <!-- Left: Modular Segmented Timeframe Switch (Zero Boilerplate, Encapsulated Motion) -->
+                        <widgets:WidgetSegmentedControl Grid.Column="0"
+                                                        Width="240"
+                                                        VerticalAlignment="Center"
+                                                        SelectedValue="{Binding SelectedDataUsageTimeframe, Mode=TwoWay}">
+                            <widgets:WidgetSegmentedItem Content="Session" Value="{x:Static corenet:DataUsageTimeframe.Session}" />
+                            <widgets:WidgetSegmentedItem Content="24h" Value="{x:Static corenet:DataUsageTimeframe.Last24Hours}" />
+                            <widgets:WidgetSegmentedItem Content="7d" Value="{x:Static corenet:DataUsageTimeframe.Last7Days}" />
+                            <widgets:WidgetSegmentedItem Content="30d" Value="{x:Static corenet:DataUsageTimeframe.Last30Days}" />
+                        </widgets:WidgetSegmentedControl>
 
                         <!-- Right: Accurate Readout (Large bold total + prominent up/down telemetry) -->
                         <StackPanel Grid.Column="2"

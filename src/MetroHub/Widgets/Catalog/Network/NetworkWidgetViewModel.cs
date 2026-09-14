@@ -7,6 +7,7 @@ using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
@@ -72,6 +73,52 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public bool IsSpeedPanel => string.Equals(CurrentPanel, "Speed", StringComparison.OrdinalIgnoreCase);
     public bool IsHotspotPanel => string.Equals(CurrentPanel, "Hotspot", StringComparison.OrdinalIgnoreCase);
 
+    // --- Dynamic Status Brushes for Modular WidgetTiles ---
+    private static readonly Brush GreenIndicatorBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00E676"));
+    private static readonly Brush RedIndicatorBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF3B30"));
+    private static readonly Brush AmberIndicatorBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFB703"));
+
+    public Brush EthernetStatusBrush
+    {
+        get
+        {
+            if (IsInternetDisconnected || !IsEthernetConnected)
+                return RedIndicatorBrush;
+            if (IsLocalOnlyNoInternet)
+                return AmberIndicatorBrush;
+            return GreenIndicatorBrush;
+        }
+    }
+
+    public Brush WifiStatusBrush
+    {
+        get
+        {
+            if (IsInternetDisconnected || !IsWifiConnected)
+                return RedIndicatorBrush;
+            if (IsLocalOnlyNoInternet)
+                return AmberIndicatorBrush;
+            return GreenIndicatorBrush;
+        }
+    }
+
+    public Brush KillNetStatusBrush => RedIndicatorBrush;
+
+    public Brush SpeedStatusBrush
+    {
+        get
+        {
+            bool isLinked = IsEthernetConnected || IsWifiConnected;
+            if (IsInternetDisconnected || !isLinked)
+                return RedIndicatorBrush;
+            if (IsLocalOnlyNoInternet)
+                return AmberIndicatorBrush;
+            return GreenIndicatorBrush;
+        }
+    }
+
+    public Brush HotspotStatusBrush => GreenIndicatorBrush;
+
     [ObservableProperty]
     private bool _isHotspotConnected;
 
@@ -110,6 +157,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetStatusDotColor))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBackground))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBorderBrush))]
+    [NotifyPropertyChangedFor(nameof(EthernetStatusBrush))]
+    [NotifyPropertyChangedFor(nameof(SpeedStatusBrush))]
     private bool _isEthernetConnected;
 
     [ObservableProperty]
@@ -125,6 +174,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(HeroActionBorderBrush))]
     [NotifyPropertyChangedFor(nameof(IsLocalOnlyNoInternet))]
     [NotifyPropertyChangedFor(nameof(HasVerifiedInternet))]
+    [NotifyPropertyChangedFor(nameof(WifiStatusBrush))]
+    [NotifyPropertyChangedFor(nameof(SpeedStatusBrush))]
     private bool _isWifiConnected;
 
     [ObservableProperty]
@@ -145,6 +196,9 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetStatusDotColor))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBackground))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBorderBrush))]
+    [NotifyPropertyChangedFor(nameof(EthernetStatusBrush))]
+    [NotifyPropertyChangedFor(nameof(WifiStatusBrush))]
+    [NotifyPropertyChangedFor(nameof(SpeedStatusBrush))]
     private bool _isInternetDisconnected;
 
     [ObservableProperty]
@@ -193,6 +247,9 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetStatusDotColor))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBackground))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBorderBrush))]
+    [NotifyPropertyChangedFor(nameof(EthernetStatusBrush))]
+    [NotifyPropertyChangedFor(nameof(WifiStatusBrush))]
+    [NotifyPropertyChangedFor(nameof(SpeedStatusBrush))]
     private NetworkHealthStatus _health = new();
 
     [ObservableProperty]
@@ -360,6 +417,21 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
     private DataUsageTimeframe _selectedDataUsageTimeframe = DataUsageTimeframe.Session;
 
+    partial void OnSelectedDataUsageTimeframeChanged(DataUsageTimeframe value)
+    {
+        if (value != DataUsageTimeframe.Session)
+        {
+            Task.Run(async () =>
+            {
+                var usage = await _dataUsageService.QueryUsageAsync(NetworkKind.Ethernet, value);
+                Application.Current?.Dispatcher.InvokeAsync(() =>
+                {
+                    HistoricalDataUsage = usage;
+                }, System.Windows.Threading.DispatcherPriority.Background);
+            });
+        }
+    }
+
     public bool IsSessionTimeframe => SelectedDataUsageTimeframe == DataUsageTimeframe.Session;
     public bool Is24HoursTimeframe => SelectedDataUsageTimeframe == DataUsageTimeframe.Last24Hours;
     public bool Is7DaysTimeframe => SelectedDataUsageTimeframe == DataUsageTimeframe.Last7Days;
@@ -423,18 +495,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         };
 
         SelectedDataUsageTimeframe = timeframe;
-
-        if (timeframe != DataUsageTimeframe.Session)
-        {
-            Task.Run(async () =>
-            {
-                var usage = await _dataUsageService.QueryUsageAsync(NetworkKind.Ethernet, timeframe);
-                Application.Current?.Dispatcher.InvokeAsync(() =>
-                {
-                    HistoricalDataUsage = usage;
-                });
-            });
-        }
     }
 
     // --- Formatted Speeds ---

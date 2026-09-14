@@ -206,7 +206,7 @@ public partial class TileControl : UserControl
 
     public void AnimatePressDown()
     {
-        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" or "photos" or "volume" or "notepad" })
+        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" or "photos" or "volume" or "notepad" or "network" })
         {
             return;
         }

@@ -1443,7 +1443,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
             _isPotentialDrag = true;
             _isDragging = false;
-            if (!(tile.TileType == TileType.Widget && (tile.TargetPath == "calendar" || tile.TargetPath == "media" || tile.TargetPath == "pomodoro" || tile.TargetPath == "photos" || tile.TargetPath == "volume" || tile.TargetPath == "notepad")))
+            if (!(tile.TileType == TileType.Widget && (tile.TargetPath == "calendar" || tile.TargetPath == "media" || tile.TargetPath == "pomodoro" || tile.TargetPath == "photos" || tile.TargetPath == "volume" || tile.TargetPath == "notepad" || tile.TargetPath == "network")))
             {
                 _draggedControl.AnimatePressDown();
             }
@@ -2492,13 +2492,19 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
             if (current is System.Windows.Controls.Primitives.TextBoxBase ||
                 current is System.Windows.Controls.PasswordBox ||
-                current is System.Windows.Controls.Button ||
+                current is System.Windows.Controls.Primitives.ButtonBase ||
                 current is System.Windows.Controls.Primitives.Thumb ||
                 current is System.Windows.Controls.Primitives.RangeBase ||
                 current is System.Windows.Controls.Slider ||
                 current is System.Windows.Controls.ProgressBar ||
+                current is System.Windows.Controls.ListBoxItem ||
+                current is System.Windows.Controls.Primitives.Selector ||
                 current is ContextMenu ||
-                current is Presentation.Controls.FluentVolumeSlider)
+                current is Presentation.Controls.FluentVolumeSlider ||
+                current is Widgets.WidgetSegmentedControl ||
+                current is Widgets.WidgetSegmentedItem ||
+                current is Widgets.WidgetTiles ||
+                current is Widgets.WidgetTile)
             {
                 return true;
             }
