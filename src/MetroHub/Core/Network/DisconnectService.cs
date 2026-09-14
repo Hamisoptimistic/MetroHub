@@ -10,10 +10,83 @@ public class DisconnectService
     public static DisconnectService Instance => _instance.Value;
 
     private bool _isDisconnected;
+    private bool _isEthernetDisabled;
     private string? _lastDisabledAdapterName;
 
     public bool IsDisconnected => _isDisconnected;
+    public bool IsEthernetDisabled => _isEthernetDisabled;
+    public string? LastDisabledAdapterName => _lastDisabledAdapterName;
+
     public event Action<bool>? DisconnectStateChanged;
+    public event Action<bool>? EthernetDisabledStateChanged;
+
+    public async Task<bool> ToggleEthernetAdapterAsync(string? adapterName = null)
+    {
+        string targetName = adapterName ?? _lastDisabledAdapterName ?? "Ethernet";
+        if (_isEthernetDisabled)
+        {
+            bool enabled = await RunElevatedAdapterCommandAsync("Enable-NetAdapter", targetName);
+            if (enabled)
+            {
+                _isEthernetDisabled = false;
+                EthernetDisabledStateChanged?.Invoke(false);
+                UpdateOverallDisconnectedState();
+                return true;
+            }
+            return false;
+        }
+        else
+        {
+            _lastDisabledAdapterName = targetName;
+            bool disabled = await RunElevatedAdapterCommandAsync("Disable-NetAdapter", targetName);
+            if (disabled)
+            {
+                _isEthernetDisabled = true;
+                EthernetDisabledStateChanged?.Invoke(true);
+                UpdateOverallDisconnectedState();
+                return true;
+            }
+            return false;
+        }
+    }
+
+    public Task<bool> ToggleWifiConnectionAsync()
+    {
+        return Task.Run(() =>
+        {
+            var wifiDetails = NativeWifiService.Instance.GetCurrentConnectionDetails();
+            if (wifiDetails.IsConnected)
+            {
+                bool success = NativeWifiService.Instance.Disconnect();
+                UpdateOverallDisconnectedState();
+                return success;
+            }
+            else
+            {
+                var networks = NativeWifiService.Instance.ScanAndGetAvailableNetworks();
+                var known = networks.FirstOrDefault(n => n.IsProfileKnown);
+                if (known != null)
+                {
+                    bool connected = NativeWifiService.Instance.QuickConnect(known.Ssid);
+                    UpdateOverallDisconnectedState();
+                    return connected;
+                }
+                return false;
+            }
+        });
+    }
+
+    private void UpdateOverallDisconnectedState()
+    {
+        bool wifiConn = NativeWifiService.Instance.GetCurrentConnectionDetails().IsConnected;
+        bool ethUp = EthernetProvider.Instance.GetActiveEthernetInfo().IsConnected;
+        bool newDisconnected = !wifiConn && !ethUp;
+        if (_isDisconnected != newDisconnected)
+        {
+            _isDisconnected = newDisconnected;
+            DisconnectStateChanged?.Invoke(newDisconnected);
+        }
+    }
 
     public async Task<bool> ToggleInternetAsync()
     {
@@ -42,18 +115,11 @@ public class DisconnectService
             }
         }
 
-        // 2. If Ethernet is active, disable the adapter via elevated command (Option B)
+        // 2. If Ethernet is active, disable the adapter via elevated command
         var ethInfo = EthernetProvider.Instance.GetActiveEthernetInfo();
         if (ethInfo.IsConnected && !string.IsNullOrWhiteSpace(ethInfo.Name))
         {
-            _lastDisabledAdapterName = ethInfo.Name;
-            bool disabled = await RunElevatedAdapterCommandAsync("Disable-NetAdapter", ethInfo.Name);
-            if (disabled)
-            {
-                _isDisconnected = true;
-                DisconnectStateChanged?.Invoke(true);
-                return true;
-            }
+            return await ToggleEthernetAdapterAsync(ethInfo.Name);
         }
 
         return false;
@@ -61,35 +127,11 @@ public class DisconnectService
 
     public async Task<bool> ReconnectInternetAsync()
     {
-        // 1. If Ethernet adapter was previously disabled, re-enable it
-        if (!string.IsNullOrWhiteSpace(_lastDisabledAdapterName))
+        if (_isEthernetDisabled)
         {
-            bool enabled = await RunElevatedAdapterCommandAsync("Enable-NetAdapter", _lastDisabledAdapterName);
-            if (enabled)
-            {
-                _isDisconnected = false;
-                DisconnectStateChanged?.Invoke(false);
-                return true;
-            }
+            return await ToggleEthernetAdapterAsync();
         }
-
-        // 2. If Wi-Fi was disconnected, attempt reconnect to available known network
-        var networks = NativeWifiService.Instance.ScanAndGetAvailableNetworks();
-        var known = networks.FirstOrDefault(n => n.IsProfileKnown);
-        if (known != null)
-        {
-            bool connected = NativeWifiService.Instance.QuickConnect(known.Ssid);
-            if (connected)
-            {
-                _isDisconnected = false;
-                DisconnectStateChanged?.Invoke(false);
-                return true;
-            }
-        }
-
-        _isDisconnected = false;
-        DisconnectStateChanged?.Invoke(false);
-        return true;
+        return await ToggleWifiConnectionAsync();
     }
 
     private static Task<bool> RunElevatedAdapterCommandAsync(string command, string adapterName)

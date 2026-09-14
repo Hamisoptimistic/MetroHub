@@ -36,7 +36,7 @@ public class WidgetTiles : Selector
             nameof(AnimationDurationMs),
             typeof(int),
             typeof(WidgetTiles),
-            new PropertyMetadata(300));
+            new PropertyMetadata(150));
 
     public double IndicatorHeight
     {

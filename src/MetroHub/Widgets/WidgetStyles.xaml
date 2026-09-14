@@ -193,26 +193,41 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             SnapsToDevicePixels="True"
                             UseLayoutRounding="True">
-                        <StackPanel HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                    Margin="0,0,0,2">
-                            <!-- Icon Glyph or Content -->
-                            <ContentControl Content="{TemplateBinding Icon}"
+                        <Grid HorizontalAlignment="Stretch"
+                              VerticalAlignment="Center"
+                              Margin="0,0,0,2"
+                              SnapsToDevicePixels="True">
+                            <Grid.RowDefinitions>
+                                <!-- Fixed 28px height for optical icon center -->
+                                <RowDefinition Height="28" />
+                                <!-- Fixed 5px spacing -->
+                                <RowDefinition Height="5" />
+                                <!-- Fixed 18px height for text baseline -->
+                                <RowDefinition Height="18" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Icon: Centered in exact 28x28 box -->
+                            <ContentControl Grid.Row="0"
+                                            Content="{TemplateBinding Icon}"
                                             FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
-                                            FontSize="22"
+                                            FontSize="20"
                                             Foreground="#FFFFFF"
                                             HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
                                             SnapsToDevicePixels="True" />
-                            <!-- Header Text -->
-                            <TextBlock Text="{TemplateBinding Header}"
+
+                            <!-- Header Text: Pinned to exact identical baseline across every single tile -->
+                            <TextBlock Grid.Row="2"
+                                       Text="{TemplateBinding Header}"
                                        FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        FontSize="11.5"
                                        FontWeight="SemiBold"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
-                                       Margin="0,5,0,0"
+                                       VerticalAlignment="Center"
+                                       TextAlignment="Center"
                                        SnapsToDevicePixels="True" />
-                        </StackPanel>
+                        </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
                         <!-- Hover state: illuminates continuous vertical dividing borders without any background highlight -->

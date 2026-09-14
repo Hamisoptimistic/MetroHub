@@ -159,6 +159,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetStatusBorderBrush))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBrush))]
     [NotifyPropertyChangedFor(nameof(SpeedStatusBrush))]
+    [NotifyPropertyChangedFor(nameof(EthernetActionText))]
+    [NotifyPropertyChangedFor(nameof(EthernetActionSubtext))]
     private bool _isEthernetConnected;
 
     [ObservableProperty]
@@ -176,6 +178,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(HasVerifiedInternet))]
     [NotifyPropertyChangedFor(nameof(WifiStatusBrush))]
     [NotifyPropertyChangedFor(nameof(SpeedStatusBrush))]
+    [NotifyPropertyChangedFor(nameof(WifiActionText))]
+    [NotifyPropertyChangedFor(nameof(WifiActionSubtext))]
     private bool _isWifiConnected;
 
     [ObservableProperty]
@@ -203,6 +207,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasNoWifiAdapter))]
+    [NotifyPropertyChangedFor(nameof(WifiActionText))]
+    [NotifyPropertyChangedFor(nameof(WifiActionSubtext))]
     private bool _hasWifiAdapter;
 
     public bool HasNoWifiAdapter => !HasWifiAdapter;
@@ -214,6 +220,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetStatusDotColor))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBackground))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBorderBrush))]
+    [NotifyPropertyChangedFor(nameof(EthernetActionText))]
+    [NotifyPropertyChangedFor(nameof(EthernetActionSubtext))]
     private bool _hasEthernetAdapter;
 
     public bool HasNoEthernetAdapter => !HasEthernetAdapter;
@@ -513,6 +521,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         _throughputService.ThroughputUpdated += OnThroughputUpdated;
         _throughputService.LatencyUpdated += OnLatencyUpdated;
         _disconnectService.DisconnectStateChanged += OnDisconnectStateChanged;
+        _disconnectService.EthernetDisabledStateChanged += OnEthernetDisabledStateChanged;
         _healthService.HealthChanged += OnHealthServiceChanged;
 
         try
@@ -654,6 +663,124 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             {
                 IsInternetDisconnected = true;
                 ShowToast("Action canceled: Administrative authorization was declined.");
+            }
+        }
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EthernetActionText))]
+    [NotifyPropertyChangedFor(nameof(EthernetActionSubtext))]
+    [NotifyPropertyChangedFor(nameof(EthernetIndicatorDotBrush))]
+    private bool _isEthernetAdapterDisabled;
+
+    public string EthernetActionText => IsEthernetAdapterDisabled ? "Enable" : "Disable";
+
+    public string EthernetActionSubtext
+    {
+        get
+        {
+            if (!HasEthernetAdapter)
+                return "No Ethernet adapter detected on this PC";
+            if (IsEthernetAdapterDisabled)
+                return "Ethernet adapter is disabled • Click Enable to restore";
+            if (IsEthernetConnected)
+                return "Disable / disconnect Ethernet (Requires Admin privilege)";
+            return "Cable unplugged • Disabling requires Admin privilege";
+        }
+    }
+
+    public Brush EthernetIndicatorDotBrush =>
+        (!HasEthernetAdapter || IsEthernetAdapterDisabled || !IsEthernetConnected)
+            ? RedIndicatorBrush
+            : GreenIndicatorBrush;
+
+    public string WifiActionText => IsWifiConnected ? "Disconnect" : "Connect";
+
+    public string WifiActionSubtext
+    {
+        get
+        {
+            if (!HasWifiAdapter)
+                return "No Wi-Fi adapter detected on this PC";
+            if (IsWifiConnected)
+                return $"Connected to {WifiConnection.Ssid} • Click to disconnect";
+            return "Not connected to any Wi-Fi network";
+        }
+    }
+
+    public Brush WifiIndicatorDotBrush =>
+        (!HasWifiAdapter || !IsWifiConnected)
+            ? RedIndicatorBrush
+            : GreenIndicatorBrush;
+
+    [RelayCommand]
+    public async Task ToggleEthernet()
+    {
+        if (!HasEthernetAdapter && !IsEthernetAdapterDisabled)
+        {
+            ShowToast("No Ethernet adapter detected.");
+            return;
+        }
+
+        string actionName = IsEthernetAdapterDisabled ? "restore" : "suspend";
+        ShowToast($"Requesting Windows authorization to {actionName} Ethernet adapter...");
+
+        bool success = await _disconnectService.ToggleEthernetAdapterAsync(Ethernet.Name);
+        if (success)
+        {
+            IsEthernetAdapterDisabled = _disconnectService.IsEthernetDisabled;
+            ShowToast(IsEthernetAdapterDisabled 
+                ? "Ethernet adapter suspended via administrative policy." 
+                : "Ethernet adapter re-enabled. Connectivity restored.");
+            RefreshAll();
+        }
+        else
+        {
+            ShowToast("Action canceled: Administrative authorization was declined.");
+        }
+    }
+
+    [RelayCommand]
+    public async Task ToggleWifi()
+    {
+        if (!HasWifiAdapter)
+        {
+            ShowToast("No Wi-Fi adapter detected.");
+            return;
+        }
+
+        if (IsWifiConnected)
+        {
+            IsWifiConnected = false;
+            ShowToast("Disconnecting from Wi-Fi...");
+            bool success = await _disconnectService.ToggleWifiConnectionAsync();
+            if (success)
+            {
+                ShowToast("Wi-Fi disconnected.");
+                RefreshAll();
+            }
+            else
+            {
+                IsWifiConnected = true;
+                ShowToast("Failed to disconnect Wi-Fi.");
+            }
+        }
+        else
+        {
+            ShowToast("Attempting Wi-Fi connection...");
+            bool success = await _disconnectService.ToggleWifiConnectionAsync();
+            if (success)
+            {
+                ShowToast("Wi-Fi connected.");
+                RefreshAll();
+            }
+            else
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo("ms-availablenetworks:") { UseShellExecute = true });
+                }
+                catch { }
             }
         }
     }
@@ -860,6 +987,14 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             OnPropertyChanged(nameof(DataUsageTotalDisplay));
             OnPropertyChanged(nameof(DataUsageDetailDisplay));
             OnPropertyChanged(nameof(DataUsageFullDisplay));
+            OnPropertyChanged(nameof(EthernetActionText));
+            OnPropertyChanged(nameof(EthernetActionSubtext));
+            OnPropertyChanged(nameof(WifiActionText));
+            OnPropertyChanged(nameof(WifiActionSubtext));
+            OnPropertyChanged(nameof(EthernetStatusBrush));
+            OnPropertyChanged(nameof(WifiStatusBrush));
+            OnPropertyChanged(nameof(KillNetStatusBrush));
+            OnPropertyChanged(nameof(SpeedStatusBrush));
         }
         catch { }
     }
@@ -975,6 +1110,17 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         });
     }
 
+    private void OnEthernetDisabledStateChanged(bool isDisabled)
+    {
+        if (!_isHubVisible) return;
+
+        Application.Current?.Dispatcher.InvokeAsync(() =>
+        {
+            IsEthernetAdapterDisabled = isDisabled;
+            RefreshAll();
+        });
+    }
+
     private void OnHealthServiceChanged(NetworkHealthStatus health)
     {
         if (!_isHubVisible) return;
@@ -1055,6 +1201,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             _throughputService.ThroughputUpdated -= OnThroughputUpdated;
             _throughputService.LatencyUpdated -= OnLatencyUpdated;
             _disconnectService.DisconnectStateChanged -= OnDisconnectStateChanged;
+            _disconnectService.EthernetDisabledStateChanged -= OnEthernetDisabledStateChanged;
             _healthService.HealthChanged -= OnHealthServiceChanged;
 
             try
