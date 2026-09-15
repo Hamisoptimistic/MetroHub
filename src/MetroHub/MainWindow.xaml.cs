@@ -192,7 +192,77 @@ public partial class MainWindow : BorderlessFluentWindow
         _ = Task.Delay(30000).ContinueWith(_ => TriggerBackgroundAppsCatalogRefresh());
 
         PreviewTextInput += OnWindowPreviewTextInput;
+        PreviewMouseDown += OnWindowPreviewMouseDown;
         ContentScrollViewer.ScrollChanged += OnContentScrollViewerScrollChanged;
+    }
+
+    private void OnWindowPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (Keyboard.FocusedElement is DependencyObject focused)
+        {
+            var textInput = (focused as System.Windows.Controls.Primitives.TextBoxBase)
+                         ?? (DependencyObject?)(focused as System.Windows.Controls.PasswordBox)
+                         ?? FindParent<System.Windows.Controls.Primitives.TextBoxBase>(focused)
+                         ?? (DependencyObject?)FindParent<System.Windows.Controls.PasswordBox>(focused);
+
+            if (textInput != null)
+            {
+                var clicked = e.OriginalSource as DependencyObject;
+                if (clicked == null || !IsDescendantOf(clicked, textInput))
+                {
+                    // If the user clicked inside the same Notepad widget (e.g. formatting buttons or todo switches),
+                    // allow that widget to manage its own focus.
+                    var notepadView = FindParent<MetroHub.Widgets.Catalog.Notepad.NotepadWidgetView>(textInput);
+                    if (notepadView != null && clicked != null && IsDescendantOf(clicked, notepadView))
+                    {
+                        return;
+                    }
+
+                    Keyboard.ClearFocus();
+                    FocusManager.SetFocusedElement(this, this);
+                }
+            }
+        }
+    }
+
+    private static bool IsDescendantOf(DependencyObject? node, DependencyObject root)
+    {
+        while (node != null)
+        {
+            if (ReferenceEquals(node, root))
+            {
+                return true;
+            }
+
+            if (node is System.Windows.Controls.Primitives.Popup popup)
+            {
+                node = popup.PlacementTarget ?? popup.Parent;
+                continue;
+            }
+
+            if (node is Visual || node is System.Windows.Media.Media3D.Visual3D)
+            {
+                var parent = VisualTreeHelper.GetParent(node);
+                if (parent == null && node is FrameworkElement fe)
+                {
+                    node = fe.Parent ?? fe.TemplatedParent;
+                }
+                else
+                {
+                    node = parent;
+                }
+            }
+            else if (node is FrameworkContentElement fce)
+            {
+                node = fce.Parent ?? fce.TemplatedParent;
+            }
+            else
+            {
+                node = LogicalTreeHelper.GetParent(node);
+            }
+        }
+
+        return false;
     }
 
     private void OnRootGridLostMouseCapture(object sender, MouseEventArgs e)
@@ -212,6 +282,18 @@ public partial class MainWindow : BorderlessFluentWindow
         if ((_isDragging || _isPotentialDrag || _isRubberBanding) && Mouse.LeftButton != MouseButtonState.Pressed)
         {
             CancelActiveDrag();
+        }
+
+        if (AllAppsDrawer == null || !AllAppsDrawer.IsOpen)
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                if (AllAppsDrawer == null || !AllAppsDrawer.IsOpen)
+                {
+                    Keyboard.ClearFocus();
+                    FocusManager.SetFocusedElement(this, this);
+                }
+            }, DispatcherPriority.Input);
         }
     }
 
@@ -1100,6 +1182,8 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
         Activate();
         Focus();
+        FocusManager.SetFocusedElement(this, this);
+        Keyboard.ClearFocus();
         UpdateLayoutMetrics();
         UpdateExposedAddSlots();
 
@@ -1112,6 +1196,8 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             ApplyConfiguredBackdrop();
             Activate();
             Focus();
+            FocusManager.SetFocusedElement(this, this);
+            Keyboard.ClearFocus();
         }, DispatcherPriority.Render);
 
         PlayOpenAnimation();
@@ -1137,6 +1223,8 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 FooterGrid.Opacity = 1.0;
             }
         }
+        Keyboard.ClearFocus();
+        FocusManager.SetFocusedElement(this, this);
         MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(false));
         DismissWithAnimation();
     }

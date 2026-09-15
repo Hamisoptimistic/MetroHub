@@ -280,6 +280,9 @@
                             <DataTrigger Binding="{Binding TargetPath}" Value="network">
                                 <Setter Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
+                            <DataTrigger Binding="{Binding TargetPath}" Value="photos">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
@@ -292,7 +295,13 @@
                 </Border.Background>
             </Border>
 
-            <!-- Fluent Reveal Highlight: Edge Illumination -->
+            <!-- Content Area via ContentPresenter: resolved via DataType DataTemplates -->
+            <ContentPresenter x:Name="TileContentPresenter"
+                              Content="{Binding TileContent}"
+                              SnapsToDevicePixels="True"
+                              UseLayoutRounding="True" />
+
+            <!-- Fluent Reveal Highlight: Edge Illumination (above ContentPresenter so it shows on top of full-bleed widget content e.g. photos) -->
             <Border x:Name="RevealEdgeBorder"
                     CornerRadius="2"
                     BorderThickness="1.2"
@@ -306,12 +315,6 @@
                     </RadialGradientBrush>
                 </Border.BorderBrush>
             </Border>
-
-            <!-- Content Area via ContentPresenter: resolved via DataType DataTemplates -->
-            <ContentPresenter x:Name="TileContentPresenter"
-                              Content="{Binding TileContent}"
-                              SnapsToDevicePixels="True"
-                              UseLayoutRounding="True" />
         </Grid>
     </Border>
 </UserControl>

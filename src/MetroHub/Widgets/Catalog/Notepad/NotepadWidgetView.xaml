@@ -319,6 +319,7 @@
                              HorizontalScrollBarVisibility="Disabled"
                              controls:AutoHideScrollBehavior.IsEnabled="True"
                              FocusVisualStyle="{x:Null}"
+                             IsTabStop="False"
                              Tag="InteractiveControl"
                              PreviewKeyDown="NotesEditorTextBox_PreviewKeyDown"
                              GotKeyboardFocus="NotesEditorTextBox_GotKeyboardFocus" />
@@ -389,6 +390,7 @@
                                          Style="{StaticResource CleanTaskTextBoxStyle}"
                                          Text="{Binding NewTaskText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          Tag="InteractiveControl"
+                                         IsTabStop="False"
                                          KeyDown="NewTaskTextBox_KeyDown"
                                          GotKeyboardFocus="NewTaskTextBox_GotKeyboardFocus" />
 
