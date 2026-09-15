@@ -68,7 +68,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="CardBorder"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="4"
+                                CornerRadius="2"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter Margin="0" VerticalAlignment="Center" />
                         </Border>
@@ -287,14 +287,14 @@
                                             <ControlTemplate TargetType="Button">
                                                 <Border x:Name="ItemBorder"
                                                         Background="Transparent"
-                                                        CornerRadius="4"
+                                                        CornerRadius="2"
                                                         SnapsToDevicePixels="True">
                                                     <Grid Margin="0,0,10,0">
                                                         <Grid.ColumnDefinitions>
-                                                            <!-- Col 0: Active Accent Indicator Pill -->
-                                                            <ColumnDefinition Width="6" />
+                                                            <!-- Col 0: Active Accent Indicator Pill (Width 12 provides 9px breathing space from 3px pill to icon) -->
+                                                            <ColumnDefinition Width="12" />
                                                             <!-- Col 1: Hardware Device Glyph (WHITE) -->
-                                                            <ColumnDefinition Width="28" />
+                                                            <ColumnDefinition Width="24" />
                                                             <!-- Col 2: Device Friendly Name (WHITE) -->
                                                             <ColumnDefinition Width="*" />
                                                             <!-- Col 3: Active Checkmark (WHITE) -->

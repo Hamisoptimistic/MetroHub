@@ -68,12 +68,12 @@
             </Setter>
         </Style>
 
-        <!-- Sleek Micro Icon Button Style (Generic ContentPresenter) -->
+        <!-- Sleek Micro Icon Button Style (Generic ContentPresenter) matching Media Player Style -->
         <Style x:Key="MicroIconButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Width" Value="28" />
+            <Setter Property="Width" Value="32" />
             <Setter Property="Height" Value="28" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
@@ -90,10 +90,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#1CFFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#2EFFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -630,7 +630,7 @@
                         <!-- Right: Scan/Refresh Button + Standard Windows 11 ToggleSwitch for Wi-Fi Radio -->
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                             <Button Style="{StaticResource MicroIconButtonStyle}"
-                                    Width="28"
+                                    Width="32"
                                     Height="28"
                                     Margin="0,0,8,0"
                                     VerticalAlignment="Center"
@@ -1175,16 +1175,16 @@
                       Margin="24,14,24,14"
                       SnapsToDevicePixels="True">
                     <Grid.RowDefinitions>
-                        <!-- Row 0: Header Text (Height 28px, matching Wi-Fi pixel alignment) -->
-                        <RowDefinition Height="28" />
+                        <!-- Row 0: Top Header: [ 🛠️ ] Disable network adapters (requires admin rights) + Refresh -->
+                        <RowDefinition Height="Auto" />
                         <!-- Row 1: Hairline Separator -->
                         <RowDefinition Height="Auto" />
                         <!-- Row 2: Adapters List or Empty State -->
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <!-- Row 0: [ 🛠️ ] Disable network adapters (requires admin rights)   [ Refresh Button ] -->
-                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <!-- Top Header: [ 🛡️ ] Disable Network Adapters   [ Refresh Button ] -->
+                    <Grid Grid.Row="0" Height="26" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -1192,27 +1192,28 @@
 
                         <!-- Left: Icon + Title -->
                         <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                            <ui:SymbolIcon Symbol="WrenchScrewdriver20"
-                                           FontSize="16"
-                                           Foreground="#85FFFFFF"
+                            <ui:SymbolIcon Symbol="ShieldQuestion32"
+                                           FontSize="18"
+                                           Foreground="#FFFFFF"
                                            VerticalAlignment="Center"
-                                           Margin="0,0,8,0" />
-                            <TextBlock Text="Disable network adapters (requires admin rights)"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                       FontSize="12"
+                                           Margin="0,0,10,0" />
+                            <TextBlock Text="Disable Network Adapters"
+                                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                       FontSize="16"
                                        FontWeight="SemiBold"
-                                       Foreground="#85FFFFFF"
-                                       VerticalAlignment="Center" />
+                                       Foreground="#FFFFFF"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" />
                         </StackPanel>
 
                         <!-- Right: Refresh Button -->
-                        <Button Grid.Column="1"
-                                Style="{StaticResource MicroIconButtonStyle}"
-                                Width="28"
-                                Height="28"
-                                VerticalAlignment="Center"
-                                Command="{Binding RefreshAdaptersCommand}"
-                                ToolTip="Scan for hardware adapters">
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Style="{StaticResource MicroIconButtonStyle}"
+                                    Width="32"
+                                    Height="28"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding RefreshAdaptersCommand}"
+                                    ToolTip="Scan for hardware adapters">
                             <ui:SymbolIcon Symbol="ArrowClockwise24"
                                            FontSize="16"
                                            Foreground="#D0FFFFFF"
@@ -1242,6 +1243,7 @@
                                 </ui:SymbolIcon.Style>
                             </ui:SymbolIcon>
                         </Button>
+                        </StackPanel>
                     </Grid>
 
                     <!-- Row 1: Hairline Divider (Same as Ethernet & Wi-Fi) -->

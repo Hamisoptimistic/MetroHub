@@ -513,9 +513,26 @@ public interface IPolicyConfigVista
 
 #endregion
 
+public enum EndpointFormFactor : uint
+{
+    RemoteNetworkDevice = 0,
+    Speakers = 1,
+    LineLevel = 2,
+    Headphones = 3,
+    Microphone = 4,
+    Headset = 5,
+    Handset = 6,
+    DigitalAudioDisplayDevice = 7,
+    SPDIF = 8,
+    Digital = 9,
+    UnknownDigitalPassthrough = 10,
+    UnknownFormFactor = 11
+}
+
 public static class CoreAudioConstants
 {
     public static readonly PropertyKey PKEY_Device_FriendlyName = new(new Guid("A45C254E-DF1C-4EFD-8020-67D146A850E0"), 14);
     public static readonly PropertyKey PKEY_DeviceInterface_FriendlyName = new(new Guid("026E516E-B814-414B-83CD-856D6FEF4822"), 2);
     public static readonly PropertyKey PKEY_Device_DeviceDesc = new(new Guid("A45C254E-DF1C-4EFD-8020-67D146A850E0"), 2);
+    public static readonly PropertyKey PKEY_AudioEndpoint_FormFactor = new(new Guid("1DA5D803-D494-4148-9EAB-67211F20E505"), 0);
 }

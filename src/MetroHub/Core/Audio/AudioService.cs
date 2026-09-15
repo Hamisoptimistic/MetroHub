@@ -240,17 +240,32 @@ public class AudioService : IDisposable
                     device.GetId(out string id);
 
                     string friendlyName = "Audio Endpoint";
+                    string deviceDesc = string.Empty;
+                    EndpointFormFactor? formFactor = null;
+
                     hr = device.OpenPropertyStore(StorageAccessMode.Read, out propStore);
                     if (hr == 0 && propStore != null)
                     {
-                        var key = CoreAudioConstants.PKEY_Device_FriendlyName;
-                        if (propStore.GetValue(ref key, out var pv) == 0 && pv.pwszVal != IntPtr.Zero)
+                        var keyName = CoreAudioConstants.PKEY_Device_FriendlyName;
+                        if (propStore.GetValue(ref keyName, out var pvName) == 0 && pvName.pwszVal != IntPtr.Zero)
                         {
-                            friendlyName = Marshal.PtrToStringUni(pv.pwszVal) ?? friendlyName;
+                            friendlyName = Marshal.PtrToStringUni(pvName.pwszVal) ?? friendlyName;
+                        }
+
+                        var keyDesc = CoreAudioConstants.PKEY_Device_DeviceDesc;
+                        if (propStore.GetValue(ref keyDesc, out var pvDesc) == 0 && pvDesc.pwszVal != IntPtr.Zero)
+                        {
+                            deviceDesc = Marshal.PtrToStringUni(pvDesc.pwszVal) ?? string.Empty;
+                        }
+
+                        var keyForm = CoreAudioConstants.PKEY_AudioEndpoint_FormFactor;
+                        if (propStore.GetValue(ref keyForm, out var pvForm) == 0)
+                        {
+                            formFactor = (EndpointFormFactor)pvForm.uintVal;
                         }
                     }
 
-                    string iconGlyph = ResolveDeviceIconGlyph(friendlyName);
+                    string iconGlyph = ResolveDeviceIconGlyph(friendlyName, deviceDesc, formFactor);
                     bool isDefault = !string.IsNullOrEmpty(currentDefaultId) &&
                                      string.Equals(id, currentDefaultId, StringComparison.OrdinalIgnoreCase);
 
@@ -281,18 +296,84 @@ public class AudioService : IDisposable
         return devices;
     }
 
-    private static string ResolveDeviceIconGlyph(string deviceName)
+    public static string ResolveDeviceIconGlyph(string deviceName, string? deviceDesc = null, EndpointFormFactor? formFactor = null)
     {
-        string lower = deviceName.ToLowerInvariant();
-        if (lower.Contains("headphone") || lower.Contains("earphone") || lower.Contains("headset"))
+        string text = $"{deviceName} {deviceDesc ?? string.Empty}".ToLowerInvariant();
+
+        // 1. Virtual Audio, Cables, Interfaces, DACs, Line-Out, AUX, Optical / SPDIF
+        if (text.Contains("virtual") || text.Contains("cable") || text.Contains("vb-audio") ||
+            text.Contains("voicemeeter") || text.Contains("wave link") || text.Contains("sonar") ||
+            text.Contains("voicemod") || text.Contains("obs") || text.Contains("line in") ||
+            text.Contains("line out") || text.Contains("line-in") || text.Contains("line-out") ||
+            text.Contains("aux") || text.Contains("auxiliary") || text.Contains("spdif") ||
+            text.Contains("optical") || text.Contains("toslink") || text.Contains("focusrite") ||
+            text.Contains("scarlett") || text.Contains("motu") || text.Contains("audient") ||
+            text.Contains("behringer") || text.Contains("go xlr") || text.Contains("goxlr") ||
+            text.Contains("dac") || text.Contains("fiio") || text.Contains("topping") ||
+            text.Contains("sound blaster") || text.Contains("realtek digital"))
+        {
+            return "\uE7F7"; // Line-Out / Audio Jack connector glyph (identical to Windows 11 Sound flyout)
+        }
+
+        // 2. Headphones, Earphones, Headsets, IEMs, Buds
+        if (text.Contains("headphone") || text.Contains("earphone") || text.Contains("headset") ||
+            text.Contains("earbuds") || text.Contains("airpods") || text.Contains("galaxy buds") ||
+            text.Contains("pixel buds") || text.Contains("freebuds") || text.Contains("in-ear") ||
+            text.Contains("iem") || text.Contains("arctis") || text.Contains("astro") ||
+            text.Contains("kraken") || text.Contains("blackshark") || text.Contains("wh-1000") ||
+            text.Contains("wf-1000") || text.Contains("bose qc") || text.Contains("quietcomfort") ||
+            text.Contains("momentum") || text.Contains("hyperx") || text.Contains("logitech g") ||
+            text.Contains("virtuoso") || text.Contains("linkbuds"))
         {
             return "\uE7F6"; // Headphones glyph
         }
-        if (lower.Contains("tv") || lower.Contains("monitor") || lower.Contains("display") || lower.Contains("hdmi"))
+
+        // 3. Monitor, TV, Screen, HDMI, DisplayPort, Projector
+        if (text.Contains("tv") || text.Contains("monitor") || text.Contains("display") ||
+            text.Contains("hdmi") || text.Contains("displayport") || text.Contains("dp ") ||
+            text.Contains("screen") || text.Contains("projector") || text.Contains("television") ||
+            text.Contains("amd high definition") || text.Contains("nvidia high definition") ||
+            text.Contains("intel(r) display audio") || text.Contains("bravia") || text.Contains("oled") ||
+            text.Contains("qled") || text.Contains("ultragear") || text.Contains("odyssey"))
         {
-            return "\uE7F4"; // Screen/TV glyph
+            return "\uE7F4"; // Screen/TV/Monitor glyph
         }
-        return "\uE7F5"; // Default Speaker glyph
+
+        // 4. Smartphone / Cellular / Handset Link
+        if (text.Contains("phone") || text.Contains("handset") || text.Contains("cellular") ||
+            text.Contains("link to windows"))
+        {
+            return "\uE717"; // Phone/Handset glyph
+        }
+
+        // 5. Windows CoreAudio Endpoint FormFactor hardware category fallback
+        if (formFactor.HasValue)
+        {
+            switch (formFactor.Value)
+            {
+                case EndpointFormFactor.Headphones:
+                case EndpointFormFactor.Headset:
+                    return "\uE7F6"; // Headphones
+
+                case EndpointFormFactor.DigitalAudioDisplayDevice:
+                    return "\uE7F4"; // Monitor/TV
+
+                case EndpointFormFactor.LineLevel:
+                case EndpointFormFactor.SPDIF:
+                case EndpointFormFactor.Digital:
+                case EndpointFormFactor.UnknownDigitalPassthrough:
+                    return "\uE7F7"; // Line-Out / Audio Jack
+
+                case EndpointFormFactor.Handset:
+                    return "\uE717"; // Handset
+
+                case EndpointFormFactor.Speakers:
+                    return "\uE7F5"; // Physical Speakers
+            }
+        }
+
+        // 6. Default Fallback
+        return "\uE7F5"; // Speaker glyph
     }
 
     public bool SetDefaultPlaybackDevice(string deviceId)
