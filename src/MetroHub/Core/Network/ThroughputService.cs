@@ -259,14 +259,15 @@ public class ThroughputService : IDisposable
     {
         var interfaces = NetworkInterface.GetAllNetworkInterfaces();
 
-        // 1. Pick interface that is Up, not Loopback, and has an IPv4 Default Gateway
-        var candidates = interfaces
+        // 1. Prioritize real physical interfaces that are Up, not Loopback/Tunnel/Virtual, with an IPv4 Default Gateway
+        var physicalCandidates = interfaces
             .Where(nic => nic.OperationalStatus == OperationalStatus.Up &&
                           nic.NetworkInterfaceType != NetworkInterfaceType.Loopback &&
-                          nic.NetworkInterfaceType != NetworkInterfaceType.Tunnel)
+                          nic.NetworkInterfaceType != NetworkInterfaceType.Tunnel &&
+                          !IsVirtualAdapter(nic))
             .ToList();
 
-        var withGateway = candidates.FirstOrDefault(nic =>
+        var withGateway = physicalCandidates.FirstOrDefault(nic =>
         {
             try
             {
@@ -281,11 +282,50 @@ public class ThroughputService : IDisposable
             return withGateway;
         }
 
-        // 2. Fallback to any active Ethernet or Wi-Fi
-        return candidates.FirstOrDefault(nic =>
+        // 2. Fallback to any active physical Ethernet or Wi-Fi
+        var physicalFallback = physicalCandidates.FirstOrDefault(nic =>
             nic.NetworkInterfaceType is NetworkInterfaceType.Ethernet or
                                         NetworkInterfaceType.GigabitEthernet or
                                         NetworkInterfaceType.Wireless80211);
+        if (physicalFallback != null)
+        {
+            return physicalFallback;
+        }
+
+        // 3. Ultimate fallback (e.g. running entirely inside a VM where only virtual NICs exist)
+        return interfaces
+            .Where(nic => nic.OperationalStatus == OperationalStatus.Up &&
+                          nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+            .FirstOrDefault(nic =>
+            {
+                try
+                {
+                    return nic.GetIPProperties().GatewayAddresses
+                        .Any(g => g.Address.AddressFamily == AddressFamily.InterNetwork);
+                }
+                catch { return false; }
+            });
+    }
+
+    private static bool IsVirtualAdapter(NetworkInterface nic)
+    {
+        // Always accept USB tethering interfaces from Android / iPhone
+        if (EthernetProvider.IsUsbTetheringInterface(nic)) return false;
+
+        string desc = nic.Description.ToLowerInvariant();
+        string name = nic.Name.ToLowerInvariant();
+
+        return desc.Contains("virtual") || desc.Contains("hyper-v") || desc.Contains("vmware") ||
+               desc.Contains("virtualbox") || desc.Contains("tap-") || desc.Contains("vpn") ||
+               desc.Contains("npcap") || desc.Contains("wsl") || desc.Contains("pseudo") ||
+               desc.Contains("bluetooth") || desc.Contains("loopback") || desc.Contains("tailscale") ||
+               desc.Contains("zerotier") || desc.Contains("wireguard") || desc.Contains("wan miniport") ||
+               desc.Contains("miniport") || desc.Contains("lightweight filter") || desc.Contains("native mac layer") ||
+               desc.Contains("kernel debug") || desc.Contains("packet scheduler") ||
+               desc.Contains("multiplexor") || desc.Contains("teredo") || desc.Contains("isatap") ||
+               desc.Contains("6to4") || desc.Contains("tunnel") || desc.Contains("pacer") ||
+               name.Contains("vethernet") || name.Contains("wsl") || name.Contains("loopback") ||
+               name.Contains("wan miniport") || name.Contains("miniport") || name.Contains("vpn");
     }
 
     private static string? GetDefaultGatewayIp()

@@ -72,6 +72,10 @@ public static class IpHelperInterop
         public ulong LastChange;
     }
 
+    public const uint NET_IF_ADMIN_STATUS_UP = 1;
+    public const uint NET_IF_ADMIN_STATUS_DOWN = 2;
+    public const uint NET_IF_ADMIN_STATUS_TESTING = 3;
+
     [DllImport(IpHlpApi, SetLastError = true, CharSet = CharSet.Unicode)]
     public static extern int GetIfEntry2(ref MIB_IF_ROW2 Row);
 }

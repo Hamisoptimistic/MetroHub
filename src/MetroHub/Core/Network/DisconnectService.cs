@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using MetroHub.Core.Network.Interop;
 
 namespace MetroHub.Core.Network;
 
@@ -60,6 +63,7 @@ public class DisconnectService
     public static Dictionary<string, WindowsInterfaceStatus> GetAllInterfaceStatuses()
     {
         var result = new Dictionary<string, WindowsInterfaceStatus>(StringComparer.OrdinalIgnoreCase);
+
         try
         {
             var psi = new ProcessStartInfo
@@ -78,15 +82,39 @@ public class DisconnectService
                 proc.WaitForExit(1000);
 
                 var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                bool passedHeader = false;
                 foreach (var line in lines)
                 {
-                    var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length >= 4 &&
-                        (parts[0].Equals("Enabled", StringComparison.OrdinalIgnoreCase) || parts[0].Equals("Disabled", StringComparison.OrdinalIgnoreCase)))
+                    if (line.Contains("---"))
                     {
-                        bool isAdminEnabled = parts[0].Equals("Enabled", StringComparison.OrdinalIgnoreCase);
-                        bool isConnected = parts[1].Equals("Connected", StringComparison.OrdinalIgnoreCase);
+                        passedHeader = true;
+                        continue;
+                    }
+                    if (!passedHeader) continue;
+
+                    var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 4)
+                    {
+                        string adminStateStr = parts[0];
+                        string connectStateStr = parts[1];
                         string name = string.Join(" ", parts.Skip(3)).Trim();
+
+                        bool isAdminDisabled = adminStateStr.Equals("Disabled", StringComparison.OrdinalIgnoreCase) ||
+                                               adminStateStr.Equals("Désactivé", StringComparison.OrdinalIgnoreCase) ||
+                                               adminStateStr.Equals("Deaktiviert", StringComparison.OrdinalIgnoreCase) ||
+                                               adminStateStr.Equals("Deshabilitado", StringComparison.OrdinalIgnoreCase) ||
+                                               adminStateStr.Equals("Disabilitato", StringComparison.OrdinalIgnoreCase) ||
+                                               adminStateStr.Equals("已禁用", StringComparison.OrdinalIgnoreCase) ||
+                                               adminStateStr.Equals("Отключено", StringComparison.OrdinalIgnoreCase);
+                        bool isAdminEnabled = !isAdminDisabled;
+
+                        bool isConnected = connectStateStr.Equals("Connected", StringComparison.OrdinalIgnoreCase) ||
+                                           connectStateStr.Equals("Connecté", StringComparison.OrdinalIgnoreCase) ||
+                                           connectStateStr.Equals("Verbunden", StringComparison.OrdinalIgnoreCase) ||
+                                           connectStateStr.Equals("Conectado", StringComparison.OrdinalIgnoreCase) ||
+                                           connectStateStr.Equals("Connesso", StringComparison.OrdinalIgnoreCase) ||
+                                           connectStateStr.Equals("已连接", StringComparison.OrdinalIgnoreCase) ||
+                                           connectStateStr.Equals("Подключено", StringComparison.OrdinalIgnoreCase);
 
                         result[name] = new WindowsInterfaceStatus(name, isAdminEnabled, isConnected);
                     }
@@ -94,6 +122,7 @@ public class DisconnectService
             }
         }
         catch { }
+
         return result;
     }
 
@@ -254,20 +283,36 @@ public class DisconnectService
         return await ToggleWifiConnectionAsync();
     }
 
+    private static readonly Regex ValidAdapterNameRegex = new(@"^[\p{L}\p{N}\s\-_.#()]+$", RegexOptions.Compiled);
+
     private static Task<bool> RunElevatedAdapterCommandAsync(string command, string adapterName)
     {
+        // Guard against command injection: validate adapter name and command strictly
+        if (string.IsNullOrWhiteSpace(adapterName) || adapterName.Length > 128 || !ValidAdapterNameRegex.IsMatch(adapterName))
+        {
+            return Task.FromResult(false);
+        }
+
+        bool isEnable = string.Equals(command, "Enable-NetAdapter", StringComparison.OrdinalIgnoreCase);
+        bool isDisable = string.Equals(command, "Disable-NetAdapter", StringComparison.OrdinalIgnoreCase);
+        if (!isEnable && !isDisable)
+        {
+            return Task.FromResult(false);
+        }
+
         return Task.Run(() =>
         {
             try
             {
-                string adminState = command.StartsWith("Enable", StringComparison.OrdinalIgnoreCase) ? "ENABLED" : "DISABLED";
+                string adminState = isEnable ? "ENABLED" : "DISABLED";
+                string safeNetshName = adapterName.Replace("\"", "\\\"");
 
                 // 1. Primary Engine: Native netsh.exe with SW_HIDE (ProcessWindowStyle.Hidden)
                 // Ultra-fast (<20ms), does NOT trigger Windows Terminal, zero console window
                 var netshPsi = new ProcessStartInfo
                 {
                     FileName = "netsh.exe",
-                    Arguments = $"interface set interface name=\"{adapterName}\" admin={adminState}",
+                    Arguments = $"interface set interface name=\"{safeNetshName}\" admin={adminState}",
                     UseShellExecute = true,
                     Verb = "runas",
                     WindowStyle = ProcessWindowStyle.Hidden,
@@ -287,10 +332,14 @@ public class DisconnectService
                 }
 
                 // 2. Secondary Engine: Headless PowerShell fallback via conhost.exe
+                // Escape single quotes for PowerShell string literal safely
+                string safePsName = adapterName.Replace("'", "''");
+                string psCmd = isEnable ? "Enable-NetAdapter" : "Disable-NetAdapter";
+
                 var psPsi = new ProcessStartInfo
                 {
                     FileName = "conhost.exe",
-                    Arguments = $"--headless powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -Command \"{command} -Name '{adapterName}' -Confirm:$false\"",
+                    Arguments = $"--headless powershell.exe -NoProfile -NonInteractive -WindowStyle Hidden -Command \"{psCmd} -Name '{safePsName}' -Confirm:$false\"",
                     UseShellExecute = true,
                     Verb = "runas",
                     WindowStyle = ProcessWindowStyle.Hidden,
@@ -496,6 +545,77 @@ public class DisconnectService
                 LinkSpeedString = FormatSpeed(speedBps),
                 MacAddress = mac
             });
+        }
+
+        // Fallback: If netsh returned nothing or failed, populate directly from physical NICs
+        if (result.Count == 0 && nics.Length > 0)
+        {
+            foreach (var nic in nics)
+            {
+                if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback ||
+                    nic.NetworkInterfaceType == NetworkInterfaceType.Tunnel)
+                    continue;
+
+                string descLower = nic.Description.ToLowerInvariant();
+                string nameLower = nic.Name.ToLowerInvariant();
+
+                if (descLower.Contains("virtual") || descLower.Contains("hyper-v") || descLower.Contains("vmware") ||
+                    descLower.Contains("virtualbox") || descLower.Contains("tap-") || descLower.Contains("vpn") ||
+                    descLower.Contains("npcap") || descLower.Contains("wsl") || descLower.Contains("pseudo") ||
+                    descLower.Contains("bluetooth") || descLower.Contains("tailscale") || descLower.Contains("zerotier") ||
+                    descLower.Contains("wireguard") || descLower.Contains("wan miniport") || descLower.Contains("miniport") ||
+                    descLower.Contains("lightweight filter") || descLower.Contains("native mac layer") ||
+                    descLower.Contains("kernel debug") || descLower.Contains("packet scheduler") ||
+                    descLower.Contains("multiplexor") || descLower.Contains("teredo") || descLower.Contains("isatap") ||
+                    descLower.Contains("6to4") || descLower.Contains("tunnel") || descLower.Contains("pacer") ||
+                    nameLower.Contains("vethernet") || nameLower.Contains("wsl") || nameLower.Contains("vpn"))
+                {
+                    continue;
+                }
+
+                PhysicalAdapterType type = PhysicalAdapterType.Ethernet;
+                if (EthernetProvider.IsUsbTetheringInterface(nic))
+                {
+                    type = PhysicalAdapterType.UsbTethering;
+                }
+                else if (nic.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)
+                {
+                    type = PhysicalAdapterType.Wifi;
+                }
+                else if (nic.NetworkInterfaceType == NetworkInterfaceType.Ethernet ||
+                         nic.NetworkInterfaceType == NetworkInterfaceType.GigabitEthernet ||
+                         nic.NetworkInterfaceType == NetworkInterfaceType.FastEthernetFx ||
+                         nic.NetworkInterfaceType == NetworkInterfaceType.FastEthernetT)
+                {
+                    type = PhysicalAdapterType.Ethernet;
+                }
+                else
+                {
+                    continue;
+                }
+
+                string mac = "--";
+                try
+                {
+                    var bytes = nic.GetPhysicalAddress()?.GetAddressBytes();
+                    if (bytes != null && bytes.Length > 0)
+                        mac = string.Join("-", bytes.Select(b => b.ToString("X2")));
+                }
+                catch { }
+
+                result.Add(new PhysicalAdapterInfo
+                {
+                    Id = nic.Id,
+                    Name = nic.Name,
+                    Description = nic.Description,
+                    AdapterType = type,
+                    IsAdminEnabled = true,
+                    IsConnected = nic.OperationalStatus == OperationalStatus.Up,
+                    LinkSpeedBitsPerSecond = nic.Speed,
+                    LinkSpeedString = FormatSpeed(nic.Speed),
+                    MacAddress = mac
+                });
+            }
         }
 
         return result;

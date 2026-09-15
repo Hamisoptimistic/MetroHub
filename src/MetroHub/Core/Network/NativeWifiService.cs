@@ -799,9 +799,20 @@ public class NativeWifiService : IDisposable
     {
         try
         {
-            var wifiNic = NetworkInterface.GetAllNetworkInterfaces()
-                .FirstOrDefault(nic => nic.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 &&
-                                       nic.OperationalStatus == OperationalStatus.Up);
+            var nics = NetworkInterface.GetAllNetworkInterfaces();
+            string primaryGuidB = _primaryInterfaceGuid != Guid.Empty ? _primaryInterfaceGuid.ToString("B") : string.Empty;
+            string primaryGuidD = _primaryInterfaceGuid != Guid.Empty ? _primaryInterfaceGuid.ToString("D") : string.Empty;
+
+            // 1. Primary: Match exact tracked interface GUID
+            var wifiNic = nics.FirstOrDefault(nic =>
+                !string.IsNullOrEmpty(primaryGuidB) &&
+                (string.Equals(nic.Id, primaryGuidB, StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(nic.Id, primaryGuidD, StringComparison.OrdinalIgnoreCase)));
+
+            // 2. Fallback: Active Wireless80211 NIC that is Up
+            wifiNic ??= nics.FirstOrDefault(nic =>
+                nic.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 &&
+                nic.OperationalStatus == OperationalStatus.Up);
 
             if (wifiNic != null)
             {

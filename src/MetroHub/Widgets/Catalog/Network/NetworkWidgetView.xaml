@@ -218,6 +218,148 @@
             </Style.Triggers>
         </Style>
 
+        <!-- Clean Modern "GO" Action Button (Pure typography, zero circular box, electric blue hover glow) -->
+        <Style x:Key="SpeedPureGoButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI, sans-serif" />
+            <Setter Property="FontSize" Value="46" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent" SnapsToDevicePixels="True" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock x:Name="GoLabel"
+                                       Text="GO"
+                                       FontFamily="{TemplateBinding FontFamily}"
+                                       FontSize="{TemplateBinding FontSize}"
+                                       FontWeight="{TemplateBinding FontWeight}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="GoLabel" Property="Foreground" Value="#0091FF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="GoLabel" Property="Foreground" Value="#0078D4" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Speed Test Focus-Timer Progress Dot Styles -->
+        <Style x:Key="SpeedTestBaseDotStyle" TargetType="Border">
+            <Setter Property="Width" Value="7" />
+            <Setter Property="Height" Value="7" />
+            <Setter Property="CornerRadius" Value="3.5" />
+            <Setter Property="Margin" Value="3.5,0" />
+            <Setter Property="Background" Value="#22FFFFFF" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+
+        <!-- Dot 1: Latency (Yellow #FFB703) -->
+        <Style x:Key="SpeedTestDot1Style" TargetType="Border" BasedOn="{StaticResource SpeedTestBaseDotStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsLatencyPhaseActive}" Value="True">
+                    <Setter Property="Background" Value="#FFB703" />
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="#FFB703" BlurRadius="7" Opacity="0.9" ShadowDepth="0" />
+                        </Setter.Value>
+                    </Setter>
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard x:Name="Dot1Blink">
+                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 From="1.0" To="0.25"
+                                                 Duration="0:0:0.4" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <StopStoryboard BeginStoryboardName="Dot1Blink" />
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsDownloadPhaseActive}" Value="True">
+                    <Setter Property="Background" Value="#FFB703" />
+                    <Setter Property="Opacity" Value="0.75" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsUploadPhaseActive}" Value="True">
+                    <Setter Property="Background" Value="#FFB703" />
+                    <Setter Property="Opacity" Value="0.75" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Dot 2: Download (Blue #0091FF) -->
+        <Style x:Key="SpeedTestDot2Style" TargetType="Border" BasedOn="{StaticResource SpeedTestBaseDotStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDownloadPhaseActive}" Value="True">
+                    <Setter Property="Background" Value="#0091FF" />
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="#0091FF" BlurRadius="7" Opacity="0.9" ShadowDepth="0" />
+                        </Setter.Value>
+                    </Setter>
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard x:Name="Dot2Blink">
+                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 From="1.0" To="0.25"
+                                                 Duration="0:0:0.4" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <StopStoryboard BeginStoryboardName="Dot2Blink" />
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsUploadPhaseActive}" Value="True">
+                    <Setter Property="Background" Value="#0091FF" />
+                    <Setter Property="Opacity" Value="0.75" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Dot 3: Upload (Purple #A855F7) -->
+        <Style x:Key="SpeedTestDot3Style" TargetType="Border" BasedOn="{StaticResource SpeedTestBaseDotStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsUploadPhaseActive}" Value="True">
+                    <Setter Property="Background" Value="#A855F7" />
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect Color="#A855F7" BlurRadius="7" Opacity="0.9" ShadowDepth="0" />
+                        </Setter.Value>
+                    </Setter>
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard x:Name="Dot3Blink">
+                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                 From="1.0" To="0.25"
+                                                 Duration="0:0:0.4" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <StopStoryboard BeginStoryboardName="Dot3Blink" />
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <!-- Fluent Green ToggleSwitch Style (Matches Windows 11 Fluent style: See-through / transparent track when OFF; Active Green #00E676 track with Solid Black knob #000000 when ON) -->
         <Style x:Key="FluentGreenToggleSwitchStyle" TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource {x:Type ui:ToggleSwitch}}">
             <Setter Property="VerticalAlignment" Value="Center" />
@@ -318,7 +460,7 @@
 
                 <!-- ==================== 1. ETHERNET PANEL ==================== -->
                 <Grid Visibility="{Binding IsEthernetPanel, Converter={StaticResource BoolToVis}}"
-                      Margin="24,14,24,14"
+                      Margin="20,14,20,14"
                       SnapsToDevicePixels="True">
                     <Grid.RowDefinitions>
                         <!-- Row 0: Top Header: [ 🖧 ] Ethernet + Standard Windows 11 ToggleSwitch -->
@@ -631,7 +773,7 @@
 
                 <!-- ==================== 2. WI-FI PANEL ==================== -->
                 <Grid Visibility="{Binding IsWifiPanel, Converter={StaticResource BoolToVis}}"
-                      Margin="24,14,24,14"
+                      Margin="20,14,20,14"
                       SnapsToDevicePixels="True">
                     <Grid.RowDefinitions>
                         <!-- Row 0: Top Header: [ 📶 ] Wi-Fi + Scan/Refresh + ToggleSwitch -->
@@ -1210,7 +1352,7 @@
 
                 <!-- ==================== 3. ADAPTERS PANEL ==================== -->
                 <Grid Visibility="{Binding IsAdaptersPanel, Converter={StaticResource BoolToVis}}"
-                      Margin="24,14,24,14"
+                      Margin="20,14,20,14"
                       SnapsToDevicePixels="True">
                     <Grid.RowDefinitions>
                         <!-- Row 0: Top Header: [ 🛠️ ] Disable network adapters (requires admin rights) + Refresh -->
@@ -1419,16 +1561,247 @@
                     </Grid>
                 </Grid>
 
-                <!-- Speed Panel Placeholder -->
+                <!-- ==================== 4. SPEED TEST PANEL ==================== -->
                 <Grid Visibility="{Binding IsSpeedPanel, Converter={StaticResource BoolToVis}}"
-                      Margin="20,16,20,16" Background="Transparent">
-                    <Border Background="#06FFFFFF" BorderBrush="#10FFFFFF" BorderThickness="1" CornerRadius="2" Padding="20">
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <ui:SymbolIcon Symbol="TopSpeed24" FontSize="26" Foreground="#80FFFFFF" HorizontalAlignment="Center" Margin="0,0,0,8" />
-                            <TextBlock Text="Speed &amp; Telemetry Panel" FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" />
-                            <TextBlock Text="Real-time bandwidth meters and GPU-accelerated waveform will be designed next." FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontSize="12" Foreground="#65FFFFFF" HorizontalAlignment="Center" Margin="0,6,0,0" />
-                        </StackPanel>
-                    </Border>
+                      Margin="20,10,20,14"
+                      SnapsToDevicePixels="True">
+                    <Grid.RowDefinitions>
+                        <!-- Row 0: Center Stage (Gauge when running / "GO" when stopped - scaled to panel size) -->
+                        <RowDefinition Height="136" />
+                        <!-- Row 1: Unified Dual Metrics Card (Download | Upload) + Horizontal Status Bar -->
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- ROW 0: CENTER STAGE -->
+                    <Grid Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" SnapsToDevicePixels="True">
+
+                        <!-- A. RUNNING GAUGE STAGE (Smoothly appears ONLY when running, pure gauge without speed text) -->
+                        <Grid x:Name="RunningGaugeStage"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center">
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Opacity" Value="0.0" />
+                                    <Setter Property="IsHitTestVisible" Value="False" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSpeedTestRunning}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         To="1.0" Duration="0:0:0.35" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         To="0.0" Duration="0:0:0.25" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.ExitActions>
+                                            <Setter Property="IsHitTestVisible" Value="True" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+
+                            <!-- Clean 180° Fluent Semi-Circle Gauge (zero inner text, strictly bounded, cannot overlap cards) -->
+                            <network:SpeedometerArcControl Width="270" Height="124"
+                                                          HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center"
+                                                          SpeedMbps="{Binding SpeedTestGaugeMbps}"
+                                                          ProgressBrush="{Binding SpeedTestArcBrush}"
+                                                          IsActive="{Binding IsSpeedTestRunning}" />
+                        </Grid>
+
+                        <!-- B. STOPPED / IDLE "GO" STAGE (Smoothly appears ONLY when stopped / idle) -->
+                        <Grid x:Name="IdleGoStage"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center">
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Opacity" Value="1.0" />
+                                    <Setter Property="IsHitTestVisible" Value="True" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSpeedTestRunning}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         To="0.0" Duration="0:0:0.25" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         To="1.0" Duration="0:0:0.35" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.ExitActions>
+                                            <Setter Property="IsHitTestVisible" Value="False" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Button Style="{StaticResource SpeedPureGoButtonStyle}"
+                                        Command="{Binding StartSpeedTestCommand}"
+                                        ToolTip="{Binding SpeedTestStatusMessage}" />
+                                <TextBlock Text="{Binding SpeedTestStatusMessage}"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="11.5"
+                                           FontWeight="Medium"
+                                           Foreground="#FF6B6B"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,4,0,0"
+                                           Visibility="{Binding IsSpeedTestFailed, Converter={StaticResource BoolToVis}}" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+
+                    <!-- ROW 1: METRICS REGION (Flush with panel bounds, matching Ethernet and Wi-Fi separator) -->
+                    <Grid Grid.Row="1"
+                          HorizontalAlignment="Stretch"
+                          SnapsToDevicePixels="True">
+                        <Grid.RowDefinitions>
+                            <!-- Row 0: Top Metrics (Download on Left, Upload on Right) -->
+                            <RowDefinition Height="56" />
+                            <!-- Row 1: Separator matching Ethernet & Wi-Fi (1px, #14FFFFFF) -->
+                            <RowDefinition Height="1" />
+                            <!-- Row 2: Bottom Status (Ping Left, 3 Dots Center, Jitter Right) -->
+                            <RowDefinition Height="32" />
+                        </Grid.RowDefinitions>
+
+                        <!-- ROW 0: TOP METRICS (Download flush-left, Upload flush-right with separator) -->
+                        <Grid Grid.Row="0" Margin="0" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <!-- Left: Download -->
+                                <ColumnDefinition Width="*" />
+                                <!-- Right: Upload -->
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Left: Download (Flush with left end of separator) -->
+                            <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <TextBlock Text="Download"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="12"
+                                           FontWeight="Medium"
+                                           Foreground="#95FFFFFF"
+                                           Margin="0,0,0,3" />
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding SpeedTestDownloadDisplay}"
+                                               FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                               FontSize="22"
+                                               FontWeight="Bold"
+                                               Foreground="#FFFFFF"
+                                               Typography.NumeralAlignment="Tabular" />
+                                    <TextBlock Text=" Mbps"
+                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                               FontSize="12.5"
+                                               Foreground="#80FFFFFF"
+                                               VerticalAlignment="Bottom"
+                                               Margin="0,0,0,2" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Right: Upload (Flush with right end of separator) -->
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <TextBlock Text="Upload"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="12"
+                                           FontWeight="Medium"
+                                           Foreground="#95FFFFFF"
+                                           HorizontalAlignment="Right"
+                                           Margin="0,0,0,3" />
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <TextBlock Text="{Binding SpeedTestUploadDisplay}"
+                                               FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                               FontSize="22"
+                                               FontWeight="Bold"
+                                               Foreground="#FFFFFF"
+                                               Typography.NumeralAlignment="Tabular" />
+                                    <TextBlock Text=" Mbps"
+                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                               FontSize="12.5"
+                                               Foreground="#80FFFFFF"
+                                               VerticalAlignment="Bottom"
+                                               Margin="0,0,0,2" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- ROW 1: SEPARATOR (Exact same length, thickness, and color as Ethernet & Wi-Fi) -->
+                        <Border Grid.Row="1"
+                                Height="1"
+                                HorizontalAlignment="Stretch"
+                                Background="#14FFFFFF"
+                                SnapsToDevicePixels="True" />
+
+                        <!-- ROW 2: BOTTOM STATUS BAR (Ping flush-left, 3 Dots Center, Jitter flush-right) -->
+                        <Grid Grid.Row="2" Margin="0" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <!-- Left: Ping -->
+                                <ColumnDefinition Width="*" />
+                                <!-- Center: 3 Focus-Timer Progress Dots -->
+                                <ColumnDefinition Width="Auto" />
+                                <!-- Right: Jitter -->
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Left: Ping (Flush with left end of separator) -->
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                <TextBlock Text="Ping "
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="11.5"
+                                           Foreground="#75FFFFFF"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding SpeedTestPingDisplay}"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="11.5"
+                                           FontWeight="SemiBold"
+                                           Foreground="#FFFFFF"
+                                           VerticalAlignment="Center"
+                                           Typography.NumeralAlignment="Tabular" />
+                            </StackPanel>
+
+                            <!-- Center: 3 Progress Dots (Latency Yellow, Download Blue, Upload Purple) -->
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center">
+                                <!-- Dot 1: Latency (Yellow #FFB703) -->
+                                <Border x:Name="DotLatency" Style="{StaticResource SpeedTestDot1Style}" />
+
+                                <!-- Dot 2: Download (Blue #0091FF) -->
+                                <Border x:Name="DotDownload" Style="{StaticResource SpeedTestDot2Style}" />
+
+                                <!-- Dot 3: Upload (Purple #A855F7) -->
+                                <Border x:Name="DotUpload" Style="{StaticResource SpeedTestDot3Style}" />
+                            </StackPanel>
+
+                            <!-- Right: Jitter (Flush with right end of separator) -->
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                <TextBlock Text="Jitter "
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="11.5"
+                                           Foreground="#75FFFFFF"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding SpeedTestJitterDisplay}"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="11.5"
+                                           FontWeight="SemiBold"
+                                           Foreground="#FFFFFF"
+                                           VerticalAlignment="Center"
+                                           Typography.NumeralAlignment="Tabular" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
                 </Grid>
 
                 <!-- Hotspot Panel Placeholder -->

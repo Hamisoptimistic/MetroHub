@@ -221,11 +221,13 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     private readonly DisconnectService _disconnectService = DisconnectService.Instance;
     private readonly NetworkHealthService _healthService = NetworkHealthService.Instance;
     private readonly NetworkDataUsageService _dataUsageService = NetworkDataUsageService.Instance;
+    private readonly SpeedTestService _speedTestService = new();
 
     private bool _isHubVisible = true;
     private bool _hasInitializedPanel;
     private CancellationTokenSource? _toastCts;
     private CancellationTokenSource? _reconnectCts;
+    private CancellationTokenSource? _speedTestCts;
     private DateTime _lastWifiProbeTime = DateTime.MinValue;
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
@@ -242,6 +244,14 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(IsHotspotPanel))]
     private string _currentPanel = "Ethernet";
 
+    partial void OnCurrentPanelChanged(string value)
+    {
+        if (!string.Equals(value, "Speed", StringComparison.OrdinalIgnoreCase))
+        {
+            CancelSpeedTest();
+        }
+    }
+
     public bool IsEthernetPanel => string.Equals(CurrentPanel, "Ethernet", StringComparison.OrdinalIgnoreCase);
     public bool IsWifiPanel => string.Equals(CurrentPanel, "Wifi", StringComparison.OrdinalIgnoreCase);
     public bool IsAdaptersPanel => string.Equals(CurrentPanel, "Adapters", StringComparison.OrdinalIgnoreCase) || string.Equals(CurrentPanel, "KillNet", StringComparison.OrdinalIgnoreCase);
@@ -251,8 +261,12 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
 
     // --- Dynamic Status Brushes for Modular WidgetTiles ---
     private static readonly Brush GreenIndicatorBrush = CreateFrozenBrush("#00E676");
+    private static readonly Brush BlueIndicatorBrush = CreateFrozenBrush("#0091FF");
     private static readonly Brush RedIndicatorBrush = CreateFrozenBrush("#FF3B30");
     private static readonly Brush AmberIndicatorBrush = CreateFrozenBrush("#FFB703");
+    private static readonly Brush CyanIndicatorBrush = CreateFrozenBrush("#60CDFF");
+    private static readonly Brush PurpleIndicatorBrush = CreateFrozenBrush("#A855F7");
+    private static readonly Brush MutedIndicatorBrush = CreateFrozenBrush("#80FFFFFF");
 
     private static Brush CreateFrozenBrush(string hex)
     {
@@ -307,7 +321,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 return RedIndicatorBrush;
             if (IsLocalOnlyNoInternet)
                 return AmberIndicatorBrush;
-            return GreenIndicatorBrush;
+            return BlueIndicatorBrush;
         }
     }
 
@@ -880,6 +894,288 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     {
         IsBitsMode = !IsBitsMode;
         SaveSettings();
+    }
+
+    // =========================================================================
+    // SPEED TEST ENGINE (100% PURE C# .NET 9 MULTI-STREAM HTTP/2 DIAGNOSTICS)
+    // =========================================================================
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSpeedTestRunning))]
+    [NotifyPropertyChangedFor(nameof(IsSpeedTestNotRunning))]
+    [NotifyPropertyChangedFor(nameof(IsSpeedTestIdle))]
+    [NotifyPropertyChangedFor(nameof(IsNotSpeedTestIdle))]
+    [NotifyPropertyChangedFor(nameof(IsSpeedTestCompleted))]
+    [NotifyPropertyChangedFor(nameof(IsSpeedTestFailed))]
+    [NotifyPropertyChangedFor(nameof(IsSpeedTestCompletedOrFailed))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestPhaseBadgeText))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestPhaseBadgeBrush))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestServerOrStatusDisplay))]
+    [NotifyPropertyChangedFor(nameof(IsDownloadPhaseActive))]
+    [NotifyPropertyChangedFor(nameof(IsUploadPhaseActive))]
+    [NotifyPropertyChangedFor(nameof(IsLatencyPhaseActive))]
+    [NotifyPropertyChangedFor(nameof(SpeedStatusBrush))]
+    private SpeedTestPhase _speedTestPhase = SpeedTestPhase.Idle;
+
+    public bool IsSpeedTestRunning => SpeedTestPhase is SpeedTestPhase.Connecting or SpeedTestPhase.Ping or SpeedTestPhase.Download or SpeedTestPhase.Upload;
+    public bool IsSpeedTestNotRunning => !IsSpeedTestRunning;
+    public bool IsSpeedTestIdle => SpeedTestPhase == SpeedTestPhase.Idle;
+    public bool IsNotSpeedTestIdle => !IsSpeedTestIdle;
+    public bool IsSpeedTestCompleted => SpeedTestPhase == SpeedTestPhase.Completed;
+    public bool IsSpeedTestFailed => SpeedTestPhase == SpeedTestPhase.Failed;
+    public bool IsSpeedTestCompletedOrFailed => SpeedTestPhase is SpeedTestPhase.Completed or SpeedTestPhase.Failed or SpeedTestPhase.Cancelled;
+    public bool IsDownloadPhaseActive => SpeedTestPhase == SpeedTestPhase.Download;
+    public bool IsUploadPhaseActive => SpeedTestPhase == SpeedTestPhase.Upload;
+    public bool IsLatencyPhaseActive => SpeedTestPhase is SpeedTestPhase.Connecting or SpeedTestPhase.Ping;
+
+    public string SpeedTestServerOrStatusDisplay
+    {
+        get
+        {
+            if (IsSpeedTestRunning)
+                return SpeedTestStatusMessage;
+            if (SpeedTestPhase == SpeedTestPhase.Completed)
+                return $"{SpeedTestServerName} • Complete";
+            return SpeedTestServerName;
+        }
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SpeedTestMainNumberDisplay))]
+    private double _speedTestInstantaneousMbps;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SpeedTestDownloadSubtitle))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestUploadSubtitle))]
+    private double _speedTestPeakMbps;
+
+    [ObservableProperty]
+    private double _speedTestGaugeMbps;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SpeedTestPingDisplay))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestMainNumberDisplay))]
+    private double? _speedTestPingMs;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SpeedTestJitterDisplay))]
+    private double? _speedTestJitterMs;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SpeedTestDownloadDisplay))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestDownloadSubtitle))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestMainNumberDisplay))]
+    private double? _speedTestDownloadMbps;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SpeedTestUploadDisplay))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestUploadSubtitle))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestMainNumberDisplay))]
+    private double? _speedTestUploadMbps;
+
+    [ObservableProperty]
+    private string _speedTestStatusMessage = "Ready to test network speed";
+
+    [ObservableProperty]
+    private string _speedTestServerName = "Cloudflare Edge • Auto";
+
+    [ObservableProperty]
+    private double _speedTestPhaseProgress;
+
+    [ObservableProperty]
+    private bool _isMeteredNetwork;
+
+    [ObservableProperty]
+    private Brush _speedTestArcBrush = BlueIndicatorBrush;
+
+    public string SpeedTestPingDisplay => SpeedTestPingMs.HasValue ? $"{SpeedTestPingMs.Value:0.#} ms" : "--";
+    public string SpeedTestJitterDisplay => SpeedTestJitterMs.HasValue ? $"{SpeedTestJitterMs.Value:0.#} ms" : "--";
+    public string SpeedTestDownloadDisplay => SpeedTestDownloadMbps.HasValue ? $"{SpeedTestDownloadMbps.Value:0.#}" : (IsDownloadPhaseActive ? $"{SpeedTestInstantaneousMbps:0.#}" : "--");
+    public string SpeedTestUploadDisplay => SpeedTestUploadMbps.HasValue ? $"{SpeedTestUploadMbps.Value:0.#}" : (IsUploadPhaseActive ? $"{SpeedTestInstantaneousMbps:0.#}" : "--");
+    public string SpeedTestDownloadShortDisplay => SpeedTestDownloadMbps.HasValue ? $"{SpeedTestDownloadMbps.Value:0.#}" : (IsDownloadPhaseActive ? $"{SpeedTestInstantaneousMbps:0.#}" : "--");
+    public string SpeedTestUploadShortDisplay => SpeedTestUploadMbps.HasValue ? $"{SpeedTestUploadMbps.Value:0.#}" : (IsUploadPhaseActive ? $"{SpeedTestInstantaneousMbps:0.#}" : "--");
+
+    public string SpeedTestDownloadSubtitle => SpeedTestDownloadMbps.HasValue
+        ? $"Peak: {Math.Max(SpeedTestDownloadMbps.Value, SpeedTestPeakMbps):0.#} Mbps"
+        : (IsDownloadPhaseActive ? "Measuring..." : "Pending");
+
+    public string SpeedTestUploadSubtitle => SpeedTestUploadMbps.HasValue
+        ? $"Peak: {Math.Max(SpeedTestUploadMbps.Value, SpeedTestPeakMbps):0.#} Mbps"
+        : (IsUploadPhaseActive ? "Measuring..." : "Pending");
+
+    public string SpeedTestMainNumberDisplay
+    {
+        get
+        {
+            if (SpeedTestPhase == SpeedTestPhase.Download || SpeedTestPhase == SpeedTestPhase.Upload)
+                return SpeedTestInstantaneousMbps > 0 ? $"{SpeedTestInstantaneousMbps:0.#}" : "0.0";
+            if (SpeedTestPhase == SpeedTestPhase.Completed)
+                return SpeedTestDownloadMbps.HasValue ? $"{SpeedTestDownloadMbps.Value:0.#}" : "0.0";
+            if (SpeedTestPhase == SpeedTestPhase.Ping)
+                return SpeedTestPingMs.HasValue ? $"{SpeedTestPingMs.Value:0.#}" : "...";
+            if (SpeedTestPhase == SpeedTestPhase.Connecting)
+                return "...";
+            return "0.0";
+        }
+    }
+
+    public string SpeedTestMainUnitDisplay => SpeedTestPhase == SpeedTestPhase.Ping ? "ms" : "Mbps";
+
+    public string SpeedTestPhaseBadgeText => SpeedTestPhase switch
+    {
+        SpeedTestPhase.Idle => "READY",
+        SpeedTestPhase.Connecting => "CONNECTING",
+        SpeedTestPhase.Ping => "LATENCY",
+        SpeedTestPhase.Download => "DOWNLOAD",
+        SpeedTestPhase.Upload => "UPLOAD",
+        SpeedTestPhase.Completed => "READY",
+        SpeedTestPhase.Cancelled => "READY",
+        SpeedTestPhase.Failed => "READY",
+        _ => "SPEED TEST"
+    };
+
+    public Brush SpeedTestPhaseBadgeBrush => SpeedTestPhase switch
+    {
+        SpeedTestPhase.Download or SpeedTestPhase.Completed => BlueIndicatorBrush,
+        SpeedTestPhase.Upload => PurpleIndicatorBrush,
+        SpeedTestPhase.Ping or SpeedTestPhase.Connecting => AmberIndicatorBrush,
+        SpeedTestPhase.Failed => RedIndicatorBrush,
+        _ => MutedIndicatorBrush
+    };
+
+    [RelayCommand]
+    public async Task StartSpeedTestAsync()
+    {
+        if (IsSpeedTestRunning) return;
+
+        CancelSpeedTest();
+
+        _speedTestCts = new CancellationTokenSource();
+        var token = _speedTestCts.Token;
+
+        bool isMetered = SpeedTestService.IsCurrentConnectionMetered();
+        IsMeteredNetwork = isMetered;
+        if (isMetered)
+        {
+            ShowToast("Metered network detected: data-conserving mode active.");
+        }
+
+        SpeedTestPhase = SpeedTestPhase.Connecting;
+        SpeedTestStatusMessage = isMetered ? "Connecting to edge server (metered network)..." : "Connecting to edge server...";
+        SpeedTestInstantaneousMbps = 0;
+        SpeedTestPeakMbps = 0;
+        SpeedTestGaugeMbps = 0;
+        SpeedTestPingMs = null;
+        SpeedTestJitterMs = null;
+        SpeedTestDownloadMbps = null;
+        SpeedTestUploadMbps = null;
+        SpeedTestPhaseProgress = 0;
+        SpeedTestArcBrush = BlueIndicatorBrush;
+
+        var progress = new Progress<SpeedTestProgress>(p =>
+        {
+            SpeedTestPhase = p.Phase;
+            if (!string.IsNullOrEmpty(p.StatusMessage))
+                SpeedTestStatusMessage = p.StatusMessage;
+
+            if (p.IsMeteredConnection) IsMeteredNetwork = true;
+            if (p.PingMs.HasValue) SpeedTestPingMs = p.PingMs.Value;
+            if (p.JitterMs.HasValue) SpeedTestJitterMs = p.JitterMs.Value;
+            if (p.FinalDownloadMbps.HasValue) SpeedTestDownloadMbps = p.FinalDownloadMbps.Value;
+            if (p.FinalUploadMbps.HasValue) SpeedTestUploadMbps = p.FinalUploadMbps.Value;
+
+            SpeedTestInstantaneousMbps = p.InstantaneousMbps;
+            SpeedTestPeakMbps = p.PeakMbps;
+            SpeedTestPhaseProgress = p.PhaseProgress;
+
+            if (p.Phase == SpeedTestPhase.Download)
+            {
+                SpeedTestArcBrush = BlueIndicatorBrush;
+                SpeedTestGaugeMbps = p.InstantaneousMbps;
+            }
+            else if (p.Phase == SpeedTestPhase.Upload)
+            {
+                SpeedTestArcBrush = PurpleIndicatorBrush;
+                SpeedTestGaugeMbps = p.InstantaneousMbps;
+            }
+            else if (p.Phase == SpeedTestPhase.Completed)
+            {
+                SpeedTestArcBrush = BlueIndicatorBrush;
+                SpeedTestGaugeMbps = SpeedTestDownloadMbps ?? 0.0;
+            }
+            else if (p.Phase is SpeedTestPhase.Idle or SpeedTestPhase.Cancelled or SpeedTestPhase.Failed)
+            {
+                SpeedTestGaugeMbps = 0;
+            }
+
+            OnPropertyChanged(nameof(SpeedTestMainNumberDisplay));
+            OnPropertyChanged(nameof(SpeedTestMainUnitDisplay));
+            OnPropertyChanged(nameof(SpeedTestDownloadDisplay));
+            OnPropertyChanged(nameof(SpeedTestUploadDisplay));
+            OnPropertyChanged(nameof(SpeedTestDownloadShortDisplay));
+            OnPropertyChanged(nameof(SpeedTestUploadShortDisplay));
+            OnPropertyChanged(nameof(SpeedTestPingDisplay));
+            OnPropertyChanged(nameof(SpeedTestJitterDisplay));
+        });
+
+        try
+        {
+            await Task.Run(() => _speedTestService.RunTestAsync(progress, token), token);
+        }
+        catch (OperationCanceledException)
+        {
+            SpeedTestPhase = SpeedTestPhase.Idle;
+            SpeedTestStatusMessage = "Ready to test network speed";
+            SpeedTestGaugeMbps = 0;
+        }
+        catch (Exception ex)
+        {
+            SpeedTestPhase = SpeedTestPhase.Failed;
+            SpeedTestStatusMessage = $"Test failed: {ex.Message}";
+            SpeedTestGaugeMbps = 0;
+        }
+    }
+
+    [RelayCommand]
+    public void CancelSpeedTest()
+    {
+        if (_speedTestCts != null)
+        {
+            try
+            {
+                _speedTestCts.Cancel();
+                _speedTestCts.Dispose();
+            }
+            catch { }
+            _speedTestCts = null;
+        }
+
+        if (IsSpeedTestRunning)
+        {
+            SpeedTestPhase = SpeedTestPhase.Idle;
+            SpeedTestStatusMessage = "Ready to test network speed";
+            SpeedTestGaugeMbps = 0;
+            OnPropertyChanged(nameof(SpeedTestMainNumberDisplay));
+        }
+    }
+
+    [RelayCommand]
+    public void ResetSpeedTest()
+    {
+        CancelSpeedTest();
+        SpeedTestPhase = SpeedTestPhase.Idle;
+        SpeedTestStatusMessage = "Ready to test network speed";
+        SpeedTestInstantaneousMbps = 0;
+        SpeedTestPeakMbps = 0;
+        SpeedTestGaugeMbps = 0;
+        SpeedTestPingMs = null;
+        SpeedTestJitterMs = null;
+        SpeedTestDownloadMbps = null;
+        SpeedTestUploadMbps = null;
+        SpeedTestPhaseProgress = 0;
+        SpeedTestArcBrush = BlueIndicatorBrush;
+        IsMeteredNetwork = false;
+        OnPropertyChanged(nameof(SpeedTestMainNumberDisplay));
     }
 
     [RelayCommand]
@@ -1520,44 +1816,65 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public async Task ConnectWithPassword(object? parameter)
     {
         WifiNetworkItemViewModel? targetItem = null;
-        string password = string.Empty;
+        System.Security.SecureString? securePassword = null;
 
         if (parameter is Wpf.Ui.Controls.PasswordBox uiPb)
         {
             targetItem = uiPb.DataContext as WifiNetworkItemViewModel;
-            password = uiPb.Password;
+            string pass = uiPb.Password;
+            if (!string.IsNullOrEmpty(pass))
+            {
+                securePassword = new System.Security.SecureString();
+                foreach (char c in pass) securePassword.AppendChar(c);
+                securePassword.MakeReadOnly();
+            }
         }
         else if (parameter is System.Windows.Controls.PasswordBox pb)
         {
             targetItem = pb.DataContext as WifiNetworkItemViewModel;
-            password = pb.Password;
+            securePassword = pb.SecurePassword;
         }
         else if (parameter is WifiNetworkItemViewModel item)
         {
             targetItem = item;
-            password = item.PasswordText;
+            if (!string.IsNullOrEmpty(item.PasswordText))
+            {
+                securePassword = new System.Security.SecureString();
+                foreach (char c in item.PasswordText) securePassword.AppendChar(c);
+                securePassword.MakeReadOnly();
+            }
         }
 
         if (targetItem == null) return;
 
-        if (string.IsNullOrEmpty(password))
+        if (securePassword == null || securePassword.Length == 0)
         {
             targetItem.HasConnectionError = true;
             targetItem.ConnectionErrorMessage = "Password cannot be empty.";
             return;
         }
 
-        // Convert plain text to SecureString for the WLAN API
-        var secure = new System.Security.SecureString();
-        foreach (char c in password) secure.AppendChar(c);
-        secure.MakeReadOnly();
+        if (targetItem.IsSecured && securePassword.Length < 8)
+        {
+            targetItem.HasConnectionError = true;
+            targetItem.ConnectionErrorMessage = "Password must be at least 8 characters.";
+            return;
+        }
 
         // Memory hardening: Immediately clear password from UI and ViewModel
         if (parameter is Wpf.Ui.Controls.PasswordBox clearUiPb) clearUiPb.Clear();
         else if (parameter is System.Windows.Controls.PasswordBox clearPb) clearPb.Clear();
         targetItem.PasswordText = string.Empty;
 
-        await ExecuteWifiConnectAsync(targetItem, secure);
+        try
+        {
+            await ExecuteWifiConnectAsync(targetItem, securePassword);
+        }
+        finally
+        {
+            // Memory hardening: Immediately zero unmanaged DPAPI buffer
+            securePassword.Dispose();
+        }
 
         if (!targetItem.HasConnectionError && targetItem.IsConnected)
         {
@@ -1699,14 +2016,17 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 if (token.IsCancellationRequested) return;
 
                 bool isConnected = false;
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                if (Application.Current?.Dispatcher is { } dispatcher)
                 {
-                    RefreshAll();
-                    if (IsEthernetConnected || IsWifiConnected)
+                    await dispatcher.InvokeAsync(() =>
                     {
-                        isConnected = true;
-                    }
-                });
+                        RefreshAll();
+                        if (IsEthernetConnected || IsWifiConnected)
+                        {
+                            isConnected = true;
+                        }
+                    });
+                }
 
                 if (isConnected) break;
             }
@@ -1717,6 +2037,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public void ShowToast(string message)
     {
         _toastCts?.Cancel();
+        _toastCts?.Dispose();
         _toastCts = new CancellationTokenSource();
         var token = _toastCts.Token;
 
@@ -1730,32 +2051,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 Application.Current?.Dispatcher.InvokeAsync(() => IsToastVisible = false);
             }
         }, TaskScheduler.Default);
-    }
-
-    [RelayCommand]
-    public void ConnectWifi(WifiNetworkItemViewModel? item)
-    {
-        if (item == null || !HasWifiAdapter) return;
-
-        if (item.IsProfileKnown)
-        {
-            ShowToast($"Connecting to {item.Ssid}...");
-            bool success = _wifiService.QuickConnect(item.Ssid);
-            if (success)
-            {
-                StartReconnectionMonitoring(10, 500);
-                ShowToast($"Connected to {item.Ssid}.");
-            }
-            else
-            {
-                ShowToast($"Failed to connect to {item.Ssid}.");
-            }
-        }
-        else
-        {
-            ShowToast($"Network '{item.Ssid}' requires a password.");
-            ToggleNetworkExpand(item);
-        }
     }
 
     [ObservableProperty]
@@ -2404,29 +2699,32 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                     _ = Task.Run(async () =>
                     {
                         bool reachable = await _healthService.CheckPassiveOrActiveReachabilityAsync(currentBps, _isHubVisible, currentHasInternet);
-                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        if (Application.Current?.Dispatcher is { } dispatcher)
                         {
-                            if (!reachable)
+                            await dispatcher.InvokeAsync(() =>
                             {
-                                if (Health == null || Health.Connectivity != ConnectivityLevel.LocalAccess)
+                                if (!reachable)
                                 {
-                                    Health = new NetworkHealthStatus
+                                    if (Health == null || Health.Connectivity != ConnectivityLevel.LocalAccess)
                                     {
-                                        Connectivity = ConnectivityLevel.LocalAccess,
-                                        HasDnsResolution = false,
-                                        PacketLossPercent = 100,
-                                        LatencyMs = -1,
-                                        HealthSummary = "Connected to Local Network. No Internet Gateway."
-                                    };
+                                        Health = new NetworkHealthStatus
+                                        {
+                                            Connectivity = ConnectivityLevel.LocalAccess,
+                                            HasDnsResolution = false,
+                                            PacketLossPercent = 100,
+                                            LatencyMs = -1,
+                                            HealthSummary = "Connected to Local Network. No Internet Gateway."
+                                        };
+                                        NotifyReachabilityChanged();
+                                    }
+                                }
+                                else if (Health != null && Health.Connectivity == ConnectivityLevel.LocalAccess)
+                                {
+                                    Health.Connectivity = ConnectivityLevel.InternetAccess;
                                     NotifyReachabilityChanged();
                                 }
-                            }
-                            else if (Health != null && Health.Connectivity == ConnectivityLevel.LocalAccess)
-                            {
-                                Health.Connectivity = ConnectivityLevel.InternetAccess;
-                                NotifyReachabilityChanged();
-                            }
-                        });
+                            });
+                        }
                     });
                 }
 
@@ -2440,14 +2738,17 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                         _ = Task.Run(async () =>
                         {
                             bool hasWan = await CheckAdapterHasInternetAsync(wifiIp);
-                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            if (Application.Current?.Dispatcher is { } dispatcher)
                             {
-                                bool newNoInternet = !hasWan;
-                                if (IsWifiNoInternet != newNoInternet)
+                                await dispatcher.InvokeAsync(() =>
                                 {
-                                    IsWifiNoInternet = newNoInternet;
-                                }
-                            });
+                                    bool newNoInternet = !hasWan;
+                                    if (IsWifiNoInternet != newNoInternet)
+                                    {
+                                        IsWifiNoInternet = newNoInternet;
+                                    }
+                                });
+                            }
                         });
                     }
                 }
@@ -2570,6 +2871,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     {
         _isHubVisible = false;
         _throughputService.Pause();
+        CancelSpeedTest();
     }
 
     public override void Resume()
@@ -2587,43 +2889,47 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         if (!System.Net.IPAddress.TryParse(ipAddress, out var localIp))
             return false;
 
-        return await Task.Run(() =>
+        var targets = new[]
+        {
+            new System.Net.IPEndPoint(System.Net.IPAddress.Parse("1.1.1.1"), 53),
+            new System.Net.IPEndPoint(System.Net.IPAddress.Parse("8.8.8.8"), 53)
+        };
+
+        foreach (var endpoint in targets)
         {
             try
             {
-                using var socket = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
+                using var socket = new System.Net.Sockets.Socket(
+                    System.Net.Sockets.AddressFamily.InterNetwork,
+                    System.Net.Sockets.SocketType.Stream,
+                    System.Net.Sockets.ProtocolType.Tcp);
                 socket.Bind(new System.Net.IPEndPoint(localIp, 0));
-                var result = socket.BeginConnect(new System.Net.IPEndPoint(System.Net.IPAddress.Parse("1.1.1.1"), 53), null, null);
-                bool success = result.AsyncWaitHandle.WaitOne(600, true);
-                if (success && socket.Connected)
+
+                using var cts = new CancellationTokenSource(600);
+                await socket.ConnectAsync(endpoint, cts.Token).ConfigureAwait(false);
+                if (socket.Connected)
                 {
-                    socket.EndConnect(result);
                     return true;
                 }
-
-                using var socket2 = new System.Net.Sockets.Socket(System.Net.Sockets.AddressFamily.InterNetwork, System.Net.Sockets.SocketType.Stream, System.Net.Sockets.ProtocolType.Tcp);
-                socket2.Bind(new System.Net.IPEndPoint(localIp, 0));
-                var result2 = socket2.BeginConnect(new System.Net.IPEndPoint(System.Net.IPAddress.Parse("8.8.8.8"), 53), null, null);
-                bool success2 = result2.AsyncWaitHandle.WaitOne(600, true);
-                if (success2 && socket2.Connected)
-                {
-                    socket2.EndConnect(result2);
-                    return true;
-                }
-
-                return false;
+            }
+            catch (OperationCanceledException)
+            {
+                // Timeout on this endpoint, try next
             }
             catch
             {
-                return false;
+                // Socket error on this endpoint, try next
             }
-        });
+        }
+
+        return false;
     }
 
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
+            CancelSpeedTest();
             _toastCts?.Cancel();
             _toastCts?.Dispose();
 
