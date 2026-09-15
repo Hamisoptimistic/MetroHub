@@ -147,6 +147,72 @@ public partial class WifiNetworkItemViewModel : ObservableObject
     public string EyeGlyph => IsPasswordVisible ? "\uED1B" : "\uED1A"; // EyeOff / Eye
 }
 
+public partial class PhysicalAdapterItemViewModel : ObservableObject
+{
+    public string Id { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string Description { get; init; } = string.Empty;
+    public PhysicalAdapterType AdapterType { get; init; } = PhysicalAdapterType.Ethernet;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SubtitleText))]
+    [NotifyPropertyChangedFor(nameof(StatusText))]
+    [NotifyPropertyChangedFor(nameof(IconOpacity))]
+    [NotifyPropertyChangedFor(nameof(CanToggle))]
+    private bool _isAdminEnabled;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SubtitleText))]
+    [NotifyPropertyChangedFor(nameof(StatusText))]
+    private bool _isConnected;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SubtitleText))]
+    [NotifyPropertyChangedFor(nameof(StatusText))]
+    private string _linkSpeedString = "--";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SubtitleText))]
+    [NotifyPropertyChangedFor(nameof(StatusText))]
+    [NotifyPropertyChangedFor(nameof(CanToggle))]
+    private bool _isBusy;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SubtitleText))]
+    [NotifyPropertyChangedFor(nameof(StatusText))]
+    private string? _pendingStatusText;
+
+    public bool CanToggle => !IsBusy;
+
+    public string Glyph => AdapterType switch
+    {
+        PhysicalAdapterType.Wifi => "\uE701",
+        PhysicalAdapterType.UsbTethering => "\uE88A",
+        _ => "\uE839"
+    };
+
+    public double IconOpacity => IsAdminEnabled ? 1.0 : 0.4;
+
+    public string StatusText
+    {
+        get
+        {
+            if (IsBusy && !string.IsNullOrEmpty(PendingStatusText))
+                return PendingStatusText;
+            if (!IsAdminEnabled) return "Disabled";
+            if (IsConnected)
+            {
+                return string.IsNullOrWhiteSpace(LinkSpeedString) || LinkSpeedString == "--"
+                    ? "Connected"
+                    : $"Connected • {LinkSpeedString}";
+            }
+            return AdapterType == PhysicalAdapterType.Ethernet ? "Cable unplugged" : "Not connected";
+        }
+    }
+
+    public string SubtitleText => $"{Description} • {StatusText}";
+}
+
 public partial class NetworkWidgetViewModel : WidgetViewModelBase
 {
     private readonly EthernetProvider _ethernetProvider = EthernetProvider.Instance;
@@ -171,13 +237,15 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(IsEthernetPanel))]
     [NotifyPropertyChangedFor(nameof(IsWifiPanel))]
     [NotifyPropertyChangedFor(nameof(IsKillNetPanel))]
+    [NotifyPropertyChangedFor(nameof(IsAdaptersPanel))]
     [NotifyPropertyChangedFor(nameof(IsSpeedPanel))]
     [NotifyPropertyChangedFor(nameof(IsHotspotPanel))]
     private string _currentPanel = "Ethernet";
 
     public bool IsEthernetPanel => string.Equals(CurrentPanel, "Ethernet", StringComparison.OrdinalIgnoreCase);
     public bool IsWifiPanel => string.Equals(CurrentPanel, "Wifi", StringComparison.OrdinalIgnoreCase);
-    public bool IsKillNetPanel => string.Equals(CurrentPanel, "KillNet", StringComparison.OrdinalIgnoreCase);
+    public bool IsAdaptersPanel => string.Equals(CurrentPanel, "Adapters", StringComparison.OrdinalIgnoreCase) || string.Equals(CurrentPanel, "KillNet", StringComparison.OrdinalIgnoreCase);
+    public bool IsKillNetPanel => IsAdaptersPanel;
     public bool IsSpeedPanel => string.Equals(CurrentPanel, "Speed", StringComparison.OrdinalIgnoreCase);
     public bool IsHotspotPanel => string.Equals(CurrentPanel, "Hotspot", StringComparison.OrdinalIgnoreCase);
 
@@ -217,7 +285,18 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    public Brush KillNetStatusBrush => IsInternetDisconnected ? RedIndicatorBrush : GreenIndicatorBrush;
+    public Brush AdaptersStatusBrush
+    {
+        get
+        {
+            if (PhysicalAdapters == null || PhysicalAdapters.Count == 0)
+                return RedIndicatorBrush;
+            bool anyConnected = PhysicalAdapters.Any(a => a.IsAdminEnabled && a.IsConnected);
+            return anyConnected ? GreenIndicatorBrush : RedIndicatorBrush;
+        }
+    }
+
+    public Brush KillNetStatusBrush => AdaptersStatusBrush;
 
     public Brush SpeedStatusBrush
     {
@@ -673,12 +752,23 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public bool HasAvailableNetworks => AvailableNetworks.Count > 0;
     public bool HasNoAvailableNetworks => HasWifiAdapter && IsWifiRadioOn && !IsWifiRadioBusy && AvailableNetworks.Count == 0;
 
+    public ObservableCollection<PhysicalAdapterItemViewModel> PhysicalAdapters { get; } = new();
+    public bool HasPhysicalAdapters => PhysicalAdapters.Count > 0;
+    public bool HasNoPhysicalAdapters => PhysicalAdapters.Count == 0;
+
     public NetworkWidgetViewModel(TileModel model) : base(model)
     {
         AvailableNetworks.CollectionChanged += (s, e) =>
         {
             OnPropertyChanged(nameof(HasAvailableNetworks));
             OnPropertyChanged(nameof(HasNoAvailableNetworks));
+        };
+
+        PhysicalAdapters.CollectionChanged += (s, e) =>
+        {
+            OnPropertyChanged(nameof(HasPhysicalAdapters));
+            OnPropertyChanged(nameof(HasNoPhysicalAdapters));
+            OnPropertyChanged(nameof(AdaptersStatusBrush));
         };
 
         _throughputService.ThroughputUpdated += OnThroughputUpdated;
@@ -762,6 +852,10 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         if (IsWifiPanel && HasWifiAdapter)
         {
             RefreshWifiNetworks();
+        }
+        else if (IsAdaptersPanel)
+        {
+            RefreshPhysicalAdapters();
         }
         else if (IsSpeedPanel)
         {
@@ -1747,6 +1841,26 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         }
     }
 
+    [ObservableProperty]
+    private bool _isRefreshingAdaptersVisual;
+
+    [RelayCommand]
+    public async Task RefreshAdapters()
+    {
+        if (IsRefreshingAdaptersVisual) return;
+        IsRefreshingAdaptersVisual = true;
+        RefreshPhysicalAdapters();
+        ShowToast("Scanning for network adapters...");
+        try
+        {
+            await Task.Delay(750);
+        }
+        finally
+        {
+            IsRefreshingAdaptersVisual = false;
+        }
+    }
+
     private int _isScanningWifi;
     private CancellationTokenSource? _networkRefreshCts;
 
@@ -1919,6 +2033,9 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             OnPropertyChanged(nameof(WifiPanelIcon));
             OnPropertyChanged(nameof(WifiPanelTitleColor));
             OnPropertyChanged(nameof(WifiTurnedOffBannerTitle));
+
+            RefreshPhysicalAdapters();
+            OnPropertyChanged(nameof(AdaptersStatusBrush));
         }
         catch { }
     }
@@ -2057,6 +2174,163 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
 
         OnPropertyChanged(nameof(HasAvailableNetworks));
         OnPropertyChanged(nameof(HasNoAvailableNetworks));
+    }
+
+    private int _isRefreshingAdapters;
+
+    public void RefreshPhysicalAdapters()
+    {
+        if (Interlocked.CompareExchange(ref _isRefreshingAdapters, 1, 0) != 0) return;
+
+        Task.Run(() =>
+        {
+            try
+            {
+                var rawAdapters = DisconnectService.GetPhysicalAdapters();
+                Application.Current?.Dispatcher.InvokeAsync(() =>
+                {
+                    try
+                    {
+                        UpdatePhysicalAdaptersInPlace(rawAdapters);
+                    }
+                    finally
+                    {
+                        Interlocked.Exchange(ref _isRefreshingAdapters, 0);
+                    }
+                });
+            }
+            catch
+            {
+                Interlocked.Exchange(ref _isRefreshingAdapters, 0);
+            }
+        });
+    }
+
+    private void UpdatePhysicalAdaptersInPlace(List<PhysicalAdapterInfo> rawList)
+    {
+        if (rawList == null || rawList.Count == 0)
+        {
+            if (PhysicalAdapters.Count > 0)
+            {
+                PhysicalAdapters.Clear();
+                OnPropertyChanged(nameof(HasPhysicalAdapters));
+                OnPropertyChanged(nameof(HasNoPhysicalAdapters));
+                OnPropertyChanged(nameof(AdaptersStatusBrush));
+            }
+            return;
+        }
+
+        var incomingByName = new Dictionary<string, PhysicalAdapterInfo>(StringComparer.OrdinalIgnoreCase);
+        foreach (var a in rawList)
+        {
+            if (!incomingByName.ContainsKey(a.Name))
+            {
+                incomingByName[a.Name] = a;
+            }
+        }
+
+        // 1. Remove obsolete adapters
+        for (int i = PhysicalAdapters.Count - 1; i >= 0; i--)
+        {
+            var existing = PhysicalAdapters[i];
+            if (!incomingByName.ContainsKey(existing.Name))
+            {
+                PhysicalAdapters.RemoveAt(i);
+            }
+        }
+
+        // 2. Update existing adapters in place
+        var existingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < PhysicalAdapters.Count; i++)
+        {
+            var existing = PhysicalAdapters[i];
+            existingNames.Add(existing.Name);
+
+            if (incomingByName.TryGetValue(existing.Name, out var updated))
+            {
+                if (!existing.IsBusy)
+                {
+                    if (existing.IsAdminEnabled != updated.IsAdminEnabled) existing.IsAdminEnabled = updated.IsAdminEnabled;
+                }
+                if (existing.IsConnected != updated.IsConnected) existing.IsConnected = updated.IsConnected;
+                if (existing.LinkSpeedString != updated.LinkSpeedString) existing.LinkSpeedString = updated.LinkSpeedString;
+            }
+        }
+
+        // 3. Add newly discovered adapters
+        foreach (var a in rawList)
+        {
+            if (!existingNames.Contains(a.Name))
+            {
+                var itemVm = new PhysicalAdapterItemViewModel
+                {
+                    Id = a.Id,
+                    Name = a.Name,
+                    Description = a.Description,
+                    AdapterType = a.AdapterType,
+                    IsAdminEnabled = a.IsAdminEnabled,
+                    IsConnected = a.IsConnected,
+                    LinkSpeedString = a.LinkSpeedString
+                };
+                PhysicalAdapters.Add(itemVm);
+                existingNames.Add(a.Name);
+            }
+        }
+
+        OnPropertyChanged(nameof(HasPhysicalAdapters));
+        OnPropertyChanged(nameof(HasNoPhysicalAdapters));
+        OnPropertyChanged(nameof(AdaptersStatusBrush));
+    }
+
+    [RelayCommand]
+    public async Task TogglePhysicalAdapter(PhysicalAdapterItemViewModel? adapter)
+    {
+        if (adapter == null || adapter.IsBusy) return;
+
+        bool originalState = adapter.IsAdminEnabled;
+        bool targetState = !originalState;
+
+        // 1. Optimistic UI: immediately flip the toggle to target state and start spinner
+        adapter.IsBusy = true;
+        adapter.IsAdminEnabled = targetState;
+        adapter.PendingStatusText = targetState ? "Enabling..." : "Disabling...";
+        ShowToast($"Requesting Windows authorization to {(targetState ? "enable" : "disable")} {adapter.Name}...");
+
+        try
+        {
+            using var _ = MainWindow.EnterDialogScope();
+
+            // 2. Run background netsh command alongside a simulated smooth fluid transition
+            // Fool the user with a deliberate animation & spinner feedback so it feels natural and authentic
+            var commandTask = _disconnectService.SetAdapterAdminStateAsync(adapter.Name, targetState);
+            var delayTask = Task.Delay(1200);
+
+            await Task.WhenAll(commandTask, delayTask);
+            bool success = await commandTask;
+
+            if (success)
+            {
+                ShowToast($"{adapter.Name} {(targetState ? "enabled" : "disabled")}.");
+            }
+            else
+            {
+                // Revert optimistic state on cancel or failure
+                adapter.IsAdminEnabled = originalState;
+                ShowToast($"Action cancelled or failed for {adapter.Name}.");
+            }
+        }
+        catch (Exception ex)
+        {
+            adapter.IsAdminEnabled = originalState;
+            ShowToast($"Error: {ex.Message}");
+        }
+        finally
+        {
+            adapter.PendingStatusText = null;
+            adapter.IsBusy = false;
+            RefreshPhysicalAdapters();
+            RefreshAll();
+        }
     }
 
     private void OnThroughputUpdated(ThroughputMetrics metrics)

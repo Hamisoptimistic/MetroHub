@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 
 namespace MetroHub.Core.Network;
@@ -312,6 +313,223 @@ public class DisconnectService
             {
                 return false;
             }
+        });
+    }
+
+    private static readonly Dictionary<string, (string Description, PhysicalAdapterType Type, string Mac)> _persistentHardwareCache = new(StringComparer.OrdinalIgnoreCase);
+
+    public static List<PhysicalAdapterInfo> GetPhysicalAdapters()
+    {
+        var result = new List<PhysicalAdapterInfo>();
+        var netshStatuses = GetAllInterfaceStatuses();
+        NetworkInterface[] nics = Array.Empty<NetworkInterface>();
+        try
+        {
+            nics = NetworkInterface.GetAllNetworkInterfaces();
+        }
+        catch { }
+
+        // 1. Update persistent hardware cache from all currently visible physical NICS
+        foreach (var nic in nics)
+        {
+            if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback ||
+                nic.NetworkInterfaceType == NetworkInterfaceType.Tunnel)
+                continue;
+
+            string desc = nic.Description;
+            string name = nic.Name;
+            string descLower = desc.ToLowerInvariant();
+            string nameLower = name.ToLowerInvariant();
+
+            // Filter out virtual / miniports
+            if (descLower.Contains("virtual") || descLower.Contains("hyper-v") || descLower.Contains("vmware") ||
+                descLower.Contains("virtualbox") || descLower.Contains("tap-") || descLower.Contains("vpn") ||
+                descLower.Contains("npcap") || descLower.Contains("wsl") || descLower.Contains("pseudo") ||
+                descLower.Contains("bluetooth") || descLower.Contains("tailscale") || descLower.Contains("zerotier") ||
+                descLower.Contains("wireguard") || descLower.Contains("wan miniport") || descLower.Contains("miniport") ||
+                descLower.Contains("lightweight filter") || descLower.Contains("native mac layer") ||
+                descLower.Contains("kernel debug") || descLower.Contains("packet scheduler") ||
+                descLower.Contains("multiplexor") || descLower.Contains("teredo") || descLower.Contains("isatap") ||
+                descLower.Contains("6to4") || descLower.Contains("tunnel") || descLower.Contains("pacer"))
+            {
+                continue;
+            }
+
+            if (nameLower.Contains("vethernet") || nameLower.Contains("wsl") || nameLower.Contains("loopback") ||
+                nameLower.Contains("wan miniport") || nameLower.Contains("miniport") || nameLower.Contains("vpn"))
+            {
+                continue;
+            }
+
+            PhysicalAdapterType type = PhysicalAdapterType.Ethernet;
+            if (EthernetProvider.IsUsbTetheringInterface(nic))
+            {
+                type = PhysicalAdapterType.UsbTethering;
+            }
+            else if (nic.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)
+            {
+                type = PhysicalAdapterType.Wifi;
+            }
+            else if (nic.NetworkInterfaceType == NetworkInterfaceType.Ethernet ||
+                     nic.NetworkInterfaceType == NetworkInterfaceType.GigabitEthernet ||
+                     nic.NetworkInterfaceType == NetworkInterfaceType.FastEthernetFx ||
+                     nic.NetworkInterfaceType == NetworkInterfaceType.FastEthernetT)
+            {
+                type = PhysicalAdapterType.Ethernet;
+            }
+            else
+            {
+                continue;
+            }
+
+            string mac = "--";
+            try
+            {
+                var bytes = nic.GetPhysicalAddress()?.GetAddressBytes();
+                if (bytes != null && bytes.Length > 0)
+                {
+                    mac = string.Join("-", bytes.Select(b => b.ToString("X2")));
+                }
+            }
+            catch { }
+
+            _persistentHardwareCache[name] = (desc, type, mac);
+        }
+
+        // 2. Iterate netsh interfaces
+        foreach (var kvp in netshStatuses)
+        {
+            string ifaceName = kvp.Key;
+            var st = kvp.Value;
+
+            // Match with active nic if available
+            var matchingNic = nics.FirstOrDefault(n => string.Equals(n.Name, ifaceName, StringComparison.OrdinalIgnoreCase));
+
+            string description = string.Empty;
+            PhysicalAdapterType adapterType = PhysicalAdapterType.Ethernet;
+            string mac = "--";
+            bool isConnected = st.IsConnected;
+            long speedBps = 0;
+
+            if (matchingNic != null)
+            {
+                string descLower = matchingNic.Description.ToLowerInvariant();
+                string nameLower = matchingNic.Name.ToLowerInvariant();
+
+                // Skip virtual
+                if (descLower.Contains("virtual") || descLower.Contains("hyper-v") || descLower.Contains("vmware") ||
+                    descLower.Contains("virtualbox") || descLower.Contains("tap-") || descLower.Contains("vpn") ||
+                    descLower.Contains("npcap") || descLower.Contains("wsl") || descLower.Contains("pseudo") ||
+                    descLower.Contains("bluetooth") || descLower.Contains("tailscale") || descLower.Contains("zerotier") ||
+                    descLower.Contains("wireguard") || descLower.Contains("wan miniport") || descLower.Contains("miniport") ||
+                    descLower.Contains("lightweight filter") || descLower.Contains("native mac layer") ||
+                    descLower.Contains("kernel debug") || descLower.Contains("packet scheduler") ||
+                    descLower.Contains("multiplexor") || descLower.Contains("teredo") || descLower.Contains("isatap") ||
+                    descLower.Contains("6to4") || descLower.Contains("tunnel") || descLower.Contains("pacer") ||
+                    nameLower.Contains("vethernet") || nameLower.Contains("wsl") || nameLower.Contains("vpn"))
+                {
+                    continue;
+                }
+
+                description = matchingNic.Description;
+                try
+                {
+                    var bytes = matchingNic.GetPhysicalAddress()?.GetAddressBytes();
+                    if (bytes != null && bytes.Length > 0)
+                    {
+                        mac = string.Join("-", bytes.Select(b => b.ToString("X2")));
+                    }
+                }
+                catch { }
+
+                if (EthernetProvider.IsUsbTetheringInterface(matchingNic))
+                {
+                    adapterType = PhysicalAdapterType.UsbTethering;
+                }
+                else if (matchingNic.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)
+                {
+                    adapterType = PhysicalAdapterType.Wifi;
+                }
+                else
+                {
+                    adapterType = PhysicalAdapterType.Ethernet;
+                }
+
+                isConnected = matchingNic.OperationalStatus == OperationalStatus.Up;
+                speedBps = matchingNic.Speed;
+            }
+            else if (_persistentHardwareCache.TryGetValue(ifaceName, out var cached))
+            {
+                description = cached.Description;
+                adapterType = cached.Type;
+                mac = cached.Mac;
+                isConnected = false;
+            }
+            else
+            {
+                string ifaceLower = ifaceName.ToLowerInvariant();
+                if (ifaceLower.Contains("wi-fi") || ifaceLower.Contains("wlan") || ifaceLower.Contains("wireless"))
+                {
+                    adapterType = PhysicalAdapterType.Wifi;
+                    description = "Wi-Fi Adapter";
+                }
+                else if (ifaceLower.Contains("ethernet") || ifaceLower.Contains("lan"))
+                {
+                    adapterType = PhysicalAdapterType.Ethernet;
+                    description = "Ethernet Controller";
+                }
+                else
+                {
+                    continue;
+                }
+            }
+
+            result.Add(new PhysicalAdapterInfo
+            {
+                Id = matchingNic?.Id ?? ifaceName,
+                Name = ifaceName,
+                Description = description,
+                AdapterType = adapterType,
+                IsAdminEnabled = st.IsAdminEnabled,
+                IsConnected = isConnected,
+                LinkSpeedBitsPerSecond = speedBps,
+                LinkSpeedString = FormatSpeed(speedBps),
+                MacAddress = mac
+            });
+        }
+
+        return result;
+    }
+
+    private static string FormatSpeed(long bitsPerSecond)
+    {
+        if (bitsPerSecond <= 0) return "--";
+        if (bitsPerSecond >= 1_000_000_000)
+        {
+            double gbps = (double)bitsPerSecond / 1_000_000_000.0;
+            return $"{gbps:0.#} Gbps";
+        }
+        if (bitsPerSecond >= 1_000_000)
+        {
+            double mbps = (double)bitsPerSecond / 1_000_000.0;
+            return $"{mbps:0.#} Mbps";
+        }
+        if (bitsPerSecond >= 1_000)
+        {
+            double kbps = (double)bitsPerSecond / 1_000.0;
+            return $"{kbps:0.#} Kbps";
+        }
+        return $"{bitsPerSecond} bps";
+    }
+
+    public async Task<bool> SetAdapterAdminStateAsync(string adapterName, bool enable)
+    {
+        return await Task.Run(async () =>
+        {
+            string command = enable ? "Enable-NetAdapter" : "Disable-NetAdapter";
+            bool result = await RunElevatedAdapterCommandAsync(command, adapterName);
+            InvalidateStatusCache();
+            return result;
         });
     }
 }

@@ -33,23 +33,29 @@ public partial class NetworkWidgetView : UserControl
         InitializeComponent();
     }
 
-    private void EthernetToggleSwitch_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    private void AdapterToggleSwitch_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
-        if (DataContext is NetworkWidgetViewModel vm && vm.CanToggleEthernet)
+        if (sender is FrameworkElement fe && fe.DataContext is PhysicalAdapterItemViewModel item)
         {
-            vm.ToggleEthernetCommand.Execute(null);
+            if (DataContext is NetworkWidgetViewModel vm && item.CanToggle)
+            {
+                vm.TogglePhysicalAdapterCommand.Execute(item);
+            }
         }
     }
 
-    private void EthernetToggleSwitch_KeyDown(object sender, KeyEventArgs e)
+    private void AdapterToggleSwitch_KeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key is Key.Space or Key.Enter)
         {
             e.Handled = true;
-            if (DataContext is NetworkWidgetViewModel vm && vm.CanToggleEthernet)
+            if (sender is FrameworkElement fe && fe.DataContext is PhysicalAdapterItemViewModel item)
             {
-                vm.ToggleEthernetCommand.Execute(null);
+                if (DataContext is NetworkWidgetViewModel vm && item.CanToggle)
+                {
+                    vm.TogglePhysicalAdapterCommand.Execute(item);
+                }
             }
         }
     }

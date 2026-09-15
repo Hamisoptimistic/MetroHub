@@ -254,3 +254,47 @@ public class NetworkHealthStatus
     public string HealthSummary { get; set; } = "Checking connectivity...";
 }
 
+public enum PhysicalAdapterType
+{
+    Ethernet,
+    Wifi,
+    UsbTethering
+}
+
+public class PhysicalAdapterInfo
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public PhysicalAdapterType AdapterType { get; set; } = PhysicalAdapterType.Ethernet;
+    public bool IsAdminEnabled { get; set; } = true;
+    public bool IsConnected { get; set; }
+    public long LinkSpeedBitsPerSecond { get; set; }
+    public string LinkSpeedString { get; set; } = "--";
+    public string MacAddress { get; set; } = "--";
+
+    public string Glyph => AdapterType switch
+    {
+        PhysicalAdapterType.Wifi => "\uE701",
+        PhysicalAdapterType.UsbTethering => "\uE88A",
+        _ => "\uE839" // Ethernet plug icon
+    };
+
+    public string StatusText
+    {
+        get
+        {
+            if (!IsAdminEnabled) return "Disabled";
+            if (IsConnected)
+            {
+                return string.IsNullOrWhiteSpace(LinkSpeedString) || LinkSpeedString == "--"
+                    ? "Connected"
+                    : $"Connected • {LinkSpeedString}";
+            }
+            return AdapterType == PhysicalAdapterType.Ethernet ? "Cable unplugged" : "Not connected";
+        }
+    }
+
+    public string SubtitleText => $"{Description} • {StatusText}";
+}
+
