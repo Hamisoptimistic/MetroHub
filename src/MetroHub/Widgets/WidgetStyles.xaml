@@ -1,6 +1,7 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:widgets="clr-namespace:MetroHub.Widgets">
+                    xmlns:widgets="clr-namespace:MetroHub.Widgets"
+                    xmlns:controls="clr-namespace:MetroHub.Presentation.Controls">
 
     <!-- 
         Shared WidgetCard Shell Style (Phase 0.2)
@@ -321,5 +322,147 @@
     </Style>
 
     <Style TargetType="{x:Type widgets:WidgetTiles}" BasedOn="{StaticResource WidgetTilesStyle}" />
+
+    <!-- ========================================================================= -->
+    <!-- SHARED FLUENT FLOATING SCROLLBAR SYSTEM (Phase 0.2 Design System)         -->
+    <!-- ========================================================================= -->
+    <!-- 
+        Standard Across All MetroHub Widgets (Network, Volume, Notepad, etc.):
+        - Width / Thickness: 4px Ultra-Slim Floating Pill.
+        - CornerRadius: 2px (full pill rounding).
+        - Track: 100% Transparent, zero border, zero background gutter.
+        - Resting State: Invisible (Opacity="0.0") so content stays clean and uninterrupted.
+        - Interaction: Auto-reveals on hover/scroll via AutoHideScrollBehavior.
+        - Colors: #40FFFFFF (resting thumb), #90FFFFFF (hover), #D0FFFFFF (active dragging).
+
+        USAGE IN WIDGETS:
+        1. On any ScrollViewer:
+           Style="{StaticResource WidgetFloatingScrollViewerStyle}"
+           (Automatically applies 4px scrollbar, AutoHideScrollBehavior, and disabled horizontal scrolling).
+
+        2. On any ListView / ListBox / ItemsControl with built-in ScrollViewer:
+           controls:AutoHideScrollBehavior.IsEnabled="True"
+           And ensure local or implicit Style targets ScrollBar with BasedOn="{StaticResource WidgetFloatingScrollBarStyle}".
+
+        3. On any TextBox (e.g., multi-line notes editor):
+           controls:AutoHideScrollBehavior.IsEnabled="True"
+           And ensure local or implicit Style targets ScrollBar with BasedOn="{StaticResource WidgetFloatingScrollBarStyle}".
+    -->
+
+    <!-- 4px Ultra-Slim Floating ScrollBar (Vertical & Horizontal support) -->
+    <Style x:Key="WidgetFloatingScrollBarStyle" TargetType="{x:Type ScrollBar}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Width" Value="4" />
+        <Setter Property="MinWidth" Value="4" />
+        <Setter Property="Opacity" Value="0.0" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ScrollBar}">
+                    <Grid Background="Transparent">
+                        <Track x:Name="PART_Track" IsDirectionReversed="True" Focusable="False">
+                            <Track.Thumb>
+                                <Thumb x:Name="Thumb" Focusable="False">
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="{x:Type Thumb}">
+                                            <Border x:Name="ThumbBorder"
+                                                    Background="#40FFFFFF"
+                                                    CornerRadius="2"
+                                                    SnapsToDevicePixels="True" />
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#90FFFFFF" />
+                                                </Trigger>
+                                                <Trigger Property="IsDragging" Value="True">
+                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#D0FFFFFF" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="Orientation" Value="Horizontal">
+                <Setter Property="Width" Value="Auto" />
+                <Setter Property="MinWidth" Value="0" />
+                <Setter Property="Height" Value="4" />
+                <Setter Property="MinHeight" Value="4" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ScrollBar}">
+                            <Grid Background="Transparent">
+                                <Track x:Name="PART_Track" Focusable="False">
+                                    <Track.Thumb>
+                                        <Thumb x:Name="Thumb" Focusable="False">
+                                            <Thumb.Template>
+                                                <ControlTemplate TargetType="{x:Type Thumb}">
+                                                    <Border x:Name="ThumbBorder"
+                                                            Background="#40FFFFFF"
+                                                            CornerRadius="2"
+                                                            SnapsToDevicePixels="True" />
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="ThumbBorder" Property="Background" Value="#90FFFFFF" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsDragging" Value="True">
+                                                            <Setter TargetName="ThumbBorder" Property="Background" Value="#D0FFFFFF" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Thumb.Template>
+                                        </Thumb>
+                                    </Track.Thumb>
+                                </Track>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Shared Floating ScrollViewer Style: Auto-attaches AutoHideScrollBehavior and 4px floating scrollbar -->
+    <Style x:Key="WidgetFloatingScrollViewerStyle" TargetType="{x:Type ScrollViewer}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+        <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="controls:AutoHideScrollBehavior.IsEnabled" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ScrollViewer}">
+                    <Grid Background="Transparent" SnapsToDevicePixels="True">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <ScrollContentPresenter Grid.Column="0"
+                                               Margin="{TemplateBinding Padding}"
+                                               CanContentScroll="{TemplateBinding CanContentScroll}" />
+                        <ScrollBar Grid.Column="1"
+                                   x:Name="PART_VerticalScrollBar"
+                                   Style="{StaticResource WidgetFloatingScrollBarStyle}"
+                                   Value="{TemplateBinding VerticalOffset}"
+                                   Maximum="{TemplateBinding ScrollableHeight}"
+                                   ViewportSize="{TemplateBinding ViewportHeight}"
+                                   Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                                   Margin="2,0,0,0" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
 </ResourceDictionary>

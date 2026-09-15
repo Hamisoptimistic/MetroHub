@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:widgets="clr-namespace:MetroHub.Widgets"
              xmlns:notepad="clr-namespace:MetroHub.Widgets.Catalog.Notepad"
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=notepad:NotepadWidgetViewModel}"
@@ -25,46 +26,8 @@
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         </Style>
 
-        <!-- Ultra-Slim 3px Fluent ScrollBar (Transparent track, no arrows, subtle pill thumb) -->
-        <Style x:Key="FluentSlimScrollBarStyle" TargetType="{x:Type ScrollBar}">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Width" Value="3" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ScrollBar}">
-                        <Track x:Name="PART_Track" IsDirectionReversed="True" Focusable="False">
-                            <Track.Thumb>
-                                <Thumb x:Name="Thumb" Focusable="False">
-                                    <Thumb.Template>
-                                        <ControlTemplate TargetType="{x:Type Thumb}">
-                                            <Border x:Name="ThumbBorder"
-                                                    Background="#55FFFFFF"
-                                                    CornerRadius="1.5"
-                                                    SnapsToDevicePixels="True" />
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#95FFFFFF" />
-                                                </Trigger>
-                                                <Trigger Property="IsDragging" Value="True">
-                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#D0FFFFFF" />
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Thumb.Template>
-                                </Thumb>
-                            </Track.Thumb>
-                        </Track>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Implicit ScrollBar Style to make all internal scrollbars slim -->
-        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource FluentSlimScrollBarStyle}" />
+        <!-- Universal 4px Fluent Floating ScrollBar: Invisible by default, reveals on scroll/hover via AutoHideScrollBehavior -->
+        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
 
         <!-- Toolbar Icon Button Style (Borderless, subtle hover, no harsh opaque box) -->
         <Style x:Key="NotepadToolbarButtonStyle" TargetType="Button">
@@ -201,7 +164,8 @@
                                       Focusable="False"
                                       FocusVisualStyle="{x:Null}"
                                       HorizontalScrollBarVisibility="Hidden"
-                                      VerticalScrollBarVisibility="Auto" />
+                                      VerticalScrollBarVisibility="Auto"
+                                      controls:AutoHideScrollBehavior.IsEnabled="True" />
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -353,6 +317,7 @@
                              TextWrapping="Wrap"
                              VerticalScrollBarVisibility="Auto"
                              HorizontalScrollBarVisibility="Disabled"
+                             controls:AutoHideScrollBehavior.IsEnabled="True"
                              FocusVisualStyle="{x:Null}"
                              Tag="InteractiveControl"
                              PreviewKeyDown="NotesEditorTextBox_PreviewKeyDown"
@@ -451,14 +416,11 @@
                         </Grid>
                     </Border>
 
-                    <!-- Floating Infinite Scrolling Task Items (Clean transparent rows, zero ugly gray boxes) -->
                     <ScrollViewer Grid.Row="1"
-                                  Focusable="False"
-                                  FocusVisualStyle="{x:Null}"
+                                  Style="{StaticResource WidgetFloatingScrollViewerStyle}"
                                   Tag="InteractiveControl"
-                                  VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled"
-                                  CanContentScroll="True">
+                                  CanContentScroll="True"
+                                  Padding="0,0,6,0">
                         <ItemsControl ItemsSource="{Binding Tasks}"
                                       Tag="InteractiveControl"
                                       VirtualizingPanel.IsVirtualizing="True"
