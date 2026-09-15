@@ -459,6 +459,20 @@ public class NativeWifiService : IDisposable
                 bool isConnected = !string.IsNullOrEmpty(connectedSsid) && string.Equals(connectedSsid, ssid, StringComparison.OrdinalIgnoreCase);
                 bool hasProfile = !string.IsNullOrWhiteSpace(net.strProfileName);
 
+                WifiStandard standard = WifiStandard.Unknown;
+                if (net.uNumberOfPhyTypes > 0 && net.dot11PhyTypes != null)
+                {
+                    uint maxPhy = 0;
+                    for (int p = 0; p < net.uNumberOfPhyTypes && p < net.dot11PhyTypes.Length; p++)
+                    {
+                        if (net.dot11PhyTypes[p] > maxPhy)
+                        {
+                            maxPhy = net.dot11PhyTypes[p];
+                        }
+                    }
+                    standard = MapPhyTypeToStandard((WlanNative.DOT11_PHY_TYPE)maxPhy);
+                }
+
                 if (!dict.TryGetValue(ssid, out var existing) || quality > existing.SignalQuality || isConnected)
                 {
                     dict[ssid] = new WifiNetworkItem
@@ -467,6 +481,7 @@ public class NativeWifiService : IDisposable
                         SignalQuality = quality,
                         IsConnected = isConnected,
                         IsProfileKnown = hasProfile,
+                        Standard = standard,
                         SecurityType = MapAuthAlgorithm(net.dot11DefaultAuthAlgorithm),
                         AuthAlgorithm = net.dot11DefaultAuthAlgorithm,
                         CipherAlgorithm = net.dot11DefaultCipherAlgorithm
@@ -524,6 +539,17 @@ public class NativeWifiService : IDisposable
         return result == WlanNative.ERROR_SUCCESS;
     }
 
+    public bool ForgetProfile(string profileName)
+    {
+        if (!_hasWifiAdapter || _primaryInterfaceGuid == Guid.Empty || string.IsNullOrWhiteSpace(profileName))
+        {
+            return false;
+        }
+
+        int result = WlanNative.WlanDeleteProfile(_clientHandle, ref _primaryInterfaceGuid, profileName, IntPtr.Zero);
+        return result == WlanNative.ERROR_SUCCESS;
+    }
+
     public async Task<(bool Success, string Message)> ConnectAsync(
         string ssid,
         SecureString? securePassword,
@@ -548,19 +574,20 @@ public class NativeWifiService : IDisposable
                 return (false, $"Failed to initiate connection to saved profile '{ssid}'.");
             }
 
-            // 2. If Enterprise network, delegate to Windows Settings
+            // 2. If Enterprise network, return informative message directly
             bool isEnterprise = authAlgo switch
             {
                 WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_RSNA or
                 WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA or
                 WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3 or
+                WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3_ENT or
                 WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3_ENT_192 => true,
                 _ => false
             };
 
             if (isEnterprise)
             {
-                return (false, "ENTERPRISE_DELEGATION");
+                return (false, "This network requires domain credentials (802.1X).");
             }
 
             // 3. Construct profile XML based on security type
@@ -853,8 +880,10 @@ public class NativeWifiService : IDisposable
         return auth switch
         {
             WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3_SAE => "WPA3-Personal",
+            WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_OWE => "OWE",
+            WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3 or
             WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3_ENT_192 or
-            WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3 => "WPA3-Enterprise",
+            WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3_ENT => "WPA3-Enterprise",
             WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_RSNA_PSK => "WPA2-Personal",
             WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_RSNA => "WPA2-Enterprise",
             WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA_PSK => "WPA-Personal",

@@ -284,45 +284,77 @@ public class WidgetSegmentedControl : Selector
         int count = Items.Count;
         double hostWidth = _hostGrid.ActualWidth;
 
-        double targetX = 0;
-        double targetWidth = 0;
+        double slotWidth = (count > 0 && hostWidth > 0) ? (hostWidth / count) : 0;
+        double slotCenterX = (index + 0.5) * slotWidth;
 
-        if (count > 0 && hostWidth > 0)
+        var container = ItemContainerGenerator.ContainerFromIndex(index) as FrameworkElement;
+        if (container == null && index >= 0 && index < Items.Count && Items[index] is FrameworkElement fe)
         {
-            // Mathematical uniform slot distribution (eliminates layout reflow and measurement jitter)
-            double slotWidth = hostWidth / count;
-            targetX = index * slotWidth;
-            targetWidth = slotWidth;
+            container = fe;
         }
-        else
+
+        if (slotWidth <= 0 && container != null && container.ActualWidth > 0)
         {
-            var container = ItemContainerGenerator.ContainerFromIndex(index) as FrameworkElement;
-            if (container != null && container.ActualWidth > 0)
+            try
             {
-                try
-                {
-                    Point p = container.TranslatePoint(new Point(0, 0), _hostGrid);
-                    targetX = p.X;
-                    targetWidth = container.ActualWidth;
-                }
-                catch
-                {
-                    return;
-                }
+                Point p = container.TranslatePoint(new Point(0, 0), _hostGrid);
+                slotCenterX = p.X + (container.ActualWidth / 2.0);
             }
-            else
+            catch
             {
-                Dispatcher.InvokeAsync(() => UpdateIndicator(false), DispatcherPriority.Loaded);
                 return;
             }
         }
 
-        // Ensure Width is statically assigned so zero layout passes occur during movement
-        if (Math.Abs(_slidingIndicator.Width - targetWidth) > 0.5)
+        double textWidth = 0;
+        if (container != null)
         {
-            _slidingIndicator.BeginAnimation(FrameworkElement.WidthProperty, null);
-            _slidingIndicator.Width = targetWidth;
+            var cp = FindVisualChild<ContentPresenter>(container);
+            if (cp != null && cp.ActualWidth > 0)
+            {
+                textWidth = cp.ActualWidth;
+            }
         }
+
+        // Fallback calculation using FormattedText if layout is pending
+        if (textWidth <= 0 && index >= 0 && index < Items.Count)
+        {
+            string? text = null;
+            if (Items[index] is HeaderedContentControl hcc && hcc.Content != null)
+            {
+                text = hcc.Content.ToString();
+            }
+            else if (Items[index] is WidgetSegmentedItem segItem && segItem.Content != null)
+            {
+                text = segItem.Content.ToString();
+            }
+            else if (Items[index] != null)
+            {
+                text = Items[index].ToString();
+            }
+
+            if (!string.IsNullOrEmpty(text))
+            {
+                var typeface = new Typeface(new FontFamily("Segoe UI Variable Text, Segoe UI, sans-serif"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
+                var formatted = new FormattedText(
+                    text,
+                    System.Globalization.CultureInfo.CurrentCulture,
+                    FlowDirection.LeftToRight,
+                    typeface,
+                    12.0,
+                    Brushes.White,
+                    VisualTreeHelper.GetDpi(_hostGrid).PixelsPerDip);
+                textWidth = formatted.Width;
+            }
+        }
+
+        if (textWidth <= 0)
+        {
+            textWidth = slotWidth > 0 ? (slotWidth * 0.45) : 24.0;
+        }
+
+        double targetWidth = Math.Round(textWidth);
+        double targetX = Math.Round(slotCenterX - (targetWidth / 2.0));
 
         if (_slidingIndicator.Opacity < 1.0)
         {
@@ -337,13 +369,34 @@ public class WidgetSegmentedControl : Selector
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
             Timeline.SetDesiredFrameRate(xAnim, 120);
-
             _indicatorTransform.BeginAnimation(TranslateTransform.XProperty, xAnim, HandoffBehavior.SnapshotAndReplace);
+
+            var wAnim = new DoubleAnimation(targetWidth, TimeSpan.FromMilliseconds(AnimationDurationMs))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            Timeline.SetDesiredFrameRate(wAnim, 120);
+            _slidingIndicator.BeginAnimation(FrameworkElement.WidthProperty, wAnim, HandoffBehavior.SnapshotAndReplace);
         }
         else
         {
             _indicatorTransform.BeginAnimation(TranslateTransform.XProperty, null);
             _indicatorTransform.X = targetX;
+            _slidingIndicator.BeginAnimation(FrameworkElement.WidthProperty, null);
+            _slidingIndicator.Width = targetWidth;
         }
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        int childCount = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < childCount; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T typedChild) return typedChild;
+            var descendant = FindVisualChild<T>(child);
+            if (descendant != null) return descendant;
+        }
+        return null;
     }
 }

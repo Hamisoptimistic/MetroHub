@@ -7,6 +7,7 @@
              xmlns:network="clr-namespace:MetroHub.Widgets.Catalog.Network"
              xmlns:corenet="clr-namespace:MetroHub.Core.Network"
              xmlns:conv="clr-namespace:MetroHub.Presentation.Converters"
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=network:NetworkWidgetViewModel}"
@@ -72,8 +73,8 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Width" Value="26" />
-            <Setter Property="Height" Value="26" />
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="24" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -186,6 +187,13 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Universal Implicit ScrollBar Style: Sleek 4px Fluent Floating Pill (Invisible by default) -->
+        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource FluentSlimScrollBarStyle}">
+            <Setter Property="Width" Value="4" />
+            <Setter Property="MinWidth" Value="4" />
+            <Setter Property="Opacity" Value="0.0" />
         </Style>
 
         <!-- Windows 11 Auto-Hiding ScrollViewer: Hidden by default (Opacity 0), appears on hover/scroll -->
@@ -379,7 +387,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Top Header: [ 🖧 ] Ethernet  [ ToggleSwitch ] -->
-                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid Grid.Row="0" Height="26" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -442,41 +450,21 @@
                             </Style>
                         </Grid.Style>
                         <Grid.RowDefinitions>
-                            <!-- 0: [ ℹ ] Properties Header -->
-                            <RowDefinition Height="Auto" />
-                            <!-- 1: 5 Core Specs Grid -->
+                            <!-- 0: 5 Core Specs Grid -->
                             <RowDefinition Height="*" />
-                            <!-- 2: Subtle Hairline Separator -->
+                            <!-- 1: Subtle Hairline Separator -->
                             <RowDefinition Height="Auto" />
-                            <!-- 3: Bottom Data Usage Row -->
+                            <!-- 2: Bottom Data Usage Row -->
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <!-- 0: Header: [ ℹ ] Properties -->
-                        <StackPanel Grid.Row="0"
-                                    Orientation="Horizontal"
-                                    VerticalAlignment="Center"
-                                    Margin="0,0,0,14">
-                            <ui:SymbolIcon Symbol="Info20"
-                                           FontSize="14"
-                                           Foreground="#A0FFFFFF"
-                                           Margin="0,0,8,0"
-                                           VerticalAlignment="Center" />
-                            <TextBlock Text="Properties"
-                                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Foreground="#FFFFFF"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-
-                        <!-- 1: 2-Column Clean Spec Grid (5 Core Specs) -->
-                        <Grid Grid.Row="1">
+                        <!-- 0: 2-Column Clean Spec Grid (5 Core Specs) -->
+                        <Grid Grid.Row="0" Margin="0,4,0,4" VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
                                 <!-- Left Column: Adapter, IPv4, MAC -->
                                 <ColumnDefinition Width="*" />
                                 <!-- Clean Separation Gap -->
-                                <ColumnDefinition Width="32" />
+                                <ColumnDefinition Width="28" />
                                 <!-- Right Column: DNS, Session Uptime -->
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
@@ -484,36 +472,36 @@
                             <!-- LEFT COLUMN -->
                             <StackPanel Grid.Column="0">
                                 <!-- 1. ADAPTER -->
-                                <StackPanel Margin="0,0,0,12">
+                                <StackPanel Margin="0,0,0,8">
                                     <TextBlock Text="ADAPTER"
                                                FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                               FontSize="10.5"
+                                               FontSize="11"
                                                FontWeight="Bold"
-                                               Foreground="#FFFFFF" />
+                                               Foreground="#90FFFFFF" />
                                     <TextBlock Text="{Binding Ethernet.Description}"
                                                FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                               FontSize="12"
-                                               FontWeight="Normal"
-                                               Foreground="#B0FFFFFF"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               Foreground="#FFFFFF"
                                                TextTrimming="CharacterEllipsis"
                                                ToolTip="{Binding Ethernet.Description}"
-                                               Margin="0,3,0,0" />
+                                               Margin="0,2,0,0" />
                                 </StackPanel>
 
                                 <!-- 2. IPV4 -->
-                                <Grid Margin="0,0,0,12">
+                                <Grid Margin="0,0,0,8">
                                     <StackPanel>
                                         <TextBlock Text="IPV4"
                                                    FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                                   FontSize="10.5"
+                                                   FontSize="11"
                                                    FontWeight="Bold"
-                                                   Foreground="#FFFFFF" />
+                                                   Foreground="#90FFFFFF" />
                                         <TextBlock Text="{Binding Ethernet.IpAddress}"
                                                    FontFamily="Consolas, Segoe UI Variable Text"
-                                                   FontSize="12"
-                                                   FontWeight="Normal"
-                                                   Foreground="#B0FFFFFF"
-                                                   Margin="0,3,0,0" />
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#FFFFFF"
+                                                   Margin="0,2,0,0" />
                                     </StackPanel>
                                     <Button HorizontalAlignment="Right"
                                             VerticalAlignment="Bottom"
@@ -527,15 +515,15 @@
                                     <StackPanel>
                                         <TextBlock Text="MAC"
                                                    FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                                   FontSize="10.5"
+                                                   FontSize="11"
                                                    FontWeight="Bold"
-                                                   Foreground="#FFFFFF" />
+                                                   Foreground="#90FFFFFF" />
                                         <TextBlock Text="{Binding Ethernet.MacAddress}"
                                                    FontFamily="Consolas, Segoe UI Variable Text"
-                                                   FontSize="12"
-                                                   FontWeight="Normal"
-                                                   Foreground="#B0FFFFFF"
-                                                   Margin="0,3,0,0" />
+                                                   FontSize="13"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#FFFFFF"
+                                                   Margin="0,2,0,0" />
                                     </StackPanel>
                                     <Button HorizontalAlignment="Right"
                                             VerticalAlignment="Bottom"
@@ -548,48 +536,48 @@
                             <!-- RIGHT COLUMN -->
                             <StackPanel Grid.Column="2">
                                 <!-- 4. DNS -->
-                                <StackPanel Margin="0,0,0,12">
+                                <StackPanel Margin="0,0,0,8">
                                     <TextBlock Text="DNS"
                                                FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                               FontSize="10.5"
+                                               FontSize="11"
                                                FontWeight="Bold"
-                                               Foreground="#FFFFFF" />
+                                               Foreground="#90FFFFFF" />
                                     <TextBlock Text="{Binding Ethernet.DnsServersString}"
                                                FontFamily="Consolas, Segoe UI Variable Text"
-                                               FontSize="12"
-                                               FontWeight="Normal"
-                                               Foreground="#B0FFFFFF"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               Foreground="#FFFFFF"
                                                TextTrimming="CharacterEllipsis"
                                                ToolTip="{Binding Ethernet.DnsServersString}"
-                                               Margin="0,3,0,0" />
+                                               Margin="0,2,0,0" />
                                 </StackPanel>
 
                                 <!-- 5. SESSION UPTIME -->
                                 <StackPanel Margin="0,0,0,0">
                                     <TextBlock Text="SESSION UPTIME"
                                                FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                               FontSize="10.5"
+                                               FontSize="11"
                                                FontWeight="Bold"
-                                               Foreground="#FFFFFF" />
+                                               Foreground="#90FFFFFF" />
                                     <TextBlock Text="{Binding Ethernet.DurationString}"
                                                FontFamily="Consolas, Segoe UI Variable Text"
-                                               FontSize="12"
-                                               FontWeight="Normal"
-                                               Foreground="#B0FFFFFF"
-                                               Margin="0,3,0,0" />
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               Foreground="#FFFFFF"
+                                               Margin="0,2,0,0" />
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
 
-                        <!-- 2: Hairline Divider -->
-                        <Border Grid.Row="2"
+                        <!-- 1: Hairline Divider -->
+                        <Border Grid.Row="1"
                                 Height="1"
                                 Background="#14FFFFFF"
-                                Margin="0,12,0,10"
+                                Margin="0,6,0,6"
                                 SnapsToDevicePixels="True" />
 
-                        <!-- 3: DATA USAGE DEDICATED BOTTOM ROW -->
-                        <Grid Grid.Row="3" SnapsToDevicePixels="True">
+                        <!-- 2: DATA USAGE DEDICATED BOTTOM ROW -->
+                        <Grid Grid.Row="2" SnapsToDevicePixels="True">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
@@ -662,33 +650,26 @@
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                             <TextBlock Text="&#xEB55;"
                                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
-                                       FontSize="36"
+                                       FontSize="38"
                                        Foreground="#45FFFFFF"
                                        HorizontalAlignment="Center"
                                        Margin="0,0,0,12" />
                             <TextBlock Text="{Binding EthernetTurnedOffBannerTitle}"
                                        FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                       FontSize="15"
-                                       FontWeight="SemiBold"
+                                       FontSize="16"
+                                       FontWeight="Bold"
                                        Foreground="#D0FFFFFF"
                                        HorizontalAlignment="Center" />
-                            <TextBlock Text="Turn on the switch above to enable this network adapter."
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                       FontSize="12"
-                                       Foreground="#65FFFFFF"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,4,0,0" />
                         </StackPanel>
                     </Grid>
                 </Grid>
 
-                <!-- ==================== OTHER PANELS (Placeholders) ==================== -->
                 <!-- ==================== 2. WI-FI PANEL ==================== -->
                 <Grid Visibility="{Binding IsWifiPanel, Converter={StaticResource BoolToVis}}"
                       Margin="24,14,24,14"
                       SnapsToDevicePixels="True">
                     <Grid.RowDefinitions>
-                        <!-- Row 0: Top Header: [ 📶 ] Wi-Fi + Standard Windows 11 ToggleSwitch -->
+                        <!-- Row 0: Top Header: [ 📶 ] Wi-Fi + Scan/Refresh + ToggleSwitch -->
                         <RowDefinition Height="Auto" />
                         <!-- Row 1: Hairline Separator -->
                         <RowDefinition Height="Auto" />
@@ -696,8 +677,8 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <!-- Top Header: [ 📶 ] Wi-Fi  [ ToggleSwitch ] -->
-                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <!-- Top Header: [ 📶 ] Wi-Fi  [ RefreshButton ] [ ToggleSwitch ] -->
+                    <Grid Grid.Row="0" Height="26" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -705,11 +686,12 @@
 
                         <!-- Left: Icon + Title ("Connected" / "Disconnected" / "Turned Off") -->
                         <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                            <ui:SymbolIcon Symbol="{Binding WifiPanelSymbol}"
-                                           FontSize="18"
-                                           Foreground="{Binding WifiPanelTitleColor, Converter={StaticResource StringToBrush}}"
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,10,0" />
+                            <TextBlock Text="{Binding WifiPanelIcon}"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                       FontSize="18"
+                                       Foreground="{Binding WifiPanelTitleColor}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,10,0" />
                             <TextBlock Text="{Binding WifiPanelTitle}"
                                        FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
                                        FontSize="16"
@@ -718,57 +700,69 @@
                                        VerticalAlignment="Center" />
                         </StackPanel>
 
-                        <!-- Right: Standard Windows 11 ToggleSwitch for Wi-Fi Radio -->
-                        <ui:ToggleSwitch x:Name="WifiRadioToggleSwitch"
-                                         Grid.Column="1"
-                                         IsChecked="{Binding IsWifiRadioEnabled, Mode=TwoWay}"
-                                         IsEnabled="{Binding CanToggleWifiRadio}"
-                                         VerticalAlignment="Center"
-                                         Focusable="True"
-                                         Cursor="Hand" />
+                        <!-- Right: Scan/Refresh Button + Standard Windows 11 ToggleSwitch for Wi-Fi Radio -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Style="{StaticResource MicroIconButtonStyle}"
+                                    Width="24"
+                                    Height="24"
+                                    Margin="0,0,8,0"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding RefreshWifiCommand}"
+                                    Visibility="{Binding IsWifiRadioOn, Converter={StaticResource BoolToVis}}"
+                                    ToolTip="Scan for Wi-Fi networks">
+                                <ui:SymbolIcon Symbol="ArrowClockwise24"
+                                               FontSize="14"
+                                               Foreground="#D0FFFFFF"
+                                               RenderTransformOrigin="0.5,0.5">
+                                    <ui:SymbolIcon.RenderTransform>
+                                        <RotateTransform Angle="0" />
+                                    </ui:SymbolIcon.RenderTransform>
+                                    <ui:SymbolIcon.Style>
+                                        <Style TargetType="{x:Type ui:SymbolIcon}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsScanningWifiVisual}" Value="True">
+                                                    <DataTrigger.EnterActions>
+                                                        <BeginStoryboard x:Name="SpinRefreshStoryboard">
+                                                            <Storyboard RepeatBehavior="Forever">
+                                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                                 From="0" To="360"
+                                                                                 Duration="0:0:0.75" />
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </DataTrigger.EnterActions>
+                                                    <DataTrigger.ExitActions>
+                                                        <StopStoryboard BeginStoryboardName="SpinRefreshStoryboard" />
+                                                    </DataTrigger.ExitActions>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:SymbolIcon.Style>
+                                </ui:SymbolIcon>
+                            </Button>
+
+                            <ui:ToggleSwitch x:Name="WifiRadioToggleSwitch"
+                                             IsChecked="{Binding IsWifiRadioEnabled, Mode=TwoWay}"
+                                             IsEnabled="{Binding CanToggleWifiRadio}"
+                                             VerticalAlignment="Center"
+                                             Focusable="True"
+                                             Cursor="Hand" />
+                        </StackPanel>
                     </Grid>
 
                     <!-- Hairline Divider -->
                     <Border Grid.Row="1"
                             Height="1"
                             Background="#14FFFFFF"
-                            Margin="0,0,0,10"
+                            Margin="0,0,0,14"
                             SnapsToDevicePixels="True" />
 
                     <!-- Content Row: View 1 - Available Networks (When Wi-Fi Radio is ON) -->
                     <Grid Grid.Row="2"
                           Visibility="{Binding IsWifiRadioOn, Converter={StaticResource BoolToVis}}"
                           SnapsToDevicePixels="True">
-                        <Grid.RowDefinitions>
-                            <!-- Subheader: "AVAILABLE NETWORKS" + Scan/Refresh Button -->
-                            <RowDefinition Height="Auto" />
-                            <!-- Scrollable Network List -->
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-
-                        <!-- Subheader Bar -->
-                        <Grid Grid.Row="0" Margin="0,0,0,8">
-                            <TextBlock Text="AVAILABLE NETWORKS"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                       FontSize="10.5"
-                                       FontWeight="Bold"
-                                       Foreground="#80FFFFFF"
-                                       VerticalAlignment="Center" />
-
-                            <Button HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    Style="{StaticResource MicroIconButtonStyle}"
-                                    Command="{Binding RefreshWifiCommand}"
-                                    ToolTip="Scan for Wi-Fi networks">
-                                <ui:SymbolIcon Symbol="ArrowSync24"
-                                               FontSize="14"
-                                               Foreground="#85FFFFFF" />
-                            </Button>
-                        </Grid>
 
                         <!-- Empty State (No Networks Detected Yet) -->
-                        <Border Grid.Row="1"
-                                Visibility="{Binding HasNoAvailableNetworks, Converter={StaticResource BoolToVis}}"
+                        <Border Visibility="{Binding HasNoAvailableNetworks, Converter={StaticResource BoolToVis}}"
                                 Background="#06FFFFFF"
                                 BorderBrush="#10FFFFFF"
                                 BorderThickness="1"
@@ -789,134 +783,336 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Scrollable Networks List -->
-                        <ScrollViewer Grid.Row="1"
-                                      Visibility="{Binding HasAvailableNetworks, Converter={StaticResource BoolToVis}}"
-                                      Style="{StaticResource MinimalScrollViewerStyle}"
-                                      Focusable="False">
-                            <ItemsControl ItemsSource="{Binding AvailableNetworks}" Focusable="False">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type network:WifiNetworkItemViewModel}">
-                                        <!-- Clean Fluent Row for each Network (No Heavy Box Border) -->
-                                        <Border Margin="0,1"
+                        <!-- Available Networks ListView (using ui:ListView with AutoHide ScrollBar) -->
+                        <ui:ListView x:Name="AvailableNetworksListView"
+                                     controls:AutoHideScrollBehavior.IsEnabled="True"
+                                     Visibility="{Binding HasAvailableNetworks, Converter={StaticResource BoolToVis}}"
+                                     ItemsSource="{Binding AvailableNetworks}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Padding="0,0,10,0"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     ScrollViewer.CanContentScroll="False"
+                                     SelectionMode="Single"
+                                     Focusable="False">
+                            <ui:ListView.Resources>
+                                <!-- Ultra-Slim 4px Fluent Floating ScrollBar: Invisible by default, reveals on scroll/hover -->
+                                <Style TargetType="{x:Type ScrollBar}">
+                                    <Setter Property="OverridesDefaultStyle" Value="True" />
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="BorderThickness" Value="0" />
+                                    <Setter Property="Width" Value="4" />
+                                    <Setter Property="MinWidth" Value="4" />
+                                    <Setter Property="Opacity" Value="0.0" />
+                                    <Setter Property="SnapsToDevicePixels" Value="True" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type ScrollBar}">
+                                                <Grid Background="Transparent">
+                                                    <Track x:Name="PART_Track" IsDirectionReversed="True" Focusable="False">
+                                                        <Track.Thumb>
+                                                            <Thumb x:Name="Thumb">
+                                                                <Thumb.Template>
+                                                                    <ControlTemplate TargetType="{x:Type Thumb}">
+                                                                        <Border x:Name="ThumbBorder"
+                                                                                Background="#40FFFFFF"
+                                                                                CornerRadius="2"
+                                                                                SnapsToDevicePixels="True" />
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="ThumbBorder" Property="Background" Value="#90FFFFFF" />
+                                                                            </Trigger>
+                                                                            <Trigger Property="IsDragging" Value="True">
+                                                                                <Setter TargetName="ThumbBorder" Property="Background" Value="#D0FFFFFF" />
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Thumb.Template>
+                                                            </Thumb>
+                                                        </Track.Thumb>
+                                                    </Track>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ui:ListView.Resources>
+                            <ui:ListView.ItemContainerStyle>
+                                <Style TargetType="{x:Type ListViewItem}">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    <Setter Property="Padding" Value="0" />
+                                    <Setter Property="Margin" Value="0,2" />
+                                    <Setter Property="Background" Value="Transparent" />
+                                    <Setter Property="BorderBrush" Value="Transparent" />
+                                    <Setter Property="BorderThickness" Value="1" />
+                                    <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="{x:Type ListViewItem}">
+                                                <Border x:Name="ItemBorder"
+                                                        Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="6"
+                                                        SnapsToDevicePixels="True">
+                                                    <ContentPresenter />
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#0AFFFFFF" />
+                                                        <Setter Property="BorderBrush" Value="#14FFFFFF" />
+                                                    </Trigger>
+                                                    <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                                        <Setter Property="Background" Value="#0DFFFFFF" />
+                                                        <Setter Property="BorderBrush" Value="#25FFFFFF" />
+                                                    </DataTrigger>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding IsExpanded}" Value="True" />
+                                                            <Condition Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsMouseOver}" Value="True" />
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Background" Value="#12FFFFFF" />
+                                                        <Setter Property="BorderBrush" Value="#32FFFFFF" />
+                                                    </MultiDataTrigger>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter Property="Background" Value="#0DFFFFFF" />
+                                                        <Setter Property="BorderBrush" Value="#25FFFFFF" />
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ui:ListView.ItemContainerStyle>
+                            <ui:ListView.ItemTemplate>
+                                <DataTemplate DataType="{x:Type network:WifiNetworkItemViewModel}">
+                                    <Grid SnapsToDevicePixels="True">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <!-- Row 0: Summary Row — full-width clickable button -->
+                                        <Button Grid.Row="0"
+                                                Command="{Binding DataContext.ToggleNetworkExpandCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
                                                 Background="Transparent"
                                                 BorderThickness="0"
-                                                CornerRadius="6"
-                                                Padding="10,8"
-                                                SnapsToDevicePixels="True">
+                                                Padding="8,8"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Stretch"
+                                                Focusable="False"
+                                                Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}"
+                                                            Padding="{TemplateBinding Padding}"
+                                                            HorizontalAlignment="Stretch">
+                                                        <ContentPresenter HorizontalAlignment="Stretch"
+                                                                          VerticalAlignment="Center" />
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+
+                                            <Grid HorizontalAlignment="Stretch">
+                                                <Grid.ColumnDefinitions>
+                                                    <!-- Column 0: Left Pill Indicator (Green = Connected, White = Disconnected) -->
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <!-- Column 1: Wi-Fi Signal Icon -->
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <!-- Column 2: SSID + Subtitle -->
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Far-Left Status Pill: Green when connected, White when disconnected -->
+                                                <Border Grid.Column="0"
+                                                        Width="3"
+                                                        Height="16"
+                                                        Background="{Binding IndicatorPillColor, Converter={StaticResource StringToBrush}}"
+                                                        CornerRadius="1.5"
+                                                        VerticalAlignment="Center"
+                                                        Margin="0,0,8,0"
+                                                        SnapsToDevicePixels="True" />
+
+                                                <!-- Segoe Fluent Icons TextBlock: uniform signal glyph, clean neutral white -->
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding WifiSignalGlyph}"
+                                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                           FontSize="18"
+                                                           Foreground="{Binding WifiIconColor, Converter={StaticResource StringToBrush}}"
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,0,12,0"
+                                                           SnapsToDevicePixels="True" />
+
+                                                <!-- SSID + Subtitle (neutral typography) -->
+                                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Ssid}"
+                                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                                               FontSize="13"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="#F2FFFFFF"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               ToolTip="{Binding Ssid}" />
+                                                    <TextBlock Text="{Binding SubtitleText}"
+                                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                                               FontSize="11"
+                                                               Foreground="{Binding SubtitleColor, Converter={StaticResource StringToBrush}}"
+                                                               Margin="0,2,0,0" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Button>
+
+                                        <!-- Row 1: Animated Accordion Drawer (Seamless unified card content, zero nested border conflict) -->
+                                        <Border Grid.Row="1"
+                                                x:Name="AccordionDrawer"
+                                                ClipToBounds="True"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Margin="0"
+                                                SnapsToDevicePixels="True"
+                                                IsVisibleChanged="AccordionDrawer_IsVisibleChanged"
+                                                SizeChanged="AccordionDrawer_SizeChanged">
                                             <Border.Style>
                                                 <Style TargetType="Border">
+                                                    <Setter Property="MaxHeight" Value="0" />
+                                                    <Setter Property="Opacity" Value="0.0" />
+                                                    <Setter Property="Visibility" Value="Collapsed" />
                                                     <Style.Triggers>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Background" Value="#12FFFFFF" />
-                                                        </Trigger>
+                                                        <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                            <Setter Property="MaxHeight" Value="260" />
+                                                            <Setter Property="Opacity" Value="1.0" />
+                                                            <DataTrigger.EnterActions>
+                                                                <BeginStoryboard>
+                                                                    <Storyboard>
+                                                                        <DoubleAnimation Storyboard.TargetProperty="MaxHeight"
+                                                                                         From="0" To="240"
+                                                                                         Duration="0:0:0.24">
+                                                                            <DoubleAnimation.EasingFunction>
+                                                                                <CubicEase EasingMode="EaseOut" />
+                                                                            </DoubleAnimation.EasingFunction>
+                                                                        </DoubleAnimation>
+                                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                                         From="0.0" To="1.0"
+                                                                                         Duration="0:0:0.20">
+                                                                            <DoubleAnimation.EasingFunction>
+                                                                                <CubicEase EasingMode="EaseOut" />
+                                                                            </DoubleAnimation.EasingFunction>
+                                                                        </DoubleAnimation>
+                                                                    </Storyboard>
+                                                                </BeginStoryboard>
+                                                            </DataTrigger.EnterActions>
+                                                            <DataTrigger.ExitActions>
+                                                                <BeginStoryboard>
+                                                                    <Storyboard>
+                                                                        <DoubleAnimation Storyboard.TargetProperty="MaxHeight"
+                                                                                         To="0"
+                                                                                         Duration="0:0:0.16">
+                                                                            <DoubleAnimation.EasingFunction>
+                                                                                <CubicEase EasingMode="EaseIn" />
+                                                                            </DoubleAnimation.EasingFunction>
+                                                                        </DoubleAnimation>
+                                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                                         To="0.0"
+                                                                                         Duration="0:0:0.12">
+                                                                            <DoubleAnimation.EasingFunction>
+                                                                                <CubicEase EasingMode="EaseIn" />
+                                                                            </DoubleAnimation.EasingFunction>
+                                                                        </DoubleAnimation>
+                                                                    </Storyboard>
+                                                                </BeginStoryboard>
+                                                            </DataTrigger.ExitActions>
+                                                        </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </Border.Style>
 
-                                            <Grid>
-                                                <Grid.RowDefinitions>
-                                                    <!-- Row 0: Network Summary (Icon + SSID + Subtitle + Connect/Disconnect) -->
-                                                    <RowDefinition Height="Auto" />
-                                                    <!-- Row 1: Inline Fluent Password Container -->
-                                                    <RowDefinition Height="Auto" />
-                                                </Grid.RowDefinitions>
+                                            <StackPanel Margin="12,2,12,12">
+                                                <!-- Wi-Fi Standard + Security -->
+                                                <TextBlock Text="{Binding SecurityDetailsDisplay}"
+                                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                                           FontSize="11.5"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="#70FFFFFF"
+                                                           Margin="0,0,0,8" />
 
-                                                <!-- Row 0: Summary Row -->
-                                                <Grid Grid.Row="0">
+                                                <!-- Password section (only for unsaved secured non-connected networks) -->
+                                                <StackPanel Visibility="{Binding IsPasswordPromptOpen, Converter={StaticResource BoolToVis}}"
+                                                            Margin="0,0,0,8">
+                                                    <TextBlock Text="Network password"
+                                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                                               FontSize="11"
+                                                               Foreground="#80FFFFFF"
+                                                               Margin="0,0,0,4" />
+
+                                                    <!-- WPF-UI ui:PasswordBox with neutral dark transparent background -->
+                                                    <ui:PasswordBox x:Name="WifiPasswordBox"
+                                                                    Height="32"
+                                                                    FontSize="12.5"
+                                                                    Foreground="#FFFFFF"
+                                                                    Background="#14FFFFFF"
+                                                                    BorderBrush="#24FFFFFF"
+                                                                    BorderThickness="1"
+                                                                    PlaceholderText="Password..."
+                                                                    ClearButtonEnabled="False"
+                                                                    RevealButtonEnabled="True"
+                                                                    Icon="{ui:SymbolIcon Key20}"
+                                                                    KeyDown="WifiPasswordBox_KeyDown" />
+
+                                                    <!-- Error message -->
+                                                    <TextBlock Text="{Binding ConnectionErrorMessage}"
+                                                               Visibility="{Binding HasConnectionError, Converter={StaticResource BoolToVis}}"
+                                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                                               FontSize="11"
+                                                               Foreground="#EF4444"
+                                                               Margin="0,5,0,0"
+                                                               TextWrapping="Wrap" />
+                                                </StackPanel>
+
+                                                <!-- Action Buttons -->
+                                                <Grid>
                                                     <Grid.ColumnDefinitions>
-                                                        <!-- Col 0: Signal Bars Icon (WPF-UI Symbol) -->
                                                         <ColumnDefinition Width="Auto" />
-                                                        <!-- Col 1: SSID & Subtitle -->
                                                         <ColumnDefinition Width="*" />
-                                                        <!-- Col 2: Action Button / Status -->
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
 
-                                                    <!-- Left: Official WPF-UI SymbolIcon for Signal Bars -->
-                                                    <ui:SymbolIcon Grid.Column="0"
-                                                                   Symbol="{Binding WifiSymbol}"
-                                                                   FontSize="20"
-                                                                   Foreground="{Binding WifiIconColor, Converter={StaticResource StringToBrush}}"
-                                                                   HorizontalAlignment="Center"
-                                                                   VerticalAlignment="Center"
-                                                                   Margin="0,0,14,0" />
+                                                    <!-- Forget (left, only for saved profiles) -->
+                                                    <Button Grid.Column="0"
+                                                            Content="Forget"
+                                                            Style="{StaticResource FluentWifiDisconnectButtonStyle}"
+                                                            Command="{Binding DataContext.ForgetWifiNetworkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Visibility="{Binding IsProfileKnown, Converter={StaticResource BoolToVis}}"
+                                                            Width="66"
+                                                            Height="26" />
 
-                                                    <!-- Center: SSID & Clean Subtitle (No Ugly Blue Badges) -->
-                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
-                                                        <TextBlock Text="{Binding Ssid}"
-                                                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                                                   FontSize="13.5"
-                                                                   FontWeight="SemiBold"
-                                                                   Foreground="#FFFFFF"
-                                                                   TextTrimming="CharacterEllipsis"
-                                                                   ToolTip="{Binding Ssid}" />
+                                                    <!-- Right-side actions -->
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal">
 
-                                                        <TextBlock Text="{Binding SubtitleText}"
-                                                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                                                   FontSize="11"
-                                                                   Foreground="{Binding SubtitleColor, Converter={StaticResource StringToBrush}}"
-                                                                   Margin="0,2,0,0" />
-                                                    </StackPanel>
-
-                                                    <!-- Right: Action Button Area (Locked at Width="76", Height="28" to eliminate size jumping and scrollbar collisions) -->
-                                                    <Grid Grid.Column="2"
-                                                          Width="76"
-                                                          Height="28"
-                                                          VerticalAlignment="Center">
-                                                        <!-- 1. Connecting State: Centered Smooth Fluent Spinning Ring -->
+                                                        <!-- Connecting spinner -->
                                                         <Border Visibility="{Binding IsConnecting, Converter={StaticResource BoolToVis}}"
-                                                                Background="#12FFFFFF"
-                                                                BorderBrush="#20FFFFFF"
+                                                                Background="#10FFFFFF"
+                                                                BorderBrush="#18FFFFFF"
                                                                 BorderThickness="1"
                                                                 CornerRadius="4"
-                                                                SnapsToDevicePixels="True">
-                                                            <Grid HorizontalAlignment="Center"
-                                                                  VerticalAlignment="Center"
-                                                                  Width="14"
-                                                                  Height="14"
-                                                                  RenderTransformOrigin="0.5,0.5">
-                                                                <Grid.RenderTransform>
-                                                                    <RotateTransform x:Name="ConnectingSpinTransform" Angle="0" />
-                                                                </Grid.RenderTransform>
-                                                                <Grid.Style>
-                                                                    <Style TargetType="Grid">
-                                                                        <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding IsConnecting}" Value="True">
-                                                                                <DataTrigger.EnterActions>
-                                                                                    <BeginStoryboard x:Name="StartConnectingSpin">
-                                                                                        <Storyboard RepeatBehavior="Forever">
-                                                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
-                                                                                                             From="0" To="360"
-                                                                                                             Duration="0:0:0.85" />
-                                                                                        </Storyboard>
-                                                                                    </BeginStoryboard>
-                                                                                </DataTrigger.EnterActions>
-                                                                                <DataTrigger.ExitActions>
-                                                                                    <StopStoryboard BeginStoryboardName="StartConnectingSpin" />
-                                                                                </DataTrigger.ExitActions>
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </Grid.Style>
-                                                                <!-- Muted Track -->
-                                                                <Ellipse Width="14"
-                                                                         Height="14"
-                                                                         Stroke="#30FFFFFF"
-                                                                         StrokeThickness="1.8" />
-                                                                <!-- Glowing Active Head -->
-                                                                <Path Stroke="#00E676"
-                                                                      StrokeThickness="1.8"
-                                                                      StrokeStartLineCap="Round"
-                                                                      StrokeEndLineCap="Round"
-                                                                      Data="M 7,0 A 7,7 0 0 1 14,7" />
-                                                            </Grid>
+                                                                Width="80"
+                                                                Height="26">
+                                                            <ui:ProgressRing IsIndeterminate="True"
+                                                                             Width="14"
+                                                                             Height="14"
+                                                                             Foreground="#0091FF"
+                                                                             HorizontalAlignment="Center"
+                                                                             VerticalAlignment="Center" />
                                                         </Border>
 
-                                                        <!-- 2. Disconnect Button (if Connected and not Connecting) -->
+                                                        <!-- Disconnect (connected, not connecting) -->
                                                         <Button Content="Disconnect"
                                                                 Command="{Binding DataContext.DisconnectWifiNetworkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                                CommandParameter="{Binding}">
+                                                                CommandParameter="{Binding}"
+                                                                Width="80"
+                                                                Height="26">
                                                             <Button.Style>
                                                                 <Style TargetType="Button" BasedOn="{StaticResource FluentWifiDisconnectButtonStyle}">
                                                                     <Setter Property="Visibility" Value="Collapsed" />
@@ -933,10 +1129,12 @@
                                                             </Button.Style>
                                                         </Button>
 
-                                                        <!-- 3. Connect Button (if Not Connected and not Connecting) -->
+                                                        <!-- Connect (not connected, not connecting, no password prompt) -->
                                                         <Button Content="Connect"
                                                                 Command="{Binding DataContext.ConnectWifiNetworkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                                CommandParameter="{Binding}">
+                                                                CommandParameter="{Binding}"
+                                                                Width="80"
+                                                                Height="26">
                                                             <Button.Style>
                                                                 <Style TargetType="Button" BasedOn="{StaticResource FluentWifiActionButtonStyle}">
                                                                     <Setter Property="Visibility" Value="Collapsed" />
@@ -945,6 +1143,7 @@
                                                                             <MultiDataTrigger.Conditions>
                                                                                 <Condition Binding="{Binding IsNotConnected}" Value="True" />
                                                                                 <Condition Binding="{Binding IsConnecting}" Value="False" />
+                                                                                <Condition Binding="{Binding IsPasswordPromptOpen}" Value="False" />
                                                                             </MultiDataTrigger.Conditions>
                                                                             <Setter Property="Visibility" Value="Visible" />
                                                                         </MultiDataTrigger>
@@ -952,81 +1151,47 @@
                                                                 </Style>
                                                             </Button.Style>
                                                         </Button>
-                                                    </Grid>
-                                                </Grid>
 
-                                                <!-- Row 1: Inline Fluent Password Container (Expands when entering key) -->
-                                                <Border Grid.Row="1"
-                                                        Visibility="{Binding IsPasswordPromptOpen, Converter={StaticResource BoolToVis}}"
-                                                        Background="#18000000"
-                                                        BorderBrush="#18FFFFFF"
-                                                        BorderThickness="1"
-                                                        CornerRadius="6"
-                                                        Margin="0,10,0,2"
-                                                        Padding="12,10"
-                                                        SnapsToDevicePixels="True">
-                                                    <StackPanel>
-                                                        <TextBlock Text="Enter the network security key"
-                                                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                                                   FontSize="11"
-                                                                   FontWeight="SemiBold"
-                                                                   Foreground="#B0FFFFFF"
-                                                                   Margin="0,0,0,6" />
+                                                        <!-- Cancel + Connect (password prompt open) -->
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <StackPanel.Style>
+                                                                <Style TargetType="StackPanel">
+                                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                                    <Style.Triggers>
+                                                                        <MultiDataTrigger>
+                                                                            <MultiDataTrigger.Conditions>
+                                                                                <Condition Binding="{Binding IsPasswordPromptOpen}" Value="True" />
+                                                                                <Condition Binding="{Binding IsConnecting}" Value="False" />
+                                                                            </MultiDataTrigger.Conditions>
+                                                                            <Setter Property="Visibility" Value="Visible" />
+                                                                        </MultiDataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </StackPanel.Style>
 
-                                                        <!-- PasswordBox with Fluent Styling -->
-                                                        <Grid Margin="0,0,0,8">
-                                                            <PasswordBox x:Name="WifiPasswordBox"
-                                                                         Height="32"
-                                                                         FontSize="13"
-                                                                         Foreground="#FFFFFF"
-                                                                         Background="#1AFFFFFF"
-                                                                         BorderBrush="#25FFFFFF"
-                                                                         BorderThickness="1"
-                                                                         Padding="8,4"
-                                                                         VerticalContentAlignment="Center"
-                                                                         KeyDown="WifiPasswordBox_KeyDown">
-                                                                <PasswordBox.Resources>
-                                                                    <Style TargetType="Border">
-                                                                        <Setter Property="CornerRadius" Value="4" />
-                                                                    </Style>
-                                                                </PasswordBox.Resources>
-                                                            </PasswordBox>
-                                                        </Grid>
-
-                                                        <!-- Error Message (if incorrect key) -->
-                                                        <TextBlock Text="{Binding ConnectionErrorMessage}"
-                                                                   Visibility="{Binding HasConnectionError, Converter={StaticResource BoolToVis}}"
-                                                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                                                   FontSize="11"
-                                                                   Foreground="#FF6B6B"
-                                                                   Margin="0,0,0,8"
-                                                                   TextWrapping="Wrap" />
-
-                                                        <!-- Action Buttons: Cancel and Next/Connect -->
-                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                                             <Button Content="Cancel"
                                                                     Style="{StaticResource FluentWifiDisconnectButtonStyle}"
                                                                     Command="{Binding DataContext.CancelWifiPasswordCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                     CommandParameter="{Binding ElementName=WifiPasswordBox}"
-                                                                    Width="72"
-                                                                    Height="28"
-                                                                    Margin="0,0,8,0" />
+                                                                    Width="64"
+                                                                    Height="26"
+                                                                    Margin="0,0,6,0" />
 
-                                                            <Button Content="Next"
+                                                            <Button Content="Connect"
                                                                     Style="{StaticResource FluentWifiActionButtonStyle}"
                                                                     Command="{Binding DataContext.ConnectWithPasswordCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                     CommandParameter="{Binding ElementName=WifiPasswordBox}"
-                                                                    Width="72"
-                                                                    Height="28" />
-                                                        </StackPanel>
+                                                                    Width="80"
+                                                                    Height="26" />
+                        </StackPanel>
                                                     </StackPanel>
-                                                </Border>
-                                            </Grid>
+                                                </Grid>
+                                            </StackPanel>
                                         </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
+                                    </Grid>
+                                </DataTemplate>
+                            </ui:ListView.ItemTemplate>
+                        </ui:ListView>
                     </Grid>
 
                     <!-- Content Row: View 2 - Clean Professional Fluent Banner (When Wi-Fi Radio is Turned OFF) -->
@@ -1055,29 +1220,16 @@
                         </Grid.Style>
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                             <ui:SymbolIcon Symbol="WifiOff24"
-                                           FontSize="36"
+                                           FontSize="38"
                                            Foreground="#45FFFFFF"
                                            HorizontalAlignment="Center"
                                            Margin="0,0,0,12" />
                             <TextBlock Text="{Binding WifiTurnedOffBannerTitle}"
                                        FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                       FontSize="15"
-                                       FontWeight="SemiBold"
+                                       FontSize="16"
+                                       FontWeight="Bold"
                                        Foreground="#D0FFFFFF"
                                        HorizontalAlignment="Center" />
-                            <TextBlock Text="Turn on the switch above to see and connect to available Wi-Fi networks."
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                       FontSize="12"
-                                       Foreground="#65FFFFFF"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,4,0,14" />
-                            <Button Content="Turn on Wi-Fi"
-                                    Style="{StaticResource FluentWifiActionButtonStyle}"
-                                    Command="{Binding ToggleWifiRadioCommand}"
-                                    HorizontalAlignment="Center"
-                                    Width="120"
-                                    Height="32"
-                                    FontSize="12.5" />
                         </StackPanel>
                     </Grid>
                 </Grid>

@@ -84,10 +84,12 @@ public static class WlanNative
         DOT11_AUTH_ALGO_WPA_PSK = 4,
         DOT11_AUTH_ALGO_WPA_NONE = 5,
         DOT11_AUTH_ALGO_RSNA = 6,
-        DOT11_AUTH_ALGO_RSNA_PSK = 7, // WPA2-Personal
+        DOT11_AUTH_ALGO_RSNA_PSK = 7,     // WPA2-Personal
         DOT11_AUTH_ALGO_WPA3 = 8,
-        DOT11_AUTH_ALGO_WPA3_ENT_192 = 9,
-        DOT11_AUTH_ALGO_WPA3_SAE = 10 // WPA3-Personal
+        DOT11_AUTH_ALGO_WPA3_ENT_192 = 8, // Windows SDK: DOT11_AUTH_ALGO_WPA3_ENT_192 = DOT11_AUTH_ALGO_WPA3
+        DOT11_AUTH_ALGO_WPA3_SAE = 9,     // Windows SDK: DOT11_AUTH_ALGO_WPA3_SAE = 9 (WPA3-Personal)
+        DOT11_AUTH_ALGO_OWE = 10,         // Windows SDK: DOT11_AUTH_ALGO_OWE = 10
+        DOT11_AUTH_ALGO_WPA3_ENT = 11     // Windows SDK: DOT11_AUTH_ALGO_WPA3_ENT = 11
     }
 
     public enum DOT11_CIPHER_ALGORITHM : uint
@@ -289,6 +291,13 @@ public static class WlanNative
         bool bOverwrite,
         IntPtr pReserved,
         out uint pdwReasonCode);
+
+    [DllImport(WlanApi, CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern int WlanDeleteProfile(
+        IntPtr hClientHandle,
+        ref Guid pInterfaceGuid,
+        [MarshalAs(UnmanagedType.LPWStr)] string strProfileName,
+        IntPtr pReserved);
 
     [DllImport(WlanApi)]
     public static extern void WlanFreeMemory(IntPtr pMemory);

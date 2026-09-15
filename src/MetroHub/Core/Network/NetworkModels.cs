@@ -94,11 +94,22 @@ public class WifiNetworkItem
         WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_RSNA or
         WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA or
         WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3 or
+        WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3_ENT or
         WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3_ENT_192 => true,
         _ => false
     };
     public bool IsConnected { get; set; }
     public bool IsProfileKnown { get; set; }
+    public WifiStandard Standard { get; set; } = WifiStandard.Unknown;
+    public string StandardString => Standard switch
+    {
+        WifiStandard.Wifi7 => "Wi-Fi 7 (802.11be)",
+        WifiStandard.Wifi6 => "Wi-Fi 6 (802.11ax)",
+        WifiStandard.Wifi5 => "Wi-Fi 5 (802.11ac)",
+        WifiStandard.Wifi4 => "Wi-Fi 4 (802.11n)",
+        WifiStandard.Legacy => "Wi-Fi (802.11a/g)",
+        _ => "Wi-Fi"
+    };
     public string Bssid { get; set; } = string.Empty;
     public string FrequencyString { get; set; } = string.Empty; // e.g. "5 GHz"
     public int Channel { get; set; }

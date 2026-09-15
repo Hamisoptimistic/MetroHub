@@ -105,7 +105,6 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
     // timer tick does a full OS query instead of local extrapolation.
     private long _seekRecoveryUntil = 0;
     private long _transientZeroDetectedAt = 0;
-    private long _lastChromiumFlushTimestamp = 0;
 
     private DispatcherTimer? _playbackTimer;
     private long _lastLocalTimestamp = Stopwatch.GetTimestamp();
@@ -353,11 +352,6 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 // or cleared timeline (Chromium/YouTube emits this during seeks and buffering).
                 if (newDuration <= TimeSpan.Zero)
                 {
-                    if (isPlaying && HasMedia)
-                    {
-                        PromptChromiumTimelineFlush(session);
-                    }
-
                     // NEVER overwrite an established duration or position with zeros from a cleared timeline!
                     if (_trackDuration > TimeSpan.Zero)
                     {
@@ -514,34 +508,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
         }, token);
     }
 
-    /// <summary>
-    /// Chromium/YouTube only flushes MediaSession position to Windows SMTC on transport changes.
-    /// When Chromium clears its timeline (EndTime=0) during a web seek or buffering,
-    /// this rapid toggle prompts Chromium to flush its actual HTML5 video currentTime and duration.
-    /// </summary>
-    private void PromptChromiumTimelineFlush(GlobalSystemMediaTransportControlsSession session)
-    {
-        long now = Stopwatch.GetTimestamp();
-        // Throttle to at most once every 1.5 seconds
-        if ((now - _lastChromiumFlushTimestamp) / (double)Stopwatch.Frequency < 1.5)
-        {
-            return;
-        }
-        _lastChromiumFlushTimestamp = now;
 
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                await session.TryTogglePlayPauseAsync();
-                await session.TryTogglePlayPauseAsync();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[MediaWidget] PromptChromiumTimelineFlush error: {ex.Message}");
-            }
-        });
-    }
 
     private void OnPlaybackTimerTick(object? sender, EventArgs e)
     {
@@ -1194,13 +1161,10 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
     {
         if (message.IsVisible)
         {
-            // When MetroHub is opened, if the timeline is currently in a cleared state
-            // (e.g. user was seeking on YouTube while the hub was closed), immediately prompt
-            // Chromium to flush the true position so the UI instantly displays the exact time!
             var session = _currentSession ?? _manager?.GetCurrentSession();
-            if (session != null && IsPlaying && HasMedia && DurationSeconds <= 0)
+            if (session != null)
             {
-                PromptChromiumTimelineFlush(session);
+                SyncTimelineProperties(session);
             }
         }
     }

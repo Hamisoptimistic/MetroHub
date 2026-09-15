@@ -32,6 +32,10 @@ public partial class WifiNetworkItemViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsNotConnected))]
     [NotifyPropertyChangedFor(nameof(CanConnect))]
     [NotifyPropertyChangedFor(nameof(StatusBadgeText))]
+    [NotifyPropertyChangedFor(nameof(SubtitleText))]
+    [NotifyPropertyChangedFor(nameof(SubtitleColor))]
+    [NotifyPropertyChangedFor(nameof(WifiIconColor))]
+    [NotifyPropertyChangedFor(nameof(IndicatorPillColor))]
     private bool _isConnected;
 
     public bool IsNotConnected => !IsConnected;
@@ -44,6 +48,7 @@ public partial class WifiNetworkItemViewModel : ObservableObject
         WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_RSNA or
         WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA or
         WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3 or
+        WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3_ENT or
         WlanNative.DOT11_AUTH_ALGORITHM.DOT11_AUTH_ALGO_WPA3_ENT_192 => true,
         _ => false
     };
@@ -61,6 +66,31 @@ public partial class WifiNetworkItemViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasConnectionError;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IndicatorPillColor))]
+    private bool _isExpanded;
+
+    // Password visibility toggle for the eye button
+    [ObservableProperty]
+    private bool _isPasswordVisible;
+
+    [ObservableProperty]
+    private string _passwordText = string.Empty;
+
+    public WifiStandard Standard { get; init; } = WifiStandard.Unknown;
+
+    public string WifiStandardDisplay => Standard switch
+    {
+        WifiStandard.Wifi7 => "Wi-Fi 7 (802.11be)",
+        WifiStandard.Wifi6 => "Wi-Fi 6 (802.11ax)",
+        WifiStandard.Wifi5 => "Wi-Fi 5 (802.11ac)",
+        WifiStandard.Wifi4 => "Wi-Fi 4 (802.11n)",
+        WifiStandard.Legacy => "Wi-Fi (802.11a/g)",
+        _ => "Wi-Fi"
+    };
+
+    public string SecurityDetailsDisplay => $"{WifiStandardDisplay}  •  {(IsSecured ? "Secured" : "Open")}";
+
     public bool CanConnect => !IsConnecting && !IsConnected;
 
     public string StatusBadgeText => IsConnected ? "Connected" : (IsProfileKnown ? "Saved" : (IsEnterprise ? "Enterprise" : (IsSecured ? "Secured" : "Open")));
@@ -76,18 +106,21 @@ public partial class WifiNetworkItemViewModel : ObservableObject
         }
     }
 
-    public SymbolRegular WifiSymbol => SignalBars switch
+    // Uniform Segoe Fluent Icons glyphs — same visual size, fewer arcs for lower signal
+    public string WifiSignalGlyph => SignalBars switch
     {
-        1 => SymbolRegular.Wifi424,
-        2 => SymbolRegular.Wifi324,
-        3 => SymbolRegular.Wifi224,
-        _ => SymbolRegular.Wifi124
+        1 => "\uEC3D",  // Wi-Fi 1 bar
+        2 => "\uEC3E",  // Wi-Fi 2 bars
+        3 => "\uEC3F",  // Wi-Fi 3 bars
+        _ => "\uE701"   // Wi-Fi full (4 bars)
     };
 
-    public string WifiIconColor => IsConnected ? "#00E676" : "#D0FFFFFF";
-    public string SubtitleColor => IsConnected ? "#00E676" : "#80FFFFFF";
-    public string StatusBadgeColor => IsConnected ? "#00E676" : (IsProfileKnown ? "#0091FF" : (IsEnterprise ? "#FFB703" : "#B0FFFFFF"));
-    public string StatusBadgeBackground => IsConnected ? "#1A00E676" : (IsProfileKnown ? "#1A0091FF" : (IsEnterprise ? "#1AFFB703" : "#12FFFFFF"));
+    public string WifiIconColor => "#FFFFFF";
+    public string SubtitleColor => IsConnected ? "#A0FFFFFF" : "#80FFFFFF";
+    public string StatusBadgeColor => IsConnected ? "#FFFFFF" : (IsProfileKnown ? "#0091FF" : (IsEnterprise ? "#FFB703" : "#B0FFFFFF"));
+    public string StatusBadgeBackground => IsConnected ? "#1AFFFFFF" : (IsProfileKnown ? "#1A0091FF" : (IsEnterprise ? "#1AFFB703" : "#12FFFFFF"));
+    public string IndicatorPillColor => IsConnected ? "#00E676" : (IsExpanded ? "#FFFFFF" : "#60FFFFFF");
+    public string EyeGlyph => IsPasswordVisible ? "\uED1B" : "\uED1A"; // EyeOff / Eye
 }
 
 public partial class NetworkWidgetViewModel : WidgetViewModelBase
@@ -1108,11 +1141,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             }
             else
             {
-                try
-                {
-                    Process.Start(new ProcessStartInfo("ms-availablenetworks:") { UseShellExecute = true });
-                }
-                catch { }
+                ShowToast("Failed to reconnect to Wi-Fi.");
             }
         }
     }
@@ -1205,12 +1234,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
 
         if (item.IsEnterprise)
         {
-            ShowToast("Opening Windows network settings for 802.1X authentication...");
-            try
-            {
-                Process.Start(new ProcessStartInfo("ms-availablenetworks:") { UseShellExecute = true });
-            }
-            catch { }
+            ShowToast("802.1X Enterprise networks require domain credentials.");
             return;
         }
 
@@ -1236,48 +1260,155 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         item.ConnectionErrorMessage = string.Empty;
     }
 
+    // Track accordion state at class level so background refreshes don't clobber it
+    private string? _activeExpandedSsid;
+    private string? _activePasswordPromptSsid;
+
+    [RelayCommand]
+    public void ToggleNetworkExpand(WifiNetworkItemViewModel? item)
+    {
+        if (item == null) return;
+
+        bool willExpand = !item.IsExpanded;
+
+        foreach (var net in AvailableNetworks)
+        {
+            if (!ReferenceEquals(net, item))
+            {
+                net.IsExpanded = false;
+                net.IsPasswordPromptOpen = false;
+                net.IsPasswordVisible = false;
+                net.PasswordText = string.Empty;
+                net.HasConnectionError = false;
+                net.ConnectionErrorMessage = string.Empty;
+            }
+        }
+
+        item.IsExpanded = willExpand;
+
+        if (willExpand)
+        {
+            // Only open password prompt when: unsaved AND secured AND not already connected
+            if (!item.IsProfileKnown && item.IsSecured && !item.IsConnected)
+            {
+                item.IsPasswordPromptOpen = true;
+            }
+            item.HasConnectionError = false;
+            item.ConnectionErrorMessage = string.Empty;
+            _activeExpandedSsid = item.Ssid;
+            _activePasswordPromptSsid = item.IsPasswordPromptOpen ? item.Ssid : null;
+        }
+        else
+        {
+            item.IsPasswordVisible = false;
+            item.PasswordText = string.Empty;
+            _activeExpandedSsid = null;
+            _activePasswordPromptSsid = null;
+        }
+    }
+
+    [RelayCommand]
+    public void ForgetWifiNetwork(WifiNetworkItemViewModel? item)
+    {
+        if (item == null) return;
+
+        bool res = _wifiService.ForgetProfile(item.Ssid);
+        if (res)
+        {
+            ShowToast($"Forgot {item.Ssid}.");
+            RefreshWifiNetworks(triggerScan: false);
+        }
+        else
+        {
+            ShowToast($"Could not forget {item.Ssid}.");
+        }
+    }
+
     [RelayCommand]
     public async Task ConnectWithPassword(object? parameter)
     {
-        if (parameter is not System.Windows.Controls.PasswordBox pb) return;
-        if (pb.DataContext is not WifiNetworkItemViewModel targetItem) return;
+        WifiNetworkItemViewModel? targetItem = null;
+        string password = string.Empty;
 
-        var securePassword = pb.SecurePassword;
-        if (securePassword == null || securePassword.Length == 0)
+        if (parameter is Wpf.Ui.Controls.PasswordBox uiPb)
+        {
+            targetItem = uiPb.DataContext as WifiNetworkItemViewModel;
+            password = uiPb.Password;
+        }
+        else if (parameter is System.Windows.Controls.PasswordBox pb)
+        {
+            targetItem = pb.DataContext as WifiNetworkItemViewModel;
+            password = pb.Password;
+        }
+        else if (parameter is WifiNetworkItemViewModel item)
+        {
+            targetItem = item;
+            password = item.PasswordText;
+        }
+
+        if (targetItem == null) return;
+
+        if (string.IsNullOrEmpty(password))
         {
             targetItem.HasConnectionError = true;
             targetItem.ConnectionErrorMessage = "Password cannot be empty.";
             return;
         }
 
-        await ExecuteWifiConnectAsync(targetItem, securePassword);
+        // Convert plain text to SecureString for the WLAN API
+        var secure = new System.Security.SecureString();
+        foreach (char c in password) secure.AppendChar(c);
+        secure.MakeReadOnly();
+
+        // Memory hardening: Immediately clear password from UI and ViewModel
+        if (parameter is Wpf.Ui.Controls.PasswordBox clearUiPb) clearUiPb.Clear();
+        else if (parameter is System.Windows.Controls.PasswordBox clearPb) clearPb.Clear();
+        targetItem.PasswordText = string.Empty;
+
+        await ExecuteWifiConnectAsync(targetItem, secure);
 
         if (!targetItem.HasConnectionError && targetItem.IsConnected)
         {
-            pb.Clear();
             targetItem.IsPasswordPromptOpen = false;
+            targetItem.IsPasswordVisible = false;
         }
+    }
+
+    [RelayCommand]
+    public void TogglePasswordVisibility(WifiNetworkItemViewModel? item)
+    {
+        if (item == null) return;
+        item.IsPasswordVisible = !item.IsPasswordVisible;
     }
 
     [RelayCommand]
     public void CancelWifiPassword(object? parameter)
     {
-        if (parameter is System.Windows.Controls.PasswordBox pb)
+        WifiNetworkItemViewModel? targetItem = null;
+        if (parameter is Wpf.Ui.Controls.PasswordBox uiPb)
         {
+            targetItem = uiPb.DataContext as WifiNetworkItemViewModel;
+            uiPb.Clear();
+        }
+        else if (parameter is System.Windows.Controls.PasswordBox pb)
+        {
+            targetItem = pb.DataContext as WifiNetworkItemViewModel;
             pb.Clear();
-            if (pb.DataContext is WifiNetworkItemViewModel vm)
-            {
-                vm.IsPasswordPromptOpen = false;
-                vm.HasConnectionError = false;
-                vm.ConnectionErrorMessage = string.Empty;
-            }
         }
-        else if (parameter is WifiNetworkItemViewModel vm)
+        else if (parameter is WifiNetworkItemViewModel item)
         {
-            vm.IsPasswordPromptOpen = false;
-            vm.HasConnectionError = false;
-            vm.ConnectionErrorMessage = string.Empty;
+            targetItem = item;
         }
+
+        if (targetItem == null) return;
+        targetItem.PasswordText = string.Empty;
+        targetItem.IsPasswordVisible = false;
+        targetItem.IsPasswordPromptOpen = false;
+        targetItem.IsExpanded = false;
+        targetItem.HasConnectionError = false;
+        targetItem.ConnectionErrorMessage = string.Empty;
+        _activeExpandedSsid = null;
+        _activePasswordPromptSsid = null;
     }
 
     [RelayCommand]
@@ -1323,21 +1454,9 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             }
             else
             {
-                if (message == "ENTERPRISE_DELEGATION")
-                {
-                    ShowToast("Opening Windows network settings for 802.1X authentication...");
-                    try
-                    {
-                        Process.Start(new ProcessStartInfo("ms-availablenetworks:") { UseShellExecute = true });
-                    }
-                    catch { }
-                }
-                else
-                {
-                    item.HasConnectionError = true;
-                    item.ConnectionErrorMessage = message;
-                    ShowToast($"Connection failed: {message}");
-                }
+                item.HasConnectionError = true;
+                item.ConnectionErrorMessage = message;
+                ShowToast($"Connection failed: {message}");
             }
         }
         catch (Exception ex)
@@ -1421,14 +1540,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         }
         else
         {
-            try
-            {
-                Process.Start(new ProcessStartInfo("ms-availablenetworks:")
-                {
-                    UseShellExecute = true
-                });
-            }
-            catch { }
+            ShowToast($"Network '{item.Ssid}' requires a password.");
+            ToggleNetworkExpand(item);
         }
     }
 
@@ -1495,11 +1608,24 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         catch { }
     }
 
+    [ObservableProperty]
+    private bool _isScanningWifiVisual;
+
     [RelayCommand]
-    public void RefreshWifi()
+    public async Task RefreshWifi()
     {
+        if (IsScanningWifiVisual) return;
+        IsScanningWifiVisual = true;
         RefreshWifiNetworks(triggerScan: true);
         ShowToast("Scanning for networks...");
+        try
+        {
+            await Task.Delay(850);
+        }
+        finally
+        {
+            IsScanningWifiVisual = false;
+        }
     }
 
     private int _isScanningWifi;
@@ -1511,34 +1637,46 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
 
         try
         {
-            // 1. Authoritative Windows Interface Status via cached netsh (non-blocking)
-            var ifStatuses = DisconnectService.GetCachedInterfaceStatuses(TimeSpan.FromSeconds(3));
-
-            string ethName = !string.IsNullOrWhiteSpace(Ethernet.Name) && Ethernet.Name != "Ethernet"
-                ? Ethernet.Name
-                : (_disconnectService.LastDisabledAdapterName ?? "Ethernet");
-
-            bool ethFoundInNetsh = ifStatuses.TryGetValue(ethName, out var ethStatus) ||
-                                  ifStatuses.TryGetValue("Ethernet", out ethStatus);
-
-            if (ethFoundInNetsh && ethStatus != null)
-            {
-                HasEthernetAdapter = true;
-                IsEthernetAdapterDisabled = !ethStatus.IsAdminEnabled;
-                _disconnectService.SetEthernetDisabledState(IsEthernetAdapterDisabled);
-            }
-            else
-            {
-                // Fallback to active interface detection
-                var ethCandidates = _ethernetProvider.GetAllEthernetInterfaces();
-                HasEthernetAdapter = ethCandidates.Count > 0;
-                IsEthernetAdapterDisabled = _disconnectService.IsEthernetDisabled;
-            }
+            // 1. Fast synchronous in-memory interface detection (< 1ms, zero process spawning)
+            var ethCandidates = _ethernetProvider.GetAllEthernetInterfaces();
+            HasEthernetAdapter = ethCandidates.Count > 0;
+            IsEthernetAdapterDisabled = _disconnectService.IsEthernetDisabled;
 
             // 2. Ethernet Info
             var eth = _ethernetProvider.GetActiveEthernetInfo();
             Ethernet = eth;
             IsEthernetConnected = !IsEthernetAdapterDisabled && eth.IsConnected;
+
+            // 3. Defer netsh administrative state check to background so the UI thread NEVER stalls
+            Task.Run(() =>
+            {
+                try
+                {
+                    var ifStatuses = DisconnectService.GetCachedInterfaceStatuses(TimeSpan.FromSeconds(5));
+                    string ethName = !string.IsNullOrWhiteSpace(eth.Name) && eth.Name != "Ethernet"
+                        ? eth.Name
+                        : (_disconnectService.LastDisabledAdapterName ?? "Ethernet");
+
+                    bool ethFoundInNetsh = ifStatuses.TryGetValue(ethName, out var ethStatus) ||
+                                          ifStatuses.TryGetValue("Ethernet", out ethStatus);
+
+                    if (ethFoundInNetsh && ethStatus != null)
+                    {
+                        bool isDisabled = !ethStatus.IsAdminEnabled;
+                        if (isDisabled != _disconnectService.IsEthernetDisabled)
+                        {
+                            Application.Current?.Dispatcher.InvokeAsync(() =>
+                            {
+                                HasEthernetAdapter = true;
+                                IsEthernetAdapterDisabled = isDisabled;
+                                _disconnectService.SetEthernetDisabledState(isDisabled);
+                                IsEthernetConnected = !isDisabled && eth.IsConnected;
+                            });
+                        }
+                    }
+                }
+                catch { }
+            });
 
             // 2. Wi-Fi Info
             HasWifiAdapter = _wifiService.HasWifiAdapter;
@@ -1673,23 +1811,28 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 {
                     try
                     {
-                        string? activePasswordPromptSsid = AvailableNetworks
-                            .FirstOrDefault(n => n.IsPasswordPromptOpen)?.Ssid;
-
                         AvailableNetworks.Clear();
                         foreach (var net in rawList)
                         {
+                            bool isExpanded = string.Equals(_activeExpandedSsid, net.Ssid, StringComparison.OrdinalIgnoreCase);
+                            // Never show password prompt on a network that is already connected
+                            bool isPasswordOpen = isExpanded
+                                && !net.IsConnected
+                                && string.Equals(_activePasswordPromptSsid, net.Ssid, StringComparison.OrdinalIgnoreCase);
+
                             AvailableNetworks.Add(new WifiNetworkItemViewModel
                             {
                                 Ssid = net.Ssid,
                                 SignalQuality = net.SignalQuality,
                                 SignalBars = net.SignalBars,
                                 SecurityType = net.SecurityType,
+                                Standard = net.Standard,
                                 AuthAlgorithm = net.AuthAlgorithm,
                                 CipherAlgorithm = net.CipherAlgorithm,
                                 IsProfileKnown = net.IsProfileKnown,
                                 IsConnected = net.IsConnected,
-                                IsPasswordPromptOpen = string.Equals(activePasswordPromptSsid, net.Ssid, StringComparison.OrdinalIgnoreCase)
+                                IsExpanded = isExpanded,
+                                IsPasswordPromptOpen = isPasswordOpen
                             });
                         }
                         OnPropertyChanged(nameof(HasAvailableNetworks));
@@ -1899,10 +2042,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 try
                 {
                     RefreshAll();
-                    if (IsEthernetPanel || IsWifiPanel)
-                    {
-                        ApplyConnectionDefaultPanel();
-                    }
                 }
                 catch { }
             });
@@ -1924,10 +2063,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         _isHubVisible = true;
         _throughputService.Resume();
         RefreshAll();
-        if (IsEthernetPanel || IsWifiPanel)
-        {
-            ApplyConnectionDefaultPanel();
-        }
     }
 
     protected override void Dispose(bool disposing)

@@ -6,20 +6,29 @@ This document establishes the single source of truth for all universal design me
 
 ## 1. Universal Scrollbar & ScrollViewer Standards
 
-MetroHub strictly uses the **Windows 11 Fluent / WPF-UI Universal Scrollbar System** across all views (Main Tile Canvas, All Apps Drawer, and Search Results) to guarantee visual consistency and ergonomic usability:
+MetroHub strictly uses the **Windows 11 Fluent Auto-Hiding Scrollbar System** across all views (Main Tile Canvas, All Apps Drawer, Search Results, and Catalog Widgets) to guarantee visual consistency and modern aesthetic excellence:
+
+### Mandatory Auto-Hide Rule
+> **CRITICAL RULE**: Scrollbars **MUST be invisible by default (`Opacity="0.0"`)**. They must **ONLY become visible (`Opacity="1.0"`) when actively scrolled or hovered**, and must automatically fade back to completely invisible after 1.2s of inactivity via `controls:AutoHideScrollBehavior.IsEnabled="True"`. Never leave scrollbars permanently visible on screen!
 
 | Component / Property | Universal Value | Purpose / Behavior |
 | :--- | :--- | :--- |
-| **Scrollbar Total Width** | **12 px** | Comfortable ergonomic width; 8px pill thumb with 2px padding |
-| **Track Background** | `Transparent` (`#00000000`) | Seamless integration with Mica and Acrylic backdrops; zero grey gutter/boxes under all states (hover, dragging, rest) |
+| **Default State** | **`Opacity="0.0"` (Invisible)** | Zero clutter; completely transparent when at rest |
+| **Scroll / Active State** | **`Opacity="1.0"` (Revealed)** | Smoothly reveals upon scroll wheel, touch, or dragging |
+| **Hover State** | **`Opacity="1.0"` (Revealed)** | Visible while mouse hovers directly over the scrollbar |
+| **Auto-Hide Timeout** | **1200 ms** (1.2s) | Automatically triggers 300ms fade-out back to `Opacity="0.0"` |
+| **Widget / Card Width** | **3 – 4 px** | Ultra-slim floating pill thumb for compact widgets/panels |
+| **Canvas / Drawer Width** | **12 px** | Full drawer/canvas ergonomic width (8px thumb + 2px inset) |
+| **Track Background** | `Transparent` (`#00000000`) | Seamless integration with Mica/Acrylic; zero grey gutter/boxes under all states |
 | **Track Border** | `0 px` (None) | Eliminates legacy Win32 gutter borders |
-| **Thumb Geometry** | Pill / Capsule (`CornerRadius="4"`) | Modern Fluent aesthetic |
-| **Thumb Color (Rest)** | `#40FFFFFF` (~25% opacity white) | Clean and visible over dynamic backdrops |
-| **Thumb Color (Hover)** | `#80FFFFFF` (~50% opacity bright white) | Interactive feedback on mouse hover (NO GREY) |
-| **Thumb Color (Dragging)** | `#B3FFFFFF` (~70% opacity active white) | High-contrast visual lock during drag operations (NO GREY) |
+| **Thumb Geometry** | Pill / Capsule | `CornerRadius="2"` (widgets) or `CornerRadius="4"` (canvas) |
+| **Thumb Color (Rest)** | `#40FFFFFF` (~25% white) | Clean and visible over dynamic backdrops |
+| **Thumb Color (Hover)** | `#90FFFFFF` (~55% white) | Bright interactive feedback on mouse hover (NO GREY) |
+| **Thumb Color (Dragging)** | `#D0FFFFFF` (~80% white) | High-contrast visual lock during drag operations (NO GREY) |
 | **Thumb Min Length** | **24 px** | Minimum grab target even in massive lists |
 | **Scroll Bar Visibility** | `VerticalScrollBarVisibility="Auto"` | Only appears when content overflows the viewport |
 | **Horizontal Visibility** | `HorizontalScrollBarVisibility="Disabled"` | Content wraps/stacks cleanly; no horizontal scrolling |
+| **Implementation** | `controls:AutoHideScrollBehavior.IsEnabled="True"` | Applied directly to `ScrollViewer`, `ListView`, or `ListBox` |
 
 ---
 

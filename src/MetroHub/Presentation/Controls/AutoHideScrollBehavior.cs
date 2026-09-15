@@ -34,21 +34,93 @@ public static class AutoHideScrollBehavior
 
     private static void OnIsEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not ScrollViewer scrollViewer) return;
-
-        if ((bool)e.NewValue)
+        if (d is ScrollViewer scrollViewer)
         {
-            var holder = new ScrollStateHolder(scrollViewer);
-            scrollViewer.SetValue(ScrollStateProperty, holder);
+            ApplyToScrollViewer(scrollViewer, (bool)e.NewValue);
+        }
+        else if (d is FrameworkElement fe)
+        {
+            if ((bool)e.NewValue)
+            {
+                if (fe.IsLoaded)
+                {
+                    AttachToChildScrollViewer(fe);
+                }
+                else
+                {
+                    RoutedEventHandler? loaded = null;
+                    loaded = (s, args) =>
+                    {
+                        fe.Loaded -= loaded;
+                        AttachToChildScrollViewer(fe);
+                    };
+                    fe.Loaded += loaded;
+                }
+            }
+            else
+            {
+                var sv = FindChild<ScrollViewer>(fe);
+                if (sv != null)
+                {
+                    ApplyToScrollViewer(sv, false);
+                }
+            }
+        }
+    }
+
+    private static void AttachToChildScrollViewer(FrameworkElement parent)
+    {
+        var sv = FindChild<ScrollViewer>(parent);
+        if (sv != null)
+        {
+            ApplyToScrollViewer(sv, true);
+        }
+    }
+
+    private static void ApplyToScrollViewer(ScrollViewer sv, bool isEnabled)
+    {
+        if (isEnabled)
+        {
+            if (sv.GetValue(ScrollStateProperty) is null)
+            {
+                var holder = new ScrollStateHolder(sv);
+                sv.SetValue(ScrollStateProperty, holder);
+            }
         }
         else
         {
-            if (scrollViewer.GetValue(ScrollStateProperty) is ScrollStateHolder holder)
+            if (sv.GetValue(ScrollStateProperty) is ScrollStateHolder holder)
             {
                 holder.Dispose();
-                scrollViewer.ClearValue(ScrollStateProperty);
+                sv.ClearValue(ScrollStateProperty);
             }
         }
+    }
+
+    internal static T? FindChild<T>(DependencyObject parent, string? childName = null) where T : DependencyObject
+    {
+        if (parent == null) return null;
+
+        int count = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+
+            if (childName == null && child is T typed)
+            {
+                return typed;
+            }
+
+            if (child is T typedChild && (child as FrameworkElement)?.Name == childName)
+            {
+                return typedChild;
+            }
+
+            var found = FindChild<T>(child, childName);
+            if (found != null) return found;
+        }
+
+        return null;
     }
 
     private sealed class ScrollStateHolder : IDisposable
@@ -96,6 +168,10 @@ public static class AutoHideScrollBehavior
             if (_verticalScrollBar == null)
             {
                 _verticalScrollBar = FindChild<ScrollBar>(_scrollViewer, "PART_VerticalScrollBar");
+            }
+            if (_verticalScrollBar == null)
+            {
+                _verticalScrollBar = FindChild<ScrollBar>(_scrollViewer);
             }
 
             if (_verticalScrollBar != null)
@@ -169,25 +245,6 @@ public static class AutoHideScrollBehavior
             _verticalScrollBar.BeginAnimation(UIElement.OpacityProperty, anim);
         }
 
-        private static T? FindChild<T>(DependencyObject parent, string childName) where T : DependencyObject
-        {
-            if (parent == null) return null;
-
-            int count = VisualTreeHelper.GetChildrenCount(parent);
-            for (int i = 0; i < count; i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T typedChild && (child as FrameworkElement)?.Name == childName)
-                {
-                    return typedChild;
-                }
-
-                var found = FindChild<T>(child, childName);
-                if (found != null) return found;
-            }
-
-            return null;
-        }
 
         public void Dispose()
         {
