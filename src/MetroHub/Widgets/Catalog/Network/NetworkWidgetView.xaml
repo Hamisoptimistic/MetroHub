@@ -756,32 +756,26 @@
                             Margin="0,0,0,14"
                             SnapsToDevicePixels="True" />
 
-                    <!-- Content Row: View 1 - Available Networks (When Wi-Fi Radio is ON) -->
+                    <!-- Content Row: View 1 - Available Networks (When Wi-Fi Radio is ON and Ready) -->
                     <Grid Grid.Row="2"
-                          Visibility="{Binding IsWifiRadioOn, Converter={StaticResource BoolToVis}}"
+                          Visibility="{Binding IsWifiContentVisible, Converter={StaticResource BoolToVis}}"
                           SnapsToDevicePixels="True">
 
                         <!-- Empty State (No Networks Detected Yet) -->
-                        <Border Visibility="{Binding HasNoAvailableNetworks, Converter={StaticResource BoolToVis}}"
-                                Background="#06FFFFFF"
-                                BorderBrush="#10FFFFFF"
-                                BorderThickness="1"
-                                CornerRadius="6"
-                                Padding="20"
-                                VerticalAlignment="Center">
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <ui:SymbolIcon Symbol="Wifi124"
-                                               FontSize="28"
-                                               Foreground="#40FFFFFF"
-                                               HorizontalAlignment="Center"
-                                               Margin="0,0,0,8" />
-                                <TextBlock Text="Scanning for available networks..."
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                           FontSize="13"
-                                           Foreground="#75FFFFFF"
-                                           HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </Border>
+                        <StackPanel Visibility="{Binding HasNoAvailableNetworks, Converter={StaticResource BoolToVis}}"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                            <ui:SymbolIcon Symbol="Wifi124"
+                                           FontSize="28"
+                                           Foreground="#40FFFFFF"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,0,0,8" />
+                            <TextBlock Text="Scanning for available networks..."
+                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                       FontSize="13"
+                                       Foreground="#75FFFFFF"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
 
                         <!-- Available Networks ListView (using ui:ListView with AutoHide ScrollBar) -->
                         <ui:ListView x:Name="AvailableNetworksListView"
@@ -793,7 +787,12 @@
                                      Padding="0,0,10,0"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                     ScrollViewer.CanContentScroll="False"
+                                     ScrollViewer.CanContentScroll="True"
+                                     VirtualizingPanel.IsVirtualizing="True"
+                                     VirtualizingPanel.VirtualizationMode="Recycling"
+                                     VirtualizingPanel.ScrollUnit="Pixel"
+                                     VirtualizingPanel.CacheLength="1,1"
+                                     VirtualizingPanel.CacheLengthUnit="Page"
                                      SelectionMode="Single"
                                      Focusable="False">
                             <ui:ListView.Resources>
@@ -1040,34 +1039,36 @@
                                                 <!-- Password section (only for unsaved secured non-connected networks) -->
                                                 <StackPanel Visibility="{Binding IsPasswordPromptOpen, Converter={StaticResource BoolToVis}}"
                                                             Margin="0,0,0,8">
-                                                    <TextBlock Text="Network password"
+                                                    <!-- Error indicator positioned where "Network password" was -->
+                                                    <TextBlock Text="Incorrect password"
+                                                               Visibility="{Binding HasConnectionError, Converter={StaticResource BoolToVis}}"
                                                                FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                                                FontSize="11"
-                                                               Foreground="#80FFFFFF"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="#FF4D4D"
                                                                Margin="0,0,0,4" />
 
-                                                    <!-- WPF-UI ui:PasswordBox with neutral dark transparent background -->
+                                                    <!-- WPF-UI ui:PasswordBox: transparent background, no orange indicator -->
                                                     <ui:PasswordBox x:Name="WifiPasswordBox"
                                                                     Height="32"
                                                                     FontSize="12.5"
                                                                     Foreground="#FFFFFF"
-                                                                    Background="#14FFFFFF"
-                                                                    BorderBrush="#24FFFFFF"
+                                                                    Background="Transparent"
+                                                                    BorderBrush="#25FFFFFF"
                                                                     BorderThickness="1"
                                                                     PlaceholderText="Password..."
                                                                     ClearButtonEnabled="False"
                                                                     RevealButtonEnabled="True"
                                                                     Icon="{ui:SymbolIcon Key20}"
-                                                                    KeyDown="WifiPasswordBox_KeyDown" />
-
-                                                    <!-- Error message -->
-                                                    <TextBlock Text="{Binding ConnectionErrorMessage}"
-                                                               Visibility="{Binding HasConnectionError, Converter={StaticResource BoolToVis}}"
-                                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                                               FontSize="11"
-                                                               Foreground="#EF4444"
-                                                               Margin="0,5,0,0"
-                                                               TextWrapping="Wrap" />
+                                                                    KeyDown="WifiPasswordBox_KeyDown">
+                                                        <ui:PasswordBox.Resources>
+                                                            <SolidColorBrush x:Key="TextControlFocusedBorderBrush" Color="Transparent" />
+                                                            <SolidColorBrush x:Key="ControlStrokeColorDefaultBrush" Color="Transparent" />
+                                                            <SolidColorBrush x:Key="TextControlBackground" Color="Transparent" />
+                                                            <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="Transparent" />
+                                                            <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="Transparent" />
+                                                        </ui:PasswordBox.Resources>
+                                                    </ui:PasswordBox>
                                                 </StackPanel>
 
                                                 <!-- Action Buttons -->
@@ -1196,7 +1197,7 @@
 
                     <!-- Content Row: View 2 - Clean Professional Fluent Banner (When Wi-Fi Radio is Turned OFF) -->
                     <Grid Grid.Row="2"
-                          Visibility="{Binding IsWifiRadioDisabled, Converter={StaticResource BoolToVis}}"
+                          Visibility="{Binding IsWifiTurnedOffBannerVisible, Converter={StaticResource BoolToVis}}"
                           VerticalAlignment="Center"
                           HorizontalAlignment="Center"
                           Margin="0,32,0,32"
@@ -1229,6 +1230,46 @@
                                        FontSize="16"
                                        FontWeight="Bold"
                                        Foreground="#D0FFFFFF"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Content Row: View 3 - Centered Fluent Progress Ring (When Wi-Fi Radio is Transitioning / Turning On or Off) -->
+                    <Grid Grid.Row="2"
+                          Visibility="{Binding IsWifiRadioBusy, Converter={StaticResource BoolToVis}}"
+                          VerticalAlignment="Center"
+                          HorizontalAlignment="Center"
+                          Margin="0,32,0,32"
+                          SnapsToDevicePixels="True">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Style.Triggers>
+                                    <Trigger Property="Visibility" Value="Visible">
+                                        <Trigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                     From="0.0" To="1.0"
+                                                                     Duration="0:0:0.15" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </Trigger.EnterActions>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <ui:ProgressRing IsIndeterminate="True"
+                                             Width="36"
+                                             Height="36"
+                                             Foreground="#0091FF"
+                                             HorizontalAlignment="Center"
+                                             Margin="0,0,0,12" />
+                            <TextBlock Text="{Binding WifiTransitionStatusText}"
+                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Foreground="#B0FFFFFF"
                                        HorizontalAlignment="Center" />
                         </StackPanel>
                     </Grid>

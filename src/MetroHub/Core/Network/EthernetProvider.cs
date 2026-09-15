@@ -26,11 +26,12 @@ public class EthernetProvider
                 .Where(IsCandidatePhysicalEthernet)
                 .ToList();
 
-            // Prioritize: (1) Connected with IPv4 Default Gateway, (2) Active USB Tethering, (3) Connected without Gateway, (4) Disconnected
+            // Prioritize: (1) Connected with IPv4 Default Gateway, (2) Active USB Tethering that is Up, (3) Physical Ethernet (even if disconnected/disabled), (4) Dormant USB Tethering
             var activeInterface = ethernetCandidates
                 .OrderByDescending(nic => nic.OperationalStatus == OperationalStatus.Up)
                 .ThenByDescending(nic => HasIpv4Gateway(nic))
-                .ThenByDescending(nic => IsUsbTetheringInterface(nic))
+                .ThenByDescending(nic => nic.OperationalStatus == OperationalStatus.Up && IsUsbTetheringInterface(nic))
+                .ThenByDescending(nic => !IsUsbTetheringInterface(nic))
                 .FirstOrDefault();
 
             if (activeInterface == null)
