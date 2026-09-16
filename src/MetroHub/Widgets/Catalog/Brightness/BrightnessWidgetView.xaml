@@ -1,0 +1,376 @@
+<UserControl x:Class="MetroHub.Widgets.Catalog.Brightness.BrightnessWidgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:widgets="clr-namespace:MetroHub.Widgets"
+             xmlns:brightness="clr-namespace:MetroHub.Widgets.Catalog.Brightness"
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=brightness:BrightnessWidgetViewModel}"
+             Focusable="False"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="Grayscale"
+             TextOptions.TextHintingMode="Animated">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- Volume & Media-Consistent Transport Button Style: Borderless, Transparent, 2px Corner Radius -->
+        <Style x:Key="BrightnessTransportButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="2"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.3" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Universal 4px Fluent Floating ScrollBar: Invisible by default, reveals on scroll/hover via AutoHideScrollBehavior -->
+        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
+    </UserControl.Resources>
+
+    <!-- Transparent WidgetCard with Padding="0" so dividers run border-to-border (matching Volume, Focus Timer, Media Player) -->
+    <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
+        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True" Background="Transparent">
+            <Grid.RowDefinitions>
+                <!-- Row 0: Top Master Brightness Strip (Day/Night Toggle + Master Seekbar + Link Button) -->
+                <RowDefinition Height="50" />
+                <!-- Row 1: Displays Section with Edge-to-Edge Divider matching Volume Widget -->
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- ============================================================= -->
+            <!-- ROW 0: TOP MASTER BRIGHTNESS STRIP                            -->
+            <!-- [ ☼ Preset ] =========== Seekbar =========== [ 🔗 Link ]      -->
+            <!-- Flush aligned to 14px horizontal baseline standard            -->
+            <!-- ============================================================= -->
+            <Grid Grid.Row="0" Margin="14,0,14,0" Background="Transparent" VerticalAlignment="Center">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Grid.RowSpan" Value="1" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsCompactMode}" Value="True">
+                                <Setter Property="Grid.RowSpan" Value="2" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+                <Grid.ColumnDefinitions>
+                    <!-- Col 0: Day / Night Preset Button -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Col 1: Master Brightness Seekbar -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Col 2: Link / Sync Button -->
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- 1. Day / Night Preset Button (Sun / Moon) -->
+                <Button Grid.Column="0"
+                        Style="{StaticResource BrightnessTransportButtonStyle}"
+                        HorizontalAlignment="Left"
+                        Command="{Binding ToggleNightModeCommand}"
+                        ToolTip="{Binding NightModeTooltip}">
+                    <TextBlock Text="{Binding MasterGlyph}"
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="16"
+                               Foreground="#FFFFFF"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center" />
+                </Button>
+
+                <!-- 2. Master Brightness Seekbar -->
+                <controls:FluentVolumeSlider x:Name="MasterBrightnessSlider"
+                                            Grid.Column="1"
+                                            Margin="12,0"
+                                            VerticalAlignment="Center"
+                                            Value="{Binding MasterBrightness, Mode=TwoWay}"
+                                            Minimum="0"
+                                            Maximum="100"
+                                            Tag="InteractiveControl"
+                                            SnapsToDevicePixels="True" />
+
+                <!-- 3. Link / Sync Button: Displays Link Glyph normally, Cross-fades to % while dragging -->
+                <Button Grid.Column="2"
+                        Style="{StaticResource BrightnessTransportButtonStyle}"
+                        HorizontalAlignment="Right"
+                        Command="{Binding ToggleLinkCommand}"
+                        ToolTip="{Binding LinkTooltip}"
+                        MinWidth="34">
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <!-- 1. Link / Unlink Glyph Icon -->
+                        <TextBlock x:Name="LinkIcon"
+                                   Text="{Binding LinkGlyph}"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="15"
+                                   Foreground="#FFFFFF"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Opacity" Value="1.0" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDragging, ElementName=MasterBrightnessSlider}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         To="0.0" Duration="0:0:0.12" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         To="1.0" Duration="0:0:0.25" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- 2. Brightness Percentage Number Shown While Dragging -->
+                        <TextBlock x:Name="MasterPercentageText"
+                                   Text="{Binding MasterBrightnessPercentText}"
+                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                   FontSize="11.5"
+                                   FontWeight="SemiBold"
+                                   Foreground="#FFFFFF"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Opacity" Value="0.0" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDragging, ElementName=MasterBrightnessSlider}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         To="1.0" Duration="0:0:0.12" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         To="0.0" Duration="0:0:0.25" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Button>
+            </Grid>
+
+            <!-- ============================================================= -->
+            <!-- ROW 1: CONNECTED DISPLAYS SECTION + SEPARATOR                 -->
+            <!-- Completely Collapsed in 1-Row Compact Mode (8x1 SlimBanner)   -->
+            <!-- ============================================================= -->
+            <Grid Grid.Row="1">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsCompactMode}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <!-- 1. Docked Display List Container -->
+                <Border Background="#14000000"
+                        BorderThickness="0"
+                        CornerRadius="0,0,2,2"
+                        SnapsToDevicePixels="True"
+                        Padding="14,14,14,12">
+
+                    <Grid Background="Transparent">
+                        <Grid.RowDefinitions>
+                            <!-- Row 1.0: DISPLAYS & BRIGHTNESS Header -->
+                            <RowDefinition Height="Auto" />
+                            <!-- Row 1.1: Monitor List -->
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Section Header: DISPLAYS & BRIGHTNESS (Matching Volume Widget standard) -->
+                        <TextBlock Grid.Row="0"
+                                   Text="DISPLAYS &amp; BRIGHTNESS"
+                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                   FontSize="11.5"
+                                   FontWeight="Bold"
+                                   Foreground="#FFFFFF"
+                                   Margin="6,2,0,8"
+                                   SnapsToDevicePixels="True" />
+
+                        <!-- Connected Displays List with 4px AutoHide ScrollBar -->
+                        <ScrollViewer Grid.Row="1"
+                                      Style="{StaticResource WidgetFloatingScrollViewerStyle}"
+                                      Padding="0,0,8,0">
+                            <ItemsControl ItemsSource="{Binding Monitors}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type brightness:MonitorItemViewModel}">
+                                        <Border CornerRadius="2"
+                                                Padding="8,6"
+                                                Margin="0,2,0,3"
+                                                SnapsToDevicePixels="True">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#08FFFFFF" />
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#1AFFFFFF" />
+                                                        </Trigger>
+                                                        <DataTrigger Binding="{Binding IsCurrentCursorMonitor}" Value="True">
+                                                            <Setter Property="Background" Value="#14FFFFFF" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <!-- Col 0: Active Accent Indicator Pill (Width 10) -->
+                                                    <ColumnDefinition Width="10" />
+                                                    <!-- Col 1: Hardware Device Glyph (Width 24) -->
+                                                    <ColumnDefinition Width="24" />
+                                                    <!-- Col 2: Device Friendly Name & Role (Width 136) -->
+                                                    <ColumnDefinition Width="136" />
+                                                    <!-- Col 3: Monitor Brightness Seekbar (Width *) -->
+                                                    <ColumnDefinition Width="*" />
+                                                    <!-- Col 4: Brightness Percentage Text (Width 36) -->
+                                                    <ColumnDefinition Width="36" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- 1. Active Accent Pill (Left Vertical Indicator on active cursor screen) -->
+                                                <Border Grid.Column="0"
+                                                        Width="3"
+                                                        Height="16"
+                                                        HorizontalAlignment="Left"
+                                                        Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                        CornerRadius="1.5"
+                                                        Visibility="{Binding IsCurrentCursorMonitor, Converter={StaticResource BoolToVis}}" />
+
+                                                <!-- 2. Hardware Device Glyph (🖥 Desktop vs 💻 Laptop) -->
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding DeviceTypeGlyph}"
+                                                           FontFamily="Segoe MDL2 Assets"
+                                                           FontSize="15"
+                                                           Foreground="#FFFFFF"
+                                                           VerticalAlignment="Center"
+                                                           HorizontalAlignment="Left" />
+
+                                                <!-- 3. Device Friendly Name & Role Subtitle -->
+                                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="2,0,6,0">
+                                                    <TextBlock Text="{Binding FriendlyName}"
+                                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                                               FontSize="12"
+                                                               FontWeight="Normal"
+                                                               Foreground="#FFFFFF"
+                                                               TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                                               FontSize="10"
+                                                               Foreground="#80FFFFFF"
+                                                               Margin="0,1,0,0">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="Secondary Display" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsPrimary}" Value="True">
+                                                                        <Setter Property="Text" Value="Primary Display" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IsInternal}" Value="True">
+                                                                        <Setter Property="Text" Value="Built-in Screen" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IsSupported}" Value="False">
+                                                                        <Setter Property="Text" Value="DDC/CI Disabled" />
+                                                                        <Setter Property="Foreground" Value="#FFAA44" />
+                                                                        <Setter Property="ToolTip" Value="DDC/CI hardware control is disabled. Please enable DDC/CI in your monitor's on-screen display (OSD) menu." />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </StackPanel>
+
+                                                <!-- 4. Individual Monitor Slider -->
+                                                <controls:FluentVolumeSlider Grid.Column="3"
+                                                                            Margin="6,0"
+                                                                            VerticalAlignment="Center"
+                                                                            Value="{Binding Brightness, Mode=TwoWay}"
+                                                                            IsEnabled="{Binding IsSupported}"
+                                                                            Minimum="0"
+                                                                            Maximum="100"
+                                                                            Tag="InteractiveControl"
+                                                                            SnapsToDevicePixels="True" />
+
+                                                <!-- 5. Brightness Percentage Text -->
+                                                <TextBlock Grid.Column="4"
+                                                           Text="{Binding BrightnessPercentText}"
+                                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                                           FontSize="11.5"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="#FFFFFF"
+                                                           VerticalAlignment="Center"
+                                                           HorizontalAlignment="Right" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <!-- 2. Focus Timer & Volume-Identical Edge-to-Edge Hairline Divider Track -->
+                <Grid VerticalAlignment="Top"
+                      Height="14"
+                      Margin="0,-7,0,0"
+                      Background="Transparent"
+                      SnapsToDevicePixels="True">
+                    <Border Height="2"
+                            VerticalAlignment="Center"
+                            Background="#14FFFFFF"
+                            CornerRadius="1"
+                            SnapsToDevicePixels="True" />
+                </Grid>
+            </Grid>
+        </Grid>
+    </widgets:WidgetCard>
+</UserControl>

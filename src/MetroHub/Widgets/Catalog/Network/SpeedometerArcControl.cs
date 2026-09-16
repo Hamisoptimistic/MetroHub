@@ -109,14 +109,12 @@ public class SpeedometerArcControl : FrameworkElement
     public static double SpeedToFraction(double speed)
     {
         if (speed <= 0) return 0.0;
-        if (speed <= 5.0) return (speed / 5.0) * (1.0 / 8.0);
-        if (speed <= 10.0) return (1.0 / 8.0) + ((speed - 5.0) / 5.0) * (1.0 / 8.0);
-        if (speed <= 50.0) return (2.0 / 8.0) + ((speed - 10.0) / 40.0) * (1.0 / 8.0);
-        if (speed <= 100.0) return (3.0 / 8.0) + ((speed - 50.0) / 50.0) * (1.0 / 8.0);
-        if (speed <= 250.0) return (4.0 / 8.0) + ((speed - 100.0) / 150.0) * (1.0 / 8.0);
-        if (speed <= 500.0) return (5.0 / 8.0) + ((speed - 250.0) / 250.0) * (1.0 / 8.0);
-        if (speed <= 750.0) return (6.0 / 8.0) + ((speed - 500.0) / 250.0) * (1.0 / 8.0);
-        if (speed <= 1000.0) return (7.0 / 8.0) + ((speed - 750.0) / 250.0) * (1.0 / 8.0);
+        if (speed <= 50.0) return (speed / 50.0) * (1.0 / 6.0);
+        if (speed <= 100.0) return (1.0 / 6.0) + ((speed - 50.0) / 50.0) * (1.0 / 6.0);
+        if (speed <= 250.0) return (2.0 / 6.0) + ((speed - 100.0) / 150.0) * (1.0 / 6.0);
+        if (speed <= 500.0) return (3.0 / 6.0) + ((speed - 250.0) / 250.0) * (1.0 / 6.0);
+        if (speed <= 750.0) return (4.0 / 6.0) + ((speed - 500.0) / 250.0) * (1.0 / 6.0);
+        if (speed <= 1000.0) return (5.0 / 6.0) + ((speed - 750.0) / 250.0) * (1.0 / 6.0);
         return 1.0;
     }
 
@@ -231,6 +229,44 @@ public class SpeedometerArcControl : FrameworkElement
     private static readonly Pen TrackPen;
     private static readonly Pen DefaultActivePen;
     private static readonly Pen DefaultGlowPen;
+    private static readonly Pen InactiveTickPen;
+    private static readonly Pen ActiveTickPen;
+
+    private static readonly Brush InactiveMarkerBrush;
+    private static readonly Brush ActiveMarkerBrush;
+
+    private static readonly Typeface MarkerTypefaceSemiBold;
+    private static readonly Typeface MarkerTypefaceBold;
+
+    private readonly struct ScaleMarker
+    {
+        public readonly string Label;
+        public readonly double Fraction;
+        public readonly double AngleDeg;
+
+        public ScaleMarker(string label, double fraction, double angleDeg)
+        {
+            Label = label;
+            Fraction = fraction;
+            AngleDeg = angleDeg;
+        }
+    }
+
+    // 0 - 50 - 100 - 250 - 500 - 750 - 1G calibrated scale milestones: exact 30.0° intervals
+    private static readonly ScaleMarker[] Markers = new[]
+    {
+        new ScaleMarker("0",   0.0 / 6.0, 180.0),
+        new ScaleMarker("50",  1.0 / 6.0, 210.0),
+        new ScaleMarker("100", 2.0 / 6.0, 240.0),
+        new ScaleMarker("250", 3.0 / 6.0, 270.0),
+        new ScaleMarker("500", 4.0 / 6.0, 300.0),
+        new ScaleMarker("750", 5.0 / 6.0, 330.0),
+        new ScaleMarker("1G",  6.0 / 6.0, 360.0)
+    };
+
+    private static double _cachedDpi = -1;
+    private static FormattedText[]? _cachedInactiveTexts;
+    private static FormattedText[]? _cachedActiveTexts;
 
     static SpeedometerArcControl()
     {
@@ -263,6 +299,70 @@ public class SpeedometerArcControl : FrameworkElement
             EndLineCap = PenLineCap.Round
         };
         DefaultGlowPen.Freeze();
+
+        // Scale marker tick pens (4.0px inward ticks)
+        var inactTickBrush = new SolidColorBrush(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF));
+        inactTickBrush.Freeze();
+        InactiveTickPen = new Pen(inactTickBrush, 1.4)
+        {
+            StartLineCap = PenLineCap.Round,
+            EndLineCap = PenLineCap.Round
+        };
+        InactiveTickPen.Freeze();
+
+        var actTickBrush = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF));
+        actTickBrush.Freeze();
+        ActiveTickPen = new Pen(actTickBrush, 1.8)
+        {
+            StartLineCap = PenLineCap.Round,
+            EndLineCap = PenLineCap.Round
+        };
+        ActiveTickPen.Freeze();
+
+        // Scale marker text brushes (clear, readable contrast)
+        var inactTextBrush = new SolidColorBrush(Color.FromArgb(0x65, 0xFF, 0xFF, 0xFF));
+        inactTextBrush.Freeze();
+        InactiveMarkerBrush = inactTextBrush;
+
+        var actTextBrush = new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF));
+        actTextBrush.Freeze();
+        ActiveMarkerBrush = actTextBrush;
+
+        var fontFamily = new FontFamily("Segoe UI Variable Display, Segoe UI, sans-serif");
+        MarkerTypefaceSemiBold = new Typeface(fontFamily, FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
+        MarkerTypefaceBold = new Typeface(fontFamily, FontStyles.Normal, FontWeights.Bold, FontStretches.Normal);
+    }
+
+    private static void EnsureCachedTexts(double dpi)
+    {
+        if (_cachedDpi == dpi && _cachedInactiveTexts != null && _cachedActiveTexts != null) return;
+
+        _cachedDpi = dpi;
+        _cachedInactiveTexts = new FormattedText[Markers.Length];
+        _cachedActiveTexts = new FormattedText[Markers.Length];
+
+        for (int i = 0; i < Markers.Length; i++)
+        {
+            var ftInact = new FormattedText(
+                Markers[i].Label,
+                System.Globalization.CultureInfo.InvariantCulture,
+                FlowDirection.LeftToRight,
+                MarkerTypefaceSemiBold,
+                11.0,
+                InactiveMarkerBrush,
+                dpi);
+            _cachedInactiveTexts[i] = ftInact;
+
+            var ftAct = new FormattedText(
+                Markers[i].Label,
+                System.Globalization.CultureInfo.InvariantCulture,
+                FlowDirection.LeftToRight,
+                MarkerTypefaceBold,
+                11.0,
+                ActiveMarkerBrush,
+                dpi);
+            _cachedActiveTexts[i] = ftAct;
+        }
     }
 
     protected override void OnRender(DrawingContext dc)
@@ -273,8 +373,8 @@ public class SpeedometerArcControl : FrameworkElement
         double h = ActualHeight;
         if (w <= 10 || h <= 10) return;
 
-        double strokeMargin = 12.0;
-        double radius = Math.Min(w / 2.0 - strokeMargin, h - strokeMargin - 4.0);
+        double strokeMargin = 14.0;
+        double radius = Math.Min(w / 2.0 - strokeMargin, h - strokeMargin - 8.0);
         if (radius <= 10) return;
 
         double cx = w / 2.0;
@@ -306,6 +406,40 @@ public class SpeedometerArcControl : FrameworkElement
                 // Sharp active line (cached & frozen)
                 dc.DrawGeometry(null, _cachedActivePen, activeGeom);
             }
+        }
+
+        // 3. Draw clean, spacious scale markers: 4 major ticks + large 12.5pt numbers with active threshold lighting
+        double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+        EnsureCachedTexts(dpi);
+
+        double tickStartRadius = radius - ArcThickness / 2.0 - 2.0;
+        double tickEndRadius = tickStartRadius - 4.5;
+        const double labelGap = 5.5;
+
+        for (int i = 0; i < Markers.Length; i++)
+        {
+            var marker = Markers[i];
+            bool isPassed = progress >= (marker.Fraction - 0.005);
+
+            double rad = marker.AngleDeg * Math.PI / 180.0;
+            double cos = Math.Cos(rad);
+            double sin = Math.Sin(rad);
+
+            // Radial tick mark pointing inward
+            var p1 = new Point(cx + tickStartRadius * cos, cy + tickStartRadius * sin);
+            var p2 = new Point(cx + tickEndRadius * cos, cy + tickEndRadius * sin);
+            dc.DrawLine(isPassed ? ActiveTickPen : InactiveTickPen, p1, p2);
+
+            // Uniform radial spacing for text labels:
+            // Calculate label center so the outer boundary of the text sits exactly 'labelGap' (5.5px)
+            // inward from the tick tip p2 along the radial vector.
+            var ft = isPassed ? _cachedActiveTexts![i] : _cachedInactiveTexts![i];
+            double radialHalfExtent = Math.Abs(cos) * (ft.Width / 2.0) + Math.Abs(sin) * (ft.Height / 2.0);
+            double textCenterRadius = tickEndRadius - labelGap - radialHalfExtent;
+
+            double tx = cx + textCenterRadius * cos - ft.Width / 2.0;
+            double ty = cy + textCenterRadius * sin - ft.Height / 2.0;
+            dc.DrawText(ft, new Point(tx, ty));
         }
     }
 

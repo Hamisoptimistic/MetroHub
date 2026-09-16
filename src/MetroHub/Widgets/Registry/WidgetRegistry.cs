@@ -179,6 +179,23 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Huge,
             Factory: model => new MetroHub.Widgets.Catalog.Network.NetworkWidgetViewModel(model)
         ));
+
+        // Register Display & Brightness widget
+        Register(new WidgetDefinition(
+            Id: "brightness",
+            DisplayName: "Display & Brightness",
+            Description: "Multi-monitor hardware brightness control, DDC/CI sync, and Day/Night profiles",
+            Icon: SymbolRegular.BrightnessHigh24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.SlimBanner, // 8x1
+                WidgetSize.Mega        // 8x4
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Brightness.BrightnessWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Brightness.BrightnessWidgetView),
+            DefaultSize: WidgetSize.Mega,
+            Factory: model => new MetroHub.Widgets.Catalog.Brightness.BrightnessWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)

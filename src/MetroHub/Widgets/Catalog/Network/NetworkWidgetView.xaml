@@ -218,14 +218,14 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Clean Modern "GO" Action Button (Pure typography, zero circular box, electric blue hover glow) -->
+        <!-- Clean Modern "START" Action Button (Pure typography, zero circular box, electric blue hover glow) -->
         <Style x:Key="SpeedPureGoButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI, sans-serif" />
-            <Setter Property="FontSize" Value="46" />
+            <Setter Property="FontSize" Value="36" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
@@ -238,8 +238,8 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Grid Background="Transparent" SnapsToDevicePixels="True" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <TextBlock x:Name="GoLabel"
-                                       Text="GO"
+                            <TextBlock x:Name="StartLabel"
+                                       Text="START"
                                        FontFamily="{TemplateBinding FontFamily}"
                                        FontSize="{TemplateBinding FontSize}"
                                        FontWeight="{TemplateBinding FontWeight}"
@@ -249,10 +249,10 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="GoLabel" Property="Foreground" Value="#0091FF" />
+                                <Setter TargetName="StartLabel" Property="Foreground" Value="#0091FF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="GoLabel" Property="Foreground" Value="#0078D4" />
+                                <Setter TargetName="StartLabel" Property="Foreground" Value="#0078D4" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -1607,7 +1607,7 @@
                                 </Style>
                             </Grid.Style>
 
-                            <!-- Clean 180° Fluent Semi-Circle Gauge (zero inner text, strictly bounded, cannot overlap cards) -->
+                            <!-- Clean 180° Fluent Semi-Circle Gauge (pure arc with clean spacious numbers) -->
                             <network:SpeedometerArcControl Width="270" Height="124"
                                                           HorizontalAlignment="Center"
                                                           VerticalAlignment="Center"
@@ -1654,11 +1654,14 @@
                                         ToolTip="{Binding SpeedTestStatusMessage}" />
                                 <TextBlock Text="{Binding SpeedTestStatusMessage}"
                                            FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                           FontSize="11.5"
-                                           FontWeight="Medium"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
                                            Foreground="#FF6B6B"
                                            HorizontalAlignment="Center"
-                                           Margin="0,4,0,0"
+                                           TextAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           MaxWidth="240"
+                                           Margin="0,8,0,0"
                                            Visibility="{Binding IsSpeedTestFailed, Converter={StaticResource BoolToVis}}" />
                             </StackPanel>
                         </Grid>

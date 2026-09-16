@@ -16,6 +16,7 @@
              xmlns:volume="clr-namespace:MetroHub.Widgets.Catalog.Volume"
              xmlns:notepad="clr-namespace:MetroHub.Widgets.Catalog.Notepad"
              xmlns:network="clr-namespace:MetroHub.Widgets.Catalog.Network"
+             xmlns:brightness="clr-namespace:MetroHub.Widgets.Catalog.Brightness"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -184,6 +185,11 @@
         <!-- 10. Network & Internet Widget DataTemplate -->
         <DataTemplate DataType="{x:Type network:NetworkWidgetViewModel}">
             <network:NetworkWidgetView />
+        </DataTemplate>
+
+        <!-- 11. Display & Brightness Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type brightness:BrightnessWidgetViewModel}">
+            <brightness:BrightnessWidgetView />
         </DataTemplate>
     </UserControl.Resources>
 

@@ -1028,9 +1028,9 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         SpeedTestPhase.Ping => "LATENCY",
         SpeedTestPhase.Download => "DOWNLOAD",
         SpeedTestPhase.Upload => "UPLOAD",
-        SpeedTestPhase.Completed => "READY",
-        SpeedTestPhase.Cancelled => "READY",
-        SpeedTestPhase.Failed => "READY",
+        SpeedTestPhase.Completed => "COMPLETED",
+        SpeedTestPhase.Cancelled => "CANCELLED",
+        SpeedTestPhase.Failed => "FAILED",
         _ => "SPEED TEST"
     };
 
@@ -1131,7 +1131,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         catch (Exception ex)
         {
             SpeedTestPhase = SpeedTestPhase.Failed;
-            SpeedTestStatusMessage = $"Test failed: {ex.Message}";
+            SpeedTestStatusMessage = SpeedTestService.GetFriendlyErrorMessage(ex);
             SpeedTestGaugeMbps = 0;
         }
     }

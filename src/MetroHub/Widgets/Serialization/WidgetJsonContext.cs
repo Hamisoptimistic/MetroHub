@@ -25,6 +25,7 @@ namespace MetroHub.Widgets.Serialization;
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Notepad.TodoTaskItem))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Network.NetworkWidgetSettings))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.Brightness.BrightnessWidgetSettings))]
 public partial class WidgetJsonContext : JsonSerializerContext
 {
 }
