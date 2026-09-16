@@ -25,8 +25,10 @@
              Focusable="False"
              SnapsToDevicePixels="True"
              UseLayoutRounding="True"
+             RenderOptions.ClearTypeHint="Enabled"
              TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType">
+             TextOptions.TextRenderingMode="ClearType"
+             TextOptions.TextHintingMode="Fixed">
 
     <UserControl.Resources>
         <conv:TileSpanToPixelsConverter x:Key="SpanConverter" />
@@ -67,7 +69,6 @@
                                HorizontalAlignment="Left"
                                Margin="8,0,8,6"
                                FontSize="12"
-                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
                                FontWeight="SemiBold"
                                Foreground="#FFFFFF"
                                SnapsToDevicePixels="True"
@@ -95,7 +96,6 @@
                                HorizontalAlignment="Left"
                                Margin="8,0,8,6"
                                FontSize="12"
-                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
                                FontWeight="SemiBold"
                                Foreground="#F5FFFFFF"
                                SnapsToDevicePixels="True"
@@ -126,20 +126,17 @@
                                        Foreground="#FFFFFF"
                                        FontSize="13"
                                        FontWeight="Bold"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
                                        SnapsToDevicePixels="True" />
                             <TextBlock Text="{Binding SettingsSummary}"
                                        HorizontalAlignment="Center"
                                        Foreground="#E0FFFFFF"
                                        FontSize="10"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
                                        Margin="0,3,0,0"
                                        SnapsToDevicePixels="True" />
                             <TextBlock Text="Click to cycle color"
                                        HorizontalAlignment="Center"
                                        Foreground="#80FFFFFF"
                                        FontSize="9"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
                                        Margin="0,4,0,0"
                                        SnapsToDevicePixels="True" />
                         </StackPanel>
@@ -206,6 +203,7 @@
             Width="{Binding SpanX, Converter={StaticResource SpanConverter}}"
             Height="{Binding SpanY, Converter={StaticResource SpanConverter}}"
             RenderTransformOrigin="0.5,0.5"
+            RenderOptions.ClearTypeHint="Enabled"
             SnapsToDevicePixels="True"
             UseLayoutRounding="True"
             ContextMenuOpening="OnContextMenuOpening"

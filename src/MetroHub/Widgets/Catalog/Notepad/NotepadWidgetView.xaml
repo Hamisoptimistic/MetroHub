@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Widgets.Catalog.Notepad.NotepadWidgetView"
+<UserControl x:Class="MetroHub.Widgets.Catalog.Notepad.NotepadWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -16,7 +16,8 @@
              UseLayoutRounding="True"
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed">
+             TextOptions.TextHintingMode="Fixed"
+             RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -28,6 +29,14 @@
 
         <!-- Universal 4px Fluent Floating ScrollBar: Invisible by default, reveals on scroll/hover via AutoHideScrollBehavior -->
         <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
+
+        <!-- Fluent Icon Anti-Aliasing Style: Eliminates staircase pixelation on curved vector glyphs -->
+        <Style TargetType="{x:Type ui:SymbolIcon}">
+            <Setter Property="SnapsToDevicePixels" Value="False" />
+            <Setter Property="UseLayoutRounding" Value="False" />
+            <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+            <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
+        </Style>
 
         <!-- Toolbar Icon Button Style (Borderless, subtle hover, no harsh opaque box) -->
         <Style x:Key="NotepadToolbarButtonStyle" TargetType="Button">
@@ -87,7 +96,7 @@
                                 SnapsToDevicePixels="True">
                             <TextBlock x:Name="CheckIcon"
                                        Text="&#xE73E;"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="9"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
@@ -155,7 +164,7 @@
             <Setter Property="SelectionBrush" Value="#503A86FF" />
             <Setter Property="SelectionOpacity" Value="0.6" />
             <Setter Property="FontSize" Value="15" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, sans-serif" />
+            <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Template">
                 <Setter.Value>
@@ -182,7 +191,7 @@
             <Setter Property="SelectionBrush" Value="#503A86FF" />
             <Setter Property="SelectionOpacity" Value="0.6" />
             <Setter Property="FontSize" Value="13.5" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, sans-serif" />
+            <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Padding" Value="0" />
@@ -328,7 +337,6 @@
                     <TextBlock Text="Note it down, you know you'll forget"
                                Foreground="#35FFFFFF"
                                FontSize="15"
-                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                IsHitTestVisible="False"
                                Margin="4,2,0,0">
                         <TextBlock.Style>
@@ -398,7 +406,6 @@
                                 <TextBlock Text="Touch Grass"
                                            Foreground="#50FFFFFF"
                                            FontSize="13.5"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            VerticalAlignment="Center"
                                            IsHitTestVisible="False"
                                            Padding="0"
@@ -462,8 +469,7 @@
                                                        TextWrapping="Wrap"
                                                        VerticalAlignment="Center"
                                                        Margin="0,0,8,0"
-                                                       FontSize="14"
-                                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif">
+                                                       FontSize="14">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Foreground" Value="#FFFFFF" />
@@ -485,7 +491,7 @@
                                                     CommandParameter="{Binding}"
                                                     ToolTip="Delete task">
                                                 <TextBlock Text="&#xE74D;"
-                                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                           FontFamily="{DynamicResource AppIconFontFamily}"
                                                            FontSize="12"
                                                            VerticalAlignment="Center"
                                                            HorizontalAlignment="Center" />
@@ -508,7 +514,6 @@
                                    Text="{Binding TasksSummary}"
                                    Foreground="#50FFFFFF"
                                    FontSize="12"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                    VerticalAlignment="Center" />
 
                         <Button Grid.Column="1"
@@ -517,7 +522,6 @@
                                 Background="Transparent"
                                 BorderThickness="0"
                                 FontSize="12"
-                                FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                 Cursor="Hand"
                                 Focusable="False"
                                 FocusVisualStyle="{x:Null}"

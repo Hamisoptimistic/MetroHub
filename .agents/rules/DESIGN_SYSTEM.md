@@ -484,8 +484,8 @@ All widgets must enforce an exact, symmetrical **20px margin from both the left 
 All widgets with media or timer playback controls must share the identical button footprint:
 - **Button Footprint:** `Width="32"`, `Height="28"`, `CornerRadius="2"`, `Background="Transparent"`, `Margin="4,0"`.
 - **Hover Feedback:** `Background="#25FFFFFF"`, `Foreground="#FFFFFF"`.
-- **Play Icon:** `FontSize="13"`, `Text="&#xE768;"`, `Margin="1.5,0,0,0"` (optical centering adjustment).
-- **Pause Icon:** `FontSize="15.5"`, `Text="&#xE769;"`, `Margin="0"` (scaled to 15.5px so its optical height and visual weight match adjacent 13px chevrons / skip buttons).
+- **Play Icon:** `FontSize="15"`, `Text="&#xE768;"`, `Margin="0"` (centered symmetrically between adjacent buttons without manual offset).
+- **Pause Icon:** `FontSize="16"`, `Text="&#xE769;"`, `Margin="0"` (scaled to 16px to match optical weight of adjacent icons).
 
 ### 15.5 Timing & Numerical Readout Containers
 - **Height Footprint:** Must be wrapped in a container with `Height="28"` and `VerticalAlignment="Center"` to match the 28px height and vertical center axis of the adjacent transport buttons.

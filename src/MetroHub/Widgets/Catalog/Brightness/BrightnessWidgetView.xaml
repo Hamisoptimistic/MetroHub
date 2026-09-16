@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Widgets.Catalog.Brightness.BrightnessWidgetView"
+<UserControl x:Class="MetroHub.Widgets.Catalog.Brightness.BrightnessWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -13,7 +13,8 @@
              UseLayoutRounding="True"
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed">
+             TextOptions.TextHintingMode="Fixed"
+             RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -99,7 +100,7 @@
                         Command="{Binding ToggleNightModeCommand}"
                         ToolTip="{Binding NightModeTooltip}">
                     <TextBlock Text="{Binding MasterGlyph}"
-                               FontFamily="Segoe MDL2 Assets"
+                               FontFamily="{DynamicResource AppIconFontFamily}"
                                FontSize="16"
                                Foreground="#FFFFFF"
                                VerticalAlignment="Center"
@@ -128,7 +129,7 @@
                         <!-- 1. Link / Unlink Glyph Icon -->
                         <TextBlock x:Name="LinkIcon"
                                    Text="{Binding LinkGlyph}"
-                                   FontFamily="Segoe MDL2 Assets"
+                                   FontFamily="{DynamicResource AppIconFontFamily}"
                                    FontSize="15"
                                    Foreground="#FFFFFF"
                                    VerticalAlignment="Center"
@@ -163,7 +164,6 @@
                         <!-- 2. Brightness Percentage Number Shown While Dragging -->
                         <TextBlock x:Name="MasterPercentageText"
                                    Text="{Binding MasterBrightnessPercentText}"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                    FontSize="11.5"
                                    FontWeight="SemiBold"
                                    Foreground="#FFFFFF"
@@ -230,12 +230,11 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <!-- Section Header: DISPLAYS & BRIGHTNESS (Matching Volume Widget standard) -->
+                        <!-- Section Header: Displays & Brightness -->
                         <TextBlock Grid.Row="0"
-                                   Text="DISPLAYS &amp; BRIGHTNESS"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   FontSize="11.5"
-                                   FontWeight="Bold"
+                                   Text="Displays &amp; Brightness"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
                                    Foreground="#FFFFFF"
                                    Margin="6,2,0,8"
                                    SnapsToDevicePixels="True" />
@@ -248,7 +247,7 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type brightness:MonitorItemViewModel}">
                                         <Border CornerRadius="2"
-                                                Padding="8,6"
+                                                Padding="8,7"
                                                 Margin="0,2,0,3"
                                                 SnapsToDevicePixels="True">
                                             <Border.Style>
@@ -290,8 +289,8 @@
                                                 <!-- 2. Hardware Device Glyph (🖥 Desktop vs 💻 Laptop) -->
                                                 <TextBlock Grid.Column="1"
                                                            Text="{Binding DeviceTypeGlyph}"
-                                                           FontFamily="Segoe MDL2 Assets"
-                                                           FontSize="15"
+                                                           FontFamily="{DynamicResource AppIconFontFamily}"
+                                                           FontSize="16"
                                                            Foreground="#FFFFFF"
                                                            VerticalAlignment="Center"
                                                            HorizontalAlignment="Left" />
@@ -299,13 +298,11 @@
                                                 <!-- 3. Device Friendly Name & Role Subtitle -->
                                                 <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="2,0,6,0">
                                                     <TextBlock Text="{Binding FriendlyName}"
-                                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                                               FontSize="12"
+                                                               FontSize="13"
                                                                FontWeight="Normal"
                                                                Foreground="#FFFFFF"
                                                                TextTrimming="CharacterEllipsis" />
-                                                    <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                                               FontSize="10"
+                                                    <TextBlock FontSize="11"
                                                                Foreground="#80FFFFFF"
                                                                Margin="0,1,0,0">
                                                         <TextBlock.Style>
@@ -343,8 +340,7 @@
                                                 <!-- 5. Brightness Percentage Text -->
                                                 <TextBlock Grid.Column="4"
                                                            Text="{Binding BrightnessPercentText}"
-                                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                                           FontSize="11.5"
+                                                           FontSize="12"
                                                            FontWeight="SemiBold"
                                                            Foreground="#FFFFFF"
                                                            VerticalAlignment="Center"

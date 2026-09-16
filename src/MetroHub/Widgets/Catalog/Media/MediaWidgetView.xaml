@@ -12,7 +12,8 @@
              UseLayoutRounding="True"
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed">
+             TextOptions.TextHintingMode="Fixed"
+             RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -26,6 +27,8 @@
             <Setter Property="Height" Value="28" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
+            <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+            <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -103,7 +106,7 @@
                             </Style>
                         </Border.Style>
                         <TextBlock Text="&#xE8D6;"
-                                   FontFamily="Segoe MDL2 Assets"
+                                   FontFamily="{DynamicResource AppIconFontFamily}"
                                    FontSize="36"
                                    Foreground="#25FFFFFF"
                                    HorizontalAlignment="Center"
@@ -120,7 +123,7 @@
                         <TextBlock Text="{Binding Title}"
                                    FontSize="17"
                                    FontWeight="SemiBold"
-                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    Foreground="#FFFFFF"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap"
@@ -130,7 +133,6 @@
                         <TextBlock Text="{Binding Artist}"
                                    FontSize="14"
                                    FontWeight="Normal"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                    Foreground="#D2D7E2"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap"
@@ -155,7 +157,7 @@
                                     Visibility="{Binding HasAlbum, Converter={StaticResource BoolToVis}}"
                                     Margin="0,1,0,0">
                             <TextBlock Text="&#xE8D6;"
-                                       FontFamily="Segoe MDL2 Assets"
+                                       FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="11"
                                        Foreground="#9DA5B4"
                                        VerticalAlignment="Center"
@@ -163,7 +165,6 @@
                             <TextBlock Text="{Binding Album}"
                                        FontSize="13"
                                        FontWeight="Normal"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        Foreground="#9DA5B4"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"
@@ -192,8 +193,8 @@
                                 IsEnabled="{Binding CanSkipPrevious}"
                                 ToolTip="Previous">
                             <TextBlock Text="&#xE76B;"
-                                       FontFamily="Segoe MDL2 Assets"
-                                       FontSize="13"
+                                       FontFamily="{DynamicResource AppIconFontFamily}"
+                                       FontSize="15"
                                        VerticalAlignment="Center"
                                        HorizontalAlignment="Center" />
                         </Button>
@@ -205,18 +206,18 @@
                                 Margin="4,0"
                                 ToolTip="Play / Pause">
                             <TextBlock x:Name="PlayPauseIcon"
-                                       FontFamily="Segoe MDL2 Assets"
+                                       FontFamily="{DynamicResource AppIconFontFamily}"
                                        VerticalAlignment="Center"
                                        HorizontalAlignment="Center">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Text" Value="&#xE768;" />
-                                        <Setter Property="FontSize" Value="13" />
-                                        <Setter Property="Margin" Value="1.5,0,0,0" />
+                                        <Setter Property="FontSize" Value="15" />
+                                        <Setter Property="Margin" Value="0" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsPlaying}" Value="True">
                                                 <Setter Property="Text" Value="&#xE769;" />
-                                                <Setter Property="FontSize" Value="15.5" />
+                                                <Setter Property="FontSize" Value="16" />
                                                 <Setter Property="Margin" Value="0" />
                                             </DataTrigger>
                                         </Style.Triggers>
@@ -231,8 +232,8 @@
                                 IsEnabled="{Binding CanSkipNext}"
                                 ToolTip="Next">
                             <TextBlock Text="&#xE76C;"
-                                       FontFamily="Segoe MDL2 Assets"
-                                       FontSize="13"
+                                       FontFamily="{DynamicResource AppIconFontFamily}"
+                                       FontSize="15"
                                        VerticalAlignment="Center"
                                        HorizontalAlignment="Center" />
                         </Button>
@@ -250,7 +251,6 @@
                                        HorizontalAlignment="Right"
                                        FontSize="13"
                                        FontWeight="Normal"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        Foreground="#D0FFFFFF"
                                        SnapsToDevicePixels="True">
                                 <TextBlock.Style>
@@ -308,7 +308,7 @@
                                 <TextBlock Text="LIVE"
                                            FontSize="11"
                                            FontWeight="Bold"
-                                           FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                           FontFamily="{DynamicResource AppDisplayFontFamily}"
                                            Foreground="#FFFFFF"
                                            VerticalAlignment="Center"
                                            SnapsToDevicePixels="True" />

@@ -20,6 +20,10 @@
         <Setter Property="Focusable" Value="False" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Stretch" />
+        <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+        <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type widgets:WidgetCard}">
@@ -27,6 +31,7 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{TemplateBinding CornerRadius}"
+                            RenderOptions.ClearTypeHint="Enabled"
                             SnapsToDevicePixels="True"
                             UseLayoutRounding="True">
                         <ContentPresenter Margin="{TemplateBinding Padding}"
@@ -54,7 +59,6 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Foreground" Value="#70FFFFFF" />
-        <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, sans-serif" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Height" Value="28" />
@@ -228,7 +232,7 @@
                                 <!-- Fallback / Custom Visual / Segoe Glyph Icon -->
                                 <ContentControl x:Name="PART_IconContent"
                                                 Content="{TemplateBinding Icon}"
-                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                                FontFamily="{DynamicResource AppIconFontFamily}"
                                                 FontSize="{TemplateBinding IconSize}"
                                                 Foreground="{TemplateBinding Foreground}"
                                                 HorizontalAlignment="Center"
@@ -239,7 +243,6 @@
                             <!-- Header Text: Pinned to exact identical baseline across every single tile -->
                             <TextBlock Grid.Row="2"
                                        Text="{TemplateBinding Header}"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        FontSize="11.5"
                                        FontWeight="SemiBold"
                                        Foreground="#FFFFFF"

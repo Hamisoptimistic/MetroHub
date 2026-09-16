@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Widgets.Catalog.Calendar.CalendarWidgetView"
+<UserControl x:Class="MetroHub.Widgets.Catalog.Calendar.CalendarWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -13,7 +13,8 @@
              UseLayoutRounding="True"
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed">
+             TextOptions.TextHintingMode="Fixed"
+             RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
         <!-- Windows 10 Calendar Palette Tokens -->
@@ -77,7 +78,7 @@
                            Text="{Binding MonthYearTitle}"
                            FontSize="22"
                            FontWeight="SemiBold"
-                           FontFamily="Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+                           FontFamily="{DynamicResource AppDisplayFontFamily}"
                            Foreground="#FFFFFF"
                            VerticalAlignment="Center" />
 
@@ -174,7 +175,6 @@
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
                                                FontSize="15"
-                                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
                                                FontWeight="Normal"
                                                Foreground="{StaticResource OutOfMonthTextBrush}"
                                                SnapsToDevicePixels="True" />

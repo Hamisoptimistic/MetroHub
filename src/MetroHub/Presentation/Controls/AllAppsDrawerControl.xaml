@@ -12,7 +12,13 @@
              Focusable="False"
              ClipToBounds="False"
              Visibility="Collapsed"
-             Background="Transparent">
+             Background="Transparent"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True"
+             RenderOptions.ClearTypeHint="Enabled"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="ClearType"
+             TextOptions.TextHintingMode="Fixed">
 
     <UserControl.RenderTransform>
         <TranslateTransform x:Name="DrawerTranslate" X="0" />
@@ -27,7 +33,6 @@
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="CaretBrush" Value="#60CDFF" />
             <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0" />
@@ -258,7 +263,6 @@
                     <TextBlock x:Name="SearchPlaceholder"
                                Text="Type here to search..."
                                FontSize="13"
-                               FontFamily="Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif"
                                Foreground="#60FFFFFF"
                                VerticalAlignment="Center"
                                Margin="34,0,28,0"
@@ -307,7 +311,7 @@
                                     <TextBlock Text="{Binding Header}"
                                                FontSize="18"
                                                FontWeight="Bold"
-                                               FontFamily="Segoe UI Variable Display, Segoe UI Variable Text, Segoe UI, sans-serif"
+                                               FontFamily="{DynamicResource AppDisplayFontFamily}"
                                                Foreground="#70FFFFFF"
                                                Margin="16,12,0,2" />
 

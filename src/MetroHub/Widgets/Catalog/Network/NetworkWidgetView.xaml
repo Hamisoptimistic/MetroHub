@@ -18,7 +18,8 @@
              UseLayoutRounding="True"
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed">
+             TextOptions.TextHintingMode="Fixed"
+             RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -110,7 +111,7 @@
             <Setter Property="BorderBrush" Value="#2AFFFFFF" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Foreground" Value="#F5FFFFFF" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI, sans-serif" />
+            <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Width" Value="76" />
@@ -173,7 +174,7 @@
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI, sans-serif" />
+            <Setter Property="FontFamily" Value="{DynamicResource AppDisplayFontFamily}" />
             <Setter Property="FontSize" Value="36" />
             <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Cursor" Value="Hand" />
@@ -420,13 +421,13 @@
                         <!-- Left: Icon + Title (Alters to Connected / No Internet / Disconnected dynamically) -->
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="{Binding EthernetPanelIcon}"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                       FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="18"
                                        Foreground="{Binding EthernetPanelTitleColor}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,10,0" />
                             <TextBlock Text="{Binding EthernetPanelTitle}"
-                                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="16"
                                        FontWeight="SemiBold"
                                        Foreground="{Binding EthernetPanelTitleColor}"
@@ -491,7 +492,6 @@
                             <!-- 1. ADAPTER -->
                             <TextBlock Grid.Row="0" Grid.Column="0"
                                        Text="Adapter:"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        FontSize="14"
                                        FontWeight="SemiBold"
                                        Foreground="#FFFFFF"
@@ -499,7 +499,6 @@
                                        Margin="0,0,0,8" />
                             <TextBlock Grid.Row="0" Grid.Column="1"
                                        Text="{Binding Ethernet.Description}"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        FontSize="13.5"
                                        FontWeight="Normal"
                                        Foreground="#D0FFFFFF"
@@ -513,7 +512,6 @@
                             <!-- 2. DNS -->
                             <TextBlock Grid.Row="1" Grid.Column="0"
                                        Text="DNS:"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        FontSize="14"
                                        FontWeight="SemiBold"
                                        Foreground="#FFFFFF"
@@ -521,7 +519,6 @@
                                        Margin="0,0,0,8" />
                             <TextBlock Grid.Row="1" Grid.Column="1"
                                        Text="{Binding Ethernet.DnsServersString}"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        Typography.NumeralAlignment="Tabular"
                                        FontSize="13.5"
                                        FontWeight="Normal"
@@ -539,7 +536,6 @@
                                         VerticalAlignment="Center"
                                         Margin="0,0,0,8">
                                 <TextBlock Text="IPv4:"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="14"
                                            FontWeight="SemiBold"
                                            Foreground="#FFFFFF"
@@ -552,7 +548,6 @@
                             </StackPanel>
                             <TextBlock Grid.Row="2" Grid.Column="1"
                                        Text="{Binding Ethernet.IpAddress}"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        Typography.NumeralAlignment="Tabular"
                                        FontSize="13.5"
                                        FontWeight="Normal"
@@ -569,7 +564,6 @@
                                         VerticalAlignment="Center"
                                         Margin="0,0,0,8">
                                 <TextBlock Text="MAC:"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="14"
                                            FontWeight="SemiBold"
                                            Foreground="#FFFFFF"
@@ -582,7 +576,6 @@
                             </StackPanel>
                             <TextBlock Grid.Row="3" Grid.Column="1"
                                        Text="{Binding Ethernet.MacAddress}"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        Typography.NumeralAlignment="Tabular"
                                        FontSize="13.5"
                                        FontWeight="Normal"
@@ -596,7 +589,6 @@
                             <!-- 5. SESSION UPTIME -->
                             <TextBlock Grid.Row="4" Grid.Column="0"
                                        Text="Session Uptime:"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        FontSize="14"
                                        FontWeight="SemiBold"
                                        Foreground="#FFFFFF"
@@ -604,7 +596,6 @@
                                        Margin="0,0,0,0" />
                             <TextBlock Grid.Row="4" Grid.Column="1"
                                        Text="{Binding Ethernet.DurationString}"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        Typography.NumeralAlignment="Tabular"
                                        FontSize="13.5"
                                        FontWeight="Normal"
@@ -643,13 +634,13 @@
                         </Grid.Style>
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                             <TextBlock Text="&#xEB55;"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                       FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="38"
                                        Foreground="#45FFFFFF"
                                        HorizontalAlignment="Center"
                                        Margin="0,0,0,12" />
                             <TextBlock Text="{Binding EthernetTurnedOffBannerTitle}"
-                                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="16"
                                        FontWeight="Bold"
                                        Foreground="#D0FFFFFF"
@@ -681,13 +672,13 @@
                         <!-- Left: Icon + Title ("Connected" / "Disconnected" / "Turned Off") -->
                         <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="{Binding WifiPanelIcon}"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                       FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="18"
                                        Foreground="{Binding WifiPanelTitleColor}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,10,0" />
                             <TextBlock Text="{Binding WifiPanelTitle}"
-                                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="16"
                                        FontWeight="SemiBold"
                                        Foreground="{Binding WifiPanelTitleColor}"
@@ -766,7 +757,6 @@
                                            HorizontalAlignment="Center"
                                            Margin="0,0,0,8" />
                             <TextBlock Text="Scanning for available networks..."
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        FontSize="13"
                                        Foreground="#75FFFFFF"
                                        HorizontalAlignment="Center" />
@@ -894,7 +884,7 @@
                                                 <!-- Segoe Fluent Icons TextBlock: uniform signal glyph, clean neutral white -->
                                                 <TextBlock Grid.Column="1"
                                                            Text="{Binding WifiSignalGlyph}"
-                                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                           FontFamily="{DynamicResource AppIconFontFamily}"
                                                            FontSize="18"
                                                            Foreground="{Binding WifiIconColor, Converter={StaticResource StringToBrush}}"
                                                            VerticalAlignment="Center"
@@ -904,14 +894,12 @@
                                                 <!-- SSID + Subtitle (neutral typography) -->
                                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Ssid}"
-                                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                                                FontSize="13"
                                                                FontWeight="SemiBold"
                                                                Foreground="#F2FFFFFF"
                                                                TextTrimming="CharacterEllipsis"
                                                                ToolTip="{Binding Ssid}" />
                                                     <TextBlock Text="{Binding SubtitleText}"
-                                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                                                FontSize="11"
                                                                Foreground="{Binding SubtitleColor, Converter={StaticResource StringToBrush}}"
                                                                Margin="0,2,0,0" />
@@ -987,7 +975,6 @@
                                             <StackPanel Margin="12,2,12,12">
                                                 <!-- Wi-Fi Standard + Security -->
                                                 <TextBlock Text="{Binding SecurityDetailsDisplay}"
-                                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                                            FontSize="11.5"
                                                            FontWeight="SemiBold"
                                                            Foreground="#70FFFFFF"
@@ -999,7 +986,6 @@
                                                     <!-- Error indicator positioned where "Network password" was -->
                                                     <TextBlock Text="Incorrect password"
                                                                Visibility="{Binding HasConnectionError, Converter={StaticResource BoolToVis}}"
-                                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                                                FontSize="11"
                                                                FontWeight="SemiBold"
                                                                Foreground="#FF4D4D"
@@ -1188,7 +1174,7 @@
                                            HorizontalAlignment="Center"
                                            Margin="0,0,0,12" />
                             <TextBlock Text="{Binding WifiTurnedOffBannerTitle}"
-                                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="16"
                                        FontWeight="Bold"
                                        Foreground="#D0FFFFFF"
@@ -1228,7 +1214,6 @@
                                              HorizontalAlignment="Center"
                                              Margin="0,0,0,12" />
                             <TextBlock Text="{Binding WifiTransitionStatusText}"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        FontSize="13"
                                        FontWeight="SemiBold"
                                        Foreground="#B0FFFFFF"
@@ -1265,7 +1250,7 @@
                                            VerticalAlignment="Center"
                                            Margin="0,0,10,0" />
                             <TextBlock Text="Disable Network Adapters"
-                                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="16"
                                        FontWeight="SemiBold"
                                        Foreground="#FFFFFF"
@@ -1361,7 +1346,7 @@
                                                 <!-- Left: Hardware Icon (Dimmed when disabled) -->
                                                 <TextBlock Grid.Column="0"
                                                            Text="{Binding Glyph}"
-                                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                           FontFamily="{DynamicResource AppIconFontFamily}"
                                                            FontSize="18"
                                                            Foreground="#FFFFFF"
                                                            Opacity="{Binding IconOpacity}"
@@ -1372,14 +1357,12 @@
                                                 <!-- Center: Name + Subtitle (Description • Status) -->
                                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Name}"
-                                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                                                FontSize="13"
                                                                FontWeight="SemiBold"
                                                                Foreground="#F2FFFFFF"
                                                                TextTrimming="CharacterEllipsis"
                                                                ToolTip="{Binding Name}" />
                                                     <TextBlock Text="{Binding SubtitleText}"
-                                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                                                FontSize="11"
                                                                Foreground="#85FFFFFF"
                                                                TextWrapping="Wrap"
@@ -1431,13 +1414,12 @@
                                                HorizontalAlignment="Center"
                                                Margin="0,0,0,12" />
                                 <TextBlock Text="No Adapters Detected"
-                                           FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                           FontFamily="{DynamicResource AppDisplayFontFamily}"
                                            FontSize="16"
                                            FontWeight="Bold"
                                            Foreground="#D0FFFFFF"
                                            HorizontalAlignment="Center" />
                                 <TextBlock Text="No physical Ethernet or Wi-Fi hardware interfaces available"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="12"
                                            FontWeight="SemiBold"
                                            Foreground="#85FFFFFF"
@@ -1540,7 +1522,6 @@
                                         Command="{Binding StartSpeedTestCommand}"
                                         ToolTip="{Binding SpeedTestStatusMessage}" />
                                 <TextBlock Text="{Binding SpeedTestStatusMessage}"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="13"
                                            FontWeight="SemiBold"
                                            Foreground="#FF6B6B"
@@ -1579,20 +1560,18 @@
                             <!-- Left: Download (Flush with left end of separator) -->
                             <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center">
                                 <TextBlock Text="Download"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="12"
                                            FontWeight="Medium"
                                            Foreground="#95FFFFFF"
                                            Margin="0,0,0,3" />
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{Binding SpeedTestDownloadDisplay}"
-                                               FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                               FontFamily="{DynamicResource AppDisplayFontFamily}"
                                                FontSize="22"
                                                FontWeight="Bold"
                                                Foreground="#FFFFFF"
                                                Typography.NumeralAlignment="Tabular" />
                                     <TextBlock Text=" Mbps"
-                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                                FontSize="12.5"
                                                Foreground="#80FFFFFF"
                                                VerticalAlignment="Bottom"
@@ -1603,7 +1582,6 @@
                             <!-- Right: Upload (Flush with right end of separator) -->
                             <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
                                 <TextBlock Text="Upload"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="12"
                                            FontWeight="Medium"
                                            Foreground="#95FFFFFF"
@@ -1611,13 +1589,12 @@
                                            Margin="0,0,0,3" />
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                     <TextBlock Text="{Binding SpeedTestUploadDisplay}"
-                                               FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                               FontFamily="{DynamicResource AppDisplayFontFamily}"
                                                FontSize="22"
                                                FontWeight="Bold"
                                                Foreground="#FFFFFF"
                                                Typography.NumeralAlignment="Tabular" />
                                     <TextBlock Text=" Mbps"
-                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                                FontSize="12.5"
                                                Foreground="#80FFFFFF"
                                                VerticalAlignment="Bottom"
@@ -1647,12 +1624,10 @@
                             <!-- Left: Ping (Flush with left end of separator) -->
                             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
                                 <TextBlock Text="Ping "
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="11.5"
                                            Foreground="#75FFFFFF"
                                            VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding SpeedTestPingDisplay}"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="11.5"
                                            FontWeight="SemiBold"
                                            Foreground="#FFFFFF"
@@ -1678,12 +1653,10 @@
                             <!-- Right: Jitter (Flush with right end of separator) -->
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                                 <TextBlock Text="Jitter "
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="11.5"
                                            Foreground="#75FFFFFF"
                                            VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding SpeedTestJitterDisplay}"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="11.5"
                                            FontWeight="SemiBold"
                                            Foreground="#FFFFFF"
@@ -1749,13 +1722,12 @@
                             <!-- Header: Icon + Title -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding UsageWiredIcon}"
-                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                           FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="15"
                                            Foreground="#FFFFFF"
                                            VerticalAlignment="Center"
                                            Margin="0,0,7,0" />
                                 <TextBlock Text="{Binding UsageWiredTitle}"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="12"
                                            FontWeight="Bold"
                                            Foreground="#E0FFFFFF"
@@ -1764,7 +1736,7 @@
 
                             <!-- Hero Big Usage Number -->
                             <TextBlock Text="{Binding EthernetUsageTotalDisplay}"
-                                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="26"
                                        FontWeight="Bold"
                                        Foreground="#FFFFFF"
@@ -1777,26 +1749,24 @@
                                         HorizontalAlignment="Center"
                                         Visibility="{Binding ShowEthernetUsageDetails, Converter={StaticResource BoolToVis}}">
                                 <TextBlock Text="&#xE896;"
-                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                           FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="10"
                                            Foreground="#85FFFFFF"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding EthernetDataUsage.FormattedReceived}"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="11.5"
                                            Foreground="#90FFFFFF"
                                            VerticalAlignment="Center"
                                            Typography.NumeralAlignment="Tabular" />
                                 <TextBlock Text="   " />
                                 <TextBlock Text="&#xE898;"
-                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                           FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="10"
                                            Foreground="#85FFFFFF"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding EthernetDataUsage.FormattedSent}"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="11.5"
                                            Foreground="#90FFFFFF"
                                            VerticalAlignment="Center"
@@ -1805,7 +1775,6 @@
 
                             <!-- No Adapter Fallback Text -->
                             <TextBlock Text="No adapter detected"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        FontSize="11.5"
                                        Foreground="#60FFFFFF"
                                        HorizontalAlignment="Center"
@@ -1825,13 +1794,12 @@
                             <!-- Header: Icon + Title -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <TextBlock Text="&#xE701;"
-                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                           FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="15"
                                            Foreground="#FFFFFF"
                                            VerticalAlignment="Center"
                                            Margin="0,0,7,0" />
                                 <TextBlock Text="Wi-Fi"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="12"
                                            FontWeight="Bold"
                                            Foreground="#E0FFFFFF"
@@ -1840,7 +1808,7 @@
 
                             <!-- Hero Big Usage Number -->
                             <TextBlock Text="{Binding WifiUsageTotalDisplay}"
-                                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="26"
                                        FontWeight="Bold"
                                        Foreground="#FFFFFF"
@@ -1853,26 +1821,24 @@
                                         HorizontalAlignment="Center"
                                         Visibility="{Binding ShowWifiUsageDetails, Converter={StaticResource BoolToVis}}">
                                 <TextBlock Text="&#xE896;"
-                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                           FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="10"
                                            Foreground="#85FFFFFF"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding WifiDataUsage.FormattedReceived}"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="11.5"
                                            Foreground="#90FFFFFF"
                                            VerticalAlignment="Center"
                                            Typography.NumeralAlignment="Tabular" />
                                 <TextBlock Text="   " />
                                 <TextBlock Text="&#xE898;"
-                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                           FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="10"
                                            Foreground="#85FFFFFF"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding WifiDataUsage.FormattedSent}"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                            FontSize="11.5"
                                            Foreground="#90FFFFFF"
                                            VerticalAlignment="Center"
@@ -1881,7 +1847,6 @@
 
                             <!-- No Adapter Fallback Text -->
                             <TextBlock Text="No adapter detected"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        FontSize="11.5"
                                        Foreground="#60FFFFFF"
                                        HorizontalAlignment="Center"
@@ -1912,14 +1877,13 @@
                                    VerticalAlignment="Center"
                                    Typography.NumeralAlignment="Tabular">
                             <Run Text="TOTAL CONSUMED"
-                                 FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                  FontSize="11"
                                  FontWeight="Bold"
                                  Foreground="#70FFFFFF" />
                             <Run Text="  "
                                  FontSize="14" />
                             <Run Text="{Binding TotalCombinedDisplay, Mode=OneWay}"
-                                 FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                 FontFamily="{DynamicResource AppDisplayFontFamily}"
                                  FontSize="20"
                                  FontWeight="Bold"
                                  Foreground="#FFFFFF" />
@@ -1928,13 +1892,12 @@
                         <!-- Right: Combined Rx / Tx Breakdown -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="&#xE896;"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                       FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="10"
                                        Foreground="#85FFFFFF"
                                        VerticalAlignment="Center"
                                        Margin="0,0,4,0" />
                             <TextBlock Text="{Binding TotalCombinedReceivedDisplay}"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        FontSize="11.5"
                                        FontWeight="SemiBold"
                                        Foreground="#95FFFFFF"
@@ -1942,13 +1905,12 @@
                                        Typography.NumeralAlignment="Tabular" />
                             <TextBlock Text="   " />
                             <TextBlock Text="&#xE898;"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                       FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="10"
                                        Foreground="#85FFFFFF"
                                        VerticalAlignment="Center"
                                        Margin="0,0,4,0" />
                             <TextBlock Text="{Binding TotalCombinedSentDisplay}"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        FontSize="11.5"
                                        FontWeight="SemiBold"
                                        Foreground="#95FFFFFF"

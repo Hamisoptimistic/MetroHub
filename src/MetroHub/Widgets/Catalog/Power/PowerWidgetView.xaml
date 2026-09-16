@@ -16,7 +16,8 @@
              UseLayoutRounding="True"
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed">
+             TextOptions.TextHintingMode="Fixed"
+             RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
         <!-- Exact replica of Network Widget WidgetTileStyle: Direct Border with no RenderTransforms for razor-sharp vector icons -->
@@ -62,6 +63,14 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Fluent Icon Anti-Aliasing Style: Eliminates staircase pixelation on curved vector glyphs -->
+        <Style TargetType="{x:Type ui:SymbolIcon}">
+            <Setter Property="SnapsToDevicePixels" Value="False" />
+            <Setter Property="UseLayoutRounding" Value="False" />
+            <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+            <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
+        </Style>
     </UserControl.Resources>
 
     <widgets:WidgetCard Padding="0" Background="Transparent" VerticalAlignment="Stretch">
@@ -85,13 +94,11 @@
                                    FontSize="24"
                                    Margin="{Binding IconMargin}"
                                    HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   SnapsToDevicePixels="True" />
+                                   VerticalAlignment="Center" />
                     <TextBlock Grid.Row="1"
                                Text="{Binding LockHeader}"
                                Foreground="{Binding LockForeground}"
                                Visibility="{Binding TextVisibility}"
-                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                FontSize="11.5"
                                FontWeight="SemiBold"
                                HorizontalAlignment="Center"
@@ -120,13 +127,11 @@
                                    FontSize="24"
                                    Margin="{Binding IconMargin}"
                                    HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   SnapsToDevicePixels="True" />
+                                   VerticalAlignment="Center" />
                     <TextBlock Grid.Row="1"
                                Text="{Binding SleepHeader}"
                                Foreground="{Binding SleepForeground}"
                                Visibility="{Binding TextVisibility}"
-                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                FontSize="11.5"
                                FontWeight="SemiBold"
                                HorizontalAlignment="Center"
@@ -155,13 +160,11 @@
                                    FontSize="24"
                                    Margin="{Binding IconMargin}"
                                    HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   SnapsToDevicePixels="True" />
+                                   VerticalAlignment="Center" />
                     <TextBlock Grid.Row="1"
                                Text="{Binding RestartHeader}"
                                Foreground="{Binding RestartForeground}"
                                Visibility="{Binding TextVisibility}"
-                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                FontSize="11.5"
                                FontWeight="SemiBold"
                                HorizontalAlignment="Center"
@@ -190,13 +193,11 @@
                                    FontSize="24"
                                    Margin="{Binding IconMargin}"
                                    HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   SnapsToDevicePixels="True" />
+                                   VerticalAlignment="Center" />
                     <TextBlock Grid.Row="1"
                                Text="{Binding ShutdownHeader}"
                                Foreground="{Binding ShutdownForeground}"
                                Visibility="{Binding TextVisibility}"
-                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                FontSize="11.5"
                                FontWeight="SemiBold"
                                HorizontalAlignment="Center"
