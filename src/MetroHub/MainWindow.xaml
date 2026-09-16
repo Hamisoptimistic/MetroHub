@@ -34,52 +34,28 @@
         Drop="OnWindowDrop">
 
     <controls:BorderlessFluentWindow.Resources>
-        <!-- Windows 11 Fluent Decelerating Slide & Fade (Hardware-Accelerated 60+ FPS) -->
+        <!-- Windows 11 Fluent Instant Appearance (Zero Translation, Fast Opacity Pop) -->
         <Storyboard x:Key="OpenStoryboard">
             <DoubleAnimation Storyboard.TargetName="RootGrid"
                              Storyboard.TargetProperty="Opacity"
                              From="0.0" To="1.0"
-                             Duration="0:0:0.20">
+                             Duration="0:0:0.08">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut" />
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
-
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RootTranslate"
-                                           Storyboard.TargetProperty="Y">
-                <SplineDoubleKeyFrame KeyTime="0:0:0" Value="36.0" />
-                <SplineDoubleKeyFrame KeyTime="0:0:0.24" Value="0.0" KeySpline="0.1, 0.9, 0.2, 1.0" />
-            </DoubleAnimationUsingKeyFrames>
-
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RootTranslate"
-                                           Storyboard.TargetProperty="X">
-                <SplineDoubleKeyFrame KeyTime="0:0:0" Value="0.0" />
-                <SplineDoubleKeyFrame KeyTime="0:0:0.24" Value="0.0" KeySpline="0.1, 0.9, 0.2, 1.0" />
-            </DoubleAnimationUsingKeyFrames>
         </Storyboard>
 
-        <!-- Windows 11 Fluent Accelerating Slide & Fade Exit -->
+        <!-- Windows 11 Fluent Instant Exit (Zero Translation, Fast Opacity Pop) -->
         <Storyboard x:Key="ExitStoryboard">
             <DoubleAnimation Storyboard.TargetName="RootGrid"
                              Storyboard.TargetProperty="Opacity"
                              From="1.0" To="0.0"
-                             Duration="0:0:0.14">
+                             Duration="0:0:0.06">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseIn" />
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
-
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RootTranslate"
-                                           Storyboard.TargetProperty="Y">
-                <SplineDoubleKeyFrame KeyTime="0:0:0" Value="0.0" />
-                <SplineDoubleKeyFrame KeyTime="0:0:0.16" Value="24.0" KeySpline="0.7, 0.0, 1.0, 0.5" />
-            </DoubleAnimationUsingKeyFrames>
-
-            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RootTranslate"
-                                           Storyboard.TargetProperty="X">
-                <SplineDoubleKeyFrame KeyTime="0:0:0" Value="0.0" />
-                <SplineDoubleKeyFrame KeyTime="0:0:0.16" Value="0.0" KeySpline="0.7, 0.0, 1.0, 0.5" />
-            </DoubleAnimationUsingKeyFrames>
         </Storyboard>
     </controls:BorderlessFluentWindow.Resources>
 

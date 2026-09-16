@@ -11,10 +11,11 @@
              VerticalAlignment="Stretch"
              Focusable="False"
              ClipToBounds="False"
+             Visibility="Collapsed"
              Background="Transparent">
 
     <UserControl.RenderTransform>
-        <TranslateTransform x:Name="DrawerTranslate" X="-320" />
+        <TranslateTransform x:Name="DrawerTranslate" X="0" />
     </UserControl.RenderTransform>
 
     <UserControl.Resources>

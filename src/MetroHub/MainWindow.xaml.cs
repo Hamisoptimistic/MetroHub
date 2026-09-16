@@ -940,54 +940,15 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         _isDismissing = false;
 
-        var edge = NativeMethods.GetActiveMonitorTaskbarEdge();
-        double startX = 0.0;
-        double startY = 0.0;
-
-        switch (edge)
-        {
-            case NativeMethods.TaskbarEdge.Bottom:
-                startY = 36.0;
-                break;
-            case NativeMethods.TaskbarEdge.Top:
-                startY = -36.0;
-                break;
-            case NativeMethods.TaskbarEdge.Left:
-                startX = -36.0;
-                break;
-            case NativeMethods.TaskbarEdge.Right:
-                startX = 36.0;
-                break;
-        }
-
         if (RootTranslate != null)
         {
-            RootTranslate.X = startX;
-            RootTranslate.Y = startY;
+            RootTranslate.X = 0.0;
+            RootTranslate.Y = 0.0;
         }
 
         if (TryFindResource("OpenStoryboard") is Storyboard openStoryboard)
         {
             var sb = openStoryboard.Clone();
-
-            foreach (var child in sb.Children)
-            {
-                if (child is DoubleAnimationUsingKeyFrames kf)
-                {
-                    var prop = Storyboard.GetTargetProperty(kf)?.Path;
-                    if (prop?.EndsWith("Y", StringComparison.OrdinalIgnoreCase) == true && kf.KeyFrames.Count >= 2)
-                    {
-                        kf.KeyFrames[0].Value = startY;
-                        kf.KeyFrames[1].Value = 0.0;
-                    }
-                    else if (prop?.EndsWith("X", StringComparison.OrdinalIgnoreCase) == true && kf.KeyFrames.Count >= 2)
-                    {
-                        kf.KeyFrames[0].Value = startX;
-                        kf.KeyFrames[1].Value = 0.0;
-                    }
-                }
-            }
-
             Timeline.SetDesiredFrameRate(sb, NativeMethods.GetScreenRefreshRate());
             sb.Begin(this);
         }
@@ -1007,48 +968,16 @@ public partial class MainWindow : BorderlessFluentWindow
             CancelActiveDrag();
         }
 
-        var edge = NativeMethods.GetActiveMonitorTaskbarEdge();
-        double endX = 0.0;
-        double endY = 0.0;
-
-        switch (edge)
+        if (RootTranslate != null)
         {
-            case NativeMethods.TaskbarEdge.Bottom:
-                endY = 24.0;
-                break;
-            case NativeMethods.TaskbarEdge.Top:
-                endY = -24.0;
-                break;
-            case NativeMethods.TaskbarEdge.Left:
-                endX = -24.0;
-                break;
-            case NativeMethods.TaskbarEdge.Right:
-                endX = 24.0;
-                break;
+            RootTranslate.X = 0.0;
+            RootTranslate.Y = 0.0;
         }
 
         if (TryFindResource("ExitStoryboard") is Storyboard exitStoryboard)
         {
             _isDismissing = true;
             var sb = exitStoryboard.Clone();
-
-            foreach (var child in sb.Children)
-            {
-                if (child is DoubleAnimationUsingKeyFrames kf)
-                {
-                    var prop = Storyboard.GetTargetProperty(kf)?.Path;
-                    if (prop?.EndsWith("Y", StringComparison.OrdinalIgnoreCase) == true && kf.KeyFrames.Count >= 2)
-                    {
-                        kf.KeyFrames[0].Value = 0.0;
-                        kf.KeyFrames[1].Value = endY;
-                    }
-                    else if (prop?.EndsWith("X", StringComparison.OrdinalIgnoreCase) == true && kf.KeyFrames.Count >= 2)
-                    {
-                        kf.KeyFrames[0].Value = 0.0;
-                        kf.KeyFrames[1].Value = endX;
-                    }
-                }
-            }
 
             Timeline.SetDesiredFrameRate(sb, NativeMethods.GetScreenRefreshRate());
             sb.Completed += (s, e) =>
@@ -5208,93 +5137,54 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     private void OnDrawerOpened(object? sender, EventArgs e)
     {
         SidebarRail?.SetAppsDrawerActive(true);
-        AnimateCanvasScissor(true);
+        ApplyCanvasDrawerClip(true);
     }
 
     private void OnDrawerClosing(object? sender, EventArgs e)
     {
         SidebarRail?.SetAppsDrawerActive(false);
-        AnimateCanvasScissor(false);
+        ApplyCanvasDrawerClip(false);
     }
 
     private void OnDrawerClosed(object? sender, EventArgs e)
     {
         SidebarRail?.SetAppsDrawerActive(false);
-        if (MainContentAreaGrid != null)
-        {
-            MainContentAreaGrid.Clip = null;
-            MainContentAreaGrid.BeginAnimation(UIElement.OpacityProperty, null);
-            MainContentAreaGrid.Opacity = 1.0;
-        }
-        if (ContentScrollViewer != null)
-        {
-            ContentScrollViewer.Clip = null;
-        }
-        if (_canvasScissorTranslate != null)
-        {
-            _canvasScissorTranslate.BeginAnimation(TranslateTransform.XProperty, null);
-            _canvasScissorTranslate.X = 0;
-        }
+        ApplyCanvasDrawerClip(false);
     }
 
-    private void AnimateCanvasScissor(bool drawerOpening)
+    private void ApplyCanvasDrawerClip(bool isDrawerOpen)
     {
         if (MainContentAreaGrid == null) return;
+
+        if (!isDrawerOpen)
+        {
+            MainContentAreaGrid.Clip = null;
+            if (ContentScrollViewer != null) ContentScrollViewer.Clip = null;
+            if (_canvasScissorTranslate != null)
+            {
+                _canvasScissorTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+                _canvasScissorTranslate.X = 0;
+            }
+            return;
+        }
 
         double drawerWidth = AllAppsDrawer?.DrawerWidth ?? 320.0;
         if (drawerWidth <= 0) drawerWidth = 320.0;
 
-        if (_canvasScissorGeom == null || _canvasScissorTranslate == null)
+        _canvasScissorTranslate ??= new TranslateTransform(0, 0);
+        _canvasScissorTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+        _canvasScissorTranslate.X = drawerWidth;
+
+        _canvasScissorGeom ??= new RectangleGeometry
         {
-            _canvasScissorTranslate = new TranslateTransform(0, 0);
-            _canvasScissorGeom = new RectangleGeometry
-            {
-                Transform = _canvasScissorTranslate
-            };
-        }
+            Transform = _canvasScissorTranslate
+        };
 
         double clipWidth = Math.Max(5000, (ActualWidth > 0 ? ActualWidth : 1920) + 1000);
         double clipHeight = Math.Max(5000, (ActualHeight > 0 ? ActualHeight : 1080) + 1000);
         _canvasScissorGeom.Rect = new Rect(0, 0, clipWidth, clipHeight);
 
         MainContentAreaGrid.Clip = _canvasScissorGeom;
-
-        double fromX = drawerOpening ? 0 : (_canvasScissorTranslate.X > 0 ? _canvasScissorTranslate.X : drawerWidth);
-        double toX = drawerOpening ? drawerWidth : 0;
-        double durationMs = drawerOpening ? 220 : 180;
-        var easing = drawerOpening
-            ? (IEasingFunction)new CubicEase { EasingMode = EasingMode.EaseOut }
-            : (IEasingFunction)new CubicEase { EasingMode = EasingMode.EaseIn };
-
-        var anim = new DoubleAnimation
-        {
-            From = fromX,
-            To = toX,
-            Duration = TimeSpan.FromMilliseconds(durationMs),
-            EasingFunction = easing
-        };
-
-        int refreshRate = NativeMethods.GetScreenRefreshRate();
-        Timeline.SetDesiredFrameRate(anim, refreshRate > 0 ? refreshRate : 100);
-
-        if (!drawerOpening)
-        {
-            anim.Completed += (s, e) =>
-            {
-                if (AllAppsDrawer == null || !AllAppsDrawer.IsOpen)
-                {
-                    if (MainContentAreaGrid != null) MainContentAreaGrid.Clip = null;
-                    if (ContentScrollViewer != null) ContentScrollViewer.Clip = null;
-                    if (_canvasScissorTranslate != null)
-                    {
-                        _canvasScissorTranslate.BeginAnimation(TranslateTransform.XProperty, null);
-                        _canvasScissorTranslate.X = 0;
-                    }
-                }
-            };
-        }
-
-        _canvasScissorTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
     }
 
     private void OnDrawerAppPinRequested(object? sender, CatalogItemModel item)

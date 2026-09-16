@@ -42,13 +42,7 @@ namespace MetroHub.Presentation.Controls
         {
             InitializeComponent();
             Visibility = Visibility.Collapsed;
-            Loaded += (s, e) =>
-            {
-                if (!IsOpen)
-                {
-                    DrawerTranslate.X = -DrawerWidth;
-                }
-            };
+            DrawerTranslate.X = 0;
         }
 
         public void Open()
@@ -56,6 +50,7 @@ namespace MetroHub.Presentation.Controls
             if (IsOpen && Visibility == Visibility.Visible) return;
 
             IsOpen = true;
+            DrawerTranslate.X = 0;
             Visibility = Visibility.Visible;
 
             if (!_isAppsLoaded || _allApps.Count == 0)
@@ -63,41 +58,8 @@ namespace MetroHub.Presentation.Controls
                 LoadApps();
             }
 
-            double slideWidth = DrawerWidth;
-            double startX = DrawerTranslate.X;
-            if (Math.Abs(startX) < 0.001)
-            {
-                startX = -slideWidth;
-                DrawerTranslate.X = startX;
-            }
-
-            int refreshRate = NativeMethods.GetScreenRefreshRate();
-            if (refreshRate <= 0) refreshRate = 100;
-
-            // GPU Hardware Texture Cache: bakes the drawer once into a GPU surface for silky 100 FPS slide
-            CacheMode = new BitmapCache { RenderAtScale = 1.0, SnapsToDevicePixels = true };
-
-            // Fire event so scissor clip is launched in exact frame synchronization
             Opened?.Invoke(this, EventArgs.Empty);
-
-            // Animate smooth GPU slide in
-            var anim = new DoubleAnimation
-            {
-                From = startX,
-                To = 0,
-                Duration = TimeSpan.FromMilliseconds(220),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-            Timeline.SetDesiredFrameRate(anim, refreshRate);
-
-            anim.Completed += (s, e) =>
-            {
-                // Restore live ClearType rendering after slide finishes
-                CacheMode = null;
-                SearchBox.Focus();
-            };
-
-            DrawerTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
+            SearchBox.Focus();
         }
 
         public void Close()
@@ -105,37 +67,11 @@ namespace MetroHub.Presentation.Controls
             if (!IsOpen && Visibility != Visibility.Visible) return;
 
             IsOpen = false;
-            double slideWidth = DrawerWidth;
-
-            int refreshRate = NativeMethods.GetScreenRefreshRate();
-            if (refreshRate <= 0) refreshRate = 100;
-
-            // GPU Hardware Texture Cache during slide out
-            CacheMode = new BitmapCache { RenderAtScale = 1.0, SnapsToDevicePixels = true };
-
             Closing?.Invoke(this, EventArgs.Empty);
 
-            // Animate smooth GPU slide out
-            var anim = new DoubleAnimation
-            {
-                From = DrawerTranslate.X,
-                To = -slideWidth,
-                Duration = TimeSpan.FromMilliseconds(180),
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
-            };
-            Timeline.SetDesiredFrameRate(anim, refreshRate);
-
-            anim.Completed += (s, e) =>
-            {
-                CacheMode = null;
-                if (!IsOpen)
-                {
-                    Visibility = Visibility.Collapsed;
-                    ClearSearch();
-                    Closed?.Invoke(this, EventArgs.Empty);
-                }
-            };
-            DrawerTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
+            Visibility = Visibility.Collapsed;
+            ClearSearch();
+            Closed?.Invoke(this, EventArgs.Empty);
         }
 
         public void Toggle()
