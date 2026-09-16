@@ -231,7 +231,32 @@ MetroHub rests quietly in the Windows system tray when closed.
   2. **Structural CLI Parsing:** When inspecting administrative states via CLI tools (like `netsh interface show interface`), delimit data rows using universal structural tokens (such as the separator `---` line) and index columns positionally. Support common international keyword dictionaries (`"Enabled"`, `"Activé"`, `"Aktiviert"`, `"Habilitado"`, `"已启用"`) and invert negative states (`!isAdminDisabled`).
   3. **Zero-Hardware-Drop Guarantee:** Always implement a fallback to live physical NICs so that hardware adapters are NEVER dropped or hidden from the user even if external CLI queries fail, time out, or are blocked by security policy.
 
+---
 
+## 14. Standardized WidgetTile & Strip Header Icon System
 
+> **MANDATORY FOR ALL CURRENT & FUTURE WIDGET TILES**: Every widget strip item (`WidgetTile`) MUST use the standardized 24px Fluent System Icons grid. Ad-hoc font sizing (`FontSize="20"`, `"24"`, `"26"`) or injecting raw `<ui:SymbolIcon>` controls inside tiles is **STRICTLY BANNED**.
 
+### 1. The Universal Standard: `Symbol` Property (`SymbolRegular`)
+- `WidgetTile` exposes a first-class `Symbol` property typed to `Wpf.Ui.Controls.SymbolRegular`.
+- The control template automatically renders the icon in a centered 28x28 optical box at the standard **24px** grid with pure white foreground (`#FFFFFF`).
+- Baseline alignment, stroke weight, and optical mass are identical across all tiles automatically.
 
+### 2. Authoring Tiles (The Clean Standard Contract)
+Widget authors write **one clean line per tile** with zero nested XAML hacks:
+
+```xaml
+<widgets:WidgetTiles SelectedValue="{Binding CurrentPanel, Mode=TwoWay}" Height="76">
+    <widgets:WidgetTile Value="Ethernet" Symbol="{Binding EthernetTileSymbol}" Header="{Binding EthernetTileHeader}" ... />
+    <widgets:WidgetTile Value="Wifi"     Symbol="{Binding WifiPanelSymbol}"     Header="Wi-Fi" ... />
+    <widgets:WidgetTile Value="Adapters" Symbol="WrenchScrewdriver24"           Header="Adapters" ... />
+    <widgets:WidgetTile Value="Speed"    Symbol="TopSpeed24"                    Header="Speed" ... />
+    <widgets:WidgetTile Value="Usage"    Symbol="DataPie24"                     Header="Usage" ... />
+</widgets:WidgetTiles>
+```
+
+### 3. Architectural Rules for Tile Icons
+1. **Zero Ad-Hoc FontSize Injections:** NEVER write `<widgets:WidgetTile.Icon><ui:SymbolIcon FontSize="26" ... /></widgets:WidgetTile.Icon>`. The system provides `IconSize="24"` as the universal standard.
+2. **Zero Hardcoded Colors:** Icons automatically inherit `{TemplateBinding Foreground}` (`#FFFFFF`).
+3. **Dynamic Icons via ViewModel:** When icons change dynamically based on state (e.g. Wi-Fi connected vs disconnected vs airplane mode), the ViewModel exposes a property returning `SymbolRegular` (e.g. `public SymbolRegular WifiPanelSymbol => ...`), which binds directly via `Symbol="{Binding WifiPanelSymbol}"`.
+4. **Backwards Compatibility:** If a custom drawing image or raw glyph string is required, the `Icon` property is preserved as a fallback and automatically renders at standard `IconSize` inside the same 28x28 centered optical box.

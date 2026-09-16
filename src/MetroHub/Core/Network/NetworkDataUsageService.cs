@@ -20,29 +20,49 @@ public class DataUsageResult
     public ulong BytesReceived { get; set; }
     public ulong BytesSent { get; set; }
     public ulong TotalBytes => BytesReceived + BytesSent;
-    // Exactly matches Windows Settings convention (displays in GB with 2 decimals)
-    public string FormattedTotal => FormatWindowsSettingsGigabytes(TotalBytes);
-    public string FormattedReceived => FormatWindowsSettingsGigabytes(BytesReceived);
-    public string FormattedSent => FormatWindowsSettingsGigabytes(BytesSent);
+    public string FormattedTotal => FormatSmartDataUsage(TotalBytes);
+    public string FormattedReceived => FormatSmartDataUsage(BytesReceived);
+    public string FormattedSent => FormatSmartDataUsage(BytesSent);
     public string FormattedDetail => $"↓ {FormattedReceived}   ↑ {FormattedSent}";
     public string FormattedFull => TotalBytes == 0 ? "0 MB" : $"{FormattedTotal}  (↓ {FormattedReceived}  ↑ {FormattedSent})";
 
-    public static string FormatWindowsSettingsGigabytes(ulong bytes)
+    public static string FormatSmartDataUsage(ulong bytes)
     {
-        if (bytes == 0)
+        const ulong KB = 1024UL;
+        const ulong MB = 1024UL * 1024;
+        const ulong GB = 1024UL * 1024 * 1024;
+        const ulong TB = 1024UL * 1024 * 1024 * 1024;
+
+        if (bytes == 0) return "0 MB";
+
+        if (bytes >= TB)
         {
-            return "0 MB";
+            double val = (double)bytes / TB;
+            return val >= 10.0 ? $"{Math.Round(val):0} TB" : $"{val:0.#} TB";
         }
-        if (bytes >= 1024UL * 1024 * 1024)
+
+        if (bytes >= GB)
         {
-            return $"{(double)bytes / (1024UL * 1024 * 1024):0.00} GB";
+            double val = (double)bytes / GB;
+            return val >= 10.0 ? $"{Math.Round(val):0} GB" : $"{val:0.#} GB";
         }
-        if (bytes >= 1024UL * 1024)
+
+        if (bytes >= MB)
         {
-            return $"{(double)bytes / (1024UL * 1024):0.0} MB";
+            double val = (double)bytes / MB;
+            return val >= 10.0 ? $"{Math.Round(val):0} MB" : $"{val:0.#} MB";
         }
-        return $"{bytes / 1024UL} KB";
+
+        if (bytes >= KB)
+        {
+            double val = (double)bytes / KB;
+            return $"{Math.Round(val):0} KB";
+        }
+
+        return $"{bytes} B";
     }
+
+    public static string FormatWindowsSettingsGigabytes(ulong bytes) => FormatSmartDataUsage(bytes);
 }
 
 public class NetworkDataUsageService

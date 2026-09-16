@@ -283,9 +283,7 @@ public class WidgetSegmentedControl : Selector
 
         int count = Items.Count;
         double hostWidth = _hostGrid.ActualWidth;
-
         double slotWidth = (count > 0 && hostWidth > 0) ? (hostWidth / count) : 0;
-        double slotCenterX = (index + 0.5) * slotWidth;
 
         var container = ItemContainerGenerator.ContainerFromIndex(index) as FrameworkElement;
         if (container == null && index >= 0 && index < Items.Count && Items[index] is FrameworkElement fe)
@@ -293,7 +291,32 @@ public class WidgetSegmentedControl : Selector
             container = fe;
         }
 
-        if (slotWidth <= 0 && container != null && container.ActualWidth > 0)
+        double slotCenterX = 0;
+        double textWidth = 0;
+
+        // Query the actual rendered TextBlock or ContentPresenter inside the container
+        FrameworkElement? textTarget = null;
+        if (container != null)
+        {
+            textTarget = FindVisualChild<TextBlock>(container)
+                         ?? (FrameworkElement?)FindVisualChild<ContentPresenter>(container);
+        }
+
+        if (textTarget != null && textTarget.ActualWidth > 0)
+        {
+            try
+            {
+                Point p = textTarget.TranslatePoint(new Point(0, 0), _hostGrid);
+                textWidth = textTarget.ActualWidth;
+                slotCenterX = p.X + (textWidth / 2.0);
+            }
+            catch
+            {
+            }
+        }
+
+        // Fallback: visual container translation if textTarget was not resolved
+        if (slotCenterX <= 0 && container != null && container.ActualWidth > 0)
         {
             try
             {
@@ -302,31 +325,36 @@ public class WidgetSegmentedControl : Selector
             }
             catch
             {
-                return;
             }
         }
 
-        double textWidth = 0;
-        if (container != null)
+        // Fallback: mathematical slot calculation
+        if (slotCenterX <= 0)
         {
-            var cp = FindVisualChild<ContentPresenter>(container);
-            if (cp != null && cp.ActualWidth > 0)
-            {
-                textWidth = cp.ActualWidth;
-            }
+            slotCenterX = (index + 0.5) * slotWidth;
         }
 
         // Fallback calculation using FormattedText if layout is pending
         if (textWidth <= 0 && index >= 0 && index < Items.Count)
         {
             string? text = null;
+            double itemFontSize = 13.0;
+            FontFamily itemFontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI, sans-serif");
+            FontWeight itemFontWeight = FontWeights.SemiBold;
+
             if (Items[index] is HeaderedContentControl hcc && hcc.Content != null)
             {
                 text = hcc.Content.ToString();
+                itemFontSize = hcc.FontSize;
+                itemFontFamily = hcc.FontFamily;
+                itemFontWeight = hcc.FontWeight;
             }
             else if (Items[index] is WidgetSegmentedItem segItem && segItem.Content != null)
             {
                 text = segItem.Content.ToString();
+                itemFontSize = segItem.FontSize;
+                itemFontFamily = segItem.FontFamily;
+                itemFontWeight = segItem.FontWeight;
             }
             else if (Items[index] != null)
             {
@@ -335,13 +363,13 @@ public class WidgetSegmentedControl : Selector
 
             if (!string.IsNullOrEmpty(text))
             {
-                var typeface = new Typeface(new FontFamily("Segoe UI Variable Text, Segoe UI, sans-serif"), FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal);
+                var typeface = new Typeface(itemFontFamily, FontStyles.Normal, itemFontWeight, FontStretches.Normal);
                 var formatted = new FormattedText(
                     text,
                     System.Globalization.CultureInfo.CurrentCulture,
                     FlowDirection.LeftToRight,
                     typeface,
-                    12.0,
+                    itemFontSize,
                     Brushes.White,
                     VisualTreeHelper.GetDpi(_hostGrid).PixelsPerDip);
                 textWidth = formatted.Width;
@@ -360,6 +388,12 @@ public class WidgetSegmentedControl : Selector
         {
             _slidingIndicator.BeginAnimation(UIElement.OpacityProperty, null);
             _slidingIndicator.Opacity = 1.0;
+        }
+
+        // If the control was in initial layout phase and visual child wasn't measured yet, schedule an exact snap
+        if ((textTarget == null || textTarget.ActualWidth <= 0) && IsLoaded)
+        {
+            Dispatcher.InvokeAsync(() => UpdateIndicator(animate: false), DispatcherPriority.Loaded);
         }
 
         if (animate)

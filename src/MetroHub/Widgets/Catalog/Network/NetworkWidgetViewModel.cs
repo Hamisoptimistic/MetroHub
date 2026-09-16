@@ -385,6 +385,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetPanelTitleColor))]
     [NotifyPropertyChangedFor(nameof(EthernetTileHeader))]
     [NotifyPropertyChangedFor(nameof(EthernetTileIcon))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileSymbol))]
     [NotifyPropertyChangedFor(nameof(EthernetTileTooltip))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelName))]
     [NotifyPropertyChangedFor(nameof(EthernetTurnedOffBannerTitle))]
@@ -445,9 +446,15 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(WifiActionText))]
     [NotifyPropertyChangedFor(nameof(WifiActionSubtext))]
     [NotifyPropertyChangedFor(nameof(WifiStatusBrush))]
+    [NotifyPropertyChangedFor(nameof(ShowWifiUsageDetails))]
+    [NotifyPropertyChangedFor(nameof(ShowWifiNoAdapterText))]
+    [NotifyPropertyChangedFor(nameof(WifiUsageTotalDisplay))]
+    [NotifyPropertyChangedFor(nameof(WifiUsageDetailDisplay))]
     private bool _hasWifiAdapter;
 
     public bool HasNoWifiAdapter => !HasWifiAdapter;
+    public bool ShowWifiUsageDetails => HasWifiAdapter;
+    public bool ShowWifiNoAdapterText => !HasWifiAdapter;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasNoEthernetAdapter))]
@@ -465,9 +472,15 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetPanelTitle))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelIcon))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelTitleColor))]
+    [NotifyPropertyChangedFor(nameof(ShowEthernetUsageDetails))]
+    [NotifyPropertyChangedFor(nameof(ShowEthernetNoAdapterText))]
+    [NotifyPropertyChangedFor(nameof(EthernetUsageTotalDisplay))]
+    [NotifyPropertyChangedFor(nameof(EthernetUsageDetailDisplay))]
     private bool _hasEthernetAdapter;
 
     public bool HasNoEthernetAdapter => !HasEthernetAdapter;
+    public bool ShowEthernetUsageDetails => HasEthernetAdapter;
+    public bool ShowEthernetNoAdapterText => !HasEthernetAdapter;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(EthernetStatusText))]
@@ -480,6 +493,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
     [NotifyPropertyChangedFor(nameof(EthernetTileHeader))]
     [NotifyPropertyChangedFor(nameof(EthernetTileIcon))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileSymbol))]
     [NotifyPropertyChangedFor(nameof(EthernetTileTooltip))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelName))]
     [NotifyPropertyChangedFor(nameof(EthernetTurnedOffBannerTitle))]
@@ -846,7 +860,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     }
 
     // Wired / USB Tethering Interface Specifics
-    public string UsageWiredTitle => IsActiveUsbTethering ? "USB TETHERING" : "ETHERNET";
+    public string UsageWiredTitle => IsActiveUsbTethering ? "USB Tethering" : "Ethernet";
     public string UsageWiredIcon => IsActiveUsbTethering ? "\uE8EA" : "\uE839";
 
     public string EthernetUsageTotalDisplay => (EthernetDataUsage?.TotalBytes ?? 0) > 0
@@ -1464,6 +1478,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetPanelTitleColor))]
     [NotifyPropertyChangedFor(nameof(EthernetTileHeader))]
     [NotifyPropertyChangedFor(nameof(EthernetTileIcon))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileSymbol))]
     [NotifyPropertyChangedFor(nameof(EthernetTileTooltip))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelName))]
     [NotifyPropertyChangedFor(nameof(EthernetTurnedOffBannerTitle))]
@@ -1496,6 +1511,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public string EthernetTileHeader => IsActiveUsbTethering ? "USB Tether" : "Ethernet";
 
     public string EthernetTileIcon => IsActiveUsbTethering ? "\uE8EA" : "\uE839";
+
+    public SymbolRegular EthernetTileSymbol => IsActiveUsbTethering ? SymbolRegular.UsbPlug24 : SymbolRegular.Desktop24;
 
     public string EthernetTileTooltip => IsActiveUsbTethering
         ? "USB Tethering Settings & Telemetry"
@@ -1771,6 +1788,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 OnPropertyChanged(nameof(EthernetPanelTitleColor));
                 OnPropertyChanged(nameof(EthernetTileHeader));
                 OnPropertyChanged(nameof(EthernetTileIcon));
+                OnPropertyChanged(nameof(EthernetTileSymbol));
                 OnPropertyChanged(nameof(EthernetTileTooltip));
                 OnPropertyChanged(nameof(EthernetPanelName));
                 OnPropertyChanged(nameof(EthernetTurnedOffBannerTitle));
@@ -2554,6 +2572,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             OnPropertyChanged(nameof(EthernetPanelTitleColor));
             OnPropertyChanged(nameof(EthernetTileHeader));
             OnPropertyChanged(nameof(EthernetTileIcon));
+            OnPropertyChanged(nameof(EthernetTileSymbol));
             OnPropertyChanged(nameof(EthernetTileTooltip));
             OnPropertyChanged(nameof(EthernetPanelName));
             OnPropertyChanged(nameof(EthernetTurnedOffBannerTitle));
@@ -3029,6 +3048,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         OnPropertyChanged(nameof(WifiIndicatorDotBrush));
         OnPropertyChanged(nameof(EthernetTileHeader));
         OnPropertyChanged(nameof(EthernetTileIcon));
+        OnPropertyChanged(nameof(EthernetTileSymbol));
         OnPropertyChanged(nameof(EthernetTileTooltip));
         OnPropertyChanged(nameof(EthernetPanelName));
         OnPropertyChanged(nameof(EthernetTurnedOffBannerTitle));

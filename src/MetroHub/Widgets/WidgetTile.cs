@@ -2,12 +2,14 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Wpf.Ui.Controls;
 
 namespace MetroHub.Widgets;
 
 /// <summary>
 /// An individual selectable tile item within a <see cref="WidgetTiles"/> strip.
 /// Displays an icon, header label, and provides its own dynamic <see cref="IndicatorBrush"/>.
+/// Standardized on the 24px Fluent System Icons grid.
 /// </summary>
 public class WidgetTile : ListBoxItem
 {
@@ -17,6 +19,52 @@ public class WidgetTile : ListBoxItem
             typeof(object),
             typeof(WidgetTile),
             new PropertyMetadata(null));
+
+    public static readonly DependencyProperty SymbolProperty =
+        DependencyProperty.Register(
+            nameof(Symbol),
+            typeof(SymbolRegular?),
+            typeof(WidgetTile),
+            new PropertyMetadata(null, OnSymbolChanged));
+
+    private static void OnSymbolChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is WidgetTile tile)
+        {
+            tile.SetValue(HasSymbolPropertyKey, e.NewValue != null);
+        }
+    }
+
+    private static readonly DependencyPropertyKey HasSymbolPropertyKey =
+        DependencyProperty.RegisterReadOnly(
+            nameof(HasSymbol),
+            typeof(bool),
+            typeof(WidgetTile),
+            new PropertyMetadata(false));
+
+    public static readonly DependencyProperty HasSymbolProperty =
+        HasSymbolPropertyKey.DependencyProperty;
+
+    public bool HasSymbol => (bool)GetValue(HasSymbolProperty);
+
+    public static readonly DependencyProperty IconSizeProperty =
+        DependencyProperty.Register(
+            nameof(IconSize),
+            typeof(double),
+            typeof(WidgetTile),
+            new PropertyMetadata(24.0));
+
+    public SymbolRegular? Symbol
+    {
+        get => (SymbolRegular?)GetValue(SymbolProperty);
+        set => SetValue(SymbolProperty, value);
+    }
+
+    public double IconSize
+    {
+        get => (double)GetValue(IconSizeProperty);
+        set => SetValue(IconSizeProperty, value);
+    }
 
     public static readonly DependencyProperty IconProperty =
         DependencyProperty.Register(
