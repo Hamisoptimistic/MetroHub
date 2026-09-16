@@ -293,6 +293,7 @@
                 <!-- Mode 1: Alphabetical Grouped Apps List with Breathing Room -->
                 <ScrollViewer x:Name="GroupedScrollViewer"
                               controls:AutoHideScrollBehavior.IsEnabled="True"
+                              controls:SmoothScrollBehavior.IsEnabled="True"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
                               Focusable="False"
@@ -302,24 +303,13 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Margin="0,0,0,6">
-                                    <!-- Group Header Badge: Perfectly aligned with app icon column below -->
-                                    <Border Width="28"
-                                            Height="28"
-                                            Background="#14FFFFFF"
-                                            BorderThickness="1"
-                                            BorderBrush="#1CFFFFFF"
-                                            CornerRadius="2"
-                                            SnapsToDevicePixels="True"
-                                            HorizontalAlignment="Left"
-                                            Margin="16,8,0,4">
-                                        <TextBlock Text="{Binding Header}"
-                                                   FontSize="14"
-                                                   FontWeight="Bold"
-                                                   FontFamily="Segoe UI Variable Display, Segoe UI Variable Text, Segoe UI, sans-serif"
-                                                   Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center" />
-                                    </Border>
+                                    <!-- Group Letter Header -->
+                                    <TextBlock Text="{Binding Header}"
+                                               FontSize="18"
+                                               FontWeight="Bold"
+                                               FontFamily="Segoe UI Variable Display, Segoe UI Variable Text, Segoe UI, sans-serif"
+                                               Foreground="#70FFFFFF"
+                                               Margin="16,12,0,2" />
 
                                     <!-- Apps in this letter group -->
                                     <ItemsControl ItemsSource="{Binding Items}">
@@ -367,6 +357,7 @@
                 <!-- Mode 2: Search Results Flat List with Breathing Room -->
                 <ScrollViewer x:Name="SearchResultsScrollViewer"
                               controls:AutoHideScrollBehavior.IsEnabled="True"
+                              controls:SmoothScrollBehavior.IsEnabled="True"
                               Visibility="Collapsed"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
