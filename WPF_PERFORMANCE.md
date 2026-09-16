@@ -114,7 +114,10 @@ Replace software `DropShadowEffect` with lightweight painted borders or GPU radi
 
 ---
 
-## 6. Summary Checklist Before Merging Any UI Code
+
+---
+
+## 7. Summary Checklist Before Merging Any UI Code
 
 - [ ] Scissor curtain clips `MainContentAreaGrid` to prevent canvas & footer text collisions.
 - [ ] Scissor curtain animates `TranslateTransform.XProperty` on a reusable `RectangleGeometry` (never `RectAnimation`).
@@ -125,3 +128,8 @@ Replace software `DropShadowEffect` with lightweight painted borders or GPU radi
 - [ ] Window, styles, and controls specify `TextFormattingMode="Ideal"` and `TextRenderingMode="Grayscale"`.
 - [ ] Dynamic media/photo scrims are conditional on thumbnail presence and avoid muddy tinting.
 - [ ] Asymmetric glyphs (Play triangle, Pause height) use optical centroid and height compensation.
+- [ ] Widget action strips reuse standard `WidgetTiles` and `WidgetTile` instead of custom button templates.
+- [ ] `WidgetTiles` indicator slides via `TranslateTransform.XProperty` (zero layout passes during motion).
+- [ ] Momentary action tiles use the `CurrentAction = null` reset pattern in ViewModel.
+- [ ] Widget ViewModels halt all background timers/polling in `Pause()` when MetroHub is hidden.
+

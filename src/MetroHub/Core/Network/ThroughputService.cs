@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace MetroHub.Core.Network;
 
-public class ThroughputService : IDisposable
+public sealed class ThroughputService : IDisposable
 {
     private static readonly Lazy<ThroughputService> _instance = new(() => new ThroughputService());
     public static ThroughputService Instance => _instance.Value;
@@ -25,7 +25,7 @@ public class ThroughputService : IDisposable
     private DateTime _prevSampleTime = DateTime.MinValue;
 
     private const int MaxHistorySamples = 30;
-    private readonly LinkedList<ThroughputSample> _history = new();
+    private readonly List<ThroughputSample> _history = new(MaxHistorySamples);
 
     public event Action<ThroughputMetrics>? ThroughputUpdated;
     public event Action<LatencyMetrics>? LatencyUpdated;
@@ -39,7 +39,7 @@ public class ThroughputService : IDisposable
         {
             lock (_lock)
             {
-                return _history.ToList();
+                return _history.ToArray();
             }
         }
     }
@@ -163,17 +163,16 @@ public class ThroughputService : IDisposable
             lock (_lock)
             {
                 CurrentThroughput = metrics;
-                _history.AddLast(new ThroughputSample
+                if (_history.Count >= MaxHistorySamples)
+                {
+                    _history.RemoveAt(0);
+                }
+                _history.Add(new ThroughputSample
                 {
                     DownloadBytesPerSec = downSpeedBytes,
                     UploadBytesPerSec = upSpeedBytes,
                     Timestamp = now
                 });
-
-                while (_history.Count > MaxHistorySamples)
-                {
-                    _history.RemoveFirst();
-                }
             }
 
             ThroughputUpdated?.Invoke(metrics);

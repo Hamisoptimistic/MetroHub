@@ -102,7 +102,7 @@ public static class AppUninstallService
         string fileName;
         string args = string.Empty;
 
-        if (cmd.StartsWith("\""))
+        if (cmd.StartsWith('"'))
         {
             int quoteEnd = cmd.IndexOf('\"', 1);
             if (quoteEnd > 0)

@@ -107,7 +107,7 @@ public partial class TileControl : UserControl
 
     private void AnimateRevealFill(double targetOpacity, int durationMs)
     {
-        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "notepad" })
+        if (DataContext is TileModel { TileType: TileType.Widget } tm && (tm.TargetPath == "notepad" || tm.TargetPath == "network" || tm.TargetPath == "photos" || tm.TargetPath == "power"))
         {
             RevealFillBorder.Opacity = 0.0;
             return;
@@ -206,7 +206,7 @@ public partial class TileControl : UserControl
 
     public void AnimatePressDown()
     {
-        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" or "photos" or "volume" or "notepad" or "network" })
+        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" or "photos" or "volume" or "notepad" or "network" or "brightness" or "power" })
         {
             return;
         }

@@ -135,7 +135,7 @@ public static class IconExtractorService
             }
         }
 
-        if (stripped.StartsWith("{"))
+        if (stripped.StartsWith('{'))
         {
             int endBrace = stripped.IndexOf('}');
             if (endBrace > 0)

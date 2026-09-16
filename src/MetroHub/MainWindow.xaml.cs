@@ -653,7 +653,7 @@ public partial class MainWindow : BorderlessFluentWindow
             {
                 RootGrid.Background = System.Windows.Media.Brushes.Transparent;
             }
-            UpdateWallpaperDisplay();
+            _ = UpdateWallpaperDisplayAsync();
         }
         else
         {
@@ -747,7 +747,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private int _wallpaperLoadGeneration = 0;
 
-    private async void UpdateWallpaperDisplay()
+    private async Task UpdateWallpaperDisplayAsync()
     {
         if (CustomWallpaperHost == null || WallpaperImage == null || WallpaperScrim == null) return;
 
@@ -805,7 +805,7 @@ public partial class MainWindow : BorderlessFluentWindow
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow] UpdateWallpaperDisplay error: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] UpdateWallpaperDisplayAsync error: {ex.Message}");
         }
 
         if (currentGen != _wallpaperLoadGeneration) return;

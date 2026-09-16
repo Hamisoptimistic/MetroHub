@@ -21,7 +21,7 @@ public enum WifiStandard
     Wifi7   // 802.11be (EHT)
 }
 
-public class EthernetInfo
+public sealed class EthernetInfo
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -73,7 +73,7 @@ public class EthernetInfo
     }
 }
 
-public class WifiNetworkItem
+public sealed class WifiNetworkItem
 {
     public string Ssid { get; set; } = string.Empty;
     public int SignalQuality { get; set; } // 0 - 100
@@ -115,7 +115,7 @@ public class WifiNetworkItem
     public int Channel { get; set; }
 }
 
-public class WifiConnectionDetails
+public sealed class WifiConnectionDetails
 {
     public string Ssid { get; set; } = string.Empty;
     public string AdapterDescription { get; set; } = string.Empty;
@@ -153,7 +153,7 @@ public class WifiConnectionDetails
     public string LinkSpeedString { get; set; } = "--";
 }
 
-public class ThroughputMetrics
+public sealed class ThroughputMetrics
 {
     public double DownloadBytesPerSec { get; set; }
     public double UploadBytesPerSec { get; set; }
@@ -188,14 +188,14 @@ public class ThroughputMetrics
     }
 }
 
-public class ThroughputSample
+public sealed class ThroughputSample
 {
     public double DownloadBytesPerSec { get; init; }
     public double UploadBytesPerSec { get; init; }
     public DateTime Timestamp { get; init; } = DateTime.UtcNow;
 }
 
-public class LatencyMetrics
+public sealed class LatencyMetrics
 {
     public long PingMs { get; set; } = -1;
     public string TargetHost { get; set; } = "1.1.1.1";
@@ -227,7 +227,7 @@ public enum ConnectivityLevel
     InternetAccess
 }
 
-public class NetworkHealthStatus
+public sealed class NetworkHealthStatus
 {
     public ConnectivityLevel Connectivity { get; set; } = ConnectivityLevel.None;
     public string ConnectivityLabel => Connectivity switch
@@ -261,7 +261,7 @@ public enum PhysicalAdapterType
     UsbTethering
 }
 
-public class PhysicalAdapterInfo
+public sealed class PhysicalAdapterInfo
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

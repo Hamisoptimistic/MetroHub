@@ -12,7 +12,7 @@ public enum TileType
     Folder
 }
 
-public class TileModel : INotifyPropertyChanged
+public sealed class TileModel : INotifyPropertyChanged
 {
     private string _id = Guid.NewGuid().ToString("N");
     private string _title = string.Empty;
@@ -265,10 +265,10 @@ public class TileModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value)) return false;
         field = value;

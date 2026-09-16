@@ -90,6 +90,9 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
     [ObservableProperty]
     private string _timeDisplayString = string.Empty;
 
+    [ObservableProperty]
+    private bool _isLive;
+
     private readonly object _stateLock = new();
     private string _currentTrackId = string.Empty;
     private long _updateEpoch = 0;
@@ -113,6 +116,8 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
     private double _playbackRate = 1.0;
     private bool _isScrubbing = false;
     private CancellationTokenSource? _seekRecoveryCts;
+    private int _lastDisplayedPosSeconds = -1;
+    private int _lastDisplayedDurSeconds = -1;
 
     public MediaWidgetViewModel(TileModel model) : base(model)
     {
@@ -228,6 +233,10 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 PositionSeconds = 0;
                 ProgressRatio = 0.0;
                 TimeDisplayString = string.Empty;
+                _lastDisplayedPosSeconds = -1;
+                _lastDisplayedDurSeconds = -1;
+                IsLive = false;
+                CanSeek = true;
                 _playbackTimer?.Stop();
             });
         }
@@ -346,22 +355,75 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                 isPlaying = _optimisticPlaybackTarget;
             }
 
+            var controls = playback?.Controls;
+            bool canSeek = controls?.IsPlaybackPositionEnabled ?? true;
+
             lock (_stateLock)
             {
-                // If the OS timeline has no range (EndTime <= 0), it is an uninitialized
-                // or cleared timeline (Chromium/YouTube emits this during seeks and buffering).
+                // ── LIVE STREAM DETECTION ──
+                // Live streams (Twitch, YouTube Live, Kick, Web Radio) lack a fixed duration
+                // or have dynamically advancing live buffers and non-seekable playback.
+                bool isLiveStream = false;
+
                 if (newDuration <= TimeSpan.Zero)
                 {
-                    // NEVER overwrite an established duration or position with zeros from a cleared timeline!
-                    if (_trackDuration > TimeSpan.Zero)
+                    // If we have an established positive duration on a regular track (e.g. Spotify / normal YouTube video),
+                    // Chromium sends transient EndTime <= 0 during seeks and buffering. Ignore that transient zero!
+                    if (_trackDuration > TimeSpan.Zero && !IsLive)
                     {
                         return;
+                    }
+
+                    // No established duration while playing or seeking is disabled: live stream!
+                    if (isPlaying || !canSeek)
+                    {
+                        isLiveStream = true;
                     }
                 }
                 else
                 {
-                    _trackDuration = newDuration;
+                    // For streams with non-zero duration:
+                    // Check if seeking is disabled, or if it was already detected as live,
+                    // or if the live buffer is continuously sliding forward at the live edge.
+                    if (!canSeek)
+                    {
+                        isLiveStream = true;
+                    }
+                    else if (IsLive)
+                    {
+                        isLiveStream = true;
+                    }
+                    else if (_trackDuration > TimeSpan.Zero &&
+                             newDuration > _trackDuration + TimeSpan.FromSeconds(1.0) &&
+                             Math.Abs((timeline.EndTime - timeline.Position).TotalSeconds) < 2.5)
+                    {
+                        isLiveStream = true;
+                    }
                 }
+
+                if (isLiveStream)
+                {
+                    IsLive = true;
+                    CanSeek = false;
+                    _trackDuration = TimeSpan.Zero;
+                    _seekRecoveryUntil = 0;
+                    _seekRecoveryCts?.Cancel();
+                    _transientZeroDetectedAt = 0;
+
+                    if (!_isScrubbing)
+                    {
+                        DurationSeconds = 0;
+                        PositionSeconds = 0;
+                        ProgressRatio = 0.0;
+                        TimeDisplayString = "LIVE";
+                    }
+                    return;
+                }
+
+                // Standard track: update duration and seek capability
+                IsLive = false;
+                CanSeek = canSeek;
+                _trackDuration = newDuration;
 
                 // If we're in a user-initiated seek suppression window, skip external updates entirely
                 if (Stopwatch.GetTimestamp() < _suppressExternalPositionUpdatesUntil)
@@ -557,11 +619,23 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
         }
 
         _timerTickCount++;
+
+        if (IsLive)
+        {
+            // For live streams, do not extrapolate against an indeterminate duration.
+            // Gently check OS timeline every 2s (every 8th tick) to track changes or pauses.
+            if (_timerTickCount % 8 == 0)
+            {
+                SyncTimelineProperties(session, playback);
+            }
+            return;
+        }
+
         bool inSeekRecovery = Stopwatch.GetTimestamp() < _seekRecoveryUntil;
 
         // During seek recovery OR every 4th tick (1s cadence), do a full OS sync
         // to ensure we converge on the real position quickly
-        if (inSeekRecovery || _timerTickCount % 4 == 0 || DurationSeconds <= 0)
+        if (inSeekRecovery || _timerTickCount % 4 == 0)
         {
             SyncTimelineProperties(session, playback);
         }
@@ -584,15 +658,39 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
     private void UpdateTimeDisplay(double pos, double dur)
     {
+        if (IsLive)
+        {
+            if (TimeDisplayString != "LIVE")
+            {
+                TimeDisplayString = "LIVE";
+            }
+            _lastDisplayedPosSeconds = -1;
+            _lastDisplayedDurSeconds = -1;
+            return;
+        }
+
         if (dur > 0)
         {
             int p = (int)Math.Max(0, pos);
             int d = (int)Math.Max(0, dur);
+
+            if (p == _lastDisplayedPosSeconds && d == _lastDisplayedDurSeconds)
+            {
+                return;
+            }
+
+            _lastDisplayedPosSeconds = p;
+            _lastDisplayedDurSeconds = d;
             TimeDisplayString = $"{p / 60}:{p % 60:D2} / {d / 60}:{d % 60:D2}";
         }
         else
         {
-            TimeDisplayString = string.Empty;
+            if (_lastDisplayedPosSeconds != -1 || _lastDisplayedDurSeconds != -1)
+            {
+                _lastDisplayedPosSeconds = -1;
+                _lastDisplayedDurSeconds = -1;
+                TimeDisplayString = string.Empty;
+            }
         }
     }
 
@@ -609,6 +707,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public async Task SeekToRatioAsync(double ratio)
     {
+        if (IsLive || !CanSeek) return;
         var session = _currentSession ?? _manager?.GetCurrentSession();
         if (session == null || DurationSeconds <= 0) return;
 
@@ -722,6 +821,8 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                     _seekRecoveryUntil = 0;
                     _transientZeroDetectedAt = 0;
                     _trackDuration = TimeSpan.Zero;
+                    IsLive = false;
+                    CanSeek = true;
                 }
             }
 

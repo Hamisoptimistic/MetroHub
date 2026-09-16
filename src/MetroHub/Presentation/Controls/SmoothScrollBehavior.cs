@@ -18,6 +18,17 @@ namespace MetroHub.Presentation.Controls
     /// Same feel at 30 / 60 / 144 Hz. Natural deceleration, no abrupt stops.
     ///
     /// Usage: controls:SmoothScrollBehavior.IsEnabled="True"
+    ///
+    /// IMPORTANT: if this is attached to a ScrollViewer that belongs to an
+    /// ItemsControl (ListBox, etc.) backed by VirtualizingStackPanel, WPF's
+    /// default VirtualizingPanel.ScrollUnit is "Item" — VerticalOffset and
+    /// ScrollableHeight are then counted in whole rows, not pixels, and
+    /// ScrollToVerticalOffset silently rounds every value to the nearest row.
+    /// That makes all the smooth per-frame math below invisible: the content
+    /// only ever snaps between item boundaries, which looks exactly like a
+    /// low, uneven frame rate even though the spring is updating every frame.
+    /// OnLoaded below forces ScrollUnit="Pixel" automatically so you don't
+    /// have to hunt this down in every XAML template that uses the behavior.
     /// </summary>
     public static class SmoothScrollBehavior
     {
@@ -84,6 +95,16 @@ namespace MetroHub.Presentation.Controls
             s.Content = sv.Content as UIElement;
             s.Current = sv.VerticalOffset;
             s.Target  = sv.VerticalOffset;
+
+            // Force pixel-accurate scrolling. When this ScrollViewer is a template
+            // part of an ItemsControl (ListBox, etc.), TemplatedParent is that
+            // control. If its items panel is virtualizing, this makes
+            // ScrollToVerticalOffset operate in real pixels instead of snapping to
+            // item boundaries. No-op (harmless) for non-virtualized content.
+            if (sv.TemplatedParent is ItemsControl itemsControl)
+            {
+                VirtualizingPanel.SetScrollUnit(itemsControl, ScrollUnit.Pixel);
+            }
         }
 
         private static void OnUnloaded(object sender, RoutedEventArgs e)
@@ -170,7 +191,7 @@ namespace MetroHub.Presentation.Controls
                 {
                     // Snap to final target — animation complete
                     s.Current = s.Target;
-                    sv.ScrollToVerticalOffset(s.Current);
+                    ApplyOffset(sv, s.Current);
                     _active.RemoveAt(i);
 
                     // Restore hover now that list has stopped moving
@@ -182,7 +203,7 @@ namespace MetroHub.Presentation.Controls
                 {
                     // Exponential approach: smooth, natural, no abrupt stops
                     s.Current += remaining * factor;
-                    sv.ScrollToVerticalOffset(s.Current);
+                    ApplyOffset(sv, s.Current);
                 }
             }
 
@@ -192,6 +213,27 @@ namespace MetroHub.Presentation.Controls
                 CompositionTarget.Rendering -= OnRendering;
                 _hooked = false;
             }
+        }
+
+        /// <summary>
+        /// Sends a whole-device-pixel offset to the ScrollViewer every frame.
+        /// Deliberately does NOT keep our own "did this already get applied"
+        /// cache: ScrollViewer/IScrollInfo already no-ops internally when the
+        /// offset hasn't meaningfully changed, so a second cache bought no real
+        /// performance — it only risked going stale. A virtualizing panel
+        /// corrects its own estimated scroll extent once it measures real item
+        /// sizes, which can nudge VerticalOffset on its own; a stale cache would
+        /// then wrongly skip re-applying our position, and the gap surfaces all
+        /// at once as a pop right when the animation settles. Letting WPF stay
+        /// the single source of truth for "what's actually applied" avoids that.
+        ///
+        /// Rounding (rather than sending the raw fractional value) still matters
+        /// on its own: fractional offsets make text re-hint its glyph sub-pixel
+        /// positioning frame to frame, which reads as a faint shimmer/pop.
+        /// </summary>
+        private static void ApplyOffset(ScrollViewer sv, double value)
+        {
+            sv.ScrollToVerticalOffset(Math.Round(value, MidpointRounding.AwayFromZero));
         }
 
         // ── Hover suppression ─────────────────────────────────────────────────────

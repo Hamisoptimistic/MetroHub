@@ -13,7 +13,7 @@ using MetroHub.Core.Audio.Interop;
 
 namespace MetroHub.Core.Audio;
 
-public class AudioService : IDisposable
+public sealed class AudioService : IDisposable
 {
     private static AudioService? _instance;
     private static readonly object _instanceLock = new();

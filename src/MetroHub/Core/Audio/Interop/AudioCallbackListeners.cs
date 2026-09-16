@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace MetroHub.Core.Audio.Interop;
 
-public class EndpointNotificationCallback : IMMNotificationClient
+public sealed class EndpointNotificationCallback : IMMNotificationClient
 {
     public event Action? DefaultDeviceChanged;
     public event Action? DeviceListChanged;
@@ -41,7 +41,7 @@ public class EndpointNotificationCallback : IMMNotificationClient
     }
 }
 
-public class EndpointVolumeCallback : IAudioEndpointVolumeCallback
+public sealed class EndpointVolumeCallback : IAudioEndpointVolumeCallback
 {
     public event Action<float, bool>? VolumeChanged;
 
@@ -60,7 +60,7 @@ public class EndpointVolumeCallback : IAudioEndpointVolumeCallback
     }
 }
 
-public class AudioSessionNotificationListener : IAudioSessionNotification
+public sealed class AudioSessionNotificationListener : IAudioSessionNotification
 {
     public event Action? SessionCreated;
 
@@ -71,7 +71,7 @@ public class AudioSessionNotificationListener : IAudioSessionNotification
     }
 }
 
-public class AudioSessionEventsListener : IAudioSessionEvents
+public sealed class AudioSessionEventsListener : IAudioSessionEvents
 {
     public uint ProcessId { get; }
     public event Action<uint, float, bool>? VolumeChanged;

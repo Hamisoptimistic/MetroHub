@@ -1,6 +1,6 @@
 namespace MetroHub.Core.Models;
 
-public class AppSettings
+public sealed class AppSettings
 {
     public uint HotkeyModifiers { get; set; } = 0x0002; // MOD_CONTROL
     public uint HotkeyKey { get; set; } = 0xC0;         // VK_OEM_3 (~)

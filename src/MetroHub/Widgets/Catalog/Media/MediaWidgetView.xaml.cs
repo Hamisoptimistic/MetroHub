@@ -88,6 +88,18 @@ public partial class MediaWidgetView : UserControl
                 UpdateProgressVisuals(0);
             }
         }
+        else if (e.PropertyName is nameof(MediaWidgetViewModel.IsLive) or nameof(MediaWidgetViewModel.CanSeek))
+        {
+            if (_vm != null && (_vm.IsLive || !_vm.CanSeek))
+            {
+                UpdateProgressVisuals(0);
+                AnimateHoverState(false, false);
+            }
+            else if (_vm != null)
+            {
+                UpdateProgressVisuals(_vm.ProgressRatio);
+            }
+        }
     }
 
     private void UpdateProgressVisuals(double ratio)
@@ -120,7 +132,7 @@ public partial class MediaWidgetView : UserControl
 
     private void Seekbar_MouseEnter(object sender, MouseEventArgs e)
     {
-        if (_vm != null && _vm.HasMedia)
+        if (_vm != null && _vm.HasMedia && !_vm.IsLive && _vm.CanSeek)
         {
             AnimateHoverState(true, _isDragging);
         }
@@ -149,7 +161,7 @@ public partial class MediaWidgetView : UserControl
 
     private void HandleSeekStart(MouseButtonEventArgs e)
     {
-        if (_vm == null || !_vm.HasMedia) return;
+        if (_vm == null || !_vm.HasMedia || _vm.IsLive || !_vm.CanSeek) return;
 
         _isDragging = true;
         SeekbarContainer.CaptureMouse();

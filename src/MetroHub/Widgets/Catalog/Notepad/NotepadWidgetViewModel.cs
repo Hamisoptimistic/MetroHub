@@ -623,8 +623,8 @@ public partial class NotepadWidgetViewModel : WidgetViewModelBase
                     else
                     {
                         int spacesToRemove = 0;
-                        if (line.StartsWith("    ")) spacesToRemove = 4;
-                        else if (line.StartsWith("\t")) spacesToRemove = 1;
+                        if (line.StartsWith("    ", StringComparison.Ordinal)) spacesToRemove = 4;
+                        else if (line.StartsWith('\t')) spacesToRemove = 1;
                         else
                         {
                             while (spacesToRemove < line.Length && line[spacesToRemove] == ' ' && spacesToRemove < 4)
@@ -680,7 +680,7 @@ public partial class NotepadWidgetViewModel : WidgetViewModelBase
         string[] lines = rangeText.Split('\n');
 
         // Regex for stripping list prefixes: bullets (●, •, -, *, ○, ■, ▪) or numbered items (1., 2., etc.)
-        var prefixRegex = new Regex(@"^(\s*)([●•\-\*○■▪]|\d+\.)\s*");
+        var prefixRegex = ListPrefixRegex();
 
         // Check if all non-empty lines already have the target format
         bool allAlreadyHaveTarget = true;
@@ -693,7 +693,7 @@ public partial class NotepadWidgetViewModel : WidgetViewModelBase
 
             if (targetType == "Bullet")
             {
-                if (!Regex.IsMatch(trimmedLine, @"^\s*[●•\-\*○■▪]\s+"))
+                if (!BulletLineRegex().IsMatch(trimmedLine))
                 {
                     allAlreadyHaveTarget = false;
                     break;
@@ -701,7 +701,7 @@ public partial class NotepadWidgetViewModel : WidgetViewModelBase
             }
             else if (targetType == "Numbered")
             {
-                if (!Regex.IsMatch(trimmedLine, @"^\s*\d+\.\s+"))
+                if (!NumberedLineRegex().IsMatch(trimmedLine))
                 {
                     allAlreadyHaveTarget = false;
                     break;
@@ -768,6 +768,15 @@ public partial class NotepadWidgetViewModel : WidgetViewModelBase
 
         ActiveListType = shouldRemove ? "None" : targetType;
     }
+
+    [GeneratedRegex(@"^(\s*)([●•\-\*○■▪]|\d+\.)\s*")]
+    private static partial Regex ListPrefixRegex();
+
+    [GeneratedRegex(@"^\s*[●•\-\*○■▪]\s+")]
+    private static partial Regex BulletLineRegex();
+
+    [GeneratedRegex(@"^\s*\d+\.\s+")]
+    private static partial Regex NumberedLineRegex();
 
     #endregion
 }

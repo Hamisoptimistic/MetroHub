@@ -7,7 +7,7 @@ using Windows.Networking.Connectivity;
 
 namespace MetroHub.Core.Network;
 
-public class NetworkHealthService
+public sealed class NetworkHealthService
 {
     private static readonly Lazy<NetworkHealthService> _instance = new(() => new NetworkHealthService());
     public static NetworkHealthService Instance => _instance.Value;

@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Widgets.Catalog.Network.NetworkWidgetView"
+<UserControl x:Class="MetroHub.Widgets.Catalog.Network.NetworkWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -368,7 +368,8 @@
                                  SelectedValue="{Binding CurrentPanel, Mode=TwoWay}"
                                  Height="76">
                 <widgets:WidgetTile Value="Ethernet"
-                                    Symbol="{Binding EthernetTileSymbol}"
+                                    Icon="{Binding EthernetTileIcon}"
+                                    IconSize="18"
                                     Header="{Binding EthernetTileHeader}"
                                     IndicatorBrush="{Binding EthernetStatusBrush}"
                                     IsEnabled="{Binding HasEthernetAdapter}"

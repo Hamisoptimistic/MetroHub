@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace MetroHub.Core.Network;
 
-public class SpeedTestService
+public sealed class SpeedTestService
 {
     private static readonly HttpClient HttpClient;
 

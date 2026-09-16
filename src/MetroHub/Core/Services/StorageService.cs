@@ -5,7 +5,7 @@ using MetroHub.Core.Models;
 
 namespace MetroHub.Core.Services;
 
-public class StorageService
+public sealed class StorageService
 {
     private static readonly string AppDataDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetroHub");

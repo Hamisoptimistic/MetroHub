@@ -8,7 +8,7 @@ using MetroHub.Core.Network.Interop;
 
 namespace MetroHub.Core.Network;
 
-public class EthernetProvider
+public sealed class EthernetProvider
 {
     private static readonly Lazy<EthernetProvider> _instance = new(() => new EthernetProvider());
     public static EthernetProvider Instance => _instance.Value;
@@ -280,13 +280,13 @@ public class EthernetProvider
 
     private static bool IsLinkLocalOrLoopback(string ip)
     {
-        return ip.StartsWith("169.254.") || ip.StartsWith("127.");
+        return ip.StartsWith("169.254.", StringComparison.Ordinal) || ip.StartsWith("127.", StringComparison.Ordinal);
     }
 
     private static string FormatMacAddress(byte[] bytes)
     {
         if (bytes == null || bytes.Length == 0) return "--";
-        return string.Join("-", bytes.Select(b => b.ToString("X2")));
+        return BitConverter.ToString(bytes);
     }
 
     private static string FormatSpeed(long bitsPerSecond)

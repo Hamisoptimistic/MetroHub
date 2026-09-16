@@ -15,7 +15,7 @@ public enum DataUsageTimeframe
     Last30Days
 }
 
-public class DataUsageResult
+public sealed class DataUsageResult
 {
     public ulong BytesReceived { get; set; }
     public ulong BytesSent { get; set; }
@@ -65,7 +65,7 @@ public class DataUsageResult
     public static string FormatWindowsSettingsGigabytes(ulong bytes) => FormatSmartDataUsage(bytes);
 }
 
-public class NetworkDataUsageService
+public sealed class NetworkDataUsageService
 {
     private static readonly Lazy<NetworkDataUsageService> _instance = new(() => new NetworkDataUsageService());
     public static NetworkDataUsageService Instance => _instance.Value;

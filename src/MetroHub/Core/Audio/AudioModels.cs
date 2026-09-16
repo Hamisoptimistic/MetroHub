@@ -3,7 +3,7 @@ using System.Windows.Media;
 
 namespace MetroHub.Core.Audio;
 
-public class AudioDeviceModel
+public sealed class AudioDeviceModel
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -13,7 +13,7 @@ public class AudioDeviceModel
     public override string ToString() => $"{Name} (Default: {IsDefault})";
 }
 
-public class AppAudioSessionModel
+public sealed class AppAudioSessionModel
 {
     public uint ProcessId { get; set; }
     public string ProcessName { get; set; } = string.Empty;

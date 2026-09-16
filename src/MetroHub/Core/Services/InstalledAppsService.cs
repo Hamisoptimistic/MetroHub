@@ -173,7 +173,7 @@ public static class InstalledAppsService
                                         }
                                         // 3. Standardize AUMIDs & shell folder items to full shell URI for icon extraction & launching
                                         else if (!path.StartsWith("shell:", StringComparison.OrdinalIgnoreCase) &&
-                                            (!Path.IsPathRooted(path) || path.StartsWith("{") || !File.Exists(path)))
+                                            (!Path.IsPathRooted(path) || path.StartsWith('{') || !File.Exists(path)))
                                         {
                                             path = @"shell:AppsFolder\" + path;
                                         }
@@ -250,7 +250,7 @@ public static class InstalledAppsService
         // Filter out documentation and web links
         foreach (var ext in ExcludedExtensions)
         {
-            if (pathLower.EndsWith(ext)) return false;
+            if (pathLower.EndsWith(ext, StringComparison.Ordinal)) return false;
         }
 
         // Filter out folders/directories

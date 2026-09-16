@@ -3,7 +3,7 @@ namespace MetroHub.Core.Display;
 /// <summary>
 /// Immutable snapshot representing a connected display device and its hardware brightness capabilities.
 /// </summary>
-public record MonitorDevice
+public sealed record MonitorDevice
 {
     public required string Id { get; init; }
     public required string DeviceName { get; init; }

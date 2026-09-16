@@ -196,6 +196,23 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Mega,
             Factory: model => new MetroHub.Widgets.Catalog.Brightness.BrightnessWidgetViewModel(model)
         ));
+
+        // Register Power & Session Hub widget
+        Register(new WidgetDefinition(
+            Id: "power",
+            DisplayName: "Power & Session",
+            Description: "Quick Lock, Sleep, Restart, and Shut Down tiles",
+            Icon: SymbolRegular.Power28,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Banner,     // 8x2
+                WidgetSize.SlimBanner  // 8x1
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Power.PowerWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Power.PowerWidgetView),
+            DefaultSize: WidgetSize.Banner,
+            Factory: model => new MetroHub.Widgets.Catalog.Power.PowerWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)

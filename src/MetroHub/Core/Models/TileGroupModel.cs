@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace MetroHub.Core.Models;
 
-public class TileGroupModel : INotifyPropertyChanged
+public sealed class TileGroupModel : INotifyPropertyChanged
 {
     private string _id = Guid.NewGuid().ToString("N");
     private string _title = "New Group";
@@ -183,10 +183,10 @@ public class TileGroupModel : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-    protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value)) return false;
         field = value;

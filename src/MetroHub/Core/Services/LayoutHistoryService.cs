@@ -3,7 +3,7 @@ using MetroHub.Core.Models;
 
 namespace MetroHub.Core.Services;
 
-public class LayoutHistoryService
+public sealed class LayoutHistoryService
 {
     private const int MaxHistory = 40;
     private readonly Stack<string> _undoStack = new();
@@ -56,7 +56,7 @@ public class LayoutHistoryService
         if (string.IsNullOrWhiteSpace(snapshot)) return null;
         try
         {
-            if (snapshot.TrimStart().StartsWith("{"))
+            if (snapshot.TrimStart().StartsWith('{'))
             {
                 var model = JsonSerializer.Deserialize<LayoutSnapshotModel>(snapshot, JsonOptions);
                 if (model != null) return model;
@@ -125,7 +125,7 @@ public class LayoutHistoryService
     }
 }
 
-public class LayoutSnapshotModel
+public sealed class LayoutSnapshotModel
 {
     public List<TileModel> Tiles { get; set; } = new();
     public List<TileGroupModel> Groups { get; set; } = new();

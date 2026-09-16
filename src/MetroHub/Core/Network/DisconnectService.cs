@@ -10,9 +10,9 @@ using MetroHub.Core.Network.Interop;
 
 namespace MetroHub.Core.Network;
 
-public record WindowsInterfaceStatus(string Name, bool IsAdminEnabled, bool IsConnected);
+public sealed record WindowsInterfaceStatus(string Name, bool IsAdminEnabled, bool IsConnected);
 
-public class DisconnectService
+public sealed class DisconnectService
 {
     private static readonly Lazy<DisconnectService> _instance = new(() => new DisconnectService());
     public static DisconnectService Instance => _instance.Value;
@@ -437,7 +437,7 @@ public class DisconnectService
                 var bytes = nic.GetPhysicalAddress()?.GetAddressBytes();
                 if (bytes != null && bytes.Length > 0)
                 {
-                    mac = string.Join("-", bytes.Select(b => b.ToString("X2")));
+                    mac = BitConverter.ToString(bytes);
                 }
             }
             catch { }
@@ -486,7 +486,7 @@ public class DisconnectService
                     var bytes = matchingNic.GetPhysicalAddress()?.GetAddressBytes();
                     if (bytes != null && bytes.Length > 0)
                     {
-                        mac = string.Join("-", bytes.Select(b => b.ToString("X2")));
+                        mac = BitConverter.ToString(bytes);
                     }
                 }
                 catch { }
@@ -599,7 +599,7 @@ public class DisconnectService
                 {
                     var bytes = nic.GetPhysicalAddress()?.GetAddressBytes();
                     if (bytes != null && bytes.Length > 0)
-                        mac = string.Join("-", bytes.Select(b => b.ToString("X2")));
+                        mac = BitConverter.ToString(bytes);
                 }
                 catch { }
 

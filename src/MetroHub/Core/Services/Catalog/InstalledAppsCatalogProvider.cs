@@ -8,7 +8,7 @@ namespace MetroHub.Core.Services.Catalog;
 /// Catalog provider that lists all installed Windows applications (Win32 and Modern UWP/MSIX),
 /// filtered for junk/uninstallers, sorted alphabetically, with lazy non-blocking icon generation.
 /// </summary>
-public class InstalledAppsCatalogProvider : ICatalogProvider
+public sealed class InstalledAppsCatalogProvider : ICatalogProvider
 {
     public string Id => "installed_apps";
 

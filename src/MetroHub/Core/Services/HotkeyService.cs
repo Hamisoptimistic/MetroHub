@@ -3,7 +3,7 @@ using MetroHub.Core.Models;
 
 namespace MetroHub.Core.Services;
 
-public class HotkeyService : IDisposable
+public sealed class HotkeyService : IDisposable
 {
     private const int HotkeyId = 9001;
     private IntPtr _windowHandle;

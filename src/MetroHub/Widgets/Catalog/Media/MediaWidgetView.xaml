@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Widgets.Catalog.Media.MediaWidgetView"
+<UserControl x:Class="MetroHub.Widgets.Catalog.Media.MediaWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -238,33 +238,82 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- Live Track Playback Time Readout (e.g. 1:24 / 3:45) on Right (Matches 28px height and typography of transport buttons) -->
+                    <!-- Live Track Playback Time Readout / Live Stream Badge on Right -->
                     <Border HorizontalAlignment="Right"
                             VerticalAlignment="Center"
                             Height="28"
                             SnapsToDevicePixels="True">
-                        <TextBlock Text="{Binding TimeDisplayString}"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Right"
-                                   FontSize="13"
-                                   FontWeight="Normal"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   Foreground="#D0FFFFFF"
-                                   SnapsToDevicePixels="True">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasMedia}" Value="False">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding TimeDisplayString}" Value="">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                        <Grid VerticalAlignment="Center">
+                            <!-- Standard Track Playback Time Readout (e.g. 1:24 / 3:45) -->
+                            <TextBlock Text="{Binding TimeDisplayString}"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Right"
+                                       FontSize="13"
+                                       FontWeight="Normal"
+                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                       Foreground="#D0FFFFFF"
+                                       SnapsToDevicePixels="True">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasMedia}" Value="False">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding TimeDisplayString}" Value="">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsLive}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <!-- Modern Fluent Live Badge (Vibrant Glowing Red Dot + Clean Aligned 'LIVE') -->
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Right">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding HasMedia}" Value="True" />
+                                                    <Condition Binding="{Binding IsLive}" Value="True" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
+
+                                <!-- Precision Glowing Red Live Dot -->
+                                <Border Width="6"
+                                        Height="6"
+                                        CornerRadius="3"
+                                        Background="#FF3333"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0.5,5.5,0"
+                                        SnapsToDevicePixels="True"
+                                        UseLayoutRounding="True">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#FF3333" BlurRadius="5" ShadowDepth="0" Opacity="0.8" />
+                                    </Border.Effect>
+                                </Border>
+
+                                <!-- Crisp 'LIVE' Label -->
+                                <TextBlock Text="LIVE"
+                                           FontSize="11"
+                                           FontWeight="Bold"
+                                           FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                           Foreground="#FFFFFF"
+                                           VerticalAlignment="Center"
+                                           SnapsToDevicePixels="True" />
+                            </StackPanel>
+                        </Grid>
                     </Border>
                 </Grid>
             </Border>
@@ -294,6 +343,12 @@
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding HasMedia}" Value="False">
                                 <Setter Property="Cursor" Value="Arrow" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsLive}" Value="True">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding CanSeek}" Value="False">
+                                <Setter Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>

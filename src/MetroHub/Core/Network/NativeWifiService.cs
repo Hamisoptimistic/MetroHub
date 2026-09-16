@@ -11,7 +11,7 @@ using MetroHub.Core.Network.Interop;
 
 namespace MetroHub.Core.Network;
 
-public class NativeWifiService : IDisposable
+public sealed class NativeWifiService : IDisposable
 {
     private static readonly Lazy<NativeWifiService> _instance = new(() => new NativeWifiService());
     public static NativeWifiService Instance => _instance.Value;

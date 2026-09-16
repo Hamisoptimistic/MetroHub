@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Presentation.Controls.TileControl"
+<UserControl x:Class="MetroHub.Presentation.Controls.TileControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -17,6 +17,7 @@
              xmlns:notepad="clr-namespace:MetroHub.Widgets.Catalog.Notepad"
              xmlns:network="clr-namespace:MetroHub.Widgets.Catalog.Network"
              xmlns:brightness="clr-namespace:MetroHub.Widgets.Catalog.Brightness"
+             xmlns:power="clr-namespace:MetroHub.Widgets.Catalog.Power"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -191,6 +192,11 @@
         <DataTemplate DataType="{x:Type brightness:BrightnessWidgetViewModel}">
             <brightness:BrightnessWidgetView />
         </DataTemplate>
+
+        <!-- 12. Power & Session Hub Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type power:PowerWidgetViewModel}">
+            <power:PowerWidgetView />
+        </DataTemplate>
     </UserControl.Resources>
 
     <Border x:Name="RootBorder"
@@ -287,6 +293,9 @@
                                 <Setter Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding TargetPath}" Value="photos">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding TargetPath}" Value="power">
                                 <Setter Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
                         </Style.Triggers>

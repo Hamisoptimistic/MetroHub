@@ -1224,7 +1224,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
 
     public string EthernetTileIcon => IsActiveUsbTethering ? "\uE8EA" : "\uE839";
 
-    public SymbolRegular EthernetTileSymbol => IsActiveUsbTethering ? SymbolRegular.UsbPlug24 : SymbolRegular.Desktop24;
+    public SymbolRegular EthernetTileSymbol => IsActiveUsbTethering ? SymbolRegular.UsbPlug24 : SymbolRegular.Connector24;
 
     public string EthernetTileTooltip => IsActiveUsbTethering
         ? "USB Tethering Settings & Telemetry"
@@ -2598,7 +2598,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             try
             {
                 Throughput = metrics;
-                SparklineSamples = _throughputService.History;
 
                 if (wifiChanged)
                 {
