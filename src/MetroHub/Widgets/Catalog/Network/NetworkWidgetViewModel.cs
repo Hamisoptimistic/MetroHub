@@ -274,7 +274,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     private static readonly Brush BlueIndicatorBrush = CreateFrozenBrush("#0091FF");
     private static readonly Brush RedIndicatorBrush = CreateFrozenBrush("#FF3B30");
     private static readonly Brush AmberIndicatorBrush = CreateFrozenBrush("#FFB703");
-    private static readonly Brush CyanIndicatorBrush = CreateFrozenBrush("#60CDFF");
     private static readonly Brush PurpleIndicatorBrush = CreateFrozenBrush("#A855F7");
     private static readonly Brush MutedIndicatorBrush = CreateFrozenBrush("#80FFFFFF");
 
@@ -338,17 +337,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public Brush DataUsageStatusBrush => GreenIndicatorBrush;
     public Brush HotspotStatusBrush => DataUsageStatusBrush;
 
-    [ObservableProperty]
-    private bool _isHotspotConnected;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsShowingSpecs))]
-    [NotifyPropertyChangedFor(nameof(DeckTitle))]
-    private bool _isShowingNetworks = true;
-
-    public bool IsShowingSpecs => !IsShowingNetworks;
-
-    public string DeckTitle => IsShowingNetworks ? "AVAILABLE NETWORKS" : "ADAPTER SPECIFICATIONS";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FormattedDownloadSpeed))]
@@ -359,23 +348,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public string SpeedUnitBadge => IsBitsMode ? "Mbps" : "MB/s";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HeroGlyph))]
-    [NotifyPropertyChangedFor(nameof(HeroGlyphColor))]
-    [NotifyPropertyChangedFor(nameof(HeroTitle))]
-    [NotifyPropertyChangedFor(nameof(HeroSubtitle))]
-    [NotifyPropertyChangedFor(nameof(HeroIsConnected))]
-    [NotifyPropertyChangedFor(nameof(HeroActionText))]
-    [NotifyPropertyChangedFor(nameof(HeroActionGlyph))]
-    [NotifyPropertyChangedFor(nameof(HeroActionBackground))]
-    [NotifyPropertyChangedFor(nameof(HeroActionForeground))]
-    [NotifyPropertyChangedFor(nameof(HeroActionBorderBrush))]
     [NotifyPropertyChangedFor(nameof(IsLocalOnlyNoInternet))]
     [NotifyPropertyChangedFor(nameof(HasVerifiedInternet))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusText))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusTextColor))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusDotColor))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusBackground))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusBorderBrush))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBrush))]
     [NotifyPropertyChangedFor(nameof(SpeedStatusBrush))]
     [NotifyPropertyChangedFor(nameof(EthernetActionText))]
@@ -396,16 +370,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     private bool _isEthernetConnected;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HeroGlyph))]
-    [NotifyPropertyChangedFor(nameof(HeroGlyphColor))]
-    [NotifyPropertyChangedFor(nameof(HeroTitle))]
-    [NotifyPropertyChangedFor(nameof(HeroSubtitle))]
-    [NotifyPropertyChangedFor(nameof(HeroIsConnected))]
-    [NotifyPropertyChangedFor(nameof(HeroActionText))]
-    [NotifyPropertyChangedFor(nameof(HeroActionGlyph))]
-    [NotifyPropertyChangedFor(nameof(HeroActionBackground))]
-    [NotifyPropertyChangedFor(nameof(HeroActionForeground))]
-    [NotifyPropertyChangedFor(nameof(HeroActionBorderBrush))]
     [NotifyPropertyChangedFor(nameof(IsLocalOnlyNoInternet))]
     [NotifyPropertyChangedFor(nameof(HasVerifiedInternet))]
     [NotifyPropertyChangedFor(nameof(WifiStatusBrush))]
@@ -419,23 +383,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     private bool _isWifiConnected;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HeroGlyph))]
-    [NotifyPropertyChangedFor(nameof(HeroGlyphColor))]
-    [NotifyPropertyChangedFor(nameof(HeroTitle))]
-    [NotifyPropertyChangedFor(nameof(HeroSubtitle))]
-    [NotifyPropertyChangedFor(nameof(HeroIsConnected))]
-    [NotifyPropertyChangedFor(nameof(HeroActionText))]
-    [NotifyPropertyChangedFor(nameof(HeroActionGlyph))]
-    [NotifyPropertyChangedFor(nameof(HeroActionBackground))]
-    [NotifyPropertyChangedFor(nameof(HeroActionForeground))]
-    [NotifyPropertyChangedFor(nameof(HeroActionBorderBrush))]
     [NotifyPropertyChangedFor(nameof(IsLocalOnlyNoInternet))]
     [NotifyPropertyChangedFor(nameof(HasVerifiedInternet))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusText))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusTextColor))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusDotColor))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusBackground))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusBorderBrush))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBrush))]
     [NotifyPropertyChangedFor(nameof(WifiStatusBrush))]
     [NotifyPropertyChangedFor(nameof(SpeedStatusBrush))]
@@ -458,11 +407,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasNoEthernetAdapter))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusText))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusTextColor))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusDotColor))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusBackground))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusBorderBrush))]
     [NotifyPropertyChangedFor(nameof(EthernetActionText))]
     [NotifyPropertyChangedFor(nameof(EthernetActionSubtext))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBrush))]
@@ -483,14 +427,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public bool ShowEthernetNoAdapterText => !HasEthernetAdapter;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusText))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusTextColor))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusDotColor))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusBackground))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusBorderBrush))]
-    [NotifyPropertyChangedFor(nameof(DataUsageTotalDisplay))]
-    [NotifyPropertyChangedFor(nameof(DataUsageDetailDisplay))]
-    [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
     [NotifyPropertyChangedFor(nameof(EthernetTileHeader))]
     [NotifyPropertyChangedFor(nameof(EthernetTileIcon))]
     [NotifyPropertyChangedFor(nameof(EthernetTileSymbol))]
@@ -503,9 +439,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(UsageWiredIcon))]
     [NotifyPropertyChangedFor(nameof(EthernetUsageStatusText))]
     [NotifyPropertyChangedFor(nameof(EthernetAdapterSummary))]
-    [NotifyPropertyChangedFor(nameof(HeroGlyph))]
-    [NotifyPropertyChangedFor(nameof(HeroTitle))]
-    [NotifyPropertyChangedFor(nameof(HeroSubtitle))]
     private EthernetInfo _ethernet = new();
 
     [ObservableProperty]
@@ -521,13 +454,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsLocalOnlyNoInternet))]
     [NotifyPropertyChangedFor(nameof(HasVerifiedInternet))]
-    [NotifyPropertyChangedFor(nameof(HeroGlyphColor))]
-    [NotifyPropertyChangedFor(nameof(HeroSubtitle))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusText))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusTextColor))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusDotColor))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusBackground))]
-    [NotifyPropertyChangedFor(nameof(EthernetStatusBorderBrush))]
     [NotifyPropertyChangedFor(nameof(EthernetStatusBrush))]
     [NotifyPropertyChangedFor(nameof(WifiStatusBrush))]
     [NotifyPropertyChangedFor(nameof(SpeedStatusBrush))]
@@ -551,17 +477,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     // --- Dynamic Hero Header Properties ---
     public bool IsActiveUsbTethering => Ethernet != null && Ethernet.IsUsbTethering && Ethernet.IsConnected;
 
-    public string HeroGlyph
-    {
-        get
-        {
-            if (IsInternetDisconnected) return "\uE774"; // Globe prohibited
-            if (IsWifiConnected) return "\uE701";       // Wi-Fi signal
-            if (IsEthernetConnected) return IsActiveUsbTethering ? "\uE8EA" : "\uE839";
-            return "\uE774";
-        }
-    }
-
     public bool IsLocalOnlyNoInternet =>
         (IsEthernetConnected || IsWifiConnected) &&
         !IsInternetDisconnected &&
@@ -573,129 +488,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         !IsInternetDisconnected &&
         (Health == null || Health.Connectivity == ConnectivityLevel.InternetAccess);
 
-    public string HeroGlyphColor
-    {
-        get
-        {
-            if (IsInternetDisconnected) return "#FF4C4C";
-            if (IsLocalOnlyNoInternet) return "#FFB703"; // Warning Amber/Yellow
-            if (IsWifiConnected || IsEthernetConnected) return "#0091FF";
-            return "#70FFFFFF";
-        }
-    }
-
-    public string HeroTitle
-    {
-        get
-        {
-            if (IsInternetDisconnected) return "Internet Disconnected";
-            if (IsWifiConnected) return string.IsNullOrWhiteSpace(WifiConnection.Ssid) ? "Wi-Fi" : WifiConnection.Ssid;
-            if (IsEthernetConnected)
-            {
-                if (IsActiveUsbTethering) return "USB Tethering";
-                return string.IsNullOrWhiteSpace(Ethernet?.Description) ? "Ethernet" : Ethernet.Description;
-            }
-            return "No Active Connection";
-        }
-    }
-
-    public string HeroSubtitle
-    {
-        get
-        {
-            if (IsInternetDisconnected) return "Hardware interface disabled • Click to Reconnect";
-            string internetSuffix = IsLocalOnlyNoInternet ? "No Internet Access" : "Internet Access";
-            if (IsWifiConnected)
-            {
-                string bandInfo = !string.IsNullOrWhiteSpace(WifiConnection.Band) && WifiConnection.Band != "--" ? $" ({WifiConnection.Band})" : "";
-                return $"Connected  •  {WifiConnection.StandardString}{bandInfo}  •  {internetSuffix}";
-            }
-            if (IsEthernetConnected)
-            {
-                string prefix = IsActiveUsbTethering ? "USB Connected" : "Connected";
-                string speedInfo = !string.IsNullOrWhiteSpace(Ethernet?.LinkSpeedString) && Ethernet.LinkSpeedString != "--" ? $"  •  {Ethernet.LinkSpeedString}" : "";
-                return $"{prefix}{speedInfo}  •  {internetSuffix}";
-            }
-            return "Not connected to any network";
-        }
-    }
-
-    // --- Status Badge Properties ---
-    public string EthernetStatusText
-    {
-        get
-        {
-            if (!HasEthernetAdapter) return "No Adapter";
-            if (Ethernet == null || !Ethernet.IsConnected) return IsActiveUsbTethering ? "Device Unplugged" : "Cable Unplugged";
-            if (IsLocalOnlyNoInternet) return "No Internet";
-            return "Connected";
-        }
-    }
-
-    public string EthernetStatusTextColor
-    {
-        get
-        {
-            if (!HasEthernetAdapter || Ethernet == null || !Ethernet.IsConnected) return "#85FFFFFF";
-            if (IsLocalOnlyNoInternet) return "#FFB703";
-            return "#FFFFFF";
-        }
-    }
-
-    public string EthernetStatusDotColor
-    {
-        get
-        {
-            if (!HasEthernetAdapter || !Ethernet.IsConnected) return "#75FFFFFF";
-            if (IsLocalOnlyNoInternet) return "#FFB703";
-            return "#00CC66";
-        }
-    }
-
-    public string EthernetStatusBackground
-    {
-        get
-        {
-            if (!HasEthernetAdapter || !Ethernet.IsConnected) return "#12FFFFFF";
-            if (IsLocalOnlyNoInternet) return "#25FFB703";
-            return "#2500CC66";
-        }
-    }
-
-    public string EthernetStatusBorderBrush
-    {
-        get
-        {
-            if (!HasEthernetAdapter || !Ethernet.IsConnected) return "#1AFFFFFF";
-            if (IsLocalOnlyNoInternet) return "#50FFB703";
-            return "#5000CC66";
-        }
-    }
-
-    public bool HeroIsConnected => (IsWifiConnected || IsEthernetConnected) && !IsInternetDisconnected;
-
-    public string HeroActionText => IsInternetDisconnected ? "Reconnect" : "Disconnect";
-    public string HeroActionGlyph => IsInternetDisconnected ? "\uE895" : "\uE774";
-    public string HeroActionBackground => IsInternetDisconnected ? "#22FF4C4C" : "#14FFFFFF";
-    public string HeroActionForeground => IsInternetDisconnected ? "#FF4C4C" : "#D0FFFFFF";
-    public string HeroActionBorderBrush => IsInternetDisconnected ? "#44FF4C4C" : "#24FFFFFF";
-
-    // --- Dynamic Specs Properties ---
-    public string ActiveAdapterDescription => IsWifiConnected ? WifiConnection.AdapterDescription : Ethernet.Description;
     public string ActiveIpAddress => IsWifiConnected ? WifiConnection.IpAddress : Ethernet.IpAddress;
-    public string ActiveSubnet => IsWifiConnected ? WifiConnection.SubnetMask : Ethernet.SubnetMask;
-    public string ActiveGateway => IsWifiConnected ? WifiConnection.Gateway : Ethernet.Gateway;
-    public string ActiveDns
-    {
-        get
-        {
-            var servers = IsWifiConnected ? WifiConnection.DnsServers : Ethernet.DnsServers;
-            return servers.Count > 0 ? string.Join(", ", servers) : "--";
-        }
-    }
-    public string ActiveLinkSpeed => IsWifiConnected ? WifiConnection.LinkSpeedString : Ethernet.LinkSpeedString;
-    public string ActiveUptime => IsWifiConnected ? WifiConnection.DurationString : Ethernet.DurationString;
-    public string ActiveMacAddress => IsWifiConnected ? "--" : Ethernet.MacAddress;
 
     // --- Accurate Data Usage Properties (Windows Settings Sync & Dual-Interface Analytics) ---
     [ObservableProperty]
@@ -718,9 +511,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetUsageDetailDisplay))]
     [NotifyPropertyChangedFor(nameof(WifiUsageTotalDisplay))]
     [NotifyPropertyChangedFor(nameof(WifiUsageDetailDisplay))]
-    [NotifyPropertyChangedFor(nameof(DataUsageTotalDisplay))]
-    [NotifyPropertyChangedFor(nameof(DataUsageDetailDisplay))]
-    [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
     private DataUsageTimeframe _selectedDataUsageTimeframe = DataUsageTimeframe.Session;
 
     partial void OnSelectedDataUsageTimeframeChanged(DataUsageTimeframe value)
@@ -747,9 +537,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(WifiPercentDisplay))]
     [NotifyPropertyChangedFor(nameof(EthernetUsageTotalDisplay))]
     [NotifyPropertyChangedFor(nameof(EthernetUsageDetailDisplay))]
-    [NotifyPropertyChangedFor(nameof(DataUsageTotalDisplay))]
-    [NotifyPropertyChangedFor(nameof(DataUsageDetailDisplay))]
-    [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
     private DataUsageResult _ethernetDataUsage = new();
 
     [ObservableProperty]
@@ -766,19 +553,10 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(WifiPercentDisplay))]
     [NotifyPropertyChangedFor(nameof(WifiUsageTotalDisplay))]
     [NotifyPropertyChangedFor(nameof(WifiUsageDetailDisplay))]
-    [NotifyPropertyChangedFor(nameof(DataUsageTotalDisplay))]
-    [NotifyPropertyChangedFor(nameof(DataUsageDetailDisplay))]
-    [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
     private DataUsageResult _wifiDataUsage = new();
 
     [ObservableProperty]
     private bool _isDataUsageRefreshing;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(DataUsageTotalDisplay))]
-    [NotifyPropertyChangedFor(nameof(DataUsageDetailDisplay))]
-    [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
-    private DataUsageResult _historicalDataUsage = new();
 
     // Combined Totals across both Ethernet and Wi-Fi
     public ulong TotalCombinedBytes => (EthernetDataUsage?.TotalBytes ?? 0) + (WifiDataUsage?.TotalBytes ?? 0);
@@ -927,10 +705,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    // Legacy Display Compatibility
-    public string DataUsageTotalDisplay => TotalCombinedDisplay;
-    public string DataUsageDetailDisplay => TotalCombinedRxTxBadge;
-    public string DataUsageFullDisplay => (TotalCombinedBytes > 0 || HasEthernetAdapter || HasWifiAdapter) ? $"{TotalCombinedDisplay}  ({TotalCombinedRxTxBadge})" : "--";
+
 
     private int _dataUsageSequenceId;
 
@@ -962,7 +737,6 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                         {
                             EthernetDataUsage = ethResult;
                             WifiDataUsage = wifiResult;
-                            HistoricalDataUsage = ethResult;
                         }
                     }, System.Windows.Threading.DispatcherPriority.Background);
                 }
@@ -984,19 +758,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         });
     }
 
-    [RelayCommand]
-    public void SelectDataUsageTimeframe(string timeframeStr)
-    {
-        var timeframe = timeframeStr?.ToLowerInvariant() switch
-        {
-            "24h" or "last24hours" => DataUsageTimeframe.Last24Hours,
-            "7d" or "last7days" => DataUsageTimeframe.Last7Days,
-            "30d" or "last30days" => DataUsageTimeframe.Last30Days,
-            _ => DataUsageTimeframe.Session
-        };
 
-        SelectedDataUsageTimeframe = timeframe;
-    }
 
     // --- Formatted Speeds ---
     public string FormattedDownloadSpeed => IsBitsMode
@@ -1122,17 +884,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    [RelayCommand]
-    public void SwitchDeck(string deck)
-    {
-        IsShowingNetworks = string.Equals(deck, "Networks", StringComparison.OrdinalIgnoreCase);
-        SaveSettings();
 
-        if (IsShowingNetworks && HasWifiAdapter)
-        {
-            RefreshWifiNetworks();
-        }
-    }
 
     [RelayCommand]
     public void ToggleSpeedUnit()
@@ -1423,47 +1175,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         OnPropertyChanged(nameof(SpeedTestMainNumberDisplay));
     }
 
-    [RelayCommand]
-    public async Task ToggleDisconnect()
-    {
-        if (!IsInternetDisconnected)
-        {
-            // Immediate visual feedback
-            IsInternetDisconnected = true;
-            ShowToast("Requesting Windows authorization to suspend adapter...");
 
-            bool success = await _disconnectService.DisconnectInternetAsync();
-            if (success)
-            {
-                IsInternetDisconnected = true;
-                ShowToast("Network adapter suspended via administrative policy.");
-                RefreshAll();
-            }
-            else
-            {
-                IsInternetDisconnected = false;
-                ShowToast("Action canceled: Administrative authorization was declined.");
-                RefreshAll();
-            }
-        }
-        else
-        {
-            ShowToast("Requesting authorization to restore network adapter...");
-
-            bool success = await _disconnectService.ReconnectInternetAsync();
-            if (success)
-            {
-                IsInternetDisconnected = false;
-                ShowToast("Network adapter re-enabled. Connectivity restored.");
-                RefreshAll();
-            }
-            else
-            {
-                IsInternetDisconnected = true;
-                ShowToast("Action canceled: Administrative authorization was declined.");
-            }
-        }
-    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(EthernetActionText))]
@@ -2510,11 +2222,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 ApplyConnectionDefaultPanel();
             }
 
-            // 5. Smart Deck default: If Wi-Fi is active, default to Networks; if Ethernet-only, default to Specs
-            if (!HasWifiAdapter && !IsWifiConnected && IsEthernetConnected && IsShowingNetworks)
-            {
-                IsShowingNetworks = false;
-            }
+
 
             // 6. Evaluate health in background
             Task.Run(async () =>
@@ -2534,29 +2242,9 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             }
 
             // Notify dependent specs
-            OnPropertyChanged(nameof(HeroGlyph));
-            OnPropertyChanged(nameof(HeroGlyphColor));
-            OnPropertyChanged(nameof(HeroTitle));
-            OnPropertyChanged(nameof(HeroSubtitle));
-            OnPropertyChanged(nameof(HeroIsConnected));
             OnPropertyChanged(nameof(IsLocalOnlyNoInternet));
             OnPropertyChanged(nameof(HasVerifiedInternet));
-            OnPropertyChanged(nameof(EthernetStatusText));
-            OnPropertyChanged(nameof(EthernetStatusTextColor));
-            OnPropertyChanged(nameof(EthernetStatusDotColor));
-            OnPropertyChanged(nameof(EthernetStatusBackground));
-            OnPropertyChanged(nameof(EthernetStatusBorderBrush));
-            OnPropertyChanged(nameof(ActiveAdapterDescription));
             OnPropertyChanged(nameof(ActiveIpAddress));
-            OnPropertyChanged(nameof(ActiveSubnet));
-            OnPropertyChanged(nameof(ActiveGateway));
-            OnPropertyChanged(nameof(ActiveDns));
-            OnPropertyChanged(nameof(ActiveLinkSpeed));
-            OnPropertyChanged(nameof(ActiveUptime));
-            OnPropertyChanged(nameof(ActiveMacAddress));
-            OnPropertyChanged(nameof(DataUsageTotalDisplay));
-            OnPropertyChanged(nameof(DataUsageDetailDisplay));
-            OnPropertyChanged(nameof(DataUsageFullDisplay));
             OnPropertyChanged(nameof(EthernetActionText));
             OnPropertyChanged(nameof(EthernetActionSubtext));
             OnPropertyChanged(nameof(WifiActionText));
@@ -3037,12 +2725,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         OnPropertyChanged(nameof(EthernetPanelTitleColor));
         OnPropertyChanged(nameof(WifiPanelTitle));
         OnPropertyChanged(nameof(WifiPanelTitleColor));
-        OnPropertyChanged(nameof(HeroGlyph));
-        OnPropertyChanged(nameof(HeroGlyphColor));
-        OnPropertyChanged(nameof(HeroSubtitle));
-        OnPropertyChanged(nameof(EthernetStatusText));
-        OnPropertyChanged(nameof(EthernetStatusTextColor));
-        OnPropertyChanged(nameof(EthernetStatusDotColor));
+
         OnPropertyChanged(nameof(EthernetStatusBrush));
         OnPropertyChanged(nameof(WifiStatusBrush));
         OnPropertyChanged(nameof(WifiIndicatorDotBrush));
