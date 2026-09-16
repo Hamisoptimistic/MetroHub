@@ -128,8 +128,8 @@ public class EthernetProvider
             try
             {
                 var stats = nic.GetIPStatistics();
-                info.BytesReceived = (ulong)stats.BytesReceived;
-                info.BytesSent = (ulong)stats.BytesSent;
+                info.BytesReceived = (ulong)Math.Max(0L, stats.BytesReceived);
+                info.BytesSent = (ulong)Math.Max(0L, stats.BytesSent);
             }
             catch { }
 

@@ -241,6 +241,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(IsKillNetPanel))]
     [NotifyPropertyChangedFor(nameof(IsAdaptersPanel))]
     [NotifyPropertyChangedFor(nameof(IsSpeedPanel))]
+    [NotifyPropertyChangedFor(nameof(IsDataUsagePanel))]
     [NotifyPropertyChangedFor(nameof(IsHotspotPanel))]
     private string _currentPanel = "Ethernet";
 
@@ -250,6 +251,12 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         {
             CancelSpeedTest();
         }
+        if (string.Equals(value, "Usage", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "DataUsage", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "Hotspot", StringComparison.OrdinalIgnoreCase))
+        {
+            RefreshDataUsageAsync();
+        }
     }
 
     public bool IsEthernetPanel => string.Equals(CurrentPanel, "Ethernet", StringComparison.OrdinalIgnoreCase);
@@ -257,7 +264,10 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public bool IsAdaptersPanel => string.Equals(CurrentPanel, "Adapters", StringComparison.OrdinalIgnoreCase) || string.Equals(CurrentPanel, "KillNet", StringComparison.OrdinalIgnoreCase);
     public bool IsKillNetPanel => IsAdaptersPanel;
     public bool IsSpeedPanel => string.Equals(CurrentPanel, "Speed", StringComparison.OrdinalIgnoreCase);
-    public bool IsHotspotPanel => string.Equals(CurrentPanel, "Hotspot", StringComparison.OrdinalIgnoreCase);
+    public bool IsDataUsagePanel => string.Equals(CurrentPanel, "Usage", StringComparison.OrdinalIgnoreCase) ||
+                                    string.Equals(CurrentPanel, "DataUsage", StringComparison.OrdinalIgnoreCase) ||
+                                    string.Equals(CurrentPanel, "Hotspot", StringComparison.OrdinalIgnoreCase);
+    public bool IsHotspotPanel => IsDataUsagePanel;
 
     // --- Dynamic Status Brushes for Modular WidgetTiles ---
     private static readonly Brush GreenIndicatorBrush = CreateFrozenBrush("#00E676");
@@ -325,7 +335,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    public Brush HotspotStatusBrush => GreenIndicatorBrush;
+    public Brush DataUsageStatusBrush => GreenIndicatorBrush;
+    public Brush HotspotStatusBrush => DataUsageStatusBrush;
 
     [ObservableProperty]
     private bool _isHotspotConnected;
@@ -377,6 +388,10 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetTileTooltip))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelName))]
     [NotifyPropertyChangedFor(nameof(EthernetTurnedOffBannerTitle))]
+    [NotifyPropertyChangedFor(nameof(UsageWiredTitle))]
+    [NotifyPropertyChangedFor(nameof(UsageWiredIcon))]
+    [NotifyPropertyChangedFor(nameof(EthernetUsageStatusText))]
+    [NotifyPropertyChangedFor(nameof(EthernetAdapterSummary))]
     private bool _isEthernetConnected;
 
     [ObservableProperty]
@@ -470,12 +485,18 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetTurnedOffBannerTitle))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelIcon))]
     [NotifyPropertyChangedFor(nameof(EthernetActionSubtext))]
+    [NotifyPropertyChangedFor(nameof(UsageWiredTitle))]
+    [NotifyPropertyChangedFor(nameof(UsageWiredIcon))]
+    [NotifyPropertyChangedFor(nameof(EthernetUsageStatusText))]
+    [NotifyPropertyChangedFor(nameof(EthernetAdapterSummary))]
     [NotifyPropertyChangedFor(nameof(HeroGlyph))]
     [NotifyPropertyChangedFor(nameof(HeroTitle))]
     [NotifyPropertyChangedFor(nameof(HeroSubtitle))]
     private EthernetInfo _ethernet = new();
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(WifiUsageStatusText))]
+    [NotifyPropertyChangedFor(nameof(WifiAdapterSummary))]
     private WifiConnectionDetails _wifiConnection = new();
 
     [ObservableProperty]
@@ -662,12 +683,27 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public string ActiveUptime => IsWifiConnected ? WifiConnection.DurationString : Ethernet.DurationString;
     public string ActiveMacAddress => IsWifiConnected ? "--" : Ethernet.MacAddress;
 
-    // --- Accurate Data Usage Properties (Windows Settings Sync) ---
+    // --- Accurate Data Usage Properties (Windows Settings Sync & Dual-Interface Analytics) ---
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsSessionTimeframe))]
     [NotifyPropertyChangedFor(nameof(Is24HoursTimeframe))]
     [NotifyPropertyChangedFor(nameof(Is7DaysTimeframe))]
     [NotifyPropertyChangedFor(nameof(Is30DaysTimeframe))]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedBytes))]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedDisplay))]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedReceivedDisplay))]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedSentDisplay))]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedRxTxBadge))]
+    [NotifyPropertyChangedFor(nameof(EthernetBarWidth))]
+    [NotifyPropertyChangedFor(nameof(WifiBarWidth))]
+    [NotifyPropertyChangedFor(nameof(EthernetRatioPercent))]
+    [NotifyPropertyChangedFor(nameof(WifiRatioPercent))]
+    [NotifyPropertyChangedFor(nameof(EthernetPercentDisplay))]
+    [NotifyPropertyChangedFor(nameof(WifiPercentDisplay))]
+    [NotifyPropertyChangedFor(nameof(EthernetUsageTotalDisplay))]
+    [NotifyPropertyChangedFor(nameof(EthernetUsageDetailDisplay))]
+    [NotifyPropertyChangedFor(nameof(WifiUsageTotalDisplay))]
+    [NotifyPropertyChangedFor(nameof(WifiUsageDetailDisplay))]
     [NotifyPropertyChangedFor(nameof(DataUsageTotalDisplay))]
     [NotifyPropertyChangedFor(nameof(DataUsageDetailDisplay))]
     [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
@@ -675,17 +711,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
 
     partial void OnSelectedDataUsageTimeframeChanged(DataUsageTimeframe value)
     {
-        if (value != DataUsageTimeframe.Session)
-        {
-            Task.Run(async () =>
-            {
-                var usage = await _dataUsageService.QueryUsageAsync(NetworkKind.Ethernet, value);
-                Application.Current?.Dispatcher.InvokeAsync(() =>
-                {
-                    HistoricalDataUsage = usage;
-                }, System.Windows.Threading.DispatcherPriority.Background);
-            });
-        }
+        RefreshDataUsageAsync();
     }
 
     public bool IsSessionTimeframe => SelectedDataUsageTimeframe == DataUsageTimeframe.Session;
@@ -694,49 +720,254 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public bool Is30DaysTimeframe => SelectedDataUsageTimeframe == DataUsageTimeframe.Last30Days;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedBytes))]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedDisplay))]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedReceivedDisplay))]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedSentDisplay))]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedRxTxBadge))]
+    [NotifyPropertyChangedFor(nameof(EthernetBarWidth))]
+    [NotifyPropertyChangedFor(nameof(WifiBarWidth))]
+    [NotifyPropertyChangedFor(nameof(EthernetRatioPercent))]
+    [NotifyPropertyChangedFor(nameof(WifiRatioPercent))]
+    [NotifyPropertyChangedFor(nameof(EthernetPercentDisplay))]
+    [NotifyPropertyChangedFor(nameof(WifiPercentDisplay))]
+    [NotifyPropertyChangedFor(nameof(EthernetUsageTotalDisplay))]
+    [NotifyPropertyChangedFor(nameof(EthernetUsageDetailDisplay))]
+    [NotifyPropertyChangedFor(nameof(DataUsageTotalDisplay))]
+    [NotifyPropertyChangedFor(nameof(DataUsageDetailDisplay))]
+    [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
+    private DataUsageResult _ethernetDataUsage = new();
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedBytes))]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedDisplay))]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedReceivedDisplay))]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedSentDisplay))]
+    [NotifyPropertyChangedFor(nameof(TotalCombinedRxTxBadge))]
+    [NotifyPropertyChangedFor(nameof(EthernetBarWidth))]
+    [NotifyPropertyChangedFor(nameof(WifiBarWidth))]
+    [NotifyPropertyChangedFor(nameof(EthernetRatioPercent))]
+    [NotifyPropertyChangedFor(nameof(WifiRatioPercent))]
+    [NotifyPropertyChangedFor(nameof(EthernetPercentDisplay))]
+    [NotifyPropertyChangedFor(nameof(WifiPercentDisplay))]
+    [NotifyPropertyChangedFor(nameof(WifiUsageTotalDisplay))]
+    [NotifyPropertyChangedFor(nameof(WifiUsageDetailDisplay))]
+    [NotifyPropertyChangedFor(nameof(DataUsageTotalDisplay))]
+    [NotifyPropertyChangedFor(nameof(DataUsageDetailDisplay))]
+    [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
+    private DataUsageResult _wifiDataUsage = new();
+
+    [ObservableProperty]
+    private bool _isDataUsageRefreshing;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DataUsageTotalDisplay))]
     [NotifyPropertyChangedFor(nameof(DataUsageDetailDisplay))]
     [NotifyPropertyChangedFor(nameof(DataUsageFullDisplay))]
     private DataUsageResult _historicalDataUsage = new();
 
-    public string DataUsageTotalDisplay
+    // Combined Totals across both Ethernet and Wi-Fi
+    public ulong TotalCombinedBytes => (EthernetDataUsage?.TotalBytes ?? 0) + (WifiDataUsage?.TotalBytes ?? 0);
+    public ulong TotalCombinedReceivedBytes => (EthernetDataUsage?.BytesReceived ?? 0) + (WifiDataUsage?.BytesReceived ?? 0);
+    public ulong TotalCombinedSentBytes => (EthernetDataUsage?.BytesSent ?? 0) + (WifiDataUsage?.BytesSent ?? 0);
+
+    public string TotalCombinedDisplay
     {
         get
         {
-            if (SelectedDataUsageTimeframe == DataUsageTimeframe.Session)
-            {
-                return Ethernet != null && (Ethernet.BytesReceived > 0 || Ethernet.BytesSent > 0)
-                    ? DataUsageResult.FormatWindowsSettingsGigabytes(Ethernet.BytesReceived + Ethernet.BytesSent)
-                    : "--";
-            }
-            return HistoricalDataUsage.TotalBytes > 0 ? HistoricalDataUsage.FormattedTotal : "--";
+            if (IsDataUsageRefreshing && TotalCombinedBytes == 0) return "Refreshing...";
+            if (TotalCombinedBytes > 0) return DataUsageResult.FormatWindowsSettingsGigabytes(TotalCombinedBytes);
+            return (HasEthernetAdapter || HasWifiAdapter) ? "0 MB" : "--";
         }
     }
 
-    public string DataUsageDetailDisplay
+    public string TotalCombinedReceivedDisplay => DataUsageResult.FormatWindowsSettingsGigabytes(TotalCombinedReceivedBytes);
+    public string TotalCombinedSentDisplay => DataUsageResult.FormatWindowsSettingsGigabytes(TotalCombinedSentBytes);
+    public string TotalCombinedRxTxBadge
     {
         get
         {
-            if (SelectedDataUsageTimeframe == DataUsageTimeframe.Session)
-            {
-                return Ethernet != null && (Ethernet.BytesReceived > 0 || Ethernet.BytesSent > 0)
-                    ? $"↓ {DataUsageResult.FormatWindowsSettingsGigabytes(Ethernet.BytesReceived)}   ↑ {DataUsageResult.FormatWindowsSettingsGigabytes(Ethernet.BytesSent)}"
-                    : "--";
-            }
-            return HistoricalDataUsage.TotalBytes > 0 ? HistoricalDataUsage.FormattedDetail : "--";
+            if (TotalCombinedBytes > 0)
+                return $"↓ {TotalCombinedReceivedDisplay}   ↑ {TotalCombinedSentDisplay}";
+            return (HasEthernetAdapter || HasWifiAdapter) ? "↓ 0 MB   ↑ 0 MB" : "--";
         }
     }
 
-    public string DataUsageFullDisplay
+    // Ratio & Progress Bar Proportions
+    public double EthernetRatioPercent
     {
         get
         {
-            if (SelectedDataUsageTimeframe == DataUsageTimeframe.Session)
-            {
-                return Ethernet?.DataUsageString ?? "--";
-            }
-            return HistoricalDataUsage.FormattedFull;
+            if (TotalCombinedBytes == 0)
+                return HasEthernetAdapter ? (HasWifiAdapter ? 50.0 : 100.0) : 0.0;
+            return Math.Clamp((double)(EthernetDataUsage?.TotalBytes ?? 0) / TotalCombinedBytes * 100.0, 0.0, 100.0);
         }
+    }
+
+    public double WifiRatioPercent
+    {
+        get
+        {
+            if (TotalCombinedBytes == 0)
+                return HasWifiAdapter ? (HasEthernetAdapter ? 50.0 : 100.0) : 0.0;
+            return Math.Clamp((double)(WifiDataUsage?.TotalBytes ?? 0) / TotalCombinedBytes * 100.0, 0.0, 100.0);
+        }
+    }
+
+    public string EthernetPercentDisplay => $"{Math.Round(EthernetRatioPercent)}%";
+    public string WifiPercentDisplay => $"{Math.Round(WifiRatioPercent)}%";
+
+    public GridLength EthernetBarWidth
+    {
+        get
+        {
+            double ethVal = (EthernetDataUsage?.TotalBytes ?? 0);
+            double wifiVal = (WifiDataUsage?.TotalBytes ?? 0);
+            if (ethVal == 0 && wifiVal == 0)
+            {
+                return new GridLength(HasEthernetAdapter ? 1 : 0.001, GridUnitType.Star);
+            }
+            return new GridLength(Math.Max(ethVal, 0.001), GridUnitType.Star);
+        }
+    }
+
+    public GridLength WifiBarWidth
+    {
+        get
+        {
+            double ethVal = (EthernetDataUsage?.TotalBytes ?? 0);
+            double wifiVal = (WifiDataUsage?.TotalBytes ?? 0);
+            if (ethVal == 0 && wifiVal == 0)
+            {
+                return new GridLength(HasWifiAdapter ? 1 : 0.001, GridUnitType.Star);
+            }
+            return new GridLength(Math.Max(wifiVal, 0.001), GridUnitType.Star);
+        }
+    }
+
+    // Wired / USB Tethering Interface Specifics
+    public string UsageWiredTitle => IsActiveUsbTethering ? "USB TETHERING" : "ETHERNET";
+    public string UsageWiredIcon => IsActiveUsbTethering ? "\uE8EA" : "\uE839";
+
+    public string EthernetUsageTotalDisplay => (EthernetDataUsage?.TotalBytes ?? 0) > 0
+        ? EthernetDataUsage!.FormattedTotal
+        : (HasEthernetAdapter ? "0 MB" : "--");
+
+    public string EthernetUsageDetailDisplay => (EthernetDataUsage?.TotalBytes ?? 0) > 0
+        ? $"↓ {EthernetDataUsage!.FormattedReceived}   ↑ {EthernetDataUsage!.FormattedSent}"
+        : (HasEthernetAdapter ? "↓ 0 MB   ↑ 0 MB" : "No active link");
+
+    public string EthernetUsageStatusText
+    {
+        get
+        {
+            if (IsActiveUsbTethering)
+                return "USB Connected";
+            if (Ethernet?.IsConnected == true)
+                return "Connected";
+            return HasEthernetAdapter ? "Disconnected" : "No Adapter";
+        }
+    }
+
+    public string EthernetAdapterSummary
+    {
+        get
+        {
+            if (IsActiveUsbTethering)
+                return "USB Tethering Device";
+            if (Ethernet?.IsConnected == true)
+                return string.IsNullOrWhiteSpace(Ethernet.Description) ? "Ethernet Adapter" : Ethernet.Description;
+            return HasEthernetAdapter ? "Ethernet Adapter (Offline)" : "No Ethernet Adapter";
+        }
+    }
+
+    // Wi-Fi Interface Specifics
+    public string WifiUsageTotalDisplay => (WifiDataUsage?.TotalBytes ?? 0) > 0
+        ? WifiDataUsage!.FormattedTotal
+        : (HasWifiAdapter ? "0 MB" : "--");
+
+    public string WifiUsageDetailDisplay => (WifiDataUsage?.TotalBytes ?? 0) > 0
+        ? $"↓ {WifiDataUsage!.FormattedReceived}   ↑ {WifiDataUsage!.FormattedSent}"
+        : (HasWifiAdapter ? "↓ 0 MB   ↑ 0 MB" : "No active link");
+
+    public string WifiUsageStatusText
+    {
+        get
+        {
+            if (WifiConnection?.IsConnected == true)
+            {
+                string ssid = string.IsNullOrWhiteSpace(WifiConnection.Ssid) ? "Connected" : WifiConnection.Ssid;
+                return ssid;
+            }
+            return HasWifiAdapter ? "Disconnected" : "No Adapter";
+        }
+    }
+
+    public string WifiAdapterSummary
+    {
+        get
+        {
+            if (WifiConnection?.IsConnected == true)
+                return string.IsNullOrWhiteSpace(WifiConnection.AdapterDescription) ? "Wi-Fi Adapter" : WifiConnection.AdapterDescription;
+            return HasWifiAdapter ? "Wi-Fi Adapter (Offline)" : "No Wi-Fi Adapter";
+        }
+    }
+
+    // Legacy Display Compatibility
+    public string DataUsageTotalDisplay => TotalCombinedDisplay;
+    public string DataUsageDetailDisplay => TotalCombinedRxTxBadge;
+    public string DataUsageFullDisplay => (TotalCombinedBytes > 0 || HasEthernetAdapter || HasWifiAdapter) ? $"{TotalCombinedDisplay}  ({TotalCombinedRxTxBadge})" : "--";
+
+    private int _dataUsageSequenceId;
+
+    public void RefreshDataUsageAsync()
+    {
+        int sequenceId = Interlocked.Increment(ref _dataUsageSequenceId);
+        IsDataUsageRefreshing = true;
+        var timeframe = SelectedDataUsageTimeframe;
+
+        Task.Run(async () =>
+        {
+            try
+            {
+                var ethTask = _dataUsageService.QueryUsageAsync(NetworkKind.Ethernet, timeframe);
+                var wifiTask = _dataUsageService.QueryUsageAsync(NetworkKind.Wifi, timeframe);
+                await Task.WhenAll(ethTask, wifiTask).ConfigureAwait(false);
+
+                var ethResult = await ethTask.ConfigureAwait(false);
+                var wifiResult = await wifiTask.ConfigureAwait(false);
+
+                // Discard obsolete result if a newer query sequence was requested
+                if (sequenceId != Volatile.Read(ref _dataUsageSequenceId)) return;
+
+                if (Application.Current?.Dispatcher is { } dispatcher)
+                {
+                    await dispatcher.InvokeAsync(() =>
+                    {
+                        if (sequenceId == Volatile.Read(ref _dataUsageSequenceId))
+                        {
+                            EthernetDataUsage = ethResult;
+                            WifiDataUsage = wifiResult;
+                            HistoricalDataUsage = ethResult;
+                        }
+                    }, System.Windows.Threading.DispatcherPriority.Background);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[NetworkWidgetViewModel] RefreshDataUsage error: {ex.Message}");
+            }
+            finally
+            {
+                if (sequenceId == Volatile.Read(ref _dataUsageSequenceId))
+                {
+                    if (Application.Current?.Dispatcher is { } dispatcher)
+                    {
+                        _ = dispatcher.InvokeAsync(() => IsDataUsageRefreshing = false);
+                    }
+                }
+            }
+        });
     }
 
     [RelayCommand]
@@ -2278,6 +2509,12 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 catch { }
             });
 
+            // 7. Refresh Data Usage (only when active panel is Usage to conserve CPU/battery)
+            if (IsDataUsagePanel)
+            {
+                RefreshDataUsageAsync();
+            }
+
             // Notify dependent specs
             OnPropertyChanged(nameof(HeroGlyph));
             OnPropertyChanged(nameof(HeroGlyphColor));
@@ -2320,6 +2557,12 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             OnPropertyChanged(nameof(EthernetTileTooltip));
             OnPropertyChanged(nameof(EthernetPanelName));
             OnPropertyChanged(nameof(EthernetTurnedOffBannerTitle));
+            OnPropertyChanged(nameof(UsageWiredTitle));
+            OnPropertyChanged(nameof(UsageWiredIcon));
+            OnPropertyChanged(nameof(EthernetUsageStatusText));
+            OnPropertyChanged(nameof(EthernetAdapterSummary));
+            OnPropertyChanged(nameof(WifiUsageStatusText));
+            OnPropertyChanged(nameof(WifiAdapterSummary));
             OnPropertyChanged(nameof(IsWifiRadioOn));
             OnPropertyChanged(nameof(IsWifiRadioDisabled));
             OnPropertyChanged(nameof(IsWifiRadioEnabled));

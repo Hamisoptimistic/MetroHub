@@ -33,7 +33,7 @@ public partial class MonitorItemViewModel : ObservableObject
     [ObservableProperty]
     private bool _isCurrentCursorMonitor;
 
-    public string BrightnessPercentText => $"{Math.Round(Brightness)}%";
+    public string BrightnessPercentText => IsSupported ? $"{Math.Round(Brightness)}%" : "--";
 
     public string BrightnessGlyph
     {
@@ -77,6 +77,7 @@ public partial class BrightnessWidgetViewModel : WidgetViewModelBase
     private readonly DispatcherTimer _cursorTimer;
     private bool _isHubVisible = true;
     private bool _isUpdatingMasterInternally;
+    private string? _pinnedCursorMonitorId;
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
@@ -268,6 +269,10 @@ public partial class BrightnessWidgetViewModel : WidgetViewModelBase
         _activeMonitorId = monitor.Id;
         ActiveMonitorName = monitor.FriendlyName;
         ActiveMonitorIcon = monitor.DeviceTypeGlyph;
+
+        // Pin current cursor screen so the 250ms timer does not override manual user selection
+        var lastMonitors = _brightnessService.LastMonitors;
+        _pinnedCursorMonitorId = _brightnessService.GetCurrentCursorMonitorId(lastMonitors);
 
         if (!IsLinked)
         {

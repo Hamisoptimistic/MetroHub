@@ -183,6 +183,7 @@ public sealed class MonitorBrightnessService : IDisposable
                         IsPrimary = isPrimary,
                         IsSupported = true,
                         PhysicalIndex = 0,
+                        WmiInstanceName = internalMatch.InstanceName,
                         Bounds = bounds
                     });
                     continue;
@@ -223,6 +224,7 @@ public sealed class MonitorBrightnessService : IDisposable
                     IsPrimary = false,
                     IsSupported = true,
                     PhysicalIndex = 0,
+                    WmiInstanceName = remaining.InstanceName,
                     Bounds = new Rect(0, 0, 1920, 1080)
                 });
             }
@@ -319,7 +321,7 @@ public sealed class MonitorBrightnessService : IDisposable
         {
             if (monitor.IsInternal)
             {
-                SetWmiBrightness(brightness);
+                SetWmiBrightness(monitor.WmiInstanceName, brightness);
                 return;
             }
 
@@ -385,7 +387,7 @@ public sealed class MonitorBrightnessService : IDisposable
 
     #region WMI Internal Panel Support
 
-    private sealed record WmiDisplayInfo(string Id, string FriendlyName, uint CurrentBrightness);
+    private sealed record WmiDisplayInfo(string Id, string InstanceName, string FriendlyName, uint CurrentBrightness);
 
     private static List<WmiDisplayInfo> GetWmiInternalDisplays()
     {
@@ -405,11 +407,27 @@ public sealed class MonitorBrightnessService : IDisposable
                     var active = (bool)(obj["Active"] ?? false);
                     if (!active) continue;
 
+                    string instanceName = obj["InstanceName"]?.ToString() ?? string.Empty;
                     var curObj = obj["CurrentBrightness"];
                     uint cur = curObj != null ? Convert.ToUInt32(curObj) : 50u;
-                    string name = idx < monitorNames.Count ? monitorNames[idx] : (idx == 0 ? "Built-in Display" : $"Internal Display {idx + 1}");
 
-                    results.Add(new WmiDisplayInfo($"wmi_internal_{idx + 1}", name, Math.Clamp(cur, 0u, 100u)));
+                    // Match deterministic name from WmiMonitorID via InstanceName or device prefix
+                    string? name = null;
+                    if (!string.IsNullOrEmpty(instanceName))
+                    {
+                        if (!monitorNames.TryGetValue(instanceName, out name))
+                        {
+                            string prefix = instanceName.Split('_')[0];
+                            name = monitorNames.FirstOrDefault(kvp => kvp.Key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).Value;
+                        }
+                    }
+
+                    if (string.IsNullOrWhiteSpace(name))
+                    {
+                        name = idx == 0 ? "Built-in Display" : $"Internal Display {idx + 1}";
+                    }
+
+                    results.Add(new WmiDisplayInfo($"wmi_internal_{idx + 1}", instanceName, name, Math.Clamp(cur, 0u, 100u)));
                     idx++;
                 }
                 finally
@@ -422,9 +440,9 @@ public sealed class MonitorBrightnessService : IDisposable
         return results;
     }
 
-    private static List<string> GetWmiMonitorNames()
+    private static Dictionary<string, string> GetWmiMonitorNames()
     {
-        var names = new List<string>();
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         try
         {
             using var searcher = new ManagementObjectSearcher(@"\\.\root\wmi", "SELECT * FROM WmiMonitorID");
@@ -434,16 +452,16 @@ public sealed class MonitorBrightnessService : IDisposable
             {
                 try
                 {
+                    string? instanceName = obj["InstanceName"]?.ToString();
+                    if (string.IsNullOrWhiteSpace(instanceName)) continue;
+
                     if (obj["UserFriendlyName"] is ushort[] chars)
                     {
-                        var sb = new StringBuilder();
-                        foreach (var c in chars)
+                        string name = DecodeEdidString(chars);
+                        if (!string.IsNullOrWhiteSpace(name))
                         {
-                            if (c == 0) break;
-                            sb.Append((char)c);
+                            names[instanceName] = name;
                         }
-                        string name = sb.ToString().Trim();
-                        if (!string.IsNullOrWhiteSpace(name)) names.Add(name);
                     }
                 }
                 finally
@@ -456,7 +474,32 @@ public sealed class MonitorBrightnessService : IDisposable
         return names;
     }
 
-    private static void SetWmiBrightness(byte brightness)
+    private static string DecodeEdidString(ushort[] chars)
+    {
+        if (chars == null || chars.Length == 0) return string.Empty;
+
+        var bytes = new List<byte>(chars.Length);
+        foreach (var c in chars)
+        {
+            if (c == 0 || c == 0x0A) break; // 0x0A is EDID LF terminator
+            bytes.Add((byte)(c & 0xFF));
+        }
+
+        if (bytes.Count == 0) return string.Empty;
+
+        try
+        {
+            // Decodes UTF-8 / ASCII cleanly without throwing on invalid sequences
+            var utf8 = new UTF8Encoding(false, false);
+            string decoded = utf8.GetString(bytes.ToArray()).Trim();
+            if (!string.IsNullOrWhiteSpace(decoded)) return decoded;
+        }
+        catch { }
+
+        return Encoding.ASCII.GetString(bytes.ToArray()).Trim();
+    }
+
+    private static void SetWmiBrightness(string? targetInstanceName, byte brightness)
     {
         try
         {
@@ -467,6 +510,17 @@ public sealed class MonitorBrightnessService : IDisposable
             {
                 try
                 {
+                    if (!string.IsNullOrWhiteSpace(targetInstanceName))
+                    {
+                        string instanceName = obj["InstanceName"]?.ToString() ?? string.Empty;
+                        if (!string.IsNullOrEmpty(instanceName) &&
+                            !string.Equals(instanceName, targetInstanceName, StringComparison.OrdinalIgnoreCase) &&
+                            !instanceName.StartsWith(targetInstanceName.Split('_')[0], StringComparison.OrdinalIgnoreCase))
+                        {
+                            continue; // Skip non-targeted display panels
+                        }
+                    }
+
                     obj.InvokeMethod("WmiSetBrightness", new object[] { 1u, brightness });
                 }
                 finally
@@ -483,8 +537,27 @@ public sealed class MonitorBrightnessService : IDisposable
     private static string CleanMonitorName(string name)
     {
         if (string.IsNullOrWhiteSpace(name)) return "Display";
-        // Remove redundant driver prefixes
-        name = name.Replace("Generic PnP Monitor", "Standard Display", StringComparison.OrdinalIgnoreCase);
+
+        string[] genericPnpIdentifiers = [
+            "Generic PnP Monitor",
+            "PnP-Monitor (Standard)",
+            "Moniteur Plug-and-Play générique",
+            "Monitor PnP genérico",
+            "Monitor Plug and Play generico",
+            "汎用 PnP モニター",
+            "通用即插即用监视器",
+            "一般 PnP 監視器",
+            "Универсальный монитор PnP"
+        ];
+
+        foreach (var generic in genericPnpIdentifiers)
+        {
+            if (name.Contains(generic, StringComparison.OrdinalIgnoreCase))
+            {
+                name = name.Replace(generic, "Standard Display", StringComparison.OrdinalIgnoreCase);
+                break;
+            }
+        }
         return name.Trim();
     }
 

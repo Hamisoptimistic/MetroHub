@@ -435,7 +435,7 @@
                                     IndicatorBrush="{Binding AdaptersStatusBrush}"
                                     ToolTip="Hardware Network Adapters &amp; Controls">
                     <widgets:WidgetTile.Icon>
-                        <ui:SymbolIcon Symbol="WrenchScrewdriver20" FontSize="20" Foreground="#FFFFFF" />
+                        <ui:SymbolIcon Symbol="WrenchScrewdriver24" FontSize="24" Foreground="#FFFFFF" />
                     </widgets:WidgetTile.Icon>
                 </widgets:WidgetTile>
                 <widgets:WidgetTile Value="Speed"
@@ -443,14 +443,17 @@
                                     IndicatorBrush="{Binding SpeedStatusBrush}"
                                     ToolTip="Live Throughput &amp; Bandwidth Diagnostics">
                     <widgets:WidgetTile.Icon>
-                        <ui:SymbolIcon Symbol="TopSpeed20" FontSize="20" Foreground="#FFFFFF" />
+                        <ui:SymbolIcon Symbol="TopSpeed24" FontSize="21" Foreground="#FFFFFF" />
                     </widgets:WidgetTile.Icon>
                 </widgets:WidgetTile>
-                <widgets:WidgetTile Value="Hotspot"
-                                    Icon="&#xE88A;"
-                                    Header="Hotspot"
-                                    IndicatorBrush="{Binding HotspotStatusBrush}"
-                                    ToolTip="Windows Mobile Hotspot Settings" />
+                <widgets:WidgetTile Value="Usage"
+                                    Header="Usage"
+                                    IndicatorBrush="{Binding DataUsageStatusBrush}"
+                                    ToolTip="Network Data Usage &amp; Analytics">
+                    <widgets:WidgetTile.Icon>
+                        <ui:SymbolIcon Symbol="DataPie24" FontSize="23" Foreground="#FFFFFF" />
+                    </widgets:WidgetTile.Icon>
+                </widgets:WidgetTile>
             </widgets:WidgetTiles>
 
             <!-- ========================================================================= -->
@@ -521,10 +524,6 @@
                         <Grid.RowDefinitions>
                             <!-- 0: 5 Core Specs Grid -->
                             <RowDefinition Height="*" />
-                            <!-- 1: Subtle Hairline Separator -->
-                            <RowDefinition Height="Auto" />
-                            <!-- 2: Bottom Data Usage Row -->
-                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <!-- 0: Clean Vertical Spec List (Adapter, DNS, IPv4, MAC, Session Uptime) -->
@@ -674,59 +673,6 @@
                                        TextTrimming="CharacterEllipsis"
                                        VerticalAlignment="Center"
                                        Margin="16,0,0,0" />
-                        </Grid>
-
-                        <!-- 1: Hairline Divider -->
-                        <Border Grid.Row="1"
-                                Height="1"
-                                Background="#14FFFFFF"
-                                Margin="0,6,0,6"
-                                SnapsToDevicePixels="True" />
-
-                        <!-- 2: DATA USAGE DEDICATED BOTTOM ROW -->
-                        <Grid Grid.Row="2" SnapsToDevicePixels="True">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <widgets:WidgetSegmentedControl Grid.Column="0"
-                                                            Width="240"
-                                                            VerticalAlignment="Center"
-                                                            SelectedValue="{Binding SelectedDataUsageTimeframe, Mode=TwoWay}">
-                                <widgets:WidgetSegmentedItem Content="Session" Value="{x:Static corenet:DataUsageTimeframe.Session}" />
-                                <widgets:WidgetSegmentedItem Content="24h" Value="{x:Static corenet:DataUsageTimeframe.Last24Hours}" />
-                                <widgets:WidgetSegmentedItem Content="7d" Value="{x:Static corenet:DataUsageTimeframe.Last7Days}" />
-                                <widgets:WidgetSegmentedItem Content="30d" Value="{x:Static corenet:DataUsageTimeframe.Last30Days}" />
-                            </widgets:WidgetSegmentedControl>
-
-                            <StackPanel Grid.Column="2"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center">
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <TextBlock Text="DATA USAGE"
-                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                               FontSize="11"
-                                               FontWeight="Bold"
-                                               Foreground="#85FFFFFF"
-                                               VerticalAlignment="Bottom"
-                                               Margin="0,0,8,2" />
-                                    <TextBlock Text="{Binding DataUsageTotalDisplay}"
-                                               FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                               FontSize="18"
-                                               FontWeight="Bold"
-                                               Foreground="#FFFFFF"
-                                               VerticalAlignment="Bottom" />
-                                </StackPanel>
-                                <TextBlock Text="{Binding DataUsageDetailDisplay}"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
-                                           Foreground="#85FFFFFF"
-                                           HorizontalAlignment="Right"
-                                           Margin="0,2,0,0" />
-                            </StackPanel>
                         </Grid>
                     </Grid>
 
@@ -1807,16 +1753,244 @@
                     </Grid>
                 </Grid>
 
-                <!-- Hotspot Panel Placeholder -->
-                <Grid Visibility="{Binding IsHotspotPanel, Converter={StaticResource BoolToVis}}"
-                      Margin="20,16,20,16" Background="Transparent">
-                    <Border Background="#06FFFFFF" BorderBrush="#10FFFFFF" BorderThickness="1" CornerRadius="2" Padding="20">
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <TextBlock Text="&#xE88E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="26" Foreground="#80FFFFFF" HorizontalAlignment="Center" Margin="0,0,0,8" />
-                            <TextBlock Text="Mobile Hotspot Panel" FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center" />
-                            <TextBlock Text="Windows Mobile Hotspot toggle, SSID/password &amp; clients will be designed next." FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontSize="12" Foreground="#65FFFFFF" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                <!-- ==================== 5. DATA USAGE & ANALYTICS PANEL ==================== -->
+                <Grid Visibility="{Binding IsDataUsagePanel, Converter={StaticResource BoolToVis}}"
+                      Margin="20,12,20,14"
+                      Background="Transparent"
+                      SnapsToDevicePixels="True">
+                    <Grid.RowDefinitions>
+                        <!-- Row 0: Centered Master Timeframe Segmented Control -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Row 1: Top Hairline Divider -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Row 2: Dual Interfaces (Wired & Wi-Fi) -->
+                        <RowDefinition Height="*" />
+                        <!-- Row 3: Bottom Hairline Divider -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Row 4: Total Consumed Bottom Summary -->
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- ROW 0: CENTERED MASTER TIMEFRAME SELECTOR -->
+                    <widgets:WidgetSegmentedControl Grid.Row="0"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Width="340"
+                                                    Height="32"
+                                                    Margin="0,0,0,8"
+                                                    SelectedValue="{Binding SelectedDataUsageTimeframe, Mode=TwoWay}">
+                        <widgets:WidgetSegmentedItem Content="Session" Value="{x:Static corenet:DataUsageTimeframe.Session}" Height="32" FontSize="13" />
+                        <widgets:WidgetSegmentedItem Content="24h" Value="{x:Static corenet:DataUsageTimeframe.Last24Hours}" Height="32" FontSize="13" />
+                        <widgets:WidgetSegmentedItem Content="7d" Value="{x:Static corenet:DataUsageTimeframe.Last7Days}" Height="32" FontSize="13" />
+                        <widgets:WidgetSegmentedItem Content="30d" Value="{x:Static corenet:DataUsageTimeframe.Last30Days}" Height="32" FontSize="13" />
+                    </widgets:WidgetSegmentedControl>
+
+                    <!-- ROW 1: TOP HAIRLINE DIVIDER -->
+                    <Border Grid.Row="1"
+                            Height="1"
+                            Background="#14FFFFFF"
+                            Margin="0,4,0,16"
+                            SnapsToDevicePixels="True" />
+
+                    <!-- ROW 2: DUAL INTERFACES (Clean, Borderless, Monochromatic) -->
+                    <Grid Grid.Row="2" VerticalAlignment="Center" SnapsToDevicePixels="True">
+                        <Grid.ColumnDefinitions>
+                            <!-- Column 0: Wired / USB Tethering -->
+                            <ColumnDefinition Width="*" />
+                            <!-- Column 1: Subtle Vertical Hairline Separator -->
+                            <ColumnDefinition Width="Auto" />
+                            <!-- Column 2: Wi-Fi -->
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- ================= COLUMN 0: WIRED / USB TETHERING ================= -->
+                        <StackPanel Grid.Column="0" Margin="8,0,0,0" VerticalAlignment="Center">
+                            <!-- Header: Icon + Title -->
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding UsageWiredIcon}"
+                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                           FontSize="15"
+                                           Foreground="#FFFFFF"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,7,0" />
+                                <TextBlock Text="{Binding UsageWiredTitle}"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="12"
+                                           FontWeight="Bold"
+                                           Foreground="#E0FFFFFF"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+
+                            <!-- Hero Big Usage Number -->
+                            <TextBlock Text="{Binding EthernetUsageTotalDisplay}"
+                                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                       FontSize="26"
+                                       FontWeight="Bold"
+                                       Foreground="#FFFFFF"
+                                       Margin="0,8,0,4"
+                                       Typography.NumeralAlignment="Tabular" />
+
+                            <!-- Rx / Tx Breakdown -->
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE896;"
+                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                           FontSize="10"
+                                           Foreground="#10B981"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,4,0" />
+                                <TextBlock Text="{Binding EthernetDataUsage.FormattedReceived}"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="11.5"
+                                           Foreground="#90FFFFFF"
+                                           VerticalAlignment="Center"
+                                           Typography.NumeralAlignment="Tabular" />
+                                <TextBlock Text="   " />
+                                <TextBlock Text="&#xE898;"
+                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                           FontSize="10"
+                                           Foreground="#F59E0B"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,4,0" />
+                                <TextBlock Text="{Binding EthernetDataUsage.FormattedSent}"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="11.5"
+                                           Foreground="#90FFFFFF"
+                                           VerticalAlignment="Center"
+                                           Typography.NumeralAlignment="Tabular" />
+                            </StackPanel>
                         </StackPanel>
-                    </Border>
+
+                        <!-- Subtle 1px Vertical Separator -->
+                        <Border Grid.Column="1"
+                                Width="1"
+                                Background="#14FFFFFF"
+                                Margin="20,2,20,2"
+                                SnapsToDevicePixels="True" />
+
+                        <!-- ================= COLUMN 2: WI-FI ================= -->
+                        <StackPanel Grid.Column="2" Margin="0,0,8,0" VerticalAlignment="Center">
+                            <!-- Header: Icon + Title -->
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="&#xE701;"
+                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                           FontSize="15"
+                                           Foreground="#FFFFFF"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,7,0" />
+                                <TextBlock Text="WI-FI"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="12"
+                                           FontWeight="Bold"
+                                           Foreground="#E0FFFFFF"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+
+                            <!-- Hero Big Usage Number -->
+                            <TextBlock Text="{Binding WifiUsageTotalDisplay}"
+                                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                       FontSize="26"
+                                       FontWeight="Bold"
+                                       Foreground="#FFFFFF"
+                                       Margin="0,8,0,4"
+                                       Typography.NumeralAlignment="Tabular" />
+
+                            <!-- Rx / Tx Breakdown -->
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE896;"
+                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                           FontSize="10"
+                                           Foreground="#10B981"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,4,0" />
+                                <TextBlock Text="{Binding WifiDataUsage.FormattedReceived}"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="11.5"
+                                           Foreground="#90FFFFFF"
+                                           VerticalAlignment="Center"
+                                           Typography.NumeralAlignment="Tabular" />
+                                <TextBlock Text="   " />
+                                <TextBlock Text="&#xE898;"
+                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                           FontSize="10"
+                                           Foreground="#F59E0B"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,4,0" />
+                                <TextBlock Text="{Binding WifiDataUsage.FormattedSent}"
+                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                           FontSize="11.5"
+                                           Foreground="#90FFFFFF"
+                                           VerticalAlignment="Center"
+                                           Typography.NumeralAlignment="Tabular" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- ROW 3: BOTTOM HAIRLINE DIVIDER -->
+                    <Border Grid.Row="3"
+                            Height="1"
+                            Background="#14FFFFFF"
+                            Margin="0,16,0,12"
+                            SnapsToDevicePixels="True" />
+
+                    <!-- ROW 4: TOTAL CONSUMED (BELOW ETHERNET & WI-FI) -->
+                    <Grid Grid.Row="4" Margin="4,0,4,2" SnapsToDevicePixels="True">
+                        <Grid.ColumnDefinitions>
+                            <!-- Left: TOTAL CONSUMED + Big Value -->
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <!-- Right: Total Rx / Tx Breakdown -->
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left: TOTAL CONSUMED Label + Hero Combined Total -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="TOTAL CONSUMED"
+                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                       FontSize="11"
+                                       FontWeight="Bold"
+                                       Foreground="#70FFFFFF"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,10,0" />
+                            <TextBlock Text="{Binding TotalCombinedDisplay}"
+                                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                       FontSize="20"
+                                       FontWeight="Bold"
+                                       Foreground="#FFFFFF"
+                                       VerticalAlignment="Center"
+                                       Typography.NumeralAlignment="Tabular" />
+                        </StackPanel>
+
+                        <!-- Right: Combined Rx / Tx Breakdown -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE896;"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                       FontSize="10"
+                                       Foreground="#10B981"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,4,0" />
+                            <TextBlock Text="{Binding TotalCombinedReceivedDisplay}"
+                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                       FontSize="11.5"
+                                       FontWeight="SemiBold"
+                                       Foreground="#95FFFFFF"
+                                       VerticalAlignment="Center"
+                                       Typography.NumeralAlignment="Tabular" />
+                            <TextBlock Text="   " />
+                            <TextBlock Text="&#xE898;"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif"
+                                       FontSize="10"
+                                       Foreground="#F59E0B"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,4,0" />
+                            <TextBlock Text="{Binding TotalCombinedSentDisplay}"
+                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                       FontSize="11.5"
+                                       FontWeight="SemiBold"
+                                       Foreground="#95FFFFFF"
+                                       VerticalAlignment="Center"
+                                       Typography.NumeralAlignment="Tabular" />
+                        </StackPanel>
+                    </Grid>
                 </Grid>
             </Grid>
         </Grid>

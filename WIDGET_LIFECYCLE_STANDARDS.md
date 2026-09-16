@@ -1,3 +1,7 @@
+# VVVVVVIMPPPPPP 
+DONT START THE APP JUST PUBLISH IT TO DESKTOP I WILL START ITMYSELF
+
+
 # Mandatory Widget Lifecycle & Resource Hygiene Standards
 
 > **CRITICAL DIRECTIVE**: Whenever building or modifying any widget for MetroHub, you MUST read and enforce this checklist. Failure to adhere to these rules leads to memory leaks, orphaned background timers, battery drain, and process bloat.
