@@ -1,4 +1,4 @@
-<UserControl x:Class="MetroHub.Presentation.Controls.GroupHeaderControl"
+﻿<UserControl x:Class="MetroHub.Presentation.Controls.GroupHeaderControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -144,7 +144,7 @@
                                Foreground="{Binding HeaderColor, TargetNullValue='#E8FFFFFF', FallbackValue='#E8FFFFFF'}"
                                VerticalAlignment="Center"
                                TextOptions.TextFormattingMode="Ideal"
-                               TextOptions.TextRenderingMode="Auto"
+                               TextOptions.TextRenderingMode="ClearType"
                                TextTrimming="CharacterEllipsis"
                                MaxWidth="260"
                                MouseDown="OnTitleMouseDown" />
@@ -176,7 +176,7 @@
                          MaxWidth="260"
                          VerticalAlignment="Center"
                          TextOptions.TextFormattingMode="Ideal"
-                         TextOptions.TextRenderingMode="Auto"
+                         TextOptions.TextRenderingMode="ClearType"
                          KeyDown="OnEditKeyDown"
                          LostFocus="OnEditLostFocus">
                     <TextBox.Style>

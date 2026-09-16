@@ -1,4 +1,4 @@
-<Application x:Class="MetroHub.App"
+﻿<Application x:Class="MetroHub.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:MetroHub"
@@ -113,16 +113,16 @@
             <!-- Universal DirectWrite Typography & Icon Defaults: Crisp vector outlines, zero color fringing across all future UI -->
             <Style TargetType="{x:Type TextBlock}">
                 <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
-                <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
-                <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+                <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
                 <Setter Property="SnapsToDevicePixels" Value="True" />
                 <Setter Property="UseLayoutRounding" Value="True" />
             </Style>
 
             <Style TargetType="{x:Type Control}">
                 <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
-                <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
-                <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+                <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
             </Style>
 
             <!-- Global Crisp DirectWrite Vector Styling for all current and future WPF-UI Icons -->
@@ -131,8 +131,8 @@
                 <Setter Property="UseLayoutRounding" Value="True" />
                 <Setter Property="Focusable" Value="False" />
                 <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
-                <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
-                <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+                <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
             </Style>
 
             <!-- Authentic Windows 11 Fluent ContextMenu Style with Integrated Responsive Scaling -->
@@ -141,8 +141,8 @@
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="FontWeight" Value="Normal" />
                 <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
-                <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
-                <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+                <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
                 <Setter Property="LayoutTransform">
                     <Setter.Value>
                         <ScaleTransform ScaleX="{Binding Source={x:Static local:MainWindow.Current}, Path=CurrentScale, FallbackValue=1.0}"
@@ -438,8 +438,8 @@
                 <Setter Property="FontWeight" Value="Normal" />
                 <Setter Property="Foreground" Value="{DynamicResource ContextMenuForeground}" />
                 <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
-                <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
-                <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+                <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
                 <Setter Property="SnapsToDevicePixels" Value="True" />
                 <Setter Property="UseLayoutRounding" Value="True" />
                 <Setter Property="MinHeight" Value="32" />

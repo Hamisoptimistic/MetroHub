@@ -218,7 +218,8 @@ public partial class MainWindow : BorderlessFluentWindow
                         return;
                     }
 
-                    Keyboard.ClearFocus();
+                    Focus();
+                    Keyboard.Focus(this);
                     FocusManager.SetFocusedElement(this, this);
                 }
             }
@@ -290,8 +291,11 @@ public partial class MainWindow : BorderlessFluentWindow
             {
                 if (AllAppsDrawer == null || !AllAppsDrawer.IsOpen)
                 {
-                    Keyboard.ClearFocus();
-                    FocusManager.SetFocusedElement(this, this);
+                    // Give the window real keyboard focus so WPF routes PreviewTextInput
+                    // through the window — without this, Keyboard.FocusedElement stays null
+                    // and typing never reaches OnWindowPreviewTextInput on first launch.
+                    Focus();
+                    Keyboard.Focus(this);
                 }
             }, DispatcherPriority.Input);
         }
@@ -1111,8 +1115,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
         Activate();
         Focus();
-        FocusManager.SetFocusedElement(this, this);
-        Keyboard.ClearFocus();
+        Keyboard.Focus(this);
         UpdateLayoutMetrics();
         UpdateExposedAddSlots();
 
@@ -1125,8 +1128,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             ApplyConfiguredBackdrop();
             Activate();
             Focus();
-            FocusManager.SetFocusedElement(this, this);
-            Keyboard.ClearFocus();
+            Keyboard.Focus(this);
         }, DispatcherPriority.Render);
 
         PlayOpenAnimation();

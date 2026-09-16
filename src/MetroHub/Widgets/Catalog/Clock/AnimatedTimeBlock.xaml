@@ -1,4 +1,4 @@
-<UserControl x:Class="MetroHub.Widgets.Catalog.Clock.AnimatedTimeBlock"
+﻿<UserControl x:Class="MetroHub.Widgets.Catalog.Clock.AnimatedTimeBlock"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -8,8 +8,8 @@
              SnapsToDevicePixels="True"
              UseLayoutRounding="True"
              TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="Grayscale"
-             TextOptions.TextHintingMode="Animated"
+             TextOptions.TextRenderingMode="ClearType"
+             TextOptions.TextHintingMode="Fixed"
              ClipToBounds="False">
     <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="False">
         <!-- Previous Text Layer (slides up & fades out) -->
@@ -19,8 +19,8 @@
                    SnapsToDevicePixels="True"
                    UseLayoutRounding="True"
                    TextOptions.TextFormattingMode="Ideal"
-                   TextOptions.TextRenderingMode="Grayscale"
-                   TextOptions.TextHintingMode="Animated">
+                   TextOptions.TextRenderingMode="ClearType"
+                   TextOptions.TextHintingMode="Fixed">
             <TextBlock.RenderTransform>
                 <TranslateTransform x:Name="PartPreviousTransform" Y="0" />
             </TextBlock.RenderTransform>
@@ -33,8 +33,8 @@
                    SnapsToDevicePixels="True"
                    UseLayoutRounding="True"
                    TextOptions.TextFormattingMode="Ideal"
-                   TextOptions.TextRenderingMode="Grayscale"
-                   TextOptions.TextHintingMode="Animated">
+                   TextOptions.TextRenderingMode="ClearType"
+                   TextOptions.TextHintingMode="Fixed">
             <TextBlock.RenderTransform>
                 <TranslateTransform x:Name="PartCurrentTransform" Y="0" />
             </TextBlock.RenderTransform>

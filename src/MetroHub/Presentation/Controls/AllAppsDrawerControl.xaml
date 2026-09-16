@@ -219,8 +219,7 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <!-- Header Title -->
-            <Grid Grid.Row="0" Margin="16,14,16,6">
+            <Grid x:Name="DrawerHeaderGrid" Grid.Row="0" Margin="16,14,16,6">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <ui:SymbolIcon Symbol="AppsList24" FontSize="18" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" Margin="0,0,8,0" />
                     <TextBlock Text="All apps"
@@ -239,7 +238,6 @@
                 </Button>
             </Grid>
 
-            <!-- Search Bar: NO BORDER, CornerRadius="2" matching tiles, perfectly aligned caret/placeholder -->
             <Border Grid.Row="1"
                     x:Name="SearchBorder"
                     Margin="14,4,14,12"
@@ -289,147 +287,149 @@
                 </Grid>
             </Border>
 
-            <!-- Mode 1: Alphabetical Grouped Apps List with Breathing Room -->
-            <ScrollViewer Grid.Row="2"
-                          x:Name="GroupedScrollViewer"
-                          controls:AutoHideScrollBehavior.IsEnabled="True"
-                          VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled"
-                          Focusable="False"
-                          Background="Transparent"
-                          Padding="0,2,14,16">
-                <ItemsControl x:Name="GroupedItemsControl">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Margin="0,0,0,6">
-                                <!-- Group Header Badge: Perfectly aligned with app icon column below -->
-                                <Border Width="28"
-                                        Height="28"
-                                        Background="#14FFFFFF"
-                                        BorderThickness="1"
-                                        BorderBrush="#1CFFFFFF"
-                                        CornerRadius="2"
-                                        SnapsToDevicePixels="True"
-                                        HorizontalAlignment="Left"
-                                        Margin="16,8,0,4">
-                                    <TextBlock Text="{Binding Header}"
-                                               FontSize="14"
-                                               FontWeight="Bold"
-                                               FontFamily="Segoe UI Variable Display, Segoe UI Variable Text, Segoe UI, sans-serif"
-                                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center" />
-                                </Border>
+            <!-- Mode 1 & 2: Staggered Content Host -->
+            <Grid Grid.Row="2" x:Name="AppsContentHostGrid">
 
-                                <!-- Apps in this letter group -->
-                                <ItemsControl ItemsSource="{Binding Items}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Style="{StaticResource AppRowContainerStyle}"
-                                                    Tag="{Binding}"
-                                                    PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
-                                                    PreviewMouseMove="OnAppRowPreviewMouseMove"
-                                                    MouseLeftButtonUp="OnAppRowMouseLeftButtonUp"
-                                                    ContextMenu="{StaticResource AppItemContextMenu}"
-                                                    ContextMenuOpening="OnAppContextMenuOpening">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="28" />
-                                                        <ColumnDefinition Width="*" />
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <Image Grid.Column="0"
-                                                           Source="{Binding Icon}"
-                                                           Width="22"
-                                                           Height="22"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"
-                                                           RenderOptions.BitmapScalingMode="HighQuality" />
-
-                                                    <TextBlock Grid.Column="1"
-                                                               Text="{Binding Name}"
-                                                               FontSize="13"
-                                                               Foreground="#E6FFFFFF"
-                                                               VerticalAlignment="Center"
-                                                               Margin="8,0,8,0"
-                                                               TextTrimming="CharacterEllipsis" />
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-
-            <!-- Mode 2: Search Results Flat List with Breathing Room -->
-            <ScrollViewer Grid.Row="2"
-                          x:Name="SearchResultsScrollViewer"
-                          controls:AutoHideScrollBehavior.IsEnabled="True"
-                          Visibility="Collapsed"
-                          VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled"
-                          Focusable="False"
-                          Background="Transparent"
-                          Padding="0,2,14,16">
-                <StackPanel>
-                    <TextBlock x:Name="NoResultsTextBlock"
-                               Text="No apps found"
-                               FontSize="13"
-                               Foreground="#70FFFFFF"
-                               HorizontalAlignment="Center"
-                               Margin="0,32,0,0"
-                               Visibility="Collapsed" />
-
-                    <ListBox x:Name="SearchResultsListBox"
-                             Background="Transparent"
-                             BorderThickness="0"
-                             Padding="0"
-                             FocusVisualStyle="{x:Null}"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                             ItemContainerStyle="{StaticResource FluentSearchListBoxItemStyle}"
-                             KeyDown="OnSearchResultsKeyDown"
-                             PreviewKeyDown="OnSearchResultsPreviewKeyDown"
-                             PreviewTextInput="OnSearchResultsPreviewTextInput">
-                        <ListBox.ItemTemplate>
+                <!-- Mode 1: Alphabetical Grouped Apps List with Breathing Room -->
+                <ScrollViewer x:Name="GroupedScrollViewer"
+                              controls:AutoHideScrollBehavior.IsEnabled="True"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Focusable="False"
+                              Background="Transparent"
+                              Padding="0,2,14,16">
+                    <ItemsControl x:Name="GroupedItemsControl">
+                        <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid Tag="{Binding}"
-                                      Background="Transparent"
-                                      PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
-                                      PreviewMouseMove="OnAppRowPreviewMouseMove"
-                                      MouseLeftButtonUp="OnAppRowMouseLeftButtonUp"
-                                      ContextMenu="{StaticResource AppItemContextMenu}"
-                                      ContextMenuOpening="OnAppContextMenuOpening">
+                                <StackPanel Margin="0,0,0,6">
+                                    <!-- Group Header Badge: Perfectly aligned with app icon column below -->
+                                    <Border Width="28"
+                                            Height="28"
+                                            Background="#14FFFFFF"
+                                            BorderThickness="1"
+                                            BorderBrush="#1CFFFFFF"
+                                            CornerRadius="2"
+                                            SnapsToDevicePixels="True"
+                                            HorizontalAlignment="Left"
+                                            Margin="16,8,0,4">
+                                        <TextBlock Text="{Binding Header}"
+                                                   FontSize="14"
+                                                   FontWeight="Bold"
+                                                   FontFamily="Segoe UI Variable Display, Segoe UI Variable Text, Segoe UI, sans-serif"
+                                                   Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                                    </Border>
 
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="28" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
+                                    <!-- Apps in this letter group -->
+                                    <ItemsControl ItemsSource="{Binding Items}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Style="{StaticResource AppRowContainerStyle}"
+                                                        Tag="{Binding}"
+                                                        PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
+                                                        PreviewMouseMove="OnAppRowPreviewMouseMove"
+                                                        MouseLeftButtonUp="OnAppRowMouseLeftButtonUp"
+                                                        ContextMenu="{StaticResource AppItemContextMenu}"
+                                                        ContextMenuOpening="OnAppContextMenuOpening">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="28" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
 
-                                    <Image Grid.Column="0"
-                                           Source="{Binding Icon}"
-                                           Width="22"
-                                           Height="22"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           RenderOptions.BitmapScalingMode="HighQuality" />
+                                                        <Image Grid.Column="0"
+                                                               Source="{Binding Icon}"
+                                                               Width="22"
+                                                               Height="22"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               RenderOptions.BitmapScalingMode="HighQuality" />
 
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding Name}"
-                                               FontSize="13"
-                                               Foreground="#E6FFFFFF"
-                                               VerticalAlignment="Center"
-                                               Margin="8,0,8,0"
-                                               TextTrimming="CharacterEllipsis" />
-                                </Grid>
+                                                        <TextBlock Grid.Column="1"
+                                                                   Text="{Binding Name}"
+                                                                   FontSize="13"
+                                                                   Foreground="#E6FFFFFF"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="8,0,8,0"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
                             </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </StackPanel>
-            </ScrollViewer>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Mode 2: Search Results Flat List with Breathing Room -->
+                <ScrollViewer x:Name="SearchResultsScrollViewer"
+                              controls:AutoHideScrollBehavior.IsEnabled="True"
+                              Visibility="Collapsed"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Focusable="False"
+                              Background="Transparent"
+                              Padding="0,2,14,16">
+                    <StackPanel>
+                        <TextBlock x:Name="NoResultsTextBlock"
+                                   Text="No apps found"
+                                   FontSize="13"
+                                   Foreground="#70FFFFFF"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,32,0,0"
+                                   Visibility="Collapsed" />
+
+                        <ListBox x:Name="SearchResultsListBox"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Padding="0"
+                                 FocusVisualStyle="{x:Null}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                 ItemContainerStyle="{StaticResource FluentSearchListBoxItemStyle}"
+                                 KeyDown="OnSearchResultsKeyDown"
+                                 PreviewKeyDown="OnSearchResultsPreviewKeyDown"
+                                 PreviewTextInput="OnSearchResultsPreviewTextInput">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Tag="{Binding}"
+                                          Background="Transparent"
+                                          PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
+                                          PreviewMouseMove="OnAppRowPreviewMouseMove"
+                                          MouseLeftButtonUp="OnAppRowMouseLeftButtonUp"
+                                          ContextMenu="{StaticResource AppItemContextMenu}"
+                                          ContextMenuOpening="OnAppContextMenuOpening">
+
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="28" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Image Grid.Column="0"
+                                               Source="{Binding Icon}"
+                                               Width="22"
+                                               Height="22"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               RenderOptions.BitmapScalingMode="HighQuality" />
+
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Name}"
+                                                   FontSize="13"
+                                                   Foreground="#E6FFFFFF"
+                                                   VerticalAlignment="Center"
+                                                   Margin="8,0,8,0"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
         </Grid>
     </Border>
     </Grid>

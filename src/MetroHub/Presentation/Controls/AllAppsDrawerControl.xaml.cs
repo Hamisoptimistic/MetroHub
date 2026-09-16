@@ -58,6 +58,8 @@ namespace MetroHub.Presentation.Controls
                 LoadApps();
             }
 
+            PlayMicroDrift();
+
             Opened?.Invoke(this, EventArgs.Empty);
             SearchBox.Focus();
         }
@@ -69,10 +71,66 @@ namespace MetroHub.Presentation.Controls
             IsOpen = false;
             Closing?.Invoke(this, EventArgs.Empty);
 
+            ResetMicroDrift();
+
             Visibility = Visibility.Collapsed;
             ClearSearch();
             Closed?.Invoke(this, EventArgs.Empty);
         }
+
+        private void PlayMicroDrift()
+        {
+            // Animate the whole drawer as ONE unit — no per-element stagger.
+            // Animating X-axis individual elements kills ClearType subpixel rendering and
+            // makes text look blurry/jumpy. A unified 8px Y-lift on the UserControl itself
+            // keeps all text pixel-snapped and crisp throughout.
+            ResetMicroDrift();
+
+            int refreshRate = NativeMethods.GetScreenRefreshRate();
+            if (refreshRate <= 0) refreshRate = 120;
+
+            var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+            const double DriftPx = 8.0;
+            const double DriftMs = 140.0;
+
+            // Y-lift: drawer slides up 8px from below, settles at 0
+            var yAnim = new DoubleAnimation
+            {
+                From = DriftPx,
+                To = 0.0,
+                Duration = TimeSpan.FromMilliseconds(DriftMs),
+                EasingFunction = easing
+            };
+            Timeline.SetDesiredFrameRate(yAnim, refreshRate);
+
+            // Opacity: from 0.6 (already mostly visible) to 1.0 — no jarring pop-in
+            var opAnim = new DoubleAnimation
+            {
+                From = 0.6,
+                To = 1.0,
+                Duration = TimeSpan.FromMilliseconds(DriftMs),
+                EasingFunction = easing
+            };
+            Timeline.SetDesiredFrameRate(opAnim, refreshRate);
+
+            // Once settled, clear animation clocks to restore ClearType pixel-snapping
+            yAnim.Completed += (s, e) => ResetMicroDrift();
+
+            DrawerTranslate.BeginAnimation(TranslateTransform.YProperty, yAnim);
+            BeginAnimation(UIElement.OpacityProperty, opAnim);
+        }
+
+        private void ResetMicroDrift()
+        {
+            // Clear animation clocks → WPF reverts to ClearType subpixel text rendering
+            DrawerTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+            DrawerTranslate.Y = 0.0;
+            DrawerTranslate.X = 0.0;
+
+            BeginAnimation(UIElement.OpacityProperty, null);
+            Opacity = 1.0;
+        }
+
 
         public void Toggle()
         {
