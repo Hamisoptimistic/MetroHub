@@ -109,6 +109,13 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
     private long _seekRecoveryUntil = 0;
     private long _transientZeroDetectedAt = 0;
 
+    // Bulletproof live stream detection & debounce state
+    private long _zeroDurationDetectedAt = 0;
+    private long _trackChangedAt = Stopwatch.GetTimestamp();
+    private TimeSpan _lastObservedDuration = TimeSpan.Zero;
+    private long _lastObservedDurationTimestamp = 0;
+    private int _consecutiveGrowthSamples = 0;
+
     private DispatcherTimer? _playbackTimer;
     private long _lastLocalTimestamp = Stopwatch.GetTimestamp();
     private TimeSpan _lastTimelinePosition = TimeSpan.Zero;
@@ -197,6 +204,19 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
         }
 
         _currentSession = newSession;
+
+        lock (_stateLock)
+        {
+            _currentTrackId = string.Empty;
+            _trackDuration = TimeSpan.Zero;
+            _zeroDurationDetectedAt = 0;
+            _trackChangedAt = Stopwatch.GetTimestamp();
+            _lastObservedDuration = TimeSpan.Zero;
+            _lastObservedDurationTimestamp = 0;
+            _consecutiveGrowthSamples = 0;
+            IsLive = false;
+            CanSeek = true;
+        }
 
         if (_currentSession != null)
         {
@@ -358,46 +378,123 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
             var controls = playback?.Controls;
             bool canSeek = controls?.IsPlaybackPositionEnabled ?? true;
 
+            bool isMusicApp = IsKnownNonLiveSource(session.SourceAppUserModelId, Title, Artist);
+
             lock (_stateLock)
             {
-                // ── LIVE STREAM DETECTION ──
-                // Live streams (Twitch, YouTube Live, Kick, Web Radio) lack a fixed duration
-                // or have dynamically advancing live buffers and non-seekable playback.
+                long now = Stopwatch.GetTimestamp();
                 bool isLiveStream = false;
 
-                if (newDuration <= TimeSpan.Zero)
+                if (isMusicApp)
                 {
-                    // If we have an established positive duration on a regular track (e.g. Spotify / normal YouTube video),
-                    // Chromium sends transient EndTime <= 0 during seeks and buffering. Ignore that transient zero!
-                    if (_trackDuration > TimeSpan.Zero && !IsLive)
+                    // ── DEDICATED MUSIC SOURCE EXEMPTION ──
+                    // Spotify, Apple Music, Tidal, Foobar2000, and local media players never broadcast raw live streams.
+                    // Zero duration is strictly transient buffering during track switches / seek operations.
+                    if (newDuration > TimeSpan.Zero)
                     {
-                        return;
+                        IsLive = false;
+                        CanSeek = canSeek;
+                        _trackDuration = newDuration;
+                        _zeroDurationDetectedAt = 0;
+                        _consecutiveGrowthSamples = 0;
                     }
-
-                    // No established duration while playing or seeking is disabled: live stream!
-                    if (isPlaying || !canSeek)
+                    else
                     {
-                        isLiveStream = true;
+                        // Buffering / loading: ignore zero duration if we already have an established duration
+                        if (_trackDuration > TimeSpan.Zero)
+                        {
+                            return;
+                        }
+                        // During initial buffering of a new song, ensure IsLive is false and return
+                        IsLive = false;
+                        return;
                     }
                 }
                 else
                 {
-                    // For streams with non-zero duration:
-                    // Check if seeking is disabled, or if it was already detected as live,
-                    // or if the live buffer is continuously sliding forward at the live edge.
-                    if (!canSeek)
+                    // ── GENERAL / BROWSER SOURCES (YouTube, Twitch, Kick, Web Radio, etc.) ──
+
+                    if (newDuration > TimeSpan.Zero)
                     {
-                        isLiveStream = true;
+                        // 1. Absurd / dummy infinite durations (e.g. > 24 hours on internet radio / HLS streams)
+                        if (newDuration > TimeSpan.FromHours(24) || newDuration >= TimeSpan.MaxValue - TimeSpan.FromDays(1))
+                        {
+                            isLiveStream = true;
+                        }
+                        else
+                        {
+                            // 2. Sliding-buffer DVR Live Stream Detection (e.g. YouTube Live with rewind capability)
+                            // A normal video or song has a CONSTANT duration.
+                            // A live DVR stream's duration GROWS in real-time alongside wall-clock time (~1s per second).
+                            if (_lastObservedDuration > TimeSpan.Zero && _lastObservedDurationTimestamp > 0)
+                            {
+                                double elapsedWallClock = (double)(now - _lastObservedDurationTimestamp) / Stopwatch.Frequency;
+                                double durationGrowth = (newDuration - _lastObservedDuration).TotalSeconds;
+
+                                // If duration grew roughly in sync with real elapsed time (within 1.2s tolerance) over at least 1s
+                                if (elapsedWallClock >= 1.0 && durationGrowth > 0.5 && Math.Abs(durationGrowth - elapsedWallClock) < 1.5)
+                                {
+                                    // Verify position is near the live edge (within 20s of the sliding buffer head)
+                                    if (Math.Abs((timeline.EndTime - timeline.Position).TotalSeconds) < 20.0)
+                                    {
+                                        _consecutiveGrowthSamples++;
+                                    }
+                                }
+                                else if (elapsedWallClock >= 1.0 && Math.Abs(durationGrowth) < 0.3)
+                                {
+                                    // Duration is completely static: regular recorded track/video!
+                                    _consecutiveGrowthSamples = 0;
+                                }
+                            }
+
+                            _lastObservedDuration = newDuration;
+                            _lastObservedDurationTimestamp = now;
+
+                            // Require 3 consecutive expanding samples spanning multiple seconds to confirm DVR live
+                            if (_consecutiveGrowthSamples >= 3)
+                            {
+                                isLiveStream = true;
+                            }
+                        }
                     }
-                    else if (IsLive)
+                    else
                     {
-                        isLiveStream = true;
-                    }
-                    else if (_trackDuration > TimeSpan.Zero &&
-                             newDuration > _trackDuration + TimeSpan.FromSeconds(1.0) &&
-                             Math.Abs((timeline.EndTime - timeline.Position).TotalSeconds) < 2.5)
-                    {
-                        isLiveStream = true;
+                        // ── ZERO / INDETERMINATE DURATION (newDuration <= TimeSpan.Zero) ──
+
+                        // A. If we already established a positive duration on this track,
+                        // Chromium sends transient EndTime <= 0 during seeks and buffering. Ignore that transient zero!
+                        if (_trackDuration > TimeSpan.Zero && !IsLive)
+                        {
+                            return;
+                        }
+
+                        // B. Track Change Grace Period:
+                        // Allow 1.5s after a track change or playback start for the browser/app to decode headers.
+                        double timeSinceTrackChange = (double)(now - _trackChangedAt) / Stopwatch.Frequency;
+                        if (timeSinceTrackChange < 1.5)
+                        {
+                            // Still within initial buffering window — DO NOT flag as live yet!
+                            return;
+                        }
+
+                        // C. Debounce gate for unseekable live streams (Twitch, Kick, Web Radio):
+                        // If duration remains 0 after the grace period, require at least 1.5s of persistent zero duration
+                        // while actively playing or with seek disabled before declaring it a live stream.
+                        if (_zeroDurationDetectedAt == 0)
+                        {
+                            _zeroDurationDetectedAt = now;
+                            return;
+                        }
+
+                        double zeroDurationElapsed = (double)(now - _zeroDurationDetectedAt) / Stopwatch.Frequency;
+                        if (zeroDurationElapsed >= 1.5 && (isPlaying || !canSeek))
+                        {
+                            isLiveStream = true;
+                        }
+                        else
+                        {
+                            return;
+                        }
                     }
                 }
 
@@ -420,10 +517,13 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                     return;
                 }
 
-                // Standard track: update duration and seek capability
+                // ── REGULAR RECORDED TRACK / VIDEO ──
+                // Positive duration arrived and stream is not a live broadcast.
+                // Clear live flags and accept valid track duration!
                 IsLive = false;
                 CanSeek = canSeek;
                 _trackDuration = newDuration;
+                _zeroDurationDetectedAt = 0;
 
                 // If we're in a user-initiated seek suppression window, skip external updates entirely
                 if (Stopwatch.GetTimestamp() < _suppressExternalPositionUpdatesUntil)
@@ -823,6 +923,11 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
                     _trackDuration = TimeSpan.Zero;
                     IsLive = false;
                     CanSeek = true;
+                    _zeroDurationDetectedAt = 0;
+                    _trackChangedAt = Stopwatch.GetTimestamp();
+                    _lastObservedDuration = TimeSpan.Zero;
+                    _lastObservedDurationTimestamp = 0;
+                    _consecutiveGrowthSamples = 0;
                 }
             }
 
@@ -1044,6 +1149,33 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
             4 => Color.FromRgb(t, p, v),
             _ => Color.FromRgb(v, p, q),
         };
+    }
+
+    /// <summary>
+    /// Determines whether the media source is a dedicated music player that never broadcasts raw live streams.
+    /// (e.g. Spotify, Apple Music, Tidal, local music playback).
+    /// </summary>
+    public static bool IsKnownNonLiveSource(string? appId, string? title, string? artist)
+    {
+        // YouTube Music releases via browser / desktop
+        if (artist != null && (artist.EndsWith("- Topic", StringComparison.OrdinalIgnoreCase) || artist.EndsWith("Topic", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(appId)) return false;
+
+        string lower = appId.ToLowerInvariant();
+        return lower.Contains("spotify") ||
+               lower.Contains("applemusic") ||
+               lower.Contains("itunes") ||
+               lower.Contains("tidal") ||
+               lower.Contains("foobar2000") ||
+               lower.Contains("aimp") ||
+               lower.Contains("musicbee") ||
+               lower.Contains("zunemusic") ||
+               lower.Contains("microsoft.zunemusic") ||
+               lower.Contains("microsoft.media.player");
     }
 
     public static string ResolveSourceName(string? appId, string? title, string? artist)
