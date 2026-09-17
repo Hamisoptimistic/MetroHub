@@ -1,8 +1,0 @@
-{
-  "entries": [
-    { "path": ".agents/plugins/dotnet" },
-    { "path": ".agents/plugins/dotnet-msbuild" },
-    { "path": ".agents/plugins/dotnet-diag" },
-    { "path": ".agents/plugins/dotnet-test" }
-  ]
-}

@@ -1,6 +1,0 @@
-{
-  "name": "dotnet",
-  "version": "0.2.4",
-  "description": "Core C# and .NET development skills for coding agents.",
-  "skills": ["./skills/"]
-}

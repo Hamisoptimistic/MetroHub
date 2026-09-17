@@ -2,6 +2,7 @@
 bin/
 obj/
 dist/
+publish/
 *.exe
 *.pdb
 
@@ -12,3 +13,9 @@ dist/
 *.user
 *.suo
 *.cache
+
+# Agent & AI tool workspace configs
+.agents/
+.gemini/
+scratch_*
+
