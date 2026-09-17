@@ -197,6 +197,11 @@ public partial class TileControl : UserControl
                     }
                     return;
                 }
+                if (tile.TileContent is Widgets.Catalog.Weather.WeatherWidgetViewModel weatherVm)
+                {
+                    weatherVm.ToggleUnits();
+                    return;
+                }
                 return;
             }
 
@@ -802,6 +807,39 @@ public partial class TileControl : UserControl
                 {
                     TileContextMenu.Items.Insert(2, notepadDivider);
                 }
+            }
+            else if (tile.TileContent is Widgets.Catalog.Weather.WeatherWidgetViewModel weatherVm)
+            {
+                var toggleUnitsItem = new MenuItem
+                {
+                    Header = weatherVm.IsFahrenheit ? "Switch to Celsius (°C)" : "Switch to Fahrenheit (°F)",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Temperature24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                toggleUnitsItem.Click += (s, ev) => weatherVm.ToggleUnits();
+
+                var refreshItem = new MenuItem
+                {
+                    Header = "Refresh Weather",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.ArrowSync24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                refreshItem.Click += (s, ev) => _ = weatherVm.RefreshAsync();
+
+                var weatherDivider = new Separator { Tag = "WidgetCustomMenu" };
+                TileContextMenu.Items.Insert(1, toggleUnitsItem);
+                TileContextMenu.Items.Insert(2, refreshItem);
+                TileContextMenu.Items.Insert(3, weatherDivider);
             }
         }
         else

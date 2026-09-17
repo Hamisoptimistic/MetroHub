@@ -13,8 +13,10 @@
     ],
     "configProperties": {
       "MVVMTOOLKIT_ENABLE_INOTIFYPROPERTYCHANGING_SUPPORT": true,
+      "System.GC.Server": false,
       "System.Reflection.Metadata.MetadataUpdater.IsSupported": false,
       "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false,
+      "System.Runtime.TieredPGO": true,
       "CSWINRT_USE_WINDOWS_UI_XAML_PROJECTIONS": false
     }
   }

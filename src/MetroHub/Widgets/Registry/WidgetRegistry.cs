@@ -214,6 +214,28 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Banner,
             Factory: model => new MetroHub.Widgets.Catalog.Power.PowerWidgetViewModel(model)
         ));
+
+        // Register Weather & AQI widget
+        Register(new WidgetDefinition(
+            Id: "weather",
+            DisplayName: "Weather & Air Quality",
+            Description: "Live weather forecast, temperature, hourly conditions and Air Quality Index",
+            Icon: SymbolRegular.WeatherPartlyCloudyDay24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Medium,    // 2x2
+                WidgetSize.Wide,      // 4x2
+                WidgetSize.ExtraWide, // 6x2
+                WidgetSize.Banner,    // 8x2
+                WidgetSize.Banner3,   // 8x3
+                WidgetSize.Large,     // 4x4
+                WidgetSize.Mega       // 8x4
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Weather.WeatherWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Weather.WeatherWidgetView),
+            DefaultSize: WidgetSize.Wide,
+            Factory: model => new MetroHub.Widgets.Catalog.Weather.WeatherWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)

@@ -18,6 +18,7 @@
              xmlns:network="clr-namespace:MetroHub.Widgets.Catalog.Network"
              xmlns:brightness="clr-namespace:MetroHub.Widgets.Catalog.Brightness"
              xmlns:power="clr-namespace:MetroHub.Widgets.Catalog.Power"
+             xmlns:weather="clr-namespace:MetroHub.Widgets.Catalog.Weather"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -193,6 +194,11 @@
         <!-- 12. Power & Session Hub Widget DataTemplate -->
         <DataTemplate DataType="{x:Type power:PowerWidgetViewModel}">
             <power:PowerWidgetView />
+        </DataTemplate>
+
+        <!-- 13. Weather & Air Quality Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type weather:WeatherWidgetViewModel}">
+            <weather:WeatherWidgetView />
         </DataTemplate>
     </UserControl.Resources>
 
