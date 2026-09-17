@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
+using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -20,7 +21,7 @@ namespace MetroHub.Widgets.Catalog.Clock;
 /// </summary>
 public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
 {
-    private DispatcherTimer? _timer;
+    private System.Threading.Timer? _timer;
 
     [ObservableProperty]
     private string _hoursString = string.Empty;
@@ -99,18 +100,25 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
     {
         if (_timer == null)
         {
-            _timer = new DispatcherTimer(DispatcherPriority.Normal)
+            _timer = new System.Threading.Timer(_ =>
             {
-                Interval = TimeSpan.FromSeconds(5)
-            };
-            _timer.Tick += (s, e) => UpdateTime();
+                var now = DateTime.Now;
+                if (now.Minute == _lastMinute && now.Hour == _lastHour)
+                {
+                    return;
+                }
+                Application.Current?.Dispatcher.InvokeAsync(() => UpdateTime());
+            }, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
         }
-        _timer.Start();
+        else
+        {
+            _timer.Change(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
+        }
     }
 
     private void StopTimer()
     {
-        _timer?.Stop();
+        _timer?.Change(Timeout.Infinite, Timeout.Infinite);
     }
 
     public override void Pause()
@@ -220,6 +228,7 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
         if (disposing)
         {
             StopTimer();
+            _timer?.Dispose();
             _timer = null;
             Model.PropertyChanged -= OnModelPropertyChanged;
         }

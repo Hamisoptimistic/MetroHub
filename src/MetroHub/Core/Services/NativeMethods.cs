@@ -93,15 +93,7 @@ public static class NativeMethods
 
     public static void FlushMemory()
     {
-        Task.Run(() =>
-        {
-            try
-            {
-                // Gentle non-blocking background garbage collection without aggressive working set eviction
-                GC.Collect(2, GCCollectionMode.Optimized, blocking: false);
-            }
-            catch { }
-        });
+        // Banned GC.Collect / EmptyWorkingSet removed per WPF_PERFORMANCE_Deepseek.md Rule 8
     }
 
     #endregion

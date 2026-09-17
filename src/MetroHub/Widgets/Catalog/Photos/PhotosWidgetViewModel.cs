@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -25,7 +26,7 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
     private readonly List<string> _photoPaths = new();
     private readonly List<int> _shuffledIndices = new();
     private int _currentIndex = -1;
-    private DispatcherTimer? _slideshowTimer;
+    private System.Threading.Timer? _slideshowTimer;
     private bool _isHubVisible = true;
     private bool _isTransitioning = false;
     private readonly Random _random = new();
@@ -105,16 +106,32 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
         LoadSettings(model.SettingsJson);
         IsActive = true;
 
-        _slideshowTimer = new DispatcherTimer(DispatcherPriority.Background)
+        _slideshowTimer = new System.Threading.Timer(_ =>
         {
-            Interval = TimeSpan.FromSeconds(Math.Max(5, IntervalSeconds))
-        };
-        _slideshowTimer.Tick += OnSlideshowTimerTick;
+            if (!_isHubVisible || _isHovered || PhotoCount <= 1 || _isTransitioning) return;
+            Application.Current?.Dispatcher.InvokeAsync(async () =>
+            {
+                if (!_isHubVisible || _isHovered || PhotoCount <= 1 || _isTransitioning) return;
+                await TransitionToNextPhotoAsync(forward: true);
+            });
+        }, null, Timeout.Infinite, Timeout.Infinite);
 
         if (HasFolder)
         {
             _ = ScanFolderAsync(FolderPath!, keepIndex: false);
         }
+    }
+
+    private void StartSlideshowTimer()
+    {
+        if (PhotoCount <= 1 || !_isHubVisible || _isHovered) return;
+        var interval = TimeSpan.FromSeconds(Math.Max(5, IntervalSeconds));
+        _slideshowTimer?.Change(interval, interval);
+    }
+
+    private void StopSlideshowTimer()
+    {
+        _slideshowTimer?.Change(Timeout.Infinite, Timeout.Infinite);
     }
 
     protected override void LoadSettings(string? settingsJson)
@@ -208,13 +225,13 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
         _isHovered = hovered;
         if (_isHovered)
         {
-            _slideshowTimer?.Stop();
+            StopSlideshowTimer();
         }
         else
         {
             if (_isHubVisible && PhotoCount > 1 && !_isTransitioning)
             {
-                _slideshowTimer?.Start();
+                StartSlideshowTimer();
             }
         }
     }
@@ -240,7 +257,7 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
             _shuffledIndices.Clear();
             PhotoLayerA = null;
             PhotoLayerB = null;
-            _slideshowTimer?.Stop();
+            StopSlideshowTimer();
             return;
         }
 
@@ -278,14 +295,14 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
 
             if (_isHubVisible && !_isHovered)
             {
-                _slideshowTimer?.Start();
+                StartSlideshowTimer();
             }
         }
         else
         {
             PhotoLayerA = null;
             PhotoLayerB = null;
-            _slideshowTimer?.Stop();
+            StopSlideshowTimer();
         }
     }
 
@@ -329,18 +346,18 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
     public async Task NextPhoto()
     {
         if (PhotoCount <= 1 || _isTransitioning) return;
-        _slideshowTimer?.Stop();
+        StopSlideshowTimer();
         await TransitionToNextPhotoAsync(forward: true);
-        if (_isHubVisible && !_isHovered) _slideshowTimer?.Start();
+        if (_isHubVisible && !_isHovered) StartSlideshowTimer();
     }
 
     [RelayCommand]
     public async Task PreviousPhoto()
     {
         if (PhotoCount <= 1 || _isTransitioning) return;
-        _slideshowTimer?.Stop();
+        StopSlideshowTimer();
         await TransitionToNextPhotoAsync(forward: false);
-        if (_isHubVisible && !_isHovered) _slideshowTimer?.Start();
+        if (_isHubVisible && !_isHovered) StartSlideshowTimer();
     }
 
     private async Task TransitionToNextPhotoAsync(bool forward)
@@ -390,7 +407,6 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
                 if (!IsDisplayingA)
                 {
                     PhotoLayerA = null;
-                    GC.Collect(2, GCCollectionMode.Optimized, false, false);
                 }
             }
             else
@@ -405,7 +421,6 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
                 if (IsDisplayingA)
                 {
                     PhotoLayerB = null;
-                    GC.Collect(2, GCCollectionMode.Optimized, false, false);
                 }
             }
         }
@@ -499,9 +514,9 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
     public void SetInterval(int seconds)
     {
         IntervalSeconds = Math.Max(5, seconds);
-        if (_slideshowTimer != null)
+        if (_isHubVisible && !_isHovered && HasPhotos && PhotoCount > 1)
         {
-            _slideshowTimer.Interval = TimeSpan.FromSeconds(IntervalSeconds);
+            StartSlideshowTimer();
         }
         SaveSettings();
     }
@@ -529,7 +544,7 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
     public override void Pause()
     {
         _isHubVisible = false;
-        _slideshowTimer?.Stop();
+        StopSlideshowTimer();
     }
 
     public override void Resume()
@@ -537,7 +552,7 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
         _isHubVisible = true;
         if (HasPhotos && PhotoCount > 1 && !_isHovered)
         {
-            _slideshowTimer?.Start();
+            StartSlideshowTimer();
         }
     }
 
@@ -545,18 +560,14 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
     {
         if (disposing)
         {
-            if (_slideshowTimer != null)
-            {
-                _slideshowTimer.Stop();
-                _slideshowTimer.Tick -= OnSlideshowTimerTick;
-                _slideshowTimer = null;
-            }
+            StopSlideshowTimer();
+            _slideshowTimer?.Dispose();
+            _slideshowTimer = null;
 
             _photoPaths.Clear();
             _shuffledIndices.Clear();
             PhotoLayerA = null;
             PhotoLayerB = null;
-            GC.Collect(2, GCCollectionMode.Optimized, false, false);
         }
 
         base.Dispose(disposing);

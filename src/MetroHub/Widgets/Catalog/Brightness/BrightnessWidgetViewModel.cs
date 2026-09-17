@@ -75,7 +75,7 @@ public partial class MonitorItemViewModel : ObservableObject
 public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
 {
     private readonly MonitorBrightnessService _brightnessService;
-    private readonly DispatcherTimer _cursorTimer;
+    private System.Threading.Timer? _cursorTimer;
     private bool _isHubVisible = true;
     private bool _isUpdatingMasterInternally;
     private string? _pinnedCursorMonitorId;
@@ -136,12 +136,23 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
 
         Model.PropertyChanged += OnModelPropertyChanged;
 
-        _cursorTimer = new DispatcherTimer(DispatcherPriority.Background)
+        _cursorTimer = new System.Threading.Timer(_ =>
         {
-            Interval = TimeSpan.FromSeconds(1)
-        };
-        _cursorTimer.Tick += OnCursorTimerTick;
-        _cursorTimer.Start();
+            if (!_isHubVisible || Monitors.Count <= 1) return;
+            var lastMonitors = _brightnessService.LastMonitors;
+            if (lastMonitors.Count == 0) return;
+
+            string? cursorMonitorId = _brightnessService.GetCurrentCursorMonitorId(lastMonitors);
+            if (string.IsNullOrEmpty(cursorMonitorId)) return;
+
+            // Diff before dispatch: check if active monitor changed
+            if (string.Equals(_activeMonitorId, cursorMonitorId, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            Application.Current?.Dispatcher.InvokeAsync(() => ProcessCursorMonitorChange(cursorMonitorId));
+        }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
 
         RefreshAll();
     }
@@ -338,15 +349,9 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    private void OnCursorTimerTick(object? sender, EventArgs e)
+    private void ProcessCursorMonitorChange(string cursorMonitorId)
     {
         if (!_isHubVisible || Monitors.Count <= 1) return;
-
-        var lastMonitors = _brightnessService.LastMonitors;
-        if (lastMonitors.Count == 0) return;
-
-        string? cursorMonitorId = _brightnessService.GetCurrentCursorMonitorId(lastMonitors);
-        if (string.IsNullOrEmpty(cursorMonitorId)) return;
 
         MonitorItemViewModel? currentUnderCursor = null;
 
@@ -478,13 +483,13 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
     public override void Pause()
     {
         _isHubVisible = false;
-        _cursorTimer.Stop();
+        _cursorTimer?.Change(Timeout.Infinite, Timeout.Infinite);
     }
 
     public override void Resume()
     {
         _isHubVisible = true;
-        _cursorTimer.Start();
+        _cursorTimer?.Change(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
         RefreshAll();
     }
 
@@ -502,8 +507,8 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
         {
             Model.PropertyChanged -= OnModelPropertyChanged;
             _brightnessService.MonitorsChanged -= OnBrightnessServiceMonitorsChanged;
-            _cursorTimer.Stop();
-            _cursorTimer.Tick -= OnCursorTimerTick;
+            _cursorTimer?.Dispose();
+            _cursorTimer = null;
             Monitors.Clear();
         }
 

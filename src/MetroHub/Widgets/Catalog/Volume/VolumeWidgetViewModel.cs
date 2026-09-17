@@ -335,24 +335,31 @@ public sealed partial class VolumeWidgetViewModel : WidgetViewModelBase
 
     private void RefreshAppSessions()
     {
-        var rawSessions = _audioService.GetAppSessions();
-
-        AppSessions.Clear();
-        foreach (var s in rawSessions)
+        _ = Task.Run(() =>
         {
-            var item = new AppSessionItemViewModel(
-                onVolumeChanged: (pid, vol) => _audioService.SetAppVolume(pid, vol),
-                onMuteChanged: (pid, mute) => _audioService.SetAppMute(pid, mute))
+            var rawSessions = _audioService.GetAppSessions();
+            Application.Current?.Dispatcher.InvokeAsync(() =>
             {
-                ProcessId = s.ProcessId,
-                ProcessName = s.ProcessName,
-                DisplayName = s.DisplayName,
-                IconSource = s.IconSource,
-                IsSystemSounds = s.IsSystemSounds
-            };
-            item.UpdateFromAudioService(s.Volume, s.IsMuted);
-            AppSessions.Add(item);
-        }
+                if (!_isHubVisible) return;
+
+                AppSessions.Clear();
+                foreach (var s in rawSessions)
+                {
+                    var item = new AppSessionItemViewModel(
+                        onVolumeChanged: (pid, vol) => _audioService.SetAppVolume(pid, vol),
+                        onMuteChanged: (pid, mute) => _audioService.SetAppMute(pid, mute))
+                    {
+                        ProcessId = s.ProcessId,
+                        ProcessName = s.ProcessName,
+                        DisplayName = s.DisplayName,
+                        IconSource = s.IconSource,
+                        IsSystemSounds = s.IsSystemSounds
+                    };
+                    item.UpdateFromAudioService(s.Volume, s.IsMuted);
+                    AppSessions.Add(item);
+                }
+            });
+        });
     }
 
     private void OnAudioServiceMasterVolumeChanged(float volume, bool isMuted)

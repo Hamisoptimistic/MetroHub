@@ -308,39 +308,114 @@ public sealed class DailyWallpaperService
         }
     }
 
+    private static readonly Lazy<bool> _isWebpSupported = new(() =>
+    {
+        try
+        {
+            // Probe for WIC WebP decoder using a minimal 1x1 WebP RIFF byte array (30 bytes)
+            byte[] dummyWebp = Convert.FromBase64String("UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAQAcJaQAA3AA/v3AgAA=");
+            using var ms = new MemoryStream(dummyWebp);
+            var decoder = BitmapDecoder.Create(ms, BitmapCreateOptions.None, BitmapCacheOption.None);
+            return decoder != null;
+        }
+        catch
+        {
+            return false;
+        }
+    });
+
+    /// <summary>
+    /// Indicates whether Windows has an active WIC WebP decoder registered.
+    /// </summary>
+    public static bool IsWebpSupported => _isWebpSupported.Value;
+
+    /// <summary>
+    /// Builds the OpenFileDialog filter string, dynamically enabling .webp if supported by the OS.
+    /// </summary>
+    public static string GetWallpaperFileDialogFilter()
+    {
+        return IsWebpSupported
+            ? "Image Files (*.png;*.jpg;*.jpeg;*.bmp;*.webp)|*.png;*.jpg;*.jpeg;*.bmp;*.webp|All Files (*.*)|*.*"
+            : "Image Files (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|All Files (*.*)|*.*";
+    }
+
+    /// <summary>
+    /// Decodes a wallpaper off-thread with capped display resolution and granular error classification.
+    /// </summary>
+    public static BitmapImage? TryLoadWallpaper(string path, double screenWidth, out string? error)
+    {
+        error = null;
+
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            error = "File not found.";
+            return null;
+        }
+
+        // Cap decode width: decode at screen width (e.g. 1920 or 2560), never 4K native if displaying smaller.
+        int decodeWidth = (int)Math.Clamp(screenWidth, 1280, 2560);
+
+        try
+        {
+            var bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.UriSource = new Uri(path, UriKind.Absolute);
+            bmp.CacheOption = BitmapCacheOption.OnLoad; // Release file handle immediately
+            bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache; // Don't hold hidden ref in WPF cache
+            bmp.DecodePixelWidth = decodeWidth;
+            bmp.EndInit();
+            bmp.Freeze(); // Immutable, thread-safe Freezable per Rule 3
+            return bmp;
+        }
+        catch (NotSupportedException)
+        {
+            error = path.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)
+                ? "WebP isn't supported on this Windows install. Convert to PNG or JPG."
+                : "That image format isn't supported on this Windows install.";
+            return null;
+        }
+        catch (FileFormatException)
+        {
+            error = "That file appears to be corrupt.";
+            return null;
+        }
+        catch (OutOfMemoryException)
+        {
+            error = "That image is too large to use as a wallpaper.";
+            return null;
+        }
+        catch (IOException)
+        {
+            error = "Can't read that file. Is it open in another app?";
+            return null;
+        }
+        catch (Exception ex)
+        {
+            error = $"Couldn't load that image: {ex.Message}";
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously decodes wallpaper off-thread with specific error messaging.
+    /// </summary>
+    public static async Task<(BitmapImage? Image, string? Error)> TryLoadWallpaperAsync(string filePath, double screenWidth = 1920)
+    {
+        return await Task.Run(() =>
+        {
+            var bmp = TryLoadWallpaper(filePath, screenWidth, out var err);
+            return (bmp, err);
+        }).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Asynchronously decodes an image off the UI thread into a frozen, thread-safe BitmapSource.
-    /// This prevents any frame drops or hitching on the main UI thread during 4K image parsing.
+    /// This prevents any frame drops or hitching on the main UI thread during image parsing.
     /// </summary>
     public static async Task<BitmapSource?> LoadFrozenBitmapAsync(string filePath, int decodeWidth = 1920)
     {
-        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
-            return null;
-
-        return await Task.Run(() =>
-        {
-            try
-            {
-                using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096);
-                var bmp = new BitmapImage();
-                bmp.BeginInit();
-                bmp.CacheOption = BitmapCacheOption.OnLoad;
-                bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
-                bmp.StreamSource = fs;
-                if (decodeWidth > 0)
-                {
-                    bmp.DecodePixelWidth = decodeWidth;
-                }
-                bmp.EndInit();
-                bmp.Freeze(); // Crucial: Freezing allows cross-thread safety and off-thread decoding
-                return (BitmapSource)bmp;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[DailyWallpaperService] Failed to load/freeze bitmap '{filePath}': {ex.Message}");
-                return null;
-            }
-        }).ConfigureAwait(false);
+        var (bmp, _) = await TryLoadWallpaperAsync(filePath, decodeWidth).ConfigureAwait(false);
+        return bmp;
     }
 
     private static string? GetNewestCachedWallpaper(string searchPattern)

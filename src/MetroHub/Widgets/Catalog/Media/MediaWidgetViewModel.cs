@@ -1039,7 +1039,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
             bitmap.StreamSource = memory;
             bitmap.DecodePixelWidth = 256;
             bitmap.EndInit();

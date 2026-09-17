@@ -43,6 +43,16 @@ public partial class TileControl : UserControl
 
 
 
+    private static readonly Brush MenuIconForegroundBrush = CreateFrozenBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF));
+    private static readonly Brush RedMutedBrush = CreateFrozenBrush(Color.FromRgb(0xFF, 0x6B, 0x6B));
+
+    private static Brush CreateFrozenBrush(Color c)
+    {
+        var b = new SolidColorBrush(c);
+        b.Freeze();
+        return b;
+    }
+
     public static readonly List<TileControl> ActiveTiles = new();
 
     public TileControl()
@@ -403,7 +413,7 @@ public partial class TileControl : UserControl
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.Clock24,
                         FontSize = 20,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                        Foreground = MenuIconForegroundBrush
                     }
                 };
 
@@ -435,7 +445,7 @@ public partial class TileControl : UserControl
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.TextFont24,
                         FontSize = 20,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                        Foreground = MenuIconForegroundBrush
                     }
                 };
 
@@ -502,7 +512,7 @@ public partial class TileControl : UserControl
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.CalendarToday24,
                         FontSize = 20,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                        Foreground = MenuIconForegroundBrush
                     }
                 };
                 todayItem.Click += (s, ev) => calVm.ResetToToday();
@@ -528,7 +538,7 @@ public partial class TileControl : UserControl
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.Timer24,
                         FontSize = 20,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                        Foreground = MenuIconForegroundBrush
                     }
                 };
 
@@ -581,7 +591,7 @@ public partial class TileControl : UserControl
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.FolderOpen24,
                         FontSize = 20,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                        Foreground = MenuIconForegroundBrush
                     }
                 };
                 chooseFolderItem.Click += (s, ev) => photosVm.ChooseFolder();
@@ -595,7 +605,7 @@ public partial class TileControl : UserControl
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.Timer24,
                         FontSize = 20,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                        Foreground = MenuIconForegroundBrush
                     }
                 };
 
@@ -647,7 +657,7 @@ public partial class TileControl : UserControl
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.ArrowShuffle24,
                         FontSize = 20,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                        Foreground = MenuIconForegroundBrush
                     }
                 };
                 shuffleItem.Click += (s, ev) => photosVm.ToggleShuffle();
@@ -663,7 +673,7 @@ public partial class TileControl : UserControl
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.Folder24,
                         FontSize = 20,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                        Foreground = MenuIconForegroundBrush
                     }
                 };
                 subfoldersItem.Click += (s, ev) => photosVm.ToggleIncludeSubfolders();
@@ -677,7 +687,7 @@ public partial class TileControl : UserControl
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.SlideSize24,
                         FontSize = 20,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                        Foreground = MenuIconForegroundBrush
                     }
                 };
 
@@ -710,7 +720,7 @@ public partial class TileControl : UserControl
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.Image24,
                         FontSize = 20,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                        Foreground = MenuIconForegroundBrush
                     }
                 };
                 openPhotoItem.Click += (s, ev) => photosVm.OpenCurrentPhoto();
@@ -745,7 +755,7 @@ public partial class TileControl : UserControl
                     {
                         Symbol = Wpf.Ui.Controls.SymbolRegular.Notepad24,
                         FontSize = 20,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                        Foreground = MenuIconForegroundBrush
                     }
                 };
 
@@ -781,7 +791,7 @@ public partial class TileControl : UserControl
                         {
                             Symbol = Wpf.Ui.Controls.SymbolRegular.DismissCircle20,
                             FontSize = 20,
-                            Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                            Foreground = MenuIconForegroundBrush
                         }
                     };
                     clearCompletedItem.Click += (s, ev) => notepadVm.ClearCompleted();
@@ -925,7 +935,7 @@ public partial class TileControl : UserControl
 
             if (group.IsLocked)
             {
-                var redBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x6B));
+                var redBrush = RedMutedBrush;
 
                 var headerBlock = new TextBlock
                 {

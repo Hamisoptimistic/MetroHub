@@ -61,12 +61,24 @@ public partial class CategoryControl : UserControl
         }
     }
 
+    private static readonly Brush GhostBorderHoverBrush = CreateFrozenBrush(Color.FromArgb(120, 255, 255, 255));
+    private static readonly Brush GhostBackgroundHoverBrush = CreateFrozenBrush(Color.FromArgb(30, 255, 255, 255));
+    private static readonly Brush GhostBorderNormalBrush = CreateFrozenBrush(Color.FromArgb(51, 255, 255, 255));
+    private static readonly Brush GhostBackgroundNormalBrush = CreateFrozenBrush(Color.FromArgb(13, 255, 255, 255));
+
+    private static Brush CreateFrozenBrush(Color c)
+    {
+        var b = new SolidColorBrush(c);
+        b.Freeze();
+        return b;
+    }
+
     private void OnGhostTileMouseEnter(object sender, MouseEventArgs e)
     {
         if (sender is Border b)
         {
-            b.BorderBrush = new SolidColorBrush(Color.FromArgb(120, 255, 255, 255));
-            b.Background = new SolidColorBrush(Color.FromArgb(30, 255, 255, 255));
+            b.BorderBrush = GhostBorderHoverBrush;
+            b.Background = GhostBackgroundHoverBrush;
         }
     }
 
@@ -74,8 +86,8 @@ public partial class CategoryControl : UserControl
     {
         if (sender is Border b)
         {
-            b.BorderBrush = new SolidColorBrush(Color.FromArgb(51, 255, 255, 255));
-            b.Background = new SolidColorBrush(Color.FromArgb(13, 255, 255, 255));
+            b.BorderBrush = GhostBorderNormalBrush;
+            b.Background = GhostBackgroundNormalBrush;
         }
     }
 

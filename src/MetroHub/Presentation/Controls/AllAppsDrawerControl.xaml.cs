@@ -39,6 +39,17 @@ namespace MetroHub.Presentation.Controls
         private bool _isAppsLoaded = false;
         private CatalogItemModel? _activeContextMenuItem;
 
+        private static readonly Brush SearchBorderFocusedBrush = CreateFrozenBrush(Color.FromArgb(0x22, 0xFF, 0xFF, 0xFF));
+        private static readonly Brush SearchBorderUnfocusedBrush = CreateFrozenBrush(Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF));
+        private static readonly Brush UnpinRedBrush = CreateFrozenBrush(Color.FromRgb(0xFF, 0x6B, 0x6B));
+
+        private static Brush CreateFrozenBrush(Color c)
+        {
+            var b = new SolidColorBrush(c);
+            b.Freeze();
+            return b;
+        }
+
         public AllAppsDrawerControl()
         {
             InitializeComponent();
@@ -257,13 +268,13 @@ namespace MetroHub.Presentation.Controls
 
         private void OnSearchBoxGotFocus(object sender, RoutedEventArgs e)
         {
-            SearchBorder.Background = new SolidColorBrush(Color.FromArgb(0x22, 0xFF, 0xFF, 0xFF));
+            SearchBorder.Background = SearchBorderFocusedBrush;
             UpdatePlaceholderVisibility();
         }
 
         private void OnSearchBoxLostFocus(object sender, RoutedEventArgs e)
         {
-            SearchBorder.Background = new SolidColorBrush(Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF));
+            SearchBorder.Background = SearchBorderUnfocusedBrush;
             UpdatePlaceholderVisibility();
         }
 
@@ -676,9 +687,9 @@ namespace MetroHub.Presentation.Controls
                 if (pinItem.Icon is Wpf.Ui.Controls.SymbolIcon sym)
                 {
                     sym.Symbol = Wpf.Ui.Controls.SymbolRegular.PinOff24;
-                    sym.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x6B));
+                    sym.Foreground = UnpinRedBrush;
                 }
-                pinItem.Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x6B, 0x6B));
+                pinItem.Foreground = UnpinRedBrush;
             }
             else
             {

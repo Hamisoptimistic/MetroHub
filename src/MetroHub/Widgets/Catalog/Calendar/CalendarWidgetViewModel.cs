@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,7 +18,8 @@ namespace MetroHub.Widgets.Catalog.Calendar;
 /// </summary>
 public sealed partial class CalendarWidgetViewModel : WidgetViewModelBase
 {
-    private DispatcherTimer? _midnightTimer;
+    private System.Threading.Timer? _midnightTimer;
+    private DateTime _lastCheckedDate = DateTime.Today;
 
     [ObservableProperty]
     private DateTime _displayMonth;
@@ -61,31 +63,45 @@ public sealed partial class CalendarWidgetViewModel : WidgetViewModelBase
     {
         if (_midnightTimer == null)
         {
-            _midnightTimer = new DispatcherTimer(DispatcherPriority.Background)
+            _midnightTimer = new System.Threading.Timer(_ =>
             {
-                Interval = TimeSpan.FromMinutes(15)
-            };
-            _midnightTimer.Tick += (s, e) =>
-            {
-                // Refresh if the date has changed
-                if (IsViewingCurrentMonth)
+                if (DateTime.Today != _lastCheckedDate)
                 {
-                    RebuildCalendar();
+                    _lastCheckedDate = DateTime.Today;
+                    Application.Current?.Dispatcher.InvokeAsync(() =>
+                    {
+                        if (IsViewingCurrentMonth)
+                        {
+                            RebuildCalendar();
+                        }
+                    });
                 }
-            };
+            }, null, TimeSpan.FromMinutes(15), TimeSpan.FromMinutes(15));
         }
-        _midnightTimer.Start();
+        else
+        {
+            _midnightTimer.Change(TimeSpan.FromMinutes(15), TimeSpan.FromMinutes(15));
+        }
+    }
+
+    private void StopMidnightTimer()
+    {
+        _midnightTimer?.Change(Timeout.Infinite, Timeout.Infinite);
     }
 
     public override void Pause()
     {
-        _midnightTimer?.Stop();
+        StopMidnightTimer();
     }
 
     public override void Resume()
     {
-        RebuildCalendar();
-        _midnightTimer?.Start();
+        if (DateTime.Today != _lastCheckedDate)
+        {
+            _lastCheckedDate = DateTime.Today;
+            RebuildCalendar();
+        }
+        StartMidnightTimer();
     }
 
     [RelayCommand]
@@ -152,7 +168,8 @@ public sealed partial class CalendarWidgetViewModel : WidgetViewModelBase
     {
         if (disposing)
         {
-            _midnightTimer?.Stop();
+            StopMidnightTimer();
+            _midnightTimer?.Dispose();
             _midnightTimer = null;
         }
 

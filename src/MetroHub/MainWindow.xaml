@@ -626,6 +626,27 @@
                 <TextBlock Text=" to toggle   •   Drag any app from desktop to pin" FontSize="11" Foreground="#80FFFFFF" />
             </StackPanel>
         </Grid>
+
+        <!-- Notification Toast Overlay -->
+        <Border x:Name="NotificationToast"
+                Grid.Row="0"
+                Grid.RowSpan="2"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Margin="0,0,0,50"
+                Background="#EE18181C"
+                BorderBrush="#40FFFFFF"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16,10"
+                Opacity="0"
+                IsHitTestVisible="False"
+                Panel.ZIndex="3000">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <ui:SymbolIcon x:Name="NotificationToastIcon" Symbol="Info24" FontSize="18" Foreground="#60CDFF" Margin="0,0,10,0" />
+                <TextBlock x:Name="NotificationToastText" Text="" Foreground="#F0FFFFFF" FontSize="13" FontWeight="Medium" VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
         </Grid>
 
         <!-- All Apps Slide-out Drawer Host (Clipped to Column 1 so it cannot bleed over Sidebar Rail) -->

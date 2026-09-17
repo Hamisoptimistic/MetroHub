@@ -443,7 +443,7 @@ public partial class MainWindow : BorderlessFluentWindow
             var dialog = new Microsoft.Win32.OpenFileDialog
             {
                 Title = "Select Custom Wallpaper",
-                Filter = "Image Files (*.png;*.jpg;*.jpeg;*.webp;*.bmp)|*.png;*.jpg;*.jpeg;*.webp;*.bmp|All Files (*.*)|*.*"
+                Filter = DailyWallpaperService.GetWallpaperFileDialogFilter()
             };
 
             if (dialog.ShowDialog(this) == true)
@@ -661,10 +661,6 @@ public partial class MainWindow : BorderlessFluentWindow
             {
                 WallpaperImage.Source = null;
                 _currentLoadedWallpaperPath = null;
-                _ = Task.Run(() =>
-                {
-                    GC.Collect(2, GCCollectionMode.Forced, blocking: false);
-                });
             }
 
             if (string.Equals(Settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase))
@@ -672,7 +668,9 @@ public partial class MainWindow : BorderlessFluentWindow
                 NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW);
                 if (RootGrid != null)
                 {
-                    RootGrid.Background = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0x99, 0x0D, 0x0D, 0x11));
+                    var acrylicBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0x99, 0x0D, 0x0D, 0x11));
+                    acrylicBrush.Freeze();
+                    RootGrid.Background = acrylicBrush;
                 }
             }
             else if (string.Equals(Settings.BackdropType, "MicaAlt", StringComparison.OrdinalIgnoreCase))
@@ -709,12 +707,11 @@ public partial class MainWindow : BorderlessFluentWindow
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
         try
         {
-            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096);
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
+            bitmap.UriSource = new Uri(path, UriKind.Absolute);
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
-            bitmap.StreamSource = fs;
             if (decodeWidth > 0)
             {
                 bitmap.DecodePixelWidth = decodeWidth;
@@ -754,6 +751,38 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private int _wallpaperLoadGeneration = 0;
     private string? _currentLoadedWallpaperPath = null;
+    private CancellationTokenSource? _toastCts;
+
+    public void ShowToast(string message, bool isError = false)
+    {
+        if (NotificationToast == null || NotificationToastText == null || NotificationToastIcon == null) return;
+
+        _toastCts?.Cancel();
+        _toastCts?.Dispose();
+        _toastCts = new CancellationTokenSource();
+        var token = _toastCts.Token;
+
+        NotificationToastText.Text = message;
+        NotificationToastIcon.Symbol = isError ? Wpf.Ui.Controls.SymbolRegular.Warning24 : Wpf.Ui.Controls.SymbolRegular.Info24;
+        var iconBrush = isError
+            ? new SolidColorBrush(Color.FromRgb(255, 120, 120))
+            : new SolidColorBrush(Color.FromRgb(96, 205, 255));
+        iconBrush.Freeze();
+        NotificationToastIcon.Foreground = iconBrush;
+
+        var fadeIn = new System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(200));
+        NotificationToast.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+
+        Task.Delay(4000, token).ContinueWith(t =>
+        {
+            if (t.IsCanceled) return;
+            Dispatcher.InvokeAsync(() =>
+            {
+                var fadeOut = new System.Windows.Media.Animation.DoubleAnimation(1.0, 0.0, TimeSpan.FromMilliseconds(250));
+                NotificationToast.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+            });
+        }, token);
+    }
 
     private async Task UpdateWallpaperDisplayAsync()
     {
@@ -762,10 +791,14 @@ public partial class MainWindow : BorderlessFluentWindow
         int currentGen = ++_wallpaperLoadGeneration;
         string backdropType = Settings.BackdropType;
 
-        // Apply scrim dim opacity immediately
+        // Apply scrim dim opacity immediately with frozen Freezable brush
         double dim = Math.Clamp(Settings.WallpaperDimOpacity, 0.1, 0.9);
         byte alpha = (byte)(255 * dim);
-        WallpaperScrim.Background = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
+        var scrimBrush = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
+        scrimBrush.Freeze();
+        WallpaperScrim.Background = scrimBrush;
+
+        string? lastError = null;
 
         try
         {
@@ -801,17 +834,16 @@ public partial class MainWindow : BorderlessFluentWindow
                     return;
                 }
 
-                // Decode at exact 1:1 screen pixel width (e.g. 1920 on 1080p, 2560 on 1440p) instead of 1.5x / 3840 over-decoding
+                // Decode at exact 1:1 screen pixel width (capped at 2560 max per DeepSeek standards)
                 double screenW = ActualWidth > 0 ? ActualWidth : SystemParameters.PrimaryScreenWidth;
-                int decodeWidth = (int)Math.Clamp(Math.Round(screenW), 1280, 3840);
 
-                var bmp = await DailyWallpaperService.LoadFrozenBitmapAsync(imagePath, decodeWidth).ConfigureAwait(true);
+                var (bmp, error) = await DailyWallpaperService.TryLoadWallpaperAsync(imagePath, screenW).ConfigureAwait(true);
+                lastError = error;
 
                 if (currentGen != _wallpaperLoadGeneration) return;
 
                 if (bmp != null)
                 {
-                    bool hadPrevious = WallpaperImage.Source != null && !string.Equals(_currentLoadedWallpaperPath, imagePath, StringComparison.OrdinalIgnoreCase);
                     _currentLoadedWallpaperPath = imagePath;
                     WallpaperImage.Source = bmp;
                     CustomWallpaperHost.Visibility = Visibility.Visible;
@@ -820,14 +852,6 @@ public partial class MainWindow : BorderlessFluentWindow
                     // Subtle, silky smooth fade-in
                     var anim = new System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(300));
                     WallpaperImage.BeginAnimation(UIElement.OpacityProperty, anim);
-
-                    if (hadPrevious)
-                    {
-                        _ = Task.Run(() =>
-                        {
-                            GC.Collect(2, GCCollectionMode.Forced, blocking: false);
-                        });
-                    }
                     return;
                 }
             }
@@ -835,19 +859,31 @@ public partial class MainWindow : BorderlessFluentWindow
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[MainWindow] UpdateWallpaperDisplayAsync error: {ex.Message}");
+            lastError ??= ex.Message;
         }
 
         if (currentGen != _wallpaperLoadGeneration) return;
 
         // Fallback to dark background if no image could be loaded
-        if (WallpaperImage.Source == null)
+        _currentLoadedWallpaperPath = null;
+        if (WallpaperImage != null)
         {
-            _currentLoadedWallpaperPath = null;
+            WallpaperImage.Source = null;
+        }
+        if (CustomWallpaperHost != null)
+        {
             CustomWallpaperHost.Visibility = Visibility.Collapsed;
-            if (RootGrid != null)
-            {
-                RootGrid.Background = new SolidColorBrush(Color.FromArgb(0xEE, 0x10, 0x10, 0x14));
-            }
+        }
+        if (RootGrid != null)
+        {
+            var darkBrush = new SolidColorBrush(Color.FromArgb(0xEE, 0x10, 0x10, 0x14));
+            darkBrush.Freeze();
+            RootGrid.Background = darkBrush;
+        }
+
+        if (!string.IsNullOrEmpty(lastError) && string.Equals(backdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase))
+        {
+            ShowToast(lastError, isError: true);
         }
         UpdateWallpaperParallax();
     }
@@ -1159,18 +1195,21 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             {
                 NativeMethods.ForceForeground(hwnd);
             }
-            ApplyConfiguredBackdrop();
             Activate();
             Focus();
             Keyboard.Focus(this);
         }, DispatcherPriority.Render);
 
         PlayOpenAnimation();
-        MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(true));
 
-        // Resume background services that were paused in HideScreen()
-        InstalledAppsService.ResumeWatchers();
-        ReinstallWinEventHook();
+        // Defer widget wake-up and service resumption to background priority so UI opens instantly without frame drops
+        Dispatcher.InvokeAsync(() =>
+        {
+            MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(true));
+            InstalledAppsService.ResumeWatchers();
+            ReinstallWinEventHook();
+        }, DispatcherPriority.Background);
+
         MetroHub.Core.Services.HiddenDiagnosticsLogger.LogTransition(true);
     }
 
