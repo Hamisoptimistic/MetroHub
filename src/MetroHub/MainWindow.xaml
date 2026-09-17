@@ -625,13 +625,6 @@
                 </Border>
                 <TextBlock Text=" to toggle   •   Drag any app from desktop to pin" FontSize="11" Foreground="#80FFFFFF" />
             </StackPanel>
-
-            <TextBlock x:Name="RamHudTextBlock"
-                       HorizontalAlignment="Right"
-                       VerticalAlignment="Center"
-                       Text="App RAM: ~15 MB"
-                       FontSize="11"
-                       Foreground="#90FFFFFF" />
         </Grid>
         </Grid>
 

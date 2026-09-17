@@ -92,13 +92,16 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
         }
     }
 
+    private int _lastMinute = -1;
+    private int _lastHour = -1;
+
     private void StartTimer()
     {
         if (_timer == null)
         {
             _timer = new DispatcherTimer(DispatcherPriority.Normal)
             {
-                Interval = TimeSpan.FromSeconds(1)
+                Interval = TimeSpan.FromSeconds(5)
             };
             _timer.Tick += (s, e) => UpdateTime();
         }
@@ -117,13 +120,20 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
 
     public override void Resume()
     {
-        UpdateTime();
+        UpdateTime(force: true);
         StartTimer();
     }
 
-    public void UpdateTime()
+    public void UpdateTime(bool force = false)
     {
         var now = DateTime.Now;
+        if (!force && now.Minute == _lastMinute && now.Hour == _lastHour)
+        {
+            return;
+        }
+
+        _lastMinute = now.Minute;
+        _lastHour = now.Hour;
 
         int hour = now.Hour;
         if (!Is24HourFormat)
@@ -170,7 +180,7 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
     public void SetTimeFormat(bool is24Hour)
     {
         Is24HourFormat = is24Hour;
-        UpdateTime();
+        UpdateTime(force: true);
         SaveSettings();
     }
 

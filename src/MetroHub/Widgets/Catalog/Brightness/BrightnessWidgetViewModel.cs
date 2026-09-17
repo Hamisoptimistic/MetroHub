@@ -138,7 +138,7 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
 
         _cursorTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
-            Interval = TimeSpan.FromMilliseconds(250)
+            Interval = TimeSpan.FromSeconds(1)
         };
         _cursorTimer.Tick += OnCursorTimerTick;
         _cursorTimer.Start();
@@ -340,7 +340,7 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
 
     private void OnCursorTimerTick(object? sender, EventArgs e)
     {
-        if (!_isHubVisible || Monitors.Count == 0) return;
+        if (!_isHubVisible || Monitors.Count <= 1) return;
 
         var lastMonitors = _brightnessService.LastMonitors;
         if (lastMonitors.Count == 0) return;

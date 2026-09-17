@@ -159,7 +159,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
         _playbackTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
-            Interval = TimeSpan.FromMilliseconds(250)
+            Interval = TimeSpan.FromMilliseconds(500)
         };
         _playbackTimer.Tick += OnPlaybackTimerTick;
 

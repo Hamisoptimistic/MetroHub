@@ -50,12 +50,14 @@ public partial class TileControl : UserControl
         InitializeComponent();
         Loaded += (s, e) =>
         {
+            ActiveTiles.RemoveAll(tc => !tc.IsLoaded && !ReferenceEquals(tc, this));
             if (!ActiveTiles.Contains(this)) ActiveTiles.Add(this);
             ApplyTileStyle(animate: false);
         };
         Unloaded += (s, e) =>
         {
             ActiveTiles.Remove(this);
+            ActiveTiles.RemoveAll(tc => !tc.IsLoaded);
         };
         DataContextChanged += (s, e) => ApplyTileStyle(animate: false);
 
@@ -1133,3 +1135,4 @@ public class TileModifiedEventArgs : RoutedEventArgs
         IsResize = isResize;
     }
 }
+

@@ -19,3 +19,16 @@ publish/
 .gemini/
 scratch_*
 
+# Diagnostic traces, profiling artifacts, counters, dumps & logs
+*.nettrace
+*.speedscope.json
+*.speedscope
+*.etl
+*.dmp
+*.diagsession
+*counters*.json
+*trace*.json
+*counters.json
+desktop_*.json
+*.log
+

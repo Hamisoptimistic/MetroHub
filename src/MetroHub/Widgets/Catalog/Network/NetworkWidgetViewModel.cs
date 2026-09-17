@@ -229,6 +229,8 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     private CancellationTokenSource? _reconnectCts;
     private CancellationTokenSource? _speedTestCts;
     private DateTime _lastWifiProbeTime = DateTime.MinValue;
+    private DateTime _lastReachabilityProbeTime = DateTime.MinValue;
+    private ConnectivityLevel? _lastNotifiedConnectivity;
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
@@ -2604,130 +2606,160 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         bool hasEth = eth.Description != "No Ethernet adapter detected";
         bool ethChanged = (hasEth != HasEthernetAdapter) || (eth.IsConnected != IsEthernetConnected);
 
-        Application.Current?.Dispatcher.InvokeAsync(() =>
-        {
-            try
-            {
-                Throughput = metrics;
+        string candidateDown = IsBitsMode ? metrics.DownloadSpeedBitsString : metrics.DownloadSpeedBytesString;
+        string candidateUp = IsBitsMode ? metrics.UploadSpeedBitsString : metrics.UploadSpeedBytesString;
+        bool throughputChanged = candidateDown != FormattedDownloadSpeed || candidateUp != FormattedUploadSpeed;
 
-                if (wifiChanged)
+        // Modular, zero-overhead internet reachability check (Smart Passive + throttled 60s fallback)
+        bool shouldProbeReachability = (IsEthernetConnected || IsWifiConnected) && !IsInternetDisconnected &&
+                                       (Health == null || Health.Connectivity != ConnectivityLevel.InternetAccess || DateTime.UtcNow - _lastReachabilityProbeTime > TimeSpan.FromSeconds(60));
+
+        bool shouldProbeWifi = IsWifiConnected && !string.IsNullOrWhiteSpace(WifiConnection?.IpAddress) &&
+                               (IsWifiNoInternet || DateTime.UtcNow - _lastWifiProbeTime > TimeSpan.FromSeconds(60));
+
+        // If throughput and adapter states are identical, and no scheduled probes are due, skip UI dispatch completely
+        if (!throughputChanged && !wifiChanged && !radioChanged && !ethChanged && !shouldProbeReachability && !shouldProbeWifi)
+        {
+            return;
+        }
+
+        if (throughputChanged || wifiChanged || radioChanged || ethChanged)
+        {
+            Application.Current?.Dispatcher.InvokeAsync(() =>
+            {
+                try
                 {
-                    HasWifiAdapter = currentWifi;
-                    if (!currentWifi)
+                    if (throughputChanged)
                     {
-                        IsWifiConnected = false;
-                        IsWifiRadioOn = false;
-                        AvailableNetworks.Clear();
-                        if (IsWifiPanel)
+                        Throughput = metrics;
+                    }
+
+                    if (wifiChanged)
+                    {
+                        HasWifiAdapter = currentWifi;
+                        if (!currentWifi)
                         {
-                            ApplyConnectionDefaultPanel();
+                            IsWifiConnected = false;
+                            IsWifiRadioOn = false;
+                            AvailableNetworks.Clear();
+                            if (IsWifiPanel)
+                            {
+                                ApplyConnectionDefaultPanel();
+                            }
+                        }
+                        else
+                        {
+                            RefreshAll();
                         }
                     }
-                    else
+                    else if (radioChanged && !IsWifiRadioBusy)
+                    {
+                        IsWifiRadioOn = currentRadio;
+                        if (!currentRadio)
+                        {
+                            IsWifiConnected = false;
+                            AvailableNetworks.Clear();
+                        }
+                        else
+                        {
+                            RefreshWifiNetworks();
+                        }
+                    }
+
+                    if (ethChanged)
                     {
                         RefreshAll();
                     }
-                }
-                else if (radioChanged && !IsWifiRadioBusy)
-                {
-                    IsWifiRadioOn = currentRadio;
-                    if (!currentRadio)
+                    else if (IsEthernetPanel && eth.IsConnected)
                     {
-                        IsWifiConnected = false;
-                        AvailableNetworks.Clear();
+                        Ethernet = eth;
                     }
-                    else
+
+                    if (!IsWifiConnected && IsWifiNoInternet)
                     {
-                        RefreshWifiNetworks();
+                        IsWifiNoInternet = false;
                     }
                 }
+                catch { }
+            });
+        }
 
-                if (ethChanged)
+        if (shouldProbeReachability)
+        {
+            _lastReachabilityProbeTime = DateTime.UtcNow;
+            double currentBps = metrics.DownloadBytesPerSec;
+            bool currentHasInternet = Health != null && Health.Connectivity == ConnectivityLevel.InternetAccess;
+            _ = Task.Run(async () =>
+            {
+                bool reachable = await _healthService.CheckPassiveOrActiveReachabilityAsync(currentBps, _isHubVisible, currentHasInternet);
+                if (Application.Current?.Dispatcher is { } dispatcher)
                 {
-                    RefreshAll();
-                }
-                else if (IsEthernetPanel && eth.IsConnected)
-                {
-                    Ethernet = eth;
-                }
-
-                // Modular, zero-overhead internet reachability check (Smart Passive + gentle 10s fallback)
-                if ((IsEthernetConnected || IsWifiConnected) && !IsInternetDisconnected)
-                {
-                    double currentBps = metrics.DownloadBytesPerSec;
-                    bool currentHasInternet = Health != null && Health.Connectivity == ConnectivityLevel.InternetAccess;
-                    _ = Task.Run(async () =>
+                    await dispatcher.InvokeAsync(() =>
                     {
-                        bool reachable = await _healthService.CheckPassiveOrActiveReachabilityAsync(currentBps, _isHubVisible, currentHasInternet);
-                        if (Application.Current?.Dispatcher is { } dispatcher)
+                        if (!reachable)
                         {
-                            await dispatcher.InvokeAsync(() =>
+                            if (Health == null || Health.Connectivity != ConnectivityLevel.LocalAccess)
                             {
-                                if (!reachable)
+                                Health = new NetworkHealthStatus
                                 {
-                                    if (Health == null || Health.Connectivity != ConnectivityLevel.LocalAccess)
-                                    {
-                                        Health = new NetworkHealthStatus
-                                        {
-                                            Connectivity = ConnectivityLevel.LocalAccess,
-                                            HasDnsResolution = false,
-                                            PacketLossPercent = 100,
-                                            LatencyMs = -1,
-                                            HealthSummary = "Connected to Local Network. No Internet Gateway."
-                                        };
-                                        NotifyReachabilityChanged();
-                                    }
-                                }
-                                else if (Health != null && Health.Connectivity == ConnectivityLevel.LocalAccess)
-                                {
-                                    Health.Connectivity = ConnectivityLevel.InternetAccess;
-                                    NotifyReachabilityChanged();
-                                }
-                            });
+                                    Connectivity = ConnectivityLevel.LocalAccess,
+                                    HasDnsResolution = false,
+                                    PacketLossPercent = 100,
+                                    LatencyMs = -1,
+                                    HealthSummary = "Connected to Local Network. No Internet Gateway."
+                                };
+                                NotifyReachabilityChanged();
+                            }
+                        }
+                        else if (Health != null && Health.Connectivity == ConnectivityLevel.LocalAccess)
+                        {
+                            Health.Connectivity = ConnectivityLevel.InternetAccess;
+                            NotifyReachabilityChanged();
                         }
                     });
                 }
+            });
+        }
 
-                // Dedicated Wi-Fi adapter internet verification (every 2.5s)
-                if (_isHubVisible && IsWifiConnected && !string.IsNullOrWhiteSpace(WifiConnection?.IpAddress))
+        if (shouldProbeWifi)
+        {
+            _lastWifiProbeTime = DateTime.UtcNow;
+            string? wifiIp = WifiConnection?.IpAddress;
+            if (!string.IsNullOrWhiteSpace(wifiIp))
+            {
+                var wifiProbeToken = _probeCts?.Token ?? CancellationToken.None;
+                _ = Task.Run(async () =>
                 {
-                    if (DateTime.UtcNow - _lastWifiProbeTime > TimeSpan.FromSeconds(2.5))
+                    if (!_isHubVisible || wifiProbeToken.IsCancellationRequested) return;
+                    bool hasWan = await CheckAdapterHasInternetAsync(wifiIp, wifiProbeToken);
+                    if (!_isHubVisible || wifiProbeToken.IsCancellationRequested) return;
+
+                    if (Application.Current?.Dispatcher is { } dispatcher)
                     {
-                        _lastWifiProbeTime = DateTime.UtcNow;
-                        string wifiIp = WifiConnection.IpAddress;
-                        var wifiProbeToken = _probeCts?.Token ?? CancellationToken.None;
-                        _ = Task.Run(async () =>
+                        await dispatcher.InvokeAsync(() =>
                         {
                             if (!_isHubVisible || wifiProbeToken.IsCancellationRequested) return;
-                            bool hasWan = await CheckAdapterHasInternetAsync(wifiIp, wifiProbeToken);
-                            if (!_isHubVisible || wifiProbeToken.IsCancellationRequested) return;
-
-                            if (Application.Current?.Dispatcher is { } dispatcher)
+                            bool newNoInternet = !hasWan;
+                            if (IsWifiNoInternet != newNoInternet)
                             {
-                                await dispatcher.InvokeAsync(() =>
-                                {
-                                    if (!_isHubVisible || wifiProbeToken.IsCancellationRequested) return;
-                                    bool newNoInternet = !hasWan;
-                                    if (IsWifiNoInternet != newNoInternet)
-                                    {
-                                        IsWifiNoInternet = newNoInternet;
-                                    }
-                                });
+                                IsWifiNoInternet = newNoInternet;
                             }
-                        }, wifiProbeToken);
+                        });
                     }
-                }
-                else if (!IsWifiConnected && IsWifiNoInternet)
-                {
-                    IsWifiNoInternet = false;
-                }
+                }, wifiProbeToken);
             }
-            catch { }
-        });
+        }
     }
 
     private void NotifyReachabilityChanged()
     {
+        var currentConnectivity = Health?.Connectivity;
+        if (_lastNotifiedConnectivity.HasValue && _lastNotifiedConnectivity.Value == currentConnectivity)
+        {
+            return;
+        }
+        _lastNotifiedConnectivity = currentConnectivity;
+
         if (IsWifiConnected && IsLocalOnlyNoInternet)
         {
             IsWifiNoInternet = true;
@@ -2755,10 +2787,11 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     private void OnLatencyUpdated(LatencyMetrics latency)
     {
         if (!_isHubVisible) return;
+        if (Health != null && Health.LatencyMs == latency.PingMs) return;
 
         Application.Current?.Dispatcher.InvokeAsync(() =>
         {
-            if (Health != null)
+            if (Health != null && Health.LatencyMs != latency.PingMs)
             {
                 Health.LatencyMs = latency.PingMs;
             }
@@ -2804,6 +2837,11 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     private void OnNetworkChanged()
     {
         if (!_isHubVisible) return;
+
+        _lastReachabilityProbeTime = DateTime.MinValue;
+        _lastWifiProbeTime = DateTime.MinValue;
+        _lastNotifiedConnectivity = null;
+        _ethernetProvider.InvalidateCache();
 
         _networkRefreshCts?.Cancel();
         _networkRefreshCts?.Dispose();

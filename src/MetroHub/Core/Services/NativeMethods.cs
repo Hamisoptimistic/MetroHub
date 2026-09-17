@@ -89,6 +89,23 @@ public static class NativeMethods
 
     #endregion
 
+    #region Memory Management
+
+    public static void FlushMemory()
+    {
+        Task.Run(() =>
+        {
+            try
+            {
+                // Gentle non-blocking background garbage collection without aggressive working set eviction
+                GC.Collect(2, GCCollectionMode.Optimized, blocking: false);
+            }
+            catch { }
+        });
+    }
+
+    #endregion
+
     #region Hotkeys
 
     [DllImport("user32.dll", SetLastError = true)]
@@ -494,3 +511,4 @@ public static class NativeMethods
 
     #endregion
 }
+

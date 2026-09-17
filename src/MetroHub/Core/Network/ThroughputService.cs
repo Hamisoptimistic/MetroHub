@@ -32,7 +32,8 @@ public sealed class ThroughputService : IDisposable
     public event Action<ThroughputMetrics>? ThroughputUpdated;
     public event Action<LatencyMetrics>? LatencyUpdated;
 
-    public ThroughputMetrics CurrentThroughput { get; private set; } = new();
+    private readonly ThroughputMetrics _currentMetrics = new();
+    public ThroughputMetrics CurrentThroughput { get; private set; }
     public LatencyMetrics CurrentLatency { get; private set; } = new();
 
     public IReadOnlyList<ThroughputSample> History
@@ -48,6 +49,7 @@ public sealed class ThroughputService : IDisposable
 
     public ThroughputService()
     {
+        CurrentThroughput = _currentMetrics;
         try
         {
             NetworkChange.NetworkAddressChanged += OnNetworkChanged;
@@ -89,8 +91,8 @@ public sealed class ThroughputService : IDisposable
             // 1000ms throughput timer
             _throughputTimer = new Timer(OnThroughputTick, null, 0, 1000);
 
-            // 3000ms latency ping timer
-            _latencyTimer = new Timer(OnLatencyTick, null, 500, 3000);
+            // 30000ms latency ping timer (relaxed to avoid idle CPU / network socket churn)
+            _latencyTimer = new Timer(OnLatencyTick, null, 2000, 30000);
         }
     }
 
@@ -134,7 +136,7 @@ public sealed class ThroughputService : IDisposable
             _prevBytesSent = -1;
             _prevSampleTime = DateTime.MinValue;
             _throughputTimer?.Change(0, 1000);
-            _latencyTimer?.Change(500, 3000);
+            _latencyTimer?.Change(2000, 30000);
         }
     }
 
@@ -213,30 +215,40 @@ public sealed class ThroughputService : IDisposable
             double downSpeedBytes = deltaRecv / elapsedSec;
             double upSpeedBytes = deltaSent / elapsedSec;
 
-            var metrics = new ThroughputMetrics
-            {
-                DownloadBytesPerSec = downSpeedBytes,
-                UploadBytesPerSec = upSpeedBytes,
-                TotalBytesReceived = (ulong)bytesRecv,
-                TotalBytesSent = (ulong)bytesSent
-            };
-
+            bool speedsChanged;
             lock (_lock)
             {
-                CurrentThroughput = metrics;
-                while (_history.Count >= MaxHistorySamples)
+                speedsChanged = Math.Abs(_currentMetrics.DownloadBytesPerSec - downSpeedBytes) > 0.001 ||
+                                Math.Abs(_currentMetrics.UploadBytesPerSec - upSpeedBytes) > 0.001 ||
+                                _currentMetrics.TotalBytesReceived != (ulong)bytesRecv ||
+                                _currentMetrics.TotalBytesSent != (ulong)bytesSent;
+
+                if (speedsChanged)
                 {
-                    _history.Dequeue();
+                    _currentMetrics.DownloadBytesPerSec = downSpeedBytes;
+                    _currentMetrics.UploadBytesPerSec = upSpeedBytes;
+                    _currentMetrics.TotalBytesReceived = (ulong)bytesRecv;
+                    _currentMetrics.TotalBytesSent = (ulong)bytesSent;
+
+                    CurrentThroughput = _currentMetrics;
+
+                    while (_history.Count >= MaxHistorySamples)
+                    {
+                        _history.Dequeue();
+                    }
+                    _history.Enqueue(new ThroughputSample
+                    {
+                        DownloadBytesPerSec = downSpeedBytes,
+                        UploadBytesPerSec = upSpeedBytes,
+                        Timestamp = now
+                    });
                 }
-                _history.Enqueue(new ThroughputSample
-                {
-                    DownloadBytesPerSec = downSpeedBytes,
-                    UploadBytesPerSec = upSpeedBytes,
-                    Timestamp = now
-                });
             }
 
-            ThroughputUpdated?.Invoke(metrics);
+            if (speedsChanged)
+            {
+                ThroughputUpdated?.Invoke(_currentMetrics);
+            }
         }
         catch { }
     }
@@ -342,12 +354,21 @@ public sealed class ThroughputService : IDisposable
 
     private void PublishZeroThroughput()
     {
-        var zero = new ThroughputMetrics();
+        bool changed;
         lock (_lock)
         {
-            CurrentThroughput = zero;
+            changed = _currentMetrics.DownloadBytesPerSec != 0 || _currentMetrics.UploadBytesPerSec != 0;
+            if (changed)
+            {
+                _currentMetrics.DownloadBytesPerSec = 0;
+                _currentMetrics.UploadBytesPerSec = 0;
+                CurrentThroughput = _currentMetrics;
+            }
         }
-        ThroughputUpdated?.Invoke(zero);
+        if (changed)
+        {
+            ThroughputUpdated?.Invoke(_currentMetrics);
+        }
     }
 
     private static NetworkInterface? FindActiveGatewayInterface()

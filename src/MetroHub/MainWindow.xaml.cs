@@ -144,7 +144,6 @@ public partial class MainWindow : BorderlessFluentWindow
     }
 
     private readonly HotkeyService _hotkeyService = new();
-    private DispatcherTimer? _hudTimer;
     private DispatcherTimer? _autoScrollTimer;
     private DispatcherTimer? _sidebarIntentTimer;
     private DispatcherTimer? _sidebarGraceTimer;
@@ -172,7 +171,6 @@ public partial class MainWindow : BorderlessFluentWindow
         DataContext = this;
 
         LoadData();
-        SetupHudTimer();
         SetupAutoScrollTimer();
         SetupSidebarTimers();
 
@@ -629,21 +627,6 @@ public partial class MainWindow : BorderlessFluentWindow
         ProcessDragMovement(currentCanvasMouse);
     }
 
-    private void SetupHudTimer()
-    {
-        _hudTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
-        _hudTimer.Tick += (s, e) =>
-        {
-            if (IsVisible)
-            {
-                long bytes = GC.GetTotalMemory(forceFullCollection: false);
-                double mb = Math.Round(bytes / (1024.0 * 1024.0), 1);
-                RamHudTextBlock.Text = $"App RAM: {mb} MB";
-            }
-        };
-        _hudTimer.Start();
-    }
-
     public void ApplyConfiguredBackdrop()
     {
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
@@ -1058,9 +1041,16 @@ public partial class MainWindow : BorderlessFluentWindow
     }
 
     private const int WM_SETTINGCHANGE = 0x001A;
+    private const int WM_GETOBJECT = 0x003D;
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        if (msg == WM_GETOBJECT)
+        {
+            handled = true;
+            return IntPtr.Zero;
+        }
+
         if ((uint)msg == NativeMethods.WM_SHOW_METROHUB)
         {
             Dispatcher.Invoke(ShowScreen);
@@ -1179,7 +1169,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(true));
 
         // Resume background services that were paused in HideScreen()
-        _hudTimer?.Start();
         InstalledAppsService.ResumeWatchers();
         ReinstallWinEventHook();
         MetroHub.Core.Services.HiddenDiagnosticsLogger.LogTransition(true);
@@ -1214,7 +1203,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         }
 
         // Halt background services that are pointless when hidden
-        _hudTimer?.Stop();
         InstalledAppsService.PauseWatchers();
         UninstallWinEventHook();
 
@@ -5743,7 +5731,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     public void ExitApplication()
     {
         _isClosingToExit = true;
-        _hudTimer?.Stop();
         InstalledAppsService.PauseWatchers();
         UninstallWinEventHook();
         _hotkeyService.Dispose();

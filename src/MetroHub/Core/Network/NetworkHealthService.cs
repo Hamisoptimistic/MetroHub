@@ -47,7 +47,7 @@ public sealed class NetworkHealthService
         {
             lock (_probeLock)
             {
-                if (DateTime.UtcNow - _lastProbeTime < TimeSpan.FromSeconds(2.5))
+                if (DateTime.UtcNow - _lastProbeTime < TimeSpan.FromSeconds(15))
                 {
                     return false;
                 }
@@ -77,10 +77,10 @@ public sealed class NetworkHealthService
             return true;
         }
 
-        // Rule 3: 10-second throttled active check only when traffic is idle
+        // Rule 3: 25-second throttled active check only when traffic is idle
         lock (_probeLock)
         {
-            if (DateTime.UtcNow - _lastProbeTime < TimeSpan.FromSeconds(10))
+            if (DateTime.UtcNow - _lastProbeTime < TimeSpan.FromSeconds(25))
             {
                 return _lastProbeResult;
             }

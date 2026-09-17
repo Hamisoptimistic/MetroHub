@@ -14,9 +14,40 @@ public sealed class EthernetProvider
     public static EthernetProvider Instance => _instance.Value;
 
     private readonly Dictionary<string, DateTime> _fallbackConnectTimes = new(StringComparer.OrdinalIgnoreCase);
+    private readonly object _cacheLock = new();
+    private EthernetInfo? _cachedActiveInfo;
+    private DateTime _lastCacheTimeUtc = DateTime.MinValue;
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(30);
 
-    public EthernetInfo GetActiveEthernetInfo()
+    public EthernetProvider()
     {
+        try
+        {
+            NetworkChange.NetworkAddressChanged += (s, e) => InvalidateCache();
+            NetworkChange.NetworkAvailabilityChanged += (s, e) => InvalidateCache();
+        }
+        catch { }
+    }
+
+    public void InvalidateCache()
+    {
+        lock (_cacheLock)
+        {
+            _cachedActiveInfo = null;
+            _lastCacheTimeUtc = DateTime.MinValue;
+        }
+    }
+
+    public EthernetInfo GetActiveEthernetInfo(bool forceRefresh = false)
+    {
+        lock (_cacheLock)
+        {
+            if (!forceRefresh && _cachedActiveInfo != null && (DateTime.UtcNow - _lastCacheTimeUtc) < CacheTtl)
+            {
+                return _cachedActiveInfo;
+            }
+        }
+
         try
         {
             var interfaces = NetworkInterface.GetAllNetworkInterfaces();
@@ -34,17 +65,28 @@ public sealed class EthernetProvider
                 .ThenByDescending(nic => !IsUsbTetheringInterface(nic))
                 .FirstOrDefault();
 
+            EthernetInfo result;
             if (activeInterface == null)
             {
-                return new EthernetInfo
+                result = new EthernetInfo
                 {
                     Name = "Ethernet",
                     Description = "No Ethernet adapter detected",
                     IsConnected = false
                 };
             }
+            else
+            {
+                result = BuildEthernetInfo(activeInterface);
+            }
 
-            return BuildEthernetInfo(activeInterface);
+            lock (_cacheLock)
+            {
+                _cachedActiveInfo = result;
+                _lastCacheTimeUtc = DateTime.UtcNow;
+            }
+
+            return result;
         }
         catch
         {
