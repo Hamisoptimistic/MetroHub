@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
@@ -17,7 +18,7 @@ namespace MetroHub.Widgets.Catalog.Power;
 /// Supports a 5-second in-tile Cancel window for all power actions (Lock, Sleep, Restart, Shut Down)
 /// with live countdown and immediate dismissal, using crisp WPF-UI Fluent System Icons.
 /// </summary>
-public partial class PowerWidgetViewModel : WidgetViewModelBase
+public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
 {
     private static readonly SolidColorBrush RedBrush = new((Color)ColorConverter.ConvertFromString("#FF5252"));
     private static readonly SolidColorBrush WhiteBrush = Brushes.White;
@@ -107,17 +108,7 @@ public partial class PowerWidgetViewModel : WidgetViewModelBase
         };
         _countdownTimer.Tick += (s, e) => OnCountdownTick();
 
-        model.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
-            {
-                OnPropertyChanged(nameof(IsCompactMode));
-                OnPropertyChanged(nameof(IconFontSize));
-                OnPropertyChanged(nameof(HeaderFontSize));
-                OnPropertyChanged(nameof(IconMargin));
-                OnPropertyChanged(nameof(TextVisibility));
-            }
-        };
+        Model.PropertyChanged += OnModelPropertyChanged;
     }
 
     [RelayCommand]
@@ -275,10 +266,23 @@ public partial class PowerWidgetViewModel : WidgetViewModelBase
         CancelPendingCountdown();
     }
 
+    private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
+        {
+            OnPropertyChanged(nameof(IsCompactMode));
+            OnPropertyChanged(nameof(IconFontSize));
+            OnPropertyChanged(nameof(HeaderFontSize));
+            OnPropertyChanged(nameof(IconMargin));
+            OnPropertyChanged(nameof(TextVisibility));
+        }
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
+            Model.PropertyChanged -= OnModelPropertyChanged;
             _countdownTimer.Stop();
         }
         base.Dispose(disposing);

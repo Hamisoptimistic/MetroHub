@@ -1,0 +1,356 @@
+2026-09-17 16:59:44.268 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 193.8 MB
+2026-09-17 16:59:53.329 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 242.1 MB
+2026-09-17 17:00:14.785 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 89.8 MB
+2026-09-17 17:00:16.496 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 110.1 MB
+2026-09-17 17:00:48.973 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Manager_CurrentSessionChanged | Working Set: 61.1 MB | Details: Deferred until Hub shown
+2026-09-17 17:00:56.174 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 71.3 MB
+2026-09-17 17:00:57.354 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 94.0 MB
+2026-09-17 17:01:02.531 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 61.6 MB
+2026-09-17 17:01:10.754 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 100.7 MB
+2026-09-17 17:01:13.712 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 59.4 MB
+2026-09-17 17:01:16.834 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 85.0 MB
+2026-09-17 17:01:18.450 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 53.1 MB
+2026-09-17 17:01:19.474 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 71.1 MB
+2026-09-17 17:01:20.371 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 48.9 MB
+2026-09-17 17:01:21.251 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 78.8 MB
+2026-09-17 17:01:22.565 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 51.6 MB
+2026-09-17 17:01:23.196 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 68.7 MB
+2026-09-17 17:02:05.803 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 58.8 MB
+2026-09-17 17:02:12.556 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 143.5 MB
+2026-09-17 17:02:17.119 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 76.2 MB
+2026-09-17 17:02:22.347 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 107.7 MB
+2026-09-17 17:02:59.133 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 63.6 MB
+2026-09-17 17:03:00.964 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 90.1 MB
+2026-09-17 17:04:04.338 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 58.8 MB
+2026-09-17 17:04:06.779 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 81.9 MB
+2026-09-17 17:04:39.993 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 62.5 MB
+2026-09-17 17:04:45.798 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 98.0 MB
+2026-09-17 17:04:48.473 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 60.6 MB
+2026-09-17 17:05:14.657 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 141.2 MB
+2026-09-17 17:06:08.062 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 66.2 MB
+2026-09-17 17:06:30.902 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 88.4 MB
+2026-09-17 17:07:03.006 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 64.6 MB
+2026-09-17 17:07:04.991 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 105.9 MB
+2026-09-17 17:07:39.397 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 63.2 MB
+2026-09-17 17:07:55.438 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 111.6 MB
+2026-09-17 17:15:18.936 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 168.7 MB
+2026-09-17 17:15:19.079 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 174.0 MB
+2026-09-17 17:15:27.043 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 206.6 MB
+2026-09-17 17:15:30.059 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 224.5 MB
+2026-09-17 17:15:30.722 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 226.8 MB
+2026-09-17 17:15:31.429 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 228.6 MB
+2026-09-17 17:15:48.121 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 229.1 MB
+2026-09-17 17:15:51.877 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 223.8 MB
+2026-09-17 17:15:52.359 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 224.1 MB
+2026-09-17 17:15:53.005 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 222.6 MB
+2026-09-17 17:15:53.443 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 222.7 MB
+2026-09-17 17:15:54.094 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 222.8 MB
+2026-09-17 17:15:54.527 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 222.7 MB
+2026-09-17 17:16:01.343 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 226.0 MB
+2026-09-17 17:16:25.881 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 222.4 MB
+2026-09-17 17:16:36.047 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 248.6 MB
+2026-09-17 17:17:05.645 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 241.8 MB
+2026-09-17 17:17:07.864 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 243.4 MB
+2026-09-17 17:17:18.659 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 243.5 MB
+2026-09-17 17:17:26.057 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 247.2 MB
+2026-09-17 17:17:35.023 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 247.2 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:17:35.051 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 247.2 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:17:35.499 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 247.3 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:17:35.507 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 247.3 MB | Details: Deferred until Hub shown
+2026-09-17 17:17:35.558 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 247.3 MB | Details: Deferred until Hub shown
+2026-09-17 17:17:35.564 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 247.3 MB | Details: Deferred until Hub shown
+2026-09-17 17:17:35.984 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 247.5 MB | Details: Deferred until Hub shown
+2026-09-17 17:17:35.991 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 247.5 MB | Details: Deferred until Hub shown
+2026-09-17 17:17:36.556 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 247.5 MB
+2026-09-17 17:17:38.345 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 247.5 MB
+2026-09-17 17:17:57.737 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 247.5 MB
+2026-09-17 17:18:04.722 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 251.8 MB
+2026-09-17 17:18:19.058 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 249.1 MB
+2026-09-17 17:18:38.940 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 255.1 MB
+2026-09-17 17:18:51.055 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 250.4 MB
+2026-09-17 17:18:53.886 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 254.9 MB
+2026-09-17 17:19:19.684 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 252.6 MB
+2026-09-17 17:19:23.501 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 255.2 MB
+2026-09-17 17:22:26.073 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 167.3 MB
+2026-09-17 17:22:29.951 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 199.7 MB
+2026-09-17 17:22:46.473 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 136.3 MB
+2026-09-17 17:22:46.867 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 145.0 MB
+2026-09-17 17:43:07.784 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 68.7 MB
+2026-09-17 17:43:13.873 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 157.9 MB
+2026-09-17 17:43:36.978 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 79.7 MB
+2026-09-17 17:43:48.116 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 100.4 MB
+2026-09-17 17:44:48.692 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 61.6 MB
+2026-09-17 17:45:00.478 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 129.8 MB
+2026-09-17 17:45:05.687 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Manager_CurrentSessionChanged | Working Set: 52.5 MB | Details: Deferred until Hub shown
+2026-09-17 17:45:05.687 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Manager_CurrentSessionChanged | Working Set: 52.5 MB | Details: Deferred until Hub shown
+2026-09-17 17:45:05.688 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Manager_CurrentSessionChanged | Working Set: 53.3 MB | Details: Deferred until Hub shown
+2026-09-17 17:45:05.711 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 53.8 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:05.717 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 53.8 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:05.726 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 53.8 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:13.991 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 56.9 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:13.999 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 57.0 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:14.008 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 57.2 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:14.013 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 57.8 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:14.019 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 57.9 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:14.024 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 57.9 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:14.029 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 57.9 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:14.175 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Manager_CurrentSessionChanged | Working Set: 60.3 MB | Details: Deferred until Hub shown
+2026-09-17 17:45:14.462 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 60.4 MB | Details: Deferred until Hub shown
+2026-09-17 17:45:14.468 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 60.8 MB | Details: Deferred until Hub shown
+2026-09-17 17:45:14.483 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 61.3 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:14.488 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 61.5 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:14.492 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 61.8 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:14.498 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 61.9 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:14.504 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 62.1 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:14.508 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 62.6 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:14.518 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 62.8 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:14.523 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 63.0 MB | Details: Deferred until Hub shown
+2026-09-17 17:45:14.528 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 63.0 MB | Details: Deferred until Hub shown
+2026-09-17 17:45:14.532 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 63.0 MB | Details: Deferred until Hub shown
+2026-09-17 17:45:14.536 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 63.0 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:14.540 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 63.0 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:15.796 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 74.4 MB
+2026-09-17 17:45:27.023 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 109.5 MB
+2026-09-17 17:45:27.905 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 38.5 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:27.914 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 42.4 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:37.943 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 45.2 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:45:37.949 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 45.4 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:49:53.040 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 62.2 MB
+2026-09-17 17:49:54.015 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 80.9 MB
+2026-09-17 17:49:57.186 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 58.6 MB
+2026-09-17 17:51:00.042 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 114.8 MB
+2026-09-17 17:55:43.773 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 44.2 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:55:43.836 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 44.6 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:55:44.732 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 44.6 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:55:45.129 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 49.0 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:55:45.146 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 49.2 MB | Details: Deferred until Hub shown
+2026-09-17 17:55:45.159 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 49.2 MB | Details: Deferred until Hub shown
+2026-09-17 17:55:45.163 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 49.2 MB | Details: Deferred until Hub shown
+2026-09-17 17:55:46.477 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 49.5 MB | Details: Deferred until Hub shown
+2026-09-17 17:55:46.486 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 49.8 MB | Details: Deferred until Hub shown
+2026-09-17 17:59:30.539 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 50.6 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:59:30.543 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 50.6 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:59:31.643 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 50.6 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:59:32.039 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 50.6 MB | Details: Skipped timer restart while hidden
+2026-09-17 17:59:32.046 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 50.6 MB | Details: Deferred until Hub shown
+2026-09-17 17:59:32.067 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 50.6 MB | Details: Deferred until Hub shown
+2026-09-17 17:59:32.077 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 50.7 MB | Details: Deferred until Hub shown
+2026-09-17 17:59:32.854 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 50.8 MB | Details: Deferred until Hub shown
+2026-09-17 17:59:32.858 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 50.8 MB | Details: Deferred until Hub shown
+2026-09-17 18:00:57.080 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 196.6 MB
+2026-09-17 18:01:09.566 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 234.0 MB
+2026-09-17 18:01:12.928 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 92.3 MB
+2026-09-17 18:01:33.333 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 163.9 MB
+2026-09-17 18:01:35.927 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 61.7 MB
+2026-09-17 18:01:52.312 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 85.6 MB
+2026-09-17 18:02:43.584 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 59.8 MB
+2026-09-17 18:02:58.582 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 98.8 MB
+2026-09-17 18:03:55.268 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 59.3 MB
+2026-09-17 18:03:59.861 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 91.2 MB
+2026-09-17 18:04:02.425 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 61.4 MB
+2026-09-17 18:04:40.427 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 106.2 MB
+2026-09-17 18:04:50.856 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 59.6 MB
+2026-09-17 18:04:52.518 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 79.2 MB
+2026-09-17 18:05:31.513 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 60.3 MB
+2026-09-17 18:05:33.109 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 80.0 MB
+2026-09-17 18:05:39.278 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 55.8 MB
+2026-09-17 18:05:43.469 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 82.5 MB
+2026-09-17 18:06:18.077 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 51.1 MB | Details: Skipped timer restart while hidden
+2026-09-17 18:06:18.081 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 51.9 MB | Details: Skipped timer restart while hidden
+2026-09-17 18:06:19.194 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 53.4 MB | Details: Skipped timer restart while hidden
+2026-09-17 18:06:20.574 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 54.5 MB | Details: Skipped timer restart while hidden
+2026-09-17 18:06:20.583 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 54.6 MB | Details: Deferred until Hub shown
+2026-09-17 18:06:20.598 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 54.7 MB | Details: Deferred until Hub shown
+2026-09-17 18:06:20.601 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 54.9 MB | Details: Deferred until Hub shown
+2026-09-17 18:06:21.343 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 55.0 MB | Details: Deferred until Hub shown
+2026-09-17 18:06:21.350 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 56.2 MB | Details: Deferred until Hub shown
+2026-09-17 18:06:32.903 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 68.6 MB
+2026-09-17 18:06:36.104 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 114.6 MB
+2026-09-17 18:07:39.170 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 55.9 MB
+2026-09-17 18:07:40.979 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 70.4 MB
+2026-09-17 18:08:16.951 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 46.0 MB
+2026-09-17 18:08:26.546 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 125.6 MB
+2026-09-17 18:08:27.341 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 45.4 MB
+2026-09-17 18:08:28.366 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 55.9 MB
+2026-09-17 18:09:30.408 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 57.9 MB
+2026-09-17 18:09:31.585 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 73.0 MB
+2026-09-17 18:09:58.397 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 52.4 MB
+2026-09-17 18:10:00.774 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 94.2 MB
+2026-09-17 18:10:04.151 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 49.4 MB
+2026-09-17 18:10:05.623 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 86.3 MB
+2026-09-17 18:10:15.663 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 50.0 MB
+2026-09-17 18:10:16.062 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 59.1 MB
+2026-09-17 18:10:19.791 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 45.3 MB
+2026-09-17 18:10:25.534 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 105.8 MB
+2026-09-17 18:10:39.162 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 165.4 MB
+2026-09-17 18:10:39.786 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 171.8 MB
+2026-09-17 18:11:22.839 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 137.4 MB
+2026-09-17 18:11:28.326 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 168.6 MB
+2026-09-17 18:11:28.910 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 45.3 MB
+2026-09-17 18:11:30.559 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 56.3 MB
+2026-09-17 18:12:07.711 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 47.5 MB
+2026-09-17 18:12:15.048 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 114.3 MB
+2026-09-17 18:12:18.401 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 47.1 MB
+2026-09-17 18:12:19.950 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 59.1 MB
+2026-09-17 18:12:21.520 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 43.1 MB
+2026-09-17 18:12:21.914 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 54.3 MB
+2026-09-17 18:13:04.366 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 46.8 MB
+2026-09-17 18:13:13.934 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 125.6 MB
+2026-09-17 18:13:18.887 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 180.5 MB
+2026-09-17 18:13:20.360 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 213.5 MB
+2026-09-17 18:13:30.803 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 117.8 MB
+2026-09-17 18:13:31.372 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 124.5 MB
+2026-09-17 18:14:37.525 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 55.8 MB
+2026-09-17 18:14:45.542 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 126.2 MB
+2026-09-17 18:14:51.497 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 180.9 MB
+2026-09-17 18:14:53.497 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 212.1 MB
+2026-09-17 18:14:54.785 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 101.6 MB
+2026-09-17 18:14:55.103 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 115.7 MB
+2026-09-17 18:15:05.784 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 113.8 MB
+2026-09-17 18:15:07.456 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 129.2 MB
+2026-09-17 18:15:20.730 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 53.3 MB | Details: Skipped timer restart while hidden
+2026-09-17 18:15:20.733 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 53.9 MB | Details: Skipped timer restart while hidden
+2026-09-17 18:15:20.834 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 53.9 MB | Details: Skipped timer restart while hidden
+2026-09-17 18:15:21.124 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 54.3 MB | Details: Deferred until Hub shown
+2026-09-17 18:15:21.130 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 54.4 MB | Details: Skipped timer restart while hidden
+2026-09-17 18:15:21.146 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 54.4 MB | Details: Deferred until Hub shown
+2026-09-17 18:15:21.149 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 54.4 MB | Details: Deferred until Hub shown
+2026-09-17 18:15:21.935 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 55.3 MB | Details: Deferred until Hub shown
+2026-09-17 18:15:21.939 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_MediaPropertiesChanged | Working Set: 55.6 MB | Details: Deferred until Hub shown
+2026-09-17 18:16:11.907 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 63.8 MB
+2026-09-17 18:16:20.113 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 105.5 MB
+2026-09-17 18:17:39.382 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 51.1 MB
+2026-09-17 18:17:52.176 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 122.6 MB
+2026-09-17 18:17:58.333 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 185.0 MB
+2026-09-17 18:17:59.302 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 212.1 MB
+2026-09-17 18:17:59.934 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 215.9 MB
+2026-09-17 18:18:00.254 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 57.8 MB
+2026-09-17 18:18:05.751 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 113.5 MB
+2026-09-17 18:18:06.070 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 124.0 MB
+2026-09-17 18:19:02.595 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 64.8 MB
+2026-09-17 18:19:05.031 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 86.4 MB
+2026-09-17 18:19:05.665 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 53.0 MB
+2026-09-17 18:19:06.375 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 69.0 MB
+2026-09-17 18:19:43.798 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 48.8 MB | Details: Skipped timer restart while hidden
+2026-09-17 18:19:43.806 [HIDDEN ACTIVITY DETECTED] [MediaWidget] Session_PlaybackInfoChanged | Working Set: 49.6 MB | Details: Skipped timer restart while hidden
+2026-09-17 18:22:08.578 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 58.5 MB
+2026-09-17 18:22:09.835 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 77.7 MB
+2026-09-17 18:24:08.770 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 59.0 MB
+2026-09-17 18:24:09.785 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 77.9 MB
+2026-09-17 18:24:10.164 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 46.2 MB
+2026-09-17 18:24:12.473 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 98.8 MB
+2026-09-17 18:25:12.343 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 78.3 MB
+2026-09-17 18:25:34.712 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 122.4 MB
+2026-09-17 18:26:10.567 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 52.1 MB
+2026-09-17 18:26:16.170 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 92.2 MB
+2026-09-17 18:27:12.499 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 53.0 MB
+2026-09-17 18:27:14.503 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 69.7 MB
+2026-09-17 18:31:55.048 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 190.9 MB
+2026-09-17 18:31:56.716 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 208.1 MB
+2026-09-17 18:31:58.818 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 208.4 MB
+2026-09-17 18:32:13.571 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 241.6 MB
+2026-09-17 18:32:19.751 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 236.1 MB
+2026-09-17 18:32:20.040 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 235.8 MB
+2026-09-17 18:32:44.930 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 234.9 MB
+2026-09-17 18:32:45.681 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 236.1 MB
+2026-09-17 18:32:46.065 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 236.2 MB
+2026-09-17 18:32:46.747 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 238.2 MB
+2026-09-17 18:32:47.301 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 238.3 MB
+2026-09-17 18:32:48.706 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 238.4 MB
+2026-09-17 18:32:51.391 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 235.9 MB
+2026-09-17 18:32:51.761 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 236.0 MB
+2026-09-17 18:32:53.164 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 236.3 MB
+2026-09-17 18:33:02.874 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 249.5 MB
+2026-09-17 18:33:08.458 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 249.6 MB
+2026-09-17 18:33:21.530 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 267.1 MB
+2026-09-17 18:33:56.752 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 257.2 MB
+2026-09-17 18:34:00.428 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 70.2 MB
+2026-09-17 18:34:31.992 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 202.4 MB
+2026-09-17 18:34:33.854 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 221.2 MB
+2026-09-17 18:34:38.188 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 134.3 MB
+2026-09-17 18:34:41.452 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 174.6 MB
+2026-09-17 18:34:42.236 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 81.9 MB
+2026-09-17 18:34:43.021 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 100.3 MB
+2026-09-17 18:34:43.492 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 72.5 MB
+2026-09-17 18:34:44.005 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 87.3 MB
+2026-09-17 18:34:44.892 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 61.5 MB
+2026-09-17 18:34:46.822 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 82.8 MB
+2026-09-17 18:34:48.546 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 55.8 MB
+2026-09-17 18:34:50.036 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 82.2 MB
+2026-09-17 18:41:35.393 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 196.8 MB
+2026-09-17 18:41:37.339 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 236.9 MB
+2026-09-17 18:41:53.540 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 139.1 MB
+2026-09-17 18:41:54.388 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 151.1 MB
+2026-09-17 18:43:10.094 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 71.4 MB
+2026-09-17 18:43:11.589 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 99.3 MB
+2026-09-17 18:45:25.455 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 196.4 MB
+2026-09-17 18:45:27.717 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 224.4 MB
+2026-09-17 18:45:56.659 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 198.8 MB
+2026-09-17 18:45:57.675 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 227.7 MB
+2026-09-17 18:46:07.358 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 114.4 MB
+2026-09-17 18:46:10.035 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 137.7 MB
+2026-09-17 18:46:28.499 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 82.5 MB
+2026-09-17 18:46:29.150 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 97.9 MB
+2026-09-17 18:46:29.847 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 66.1 MB
+2026-09-17 18:46:38.180 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 125.1 MB
+2026-09-17 18:46:38.906 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 65.1 MB
+2026-09-17 18:46:39.740 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 83.5 MB
+2026-09-17 18:47:39.449 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 66.4 MB
+2026-09-17 18:47:41.280 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 87.2 MB
+2026-09-17 18:47:48.682 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 61.2 MB
+2026-09-17 18:47:50.179 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 83.3 MB
+2026-09-17 18:49:00.815 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 64.1 MB
+2026-09-17 18:49:02.271 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 82.0 MB
+2026-09-17 19:26:54.640 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 196.5 MB
+2026-09-17 19:26:59.719 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 228.0 MB
+2026-09-17 19:27:01.272 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 230.3 MB
+2026-09-17 19:27:02.097 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 231.1 MB
+2026-09-17 19:27:03.771 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 228.3 MB
+2026-09-17 19:27:04.524 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 229.8 MB
+2026-09-17 19:27:04.531 [HIDDEN ACTIVITY DETECTED] [ThroughputService] OnThroughputTick | Working Set: 230.1 MB | Details: Skipped tick (properly paused)
+2026-09-17 19:27:05.093 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 244.8 MB
+2026-09-17 19:27:05.578 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 240.4 MB
+2026-09-17 19:27:06.609 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 240.5 MB
+2026-09-17 19:27:07.025 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 240.5 MB
+2026-09-17 19:27:07.809 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 241.3 MB
+2026-09-17 19:27:08.274 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 246.3 MB
+2026-09-17 19:27:09.053 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 249.2 MB
+2026-09-17 19:27:09.466 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 249.7 MB
+2026-09-17 19:27:34.864 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 237.4 MB
+2026-09-17 19:27:38.411 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 248.8 MB
+2026-09-17 19:27:39.153 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 248.9 MB
+2026-09-17 19:27:45.325 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 252.5 MB
+2026-09-17 19:27:46.032 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 252.6 MB
+2026-09-17 19:27:46.867 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 252.6 MB
+2026-09-17 19:27:47.726 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 250.7 MB
+2026-09-17 19:27:48.651 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 250.7 MB
+2026-09-17 19:28:56.862 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 247.3 MB
+2026-09-17 19:28:57.885 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 247.5 MB
+2026-09-17 19:29:08.279 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 247.8 MB
+2026-09-17 19:29:13.725 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 249.2 MB
+2026-09-17 19:29:14.761 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 249.7 MB
+2026-09-17 19:29:16.266 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 249.8 MB
+2026-09-17 19:29:47.822 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 247.6 MB
+2026-09-17 19:29:56.319 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 254.1 MB
+2026-09-17 19:30:03.552 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 254.1 MB
+2026-09-17 19:30:07.888 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 253.2 MB
+2026-09-17 19:35:20.489 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 165.3 MB
+2026-09-17 19:35:20.550 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 167.5 MB
+2026-09-17 19:35:36.900 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 165.3 MB
+2026-09-17 19:35:39.535 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 199.1 MB
+2026-09-17 19:35:53.757 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 206.1 MB
+2026-09-17 19:35:54.458 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 208.9 MB
+2026-09-17 19:35:54.951 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 209.1 MB
+2026-09-17 19:35:55.410 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 209.5 MB
+2026-09-17 19:35:55.902 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 209.6 MB
+2026-09-17 19:35:59.086 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 225.0 MB
+2026-09-17 19:35:59.651 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 225.0 MB
+2026-09-17 19:36:00.042 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 225.1 MB
+2026-09-17 19:36:08.091 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 215.9 MB
+2026-09-17 19:36:40.748 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 265.5 MB
+2026-09-17 19:36:41.324 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 265.5 MB
+2026-09-17 19:36:41.644 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 265.4 MB
+2026-09-17 19:36:57.805 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 262.0 MB
+2026-09-17 19:36:58.061 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 262.5 MB
+2026-09-17 19:36:59.106 [TRANSITION] MetroHub is now SHOWN (Foreground Active) | Working Set: 264.6 MB
+2026-09-17 19:36:59.302 [TRANSITION] MetroHub is now HIDDEN (Background Dormant) | Working Set: 265.1 MB

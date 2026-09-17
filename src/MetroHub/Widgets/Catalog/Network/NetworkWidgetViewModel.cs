@@ -213,7 +213,7 @@ public partial class PhysicalAdapterItemViewModel : ObservableObject
     public string SubtitleText => $"{Description} • {StatusText}";
 }
 
-public partial class NetworkWidgetViewModel : WidgetViewModelBase
+public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
 {
     private readonly EthernetProvider _ethernetProvider = EthernetProvider.Instance;
     private readonly NativeWifiService _wifiService = NativeWifiService.Instance;
@@ -2119,6 +2119,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
 
     private int _isScanningWifi;
     private CancellationTokenSource? _networkRefreshCts;
+    private CancellationTokenSource? _probeCts = new();
 
     public void RefreshAll()
     {
@@ -2191,17 +2192,22 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 }
 
                 // Hydrate full IP properties in background to never stall UI thread
+                var token = _probeCts?.Token ?? CancellationToken.None;
                 Task.Run(async () =>
                 {
+                    if (!_isHubVisible || token.IsCancellationRequested) return;
                     var wifiConn = _wifiService.GetCurrentConnectionDetails();
                     bool wifiHasWan = false;
-                    if (wifiConn.IsConnected)
+                    if (wifiConn.IsConnected && _isHubVisible && !token.IsCancellationRequested)
                     {
-                        wifiHasWan = await CheckAdapterHasInternetAsync(wifiConn.IpAddress);
+                        wifiHasWan = await CheckAdapterHasInternetAsync(wifiConn.IpAddress, token);
                     }
+
+                    if (!_isHubVisible || token.IsCancellationRequested) return;
 
                     Application.Current?.Dispatcher.InvokeAsync(() =>
                     {
+                        if (!_isHubVisible || token.IsCancellationRequested) return;
                         WifiConnection = wifiConn;
                         IsWifiConnected = IsWifiRadioOn && wifiConn.IsConnected;
                         IsWifiNoInternet = IsWifiConnected && !wifiHasWan;
@@ -2209,7 +2215,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                         OnPropertyChanged(nameof(WifiPanelSymbol));
                         OnPropertyChanged(nameof(WifiPanelTitleColor));
                     });
-                });
+                }, token);
             }
 
             // 3. Disconnect state: True only if neither Ethernet nor Wi-Fi is actively connected
@@ -2222,18 +2228,23 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 ApplyConnectionDefaultPanel();
             }
 
-
-
             // 6. Evaluate health in background
+            var healthToken = _probeCts?.Token ?? CancellationToken.None;
             Task.Run(async () =>
             {
                 try
                 {
-                    var h = await _healthService.EvaluateHealthAsync();
-                    Application.Current?.Dispatcher.InvokeAsync(() => Health = h);
+                    if (!_isHubVisible || healthToken.IsCancellationRequested) return;
+                    var h = await _healthService.EvaluateHealthAsync(healthToken);
+                    if (!_isHubVisible || healthToken.IsCancellationRequested) return;
+                    Application.Current?.Dispatcher.InvokeAsync(() =>
+                    {
+                        if (!_isHubVisible || healthToken.IsCancellationRequested) return;
+                        Health = h;
+                    });
                 }
                 catch { }
-            });
+            }, healthToken);
 
             // 7. Refresh Data Usage (only when active panel is Usage to conserve CPU/battery)
             if (IsDataUsagePanel)
@@ -2678,19 +2689,24 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                 }
 
                 // Dedicated Wi-Fi adapter internet verification (every 2.5s)
-                if (IsWifiConnected && !string.IsNullOrWhiteSpace(WifiConnection?.IpAddress))
+                if (_isHubVisible && IsWifiConnected && !string.IsNullOrWhiteSpace(WifiConnection?.IpAddress))
                 {
                     if (DateTime.UtcNow - _lastWifiProbeTime > TimeSpan.FromSeconds(2.5))
                     {
                         _lastWifiProbeTime = DateTime.UtcNow;
                         string wifiIp = WifiConnection.IpAddress;
+                        var wifiProbeToken = _probeCts?.Token ?? CancellationToken.None;
                         _ = Task.Run(async () =>
                         {
-                            bool hasWan = await CheckAdapterHasInternetAsync(wifiIp);
+                            if (!_isHubVisible || wifiProbeToken.IsCancellationRequested) return;
+                            bool hasWan = await CheckAdapterHasInternetAsync(wifiIp, wifiProbeToken);
+                            if (!_isHubVisible || wifiProbeToken.IsCancellationRequested) return;
+
                             if (Application.Current?.Dispatcher is { } dispatcher)
                             {
                                 await dispatcher.InvokeAsync(() =>
                                 {
+                                    if (!_isHubVisible || wifiProbeToken.IsCancellationRequested) return;
                                     bool newNoInternet = !hasWan;
                                     if (IsWifiNoInternet != newNoInternet)
                                     {
@@ -2698,7 +2714,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                                     }
                                 });
                             }
-                        });
+                        }, wifiProbeToken);
                     }
                 }
                 else if (!IsWifiConnected && IsWifiNoInternet)
@@ -2815,6 +2831,11 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public override void Pause()
     {
         _isHubVisible = false;
+        _healthService.IsHubVisible = false;
+        _networkRefreshCts?.Cancel();
+        _probeCts?.Cancel();
+        _probeCts?.Dispose();
+        _probeCts = null;
         _throughputService.Pause();
         CancelSpeedTest();
     }
@@ -2822,12 +2843,16 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
     public override void Resume()
     {
         _isHubVisible = true;
+        _healthService.IsHubVisible = true;
+        _probeCts?.Dispose();
+        _probeCts = new CancellationTokenSource();
         _throughputService.Resume();
         RefreshAll();
     }
 
-    private static async Task<bool> CheckAdapterHasInternetAsync(string ipAddress)
+    private static async Task<bool> CheckAdapterHasInternetAsync(string ipAddress, CancellationToken cancellationToken = default)
     {
+        if (cancellationToken.IsCancellationRequested) return false;
         if (string.IsNullOrWhiteSpace(ipAddress) || ipAddress == "--" || ipAddress == "0.0.0.0")
             return false;
 
@@ -2842,6 +2867,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
 
         foreach (var endpoint in targets)
         {
+            if (cancellationToken.IsCancellationRequested) return false;
+
             try
             {
                 using var socket = new System.Net.Sockets.Socket(
@@ -2850,7 +2877,8 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
                     System.Net.Sockets.ProtocolType.Tcp);
                 socket.Bind(new System.Net.IPEndPoint(localIp, 0));
 
-                using var cts = new CancellationTokenSource(600);
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                cts.CancelAfter(600);
                 await socket.ConnectAsync(endpoint, cts.Token).ConfigureAwait(false);
                 if (socket.Connected)
                 {
@@ -2859,7 +2887,7 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
             }
             catch (OperationCanceledException)
             {
-                // Timeout on this endpoint, try next
+                if (cancellationToken.IsCancellationRequested) return false;
             }
             catch
             {
@@ -2883,6 +2911,10 @@ public partial class NetworkWidgetViewModel : WidgetViewModelBase
 
             _networkRefreshCts?.Cancel();
             _networkRefreshCts?.Dispose();
+
+            _probeCts?.Cancel();
+            _probeCts?.Dispose();
+            _probeCts = null;
 
             _throughputService.ThroughputUpdated -= OnThroughputUpdated;
             _throughputService.LatencyUpdated -= OnLatencyUpdated;

@@ -269,44 +269,46 @@ public class WidgetTiles : Selector
         }
     }
 
-    private void UpdateIndicator(bool animate)
+    private static readonly Color DefaultIndicatorColor = Color.FromRgb(0x00, 0xE6, 0x76);
+    private static readonly SolidColorBrush DefaultIndicatorBrush = CreateFrozenBrush(DefaultIndicatorColor);
+
+    private static SolidColorBrush CreateFrozenBrush(Color color)
+    {
+        var b = new SolidColorBrush(color);
+        b.Freeze();
+        return b;
+    }
+
+    private void UpdateIndicator(bool animate = true)
     {
         if (_slidingIndicator == null || _indicatorTransform == null || _hostGrid == null) return;
 
         int index = SelectedIndex;
-        if (index < 0)
+        if (index < 0 || index >= Items.Count)
         {
-            _slidingIndicator.Opacity = 0;
+            // Fade out indicator when no item is selected
+            if (_slidingIndicator.Opacity > 0.0)
+            {
+                var fadeOut = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(AnimationDurationMs))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+                _slidingIndicator.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+            }
             return;
         }
 
-        int count = Items.Count;
-        double hostWidth = _hostGrid.ActualWidth;
-
+        // Measure item bounds relative to container canvas
         double targetX = 0;
         double targetWidth = 0;
 
-        if (count > 0 && hostWidth > 0)
+        if (ItemContainerGenerator.ContainerFromIndex(index) is FrameworkElement container)
         {
-            double slotWidth = hostWidth / count;
-            targetX = index * slotWidth;
-            targetWidth = slotWidth;
-        }
-        else
-        {
-            var container = ItemContainerGenerator.ContainerFromIndex(index) as FrameworkElement;
-            if (container != null && container.ActualWidth > 0)
+            if (container.ActualWidth > 0)
             {
-                try
-                {
-                    Point p = container.TranslatePoint(new Point(0, 0), _hostGrid);
-                    targetX = p.X;
-                    targetWidth = container.ActualWidth;
-                }
-                catch
-                {
-                    return;
-                }
+                var point = container.TranslatePoint(new Point(0, 0), _hostGrid);
+                targetX = point.X;
+                targetWidth = container.ActualWidth;
             }
             else
             {
@@ -317,8 +319,8 @@ public class WidgetTiles : Selector
 
         // Determine active tile's indicator color
         var activeTile = Items[index] as WidgetTile;
-        Brush targetBrush = activeTile?.IndicatorBrush ?? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00E676"));
-        Color targetColor = (targetBrush as SolidColorBrush)?.Color ?? (Color)ColorConverter.ConvertFromString("#00E676");
+        Brush targetBrush = activeTile?.IndicatorBrush ?? DefaultIndicatorBrush;
+        Color targetColor = (targetBrush as SolidColorBrush)?.Color ?? DefaultIndicatorColor;
 
         // Keep width static to eliminate layout passes during translation
         if (Math.Abs(_slidingIndicator.Width - targetWidth) > 0.5)

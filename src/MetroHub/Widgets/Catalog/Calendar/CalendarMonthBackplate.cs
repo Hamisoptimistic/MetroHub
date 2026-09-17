@@ -84,51 +84,48 @@ public class CalendarMonthBackplate : FrameworkElement
         double yEnd = endRow * rowH;
         double yEndPlus1 = (endRow + 1) * rowH;
 
-        var figure = new PathFigure
+        var geometry = new StreamGeometry();
+        using (var ctx = geometry.Open())
         {
-            StartPoint = new Point(xStart, y0),
-            IsClosed = true,
-            IsFilled = true
-        };
+            ctx.BeginFigure(new Point(xStart, y0), isFilled: true, isClosed: true);
 
-        // 1. Top edge of Row 0 to right edge
-        figure.Segments.Add(new LineSegment(new Point(x7, y0), false));
+            // 1. Top edge of Row 0 to right edge
+            ctx.LineTo(new Point(x7, y0), isStroked: false, isSmoothJoin: false);
 
-        // 2. Down right edge to endRow
-        figure.Segments.Add(new LineSegment(new Point(x7, yEnd), false));
+            // 2. Down right edge to endRow
+            ctx.LineTo(new Point(x7, yEnd), isStroked: false, isSmoothJoin: false);
 
-        if (endCol < 6)
-        {
-            // Step in along top of remaining next-month days in endRow
-            figure.Segments.Add(new LineSegment(new Point(xEnd, yEnd), false));
-            // Down to bottom of endRow
-            figure.Segments.Add(new LineSegment(new Point(xEnd, yEndPlus1), false));
+            if (endCol < 6)
+            {
+                // Step in along top of remaining next-month days in endRow
+                ctx.LineTo(new Point(xEnd, yEnd), isStroked: false, isSmoothJoin: false);
+                // Down to bottom of endRow
+                ctx.LineTo(new Point(xEnd, yEndPlus1), isStroked: false, isSmoothJoin: false);
+            }
+            else
+            {
+                // Month fills all 7 columns of endRow
+                ctx.LineTo(new Point(x7, yEndPlus1), isStroked: false, isSmoothJoin: false);
+            }
+
+            // 3. Along bottom of endRow to left edge
+            ctx.LineTo(new Point(x0, yEndPlus1), isStroked: false, isSmoothJoin: false);
+
+            if (startCol > 0)
+            {
+                // Up to bottom of Row 0 (top of Row 1)
+                ctx.LineTo(new Point(x0, y1), isStroked: false, isSmoothJoin: false);
+                // Step in along bottom of previous-month days in Row 0
+                ctx.LineTo(new Point(xStart, y1), isStroked: false, isSmoothJoin: false);
+            }
+            else
+            {
+                // Month starts at col 0, go all the way up to y0
+                ctx.LineTo(new Point(x0, y0), isStroked: false, isSmoothJoin: false);
+            }
         }
-        else
-        {
-            // Month fills all 7 columns of endRow
-            figure.Segments.Add(new LineSegment(new Point(x7, yEndPlus1), false));
-        }
 
-        // 3. Along bottom of endRow to left edge
-        figure.Segments.Add(new LineSegment(new Point(x0, yEndPlus1), false));
-
-        if (startCol > 0)
-        {
-            // Up to bottom of Row 0 (top of Row 1)
-            figure.Segments.Add(new LineSegment(new Point(x0, y1), false));
-            // Step in along bottom of previous-month days in Row 0
-            figure.Segments.Add(new LineSegment(new Point(xStart, y1), false));
-        }
-        else
-        {
-            // Month starts at col 0, go all the way up to y0
-            figure.Segments.Add(new LineSegment(new Point(x0, y0), false));
-        }
-
-        var geometry = new PathGeometry();
-        geometry.Figures.Add(figure);
-
+        geometry.Freeze();
         dc.DrawGeometry(FillBrush, null, geometry);
     }
 }

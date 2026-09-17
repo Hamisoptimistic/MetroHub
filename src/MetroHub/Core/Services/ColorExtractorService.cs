@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Windows;
@@ -14,13 +15,13 @@ namespace MetroHub.Core.Services;
 /// </summary>
 public static class ColorExtractorService
 {
-    private class ColorBucket
+    private struct ColorBucket
     {
-        public double TotalScore { get; set; }
-        public long SumR { get; set; }
-        public long SumG { get; set; }
-        public long SumB { get; set; }
-        public int Count { get; set; }
+        public double TotalScore;
+        public long SumR;
+        public long SumG;
+        public long SumB;
+        public int Count;
     }
 
     /// <summary>
@@ -50,90 +51,97 @@ public static class ColorExtractorService
             int width = converted.PixelWidth;
             int height = converted.PixelHeight;
             int stride = width * 4;
-            byte[] pixels = new byte[height * stride];
-            converted.CopyPixels(pixels, stride, 0);
+            int totalBytes = height * stride;
+            byte[] pixels = ArrayPool<byte>.Shared.Rent(totalBytes);
 
-            var buckets = new ColorBucket[12];
-            for (int i = 0; i < 12; i++)
+            try
             {
-                buckets[i] = new ColorBucket();
-            }
+                converted.CopyPixels(pixels, stride, 0);
 
-            int validColorCount = 0;
+                Span<ColorBucket> buckets = stackalloc ColorBucket[12];
+                buckets.Clear();
 
-            for (int i = 0; i <= pixels.Length - 4; i += 4)
-            {
-                byte b = pixels[i];
-                byte g = pixels[i + 1];
-                byte r = pixels[i + 2];
-                byte a = pixels[i + 3];
+                int validColorCount = 0;
 
-                // Ignore transparent background
-                if (a < 128) continue;
-
-                int max = Math.Max(r, Math.Max(g, b));
-                int min = Math.Min(r, Math.Min(g, b));
-                int delta = max - min;
-
-                float saturation = max == 0 ? 0 : (float)delta / max;
-                float value = max / 255f;
-
-                // Filter out pure black / very dark shadows
-                if (value < 0.15f) continue;
-
-                // Filter out pure white or light desaturated highlights
-                if (value > 0.95f && saturation < 0.12f) continue;
-
-                // Filter out neutral grays (low saturation)
-                if (saturation < 0.20f) continue;
-
-                float hue = 0f;
-                if (delta > 0)
+                for (int i = 0; i <= totalBytes - 4; i += 4)
                 {
-                    if (max == r) hue = ((g - b) / (float)delta) % 6f;
-                    else if (max == g) hue = ((b - r) / (float)delta) + 2f;
-                    else hue = ((r - g) / (float)delta) + 4f;
-                    hue *= 60f;
-                    if (hue < 0f) hue += 360f;
+                    byte b = pixels[i];
+                    byte g = pixels[i + 1];
+                    byte r = pixels[i + 2];
+                    byte a = pixels[i + 3];
+
+                    // Ignore transparent background
+                    if (a < 128) continue;
+
+                    int max = Math.Max(r, Math.Max(g, b));
+                    int min = Math.Min(r, Math.Min(g, b));
+                    int delta = max - min;
+
+                    float saturation = max == 0 ? 0 : (float)delta / max;
+                    float value = max / 255f;
+
+                    // Filter out pure black / very dark shadows
+                    if (value < 0.15f) continue;
+
+                    // Filter out pure white or light desaturated highlights
+                    if (value > 0.95f && saturation < 0.12f) continue;
+
+                    // Filter out neutral grays (low saturation)
+                    if (saturation < 0.20f) continue;
+
+                    float hue = 0f;
+                    if (delta > 0)
+                    {
+                        if (max == r) hue = ((g - b) / (float)delta) % 6f;
+                        else if (max == g) hue = ((b - r) / (float)delta) + 2f;
+                        else hue = ((r - g) / (float)delta) + 4f;
+                        hue *= 60f;
+                        if (hue < 0f) hue += 360f;
+                    }
+
+                    int bucketIndex = Math.Clamp((int)(hue / 30f), 0, 11);
+
+                    // Score: prioritize high saturation and balanced luminance
+                    double score = (saturation * 2.2) * (value >= 0.30f && value <= 0.88f ? 1.3 : 0.85);
+
+                    ref var bucket = ref buckets[bucketIndex];
+                    bucket.TotalScore += score;
+                    bucket.SumR += r;
+                    bucket.SumG += g;
+                    bucket.SumB += b;
+                    bucket.Count++;
+                    validColorCount++;
                 }
 
-                int bucketIndex = Math.Clamp((int)(hue / 30f), 0, 11);
-
-                // Score: prioritize high saturation and balanced luminance
-                double score = (saturation * 2.2) * (value >= 0.30f && value <= 0.88f ? 1.3 : 0.85);
-
-                var bucket = buckets[bucketIndex];
-                bucket.TotalScore += score;
-                bucket.SumR += r;
-                bucket.SumG += g;
-                bucket.SumB += b;
-                bucket.Count++;
-                validColorCount++;
-            }
-
-            // Find bucket with highest accumulated vibrancy
-            ColorBucket? bestBucket = null;
-            double maxScore = 0;
-            for (int i = 0; i < 12; i++)
-            {
-                if (buckets[i].TotalScore > maxScore && buckets[i].Count >= 2)
+                // Find bucket with highest accumulated vibrancy
+                int bestBucketIndex = -1;
+                double maxScore = 0;
+                for (int i = 0; i < 12; i++)
                 {
-                    maxScore = buckets[i].TotalScore;
-                    bestBucket = buckets[i];
+                    if (buckets[i].TotalScore > maxScore && buckets[i].Count >= 2)
+                    {
+                        maxScore = buckets[i].TotalScore;
+                        bestBucketIndex = i;
+                    }
                 }
-            }
 
-            if (bestBucket != null && bestBucket.Count > 0)
+                if (bestBucketIndex >= 0 && buckets[bestBucketIndex].Count > 0)
+                {
+                    ref readonly var bestBucket = ref buckets[bestBucketIndex];
+                    byte avgR = (byte)Math.Clamp(bestBucket.SumR / bestBucket.Count, 0, 255);
+                    byte avgG = (byte)Math.Clamp(bestBucket.SumG / bestBucket.Count, 0, 255);
+                    byte avgB = (byte)Math.Clamp(bestBucket.SumB / bestBucket.Count, 0, 255);
+
+                    return $"#{avgR:X2}{avgG:X2}{avgB:X2}";
+                }
+
+                // Grayscale / monochromatic icon fallback
+                return GetFallbackSystemAccentHex();
+            }
+            finally
             {
-                byte avgR = (byte)Math.Clamp(bestBucket.SumR / bestBucket.Count, 0, 255);
-                byte avgG = (byte)Math.Clamp(bestBucket.SumG / bestBucket.Count, 0, 255);
-                byte avgB = (byte)Math.Clamp(bestBucket.SumB / bestBucket.Count, 0, 255);
-
-                return $"#{avgR:X2}{avgG:X2}{avgB:X2}";
+                ArrayPool<byte>.Shared.Return(pixels);
             }
-
-            // Grayscale / monochromatic icon fallback
-            return GetFallbackSystemAccentHex();
         }
         catch
         {

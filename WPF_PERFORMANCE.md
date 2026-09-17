@@ -114,10 +114,52 @@ Replace software `DropShadowEffect` with lightweight painted borders or GPU radi
 
 ---
 
+## 6. Widget Action Strip & Sliding Indicator Standards (`WidgetTiles`)
+
+1. **Re-use Standard Controls**:
+   * Action bars and navigation strips inside widgets MUST use `WidgetTiles` and `WidgetTile` instead of custom ItemsControls or button stacks.
+2. **Zero-Layout Matrix Sliding**:
+   * The sliding active indicator MUST animate via `TranslateTransform.XProperty` on a pre-sized visual. Never animate `Margin`, `Width`, or trigger layout passes (`MeasureOverride`/`ArrangeOverride`) during indicator motion.
+3. **Hardware Timeline Sync**:
+   * Use `Timeline.SetDesiredFrameRate(anim, 120)` with `CubicEase.EaseOut` for butter-smooth 120 FPS slider transitions.
+4. **ViewModel Momentary Action Pattern**:
+   * For momentary action triggers (e.g. quick actions), bind to `SelectedValue` and immediately reset `CurrentAction = null` in the ViewModel to allow re-triggering without stale selection state.
 
 ---
 
-## 7. Summary Checklist Before Merging Any UI Code
+## 8. RAM & Managed Allocation Standards (CRITICAL)
+
+1. **No Destructive `EmptyWorkingSet` P/Invokes or Forced GCs**:
+   * Never call `psapi.dll!EmptyWorkingSet(hProcess)` or invoke manual `GC.Collect()` on window minimization. Forcibly paging working set pages to disk causes hard page faults and sluggish app restore times.
+   * Modern .NET 9 uses self-tuning, background concurrent GC. Avoid manual `GC.Collect()` or `Task.Run` hops on minimize; allow the CLR to manage generation budgets autonomously.
+
+2. **Zero-Leak ViewModel & Element Lifecycle**:
+   * Never subscribe anonymous lambdas `Model.PropertyChanged += (s, e) => ...` inside ViewModels without an unsubscription mechanism.
+   * Always use named handler methods `OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)` and explicitly detach in `Dispose(bool disposing)`.
+   * For static control registries (e.g. `TileControl.ActiveTiles`), hook the canonical WPF `Loaded` (`ActiveTiles.Add(this)`) and `Unloaded` (`ActiveTiles.Remove(this)`) events instead of ad-hoc scans.
+
+3. **Universal Freezable Hygiene**:
+   * In WPF, any dynamic `SolidColorBrush`, `LinearGradientBrush`, or `Geometry` created in C# MUST call `.Freeze()` immediately after creation.
+   * Frozen Freezables are immutable, thread-safe, and read directly by `milcore.dll` without allocating change-tracking listener hooks or context thread switches.
+   * Prefer `StreamGeometry` over heavy `PathGeometry`/`PathFigure` hierarchies for procedural drawing (`StreamGeometry.Open()` -> `geometry.Freeze()`).
+
+4. **Event-Driven Caching Over Polling Allocations**:
+   * Avoid calling expensive hardware enumeration APIs (such as `NetworkInterface.GetAllNetworkInterfaces()`, `GetIPProperties()`, and LINQ transformations) on recurring timers.
+   * Cache hardware references and invalidate reactively using OS change notifications (e.g. `NetworkChange.NetworkAddressChanged`, `NetworkChange.NetworkAvailabilityChanged`).
+   * For sliding histories and time-series samples, use `Queue<T>` with $O(1)$ circular buffer behavior instead of `List<T>.RemoveAt(0)` which causes continuous $O(N)$ array copies.
+
+5. **Buffer Pooling & Zero-Heap Raster Scanning**:
+   * Never allocate throwaway byte arrays (e.g. `new byte[height * stride]`) on recurring or interactive paths (such as thumbnail color extractors or media seekbars).
+   * Use `ArrayPool<byte>.Shared.Rent(totalBytes)` with a `finally { ArrayPool<byte>.Shared.Return(buffer); }` block.
+   * Use `Span<T>` and `stackalloc` for small temporary analysis structures (such as color histogram buckets).
+
+6. **Bounded In-Memory Caches & Devirtualization**:
+   * Any static or in-memory dictionary caching bitmaps or assets (such as `CatalogItemModel._memoryIconCache`) must enforce an upper capacity limit (`MaxCachedIcons`) and purge oldest entries to prevent unbounded RAM growth during catalog exploration.
+   * Always mark concrete `WidgetViewModelBase` subclasses as `sealed` to allow the .NET JIT compiler to devirtualize method/property dispatches, inline calls, and minimize runtime type overhead.
+
+---
+
+## 9. Summary Checklist Before Merging Any UI Code
 
 - [ ] Scissor curtain clips `MainContentAreaGrid` to prevent canvas & footer text collisions.
 - [ ] Scissor curtain animates `TranslateTransform.XProperty` on a reusable `RectangleGeometry` (never `RectAnimation`).
@@ -132,4 +174,9 @@ Replace software `DropShadowEffect` with lightweight painted borders or GPU radi
 - [ ] `WidgetTiles` indicator slides via `TranslateTransform.XProperty` (zero layout passes during motion).
 - [ ] Momentary action tiles use the `CurrentAction = null` reset pattern in ViewModel.
 - [ ] Widget ViewModels halt all background timers/polling in `Pause()` when MetroHub is hidden.
+- [ ] ViewModels detach all `Model.PropertyChanged` subscriptions in `Dispose(bool)`.
+- [ ] Dynamic brushes and procedural vector geometries call `.Freeze()`.
+- [ ] Raster and pixel extraction loops use `ArrayPool<byte>.Shared` and `stackalloc`.
+- [ ] Hardware queries use event-driven caching (`NetworkChange`) instead of periodic polling.
+- [ ] Concrete widget ViewModels are `sealed`.
 

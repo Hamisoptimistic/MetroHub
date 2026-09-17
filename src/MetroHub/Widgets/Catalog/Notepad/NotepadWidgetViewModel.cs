@@ -18,7 +18,7 @@ namespace MetroHub.Widgets.Catalog.Notepad;
 /// Implements debounced auto-saving, dual-mode view switching, smart list transformation,
 /// and reactive to-do task management.
 /// </summary>
-public partial class NotepadWidgetViewModel : WidgetViewModelBase
+public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
 {
     private DispatcherTimer? _debounceTimer;
     private bool _isSettingsLoaded;
@@ -95,16 +95,7 @@ public partial class NotepadWidgetViewModel : WidgetViewModelBase
             model.SpanY = 4;
         }
 
-        model.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
-            {
-                OnPropertyChanged(nameof(IsMegaSize));
-                OnPropertyChanged(nameof(IsHugeSize));
-                OnPropertyChanged(nameof(IsCanvasSize));
-                OnPropertyChanged(nameof(IsFullSize));
-            }
-        };
+        Model.PropertyChanged += OnModelPropertyChanged;
 
         // Initialize background debouncer (400ms)
         _debounceTimer = new DispatcherTimer(DispatcherPriority.Background)
@@ -265,10 +256,22 @@ public partial class NotepadWidgetViewModel : WidgetViewModelBase
         }
     }
 
+    private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
+        {
+            OnPropertyChanged(nameof(IsMegaSize));
+            OnPropertyChanged(nameof(IsHugeSize));
+            OnPropertyChanged(nameof(IsCanvasSize));
+            OnPropertyChanged(nameof(IsFullSize));
+        }
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
+            Model.PropertyChanged -= OnModelPropertyChanged;
             _debounceTimer?.Stop();
             SaveSettings();
 

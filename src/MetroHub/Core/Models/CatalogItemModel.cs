@@ -82,7 +82,13 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
         set => SetField(ref _tag, value);
     }
 
+    private const int MaxCachedIcons = 250;
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource> _memoryIconCache = new(StringComparer.OrdinalIgnoreCase);
+
+    public static void ClearMemoryCache()
+    {
+        _memoryIconCache.Clear();
+    }
 
     public static bool HasMemoryCachedIcon(string targetPath)
     {
@@ -147,6 +153,15 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
             bi.DecodePixelWidth = 24; // Lightweight 24px menu thumbnail (<2.5 KB RAM per app)
             bi.EndInit();
             bi.Freeze();
+
+            if (_memoryIconCache.Count >= MaxCachedIcons)
+            {
+                var keysToRemove = _memoryIconCache.Keys.Take(MaxCachedIcons / 5).ToList();
+                foreach (var key in keysToRemove)
+                {
+                    _memoryIconCache.TryRemove(key, out _);
+                }
+            }
 
             _memoryIconCache[targetPath] = bi;
             return bi;

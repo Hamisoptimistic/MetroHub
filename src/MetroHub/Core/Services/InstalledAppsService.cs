@@ -73,6 +73,34 @@ public static class InstalledAppsService
         catch { }
     }
 
+    /// <summary>
+    /// Suspends FileSystemWatcher events when MetroHub is hidden to reduce background CPU/disk activity.
+    /// </summary>
+    public static void PauseWatchers()
+    {
+        lock (_lock)
+        {
+            _debounceTimer?.Dispose();
+            _debounceTimer = null;
+        }
+
+        foreach (var w in _watchers)
+        {
+            try { w.EnableRaisingEvents = false; } catch { }
+        }
+    }
+
+    /// <summary>
+    /// Resumes FileSystemWatcher events when MetroHub is shown.
+    /// </summary>
+    public static void ResumeWatchers()
+    {
+        foreach (var w in _watchers)
+        {
+            try { w.EnableRaisingEvents = true; } catch { }
+        }
+    }
+
     private static void OnStartMenuFolderChanged(object sender, FileSystemEventArgs e)
     {
         // Debounce: Installers usually write multiple shortcut files within a few hundred ms.

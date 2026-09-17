@@ -4,6 +4,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using CommunityToolkit.Mvvm.Messaging;
+using MetroHub.Widgets.Messaging;
 
 namespace MetroHub.Widgets.Catalog.Photos;
 
@@ -24,6 +26,27 @@ public partial class PhotosWidgetView : UserControl
         MouseEnter += (s, e) => _vm?.SetHovered(true);
         MouseLeave += (s, e) => _vm?.SetHovered(false);
         PreviewMouseWheel += OnPreviewMouseWheel;
+
+        WeakReferenceMessenger.Default.Register<HubVisibilityChangedMessage>(this, (recipient, msg) =>
+        {
+            if (recipient is PhotosWidgetView view)
+            {
+                view.Dispatcher.InvokeAsync(() =>
+                {
+                    if (msg.IsVisible)
+                    {
+                        if (view.IsLoaded && view._vm != null)
+                        {
+                            view.ApplyInitialState(view._vm);
+                        }
+                    }
+                    else
+                    {
+                        view.StopAllAnimations();
+                    }
+                });
+            }
+        });
     }
 
     private DateTime _lastWheelTime = DateTime.MinValue;

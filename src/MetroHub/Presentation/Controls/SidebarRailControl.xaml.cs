@@ -18,6 +18,7 @@ public partial class SidebarRailControl : UserControl
     public event EventHandler? AppsToggleRequested;
     public event EventHandler? PinToggled;
     public event EventHandler? ShortcutsChanged;
+    public event EventHandler<string?>? AddWebLinkRequested;
 
     public bool IsPinned { get; private set; } = false;
 
@@ -27,7 +28,7 @@ public partial class SidebarRailControl : UserControl
     private Point _dragStartPoint;
     private SidebarShortcutItem? _draggedItem;
     private bool _isDragging;
-    private readonly HashSet<Grid> _activeIndicatorGrids = new();
+    private int _currentDropIndex = -1;
     private const string ShortcutDataFormat = "MetroHub.SidebarShortcut";
 
     public SidebarRailControl()
@@ -81,9 +82,6 @@ public partial class SidebarRailControl : UserControl
         if (PinIcon != null)
         {
             PinIcon.Symbol = IsPinned ? Wpf.Ui.Controls.SymbolRegular.PinOff24 : Wpf.Ui.Controls.SymbolRegular.Pin24;
-            PinIcon.Foreground = IsPinned 
-                ? (System.Windows.Media.Brush)FindResource("SystemAccentColorPrimaryBrush") 
-                : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x90, 0xFF, 0xFF, 0xFF));
         }
     }
 
@@ -111,6 +109,13 @@ public partial class SidebarRailControl : UserControl
         }
     }
 
+    private void OnItemPreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+    {
+        _draggedItem = null;
+        _isDragging = false;
+        HideDragIndicator();
+    }
+
     private void OnItemPreviewMouseMove(object sender, MouseEventArgs e)
     {
         if (e.LeftButton != MouseButtonState.Pressed || _draggedItem == null || _isDragging)
@@ -119,8 +124,9 @@ public partial class SidebarRailControl : UserControl
         Point currentPoint = e.GetPosition(this);
         Vector diff = _dragStartPoint - currentPoint;
 
-        if (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
-            Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance)
+        // Intentional threshold (12px) ensures normal clicks never trigger drag mode or indicator flashes
+        double threshold = Math.Max(12.0, SystemParameters.MinimumVerticalDragDistance * 2.5);
+        if (Math.Abs(diff.Y) > threshold || Math.Abs(diff.X) > threshold)
         {
             _isDragging = true;
             try
@@ -136,7 +142,8 @@ public partial class SidebarRailControl : UserControl
             {
                 _isDragging = false;
                 _draggedItem = null;
-                ClearAllDropIndicators();
+                _currentDropIndex = -1;
+                HideDragIndicator();
             }
         }
     }
@@ -154,163 +161,6 @@ public partial class SidebarRailControl : UserControl
                 }
             }
         }
-    }
-
-    private void OnItemDragOver(object sender, DragEventArgs e)
-    {
-        if (sender is Grid rowGrid && (rowGrid.DataContext is SidebarShortcutItem targetItem || (rowGrid.Tag is SidebarShortcutItem tagItem && (targetItem = tagItem) != null)))
-        {
-            if (e.Data.GetDataPresent(ShortcutDataFormat))
-            {
-                var sourceItem = e.Data.GetData(ShortcutDataFormat) as SidebarShortcutItem;
-                if (sourceItem == targetItem)
-                {
-                    ClearIndicatorsOnGrid(rowGrid);
-                    e.Effects = DragDropEffects.None;
-                    e.Handled = true;
-                    return;
-                }
-
-                Point pos = e.GetPosition(rowGrid);
-                bool isTopHalf = pos.Y < (rowGrid.ActualHeight / 2.0);
-                UpdateIndicatorsOnGrid(rowGrid, isTopHalf);
-                e.Effects = DragDropEffects.Move;
-                e.Handled = true;
-                return;
-            }
-            else if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                Point pos = e.GetPosition(rowGrid);
-                bool isTopHalf = pos.Y < (rowGrid.ActualHeight / 2.0);
-                UpdateIndicatorsOnGrid(rowGrid, isTopHalf);
-                e.Effects = DragDropEffects.Copy;
-                e.Handled = true;
-                return;
-            }
-        }
-
-        e.Effects = DragDropEffects.None;
-    }
-
-    private void OnItemDragLeave(object sender, DragEventArgs e)
-    {
-        if (sender is Grid rowGrid)
-        {
-            ClearIndicatorsOnGrid(rowGrid);
-        }
-    }
-
-    private void OnItemDrop(object sender, DragEventArgs e)
-    {
-        if (sender is Grid rowGrid && (rowGrid.DataContext is SidebarShortcutItem targetItem || (rowGrid.Tag is SidebarShortcutItem tagItem && (targetItem = tagItem) != null)))
-        {
-            Point pos = e.GetPosition(rowGrid);
-            bool isTopHalf = pos.Y < (rowGrid.ActualHeight / 2.0);
-            ClearAllDropIndicators();
-
-            if (e.Data.GetDataPresent(ShortcutDataFormat))
-            {
-                var sourceItem = e.Data.GetData(ShortcutDataFormat) as SidebarShortcutItem;
-                if (sourceItem != null && sourceItem != targetItem)
-                {
-                    int oldIndex = Shortcuts.IndexOf(sourceItem);
-                    int targetIndex = Shortcuts.IndexOf(targetItem);
-
-                    if (oldIndex >= 0 && targetIndex >= 0)
-                    {
-                        int newIndex = isTopHalf ? targetIndex : targetIndex + 1;
-                        if (oldIndex < newIndex)
-                        {
-                            newIndex--;
-                        }
-                        newIndex = Math.Clamp(newIndex, 0, Shortcuts.Count - 1);
-
-                        if (oldIndex != newIndex)
-                        {
-                            Shortcuts.Move(oldIndex, newIndex);
-                            ReindexSortOrders();
-                            PersistShortcuts();
-                            ShortcutsChanged?.Invoke(this, EventArgs.Empty);
-                        }
-                    }
-                }
-                e.Handled = true;
-                return;
-            }
-            else if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                if (e.Data.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
-                {
-                    int targetIndex = Shortcuts.IndexOf(targetItem);
-                    int insertIndex = isTopHalf ? targetIndex : targetIndex + 1;
-                    insertIndex = Math.Clamp(insertIndex, 0, Shortcuts.Count);
-
-                    for (int i = files.Length - 1; i >= 0; i--)
-                    {
-                        AddPathAsShortcut(files[i], insertIndex);
-                    }
-                    e.Handled = true;
-                    return;
-                }
-            }
-        }
-    }
-
-    private void UpdateIndicatorsOnGrid(Grid grid, bool isTopHalf)
-    {
-        Border? topBorder = null;
-        Border? bottomBorder = null;
-
-        foreach (UIElement child in grid.Children)
-        {
-            if (child is Border b)
-            {
-                if (b.Name == "TopDropIndicator") topBorder = b;
-                else if (b.Name == "BottomDropIndicator") bottomBorder = b;
-            }
-        }
-
-        foreach (var otherGrid in _activeIndicatorGrids.ToList())
-        {
-            if (otherGrid != grid)
-            {
-                ClearIndicatorsOnGrid(otherGrid);
-            }
-        }
-
-        if (isTopHalf)
-        {
-            if (topBorder != null) topBorder.Visibility = Visibility.Visible;
-            if (bottomBorder != null) bottomBorder.Visibility = Visibility.Collapsed;
-        }
-        else
-        {
-            if (topBorder != null) topBorder.Visibility = Visibility.Collapsed;
-            if (bottomBorder != null) bottomBorder.Visibility = Visibility.Visible;
-        }
-
-        _activeIndicatorGrids.Add(grid);
-    }
-
-    private void ClearIndicatorsOnGrid(Grid grid)
-    {
-        foreach (UIElement child in grid.Children)
-        {
-            if (child is Border b && (b.Name == "TopDropIndicator" || b.Name == "BottomDropIndicator"))
-            {
-                b.Visibility = Visibility.Collapsed;
-            }
-        }
-        _activeIndicatorGrids.Remove(grid);
-    }
-
-    private void ClearAllDropIndicators()
-    {
-        foreach (var grid in _activeIndicatorGrids.ToList())
-        {
-            ClearIndicatorsOnGrid(grid);
-        }
-        _activeIndicatorGrids.Clear();
     }
 
     private void OnShortcutClick(object sender, RoutedEventArgs e)
@@ -474,6 +324,11 @@ public partial class SidebarRailControl : UserControl
                 ShortcutsChanged?.Invoke(this, EventArgs.Empty);
             }
         }
+    }
+
+    private void OnAddWebLinkClick(object sender, RoutedEventArgs e)
+    {
+        AddWebLinkRequested?.Invoke(this, null);
     }
 
     private void OnBrowseLocalFolderClick(object sender, RoutedEventArgs e)
@@ -735,21 +590,7 @@ public partial class SidebarRailControl : UserControl
             if (ext == ".url")
             {
                 string url = ParseUrlShortcut(path);
-                var item = new SidebarShortcutItem
-                {
-                    Title = appName,
-                    Target = url,
-                    TargetType = SidebarShortcutType.WebUrl,
-                    IconSymbol = "Globe24",
-                    CustomIconPath = null,
-                    SortOrder = targetIndex,
-                    IsRemovable = true
-                };
-
-                Shortcuts.Insert(targetIndex, item);
-                ReindexSortOrders();
-                PersistShortcuts();
-                ShortcutsChanged?.Invoke(this, EventArgs.Empty);
+                AddWebLinkShortcut(appName, url, null, targetIndex);
                 return;
             }
 
@@ -837,34 +678,136 @@ public partial class SidebarRailControl : UserControl
 
     private void OnShortcutsDragOver(object sender, DragEventArgs e)
     {
-        if (e.Data.GetDataPresent(ShortcutDataFormat))
-        {
-            e.Effects = DragDropEffects.Move;
-            e.Handled = true;
-        }
-        else if (e.Data.GetDataPresent(DataFormats.FileDrop))
-        {
-            e.Effects = DragDropEffects.Copy;
-            e.Handled = true;
-        }
-    }
+        bool isInternal = e.Data.GetDataPresent(ShortcutDataFormat);
+        bool isFile = e.Data.GetDataPresent(DataFormats.FileDrop);
+        bool isText = e.Data.GetDataPresent(DataFormats.UnicodeText) || e.Data.GetDataPresent(DataFormats.Text);
 
-    private void OnShortcutsDrop(object sender, DragEventArgs e)
-    {
-        ClearAllDropIndicators();
+        if (!isInternal && !isFile && !isText)
+        {
+            HideDragIndicator();
+            e.Effects = DragDropEffects.None;
+            e.Handled = true;
+            return;
+        }
 
-        if (e.Data.GetDataPresent(ShortcutDataFormat))
+        Point mousePos = e.GetPosition(ShortcutsContainer);
+        int targetIndex = -1;
+        double targetY = 0;
+
+        for (int i = 0; i < Shortcuts.Count; i++)
+        {
+            if (ShortcutsItemsControl.ItemContainerGenerator.ContainerFromIndex(i) is FrameworkElement container && container.IsVisible)
+            {
+                Point containerPos = container.TranslatePoint(new Point(0, 0), ShortcutsContainer);
+                double top = containerPos.Y;
+                double height = container.ActualHeight;
+                double bottom = top + height;
+
+                if (mousePos.Y >= top && mousePos.Y <= bottom)
+                {
+                    bool isTopHalf = mousePos.Y < (top + (height / 2.0));
+                    if (isTopHalf)
+                    {
+                        targetIndex = i;
+                        targetY = top - 1;
+                    }
+                    else
+                    {
+                        targetIndex = i + 1;
+                        targetY = bottom - 1;
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (targetIndex < 0 && Shortcuts.Count > 0)
+        {
+            if (ShortcutsItemsControl.ItemContainerGenerator.ContainerFromIndex(Shortcuts.Count - 1) is FrameworkElement lastContainer && lastContainer.IsVisible)
+            {
+                Point lastPos = lastContainer.TranslatePoint(new Point(0, lastContainer.ActualHeight), ShortcutsContainer);
+                targetIndex = Shortcuts.Count;
+                targetY = lastPos.Y + 1;
+            }
+        }
+        else if (targetIndex < 0 && Shortcuts.Count == 0)
+        {
+            targetIndex = 0;
+            targetY = 4;
+        }
+
+        if (isInternal)
         {
             var sourceItem = e.Data.GetData(ShortcutDataFormat) as SidebarShortcutItem;
             if (sourceItem != null)
             {
-                int oldIndex = Shortcuts.IndexOf(sourceItem);
-                if (oldIndex >= 0 && oldIndex != Shortcuts.Count - 1)
+                int sourceIndex = Shortcuts.IndexOf(sourceItem);
+                if (targetIndex == sourceIndex || targetIndex == sourceIndex + 1)
                 {
-                    Shortcuts.Move(oldIndex, Shortcuts.Count - 1);
-                    ReindexSortOrders();
-                    PersistShortcuts();
-                    ShortcutsChanged?.Invoke(this, EventArgs.Empty);
+                    HideDragIndicator();
+                    e.Effects = DragDropEffects.None;
+                    e.Handled = true;
+                    return;
+                }
+            }
+        }
+
+        _currentDropIndex = targetIndex;
+        if (DragInsertionTransform != null && DragInsertionLine != null)
+        {
+            DragInsertionTransform.Y = Math.Max(0, targetY);
+            DragInsertionLine.Visibility = Visibility.Visible;
+        }
+
+        e.Effects = isInternal ? DragDropEffects.Move : DragDropEffects.Copy;
+        e.Handled = true;
+    }
+
+    private void OnShortcutsDragLeave(object sender, DragEventArgs e)
+    {
+        Point p = e.GetPosition(ShortcutsScrollViewer);
+        if (p.X < 0 || p.X >= ShortcutsScrollViewer.ActualWidth || p.Y < 0 || p.Y >= ShortcutsScrollViewer.ActualHeight)
+        {
+            HideDragIndicator();
+        }
+    }
+
+    private void HideDragIndicator()
+    {
+        if (DragInsertionLine != null)
+        {
+            DragInsertionLine.Visibility = Visibility.Collapsed;
+        }
+        _currentDropIndex = -1;
+    }
+
+    private void OnShortcutsDrop(object sender, DragEventArgs e)
+    {
+        int targetIndex = _currentDropIndex;
+        HideDragIndicator();
+
+        if (e.Data.GetDataPresent(ShortcutDataFormat))
+        {
+            var sourceItem = e.Data.GetData(ShortcutDataFormat) as SidebarShortcutItem;
+            if (sourceItem != null && targetIndex >= 0)
+            {
+                int oldIndex = Shortcuts.IndexOf(sourceItem);
+                if (oldIndex >= 0 && targetIndex != oldIndex && targetIndex != oldIndex + 1)
+                {
+                    int newIndex = targetIndex;
+                    if (oldIndex < newIndex)
+                    {
+                        newIndex--;
+                    }
+                    newIndex = Math.Clamp(newIndex, 0, Shortcuts.Count - 1);
+
+                    if (oldIndex != newIndex)
+                    {
+                        Shortcuts.Move(oldIndex, newIndex);
+                        ReindexSortOrders();
+                        PersistShortcuts();
+                        ShortcutsChanged?.Invoke(this, EventArgs.Empty);
+                    }
                 }
             }
             e.Handled = true;
@@ -873,12 +816,78 @@ public partial class SidebarRailControl : UserControl
         {
             if (e.Data.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
             {
-                foreach (string path in files)
+                int insertIndex = targetIndex >= 0 ? targetIndex : Shortcuts.Count;
+                insertIndex = Math.Clamp(insertIndex, 0, Shortcuts.Count);
+
+                for (int i = files.Length - 1; i >= 0; i--)
                 {
-                    AddPathAsShortcut(path);
+                    AddPathAsShortcut(files[i], insertIndex);
                 }
                 e.Handled = true;
             }
+        }
+        else if (e.Data.GetDataPresent(DataFormats.UnicodeText) || e.Data.GetDataPresent(DataFormats.Text))
+        {
+            string? text = (e.Data.GetData(DataFormats.UnicodeText) ?? e.Data.GetData(DataFormats.Text)) as string;
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                string trimmed = text.Trim();
+                if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                    trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+                    trimmed.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
+                {
+                    int insertIndex = targetIndex >= 0 ? targetIndex : Shortcuts.Count;
+                    insertIndex = Math.Clamp(insertIndex, 0, Shortcuts.Count);
+                    AddWebLinkShortcut(string.Empty, trimmed, null, insertIndex);
+                    e.Handled = true;
+                }
+            }
+        }
+    }
+
+    public void AddWebLinkShortcut(string title, string url, string? iconPath, int? insertIndex = null)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return;
+
+        string normalized = WebFaviconService.NormalizeUrl(url);
+        string resolvedTitle = !string.IsNullOrWhiteSpace(title) 
+            ? title 
+            : WebFaviconService.InferTitleFromUrl(normalized);
+
+        int targetIndex = insertIndex.HasValue
+            ? Math.Clamp(insertIndex.Value, 0, Shortcuts.Count)
+            : Shortcuts.Count;
+
+        var item = new SidebarShortcutItem
+        {
+            Title = resolvedTitle,
+            Target = normalized,
+            TargetType = SidebarShortcutType.WebUrl,
+            IconSymbol = "Globe24",
+            CustomIconPath = iconPath,
+            SortOrder = targetIndex,
+            IsRemovable = true
+        };
+
+        Shortcuts.Insert(targetIndex, item);
+        ReindexSortOrders();
+        PersistShortcuts();
+        ShortcutsChanged?.Invoke(this, EventArgs.Empty);
+
+        if (string.IsNullOrWhiteSpace(iconPath))
+        {
+            _ = Task.Run(async () =>
+            {
+                string? fetched = await WebFaviconService.GetFaviconPathAsync(normalized);
+                if (!string.IsNullOrWhiteSpace(fetched))
+                {
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                        item.CustomIconPath = fetched;
+                        PersistShortcuts();
+                    });
+                }
+            });
         }
     }
 

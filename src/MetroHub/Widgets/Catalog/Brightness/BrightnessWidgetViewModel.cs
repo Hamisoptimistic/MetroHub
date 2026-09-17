@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
@@ -71,7 +72,7 @@ public partial class MonitorItemViewModel : ObservableObject
     }
 }
 
-public partial class BrightnessWidgetViewModel : WidgetViewModelBase
+public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
 {
     private readonly MonitorBrightnessService _brightnessService;
     private readonly DispatcherTimer _cursorTimer;
@@ -133,13 +134,7 @@ public partial class BrightnessWidgetViewModel : WidgetViewModelBase
 
         _brightnessService.MonitorsChanged += OnBrightnessServiceMonitorsChanged;
 
-        model.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
-            {
-                OnPropertyChanged(nameof(IsCompactMode));
-            }
-        };
+        Model.PropertyChanged += OnModelPropertyChanged;
 
         _cursorTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
@@ -493,10 +488,19 @@ public partial class BrightnessWidgetViewModel : WidgetViewModelBase
         RefreshAll();
     }
 
+    private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
+        {
+            OnPropertyChanged(nameof(IsCompactMode));
+        }
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
+            Model.PropertyChanged -= OnModelPropertyChanged;
             _brightnessService.MonitorsChanged -= OnBrightnessServiceMonitorsChanged;
             _cursorTimer.Stop();
             _cursorTimer.Tick -= OnCursorTimerTick;

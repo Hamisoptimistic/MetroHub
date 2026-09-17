@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -19,7 +20,7 @@ using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Media;
 
-public partial class MediaWidgetViewModel : WidgetViewModelBase
+public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 {
     private GlobalSystemMediaTransportControlsSessionManager? _manager;
     private GlobalSystemMediaTransportControlsSession? _currentSession;
@@ -51,11 +52,21 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
     [ObservableProperty]
     private bool _hasThumbnail;
 
-    [ObservableProperty]
-    private SolidColorBrush _seekbarBrush = new SolidColorBrush(Color.FromRgb(0x4C, 0x9E, 0xFF));
+    private static readonly Color DefaultSeekbarColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
+    private static readonly SolidColorBrush DefaultSeekbarBrush = CreateFrozenSolidBrush(DefaultSeekbarColor);
+
+    private static SolidColorBrush CreateFrozenSolidBrush(Color color)
+    {
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        return brush;
+    }
 
     [ObservableProperty]
-    private Color _seekbarGlowColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
+    private SolidColorBrush _seekbarBrush = DefaultSeekbarBrush;
+
+    [ObservableProperty]
+    private Color _seekbarGlowColor = DefaultSeekbarColor;
 
     public double AlbumArtSize => Model.SpanY >= 4 ? 132.0 : 104.0;
 
@@ -125,6 +136,8 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
     private CancellationTokenSource? _seekRecoveryCts;
     private int _lastDisplayedPosSeconds = -1;
     private int _lastDisplayedDurSeconds = -1;
+    private bool _isHubVisible = true;
+    private bool _hasPendingMetadataRefresh = false;
 
     public MediaWidgetViewModel(TileModel model) : base(model)
     {
@@ -175,6 +188,13 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
     private void Manager_CurrentSessionChanged(GlobalSystemMediaTransportControlsSessionManager sender, CurrentSessionChangedEventArgs args)
     {
+        if (!_isHubVisible)
+        {
+            _hasPendingMetadataRefresh = true;
+            MetroHub.Core.Services.HiddenDiagnosticsLogger.LogHiddenEvent("MediaWidget", "Manager_CurrentSessionChanged", "Deferred until Hub shown");
+            return;
+        }
+
         if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
         {
             disp.InvokeAsync(async () => await RefreshSessionAsync());
@@ -228,8 +248,15 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
             }
             catch { }
 
-            await UpdateMediaDetailsAsync();
-            SyncPlaybackState(_currentSession);
+            if (_isHubVisible)
+            {
+                await UpdateMediaDetailsAsync();
+                SyncPlaybackState(_currentSession);
+            }
+            else
+            {
+                _hasPendingMetadataRefresh = true;
+            }
         }
         else
         {
@@ -264,11 +291,24 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
     private void Session_MediaPropertiesChanged(GlobalSystemMediaTransportControlsSession sender, MediaPropertiesChangedEventArgs args)
     {
+        if (!_isHubVisible)
+        {
+            _hasPendingMetadataRefresh = true;
+            MetroHub.Core.Services.HiddenDiagnosticsLogger.LogHiddenEvent("MediaWidget", "Session_MediaPropertiesChanged", "Deferred until Hub shown");
+            return;
+        }
+
         _ = UpdateMediaDetailsAsync();
     }
 
     private void Session_PlaybackInfoChanged(GlobalSystemMediaTransportControlsSession sender, PlaybackInfoChangedEventArgs args)
     {
+        if (!_isHubVisible)
+        {
+            MetroHub.Core.Services.HiddenDiagnosticsLogger.LogHiddenEvent("MediaWidget", "Session_PlaybackInfoChanged", "Skipped timer restart while hidden");
+            return;
+        }
+
         if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
         {
             disp.InvokeAsync(() => SyncPlaybackState(sender));
@@ -277,6 +317,11 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
     private void Session_TimelinePropertiesChanged(GlobalSystemMediaTransportControlsSession sender, TimelinePropertiesChangedEventArgs args)
     {
+        if (!_isHubVisible)
+        {
+            return;
+        }
+
         if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
         {
             disp.InvokeAsync(() => SyncPlaybackState(sender));
@@ -334,7 +379,7 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
             SyncTimelineProperties(session, playback);
 
-            if (isPlaying && HasMedia)
+            if (_isHubVisible && isPlaying && HasMedia)
             {
                 if (_playbackTimer?.IsEnabled != true)
                 {
@@ -674,6 +719,13 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
     private void OnPlaybackTimerTick(object? sender, EventArgs e)
     {
+        if (!_isHubVisible)
+        {
+            _playbackTimer?.Stop();
+            MetroHub.Core.Services.HiddenDiagnosticsLogger.LogHiddenEvent("MediaWidget", "OnPlaybackTimerTick", "Stopped unexpected hidden timer tick");
+            return;
+        }
+
         if (!HasMedia || _isScrubbing)
         {
             return;
@@ -1019,84 +1071,93 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
             int width = converted.PixelWidth;
             int height = converted.PixelHeight;
             int stride = width * 4;
-            byte[] pixels = new byte[height * stride];
-            converted.CopyPixels(pixels, stride, 0);
+            int totalBytes = height * stride;
+            byte[] pixels = ArrayPool<byte>.Shared.Rent(totalBytes);
 
-            double totalColorWeight = 0;
-            double accR = 0, accG = 0, accB = 0;
-            int validPixelCount = 0;
-            double totalLum = 0;
-
-            for (int i = 0; i <= pixels.Length - 4; i += 4)
+            try
             {
-                byte b = pixels[i];
-                byte g = pixels[i + 1];
-                byte r = pixels[i + 2];
-                byte a = pixels[i + 3];
-                if (a < 128) continue;
+                converted.CopyPixels(pixels, stride, 0);
 
-                int max = Math.Max(r, Math.Max(g, b));
-                int min = Math.Min(r, Math.Min(g, b));
-                int delta = max - min;
+                double totalColorWeight = 0;
+                double accR = 0, accG = 0, accB = 0;
+                int validPixelCount = 0;
+                double totalLum = 0;
 
-                var (h, s, v) = RgbToHsv(r, g, b);
-                validPixelCount++;
-                totalLum += v;
-
-                if (delta >= 24 && s >= 0.20 && v >= 0.18 && v <= 0.95)
+                for (int i = 0; i <= totalBytes - 4; i += 4)
                 {
-                    double weight = s * s * (1.0 - Math.Abs(v - 0.65));
-                    accR += r * weight;
-                    accG += g * weight;
-                    accB += b * weight;
-                    totalColorWeight += weight;
+                    byte b = pixels[i];
+                    byte g = pixels[i + 1];
+                    byte r = pixels[i + 2];
+                    byte a = pixels[i + 3];
+                    if (a < 128) continue;
+
+                    int max = Math.Max(r, Math.Max(g, b));
+                    int min = Math.Min(r, Math.Min(g, b));
+                    int delta = max - min;
+
+                    var (h, s, v) = RgbToHsv(r, g, b);
+                    validPixelCount++;
+                    totalLum += v;
+
+                    if (delta >= 24 && s >= 0.20 && v >= 0.18 && v <= 0.95)
+                    {
+                        double weight = s * s * (1.0 - Math.Abs(v - 0.65));
+                        accR += r * weight;
+                        accG += g * weight;
+                        accB += b * weight;
+                        totalColorWeight += weight;
+                    }
                 }
-            }
 
-            Color seekbarColor;
-            bool isMonochrome = totalColorWeight < 0.05;
+                Color seekbarColor;
+                bool isMonochrome = totalColorWeight < 0.05;
 
-            if (!isMonochrome)
-            {
-                byte avgR = (byte)Math.Clamp(accR / totalColorWeight, 0, 255);
-                byte avgG = (byte)Math.Clamp(accG / totalColorWeight, 0, 255);
-                byte avgB = (byte)Math.Clamp(accB / totalColorWeight, 0, 255);
-
-                var (h, s, v) = RgbToHsv(avgR, avgG, avgB);
-
-                double seekH = h;
-                double seekS = s;
-                double seekV = v;
-
-                // Blue-Indigo-Violet Range (195° - 275°) Compensation:
-                if (seekH >= 195.0 && seekH <= 275.0)
+                if (!isMonochrome)
                 {
-                    seekV = Math.Clamp(seekV * 1.60, 0.88, 1.0);
-                    seekS = Math.Clamp(seekS * 0.82, 0.42, 0.78);
+                    byte avgR = (byte)Math.Clamp(accR / totalColorWeight, 0, 255);
+                    byte avgG = (byte)Math.Clamp(accG / totalColorWeight, 0, 255);
+                    byte avgB = (byte)Math.Clamp(accB / totalColorWeight, 0, 255);
+
+                    var (h, s, v) = RgbToHsv(avgR, avgG, avgB);
+
+                    double seekH = h;
+                    double seekS = s;
+                    double seekV = v;
+
+                    // Blue-Indigo-Violet Range (195° - 275°) Compensation:
+                    if (seekH >= 195.0 && seekH <= 275.0)
+                    {
+                        seekV = Math.Clamp(seekV * 1.60, 0.88, 1.0);
+                        seekS = Math.Clamp(seekS * 0.82, 0.42, 0.78);
+                    }
+                    else
+                    {
+                        seekV = Math.Clamp(seekV * 1.35, 0.82, 0.98);
+                        seekS = Math.Clamp(seekS * 0.95, 0.55, 0.90);
+                    }
+                    seekbarColor = ColorFromHsv(seekH, seekS, seekV);
                 }
                 else
                 {
-                    seekV = Math.Clamp(seekV * 1.35, 0.82, 0.98);
-                    seekS = Math.Clamp(seekS * 0.95, 0.55, 0.90);
+                    double avgLum = validPixelCount > 0 ? totalLum / validPixelCount : 0.8;
+                    if (avgLum > 0.4)
+                    {
+                        seekbarColor = Color.FromRgb(240, 244, 255); // Crisp moonlight pearl-white
+                    }
+                    else
+                    {
+                        seekbarColor = Color.FromRgb(180, 215, 255); // Electric ice-blue
+                    }
                 }
-                seekbarColor = ColorFromHsv(seekH, seekS, seekV);
-            }
-            else
-            {
-                double avgLum = validPixelCount > 0 ? totalLum / validPixelCount : 0.8;
-                if (avgLum > 0.4)
-                {
-                    seekbarColor = Color.FromRgb(240, 244, 255); // Crisp moonlight pearl-white
-                }
-                else
-                {
-                    seekbarColor = Color.FromRgb(180, 215, 255); // Electric ice-blue
-                }
-            }
 
-            var seekbarBrush = new SolidColorBrush(seekbarColor);
-            seekbarBrush.Freeze();
-            return (seekbarBrush, seekbarColor);
+                var seekbarBrush = new SolidColorBrush(seekbarColor);
+                seekbarBrush.Freeze();
+                return (seekbarBrush, seekbarColor);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(pixels);
+            }
         }
         catch
         {
@@ -1392,24 +1453,34 @@ public partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public override void Receive(HubVisibilityChangedMessage message)
     {
-        if (message.IsVisible)
-        {
-            var session = _currentSession ?? _manager?.GetCurrentSession();
-            if (session != null)
-            {
-                SyncTimelineProperties(session);
-            }
-        }
+        base.Receive(message); // Routes to Pause()/Resume()
     }
 
     public override void Pause()
     {
-        // Intentionally empty - do not pause media tracking or timer in the background.
+        _isHubVisible = false;
+        _playbackTimer?.Stop();
     }
 
     public override void Resume()
     {
-        // Intentionally empty - media widget runs continuously in the background.
+        _isHubVisible = true;
+        var session = _currentSession ?? _manager?.GetCurrentSession();
+        if (session != null)
+        {
+            if (_hasPendingMetadataRefresh)
+            {
+                _hasPendingMetadataRefresh = false;
+                _ = UpdateMediaDetailsAsync();
+            }
+            SyncTimelineProperties(session);
+            SyncPlaybackState(session);
+        }
+        else if (_hasPendingMetadataRefresh)
+        {
+            _hasPendingMetadataRefresh = false;
+            _ = RefreshSessionAsync();
+        }
     }
 
     protected override void LoadSettings(string? settingsJson)

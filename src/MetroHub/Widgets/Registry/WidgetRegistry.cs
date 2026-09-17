@@ -15,6 +15,7 @@ namespace MetroHub.Widgets.Registry;
 public static class WidgetRegistry
 {
     private static readonly Dictionary<string, WidgetDefinition> _registry = new(StringComparer.OrdinalIgnoreCase);
+    private static WidgetDefinition[] _allCached = Array.Empty<WidgetDefinition>();
 
     static WidgetRegistry()
     {
@@ -218,6 +219,7 @@ public static class WidgetRegistry
     public static void Register(WidgetDefinition definition)
     {
         _registry[definition.Id] = definition;
+        _allCached = _registry.Values.ToArray();
     }
 
     public static WidgetDefinition? Get(string id)
@@ -231,7 +233,7 @@ public static class WidgetRegistry
         return _registry.TryGetValue(id, out definition);
     }
 
-    public static IReadOnlyList<WidgetDefinition> GetAll() => _registry.Values.ToList();
+    public static IReadOnlyList<WidgetDefinition> GetAll() => _allCached;
 
     public static IWidgetViewModel CreateViewModelForTile(TileModel tile)
     {

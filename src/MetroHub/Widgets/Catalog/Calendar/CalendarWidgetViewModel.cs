@@ -15,7 +15,7 @@ namespace MetroHub.Widgets.Catalog.Calendar;
 /// Operates at fixed 8x6 dimensions (504x376px) featuring vertical month navigation
 /// and a 42-day contiguous month grid with zero UI thread overhead when hidden.
 /// </summary>
-public partial class CalendarWidgetViewModel : WidgetViewModelBase
+public sealed partial class CalendarWidgetViewModel : WidgetViewModelBase
 {
     private DispatcherTimer? _midnightTimer;
 

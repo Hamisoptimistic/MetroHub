@@ -16,16 +16,18 @@ public sealed class ThroughputService : IDisposable
     private readonly object _lock = new();
     private Timer? _throughputTimer;
     private Timer? _latencyTimer;
+    private CancellationTokenSource? _latencyCts;
     private bool _isRunning;
     private bool _isPaused;
 
+    private NetworkInterface? _cachedActiveNic;
     private string? _monitoredInterfaceId;
     private long _prevBytesReceived = -1;
     private long _prevBytesSent = -1;
     private DateTime _prevSampleTime = DateTime.MinValue;
 
     private const int MaxHistorySamples = 30;
-    private readonly List<ThroughputSample> _history = new(MaxHistorySamples);
+    private readonly Queue<ThroughputSample> _history = new(MaxHistorySamples);
 
     public event Action<ThroughputMetrics>? ThroughputUpdated;
     public event Action<LatencyMetrics>? LatencyUpdated;
@@ -46,6 +48,28 @@ public sealed class ThroughputService : IDisposable
 
     public ThroughputService()
     {
+        try
+        {
+            NetworkChange.NetworkAddressChanged += OnNetworkChanged;
+            NetworkChange.NetworkAvailabilityChanged += OnNetworkAvailabilityChanged;
+        }
+        catch { }
+    }
+
+    private void OnNetworkChanged(object? sender, EventArgs e)
+    {
+        lock (_lock)
+        {
+            _cachedActiveNic = null;
+        }
+    }
+
+    private void OnNetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs e)
+    {
+        lock (_lock)
+        {
+            _cachedActiveNic = null;
+        }
     }
 
     public void Start()
@@ -89,6 +113,9 @@ public sealed class ThroughputService : IDisposable
             _isPaused = true;
             _throughputTimer?.Change(Timeout.Infinite, Timeout.Infinite);
             _latencyTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+            _latencyCts?.Cancel();
+            _latencyCts?.Dispose();
+            _latencyCts = null;
         }
     }
 
@@ -113,11 +140,32 @@ public sealed class ThroughputService : IDisposable
 
     private void OnThroughputTick(object? state)
     {
-        if (_isPaused || !_isRunning) return;
+        if (_isPaused || !_isRunning)
+        {
+            if (MetroHub.Core.Services.HiddenDiagnosticsLogger.IsHubHidden)
+            {
+                MetroHub.Core.Services.HiddenDiagnosticsLogger.LogHiddenEvent("ThroughputService", "OnThroughputTick", "Skipped tick (properly paused)");
+            }
+            return;
+        }
 
         try
         {
-            var activeNic = FindActiveGatewayInterface();
+            NetworkInterface? activeNic;
+            lock (_lock)
+            {
+                activeNic = _cachedActiveNic;
+            }
+
+            if (activeNic == null || activeNic.OperationalStatus != OperationalStatus.Up)
+            {
+                activeNic = FindActiveGatewayInterface();
+                lock (_lock)
+                {
+                    _cachedActiveNic = activeNic;
+                }
+            }
+
             if (activeNic == null)
             {
                 PublishZeroThroughput();
@@ -125,7 +173,20 @@ public sealed class ThroughputService : IDisposable
             }
 
             var now = DateTime.UtcNow;
-            var stats = activeNic.GetIPStatistics();
+            IPInterfaceStatistics stats;
+            try
+            {
+                stats = activeNic.GetIPStatistics();
+            }
+            catch
+            {
+                lock (_lock)
+                {
+                    _cachedActiveNic = null;
+                }
+                return;
+            }
+
             long bytesRecv = stats.BytesReceived;
             long bytesSent = stats.BytesSent;
 
@@ -163,11 +224,11 @@ public sealed class ThroughputService : IDisposable
             lock (_lock)
             {
                 CurrentThroughput = metrics;
-                if (_history.Count >= MaxHistorySamples)
+                while (_history.Count >= MaxHistorySamples)
                 {
-                    _history.RemoveAt(0);
+                    _history.Dequeue();
                 }
-                _history.Add(new ThroughputSample
+                _history.Enqueue(new ThroughputSample
                 {
                     DownloadBytesPerSec = downSpeedBytes,
                     UploadBytesPerSec = upSpeedBytes,
@@ -182,11 +243,27 @@ public sealed class ThroughputService : IDisposable
 
     private async void OnLatencyTick(object? state)
     {
-        if (_isPaused || !_isRunning) return;
+        CancellationToken token;
+        lock (_lock)
+        {
+            if (_isPaused || !_isRunning)
+            {
+                if (MetroHub.Core.Services.HiddenDiagnosticsLogger.IsHubHidden)
+                {
+                    MetroHub.Core.Services.HiddenDiagnosticsLogger.LogHiddenEvent("ThroughputService", "OnLatencyTick", "Skipped tick (properly paused)");
+                }
+                return;
+            }
+            _latencyCts?.Dispose();
+            _latencyCts = new CancellationTokenSource();
+            token = _latencyCts.Token;
+        }
 
         try
         {
-            var latency = await MeasureLatencyAsync();
+            var latency = await MeasureLatencyAsync(token);
+            if (token.IsCancellationRequested || _isPaused) return;
+
             lock (_lock)
             {
                 CurrentLatency = latency;
@@ -196,16 +273,25 @@ public sealed class ThroughputService : IDisposable
         catch { }
     }
 
-    public static async Task<LatencyMetrics> MeasureLatencyAsync()
+    public static async Task<LatencyMetrics> MeasureLatencyAsync(CancellationToken cancellationToken = default)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return new LatencyMetrics { PingMs = -1, TargetHost = "--" };
+        }
+
         string[] targets = { "1.1.1.1", "8.8.8.8" };
         using var ping = new Ping();
 
         foreach (var host in targets)
         {
+            if (cancellationToken.IsCancellationRequested) break;
+
             try
             {
+                using var reg = cancellationToken.Register(() => { try { ping.SendAsyncCancel(); } catch { } });
                 var reply = await ping.SendPingAsync(host, 1200);
+                if (cancellationToken.IsCancellationRequested) break;
                 if (reply != null && reply.Status == IPStatus.Success)
                 {
                     return new LatencyMetrics
@@ -218,13 +304,23 @@ public sealed class ThroughputService : IDisposable
             catch { }
         }
 
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return new LatencyMetrics { PingMs = -1, TargetHost = "--" };
+        }
+
         // Try Default Gateway if internet DNS failed
         try
         {
             var gw = GetDefaultGatewayIp();
-            if (!string.IsNullOrEmpty(gw))
+            if (!string.IsNullOrEmpty(gw) && !cancellationToken.IsCancellationRequested)
             {
+                using var reg = cancellationToken.Register(() => { try { ping.SendAsyncCancel(); } catch { } });
                 var reply = await ping.SendPingAsync(gw, 800);
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return new LatencyMetrics { PingMs = -1, TargetHost = "--" };
+                }
                 if (reply != null && reply.Status == IPStatus.Success)
                 {
                     return new LatencyMetrics
@@ -240,7 +336,7 @@ public sealed class ThroughputService : IDisposable
         return new LatencyMetrics
         {
             PingMs = -1,
-            TargetHost = targets[0]
+            TargetHost = "--"
         };
     }
 
@@ -331,7 +427,7 @@ public sealed class ThroughputService : IDisposable
     {
         try
         {
-            var nic = FindActiveGatewayInterface();
+            var nic = Instance._cachedActiveNic ?? FindActiveGatewayInterface();
             if (nic == null) return null;
             var gw = nic.GetIPProperties().GatewayAddresses
                 .FirstOrDefault(g => g.Address.AddressFamily == AddressFamily.InterNetwork);
@@ -346,5 +442,11 @@ public sealed class ThroughputService : IDisposable
     public void Dispose()
     {
         Stop();
+        try
+        {
+            NetworkChange.NetworkAddressChanged -= OnNetworkChanged;
+            NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged;
+        }
+        catch { }
     }
 }

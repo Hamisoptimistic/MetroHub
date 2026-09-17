@@ -18,7 +18,7 @@ namespace MetroHub.Widgets.Catalog.Clock;
 /// Supports 12h/24h toggle, full date formatting ("Friday, 11 September"),
 /// responsive adaptive layouts (2x2 up to 8x4), and zero background drain when hidden.
 /// </summary>
-public partial class ClockWidgetViewModel : WidgetViewModelBase
+public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
 {
     private DispatcherTimer? _timer;
 

@@ -12,7 +12,7 @@ namespace MetroHub.Widgets.Catalog.Stub;
 /// Implements WidgetViewModelBase using CommunityToolkit.Mvvm (Phase 0.5 directive).
 /// Demonstrates source-generated settings persistence and has zero WPF UI dependencies.
 /// </summary>
-public partial class StubWidgetViewModel : WidgetViewModelBase
+public sealed partial class StubWidgetViewModel : WidgetViewModelBase
 {
     private static readonly string[] Palette = { "#2563EB", "#7C3AED", "#059669", "#D97706", "#DC2626" };
 

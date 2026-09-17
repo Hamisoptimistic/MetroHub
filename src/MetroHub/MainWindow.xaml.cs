@@ -181,6 +181,11 @@ public partial class MainWindow : BorderlessFluentWindow
         SidebarRail.ShortcutsChanged += OnSidebarShortcutsChanged;
         UpdateSidebarVisibilityInitial();
 
+        if (AllAppsDrawer != null)
+        {
+            AllAppsDrawer.RefreshRequested += (s, e) => TriggerBackgroundAppsCatalogRefresh();
+        }
+
         Activated += OnWindowActivated;
         RootGrid.LostMouseCapture += OnRootGridLostMouseCapture;
         LostMouseCapture += OnRootGridLostMouseCapture;
@@ -197,7 +202,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
         InstalledAppsService.AppsCatalogChanged += OnAppsCatalogChanged;
         StartBackgroundAppWarmup();
-        _ = Task.Delay(30000).ContinueWith(_ => TriggerBackgroundAppsCatalogRefresh());
 
         PreviewTextInput += OnWindowPreviewTextInput;
         PreviewMouseDown += OnWindowPreviewMouseDown;
@@ -1006,8 +1010,6 @@ public partial class MainWindow : BorderlessFluentWindow
                     RootTranslate.X = 0.0;
                     RootTranslate.Y = 0.0;
                 }
-
-                NativeMethods.FlushMemory();
             };
             sb.Begin(this);
         }
@@ -1017,7 +1019,6 @@ public partial class MainWindow : BorderlessFluentWindow
             _isDismissing = false;
             _isFullyActivated = false;
             Topmost = false;
-            NativeMethods.FlushMemory();
         }
     }
 
@@ -1141,10 +1142,17 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
         PlayOpenAnimation();
         MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(true));
+
+        // Resume background services that were paused in HideScreen()
+        _hudTimer?.Start();
+        InstalledAppsService.ResumeWatchers();
+        ReinstallWinEventHook();
+        MetroHub.Core.Services.HiddenDiagnosticsLogger.LogTransition(true);
     }
 
     public void HideScreen()
     {
+        MetroHub.Core.Services.HiddenDiagnosticsLogger.LogTransition(false);
         if (AllAppsDrawer != null && AllAppsDrawer.IsOpen)
         {
             AllAppsDrawer.Close();
@@ -1169,6 +1177,12 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
             HideSidebarRail(immediate: true);
         }
+
+        // Halt background services that are pointless when hidden
+        _hudTimer?.Stop();
+        InstalledAppsService.PauseWatchers();
+        UninstallWinEventHook();
+
         DismissWithAnimation();
     }
 
@@ -3388,8 +3402,10 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             }
 
             var solidBrush = new SolidColorBrush(groupColor);
+            solidBrush.Freeze();
             var tintBrush = new SolidColorBrush(Color.FromArgb(isLocked ? (byte)36 : (byte)22, groupColor.R,
                 groupColor.G, groupColor.B));
+            tintBrush.Freeze();
 
             if (GroupDropPerimeterBorder != null)
             {
@@ -3524,9 +3540,12 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         GroupDropPerimeterBorder.CornerRadius = new CornerRadius(6);
 
         var redColor = Color.FromRgb(0xFF, 0x43, 0x43);
-        GroupDropPerimeterBorder.BorderBrush = new SolidColorBrush(redColor);
-        GroupDropPerimeterBorder.Background =
-            new SolidColorBrush(Color.FromArgb(45, redColor.R, redColor.G, redColor.B));
+        var redBorderBrush = new SolidColorBrush(redColor);
+        redBorderBrush.Freeze();
+        var redBackgroundBrush = new SolidColorBrush(Color.FromArgb(45, redColor.R, redColor.G, redColor.B));
+        redBackgroundBrush.Freeze();
+        GroupDropPerimeterBorder.BorderBrush = redBorderBrush;
+        GroupDropPerimeterBorder.Background = redBackgroundBrush;
         if (GroupDropGlowEffect != null)
         {
             GroupDropGlowEffect.Color = redColor;
@@ -4346,6 +4365,183 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         }
     }
 
+    private AddWebLinkDialogControl? _webLinkDialog;
+    private AddWebLinkDialogControl GetOrCreateWebLinkDialog()
+    {
+        if (_webLinkDialog == null)
+        {
+            _webLinkDialog = new AddWebLinkDialogControl
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
+            };
+            Grid.SetColumn(_webLinkDialog, 0);
+            Grid.SetColumnSpan(_webLinkDialog, 2);
+            Grid.SetRowSpan(_webLinkDialog, 2);
+            Panel.SetZIndex(_webLinkDialog, 5000);
+            _webLinkDialog.WebLinkCreated += OnWebLinkCreated;
+            RootGrid.Children.Add(_webLinkDialog);
+        }
+        return _webLinkDialog;
+    }
+
+    private void OnSidebarAddWebLinkRequested(object? sender, string? initialUrl)
+    {
+        GetOrCreateWebLinkDialog().ShowDialog(initialUrl);
+    }
+
+    private void OnCanvasAddWebLinkClick(object sender, RoutedEventArgs e)
+    {
+        GetOrCreateWebLinkDialog().ShowDialog();
+    }
+
+    private void OnWebLinkCreated(object? sender, WebLinkCreatedEventArgs e)
+    {
+        if (e.AddToCanvas)
+        {
+            AddWebLinkTile(e.Title, e.Url, e.IconPath, _canvasRightClickPoint.X, _canvasRightClickPoint.Y, recordHistory: true);
+        }
+
+        if (e.AddToSidebar)
+        {
+            SidebarRail?.AddWebLinkShortcut(e.Title, e.Url, e.IconPath);
+        }
+    }
+
+    public void AddWebLinkTile(string title, string url, string? iconPath, double x = 0, double y = 0, bool recordHistory = true)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return;
+
+        string normalized = WebFaviconService.NormalizeUrl(url);
+        string displayTitle = !string.IsNullOrWhiteSpace(title)
+            ? title
+            : WebFaviconService.InferTitleFromUrl(normalized);
+
+        if (recordHistory)
+        {
+            string preAdd = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
+            _historyService.PushState(preAdd);
+        }
+
+        double viewportWidth = ContentScrollViewer?.ActualWidth > 0
+            ? ContentScrollViewer.ActualWidth
+            : (Width > 0 ? Width : 1920);
+        int maxCols = GridPlacementService.GetMaxCols(viewportWidth);
+
+        int col = x > 0 ? GridPlacementService.ColFromPixel(x) : 0;
+        int row = y > 0 ? GridPlacementService.RowFromPixel(y) : 0;
+
+        TileGroupModel? targetGroup = null;
+        if (x > 0 || y > 0)
+        {
+            foreach (var g in Groups)
+            {
+                var (minC, maxC, minR, maxR) = GridPlacementService.GetGroupBoundingBox(g, Tiles);
+                if (col >= minC && col < maxC && row >= minR && row <= maxR)
+                {
+                    targetGroup = g;
+                    break;
+                }
+            }
+        }
+
+        TileModel tile;
+
+        if (targetGroup != null)
+        {
+            tile = new TileModel
+            {
+                Title = displayTitle,
+                TargetPath = normalized,
+                IconPath = iconPath,
+                TileType = TileType.WebUrl,
+                SpanX = 2,
+                SpanY = 2,
+                Group = targetGroup.Id,
+                SectionHeader = targetGroup.Title
+            };
+
+            int clickRelCol = col - targetGroup.Col;
+            int clickRelRow = row - (targetGroup.Row + 1);
+            var existingGroupTiles = Tiles.Where(t => t.Group == targetGroup.Id).ToList();
+            var (slotCol, slotRow) = GridPlacementService.FindFreeSlotInGroup(
+                targetGroup, clickRelCol, clickRelRow, tile.SpanX, tile.SpanY, existingGroupTiles);
+            tile.Col = slotCol;
+            tile.Row = slotRow;
+            tile.X = GridPlacementService.PixelXFromCol(slotCol);
+            tile.Y = GridPlacementService.PixelYFromRow(slotRow);
+
+            Tiles.Add(tile);
+            var mod = GridPlacementService.PlaceTileInGroup(
+                tile, slotCol, slotRow, slotCol, slotRow, targetGroup, Tiles);
+            var pushed = GridPlacementService.PushLowerGroupsDown(targetGroup, Groups, Tiles);
+            foreach (var pt in pushed)
+            {
+                if (!mod.Contains(pt)) mod.Add(pt);
+            }
+
+            AnimateModifiedTiles(mod);
+            UpdateGroupHeaderPositions();
+            StorageService.SaveLayout(Tiles);
+            SaveGroupsAndLayout();
+            UpdateCanvasHeight();
+            UpdateExposedAddSlots();
+        }
+        else
+        {
+            var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(
+                col, Math.Max(1, row), 2, 2, Tiles, null, maxCols, Groups);
+
+            tile = new TileModel
+            {
+                Title = displayTitle,
+                TargetPath = normalized,
+                IconPath = iconPath,
+                TileType = TileType.WebUrl,
+                SpanX = 2,
+                SpanY = 2,
+                Col = freeCol,
+                Row = freeRow,
+                X = GridPlacementService.PixelXFromCol(freeCol),
+                Y = GridPlacementService.PixelYFromRow(freeRow)
+            };
+
+            Tiles.Add(tile);
+
+            if (Groups != null && Groups.Count > 0)
+            {
+                var looseTiles = Tiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+                var pushedGroupTiles = GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, Groups, Tiles);
+                AnimateModifiedTiles(pushedGroupTiles);
+                UpdateGroupHeaderPositions(animate: true);
+                CompactGroupGaps();
+                SaveGroupsAndLayout();
+            }
+
+            StorageService.SaveLayout(Tiles);
+            UpdateCanvasHeight();
+            UpdateExposedAddSlots();
+        }
+
+        // Asynchronously fetch high-resolution favicon if not yet available
+        if (string.IsNullOrWhiteSpace(iconPath))
+        {
+            _ = Task.Run(async () =>
+            {
+                string? fetched = await WebFaviconService.GetFaviconPathAsync(normalized);
+                if (!string.IsNullOrWhiteSpace(fetched))
+                {
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                        tile.IconPath = fetched;
+                        StorageService.SaveLayout(Tiles);
+                    });
+                }
+            });
+        }
+    }
+
+
     #region Canvas Context Menu & Modular Catalog Methods
 
     private void OnCanvasPreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
@@ -5042,7 +5238,10 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     private void OnWindowDragOver(object sender, DragEventArgs e)
     {
-        if (e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent(typeof(CatalogItemModel)))
+        if (e.Data.GetDataPresent(DataFormats.FileDrop) ||
+            e.Data.GetDataPresent(typeof(CatalogItemModel)) ||
+            e.Data.GetDataPresent(DataFormats.UnicodeText) ||
+            e.Data.GetDataPresent(DataFormats.Text))
         {
             e.Effects = DragDropEffects.Copy;
             e.Handled = true;
@@ -5079,7 +5278,16 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 double currentY = Math.Max(0, pos.Y);
                 foreach (string file in files)
                 {
-                    AddFileAsTile(file, currentX, currentY, recordHistory: false);
+                    if (string.Equals(Path.GetExtension(file), ".url", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string parsedUrl = ParseUrlFile(file);
+                        string title = Path.GetFileNameWithoutExtension(file);
+                        AddWebLinkTile(title, parsedUrl, null, currentX, currentY, recordHistory: false);
+                    }
+                    else
+                    {
+                        AddFileAsTile(file, currentX, currentY, recordHistory: false);
+                    }
                     currentX += 70;
                     currentY += 70;
                 }
@@ -5087,8 +5295,41 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 e.Handled = true;
             }
         }
+        else if (e.Data.GetDataPresent(DataFormats.UnicodeText) || e.Data.GetDataPresent(DataFormats.Text))
+        {
+            string? text = (e.Data.GetData(DataFormats.UnicodeText) ?? e.Data.GetData(DataFormats.Text)) as string;
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                string trimmed = text.Trim();
+                if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                    trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+                    trimmed.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
+                {
+                    Point pos = e.GetPosition(TilesListBox);
+                    AddWebLinkTile(string.Empty, trimmed, null, pos.X, pos.Y, recordHistory: true);
+                    e.Handled = true;
+                }
+            }
+        }
 
         UpdateExposedAddSlots();
+    }
+
+    private static string ParseUrlFile(string urlFilePath)
+    {
+        try
+        {
+            foreach (var line in File.ReadAllLines(urlFilePath))
+            {
+                string trimmed = line.Trim();
+                if (trimmed.StartsWith("URL=", StringComparison.OrdinalIgnoreCase))
+                {
+                    return trimmed.Substring(4).Trim();
+                }
+            }
+        }
+        catch { }
+        return urlFilePath;
     }
 
     #region Sidebar Rail and All Apps Drawer Handlers
@@ -5458,11 +5699,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         }
         else
         {
-            if (_winEventHook != IntPtr.Zero)
-            {
-                NativeMethods.UnhookWinEvent(_winEventHook);
-                _winEventHook = IntPtr.Zero;
-            }
+            UninstallWinEventHook();
             _hotkeyService.Dispose();
             base.OnClosing(e);
         }
@@ -5471,13 +5708,35 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     public void ExitApplication()
     {
         _isClosingToExit = true;
+        _hudTimer?.Stop();
+        InstalledAppsService.PauseWatchers();
+        UninstallWinEventHook();
+        _hotkeyService.Dispose();
+        Close();
+        Application.Current.Shutdown();
+    }
+
+    private void UninstallWinEventHook()
+    {
         if (_winEventHook != IntPtr.Zero)
         {
             NativeMethods.UnhookWinEvent(_winEventHook);
             _winEventHook = IntPtr.Zero;
         }
-        _hotkeyService.Dispose();
-        Close();
-        Application.Current.Shutdown();
+    }
+
+    private void ReinstallWinEventHook()
+    {
+        if (_winEventHook != IntPtr.Zero) return; // Already installed
+        if (_winEventDelegate == null) return;
+
+        _winEventHook = NativeMethods.SetWinEventHook(
+            NativeMethods.EVENT_SYSTEM_FOREGROUND,
+            NativeMethods.EVENT_SYSTEM_FOREGROUND,
+            IntPtr.Zero,
+            _winEventDelegate,
+            0,
+            0,
+            NativeMethods.WINEVENT_OUTOFCONTEXT);
     }
 }

@@ -53,7 +53,10 @@ public partial class TileControl : UserControl
             if (!ActiveTiles.Contains(this)) ActiveTiles.Add(this);
             ApplyTileStyle(animate: false);
         };
-        Unloaded += (s, e) => { ActiveTiles.Remove(this); };
+        Unloaded += (s, e) =>
+        {
+            ActiveTiles.Remove(this);
+        };
         DataContextChanged += (s, e) => ApplyTileStyle(animate: false);
 
         MouseEnter += OnMouseEnter;
@@ -791,9 +794,14 @@ public partial class TileControl : UserControl
         }
         else
         {
-            SingleAppSeparator.Visibility = Visibility.Visible;
-            RunAdminMenuItem.Visibility = Visibility.Visible;
-            OpenLocationMenuItem.Visibility = Visibility.Visible;
+            bool isWebUrl = tile.TileType == TileType.WebUrl;
+            SingleAppSeparator.Visibility = isWebUrl ? Visibility.Collapsed : Visibility.Visible;
+            RunAdminMenuItem.Visibility = isWebUrl ? Visibility.Collapsed : Visibility.Visible;
+            OpenLocationMenuItem.Visibility = isWebUrl ? Visibility.Collapsed : Visibility.Visible;
+            if (CopyUrlMenuItem != null)
+            {
+                CopyUrlMenuItem.Visibility = isWebUrl ? Visibility.Visible : Visibility.Collapsed;
+            }
             StyleMenuItem.Visibility = Visibility.Visible;
             UnpinSeparator.Visibility = Visibility.Visible;
             GroupMenuItem.Visibility = mainWindow.SelectedTiles.Any(t => t.TileType == TileType.Widget)
@@ -1083,6 +1091,18 @@ public partial class TileControl : UserControl
                 {
                     Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{target}\"") { UseShellExecute = true });
                 }
+            }
+            catch { }
+        }
+    }
+
+    private void OnCopyUrlClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is TileModel tile && !string.IsNullOrWhiteSpace(tile.TargetPath))
+        {
+            try
+            {
+                Clipboard.SetText(tile.TargetPath);
             }
             catch { }
         }

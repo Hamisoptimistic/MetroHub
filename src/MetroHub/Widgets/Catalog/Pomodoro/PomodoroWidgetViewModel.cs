@@ -19,7 +19,7 @@ namespace MetroHub.Widgets.Catalog.Pomodoro;
 /// Follows the exact design and architectural patterns of MediaWidgetViewModel.
 /// Supports 4x2 (ring-only), 8x3 (Banner3), and 8x4 (Mega) sizes with zero-drift timing.
 /// </summary>
-public partial class PomodoroWidgetViewModel : WidgetViewModelBase
+public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
 {
     private DispatcherTimer? _uiTimer;
     private Timer? _dormantBackgroundTimer;
@@ -78,7 +78,7 @@ public partial class PomodoroWidgetViewModel : WidgetViewModelBase
     private Color _glowColor = Color.FromRgb(0xFF, 0x4B, 0x4B); // Electric Coral
 
     [ObservableProperty]
-    private Brush _glowSolidBrush = new SolidColorBrush(Color.FromRgb(0xFF, 0x4B, 0x4B));
+    private Brush _glowSolidBrush = CreateFrozenSolidBrush(Color.FromRgb(0xFF, 0x4B, 0x4B));
 
     [ObservableProperty]
     private RadialGradientBrush _sensualRadialBrush = CreateSensualBrush(Color.FromRgb(0xFF, 0x4B, 0x4B));
@@ -111,14 +111,7 @@ public partial class PomodoroWidgetViewModel : WidgetViewModelBase
             model.SpanY = 4;
         }
 
-        model.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
-            {
-                OnPropertyChanged(nameof(IsRingOnly));
-                OnPropertyChanged(nameof(RingSize));
-            }
-        };
+        Model.PropertyChanged += OnModelPropertyChanged;
 
         LoadSettings(model.SettingsJson);
         _isSettingsLoaded = true;
@@ -368,6 +361,13 @@ public partial class PomodoroWidgetViewModel : WidgetViewModelBase
         SensualRadialBrush = CreateSensualBrush(color);
     }
 
+    private static SolidColorBrush CreateFrozenSolidBrush(Color color)
+    {
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        return brush;
+    }
+
     private static RadialGradientBrush CreateSensualBrush(Color baseColor)
     {
         var brush = new RadialGradientBrush
@@ -489,10 +489,20 @@ public partial class PomodoroWidgetViewModel : WidgetViewModelBase
         base.OnDeactivated();
     }
 
+    private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
+        {
+            OnPropertyChanged(nameof(IsRingOnly));
+            OnPropertyChanged(nameof(RingSize));
+        }
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
+            Model.PropertyChanged -= OnModelPropertyChanged;
             if (_uiTimer != null)
             {
                 _uiTimer.Stop();

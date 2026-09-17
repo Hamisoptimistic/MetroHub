@@ -89,28 +89,6 @@ public static class NativeMethods
 
     #endregion
 
-    #region Working Set Trimming
-
-    [DllImport("psapi.dll")]
-    private static extern bool EmptyWorkingSet(IntPtr hProcess);
-
-    public static void FlushMemory()
-    {
-        Task.Run(() =>
-        {
-            try
-            {
-                GC.Collect(2, GCCollectionMode.Forced, false);
-                GC.WaitForPendingFinalizers();
-                GC.Collect(2, GCCollectionMode.Forced, false);
-                EmptyWorkingSet(Process.GetCurrentProcess().Handle);
-            }
-            catch { }
-        });
-    }
-
-    #endregion
-
     #region Hotkeys
 
     [DllImport("user32.dll", SetLastError = true)]

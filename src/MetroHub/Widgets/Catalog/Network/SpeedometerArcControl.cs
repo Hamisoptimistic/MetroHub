@@ -2,6 +2,8 @@ using System;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
+using CommunityToolkit.Mvvm.Messaging;
+using MetroHub.Widgets.Messaging;
 
 namespace MetroHub.Widgets.Catalog.Network;
 
@@ -80,6 +82,7 @@ public class SpeedometerArcControl : FrameworkElement
     private double _targetProgress = 0.0;
     private double _currentProgress = 0.0;
     private bool _isAnimating = false;
+    private bool _isHubVisible = true;
     private long _lastRenderTimestamp = 0;
 
     private Pen _cachedActivePen = DefaultActivePen;
@@ -90,6 +93,27 @@ public class SpeedometerArcControl : FrameworkElement
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
         UpdateCachedBrushes();
+
+        WeakReferenceMessenger.Default.Register<HubVisibilityChangedMessage>(this, (recipient, msg) =>
+        {
+            if (recipient is SpeedometerArcControl arc)
+            {
+                arc.Dispatcher.InvokeAsync(() =>
+                {
+                    arc._isHubVisible = msg.IsVisible;
+                    if (!msg.IsVisible)
+                    {
+                        arc.StopAnimation();
+                        arc._currentProgress = arc._targetProgress;
+                        arc.AnimatedProgress = arc._targetProgress;
+                    }
+                    else if (arc.IsLoaded && Math.Abs(arc._targetProgress - arc._currentProgress) > 0.001)
+                    {
+                        arc.EnsureAnimationActive();
+                    }
+                });
+            }
+        });
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -170,13 +194,13 @@ public class SpeedometerArcControl : FrameworkElement
         if (d is not SpeedometerArcControl control) return;
 
         control._targetProgress = SpeedToFraction(control.SpeedMbps);
-        if (control.IsLoaded)
+        if (control.IsLoaded && control._isHubVisible)
         {
             control.EnsureAnimationActive();
         }
         else
         {
-            // If control is not currently loaded in the visual tree, update progress directly
+            // If control is not currently loaded or hub is hidden, update progress directly
             // avoiding running an invisible CompositionTarget.Rendering loop
             control._currentProgress = control._targetProgress;
             control.AnimatedProgress = control._targetProgress;
@@ -185,7 +209,7 @@ public class SpeedometerArcControl : FrameworkElement
 
     private void EnsureAnimationActive()
     {
-        if (!_isAnimating && IsLoaded)
+        if (!_isAnimating && IsLoaded && _isHubVisible)
         {
             _isAnimating = true;
             _lastRenderTimestamp = Stopwatch.GetTimestamp();
@@ -204,6 +228,12 @@ public class SpeedometerArcControl : FrameworkElement
 
     private void OnCompositionTargetRendering(object? sender, EventArgs e)
     {
+        if (!_isHubVisible)
+        {
+            StopAnimation();
+            return;
+        }
+
         long now = Stopwatch.GetTimestamp();
         double dt = (now - _lastRenderTimestamp) / (double)Stopwatch.Frequency;
         _lastRenderTimestamp = now;

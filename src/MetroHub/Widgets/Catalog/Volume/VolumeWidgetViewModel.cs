@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
@@ -90,7 +91,7 @@ public partial class AppSessionItemViewModel : ObservableObject
     }
 }
 
-public partial class VolumeWidgetViewModel : WidgetViewModelBase
+public sealed partial class VolumeWidgetViewModel : WidgetViewModelBase
 {
     private readonly AudioService _audioService;
     private bool _isHubVisible = true;
@@ -155,15 +156,17 @@ public partial class VolumeWidgetViewModel : WidgetViewModelBase
         _audioService.DeviceListChanged += OnAudioServiceDeviceListChanged;
         _audioService.SessionsChanged += OnAudioServiceSessionsChanged;
 
-        model.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
-            {
-                OnPropertyChanged(nameof(IsCompactMode));
-            }
-        };
+        Model.PropertyChanged += OnModelPropertyChanged;
 
         RefreshAll();
+    }
+
+    private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
+        {
+            OnPropertyChanged(nameof(IsCompactMode));
+        }
     }
 
     protected override void LoadSettings(string? settingsJson)
@@ -404,6 +407,7 @@ public partial class VolumeWidgetViewModel : WidgetViewModelBase
     {
         if (disposing)
         {
+            Model.PropertyChanged -= OnModelPropertyChanged;
             _audioService.MasterVolumeChanged -= OnAudioServiceMasterVolumeChanged;
             _audioService.DefaultDeviceChanged -= OnAudioServiceDefaultDeviceChanged;
             _audioService.DeviceListChanged -= OnAudioServiceDeviceListChanged;

@@ -15,6 +15,8 @@ public sealed class NetworkHealthService
     public NetworkHealthStatus CurrentStatus { get; private set; } = new() { Connectivity = QueryFastConnectivity() };
     public event Action<NetworkHealthStatus>? HealthChanged;
 
+    public volatile bool IsHubVisible = true;
+
     private DateTime _lastSuccessfulTrafficTime = DateTime.UtcNow;
     private DateTime _lastProbeTime = DateTime.MinValue;
     private bool _lastProbeResult = true;
@@ -34,7 +36,7 @@ public sealed class NetworkHealthService
     /// </summary>
     public async Task<bool> CheckPassiveOrActiveReachabilityAsync(double currentDownloadSpeedBps, bool isHubVisible, bool currentlyHasInternet)
     {
-        if (!isHubVisible)
+        if (!isHubVisible || !IsHubVisible)
         {
             return _lastProbeResult;
         }
@@ -132,15 +134,18 @@ public sealed class NetworkHealthService
         }
     }
 
-    public static async Task<bool> CheckInternetReachabilityAsync(int timeoutMs = 800)
+    public static async Task<bool> CheckInternetReachabilityAsync(int timeoutMs = 800, System.Threading.CancellationToken cancellationToken = default)
     {
+        if (cancellationToken.IsCancellationRequested) return false;
+
         // 1. Primary Check: Direct TCP socket handshake to Cloudflare Anycast DNS (1.1.1.1:53)
         // Bypasses Windows DNS client cache completely — requires real WAN packet routing.
         try
         {
             using var client = new System.Net.Sockets.TcpClient();
+            using var reg = cancellationToken.Register(() => { try { client.Dispose(); } catch { } });
             var connectTask = client.ConnectAsync("1.1.1.1", 53);
-            var completed = await Task.WhenAny(connectTask, Task.Delay(timeoutMs));
+            var completed = await Task.WhenAny(connectTask, Task.Delay(timeoutMs, cancellationToken));
             if (completed == connectTask && client.Connected)
             {
                 return true;
@@ -148,12 +153,15 @@ public sealed class NetworkHealthService
         }
         catch { }
 
+        if (cancellationToken.IsCancellationRequested) return false;
+
         // 2. Secondary Fallback: Direct TCP socket handshake to Google Anycast DNS (8.8.8.8:53)
         try
         {
             using var client = new System.Net.Sockets.TcpClient();
+            using var reg = cancellationToken.Register(() => { try { client.Dispose(); } catch { } });
             var connectTask = client.ConnectAsync("8.8.8.8", 53);
-            var completed = await Task.WhenAny(connectTask, Task.Delay(timeoutMs));
+            var completed = await Task.WhenAny(connectTask, Task.Delay(timeoutMs, cancellationToken));
             if (completed == connectTask && client.Connected)
             {
                 return true;
@@ -166,21 +174,29 @@ public sealed class NetworkHealthService
 
     private async void OnNetworkStatusChanged(object sender)
     {
+        if (!IsHubVisible) return;
         await EvaluateHealthAsync();
     }
 
-    public async Task<NetworkHealthStatus> EvaluateHealthAsync()
+    public async Task<NetworkHealthStatus> EvaluateHealthAsync(System.Threading.CancellationToken cancellationToken = default)
     {
+        if (!IsHubVisible || cancellationToken.IsCancellationRequested)
+        {
+            return CurrentStatus;
+        }
+
         var status = new NetworkHealthStatus();
 
         // 1. Windows NCSI (Network Connectivity Status Indicator)
         status.Connectivity = QueryFastConnectivity();
 
+        if (!IsHubVisible || cancellationToken.IsCancellationRequested) return CurrentStatus;
+
         // 2. DNS Resolution Diagnostic
         var sw = Stopwatch.StartNew();
         try
         {
-            var addresses = await Dns.GetHostAddressesAsync("www.msftconnecttest.com");
+            var addresses = await Dns.GetHostAddressesAsync("www.msftconnecttest.com", cancellationToken);
             sw.Stop();
             status.HasDnsResolution = addresses != null && addresses.Length > 0;
             status.DnsResolutionTimeMs = sw.Elapsed.TotalMilliseconds;
@@ -192,6 +208,8 @@ public sealed class NetworkHealthService
             status.DnsResolutionTimeMs = -1;
         }
 
+        if (!IsHubVisible || cancellationToken.IsCancellationRequested) return CurrentStatus;
+
         // 3. Packet Loss & Latency Diagnostic (4 pings)
         using var ping = new Ping();
         int lostPackets = 0;
@@ -201,6 +219,8 @@ public sealed class NetworkHealthService
 
         for (int i = 0; i < pingCount; i++)
         {
+            if (!IsHubVisible || cancellationToken.IsCancellationRequested) return CurrentStatus;
+
             try
             {
                 var reply = await ping.SendPingAsync("1.1.1.1", 1000);
@@ -223,7 +243,11 @@ public sealed class NetworkHealthService
         status.PacketLossPercent = (double)lostPackets / pingCount * 100.0;
         status.LatencyMs = successfulPings > 0 ? totalRtt / successfulPings : -1;
 
-        bool hasTcpReachability = await CheckInternetReachabilityAsync(800);
+        if (!IsHubVisible || cancellationToken.IsCancellationRequested) return CurrentStatus;
+
+        bool hasTcpReachability = await CheckInternetReachabilityAsync(800, cancellationToken);
+
+        if (!IsHubVisible || cancellationToken.IsCancellationRequested) return CurrentStatus;
 
         // If either Ping or raw TCP reaches the outside world, internet is verified
         if (successfulPings > 0 || hasTcpReachability)

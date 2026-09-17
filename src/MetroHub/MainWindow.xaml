@@ -111,6 +111,7 @@
                                      VerticalAlignment="Stretch"
                                      Panel.ZIndex="2000"
                                      AppsToggleRequested="OnSidebarAppsToggleRequested"
+                                     AddWebLinkRequested="OnSidebarAddWebLinkRequested"
                                      MouseEnter="OnSidebarRailMouseEnter"
                                      MouseLeave="OnSidebarRailMouseLeave">
             <controls:SidebarRailControl.RenderTransform>
@@ -231,6 +232,14 @@
                                 <ui:SymbolIcon Symbol="AppGeneric24" FontSize="20" Foreground="#D0FFFFFF" />
                             </MenuItem.Icon>
                             <MenuItem Header="Loading widgets..." IsEnabled="False" />
+                        </MenuItem>
+
+                        <!-- Add Web Link -->
+                        <MenuItem Header="Add Web Link..."
+                                  Click="OnCanvasAddWebLinkClick">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="Globe24" FontSize="20" Foreground="#D0FFFFFF" />
+                            </MenuItem.Icon>
                         </MenuItem>
 
                         <!-- Dynamic Group Options (Visible when right-clicking empty space inside a group) -->

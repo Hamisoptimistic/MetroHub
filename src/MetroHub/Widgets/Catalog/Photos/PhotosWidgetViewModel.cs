@@ -15,7 +15,7 @@ using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Photos;
 
-public partial class PhotosWidgetViewModel : WidgetViewModelBase
+public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
 {
     private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {

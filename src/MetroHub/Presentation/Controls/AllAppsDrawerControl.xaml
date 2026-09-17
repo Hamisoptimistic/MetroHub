@@ -234,13 +234,29 @@
                                VerticalAlignment="Center" />
                 </StackPanel>
                 
-                <Button x:Name="CloseButton"
-                        HorizontalAlignment="Right"
-                        Style="{StaticResource MiniPinButtonStyle}"
-                        ToolTip="Close"
-                        Click="OnCloseClick">
-                    <ui:SymbolIcon Symbol="Dismiss20" FontSize="14" Foreground="#A0FFFFFF" />
-                </Button>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button x:Name="RefreshButton"
+                            Style="{StaticResource MiniPinButtonStyle}"
+                            ToolTip="Refresh installed apps"
+                            Margin="0,0,4,0"
+                            Click="OnRefreshClick">
+                        <ui:SymbolIcon x:Name="RefreshIcon"
+                                       Symbol="ArrowSync24"
+                                       FontSize="14"
+                                       Foreground="#A0FFFFFF"
+                                       RenderTransformOrigin="0.5,0.5">
+                            <ui:SymbolIcon.RenderTransform>
+                                <RotateTransform x:Name="RefreshIconRotation" Angle="0" />
+                            </ui:SymbolIcon.RenderTransform>
+                        </ui:SymbolIcon>
+                    </Button>
+                    <Button x:Name="CloseButton"
+                            Style="{StaticResource MiniPinButtonStyle}"
+                            ToolTip="Close"
+                            Click="OnCloseClick">
+                        <ui:SymbolIcon Symbol="Dismiss20" FontSize="14" Foreground="#A0FFFFFF" />
+                    </Button>
+                </StackPanel>
             </Grid>
 
             <Border Grid.Row="1"

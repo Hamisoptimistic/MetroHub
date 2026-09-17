@@ -26,6 +26,7 @@ namespace MetroHub.Presentation.Controls
         public event EventHandler? Opened;
         public event EventHandler? Closing;
         public event EventHandler? Closed;
+        public event EventHandler? RefreshRequested;
 
         public bool IsOpen { get; private set; } = false;
 
@@ -223,6 +224,27 @@ namespace MetroHub.Presentation.Controls
         private void OnCloseClick(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        private void OnRefreshClick(object sender, RoutedEventArgs e)
+        {
+            PlayRefreshAnimation();
+            RefreshRequested?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void PlayRefreshAnimation()
+        {
+            if (RefreshIconRotation != null)
+            {
+                var anim = new DoubleAnimation
+                {
+                    From = 0,
+                    To = 360,
+                    Duration = TimeSpan.FromMilliseconds(650),
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+                RefreshIconRotation.BeginAnimation(RotateTransform.AngleProperty, anim);
+            }
         }
 
         private void UpdatePlaceholderVisibility()
