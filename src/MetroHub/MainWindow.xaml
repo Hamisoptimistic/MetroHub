@@ -110,7 +110,26 @@
                                      Grid.Column="0"
                                      VerticalAlignment="Stretch"
                                      Panel.ZIndex="2000"
-                                     AppsToggleRequested="OnSidebarAppsToggleRequested" />
+                                     AppsToggleRequested="OnSidebarAppsToggleRequested"
+                                     MouseEnter="OnSidebarRailMouseEnter"
+                                     MouseLeave="OnSidebarRailMouseLeave">
+            <controls:SidebarRailControl.RenderTransform>
+                <TranslateTransform X="-52" />
+            </controls:SidebarRailControl.RenderTransform>
+        </controls:SidebarRailControl>
+
+        <!-- 5px Invisible Hit-Test Strip along the left screen edge to detect hover intent -->
+        <Border x:Name="LeftEdgeHoverStrip"
+                Grid.Column="0"
+                HorizontalAlignment="Left"
+                Width="5"
+                VerticalAlignment="Stretch"
+                Background="Transparent"
+                Panel.ZIndex="1999"
+                MouseEnter="OnLeftEdgeHoverStripMouseEnter"
+                MouseLeave="OnLeftEdgeHoverStripMouseLeave"
+                AllowDrop="True"
+                DragEnter="OnLeftEdgeHoverStripDragEnter" />
 
         <!-- Main Application Content Area (Header + Canvas + Footer) in Column 1 -->
         <Grid x:Name="MainContentAreaGrid"

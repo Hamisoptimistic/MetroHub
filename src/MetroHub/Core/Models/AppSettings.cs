@@ -20,4 +20,8 @@ public sealed class AppSettings
     public int TileGap { get; set; } = 8;
     public double AcrylicOpacity { get; set; } = 0.85;
     public int GroupColumnWidth { get; set; } = 8; // Fixed 8 units
+
+    public bool SidebarAutoHide { get; set; } = true;
+    public bool SidebarPinned { get; set; } = false;
+    public List<SidebarShortcutItem> SidebarShortcuts { get; set; } = SidebarShortcutItem.CreateDefaultList();
 }

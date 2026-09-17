@@ -4,10 +4,11 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+             xmlns:models="clr-namespace:MetroHub.Core.Models"
              mc:Ignorable="d" 
              Width="48"
              Focusable="False"
-             Background="Transparent"
              SnapsToDevicePixels="True"
              UseLayoutRounding="True"
              RenderOptions.ClearTypeHint="Enabled"
@@ -16,6 +17,9 @@
              TextOptions.TextHintingMode="Fixed">
 
     <UserControl.Resources>
+        <!-- Boolean to Visibility Converter -->
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
         <!-- Modern Windows 11 Fluent Rail Button Style -->
         <Style x:Key="RailButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
@@ -100,18 +104,105 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Modern Fluent Add Shortcut Context Menu -->
+        <ContextMenu x:Key="AddShortcutContextMenu">
+            <!-- System Folders Submenu -->
+            <MenuItem Header="System Folders">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="Folder24" FontSize="16" />
+                </MenuItem.Icon>
+                <MenuItem Header="Documents" Tag="Documents|Documents|Document24" Click="OnAddSystemFolderClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="Document24" FontSize="16" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Downloads" Tag="Downloads|Downloads|ArrowDownload24" Click="OnAddSystemFolderClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="16" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Pictures" Tag="Pictures|Pictures|Image24" Click="OnAddSystemFolderClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="Image24" FontSize="16" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Music" Tag="Music|Music|MusicNote224" Click="OnAddSystemFolderClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="MusicNote224" FontSize="16" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Videos" Tag="Videos|Videos|Video24" Click="OnAddSystemFolderClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="Video24" FontSize="16" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator />
+                <MenuItem Header="Windows Settings" Tag="Settings|Settings|Settings24" Click="OnAddSystemFolderClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="Settings24" FontSize="16" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Windows Security" Tag="Security|Windows Security|Shield24" Click="OnAddSystemFolderClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="Shield24" FontSize="16" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="Control Panel" Tag="ControlPanel|Control Panel|Options24" Click="OnAddSystemFolderClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="Options24" FontSize="16" />
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+
+            <Separator />
+
+            <!-- Browse Local Folder -->
+            <MenuItem Header="Browse Local Folder..." Click="OnBrowseLocalFolderClick">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" />
+                </MenuItem.Icon>
+            </MenuItem>
+
+            <!-- Browse Application -->
+            <MenuItem Header="Browse Application (.exe)..." Click="OnBrowseAppClick">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="AppGeneric24" FontSize="16" />
+                </MenuItem.Icon>
+            </MenuItem>
+
+            <Separator />
+
+            <!-- Add Divider Line -->
+            <MenuItem Header="Add Divider Line" Click="OnAddSeparatorClick">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="ReOrder24" FontSize="16" />
+                </MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
     </UserControl.Resources>
 
-    <Grid>
+    <Grid Background="Transparent">
         <Grid.RowDefinitions>
-            <!-- Top Section: App List Icon -->
+            <!-- Top Section: Pin + All Apps Toggle -->
             <RowDefinition Height="Auto" />
-            <!-- Scrollable Bottom Section: System and Folder Shortcuts -->
+            <!-- Center Section: User Custom Shortcuts List -->
             <RowDefinition Height="*" />
+            <!-- Bottom Section: Add + Power -->
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Top Section: Single App List Toggle Button -->
-        <StackPanel Grid.Row="0" Margin="0,12,0,0">
+        <!-- 1. Top Section: Pin & All Apps -->
+        <StackPanel Grid.Row="0" Margin="0,10,0,6">
+            <!-- Pin / Unpin Toggle -->
+            <Button x:Name="PinButton"
+                    Style="{StaticResource RailButtonStyle}"
+                    ToolTip="Pin sidebar open"
+                    Click="OnPinToggleClick">
+                <ui:SymbolIcon x:Name="PinIcon" Symbol="Pin24" FontSize="18" Foreground="#90FFFFFF" />
+            </Button>
+
+            <!-- All Apps Drawer Toggle Button -->
             <Button x:Name="AppsToggleButton"
                     Style="{StaticResource RailButtonStyle}"
                     ToolTip="All apps"
@@ -120,88 +211,309 @@
             </Button>
         </StackPanel>
 
-        <!-- Bottom Section: Pins to bottom when space permits, gracefully scrolls on short laptop screens -->
+        <!-- 2. Center Dynamic Shortcuts Area -->
         <ScrollViewer x:Name="ShortcutsScrollViewer"
                       Grid.Row="1"
                       VerticalScrollBarVisibility="Hidden"
                       HorizontalScrollBarVisibility="Disabled"
                       Focusable="False"
                       CanContentScroll="False"
-                      VerticalAlignment="Bottom">
-            <StackPanel Margin="0,0,0,10">
-            <!-- User Account -->
-            <Button x:Name="UserButton"
+                      VerticalAlignment="Stretch"
+                      AllowDrop="True"
+                      ContextMenu="{StaticResource AddShortcutContextMenu}"
+                      DragOver="OnShortcutsDragOver"
+                      Drop="OnShortcutsDrop">
+            <ItemsControl x:Name="ShortcutsItemsControl"
+                          Margin="0,2,0,2">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:SidebarShortcutItem}">
+                        <Grid x:Name="ItemRowContainer"
+                              Background="Transparent"
+                              AllowDrop="True"
+                              Tag="{Binding}"
+                              PreviewMouseLeftButtonDown="OnItemPreviewMouseLeftButtonDown"
+                              PreviewMouseMove="OnItemPreviewMouseMove"
+                              MouseDown="OnItemMouseDown"
+                              DragOver="OnItemDragOver"
+                              DragLeave="OnItemDragLeave"
+                              Drop="OnItemDrop">
+
+                            <!-- Top Drop Indicator (2px Accent Line) -->
+                            <Border x:Name="TopDropIndicator"
+                                    Height="2"
+                                    VerticalAlignment="Top"
+                                    Margin="4,-1,4,0"
+                                    CornerRadius="1"
+                                    Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                    Visibility="Collapsed"
+                                    SnapsToDevicePixels="True"
+                                    Panel.ZIndex="10" />
+
+                            <!-- 1. Normal Shortcut Button (Visible when NOT Separator) -->
+                            <Button x:Name="ShortcutButton"
+                                    Style="{StaticResource RailButtonStyle}"
+                                    ToolTip="{Binding Title}"
+                                    Tag="{Binding}"
+                                    Click="OnShortcutClick">
+                                <Button.ContextMenu>
+                                    <ContextMenu DataContext="{Binding Path=PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                                        <MenuItem Header="{Binding Title}" IsEnabled="False" FontWeight="SemiBold" />
+                                        <Separator />
+
+                                        <!-- Folder Actions (Visible when IsFolder is True) -->
+                                        <MenuItem Header="Open in Terminal" Click="OnOpenInTerminalClick"
+                                                  Visibility="{Binding IsFolder, Converter={StaticResource BoolToVis}}">
+                                            <MenuItem.Icon>
+                                                <ui:SymbolIcon Symbol="Code24" FontSize="16" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="Open in New Window" Click="OnOpenInNewWindowClick"
+                                                  Visibility="{Binding IsFolder, Converter={StaticResource BoolToVis}}">
+                                            <MenuItem.Icon>
+                                                <ui:SymbolIcon Symbol="Open24" FontSize="16" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                        <!-- Copy Path Action -->
+                                        <MenuItem Header="Copy Path" Click="OnCopyPathClick">
+                                            <MenuItem.Icon>
+                                                <ui:SymbolIcon Symbol="Copy24" FontSize="16" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                        <Separator />
+                                        <MenuItem Header="Move Up" Click="OnMoveUpClick">
+                                            <MenuItem.Icon>
+                                                <ui:SymbolIcon Symbol="ArrowUp24" FontSize="16" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="Move Down" Click="OnMoveDownClick">
+                                            <MenuItem.Icon>
+                                                <ui:SymbolIcon Symbol="ArrowDown24" FontSize="16" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <Separator />
+
+                                        <!-- Change Icon Submenu -->
+                                        <MenuItem Header="Change Icon">
+                                            <MenuItem.Icon>
+                                                <ui:SymbolIcon Symbol="PaintBrush24" FontSize="16" />
+                                            </MenuItem.Icon>
+                                            <MenuItem Header="Standard Folder" Tag="Folder24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Folder24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Open Folder" Tag="FolderOpen24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Archive / Zip" Tag="FolderZip24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="FolderZip24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <Separator />
+                                            <MenuItem Header="Games" Tag="Games24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Games24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Code / Projects" Tag="Code24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Code24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Music / Audio" Tag="MusicNote224" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="MusicNote224" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Photos / Media" Tag="Image24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Image24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Videos / Movies" Tag="Video24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Video24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Documents" Tag="Document24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Document24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Downloads" Tag="ArrowDownload24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <Separator />
+                                            <MenuItem Header="Work / Office" Tag="Briefcase24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Briefcase24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Cloud Drive" Tag="Cloud24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Cloud24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Desktop" Tag="Desktop24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Desktop24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Hard Drive" Tag="HardDrive24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="HardDrive24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Tools / Utilities" Tag="Wrench24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Wrench24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <Separator />
+                                            <MenuItem Header="Star" Tag="Star24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Star24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Rocket" Tag="Rocket24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Rocket24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Heart" Tag="Heart24" Click="OnChangeIconClick">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Heart24" FontSize="16" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                        </MenuItem>
+                                        <Separator />
+                                        <MenuItem Header="Unpin from Sidebar" Click="OnRemoveShortcutClick">
+                                            <MenuItem.Icon>
+                                                <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+
+                                <Grid Width="22" Height="22">
+                                    <!-- Real Application / Shell Icon (when CustomIconPath exists) -->
+                                    <Image Source="{Binding CustomIconPath}"
+                                           Width="20"
+                                           Height="20"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           RenderOptions.BitmapScalingMode="HighQuality">
+                                        <Image.Style>
+                                            <Style TargetType="Image">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasCustomIcon}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Image.Style>
+                                    </Image>
+
+                                    <!-- Built-in Fluent Vector Symbol Icon (when no CustomIconPath) -->
+                                    <ui:SymbolIcon Symbol="{Binding IconSymbol}"
+                                                   FontSize="19"
+                                                   Foreground="#C8FFFFFF"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center">
+                                        <ui:SymbolIcon.Style>
+                                            <Style TargetType="ui:SymbolIcon">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding HasCustomIcon}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ui:SymbolIcon.Style>
+                                    </ui:SymbolIcon>
+                                </Grid>
+                            </Button>
+
+                            <!-- 2. Visual Separator / Divider (Visible when IsSeparator is True) -->
+                            <Border x:Name="SeparatorHost"
+                                    Height="14"
+                                    Background="Transparent"
+                                    Tag="{Binding}"
+                                    Cursor="SizeNS"
+                                    Visibility="Collapsed">
+                                <Border.ContextMenu>
+                                    <ContextMenu DataContext="{Binding Path=PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                                        <MenuItem Header="Divider" IsEnabled="False" FontWeight="SemiBold" />
+                                        <Separator />
+                                        <MenuItem Header="Move Up" Click="OnMoveUpClick">
+                                            <MenuItem.Icon>
+                                                <ui:SymbolIcon Symbol="ArrowUp24" FontSize="16" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="Move Down" Click="OnMoveDownClick">
+                                            <MenuItem.Icon>
+                                                <ui:SymbolIcon Symbol="ArrowDown24" FontSize="16" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <Separator />
+                                        <MenuItem Header="Remove Divider" Click="OnRemoveShortcutClick">
+                                            <MenuItem.Icon>
+                                                <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </ContextMenu>
+                                </Border.ContextMenu>
+                                <Rectangle Height="1"
+                                           Margin="10,0"
+                                           Fill="#25FFFFFF"
+                                           SnapsToDevicePixels="True"
+                                           VerticalAlignment="Center" />
+                            </Border>
+
+                            <!-- Bottom Drop Indicator (2px Accent Line) -->
+                            <Border x:Name="BottomDropIndicator"
+                                    Height="2"
+                                    VerticalAlignment="Bottom"
+                                    Margin="4,0,4,-1"
+                                    CornerRadius="1"
+                                    Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                    Visibility="Collapsed"
+                                    SnapsToDevicePixels="True"
+                                    Panel.ZIndex="10" />
+                        </Grid>
+
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsSeparator}" Value="True">
+                                <Setter TargetName="ShortcutButton" Property="Visibility" Value="Collapsed" />
+                                <Setter TargetName="SeparatorHost" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- 3. Bottom Section: Add Shortcut & Power -->
+        <StackPanel Grid.Row="2" Margin="0,6,0,10">
+            <!-- Add Shortcut Button (+) -->
+            <Button x:Name="AddShortcutButton"
                     Style="{StaticResource RailButtonStyle}"
-                    ToolTip="Account"
-                    Click="OnUserClick">
-                <ui:SymbolIcon Symbol="Person24" FontSize="19" Foreground="#C8FFFFFF" />
+                    ToolTip="Add shortcut..."
+                    ContextMenu="{StaticResource AddShortcutContextMenu}"
+                    PreviewMouseRightButtonUp="OnAddShortcutRightClick"
+                    Click="OnAddShortcutClick">
+                <ui:SymbolIcon Symbol="Add24" FontSize="19" Foreground="#90FFFFFF" />
             </Button>
 
-            <!-- Documents -->
-            <Button x:Name="DocumentsButton"
-                    Style="{StaticResource RailButtonStyle}"
-                    ToolTip="Documents"
-                    Click="OnDocumentsClick">
-                <ui:SymbolIcon Symbol="Document24" FontSize="19" Foreground="#C8FFFFFF" />
-            </Button>
-
-            <!-- Downloads -->
-            <Button x:Name="DownloadsButton"
-                    Style="{StaticResource RailButtonStyle}"
-                    ToolTip="Downloads"
-                    Click="OnDownloadsClick">
-                <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="19" Foreground="#C8FFFFFF" />
-            </Button>
-
-            <!-- Music -->
-            <Button x:Name="MusicButton"
-                    Style="{StaticResource RailButtonStyle}"
-                    ToolTip="Music"
-                    Click="OnMusicClick">
-                <ui:SymbolIcon Symbol="MusicNote224" FontSize="19" Foreground="#C8FFFFFF" />
-            </Button>
-
-            <!-- Pictures -->
-            <Button x:Name="PicturesButton"
-                    Style="{StaticResource RailButtonStyle}"
-                    ToolTip="Pictures"
-                    Click="OnPicturesClick">
-                <ui:SymbolIcon Symbol="Image24" FontSize="19" Foreground="#C8FFFFFF" />
-            </Button>
-
-            <!-- Videos / Folders -->
-            <Button x:Name="VideosButton"
-                    Style="{StaticResource RailButtonStyle}"
-                    ToolTip="Videos"
-                    Click="OnVideosClick">
-                <ui:SymbolIcon Symbol="Folder24" FontSize="19" Foreground="#C8FFFFFF" />
-            </Button>
-
-            <!-- Quick Controls -->
-            <Button x:Name="ControlsButton"
-                    Style="{StaticResource RailButtonStyle}"
-                    ToolTip="Control Panel"
-                    Click="OnControlsClick">
-                <ui:SymbolIcon Symbol="Options24" FontSize="19" Foreground="#C8FFFFFF" />
-            </Button>
-
-            <!-- Settings -->
-            <Button x:Name="SettingsButton"
-                    Style="{StaticResource RailButtonStyle}"
-                    ToolTip="Settings"
-                    Click="OnSettingsClick">
-                <ui:SymbolIcon Symbol="Settings24" FontSize="19" Foreground="#C8FFFFFF" />
-            </Button>
-
-            <!-- Windows Security -->
-            <Button x:Name="SecurityButton"
-                    Style="{StaticResource RailButtonStyle}"
-                    ToolTip="Windows Security"
-                    Click="OnSecurityClick">
-                <ui:SymbolIcon Symbol="Shield24" FontSize="19" Foreground="#C8FFFFFF" />
-            </Button>
-
-            <!-- Power Button with Flyout Menu -->
+            <!-- Power Button with Context Menu -->
             <Button x:Name="PowerButton"
                     Style="{StaticResource RailButtonStyle}"
                     ToolTip="Power"
@@ -234,6 +546,5 @@
                 </Button.ContextMenu>
             </Button>
         </StackPanel>
-        </ScrollViewer>
     </Grid>
 </UserControl>

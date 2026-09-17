@@ -146,6 +146,8 @@ public partial class MainWindow : BorderlessFluentWindow
     private readonly HotkeyService _hotkeyService = new();
     private DispatcherTimer? _hudTimer;
     private DispatcherTimer? _autoScrollTimer;
+    private DispatcherTimer? _sidebarIntentTimer;
+    private DispatcherTimer? _sidebarGraceTimer;
     private double _autoScrollVelocityY;
     private bool _isClosingToExit = false;
 
@@ -172,6 +174,12 @@ public partial class MainWindow : BorderlessFluentWindow
         LoadData();
         SetupHudTimer();
         SetupAutoScrollTimer();
+        SetupSidebarTimers();
+
+        SidebarRail.InitializeSettings(Settings);
+        SidebarRail.PinToggled += OnSidebarPinToggled;
+        SidebarRail.ShortcutsChanged += OnSidebarShortcutsChanged;
+        UpdateSidebarVisibilityInitial();
 
         Activated += OnWindowActivated;
         RootGrid.LostMouseCapture += OnRootGridLostMouseCapture;
@@ -183,7 +191,7 @@ public partial class MainWindow : BorderlessFluentWindow
             UpdateExposedAddSlots();
             if (AllAppsDrawer != null && AllAppsDrawer.IsOpen && _canvasScissorTranslate != null)
             {
-                _canvasScissorTranslate.X = AllAppsDrawer.DrawerWidth;
+                _canvasScissorTranslate.X = (AllAppsDrawer.DrawerWidth > 0 ? AllAppsDrawer.DrawerWidth : 320.0);
             }
         };
 
@@ -1157,6 +1165,10 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         Keyboard.ClearFocus();
         FocusManager.SetFocusedElement(this, this);
         MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(false));
+        if (!Settings.SidebarPinned)
+        {
+            HideSidebarRail(immediate: true);
+        }
         DismissWithAnimation();
     }
 
@@ -5130,6 +5142,224 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     private RectangleGeometry? _canvasScissorGeom;
     private TranslateTransform? _canvasScissorTranslate;
+    private TranslateTransform? SidebarRailTranslate => SidebarRail?.RenderTransform as TranslateTransform;
+
+    private void SetupSidebarTimers()
+    {
+        _sidebarIntentTimer = new DispatcherTimer(DispatcherPriority.Normal)
+        {
+            Interval = TimeSpan.FromMilliseconds(120)
+        };
+        _sidebarIntentTimer.Tick += OnSidebarIntentTimerTick;
+
+        _sidebarGraceTimer = new DispatcherTimer(DispatcherPriority.Normal)
+        {
+            Interval = TimeSpan.FromMilliseconds(250)
+        };
+        _sidebarGraceTimer.Tick += OnSidebarGraceTimerTick;
+    }
+
+    private void UpdateSidebarVisibilityInitial()
+    {
+        if (SidebarRailTranslate == null || SidebarRail == null) return;
+        if (Settings.SidebarPinned)
+        {
+            SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+            SidebarRailTranslate.X = 0;
+            SidebarRail.SetPinnedState(true);
+        }
+        else
+        {
+            SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+            SidebarRailTranslate.X = -52;
+            SidebarRail.SetPinnedState(false);
+        }
+    }
+
+    private void OnSidebarPinToggled(object? sender, EventArgs e)
+    {
+        StorageService.SaveSettings(Settings);
+        if (Settings.SidebarPinned)
+        {
+            ShowSidebarRail();
+        }
+        else
+        {
+            if (SidebarRail != null && !SidebarRail.IsMouseOver && (AllAppsDrawer == null || !AllAppsDrawer.IsOpen))
+            {
+                _sidebarGraceTimer?.Start();
+            }
+        }
+    }
+
+    private void OnSidebarShortcutsChanged(object? sender, EventArgs e)
+    {
+        StorageService.SaveSettings(Settings);
+    }
+
+    private void OnLeftEdgeHoverStripMouseEnter(object sender, MouseEventArgs e)
+    {
+        if (Settings.SidebarPinned) return;
+        _sidebarGraceTimer?.Stop();
+        _sidebarIntentTimer?.Stop();
+        _sidebarIntentTimer?.Start();
+    }
+
+    private void OnLeftEdgeHoverStripMouseLeave(object sender, MouseEventArgs e)
+    {
+        if (SidebarRailTranslate != null && SidebarRailTranslate.X <= -50)
+        {
+            _sidebarIntentTimer?.Stop();
+        }
+    }
+
+    private void OnLeftEdgeHoverStripDragEnter(object sender, DragEventArgs e)
+    {
+        ShowSidebarRail();
+    }
+
+    private void OnSidebarIntentTimerTick(object? sender, EventArgs e)
+    {
+        _sidebarIntentTimer?.Stop();
+        if ((LeftEdgeHoverStrip != null && LeftEdgeHoverStrip.IsMouseOver) ||
+            (SidebarRail != null && SidebarRail.IsMouseOver))
+        {
+            ShowSidebarRail();
+        }
+        else
+        {
+            Point mousePos = Mouse.GetPosition(this);
+            if (mousePos.X <= 48 && mousePos.X >= 0)
+            {
+                ShowSidebarRail();
+            }
+        }
+    }
+
+    private void OnSidebarRailMouseEnter(object sender, MouseEventArgs e)
+    {
+        _sidebarGraceTimer?.Stop();
+        _sidebarIntentTimer?.Stop();
+        if (SidebarRailTranslate != null && SidebarRailTranslate.X < 0)
+        {
+            ShowSidebarRail();
+        }
+    }
+
+    private void OnSidebarRailMouseLeave(object sender, MouseEventArgs e)
+    {
+        if (Settings.SidebarPinned) return;
+        if (AllAppsDrawer != null && AllAppsDrawer.IsOpen) return;
+        if (IsDialogOpen) return;
+
+        _sidebarGraceTimer?.Stop();
+        _sidebarGraceTimer?.Start();
+    }
+
+    private void OnSidebarGraceTimerTick(object? sender, EventArgs e)
+    {
+        _sidebarGraceTimer?.Stop();
+
+        if (Settings.SidebarPinned) return;
+        if (AllAppsDrawer != null && AllAppsDrawer.IsOpen) return;
+        if (IsDialogOpen) return;
+
+        if (SidebarRail != null && SidebarRail.IsMouseOver) return;
+        if (LeftEdgeHoverStrip != null && LeftEdgeHoverStrip.IsMouseOver) return;
+
+        Point mousePos = Mouse.GetPosition(this);
+        if (mousePos.X <= 48 && mousePos.X >= 0) return;
+
+        HideSidebarRail();
+    }
+
+    public void ShowSidebarRail()
+    {
+        _sidebarGraceTimer?.Stop();
+        if (SidebarRailTranslate == null || SidebarRail == null) return;
+
+        if (Math.Abs(SidebarRailTranslate.X) < 0.1 && !SidebarRailTranslate.HasAnimatedProperties)
+        {
+            return;
+        }
+
+        SidebarRail.CacheMode = new BitmapCache { RenderAtScale = 1.0, SnapsToDevicePixels = true };
+
+        var anim = new DoubleAnimation
+        {
+            To = 0,
+            Duration = TimeSpan.FromMilliseconds(180),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        int refreshRate = NativeMethods.GetScreenRefreshRate();
+        Timeline.SetDesiredFrameRate(anim, refreshRate > 0 ? refreshRate : 100);
+
+        anim.Completed += (s, e) =>
+        {
+            if (SidebarRail != null)
+            {
+                SidebarRail.CacheMode = null;
+            }
+            if (SidebarRailTranslate != null)
+            {
+                SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+                SidebarRailTranslate.X = 0;
+            }
+        };
+
+        SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
+    }
+
+    public void HideSidebarRail(bool immediate = false)
+    {
+        if (Settings.SidebarPinned) return;
+        if (AllAppsDrawer != null && AllAppsDrawer.IsOpen) return;
+        if (IsDialogOpen) return;
+        if (SidebarRail == null || SidebarRailTranslate == null) return;
+
+        if (immediate)
+        {
+            _sidebarIntentTimer?.Stop();
+            _sidebarGraceTimer?.Stop();
+            SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+            SidebarRailTranslate.X = -52;
+            SidebarRail.CacheMode = null;
+            return;
+        }
+
+        if (SidebarRailTranslate.X <= -52 && !SidebarRailTranslate.HasAnimatedProperties)
+        {
+            return;
+        }
+
+        SidebarRail.CacheMode = new BitmapCache { RenderAtScale = 1.0, SnapsToDevicePixels = true };
+
+        var anim = new DoubleAnimation
+        {
+            To = -52,
+            Duration = TimeSpan.FromMilliseconds(160),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+        };
+
+        int refreshRate = NativeMethods.GetScreenRefreshRate();
+        Timeline.SetDesiredFrameRate(anim, refreshRate > 0 ? refreshRate : 100);
+
+        anim.Completed += (s, e) =>
+        {
+            if (SidebarRail != null)
+            {
+                SidebarRail.CacheMode = null;
+            }
+            if (SidebarRailTranslate != null)
+            {
+                SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+                SidebarRailTranslate.X = -52;
+            }
+        };
+
+        SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
+    }
 
     private void OnSidebarAppsToggleRequested(object? sender, EventArgs e)
     {
@@ -5138,6 +5368,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     private void OnDrawerOpened(object? sender, EventArgs e)
     {
+        ShowSidebarRail();
         SidebarRail?.SetAppsDrawerActive(true);
         ApplyCanvasDrawerClip(true);
     }
@@ -5152,6 +5383,13 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     {
         SidebarRail?.SetAppsDrawerActive(false);
         ApplyCanvasDrawerClip(false);
+        if (!Settings.SidebarPinned)
+        {
+            if (SidebarRail != null && !SidebarRail.IsMouseOver)
+            {
+                _sidebarGraceTimer?.Start();
+            }
+        }
     }
 
     private void ApplyCanvasDrawerClip(bool isDrawerOpen)

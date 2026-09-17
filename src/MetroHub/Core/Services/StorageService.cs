@@ -172,7 +172,15 @@ public sealed class StorageService
             {
                 string json = File.ReadAllText(SettingsPath);
                 var settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
-                if (settings != null) return settings;
+                if (settings != null)
+                {
+                    settings.SidebarShortcuts ??= MetroHub.Core.Models.SidebarShortcutItem.CreateDefaultList();
+                    if (settings.SidebarShortcuts.Count == 0)
+                    {
+                        settings.SidebarShortcuts = MetroHub.Core.Models.SidebarShortcutItem.CreateDefaultList();
+                    }
+                    return settings;
+                }
             }
         }
         catch { }
