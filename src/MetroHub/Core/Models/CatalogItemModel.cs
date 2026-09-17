@@ -82,7 +82,7 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
         set => SetField(ref _tag, value);
     }
 
-    private const int MaxCachedIcons = 250;
+    private const int MaxCachedIcons = 64;
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource> _memoryIconCache = new(StringComparer.OrdinalIgnoreCase);
 
     public static void ClearMemoryCache()
@@ -95,12 +95,12 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
         return !string.IsNullOrWhiteSpace(targetPath) && _memoryIconCache.ContainsKey(targetPath);
     }
 
-    public static void PrewarmMemoryCache(IEnumerable<CatalogItemModel> items)
+    public static void PrewarmMemoryCache(IEnumerable<CatalogItemModel> items, int maxItems = 24)
     {
         if (items == null) return;
         Task.Run(() =>
         {
-            var itemList = items.Where(i => !string.IsNullOrWhiteSpace(i.TargetPath)).ToList();
+            var itemList = items.Where(i => !string.IsNullOrWhiteSpace(i.TargetPath)).Take(maxItems).ToList();
             if (itemList.Count == 0) return;
 
             Parallel.ForEach(itemList, new ParallelOptions { MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount, 2, 4) }, item =>
@@ -148,6 +148,7 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
         {
             var bi = new BitmapImage();
             bi.BeginInit();
+            bi.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
             bi.UriSource = new Uri(cachedPath, UriKind.Absolute);
             bi.CacheOption = BitmapCacheOption.OnLoad;
             bi.DecodePixelWidth = 24; // Lightweight 24px menu thumbnail (<2.5 KB RAM per app)

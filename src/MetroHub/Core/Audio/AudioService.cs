@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -43,6 +44,7 @@ public sealed class AudioService : IDisposable
     private readonly AudioSessionNotificationListener _sessionListener;
 
     private Guid _emptyGuid = Guid.Empty;
+    private const int MaxCachedIcons = 64;
     private readonly ConcurrentDictionary<string, ImageSource> _iconCache = new(StringComparer.OrdinalIgnoreCase);
 
     public event Action? DefaultDeviceChanged;
@@ -604,6 +606,11 @@ public sealed class AudioService : IDisposable
         }
     }
 
+    public void ClearIconCache()
+    {
+        _iconCache.Clear();
+    }
+
     private ImageSource? GetOrLoadProcessIcon(string exePath)
     {
         if (string.IsNullOrWhiteSpace(exePath) || !File.Exists(exePath)) return null;
@@ -624,6 +631,16 @@ public sealed class AudioService : IDisposable
                     BitmapSizeOptions.FromEmptyOptions());
 
                 bitmapSource.Freeze(); // Crucial: Free-threaded and immune to memory leaks
+
+                if (_iconCache.Count >= MaxCachedIcons)
+                {
+                    var keysToRemove = _iconCache.Keys.Take(MaxCachedIcons / 4).ToList();
+                    foreach (var key in keysToRemove)
+                    {
+                        _iconCache.TryRemove(key, out _);
+                    }
+                }
+
                 _iconCache[exePath] = bitmapSource;
                 return bitmapSource;
             }

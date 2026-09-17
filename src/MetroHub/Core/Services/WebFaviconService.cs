@@ -184,7 +184,7 @@ public static partial class WebFaviconService
 
         // Compute deterministic hash for the cache filename using compiled regex
         string safeDomain = SafeDomainRegex().Replace(domain, "_");
-        string hash = Math.Abs(domain.GetHashCode()).ToString("X8");
+        string hash = IconExtractorService.ComputeDeterministicHash(domain);
         string cachedPath = Path.Combine(IconCacheDir, $"web_{safeDomain}_{hash}.png");
 
         // Check on-disk cache
@@ -236,27 +236,31 @@ public static partial class WebFaviconService
             using var response = await _httpClient.GetAsync(requestUrl, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode) return false;
 
-            string tempFile = destinationPath + ".tmp";
-            await using (var responseStream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
-            await using (var fileStream = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+            string tempFile = $"{destinationPath}.{Guid.NewGuid():N}.tmp";
+            try
             {
-                await responseStream.CopyToAsync(fileStream, ct).ConfigureAwait(false);
-            }
+                await using (var responseStream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
+                await using (var fileStream = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
+                {
+                    await responseStream.CopyToAsync(fileStream, ct).ConfigureAwait(false);
+                }
 
-            var fi = new FileInfo(tempFile);
-            if (fi.Length < 200)
+                var fi = new FileInfo(tempFile);
+                if (fi.Length < 200)
+                {
+                    return false;
+                }
+
+                File.Move(tempFile, destinationPath, overwrite: true);
+                return true;
+            }
+            finally
             {
-                try { File.Delete(tempFile); } catch { }
-                return false;
+                if (File.Exists(tempFile))
+                {
+                    try { File.Delete(tempFile); } catch { }
+                }
             }
-
-            if (File.Exists(destinationPath))
-            {
-                File.Delete(destinationPath);
-            }
-            File.Move(tempFile, destinationPath);
-
-            return true;
         }
         catch (Exception ex)
         {

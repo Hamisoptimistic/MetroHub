@@ -312,7 +312,7 @@ public sealed class DailyWallpaperService
     /// Asynchronously decodes an image off the UI thread into a frozen, thread-safe BitmapSource.
     /// This prevents any frame drops or hitching on the main UI thread during 4K image parsing.
     /// </summary>
-    public static async Task<BitmapSource?> LoadFrozenBitmapAsync(string filePath, int decodeWidth = 3840)
+    public static async Task<BitmapSource?> LoadFrozenBitmapAsync(string filePath, int decodeWidth = 1920)
     {
         if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
             return null;
@@ -321,10 +321,12 @@ public sealed class DailyWallpaperService
         {
             try
             {
+                using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096);
                 var bmp = new BitmapImage();
                 bmp.BeginInit();
                 bmp.CacheOption = BitmapCacheOption.OnLoad;
-                bmp.UriSource = new Uri(filePath, UriKind.Absolute);
+                bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+                bmp.StreamSource = fs;
                 if (decodeWidth > 0)
                 {
                     bmp.DecodePixelWidth = decodeWidth;

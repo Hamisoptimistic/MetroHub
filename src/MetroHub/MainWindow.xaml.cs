@@ -674,6 +674,16 @@ public partial class MainWindow : BorderlessFluentWindow
                 CustomWallpaperHost.Visibility = Visibility.Collapsed;
             }
 
+            if (WallpaperImage != null && WallpaperImage.Source != null)
+            {
+                WallpaperImage.Source = null;
+                _currentLoadedWallpaperPath = null;
+                _ = Task.Run(() =>
+                {
+                    GC.Collect(2, GCCollectionMode.Forced, blocking: false);
+                });
+            }
+
             if (string.Equals(Settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase))
             {
                 NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW);
@@ -716,10 +726,12 @@ public partial class MainWindow : BorderlessFluentWindow
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
         try
         {
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096);
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
-            bitmap.UriSource = new Uri(path, UriKind.Absolute);
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+            bitmap.StreamSource = fs;
             if (decodeWidth > 0)
             {
                 bitmap.DecodePixelWidth = decodeWidth;
@@ -758,6 +770,7 @@ public partial class MainWindow : BorderlessFluentWindow
     }
 
     private int _wallpaperLoadGeneration = 0;
+    private string? _currentLoadedWallpaperPath = null;
 
     private async Task UpdateWallpaperDisplayAsync()
     {
@@ -797,13 +810,26 @@ public partial class MainWindow : BorderlessFluentWindow
 
             if (!string.IsNullOrEmpty(imagePath) && File.Exists(imagePath))
             {
-                int decodeWidth = (int)Math.Max(1920, ActualWidth > 0 ? ActualWidth * 1.5 : 3840);
+                // If the exact same wallpaper is already loaded and decoded, reuse it without disk I/O or re-decoding
+                if (string.Equals(_currentLoadedWallpaperPath, imagePath, StringComparison.OrdinalIgnoreCase) && WallpaperImage.Source != null)
+                {
+                    CustomWallpaperHost.Visibility = Visibility.Visible;
+                    UpdateWallpaperParallax();
+                    return;
+                }
+
+                // Decode at exact 1:1 screen pixel width (e.g. 1920 on 1080p, 2560 on 1440p) instead of 1.5x / 3840 over-decoding
+                double screenW = ActualWidth > 0 ? ActualWidth : SystemParameters.PrimaryScreenWidth;
+                int decodeWidth = (int)Math.Clamp(Math.Round(screenW), 1280, 3840);
+
                 var bmp = await DailyWallpaperService.LoadFrozenBitmapAsync(imagePath, decodeWidth).ConfigureAwait(true);
 
                 if (currentGen != _wallpaperLoadGeneration) return;
 
                 if (bmp != null)
                 {
+                    bool hadPrevious = WallpaperImage.Source != null && !string.Equals(_currentLoadedWallpaperPath, imagePath, StringComparison.OrdinalIgnoreCase);
+                    _currentLoadedWallpaperPath = imagePath;
                     WallpaperImage.Source = bmp;
                     CustomWallpaperHost.Visibility = Visibility.Visible;
                     UpdateWallpaperParallax();
@@ -811,6 +837,14 @@ public partial class MainWindow : BorderlessFluentWindow
                     // Subtle, silky smooth fade-in
                     var anim = new System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(300));
                     WallpaperImage.BeginAnimation(UIElement.OpacityProperty, anim);
+
+                    if (hadPrevious)
+                    {
+                        _ = Task.Run(() =>
+                        {
+                            GC.Collect(2, GCCollectionMode.Forced, blocking: false);
+                        });
+                    }
                     return;
                 }
             }
@@ -825,6 +859,7 @@ public partial class MainWindow : BorderlessFluentWindow
         // Fallback to dark background if no image could be loaded
         if (WallpaperImage.Source == null)
         {
+            _currentLoadedWallpaperPath = null;
             CustomWallpaperHost.Visibility = Visibility.Collapsed;
             if (RootGrid != null)
             {

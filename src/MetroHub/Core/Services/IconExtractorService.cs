@@ -1,6 +1,9 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -280,8 +283,40 @@ public static class IconExtractorService
             {
                 Directory.CreateDirectory(IconCacheDir);
             }
+            else
+            {
+                // Background sweep: Purge orphaned non-deterministic v4_* files from earlier versions
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        var dir = new DirectoryInfo(IconCacheDir);
+                        foreach (var f in dir.GetFiles("v4_*.png"))
+                        {
+                            try { f.Delete(); } catch { }
+                        }
+                        foreach (var f in dir.GetFiles("*.tmp"))
+                        {
+                            try { f.Delete(); } catch { }
+                        }
+                    }
+                    catch { }
+                });
+            }
         }
         catch { }
+    }
+
+    /// <summary>
+    /// Computes a stable, deterministic 64-bit hex hash (16 characters) from the input string using SHA-256.
+    /// Unlike string.GetHashCode() which is randomized per process launch in modern .NET,
+    /// this hash is 100% stable across all process executions, reboots, and machines.
+    /// </summary>
+    public static string ComputeDeterministicHash(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return "0000000000000000";
+        byte[] hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(input.Trim().ToLowerInvariant()));
+        return Convert.ToHexString(hashBytes, 0, 8).ToLowerInvariant();
     }
 
     public static string? ExtractAndCacheIcon(string filePath)
@@ -299,10 +334,18 @@ public static class IconExtractorService
             resolvedPath = ResolveKnownFolderGuid(resolvedPath);
             string modernPath = ResolveModernAppRedirect(resolvedPath);
             string keyPath = !string.IsNullOrWhiteSpace(modernPath) ? modernPath : (!string.IsNullOrWhiteSpace(resolvedPath) ? resolvedPath : filePath);
-            string hashName = $"v4_{Math.Abs(keyPath.ToLowerInvariant().GetHashCode())}.png";
+
+            // Canonicalize keyPath so relative, differently cased, or slash-varying paths resolve to the exact same hash
+            if (!keyPath.StartsWith("shell:", StringComparison.OrdinalIgnoreCase) && (File.Exists(keyPath) || Directory.Exists(keyPath)))
+            {
+                try { keyPath = Path.GetFullPath(keyPath); } catch { }
+            }
+            keyPath = keyPath.Trim().ToLowerInvariant();
+
+            string hashName = $"v5_{ComputeDeterministicHash(keyPath)}.png";
             string cachedFilePath = Path.Combine(IconCacheDir, hashName);
 
-            // Fast check: if already cached on disk, return existing without opening stream
+            // Fast check: if already cached on disk, return existing without opening stream or re-extracting
             if (File.Exists(cachedFilePath))
             {
                 try
@@ -311,6 +354,8 @@ public static class IconExtractorService
                     if (fi.Length > 200)
                     {
                         _iconPathCache[filePath] = cachedFilePath;
+                        _iconPathCache[keyPath] = cachedFilePath;
+                        if (!string.IsNullOrWhiteSpace(resolvedPath)) _iconPathCache[resolvedPath] = cachedFilePath;
                         return cachedFilePath;
                     }
                 }
@@ -324,13 +369,29 @@ public static class IconExtractorService
                 // Auto-trim transparent borders and shell backplates so small icons fill the container bold and large
                 bs = TrimTransparentPadding(bs);
 
-                using (var fs = new FileStream(cachedFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
+                // Atomic write via unique temp file to guarantee zero corruption and zero thread-locking clashes
+                string tempFile = Path.Combine(IconCacheDir, $"{hashName}.{Guid.NewGuid():N}.tmp");
+                try
                 {
-                    var encoder = new PngBitmapEncoder();
-                    encoder.Frames.Add(BitmapFrame.Create(bs));
-                    encoder.Save(fs);
+                    using (var fs = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None, 4096))
+                    {
+                        var encoder = new PngBitmapEncoder();
+                        encoder.Frames.Add(BitmapFrame.Create(bs));
+                        encoder.Save(fs);
+                    }
+                    File.Move(tempFile, cachedFilePath, overwrite: true);
                 }
+                finally
+                {
+                    if (File.Exists(tempFile))
+                    {
+                        try { File.Delete(tempFile); } catch { }
+                    }
+                }
+
                 _iconPathCache[filePath] = cachedFilePath;
+                _iconPathCache[keyPath] = cachedFilePath;
+                if (!string.IsNullOrWhiteSpace(resolvedPath)) _iconPathCache[resolvedPath] = cachedFilePath;
                 return cachedFilePath;
             }
         }
