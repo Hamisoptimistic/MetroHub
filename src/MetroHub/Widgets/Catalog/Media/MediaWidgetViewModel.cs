@@ -52,6 +52,27 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     [ObservableProperty]
     private bool _hasThumbnail;
 
+    /// <summary>
+    /// Alias for Thumbnail to match user and widget naming standards.
+    /// Setting this also updates HasThumbnail automatically.
+    /// </summary>
+    public ImageSource? AlbumArtSource
+    {
+        get => Thumbnail;
+        set
+        {
+            Thumbnail = value;
+            HasThumbnail = value != null;
+        }
+    }
+
+    /// <summary>
+    /// Retains compressed raw image bytes (~20 KB) in managed memory.
+    /// Allows the heavy decoded WPF BitmapSource/DirectX surface to be released
+    /// when MetroHub is hidden, and instantly re-decoded with 0ms latency when restored.
+    /// </summary>
+    private byte[]? _cachedThumbnailBytes;
+
     private static readonly Color DefaultSeekbarColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
     private static readonly SolidColorBrush DefaultSeekbarBrush = CreateFrozenSolidBrush(DefaultSeekbarColor);
 
@@ -123,9 +144,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     // Bulletproof live stream detection & debounce state
     private long _zeroDurationDetectedAt = 0;
     private long _trackChangedAt = Stopwatch.GetTimestamp();
-    private TimeSpan _lastObservedDuration = TimeSpan.Zero;
-    private long _lastObservedDurationTimestamp = 0;
-    private int _consecutiveGrowthSamples = 0;
 
     private DispatcherTimer? _playbackTimer;
     private long _lastLocalTimestamp = Stopwatch.GetTimestamp();
@@ -231,9 +249,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             _trackDuration = TimeSpan.Zero;
             _zeroDurationDetectedAt = 0;
             _trackChangedAt = Stopwatch.GetTimestamp();
-            _lastObservedDuration = TimeSpan.Zero;
-            _lastObservedDurationTimestamp = 0;
-            _consecutiveGrowthSamples = 0;
             IsLive = false;
             CanSeek = true;
         }
@@ -270,6 +285,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 SourceName = "Media Player";
                 Thumbnail = null;
                 HasThumbnail = false;
+                _cachedThumbnailBytes = null;
                 var fallbackSeekColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
                 var fallbackSeekBrush = new SolidColorBrush(fallbackSeekColor);
                 fallbackSeekBrush.Freeze();
@@ -430,117 +446,54 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 long now = Stopwatch.GetTimestamp();
                 bool isLiveStream = false;
 
-                if (isMusicApp)
+                // A track is a normal recorded track if it has a valid, finite duration (< 24h)
+                if (newDuration > TimeSpan.Zero && newDuration < TimeSpan.FromHours(24))
                 {
-                    // ── DEDICATED MUSIC SOURCE EXEMPTION ──
-                    // Spotify, Apple Music, Tidal, Foobar2000, and local media players never broadcast raw live streams.
-                    // Zero duration is strictly transient buffering during track switches / seek operations.
-                    if (newDuration > TimeSpan.Zero)
+                    IsLive = false;
+                    CanSeek = canSeek;
+                    _trackDuration = newDuration;
+                    _zeroDurationDetectedAt = 0;
+                }
+                else if (newDuration <= TimeSpan.Zero)
+                {
+                    // Zero or indeterminate duration reported:
+                    // 1. If we already established a valid duration for this track, ignore transient zero
+                    // (Chromium/Edge sends momentary zero duration during buffering/seeks).
+                    if (_trackDuration > TimeSpan.Zero && !IsLive)
                     {
-                        IsLive = false;
-                        CanSeek = canSeek;
-                        _trackDuration = newDuration;
-                        _zeroDurationDetectedAt = 0;
-                        _consecutiveGrowthSamples = 0;
+                        return;
+                    }
+
+                    // 2. Track Change Grace Period: allow 2.0s for headers to load before considering live
+                    double timeSinceTrackChange = (double)(now - _trackChangedAt) / Stopwatch.Frequency;
+                    if (timeSinceTrackChange < 2.0 || canSeek || isMusicApp)
+                    {
+                        // Still loading/buffering or seeking is enabled -> definitely not a live stream!
+                        return;
+                    }
+
+                    // 3. Unseekable live broadcast gate (Twitch, Kick, web radio):
+                    // Must have seek disabled AND zero duration persistently for > 2.5s
+                    if (_zeroDurationDetectedAt == 0)
+                    {
+                        _zeroDurationDetectedAt = now;
+                        return;
+                    }
+
+                    double zeroDurationElapsed = (double)(now - _zeroDurationDetectedAt) / Stopwatch.Frequency;
+                    if (zeroDurationElapsed >= 2.5 && !canSeek)
+                    {
+                        isLiveStream = true;
                     }
                     else
                     {
-                        // Buffering / loading: ignore zero duration if we already have an established duration
-                        if (_trackDuration > TimeSpan.Zero)
-                        {
-                            return;
-                        }
-                        // During initial buffering of a new song, ensure IsLive is false and return
-                        IsLive = false;
                         return;
                     }
                 }
-                else
+                else if (newDuration >= TimeSpan.FromHours(24) && !canSeek)
                 {
-                    // ── GENERAL / BROWSER SOURCES (YouTube, Twitch, Kick, Web Radio, etc.) ──
-
-                    if (newDuration > TimeSpan.Zero)
-                    {
-                        // 1. Absurd / dummy infinite durations (e.g. > 24 hours on internet radio / HLS streams)
-                        if (newDuration > TimeSpan.FromHours(24) || newDuration >= TimeSpan.MaxValue - TimeSpan.FromDays(1))
-                        {
-                            isLiveStream = true;
-                        }
-                        else
-                        {
-                            // 2. Sliding-buffer DVR Live Stream Detection (e.g. YouTube Live with rewind capability)
-                            // A normal video or song has a CONSTANT duration.
-                            // A live DVR stream's duration GROWS in real-time alongside wall-clock time (~1s per second).
-                            if (_lastObservedDuration > TimeSpan.Zero && _lastObservedDurationTimestamp > 0)
-                            {
-                                double elapsedWallClock = (double)(now - _lastObservedDurationTimestamp) / Stopwatch.Frequency;
-                                double durationGrowth = (newDuration - _lastObservedDuration).TotalSeconds;
-
-                                // If duration grew roughly in sync with real elapsed time (within 1.2s tolerance) over at least 1s
-                                if (elapsedWallClock >= 1.0 && durationGrowth > 0.5 && Math.Abs(durationGrowth - elapsedWallClock) < 1.5)
-                                {
-                                    // Verify position is near the live edge (within 20s of the sliding buffer head)
-                                    if (Math.Abs((timeline.EndTime - timeline.Position).TotalSeconds) < 20.0)
-                                    {
-                                        _consecutiveGrowthSamples++;
-                                    }
-                                }
-                                else if (elapsedWallClock >= 1.0 && Math.Abs(durationGrowth) < 0.3)
-                                {
-                                    // Duration is completely static: regular recorded track/video!
-                                    _consecutiveGrowthSamples = 0;
-                                }
-                            }
-
-                            _lastObservedDuration = newDuration;
-                            _lastObservedDurationTimestamp = now;
-
-                            // Require 3 consecutive expanding samples spanning multiple seconds to confirm DVR live
-                            if (_consecutiveGrowthSamples >= 3)
-                            {
-                                isLiveStream = true;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // ── ZERO / INDETERMINATE DURATION (newDuration <= TimeSpan.Zero) ──
-
-                        // A. If we already established a positive duration on this track,
-                        // Chromium sends transient EndTime <= 0 during seeks and buffering. Ignore that transient zero!
-                        if (_trackDuration > TimeSpan.Zero && !IsLive)
-                        {
-                            return;
-                        }
-
-                        // B. Track Change Grace Period:
-                        // Allow 1.5s after a track change or playback start for the browser/app to decode headers.
-                        double timeSinceTrackChange = (double)(now - _trackChangedAt) / Stopwatch.Frequency;
-                        if (timeSinceTrackChange < 1.5)
-                        {
-                            // Still within initial buffering window — DO NOT flag as live yet!
-                            return;
-                        }
-
-                        // C. Debounce gate for unseekable live streams (Twitch, Kick, Web Radio):
-                        // If duration remains 0 after the grace period, require at least 1.5s of persistent zero duration
-                        // while actively playing or with seek disabled before declaring it a live stream.
-                        if (_zeroDurationDetectedAt == 0)
-                        {
-                            _zeroDurationDetectedAt = now;
-                            return;
-                        }
-
-                        double zeroDurationElapsed = (double)(now - _zeroDurationDetectedAt) / Stopwatch.Frequency;
-                        if (zeroDurationElapsed >= 1.5 && (isPlaying || !canSeek))
-                        {
-                            isLiveStream = true;
-                        }
-                        else
-                        {
-                            return;
-                        }
-                    }
+                    // Infinite / 24h+ live broadcast with seek disabled
+                    isLiveStream = true;
                 }
 
                 if (isLiveStream)
@@ -563,11 +516,9 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 }
 
                 // ── REGULAR RECORDED TRACK / VIDEO ──
-                // Positive duration arrived and stream is not a live broadcast.
-                // Clear live flags and accept valid track duration!
                 IsLive = false;
                 CanSeek = canSeek;
-                _trackDuration = newDuration;
+                _trackDuration = newDuration > TimeSpan.Zero ? newDuration : _trackDuration;
                 _zeroDurationDetectedAt = 0;
 
                 // If we're in a user-initiated seek suppression window, skip external updates entirely
@@ -774,9 +725,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
         if (IsLive)
         {
-            // For live streams, do not extrapolate against an indeterminate duration.
-            // Gently check OS timeline every 2s (every 8th tick) to track changes or pauses.
-            if (_timerTickCount % 8 == 0)
+            // For live streams, check OS timeline every 1s (every 2nd tick) to detect if a recorded track started
+            if (_timerTickCount % 2 == 0)
             {
                 SyncTimelineProperties(session, playback);
             }
@@ -917,6 +867,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                     SourceName = ResolveSourceName(rawSource, null, null);
                     Thumbnail = null;
                     HasThumbnail = false;
+                    _cachedThumbnailBytes = null;
                     var fallbackSeekColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
                     var fallbackSeekBrush = new SolidColorBrush(fallbackSeekColor);
                     fallbackSeekBrush.Freeze();
@@ -977,9 +928,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                     CanSeek = true;
                     _zeroDurationDetectedAt = 0;
                     _trackChangedAt = Stopwatch.GetTimestamp();
-                    _lastObservedDuration = TimeSpan.Zero;
-                    _lastObservedDurationTimestamp = 0;
-                    _consecutiveGrowthSamples = 0;
                 }
             }
 
@@ -987,13 +935,14 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             bool hasAlbum = !string.IsNullOrWhiteSpace(cleanAlbum);
 
             ImageSource? bmp = null;
+            byte[]? rawBytes = null;
             Color seekbarColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
             var seekbarBrush = new SolidColorBrush(seekbarColor);
             seekbarBrush.Freeze();
 
             if (props.Thumbnail != null)
             {
-                bmp = await LoadThumbnailAsync(props.Thumbnail);
+                (bmp, rawBytes) = await LoadThumbnailAsync(props.Thumbnail);
                 if (epoch != _updateEpoch) return;
                 if (bmp is BitmapSource bs)
                 {
@@ -1010,6 +959,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 Album = cleanAlbum;
                 HasAlbum = hasAlbum;
                 SourceName = cleanSource;
+                _cachedThumbnailBytes = rawBytes;
                 Thumbnail = bmp;
                 HasThumbnail = bmp != null;
                 SeekbarBrush = seekbarBrush;
@@ -1026,7 +976,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    private static async Task<ImageSource?> LoadThumbnailAsync(IRandomAccessStreamReference streamRef)
+    private static async Task<(ImageSource? Image, byte[]? RawBytes)> LoadThumbnailAsync(IRandomAccessStreamReference streamRef)
     {
         try
         {
@@ -1034,18 +984,49 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             using var netStream = stream.AsStreamForRead();
             using var memory = new MemoryStream();
             await netStream.CopyToAsync(memory);
+            byte[] bytes = memory.ToArray();
             memory.Position = 0;
 
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.StreamSource = memory;
-            bitmap.DecodePixelWidth = 256;
+            bitmap.DecodePixelWidth = 512;
             bitmap.EndInit();
             bitmap.Freeze();
 
             // If thumbnail is 16:9 YouTube video frame with pillarboxes,
             // center-crop to the square album cover to eliminate side pillarbox bars!
+            if (bitmap.PixelWidth > bitmap.PixelHeight * 1.25)
+            {
+                int size = bitmap.PixelHeight;
+                int xOffset = (bitmap.PixelWidth - size) / 2;
+                var cropped = new CroppedBitmap(bitmap, new Int32Rect(xOffset, 0, size, size));
+                cropped.Freeze();
+                return (cropped, bytes);
+            }
+
+            return (bitmap, bytes);
+        }
+        catch
+        {
+            return (null, null);
+        }
+    }
+
+    private static ImageSource? CreateThumbnailFromBytes(byte[] bytes)
+    {
+        try
+        {
+            using var memory = new MemoryStream(bytes);
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.StreamSource = memory;
+            bitmap.DecodePixelWidth = 512;
+            bitmap.EndInit();
+            bitmap.Freeze();
+
             if (bitmap.PixelWidth > bitmap.PixelHeight * 1.25)
             {
                 int size = bitmap.PixelHeight;
@@ -1237,7 +1218,16 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                lower.Contains("musicbee") ||
                lower.Contains("zunemusic") ||
                lower.Contains("microsoft.zunemusic") ||
-               lower.Contains("microsoft.media.player");
+               lower.Contains("microsoft.media.player") ||
+               lower.Contains("vlc") ||
+               lower.Contains("wmplayer") ||
+               lower.Contains("potplayer") ||
+               lower.Contains("mpc-hc") ||
+               lower.Contains("mpc-be") ||
+               lower.Contains("groove") ||
+               lower.Contains("deezer") ||
+               lower.Contains("qobuz") ||
+               lower.Contains("amazonmusic");
     }
 
     public static string ResolveSourceName(string? appId, string? title, string? artist)
@@ -1461,6 +1451,24 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     {
         _isHubVisible = false;
         _playbackTimer?.Stop();
+
+        // Release decoded album art bitmap from GPU/DirectX memory and WPF render tree
+        // while hidden, preventing working set growth (60 MB -> 240 MB+).
+        // Compressed raw bytes (_cachedThumbnailBytes) remain intact in memory for instant zero-latency restoration.
+        void ClearThumbnail()
+        {
+            Thumbnail = null;
+            HasThumbnail = false;
+        }
+
+        if (Application.Current?.Dispatcher is Dispatcher disp && !disp.CheckAccess())
+        {
+            disp.InvokeAsync(ClearThumbnail);
+        }
+        else
+        {
+            ClearThumbnail();
+        }
     }
 
     public override void Resume()
@@ -1474,6 +1482,40 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 _hasPendingMetadataRefresh = false;
                 _ = UpdateMediaDetailsAsync();
             }
+            else
+            {
+                // Hub restored without track change: re-decode cached thumbnail bytes instantly
+                void RestoreThumbnail()
+                {
+                    if (_cachedThumbnailBytes != null && Thumbnail == null)
+                    {
+                        var restoredBmp = CreateThumbnailFromBytes(_cachedThumbnailBytes);
+                        if (restoredBmp != null)
+                        {
+                            Thumbnail = restoredBmp;
+                            HasThumbnail = true;
+                        }
+                        else
+                        {
+                            _ = UpdateMediaDetailsAsync();
+                        }
+                    }
+                    else if (Thumbnail == null && HasMedia)
+                    {
+                        _ = UpdateMediaDetailsAsync();
+                    }
+                }
+
+                if (Application.Current?.Dispatcher is Dispatcher disp && !disp.CheckAccess())
+                {
+                    disp.InvokeAsync(RestoreThumbnail);
+                }
+                else
+                {
+                    RestoreThumbnail();
+                }
+            }
+
             SyncTimelineProperties(session);
             SyncPlaybackState(session);
         }
@@ -1534,6 +1576,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             }
 
             Thumbnail = null;
+            _cachedThumbnailBytes = null;
         }
 
         base.Dispose(disposing);

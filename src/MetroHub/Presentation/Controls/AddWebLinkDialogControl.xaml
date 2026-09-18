@@ -237,7 +237,7 @@
                                 <ui:ProgressRing x:Name="LivePreviewSpinner"
                                                  Width="18"
                                                  Height="18"
-                                                 IsIndeterminate="True"
+                                                 IsIndeterminate="False"
                                                  HorizontalAlignment="Center"
                                                  VerticalAlignment="Center"
                                                  Visibility="Collapsed" />

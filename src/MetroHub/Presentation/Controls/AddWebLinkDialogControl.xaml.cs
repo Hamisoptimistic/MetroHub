@@ -48,6 +48,7 @@ public sealed partial class AddWebLinkDialogControl : UserControl
         LivePreviewImage.Visibility = Visibility.Collapsed;
         LivePreviewFallbackIcon.Visibility = Visibility.Visible;
         LivePreviewSpinner.Visibility = Visibility.Collapsed;
+        LivePreviewSpinner.IsIndeterminate = false;
         LivePreviewTitleText.Text = "Website Preview";
         LivePreviewDomainText.Text = "Enter a URL below...";
         AddButton.IsEnabled = false;
@@ -161,6 +162,7 @@ public sealed partial class AddWebLinkDialogControl : UserControl
             LivePreviewImage.Visibility = Visibility.Collapsed;
             LivePreviewFallbackIcon.Visibility = Visibility.Visible;
             LivePreviewSpinner.Visibility = Visibility.Collapsed;
+            LivePreviewSpinner.IsIndeterminate = false;
             _resolvedIconPath = null;
             return;
         }
@@ -192,6 +194,7 @@ public sealed partial class AddWebLinkDialogControl : UserControl
                     LivePreviewTitleText.Text = !string.IsNullOrWhiteSpace(TitleTextBox.Text) ? TitleTextBox.Text : inferredTitle;
                     LivePreviewDomainText.Text = domain;
                     LivePreviewSpinner.Visibility = Visibility.Visible;
+                    LivePreviewSpinner.IsIndeterminate = true;
                     LivePreviewFallbackIcon.Visibility = Visibility.Collapsed;
                     LivePreviewImage.Visibility = Visibility.Collapsed;
                 });
@@ -203,6 +206,7 @@ public sealed partial class AddWebLinkDialogControl : UserControl
                 {
                     if (token.IsCancellationRequested) return;
                     LivePreviewSpinner.Visibility = Visibility.Collapsed;
+                    LivePreviewSpinner.IsIndeterminate = false;
 
                     if (!string.IsNullOrWhiteSpace(iconPath) && File.Exists(iconPath))
                     {

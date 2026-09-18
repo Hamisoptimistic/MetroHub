@@ -451,7 +451,7 @@
             </Grid>
 
             <!-- Loading Spinner Indicator -->
-            <ProgressBar IsIndeterminate="True"
+            <ProgressBar IsIndeterminate="{Binding IsLoading}"
                          Height="2"
                          VerticalAlignment="Top"
                          Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"

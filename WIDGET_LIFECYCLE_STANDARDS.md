@@ -45,6 +45,10 @@ MetroHub rests quietly in the Windows system tray when closed.
 - **Visibility Check:** In any asynchronous callbacks, OS event delegates, or media listeners, check `_isHubVisible` before dispatching work.
 - **No Idle UI Dispatching:** **NEVER** dispatch `Dispatcher.InvokeAsync` updates when MetroHub is hidden (`!_isHubVisible`).
 - **Dormant Timers for Background State:** If a widget tracks ongoing elapsed time while hidden (like Pomodoro), DO NOT tick a high-frequency UI timer. Instead, pause the UI timer and either compute elapsed time on `Resume()` via `DateTime.UtcNow`, or arm a single dormant one-shot `System.Threading.Timer` with zero CPU overhead.
+- **Dynamic Progress Controls (`IsIndeterminate`):** **NEVER** hardcode `IsIndeterminate="True"` in XAML for `ProgressBar` or `ui:ProgressRing`. Hardcoding `True` causes WPF's composition engine (`MediaContext.AnimatedRenderMessageHandler`) and vector geometry math (`PathGeometry.GetPathBoundsAsRB`) to continuously tick even when the control or its parent is `Visibility="Collapsed"`. Always bind dynamically: `IsIndeterminate="{Binding IsLoading}"` or disable in code-behind when hidden.
+- **No Forced Memory Trimming (`GC.Collect` / `EmptyWorkingSet`):** **STRICTLY BANNED:** Never call `GC.Collect()`, `psapi.dll!EmptyWorkingSet()`, or `SetProcessWorkingSetSize()`. Forcing pages to disk causes hard page faults and sluggish restore times. Modern .NET 9 concurrent GC manages generation budgets autonomously without manual interference.
+- **UI Automation Suppression:** Custom root windows (`BorderlessFluentWindow`) and dense canvas shells must override `OnCreateAutomationPeer()` to return `null`, preventing `ContextLayoutManager.fireAutomationEvents()` and recursive subtree walks from burning CPU in idle.
+- **Release Decoded Album Art on Hide:** In media or image widgets, set `Thumbnail = null; HasThumbnail = false;` (or `AlbumArtSource = null;`) on `Pause()`. Retain only compact compressed raw bytes (~20 KB) in memory and re-decode on `Resume()`. Pinned decoded DirectX bitmap surfaces in VRAM cause hidden working set to climb from ~60 MB to 240 MB+.
 
 ---
 

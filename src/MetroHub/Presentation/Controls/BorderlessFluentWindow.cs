@@ -39,6 +39,13 @@ public class BorderlessFluentWindow : FluentWindow
         // Suppress WPF-UI's built-in backdrop manager which resets Background to solid #202020
     }
 
+    protected override System.Windows.Automation.Peers.AutomationPeer? OnCreateAutomationPeer()
+    {
+        // Suppress recursive UI Automation peer subtree walking during layout and render passes,
+        // preventing ContextLayoutManager.fireAutomationEvents() from burning CPU cycles in idle.
+        return null;
+    }
+
     protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
     {
         base.OnPropertyChanged(e);

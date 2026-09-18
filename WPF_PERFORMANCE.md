@@ -127,10 +127,44 @@ Replace software `DropShadowEffect` with lightweight painted borders or GPU radi
 
 ---
 
+## 7. Zero-CPU Idle Hygiene: Spinners & UI Automation (CRITICAL)
+
+### 1. Dynamic Progress Controls (`IsIndeterminate`)
+* **The Problem:** In WPF (especially `Wpf.Ui.Controls.ProgressRing` which uses vector `Arc` geometries, and standard `ProgressBar`), hardcoding `IsIndeterminate="True"` causes background animation storyboards and `MediaContext.AnimatedRenderMessageHandler` to continuously tick in the composition engine—even if the control or its parent container has `Visibility="Collapsed"`. This triggers continuous `PathGeometry.GetPathBoundsAsRB` recalculations and burns 2–5% CPU in pure idle.
+* **The Mandatory Rule:** **NEVER** hardcode `IsIndeterminate="True"` in XAML.
+  * Always bind dynamically to the loading boolean:
+    ```xaml
+    <!-- ✅ CORRECT: Storyboard stops completely when not loading -->
+    <ui:ProgressRing IsIndeterminate="{Binding IsLoading}"
+                     Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}" />
+    ```
+  * In code-behind (e.g. dialogs), always toggle `IsIndeterminate` alongside `Visibility`:
+    ```csharp
+    spinner.Visibility = Visibility.Visible;
+    spinner.IsIndeterminate = true;
+    // On complete / dismiss:
+    spinner.Visibility = Visibility.Collapsed;
+    spinner.IsIndeterminate = false;
+    ```
+
+### 2. UI Automation Peer Suppression (`OnCreateAutomationPeer`)
+* **The Problem:** When Windows UIAutomation / Accessibility tools or shell monitors are active on the system, WPF's default `WindowAutomationPeer` recursively walks the element tree (`ContextLayoutManager.fireAutomationEvents()` -> `AutomationPeer.UpdateSubtree()`), creating hundreds of `ItemAutomationPeer`s and repeatedly resizing internal collections, burning hundreds of milliseconds in idle layout passes.
+* **The Mandatory Rule:** On custom root windows (`BorderlessFluentWindow`) and dense canvas shells, override `OnCreateAutomationPeer()` to return `null` unless explicit external screen-reader integration is required:
+  ```csharp
+  protected override System.Windows.Automation.Peers.AutomationPeer? OnCreateAutomationPeer()
+  {
+      // Suppress recursive UI Automation peer subtree walking during layout and render passes,
+      // preventing ContextLayoutManager.fireAutomationEvents() from burning CPU cycles in idle.
+      return null;
+  }
+  ```
+
+---
+
 ## 8. RAM & Managed Allocation Standards (CRITICAL)
 
 1. **No Destructive `EmptyWorkingSet` P/Invokes or Forced GCs**:
-   * Never call `psapi.dll!EmptyWorkingSet(hProcess)` or invoke manual `GC.Collect()` on window minimization. Forcibly paging working set pages to disk causes hard page faults and sluggish app restore times.
+   * Never call `psapi.dll!EmptyWorkingSet(hProcess)` or invoke manual `GC.Collect()` on window minimization or idle. Forcibly paging working set pages to disk causes hard page faults and sluggish app restore times.
    * Modern .NET 9 uses self-tuning, background concurrent GC. Avoid manual `GC.Collect()` or `Task.Run` hops on minimize; allow the CLR to manage generation budgets autonomously.
 
 2. **Zero-Leak ViewModel & Element Lifecycle**:
@@ -179,4 +213,7 @@ Replace software `DropShadowEffect` with lightweight painted borders or GPU radi
 - [ ] Raster and pixel extraction loops use `ArrayPool<byte>.Shared` and `stackalloc`.
 - [ ] Hardware queries use event-driven caching (`NetworkChange`) instead of periodic polling.
 - [ ] Concrete widget ViewModels are `sealed`.
+- [ ] No hardcoded `IsIndeterminate="True"` on `ProgressRing` or `ProgressBar` (bound dynamically to loading state).
+- [ ] Root window overrides `OnCreateAutomationPeer()` returning `null` to prevent idle UIA tree walks.
+- [ ] Zero manual `GC.Collect()` calls, zero `EmptyWorkingSet()` or forced memory trimming.
 

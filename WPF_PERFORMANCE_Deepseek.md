@@ -15,6 +15,9 @@ We've already fixed these bugs once. Don't reintroduce them.
 | GDI handle churn | Unfrozen Freezables | Freeze everywhere |
 | Working set thrashing | EmptyWorkingSet() on minimize | Deleted |
 | Memory leaks | Lambda event subscriptions | Named handlers + Dispose |
+| 2–5% idle animation churn | IsIndeterminate="True" on collapsed spinners | Dynamic binding {Binding IsLoading} |
+| 700ms+ idle UIA tree walks | Default AutomationPeer on dense window | OnCreateAutomationPeer() => null |
+| 60 MB -> 240 MB+ RAM climb | Keeping decoded album art bitmaps in VRAM while hidden | Release Decoded Album Art on HideScreen() / Pause() |
 
 ## 1 - Timers
 
@@ -271,7 +274,53 @@ Resume() must:
 
 If your widget does no background work, Pause() and Resume() can be no-ops, but implement them anyway.
 
-## 11 - Verification Before Merge
+## 11 - Indeterminate Progress Controls (ProgressRing & ProgressBar)
+
+Never hardcode `IsIndeterminate="True"` on static XAML.
+
+In WPF (specifically `Wpf.Ui.Controls.ProgressRing` which uses vector `Arc` geometries, and standard `ProgressBar`), hardcoding `IsIndeterminate="True"` causes background animation storyboards and `MediaContext.AnimatedRenderMessageHandler` to continuously tick in the composition engine—even if the control or its parent container has `Visibility="Collapsed"`! This triggers continuous `PathGeometry.GetPathBoundsAsRB` recalculations and 2–5% idle CPU drain.
+
+Always bind `IsIndeterminate` dynamically to the actual boolean loading state:
+
+    <!-- BAD: Storyboard runs in background even when parent Grid is Collapsed -->
+    <ui:ProgressRing IsIndeterminate="True"
+                     Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}" />
+
+    <!-- GOOD: Storyboard is stopped completely when not loading -->
+    <ui:ProgressRing IsIndeterminate="{Binding IsLoading}"
+                     Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}" />
+
+If controlling from code-behind (e.g. in dialogs):
+Always pair visibility changes with `IsIndeterminate`:
+- When showing: `spinner.Visibility = Visibility.Visible; spinner.IsIndeterminate = true;`
+- When hiding: `spinner.Visibility = Visibility.Collapsed; spinner.IsIndeterminate = false;`
+
+## 12 - UI Automation Peer Suppression
+
+WPF's default `WindowAutomationPeer` recursively walks the entire visual tree on layout updates whenever Windows Accessibility / UI Automation is active on the system (Inspect, Narrator, shell integrations).
+
+In dense applications with hundreds of controls, icons, and tiles, `ContextLayoutManager.fireAutomationEvents()` calls `AutomationPeer.UpdateSubtree()`, creating hundreds of `ItemAutomationPeer`s and repeatedly resizing HashSets and Lists, burning up to 700ms+ of CPU in idle layout passes.
+
+Rule: On root windows (`BorderlessFluentWindow`) and dense canvas containers, override `OnCreateAutomationPeer()` to return `null` unless explicit external accessibility tree exposure is required:
+
+    protected override System.Windows.Automation.Peers.AutomationPeer? OnCreateAutomationPeer()
+    {
+        // Suppress recursive UI Automation peer subtree walking during layout and render passes,
+        // preventing ContextLayoutManager.fireAutomationEvents() from burning CPU cycles in idle.
+        return null;
+    }
+
+## 13 - Release Decoded Album Art on HideScreen / Pause
+
+DirectX/WPF keeps decoded `BitmapSource` unmanaged surfaces pinned in the composition and render pipeline. When media plays (Spotify, YouTube, VLC), continuous track updates load heavy 256x256+ decoded textures that can expand process working set from ~60 MB up to 240 MB+.
+
+Rule:
+- When MetroHub transitions to HIDDEN (`Pause()`), set `Thumbnail = null; HasThumbnail = false;` (or `AlbumArtSource = null;`).
+- Retain only the compact compressed raw image bytes (`byte[]? _cachedThumbnailBytes`, ~20 KB) in managed memory.
+- When restored in `ShowScreen()` (`Resume()`), instantly re-decode the cached bytes via `BitmapImage` with `DecodePixelWidth = 256` and `.Freeze()`.
+- If the track changed while hidden, defer GSMTC metadata fetches until `Resume()` so zero decoding happens in the background.
+
+## 14 - Verification Before Merge
 
 Every new feature must pass this checklist before it ships.
 
@@ -302,7 +351,7 @@ Lifecycle: minimize and restore 10 times. Working set and GDI handles must be fl
 
 If any target fails, the feature is not done. Fix the root cause. Do not add GC.Collect.
 
-## 12 - Anti-Patterns Reference
+## 14 - Anti-Patterns Reference
 
 Never use these. If you see them in code review, reject.
 
@@ -318,8 +367,10 @@ Never use these. If you see them in code review, reject.
 - Task.Run inside a lock: deadlock risk. Use SemaphoreSlim.WaitAsync.
 - .Result or .Wait() on the UI thread: deadlock. Use async void handler or ConfigureAwait(false).
 - Raising PropertyChanged for unchanged values: forces binding re-evaluation and layout. Diff before raise.
+- IsIndeterminate="True" hardcoded in XAML: keeps the animation storyboard ticking in the composition engine (MediaContext.AnimatedRenderMessageHandler), recomputing vector geometries and bounds even when Visibility="Collapsed". Always bind IsIndeterminate="{Binding IsLoading}" or set to false when hidden.
+- Default WindowAutomationPeer on dense custom windows: ContextLayoutManager.fireAutomationEvents() calls UpdateSubtree() and traverses hundreds of visual items on every layout pass. Override OnCreateAutomationPeer() to return null on BorderlessFluentWindow.
 
-## 13 - Code Review Checklist
+## 15 - Code Review Checklist
 
 Before approving any PR that adds a widget, feature, service, or control:
 
@@ -331,10 +382,12 @@ Before approving any PR that adds a widget, feature, service, or control:
 - All UI-thread PropertyChanged raises diffed
 - All timers stoppable, gated on Pause and Resume
 - No GC.Collect, no EmptyWorkingSet
+- No hardcoded IsIndeterminate="True" on ProgressRing or ProgressBar
+- Root window overrides OnCreateAutomationPeer() returning null
 - dotnet-counters and dotnet-trace targets met (attach results to PR)
 - 10-cycle minimize and restore shows flat working set and GDI
 
-## 14 - When Something Is Slow
+## 16 - When Something Is Slow
 
 Follow this order. Do not skip steps. Do not guess.
 
@@ -361,6 +414,9 @@ When implementing any new feature, widget, service, or control for MetroHub, you
 8. No GC.Collect calls, ever. No EmptyWorkingSet. No forced memory trimming.
 9. Any timer-driven update must diff its output before writing to the UI. If the formatted string is identical, return early.
 10. On minimize or hide: pause timers, release rebuildable caches, and stop polling. On show or restore: resume timers, re-warm caches before the window becomes visible if warming is over 50ms.
+11. Never hardcode IsIndeterminate="True" on ProgressRing or ProgressBar. Always bind dynamically to the loading boolean (IsIndeterminate="{Binding IsLoading}") or toggle off in code-behind so animations don't tick in idle.
+12. Suppress UI Automation on dense fullscreen / canvas windows by overriding OnCreateAutomationPeer() to return null unless explicit accessibility peers are required.
+13. Release decoded album art bitmaps on hide (Thumbnail = null; HasThumbnail = false;). Cache raw compressed bytes and re-decode on resume to prevent working set bloat (60 MB -> 240 MB+).
 
 Before declaring a feature complete, run dotnet-counters for 20 seconds while the feature is idle and confirm CPU under 0.5%, allocation under 0.5 MB/s, and Gen0 under 1 per second. Report the numbers.
 
@@ -370,13 +426,16 @@ Before declaring a feature complete, run dotnet-counters for 20 seconds while th
     EVENTS       -> Named handlers, always unsubscribed
     FREEZABLES   -> Freeze on creation, cache frozen instances
     BITMAPS      -> DecodePixelWidth at display size, Freeze
+    ALBUM ART    -> Null on Pause(), re-decode from cached bytes on Resume()
     CACHES       -> Bounded, LRU, deterministic hashes
     THREADS      -> Task.Run for work, marshal only the result
     PROPERTIES   -> Diff before raise
     MEMORY       -> No GC.Collect, no EmptyWorkingSet, ever
+    SPINNERS     -> IsIndeterminate="{Binding IsLoading}", never hardcode True
+    AUTOMATION   -> OnCreateAutomationPeer => null on root windows
     LIFECYCLE    -> Pause timers on hide, Resume on show
     VERIFY       -> dotnet-counters + dotnet-trace before merge
 
-Last updated: 2026-09-17
+Last updated: 2026-09-18
 Applies to: All code in src/MetroHub/
 Enforcement: Build must pass, trace must show targets, review must check the list above.

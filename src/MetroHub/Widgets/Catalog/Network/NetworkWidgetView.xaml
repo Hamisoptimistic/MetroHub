@@ -1049,7 +1049,7 @@
                                                             CornerRadius="2"
                                                             Width="80"
                                                             Height="26">
-                                                        <ui:ProgressRing IsIndeterminate="True"
+                                                        <ui:ProgressRing IsIndeterminate="{Binding IsConnecting}"
                                                                          Width="14"
                                                                          Height="14"
                                                                          Foreground="#FFFFFF"
@@ -1207,7 +1207,7 @@
                             </Style>
                         </Grid.Style>
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <ui:ProgressRing IsIndeterminate="True"
+                            <ui:ProgressRing IsIndeterminate="{Binding IsWifiTransitioning}"
                                              Width="36"
                                              Height="36"
                                              Foreground="#FFFFFF"
@@ -1375,7 +1375,7 @@
                                                 <Grid Grid.Column="2" VerticalAlignment="Center" Width="76" HorizontalAlignment="Right">
                                                     <!-- Smooth Micro Progress Ring (Left slot) -->
                                                     <ui:ProgressRing Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
-                                                                     IsIndeterminate="True"
+                                                                     IsIndeterminate="{Binding IsBusy}"
                                                                      Width="14"
                                                                      Height="14"
                                                                      Foreground="#FFFFFF"

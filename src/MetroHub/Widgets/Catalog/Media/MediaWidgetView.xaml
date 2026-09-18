@@ -80,9 +80,12 @@
                             BorderThickness="1"
                             SnapsToDevicePixels="True"
                             UseLayoutRounding="True"
+                            RenderOptions.BitmapScalingMode="HighQuality"
                             Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}">
                         <Border.Background>
-                            <ImageBrush ImageSource="{Binding Thumbnail}" Stretch="UniformToFill" />
+                            <ImageBrush ImageSource="{Binding Thumbnail}"
+                                        Stretch="UniformToFill"
+                                        RenderOptions.BitmapScalingMode="HighQuality" />
                         </Border.Background>
                     </Border>
 
