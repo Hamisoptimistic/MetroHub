@@ -273,49 +273,6 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-
-                            <!-- Modern Fluent Live Badge (Vibrant Glowing Red Dot + Clean Aligned 'LIVE') -->
-                            <StackPanel Orientation="Horizontal"
-                                        VerticalAlignment="Center"
-                                        HorizontalAlignment="Right">
-                                <StackPanel.Style>
-                                    <Style TargetType="StackPanel">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <MultiDataTrigger>
-                                                <MultiDataTrigger.Conditions>
-                                                    <Condition Binding="{Binding HasMedia}" Value="True" />
-                                                    <Condition Binding="{Binding IsLive}" Value="True" />
-                                                </MultiDataTrigger.Conditions>
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </MultiDataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
-
-                                <!-- Precision Glowing Red Live Dot -->
-                                <Border Width="6"
-                                        Height="6"
-                                        CornerRadius="3"
-                                        Background="#FF3333"
-                                        VerticalAlignment="Center"
-                                        Margin="0,0.5,5.5,0"
-                                        SnapsToDevicePixels="True"
-                                        UseLayoutRounding="True">
-                                    <Border.Effect>
-                                        <DropShadowEffect Color="#FF3333" BlurRadius="5" ShadowDepth="0" Opacity="0.8" />
-                                    </Border.Effect>
-                                </Border>
-
-                                <!-- Crisp 'LIVE' Label -->
-                                <TextBlock Text="LIVE"
-                                           FontSize="11"
-                                           FontWeight="Bold"
-                                           FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                           Foreground="#FFFFFF"
-                                           VerticalAlignment="Center"
-                                           SnapsToDevicePixels="True" />
-                            </StackPanel>
                         </Grid>
                     </Border>
                 </Grid>

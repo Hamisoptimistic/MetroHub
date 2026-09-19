@@ -3,27 +3,31 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
 using MetroHub.Widgets.Messaging;
+using MetroHub.Widgets.Serialization;
 using Windows.Media.Control;
 using Windows.Storage.Streams;
-using System.Windows.Threading;
-using MetroHub.Widgets.Serialization;
+using WindowsMediaController;
 
 namespace MetroHub.Widgets.Catalog.Media;
 
+/// <summary>
+/// High-performance, event-driven Media Widget ViewModel powered by Dubya.WindowsMediaController.
+/// Listens to OS SMTC events without polling timers. Idle CPU is 0.0%.
+/// </summary>
 public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 {
-    private GlobalSystemMediaTransportControlsSessionManager? _manager;
-    private GlobalSystemMediaTransportControlsSession? _currentSession;
+    private MediaManager? _mediaManager;
+    private MediaManager.MediaSession? _activeSession;
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
@@ -35,7 +39,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     private string _title = "No media playing";
 
     [ObservableProperty]
-    private string _artist = string.Empty;
+    private string _artist = "Open Spotify, YouTube, or VLC";
 
     [ObservableProperty]
     private string _album = string.Empty;
@@ -53,7 +57,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     private bool _hasThumbnail;
 
     /// <summary>
-    /// Alias for Thumbnail to match user and widget naming standards.
+    /// Alias for Thumbnail to match widget naming standards.
     /// Setting this also updates HasThumbnail automatically.
     /// </summary>
     public ImageSource? AlbumArtSource
@@ -91,7 +95,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public double AlbumArtSize => Model.SpanY >= 4 ? 132.0 : 104.0;
 
-
     [ObservableProperty]
     private bool _isPlaying;
 
@@ -127,35 +130,30 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     private readonly object _stateLock = new();
     private string _currentTrackId = string.Empty;
-    private long _updateEpoch = 0;
     private long _suppressExternalPositionUpdatesUntil = 0;
     private bool _optimisticPlaybackTarget = false;
     private long _optimisticUntilTimestamp = 0;
-    private int _timerTickCount = 0;
 
     // Bulletproof sync: Track the freshest OS-reported LastUpdatedTime we've seen.
-    // Any incoming update with an OLDER LastUpdatedTime is stale and rejected.
     private DateTimeOffset _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
-    // After a large position jump (seek), enter a recovery window where every
-    // timer tick does a full OS query instead of local extrapolation.
-    private long _seekRecoveryUntil = 0;
     private long _transientZeroDetectedAt = 0;
 
     // Bulletproof live stream detection & debounce state
+    private bool _isLiveLocked = false;
+    private TimeSpan _lastObservedDuration = TimeSpan.Zero;
     private long _zeroDurationDetectedAt = 0;
     private long _trackChangedAt = Stopwatch.GetTimestamp();
 
+    // Lightweight 250ms timer used SOLELY to interpolate seekbar motion while playing non-live tracks
     private DispatcherTimer? _playbackTimer;
     private long _lastLocalTimestamp = Stopwatch.GetTimestamp();
     private TimeSpan _lastTimelinePosition = TimeSpan.Zero;
     private TimeSpan _trackDuration = TimeSpan.Zero;
     private double _playbackRate = 1.0;
     private bool _isScrubbing = false;
-    private CancellationTokenSource? _seekRecoveryCts;
     private int _lastDisplayedPosSeconds = -1;
     private int _lastDisplayedDurSeconds = -1;
     private bool _isHubVisible = true;
-    private bool _hasPendingMetadataRefresh = false;
 
     public MediaWidgetViewModel(TileModel model) : base(model)
     {
@@ -177,332 +175,435 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
         _playbackTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
-            Interval = TimeSpan.FromMilliseconds(500)
+            Interval = TimeSpan.FromMilliseconds(250)
         };
         _playbackTimer.Tick += OnPlaybackTimerTick;
 
-        InitializeAsync();
+        InitializeMediaControllerAsync();
     }
 
-    private void InitializeAsync()
+    private async void InitializeMediaControllerAsync()
     {
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                _manager = await GlobalSystemMediaTransportControlsSessionManager.RequestAsync();
-                if (_manager != null)
-                {
-                    _manager.CurrentSessionChanged += Manager_CurrentSessionChanged;
-                    await RefreshSessionAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[MediaWidget] Failed to initialize session manager: {ex.Message}");
-            }
-        });
-    }
-
-    private void Manager_CurrentSessionChanged(GlobalSystemMediaTransportControlsSessionManager sender, CurrentSessionChangedEventArgs args)
-    {
-        if (!_isHubVisible)
-        {
-            _hasPendingMetadataRefresh = true;
-            MetroHub.Core.Services.HiddenDiagnosticsLogger.LogHiddenEvent("MediaWidget", "Manager_CurrentSessionChanged", "Deferred until Hub shown");
-            return;
-        }
-
-        if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
-        {
-            disp.InvokeAsync(async () => await RefreshSessionAsync());
-        }
-    }
-
-    public async Task RefreshSessionAsync()
-    {
-        if (_manager == null) return;
-
-        GlobalSystemMediaTransportControlsSession? newSession = null;
         try
         {
-            newSession = _manager.GetCurrentSession();
-        }
-        catch { }
+            _mediaManager = new MediaManager();
+            _mediaManager.OnAnySessionOpened += Manager_OnAnySessionOpened;
+            _mediaManager.OnAnySessionClosed += Manager_OnAnySessionClosed;
+            _mediaManager.OnFocusedSessionChanged += Manager_OnFocusedSessionChanged;
+            _mediaManager.OnAnyPlaybackStateChanged += Manager_OnAnyPlaybackStateChanged;
+            _mediaManager.OnAnyMediaPropertyChanged += Manager_OnAnyMediaPropertyChanged;
+            _mediaManager.OnAnyTimelinePropertyChanged += Manager_OnAnyTimelinePropertyChanged;
 
-        if (_currentSession != null)
-        {
-            try
+            await _mediaManager.StartAsync();
+
+            var initial = _mediaManager.GetFocusedSession() ?? _mediaManager.CurrentMediaSessions.Values.FirstOrDefault();
+            if (initial != null)
             {
-                _currentSession.MediaPropertiesChanged -= Session_MediaPropertiesChanged;
-                _currentSession.PlaybackInfoChanged -= Session_PlaybackInfoChanged;
-                _currentSession.TimelinePropertiesChanged -= Session_TimelinePropertiesChanged;
-            }
-            catch { }
-        }
-
-        _currentSession = newSession;
-
-        lock (_stateLock)
-        {
-            _currentTrackId = string.Empty;
-            _trackDuration = TimeSpan.Zero;
-            _zeroDurationDetectedAt = 0;
-            _trackChangedAt = Stopwatch.GetTimestamp();
-            IsLive = false;
-            CanSeek = true;
-        }
-
-        if (_currentSession != null)
-        {
-            try
-            {
-                _currentSession.MediaPropertiesChanged += Session_MediaPropertiesChanged;
-                _currentSession.PlaybackInfoChanged += Session_PlaybackInfoChanged;
-                _currentSession.TimelinePropertiesChanged += Session_TimelinePropertiesChanged;
-            }
-            catch { }
-
-            if (_isHubVisible)
-            {
-                await UpdateMediaDetailsAsync();
-                SyncPlaybackState(_currentSession);
+                SetActiveSession(initial);
             }
             else
             {
-                _hasPendingMetadataRefresh = true;
-            }
-        }
-        else
-        {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                HasMedia = false;
-                Title = "No media playing";
-                Artist = "Open Spotify, YouTube, or VLC";
-                Album = string.Empty;
-                HasAlbum = false;
-                SourceName = "Media Player";
-                Thumbnail = null;
-                HasThumbnail = false;
-                _cachedThumbnailBytes = null;
-                var fallbackSeekColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
-                var fallbackSeekBrush = new SolidColorBrush(fallbackSeekColor);
-                fallbackSeekBrush.Freeze();
-                SeekbarBrush = fallbackSeekBrush;
-                SeekbarGlowColor = fallbackSeekColor;
-                IsPlaying = false;
-                DurationSeconds = 0;
-                PositionSeconds = 0;
-                ProgressRatio = 0.0;
-                TimeDisplayString = string.Empty;
-                _lastDisplayedPosSeconds = -1;
-                _lastDisplayedDurSeconds = -1;
-                IsLive = false;
-                CanSeek = true;
-                _playbackTimer?.Stop();
-            });
-        }
-    }
-
-    private void Session_MediaPropertiesChanged(GlobalSystemMediaTransportControlsSession sender, MediaPropertiesChangedEventArgs args)
-    {
-        if (!_isHubVisible)
-        {
-            _hasPendingMetadataRefresh = true;
-            MetroHub.Core.Services.HiddenDiagnosticsLogger.LogHiddenEvent("MediaWidget", "Session_MediaPropertiesChanged", "Deferred until Hub shown");
-            return;
-        }
-
-        _ = UpdateMediaDetailsAsync();
-    }
-
-    private void Session_PlaybackInfoChanged(GlobalSystemMediaTransportControlsSession sender, PlaybackInfoChangedEventArgs args)
-    {
-        if (!_isHubVisible)
-        {
-            MetroHub.Core.Services.HiddenDiagnosticsLogger.LogHiddenEvent("MediaWidget", "Session_PlaybackInfoChanged", "Skipped timer restart while hidden");
-            return;
-        }
-
-        if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
-        {
-            disp.InvokeAsync(() => SyncPlaybackState(sender));
-        }
-    }
-
-    private void Session_TimelinePropertiesChanged(GlobalSystemMediaTransportControlsSession sender, TimelinePropertiesChangedEventArgs args)
-    {
-        if (!_isHubVisible)
-        {
-            return;
-        }
-
-        if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
-        {
-            disp.InvokeAsync(() => SyncPlaybackState(sender));
-        }
-    }
-
-    private void SyncPlaybackState(GlobalSystemMediaTransportControlsSession? targetSession = null)
-    {
-        var session = targetSession ?? _currentSession ?? _manager?.GetCurrentSession();
-        if (session == null)
-        {
-            if (Application.Current?.Dispatcher is Dispatcher disp && !disp.CheckAccess())
-            {
-                disp.InvokeAsync(() => SyncPlaybackState(null));
-                return;
-            }
-            IsPlaying = false;
-            _playbackTimer?.Stop();
-            return;
-        }
-
-        if (Application.Current?.Dispatcher is Dispatcher d && !d.CheckAccess())
-        {
-            d.InvokeAsync(() => SyncPlaybackState(session));
-            return;
-        }
-
-        try
-        {
-            var playback = session.GetPlaybackInfo();
-            var controls = playback?.Controls;
-            bool isPlaying = playback?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
-
-            if (Stopwatch.GetTimestamp() < _optimisticUntilTimestamp)
-            {
-                if (isPlaying == _optimisticPlaybackTarget)
-                {
-                    _optimisticUntilTimestamp = 0;
-                }
-                else
-                {
-                    isPlaying = _optimisticPlaybackTarget;
-                }
-            }
-
-            if (controls != null)
-            {
-                CanPlayPause = controls.IsPlayPauseToggleEnabled;
-                CanSkipNext = controls.IsNextEnabled;
-                CanSkipPrevious = controls.IsPreviousEnabled;
-                CanSeek = controls.IsPlaybackPositionEnabled;
-            }
-
-            IsPlaying = isPlaying;
-
-            SyncTimelineProperties(session, playback);
-
-            if (_isHubVisible && isPlaying && HasMedia)
-            {
-                if (_playbackTimer?.IsEnabled != true)
-                {
-                    _playbackTimer?.Start();
-                }
-            }
-            else
-            {
-                _playbackTimer?.Stop();
+                RunOnUi(ResetToNoMedia);
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[MediaWidget] SyncPlaybackState error: {ex.Message}");
+            Debug.WriteLine($"[MediaWidget] Init failed: {ex.Message}");
+            RunOnUi(ResetToNoMedia);
         }
     }
 
-    private void SyncTimelineProperties(GlobalSystemMediaTransportControlsSession session, GlobalSystemMediaTransportControlsSessionPlaybackInfo? playbackInfo = null)
+    private void Manager_OnFocusedSessionChanged(MediaManager.MediaSession? mediaSession)
     {
+        if (mediaSession != null)
+        {
+            SetActiveSession(mediaSession);
+        }
+        else
+        {
+            var next = _mediaManager?.GetFocusedSession() ?? _mediaManager?.CurrentMediaSessions.Values.FirstOrDefault();
+            if (next != null)
+            {
+                SetActiveSession(next);
+            }
+            else
+            {
+                RunOnUi(ResetToNoMedia);
+            }
+        }
+    }
+
+    private void Manager_OnAnySessionOpened(MediaManager.MediaSession mediaSession)
+    {
+        if (_activeSession == null)
+        {
+            SetActiveSession(mediaSession);
+        }
+    }
+
+    private void Manager_OnAnySessionClosed(MediaManager.MediaSession mediaSession)
+    {
+        if (_activeSession == null || _activeSession.Id == mediaSession.Id)
+        {
+            var next = _mediaManager?.GetFocusedSession() ?? _mediaManager?.CurrentMediaSessions.Values.FirstOrDefault(s => s.Id != mediaSession.Id);
+            if (next != null)
+            {
+                SetActiveSession(next);
+            }
+            else
+            {
+                RunOnUi(ResetToNoMedia);
+            }
+        }
+    }
+
+    private void Manager_OnAnyPlaybackStateChanged(MediaManager.MediaSession mediaSession, GlobalSystemMediaTransportControlsSessionPlaybackInfo playbackInfo)
+    {
+        if (playbackInfo == null) return;
+
+        // Auto-switch to newly playing session if our current session is inactive/different (Android music notification pattern)
+        if (_activeSession == null || _activeSession.Id != mediaSession.Id)
+        {
+            if (playbackInfo.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing)
+            {
+                SetActiveSession(mediaSession);
+                return;
+            }
+        }
+
+        if (_activeSession != null && _activeSession.Id == mediaSession.Id)
+        {
+            RunOnUi(() => ApplyPlaybackInfo(playbackInfo));
+        }
+    }
+
+    private void Manager_OnAnyMediaPropertyChanged(MediaManager.MediaSession mediaSession, GlobalSystemMediaTransportControlsSessionMediaProperties mediaProperties)
+    {
+        if (_activeSession == null)
+        {
+            SetActiveSession(mediaSession);
+            return;
+        }
+
+        if (_activeSession.Id == mediaSession.Id)
+        {
+            _ = ApplyMediaPropertiesAsync(mediaSession, mediaProperties);
+        }
+    }
+
+    private void Manager_OnAnyTimelinePropertyChanged(MediaManager.MediaSession mediaSession, GlobalSystemMediaTransportControlsSessionTimelineProperties timelineProperties)
+    {
+        if (_activeSession != null && _activeSession.Id == mediaSession.Id)
+        {
+            RunOnUi(() => ApplyTimelineProperties(timelineProperties));
+        }
+    }
+
+    private void SetActiveSession(MediaManager.MediaSession session)
+    {
+        _activeSession = session;
+        lock (_stateLock)
+        {
+            _currentTrackId = string.Empty;
+            _isLiveLocked = false;
+            _lastObservedDuration = TimeSpan.Zero;
+            _trackDuration = TimeSpan.Zero;
+            _lastTimelinePosition = TimeSpan.Zero;
+            _lastLocalTimestamp = Stopwatch.GetTimestamp();
+            _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
+            _zeroDurationDetectedAt = 0;
+            _trackChangedAt = Stopwatch.GetTimestamp();
+            _transientZeroDetectedAt = 0;
+        }
+
         try
         {
-            var timeline = session.GetTimelineProperties();
-            var playback = playbackInfo ?? session.GetPlaybackInfo();
-            if (timeline == null) return;
+            var control = session.ControlSession;
+            if (control != null)
+            {
+                var playback = control.GetPlaybackInfo();
+                var timeline = control.GetTimelineProperties();
 
-            double rate = playback?.PlaybackRate ?? 1.0;
-            if (rate <= 0.0) rate = 1.0;
+                RunOnUi(() =>
+                {
+                    if (playback != null) ApplyPlaybackInfo(playback);
+                    if (timeline != null) ApplyTimelineProperties(timeline);
+                });
 
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var props = await control.TryGetMediaPropertiesAsync();
+                        if (props != null && _activeSession?.Id == session.Id)
+                        {
+                            await ApplyMediaPropertiesAsync(session, props);
+                        }
+                    }
+                    catch { }
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MediaWidget] SetActiveSession error: {ex.Message}");
+        }
+    }
+
+    private async Task ApplyMediaPropertiesAsync(MediaManager.MediaSession session, GlobalSystemMediaTransportControlsSessionMediaProperties? props)
+    {
+        if (props == null) return;
+
+        string cleanTitle = props.Title?.Trim() ?? string.Empty;
+        string cleanArtist = props.Artist?.Trim() ?? string.Empty;
+        string cleanAlbum = props.AlbumTitle?.Trim() ?? props.AlbumArtist?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(cleanTitle) && string.IsNullOrWhiteSpace(cleanArtist))
+        {
+            return;
+        }
+
+        // Strip redundant browser suffixes like " - YouTube"
+        if (cleanTitle.EndsWith(" - YouTube", StringComparison.OrdinalIgnoreCase))
+        {
+            cleanTitle = cleanTitle.Substring(0, cleanTitle.Length - " - YouTube".Length).Trim();
+        }
+
+        // Clean YouTube Music "- Topic" suffix from artist name (e.g. "Deftones - Topic" -> "Deftones")
+        string rawArtist = cleanArtist;
+        if (cleanArtist.EndsWith(" - Topic", StringComparison.OrdinalIgnoreCase))
+        {
+            cleanArtist = cleanArtist.Substring(0, cleanArtist.Length - " - Topic".Length).Trim();
+        }
+        else if (cleanArtist.EndsWith("- Topic", StringComparison.OrdinalIgnoreCase))
+        {
+            cleanArtist = cleanArtist.Substring(0, cleanArtist.Length - "- Topic".Length).Trim();
+        }
+
+        // If artist is empty but title has " - ", split artist and track name (common on YouTube/browser streams)
+        if (string.IsNullOrWhiteSpace(cleanArtist) && cleanTitle.Contains(" - "))
+        {
+            var parts = cleanTitle.Split(new[] { " - " }, 2, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 2)
+            {
+                cleanArtist = parts[0].Trim();
+                cleanTitle = parts[1].Trim();
+            }
+        }
+
+        string rawSource = session.Id ?? string.Empty;
+        string cleanSource = ResolveSourceName(rawSource, cleanTitle, rawArtist);
+        bool hasAlbum = !string.IsNullOrWhiteSpace(cleanAlbum);
+        bool isMusicApp = IsKnownNonLiveSource(rawSource, cleanTitle, rawArtist);
+        bool isLiveTitle = !isMusicApp && HasLiveTitleKeyword(cleanTitle);
+
+        string newTrackId = $"{cleanArtist}|{cleanTitle}|{cleanAlbum}";
+        lock (_stateLock)
+        {
+            if (!string.Equals(_currentTrackId, newTrackId, StringComparison.Ordinal))
+            {
+                _currentTrackId = newTrackId;
+                _isLiveLocked = isLiveTitle;
+                _lastObservedDuration = TimeSpan.Zero;
+                _lastTimelinePosition = TimeSpan.Zero;
+                _lastLocalTimestamp = Stopwatch.GetTimestamp();
+                _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
+                _suppressExternalPositionUpdatesUntil = 0;
+                _transientZeroDetectedAt = 0;
+                _trackDuration = TimeSpan.Zero;
+                _zeroDurationDetectedAt = 0;
+                _trackChangedAt = Stopwatch.GetTimestamp();
+            }
+            else if (isLiveTitle)
+            {
+                _isLiveLocked = true;
+            }
+        }
+
+        ImageSource? bmp = null;
+        byte[]? rawBytes = null;
+        Color seekbarColor = DefaultSeekbarColor;
+        SolidColorBrush seekbarBrush = DefaultSeekbarBrush;
+
+        if (props.Thumbnail != null)
+        {
+            (bmp, rawBytes) = await LoadThumbnailAsync(props.Thumbnail);
+            if (bmp is BitmapSource bs)
+            {
+                (seekbarBrush, seekbarColor) = ExtractSeekbarBrush(bs);
+            }
+        }
+
+        RunOnUi(() =>
+        {
+            if (_activeSession?.Id != session.Id) return;
+
+            Title = string.IsNullOrWhiteSpace(cleanTitle) ? "Unknown Track" : cleanTitle;
+            Artist = cleanArtist;
+            Album = cleanAlbum;
+            HasAlbum = hasAlbum;
+            SourceName = cleanSource;
+            _cachedThumbnailBytes = rawBytes;
+            Thumbnail = bmp;
+            HasThumbnail = bmp != null;
+            SeekbarBrush = seekbarBrush;
+            SeekbarGlowColor = seekbarColor;
+            HasMedia = true;
+
+            if (_isLiveLocked)
+            {
+                IsLive = true;
+                CanSeek = false;
+                TimeDisplayString = string.Empty;
+                DurationSeconds = 0;
+                PositionSeconds = 0;
+                ProgressRatio = 0.0;
+                _playbackTimer?.Stop();
+            }
+        });
+    }
+
+    private void ApplyPlaybackInfo(GlobalSystemMediaTransportControlsSessionPlaybackInfo? playback)
+    {
+        if (playback == null) return;
+
+        var controls = playback.Controls;
+        if (controls != null)
+        {
+            CanPlayPause = controls.IsPlayPauseToggleEnabled;
+            CanSkipNext = controls.IsNextEnabled;
+            CanSkipPrevious = controls.IsPreviousEnabled;
+            CanSeek = controls.IsPlaybackPositionEnabled;
+        }
+
+        bool isPlaying = playback.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+
+        if (Stopwatch.GetTimestamp() < _optimisticUntilTimestamp)
+        {
+            if (isPlaying == _optimisticPlaybackTarget)
+            {
+                _optimisticUntilTimestamp = 0;
+            }
+            else
+            {
+                isPlaying = _optimisticPlaybackTarget;
+            }
+        }
+
+        IsPlaying = isPlaying;
+
+        if (_isHubVisible && isPlaying && HasMedia && !IsLive)
+        {
+            _lastLocalTimestamp = Stopwatch.GetTimestamp();
+            if (_playbackTimer?.IsEnabled != true)
+            {
+                _playbackTimer?.Start();
+            }
+        }
+        else
+        {
+            _playbackTimer?.Stop();
+        }
+    }
+
+    private void ApplyTimelineProperties(GlobalSystemMediaTransportControlsSessionTimelineProperties? timeline)
+    {
+        if (timeline == null) return;
+
+        try
+        {
             TimeSpan newDuration = timeline.EndTime - timeline.StartTime;
             if (newDuration <= TimeSpan.Zero && timeline.MaxSeekTime > timeline.MinSeekTime)
             {
                 newDuration = timeline.MaxSeekTime - timeline.MinSeekTime;
             }
 
-            bool isPlaying = playback?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
-            if (Stopwatch.GetTimestamp() < _optimisticUntilTimestamp)
-            {
-                isPlaying = _optimisticPlaybackTarget;
-            }
-
-            var controls = playback?.Controls;
-            bool canSeek = controls?.IsPlaybackPositionEnabled ?? true;
-
-            bool isMusicApp = IsKnownNonLiveSource(session.SourceAppUserModelId, Title, Artist);
+            bool isMusicApp = IsKnownNonLiveSource(_activeSession?.Id, Title, Artist);
+            bool canSeek = CanSeek;
 
             lock (_stateLock)
             {
                 long now = Stopwatch.GetTimestamp();
-                bool isLiveStream = false;
+                bool isLiveStream = _isLiveLocked;
 
-                // A track is a normal recorded track if it has a valid, finite duration (< 24h)
-                if (newDuration > TimeSpan.Zero && newDuration < TimeSpan.FromHours(24))
+                // 1. Title keyword signal (for non-music sources)
+                if (!isLiveStream && !isMusicApp && HasLiveTitleKeyword(Title))
                 {
-                    IsLive = false;
-                    CanSeek = canSeek;
-                    _trackDuration = newDuration;
-                    _zeroDurationDetectedAt = 0;
+                    isLiveStream = true;
                 }
-                else if (newDuration <= TimeSpan.Zero)
+
+                // 2. Ultra-long broadcast threshold (YouTube limits uploads to 12h; >= 12h is always live/24-7)
+                if (!isLiveStream && newDuration >= TimeSpan.FromHours(12))
                 {
-                    // Zero or indeterminate duration reported:
-                    // 1. If we already established a valid duration for this track, ignore transient zero
-                    // (Chromium/Edge sends momentary zero duration during buffering/seeks).
-                    if (_trackDuration > TimeSpan.Zero && !IsLive)
-                    {
-                        return;
-                    }
+                    isLiveStream = true;
+                }
 
-                    // 2. Track Change Grace Period: allow 2.0s for headers to load before considering live
-                    double timeSinceTrackChange = (double)(now - _trackChangedAt) / Stopwatch.Frequency;
-                    if (timeSinceTrackChange < 2.0 || canSeek || isMusicApp)
-                    {
-                        // Still loading/buffering or seeking is enabled -> definitely not a live stream!
-                        return;
-                    }
+                // 3. User's 5th signal: Twitch streams with a static DVR window (duration > 0 but seek is disabled)
+                if (!isLiveStream && !canSeek && newDuration > TimeSpan.Zero && !isMusicApp)
+                {
+                    isLiveStream = true;
+                }
 
-                    // 3. Unseekable live broadcast gate (Twitch, Kick, web radio):
-                    // Must have seek disabled AND zero duration persistently for > 2.5s
-                    if (_zeroDurationDetectedAt == 0)
-                    {
-                        _zeroDurationDetectedAt = now;
-                        return;
-                    }
-
-                    double zeroDurationElapsed = (double)(now - _zeroDurationDetectedAt) / Stopwatch.Frequency;
-                    if (zeroDurationElapsed >= 2.5 && !canSeek)
+                // 4. Expanding Duration: In a live stream with DVR (e.g. YouTube), the duration continuously expands with real time
+                if (!isLiveStream && !isMusicApp && IsPlaying && _lastObservedDuration > TimeSpan.Zero && newDuration > TimeSpan.Zero)
+                {
+                    if (newDuration > _lastObservedDuration + TimeSpan.FromSeconds(1.5))
                     {
                         isLiveStream = true;
                     }
-                    else
-                    {
-                        return;
-                    }
                 }
-                else if (newDuration >= TimeSpan.FromHours(24) && !canSeek)
+
+                if (newDuration > TimeSpan.Zero)
                 {
-                    // Infinite / 24h+ live broadcast with seek disabled
-                    isLiveStream = true;
+                    _lastObservedDuration = newDuration;
+                }
+
+                if (!isLiveStream)
+                {
+                    if (newDuration > TimeSpan.Zero)
+                    {
+                        IsLive = false;
+                        CanSeek = canSeek;
+                        _trackDuration = newDuration;
+                        _zeroDurationDetectedAt = 0;
+                    }
+                    else if (newDuration <= TimeSpan.Zero)
+                    {
+                        if (_trackDuration > TimeSpan.Zero && !IsLive)
+                        {
+                            return; // Ignore transient zero duration if already established
+                        }
+
+                        double timeSinceTrackChange = (double)(now - _trackChangedAt) / Stopwatch.Frequency;
+                        if (timeSinceTrackChange < 2.0 || canSeek || isMusicApp)
+                        {
+                            return; // Grace period or seekable or dedicated music app
+                        }
+
+                        if (_zeroDurationDetectedAt == 0)
+                        {
+                            _zeroDurationDetectedAt = now;
+                            return;
+                        }
+
+                        double zeroDurationElapsed = (double)(now - _zeroDurationDetectedAt) / Stopwatch.Frequency;
+                        if (zeroDurationElapsed >= 2.5 && !canSeek)
+                        {
+                            isLiveStream = true;
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
                 }
 
                 if (isLiveStream)
                 {
+                    _isLiveLocked = true;
                     IsLive = true;
                     CanSeek = false;
                     _trackDuration = TimeSpan.Zero;
-                    _seekRecoveryUntil = 0;
-                    _seekRecoveryCts?.Cancel();
                     _transientZeroDetectedAt = 0;
 
                     if (!_isScrubbing)
@@ -510,18 +611,18 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                         DurationSeconds = 0;
                         PositionSeconds = 0;
                         ProgressRatio = 0.0;
-                        TimeDisplayString = "LIVE";
+                        TimeDisplayString = string.Empty;
                     }
+                    _playbackTimer?.Stop();
                     return;
                 }
 
-                // ── REGULAR RECORDED TRACK / VIDEO ──
+                // ── REGULAR RECORDED TRACK ──
                 IsLive = false;
                 CanSeek = canSeek;
                 _trackDuration = newDuration > TimeSpan.Zero ? newDuration : _trackDuration;
                 _zeroDurationDetectedAt = 0;
 
-                // If we're in a user-initiated seek suppression window, skip external updates entirely
                 if (Stopwatch.GetTimestamp() < _suppressExternalPositionUpdatesUntil)
                 {
                     return;
@@ -530,35 +631,25 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 TimeSpan incomingPos = timeline.Position;
                 DateTimeOffset incomingUpdateTime = timeline.LastUpdatedTime;
 
-                // ── FRESHNESS GATE ──
-                // Chromium/YouTube often fires stale snapshots (position=0 or old position)
-                // during seek/pause/play transitions. The LastUpdatedTime reported by the OS
-                // is the canonical freshness signal. If this update is OLDER than one we've
-                // already accepted, it's stale → reject it.
+                // Freshness gate: Reject updates older than our freshest accepted update
                 if (incomingUpdateTime > DateTimeOffset.MinValue &&
                     _lastAcceptedOsUpdateTime > DateTimeOffset.MinValue &&
                     incomingUpdateTime < _lastAcceptedOsUpdateTime)
                 {
-                    ScheduleSeekRecoveryPoll(session);
                     return;
                 }
 
-
                 TimeSpan calculatedPos = incomingPos;
-
-                // Extrapolate position forward if playing (accounts for event delivery latency & browser batching)
-                if (isPlaying && incomingUpdateTime > DateTimeOffset.MinValue)
+                if (IsPlaying && incomingUpdateTime > DateTimeOffset.MinValue)
                 {
                     var diff = (DateTimeOffset.UtcNow - incomingUpdateTime).TotalSeconds;
                     if (diff >= 0)
                     {
-                        calculatedPos += TimeSpan.FromSeconds(diff * rate);
+                        calculatedPos += TimeSpan.FromSeconds(diff * _playbackRate);
                     }
                 }
 
-                // ── ANTI-GLITCH: Transient zero/near-zero detection ──
-                // Check if the EXTRAPOLATED position calculatedPos is near zero while we were previously well into a track.
-                // Note: We MUST check calculatedPos (not incomingPos), because Chromium browsers leave incomingPos at 00:00:00!
+                // Anti-glitch: Detect transient zero/near-zero during buffering/seeks
                 bool isTransientZero = calculatedPos <= TimeSpan.FromSeconds(1.5) &&
                                        _lastTimelinePosition >= TimeSpan.FromSeconds(2.5) &&
                                        _trackDuration > TimeSpan.FromSeconds(5.0);
@@ -568,42 +659,27 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                     if (_transientZeroDetectedAt == 0)
                     {
                         _transientZeroDetectedAt = Stopwatch.GetTimestamp();
+                        return;
                     }
                     else if ((Stopwatch.GetTimestamp() - _transientZeroDetectedAt) / (double)Stopwatch.Frequency > 0.5)
                     {
-                        // OS has consistently reported near-zero for >500ms.
-                        // Assume it's a genuine user seek to the beginning, accept it.
                         isTransientZero = false;
                         _transientZeroDetectedAt = 0;
                     }
+                    else
+                    {
+                        return;
+                    }
                 }
-
-                if (isTransientZero)
-                {
-                    ScheduleSeekRecoveryPoll(session);
-                    return;
-                }
-                
                 _transientZeroDetectedAt = 0;
 
-                // ── ACCEPT THIS UPDATE ──
                 if (incomingUpdateTime > DateTimeOffset.MinValue)
                 {
                     _lastAcceptedOsUpdateTime = incomingUpdateTime;
                 }
 
-                // Detect large position jumps (seek) and enter recovery window
-                // Only trigger if _lastTimelinePosition was already established (>0)
-                double positionDelta = Math.Abs(calculatedPos.TotalSeconds - _lastTimelinePosition.TotalSeconds);
-                if (_lastTimelinePosition > TimeSpan.Zero && positionDelta > 3.0 && _trackDuration > TimeSpan.FromSeconds(5.0))
-                {
-                    _seekRecoveryUntil = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 1.5);
-                    ScheduleSeekRecoveryPoll(session);
-                }
-
                 _lastTimelinePosition = calculatedPos;
                 _lastLocalTimestamp = Stopwatch.GetTimestamp();
-                _playbackRate = rate;
 
                 double durSec = _trackDuration.TotalSeconds;
                 double posSec = Math.Clamp(calculatedPos.TotalSeconds, 0, durSec > 0 ? durSec : calculatedPos.TotalSeconds);
@@ -622,139 +698,28 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[MediaWidget] SyncTimelineProperties error: {ex.Message}");
+            Debug.WriteLine($"[MediaWidget] ApplyTimelineProperties error: {ex.Message}");
         }
     }
-
-    /// <summary>
-    /// Schedules aggressive re-polling of the OS timeline to find the real position
-    /// after a seek or glitch is detected. Uses increasing delays to catch the OS
-    /// as it stabilizes. Each poll that finds a fresher LastUpdatedTime will accept
-    /// and apply the position, automatically stopping further polls.
-    /// </summary>
-    private void ScheduleSeekRecoveryPoll(GlobalSystemMediaTransportControlsSession session)
-    {
-        _seekRecoveryCts?.Cancel();
-        _seekRecoveryCts = new CancellationTokenSource();
-        var token = _seekRecoveryCts.Token;
-
-        // Enter recovery window: every timer tick will also do a full OS query
-        _seekRecoveryUntil = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 1.5);
-
-        _ = Task.Run(async () =>
-        {
-            // Aggressive polling with increasing backoff
-            int[] delays = { 50, 100, 200, 400, 800 };
-            foreach (int delay in delays)
-            {
-                try
-                {
-                    await Task.Delay(delay, token);
-                    if (token.IsCancellationRequested) return;
-
-                    if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
-                    {
-                        await disp.InvokeAsync(() =>
-                        {
-                            if (token.IsCancellationRequested) return;
-                            SyncTimelineProperties(session);
-                        });
-                    }
-                }
-                catch { }
-            }
-        }, token);
-    }
-
-
 
     private void OnPlaybackTimerTick(object? sender, EventArgs e)
     {
-        if (!_isHubVisible)
+        if (!_isHubVisible || !HasMedia || _isScrubbing || !IsPlaying || IsLive)
         {
             _playbackTimer?.Stop();
-            MetroHub.Core.Services.HiddenDiagnosticsLogger.LogHiddenEvent("MediaWidget", "OnPlaybackTimerTick", "Stopped unexpected hidden timer tick");
             return;
         }
 
-        if (!HasMedia || _isScrubbing)
+        lock (_stateLock)
         {
-            return;
-        }
+            double elapsedSeconds = (double)(Stopwatch.GetTimestamp() - _lastLocalTimestamp) / Stopwatch.Frequency;
+            if (elapsedSeconds < 0) elapsedSeconds = 0;
 
-        var session = _currentSession ?? _manager?.GetCurrentSession();
-        if (session == null)
-        {
-            IsPlaying = false;
-            _playbackTimer?.Stop();
-            return;
-        }
-
-        // Direct OS query to ensure bulletproof synchronization
-        var playback = session.GetPlaybackInfo();
-        bool isActuallyPlaying = playback?.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
-
-        if (Stopwatch.GetTimestamp() < _optimisticUntilTimestamp)
-        {
-            if (isActuallyPlaying == _optimisticPlaybackTarget)
-            {
-                _optimisticUntilTimestamp = 0;
-            }
-            else
-            {
-                isActuallyPlaying = _optimisticPlaybackTarget;
-            }
-        }
-
-        if (!isActuallyPlaying)
-        {
-            if (IsPlaying)
-            {
-                IsPlaying = false;
-            }
-            _playbackTimer?.Stop();
-            return;
-        }
-
-        if (!IsPlaying)
-        {
-            IsPlaying = true;
-        }
-
-        _timerTickCount++;
-
-        if (IsLive)
-        {
-            // For live streams, check OS timeline every 1s (every 2nd tick) to detect if a recorded track started
-            if (_timerTickCount % 2 == 0)
-            {
-                SyncTimelineProperties(session, playback);
-            }
-            return;
-        }
-
-        bool inSeekRecovery = Stopwatch.GetTimestamp() < _seekRecoveryUntil;
-
-        // During seek recovery OR every 4th tick (1s cadence), do a full OS sync
-        // to ensure we converge on the real position quickly
-        if (inSeekRecovery || _timerTickCount % 4 == 0)
-        {
-            SyncTimelineProperties(session, playback);
-        }
-        else
-        {
-            // Local extrapolation between full syncs for smooth seekbar motion
-            lock (_stateLock)
-            {
-                double elapsedSeconds = (double)(Stopwatch.GetTimestamp() - _lastLocalTimestamp) / Stopwatch.Frequency;
-                if (elapsedSeconds < 0) elapsedSeconds = 0;
-
-                double maxPos = DurationSeconds > 0 ? DurationSeconds : double.MaxValue;
-                double currentPos = Math.Clamp(_lastTimelinePosition.TotalSeconds + (elapsedSeconds * _playbackRate), 0, maxPos);
-                PositionSeconds = currentPos;
-                ProgressRatio = DurationSeconds > 0 ? Math.Clamp(currentPos / DurationSeconds, 0.0, 1.0) : 0.0;
-                UpdateTimeDisplay(PositionSeconds, DurationSeconds);
-            }
+            double maxPos = DurationSeconds > 0 ? DurationSeconds : double.MaxValue;
+            double currentPos = Math.Clamp(_lastTimelinePosition.TotalSeconds + (elapsedSeconds * _playbackRate), 0, maxPos);
+            PositionSeconds = currentPos;
+            ProgressRatio = DurationSeconds > 0 ? Math.Clamp(currentPos / DurationSeconds, 0.0, 1.0) : 0.0;
+            UpdateTimeDisplay(PositionSeconds, DurationSeconds);
         }
     }
 
@@ -762,9 +727,9 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     {
         if (IsLive)
         {
-            if (TimeDisplayString != "LIVE")
+            if (!string.IsNullOrEmpty(TimeDisplayString))
             {
-                TimeDisplayString = "LIVE";
+                TimeDisplayString = string.Empty;
             }
             _lastDisplayedPosSeconds = -1;
             _lastDisplayedDurSeconds = -1;
@@ -783,7 +748,9 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
             _lastDisplayedPosSeconds = p;
             _lastDisplayedDurSeconds = d;
-            TimeDisplayString = $"{p / 60}:{p % 60:D2} / {d / 60}:{d % 60:D2}";
+
+            bool showHours = d >= 3600;
+            TimeDisplayString = $"{FormatTimeSpan(p, showHours)} / {FormatTimeSpan(d, showHours)}";
         }
         else
         {
@@ -794,6 +761,19 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 TimeDisplayString = string.Empty;
             }
         }
+    }
+
+    private static string FormatTimeSpan(int totalSeconds, bool includeHours)
+    {
+        int hours = totalSeconds / 3600;
+        int minutes = (totalSeconds % 3600) / 60;
+        int seconds = totalSeconds % 60;
+
+        if (includeHours || hours > 0)
+        {
+            return $"{hours}:{minutes:D2}:{seconds:D2}";
+        }
+        return $"{minutes}:{seconds:D2}";
     }
 
     public void StartScrubbing()
@@ -810,8 +790,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     public async Task SeekToRatioAsync(double ratio)
     {
         if (IsLive || !CanSeek) return;
-        var session = _currentSession ?? _manager?.GetCurrentSession();
-        if (session == null || DurationSeconds <= 0) return;
+        var control = _activeSession?.ControlSession;
+        if (control == null || DurationSeconds <= 0) return;
 
         ratio = Math.Clamp(ratio, 0.0, 1.0);
         double targetSeconds = ratio * DurationSeconds;
@@ -823,156 +803,192 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             ProgressRatio = ratio;
             _lastTimelinePosition = TimeSpan.FromSeconds(targetSeconds);
             _lastLocalTimestamp = Stopwatch.GetTimestamp();
-            // Suppress external updates for 1.2s while the OS processes our seek command
             _suppressExternalPositionUpdatesUntil = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 1.2);
-            // Reset the freshness tracker so the next OS update is always accepted
             _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
         }
         UpdateTimeDisplay(PositionSeconds, DurationSeconds);
 
         try
         {
-            await session.TryChangePlaybackPositionAsync(requestedTicks);
+            await control.TryChangePlaybackPositionAsync(requestedTicks);
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[MediaWidget] Seek failed: {ex.Message}");
+            Debug.WriteLine($"[MediaWidget] Seek failed: {ex.Message}");
         }
     }
 
-    private async Task UpdateMediaDetailsAsync()
+    [RelayCommand]
+    public async Task TogglePlayPauseAsync()
     {
-        if (_currentSession == null) return;
-
-        long epoch = Interlocked.Increment(ref _updateEpoch);
+        var control = _activeSession?.ControlSession;
+        if (control == null) return;
 
         try
         {
-            var props = await _currentSession.TryGetMediaPropertiesAsync();
-            if (epoch != _updateEpoch) return;
+            bool targetState = !IsPlaying;
+            _optimisticPlaybackTarget = targetState;
+            _optimisticUntilTimestamp = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 1.5);
+            IsPlaying = targetState;
 
-            string rawSource = _currentSession.SourceAppUserModelId ?? string.Empty;
-
-            if (props == null || (string.IsNullOrWhiteSpace(props.Title) && string.IsNullOrWhiteSpace(props.Artist)))
+            if (!targetState)
             {
-                await Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    if (epoch != _updateEpoch) return;
-
-                    HasMedia = false;
-                    Title = "No media playing";
-                    Artist = "Open Spotify, YouTube, or VLC";
-                    Album = string.Empty;
-                    HasAlbum = false;
-                    SourceName = ResolveSourceName(rawSource, null, null);
-                    Thumbnail = null;
-                    HasThumbnail = false;
-                    _cachedThumbnailBytes = null;
-                    var fallbackSeekColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
-                    var fallbackSeekBrush = new SolidColorBrush(fallbackSeekColor);
-                    fallbackSeekBrush.Freeze();
-                    SeekbarBrush = fallbackSeekBrush;
-                    SeekbarGlowColor = fallbackSeekColor;
-                    IsPlaying = false;
-                    _playbackTimer?.Stop();
-                });
-                return;
+                _playbackTimer?.Stop();
+            }
+            else if (_isHubVisible && HasMedia && !IsLive)
+            {
+                _lastLocalTimestamp = Stopwatch.GetTimestamp();
+                _playbackTimer?.Start();
             }
 
-            string cleanTitle = props.Title?.Trim() ?? "Unknown Track";
-            string cleanArtist = props.Artist?.Trim() ?? string.Empty;
-            string cleanAlbum = props.AlbumTitle?.Trim() ?? props.AlbumArtist?.Trim() ?? string.Empty;
-
-            // Strip redundant browser suffixes like " - YouTube"
-            if (cleanTitle.EndsWith(" - YouTube", StringComparison.OrdinalIgnoreCase))
-            {
-                cleanTitle = cleanTitle.Substring(0, cleanTitle.Length - " - YouTube".Length).Trim();
-            }
-
-            // Clean YouTube Music "- Topic" suffix from artist name (e.g. "Deftones - Topic" -> "Deftones")
-            string rawArtist = cleanArtist;
-            if (cleanArtist.EndsWith(" - Topic", StringComparison.OrdinalIgnoreCase))
-            {
-                cleanArtist = cleanArtist.Substring(0, cleanArtist.Length - " - Topic".Length).Trim();
-            }
-            else if (cleanArtist.EndsWith("- Topic", StringComparison.OrdinalIgnoreCase))
-            {
-                cleanArtist = cleanArtist.Substring(0, cleanArtist.Length - "- Topic".Length).Trim();
-            }
-
-            // If artist is empty but title has " - ", split artist and track name (common on YouTube/browser streams)
-            if (string.IsNullOrWhiteSpace(cleanArtist) && cleanTitle.Contains(" - "))
-            {
-                var parts = cleanTitle.Split(new[] { " - " }, 2, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length == 2)
-                {
-                    cleanArtist = parts[0].Trim();
-                    cleanTitle = parts[1].Trim();
-                }
-            }
-
-            string newTrackId = $"{cleanArtist}|{cleanTitle}|{cleanAlbum}";
-            lock (_stateLock)
-            {
-                if (!string.Equals(_currentTrackId, newTrackId, StringComparison.Ordinal))
-                {
-                    _currentTrackId = newTrackId;
-                    _lastTimelinePosition = TimeSpan.Zero;
-                    _lastLocalTimestamp = Stopwatch.GetTimestamp();
-                    _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
-                    _suppressExternalPositionUpdatesUntil = 0;
-                    _seekRecoveryUntil = 0;
-                    _transientZeroDetectedAt = 0;
-                    _trackDuration = TimeSpan.Zero;
-                    IsLive = false;
-                    CanSeek = true;
-                    _zeroDurationDetectedAt = 0;
-                    _trackChangedAt = Stopwatch.GetTimestamp();
-                }
-            }
-
-            string cleanSource = ResolveSourceName(rawSource, cleanTitle, rawArtist);
-            bool hasAlbum = !string.IsNullOrWhiteSpace(cleanAlbum);
-
-            ImageSource? bmp = null;
-            byte[]? rawBytes = null;
-            Color seekbarColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
-            var seekbarBrush = new SolidColorBrush(seekbarColor);
-            seekbarBrush.Freeze();
-
-            if (props.Thumbnail != null)
-            {
-                (bmp, rawBytes) = await LoadThumbnailAsync(props.Thumbnail);
-                if (epoch != _updateEpoch) return;
-                if (bmp is BitmapSource bs)
-                {
-                    (seekbarBrush, seekbarColor) = ExtractSeekbarBrush(bs);
-                }
-            }
-
-            await Application.Current.Dispatcher.InvokeAsync(() =>
-            {
-                if (epoch != _updateEpoch) return;
-
-                Title = cleanTitle;
-                Artist = cleanArtist;
-                Album = cleanAlbum;
-                HasAlbum = hasAlbum;
-                SourceName = cleanSource;
-                _cachedThumbnailBytes = rawBytes;
-                Thumbnail = bmp;
-                HasThumbnail = bmp != null;
-                SeekbarBrush = seekbarBrush;
-                SeekbarGlowColor = seekbarColor;
-                HasMedia = true;
-
-                // Sync controls and playback authoritatively from session
-                SyncPlaybackState(_currentSession);
-            });
+            await control.TryTogglePlayPauseAsync();
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[MediaWidget] UpdateMediaDetails error: {ex.Message}");
+            Debug.WriteLine($"[MediaWidget] TogglePlayPause error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    public async Task SkipNextAsync()
+    {
+        var control = _activeSession?.ControlSession;
+        if (control == null) return;
+
+        try
+        {
+            await control.TrySkipNextAsync();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MediaWidget] SkipNext error: {ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    public async Task SkipPreviousAsync()
+    {
+        var control = _activeSession?.ControlSession;
+        if (control == null) return;
+
+        try
+        {
+            await control.TrySkipPreviousAsync();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MediaWidget] SkipPrevious error: {ex.Message}");
+        }
+    }
+
+    private void ResetToNoMedia()
+    {
+        _activeSession = null;
+        _isLiveLocked = false;
+        _lastObservedDuration = TimeSpan.Zero;
+        _zeroDurationDetectedAt = 0;
+        _trackChangedAt = Stopwatch.GetTimestamp();
+        HasMedia = false;
+        Title = "No media playing";
+        Artist = "Open Spotify, YouTube, or VLC";
+        Album = string.Empty;
+        HasAlbum = false;
+        SourceName = "Media Player";
+        Thumbnail = null;
+        HasThumbnail = false;
+        _cachedThumbnailBytes = null;
+        SeekbarBrush = DefaultSeekbarBrush;
+        SeekbarGlowColor = DefaultSeekbarColor;
+        IsPlaying = false;
+        DurationSeconds = 0;
+        PositionSeconds = 0;
+        ProgressRatio = 0.0;
+        TimeDisplayString = string.Empty;
+        _lastDisplayedPosSeconds = -1;
+        _lastDisplayedDurSeconds = -1;
+        IsLive = false;
+        CanSeek = true;
+        _playbackTimer?.Stop();
+    }
+
+    public override void Pause()
+    {
+        _isHubVisible = false;
+        _playbackTimer?.Stop();
+
+        // Release decoded album art bitmap from GPU/DirectX memory
+        // Compressed raw bytes (_cachedThumbnailBytes) remain intact in managed memory (~20 KB)
+        RunOnUi(() =>
+        {
+            Thumbnail = null;
+            HasThumbnail = false;
+        });
+    }
+
+    public override void Resume()
+    {
+        _isHubVisible = true;
+
+        RunOnUi(() =>
+        {
+            if (_cachedThumbnailBytes != null && Thumbnail == null && HasMedia)
+            {
+                var restored = CreateThumbnailFromBytes(_cachedThumbnailBytes);
+                if (restored != null)
+                {
+                    Thumbnail = restored;
+                    HasThumbnail = true;
+                }
+            }
+
+            if (IsPlaying && HasMedia && !IsLive)
+            {
+                _lastLocalTimestamp = Stopwatch.GetTimestamp();
+                _playbackTimer?.Start();
+            }
+        });
+
+        if (_activeSession != null)
+        {
+            try
+            {
+                var control = _activeSession.ControlSession;
+                if (control != null)
+                {
+                    var playback = control.GetPlaybackInfo();
+                    var timeline = control.GetTimelineProperties();
+                    RunOnUi(() =>
+                    {
+                        if (playback != null) ApplyPlaybackInfo(playback);
+                        if (timeline != null) ApplyTimelineProperties(timeline);
+                    });
+                }
+            }
+            catch { }
+        }
+    }
+
+    protected override void LoadSettings(string? settingsJson) { }
+
+    public override void SaveSettings()
+    {
+        var settings = new MediaWidgetSettings();
+        Model.TargetPath = "media";
+        Model.SettingsJson = WidgetSerializer.Serialize(settings);
+        MainWindow.Current?.SaveGroupsAndLayout();
+    }
+
+    private void RunOnUi(Action action)
+    {
+        var app = Application.Current;
+        if (app == null) return;
+        if (app.Dispatcher.CheckAccess())
+        {
+            action();
+        }
+        else if (!app.Dispatcher.HasShutdownStarted)
+        {
+            app.Dispatcher.InvokeAsync(action);
         }
     }
 
@@ -991,12 +1007,10 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             bitmap.BeginInit();
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.StreamSource = memory;
-            bitmap.DecodePixelWidth = 512;
+            bitmap.DecodePixelWidth = 400;
             bitmap.EndInit();
             bitmap.Freeze();
 
-            // If thumbnail is 16:9 YouTube video frame with pillarboxes,
-            // center-crop to the square album cover to eliminate side pillarbox bars!
             if (bitmap.PixelWidth > bitmap.PixelHeight * 1.25)
             {
                 int size = bitmap.PixelHeight;
@@ -1023,7 +1037,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             bitmap.BeginInit();
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.StreamSource = memory;
-            bitmap.DecodePixelWidth = 512;
+            bitmap.DecodePixelWidth = 400;
             bitmap.EndInit();
             bitmap.Freeze();
 
@@ -1106,7 +1120,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                     double seekS = s;
                     double seekV = v;
 
-                    // Blue-Indigo-Violet Range (195° - 275°) Compensation:
                     if (seekH >= 195.0 && seekH <= 275.0)
                     {
                         seekV = Math.Clamp(seekV * 1.60, 0.88, 1.0);
@@ -1124,11 +1137,11 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                     double avgLum = validPixelCount > 0 ? totalLum / validPixelCount : 0.8;
                     if (avgLum > 0.4)
                     {
-                        seekbarColor = Color.FromRgb(240, 244, 255); // Crisp moonlight pearl-white
+                        seekbarColor = Color.FromRgb(240, 244, 255);
                     }
                     else
                     {
-                        seekbarColor = Color.FromRgb(180, 215, 255); // Electric ice-blue
+                        seekbarColor = Color.FromRgb(180, 215, 255);
                     }
                 }
 
@@ -1143,10 +1156,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         }
         catch
         {
-            var fallbackSeekColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
-            var fallbackSeekbarBrush = new SolidColorBrush(fallbackSeekColor);
-            fallbackSeekbarBrush.Freeze();
-            return (fallbackSeekbarBrush, fallbackSeekColor);
+            return (DefaultSeekbarBrush, DefaultSeekbarColor);
         }
     }
 
@@ -1194,13 +1204,25 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         };
     }
 
-    /// <summary>
-    /// Determines whether the media source is a dedicated music player that never broadcasts raw live streams.
-    /// (e.g. Spotify, Apple Music, Tidal, local music playback).
-    /// </summary>
+    public static bool HasLiveTitleKeyword(string? title)
+    {
+        if (string.IsNullOrWhiteSpace(title)) return false;
+
+        return title.Contains("● LIVE", StringComparison.OrdinalIgnoreCase) ||
+               title.Contains("• LIVE", StringComparison.OrdinalIgnoreCase) ||
+               title.Contains("[LIVE]", StringComparison.OrdinalIgnoreCase) ||
+               title.Contains("(LIVE)", StringComparison.OrdinalIgnoreCase) ||
+               title.Contains(" LIVE ", StringComparison.OrdinalIgnoreCase) ||
+               title.Contains("LIVE STREAM", StringComparison.OrdinalIgnoreCase) ||
+               title.StartsWith("LIVE:", StringComparison.OrdinalIgnoreCase) ||
+               title.StartsWith("LIVE -", StringComparison.OrdinalIgnoreCase) ||
+               title.StartsWith("LIVE |", StringComparison.OrdinalIgnoreCase) ||
+               title.EndsWith(" LIVE", StringComparison.OrdinalIgnoreCase) ||
+               title.EndsWith(" - LIVE", StringComparison.OrdinalIgnoreCase);
+    }
+
     public static bool IsKnownNonLiveSource(string? appId, string? title, string? artist)
     {
-        // YouTube Music releases via browser / desktop
         if (artist != null && (artist.EndsWith("- Topic", StringComparison.OrdinalIgnoreCase) || artist.EndsWith("Topic", StringComparison.OrdinalIgnoreCase)))
         {
             return true;
@@ -1232,7 +1254,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public static string ResolveSourceName(string? appId, string? title, string? artist)
     {
-        // 1. Detect YouTube / YouTube Music
         if (artist != null && (artist.EndsWith("- Topic", StringComparison.OrdinalIgnoreCase) || artist.EndsWith("Topic", StringComparison.OrdinalIgnoreCase)))
         {
             return "YouTube Music";
@@ -1256,22 +1277,18 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         if (lower.Contains("zunemusic") || lower.Contains("microsoft.zunemusic")) return "Groove Music";
         if (lower.Contains("microsoft.media.player")) return "Media Player";
         if (lower.Contains("zen")) return "Zen Browser";
-
-        // Known browsers
         if (lower.Contains("edge") || lower.Contains("msedge")) return "Microsoft Edge";
         if (lower.Contains("chrome")) return "Google Chrome";
         if (lower.Contains("brave")) return "Brave";
         if (lower.Contains("firefox")) return "Firefox";
         if (lower.Contains("opera")) return "Opera";
 
-        // 2. Query Windows Registry AppUserModelId (e.g. ZenToast-F0DC299D809B9700 or PWAs)
         string? regName = TryResolveFromRegistry(appId);
         if (!string.IsNullOrWhiteSpace(regName))
         {
             return regName;
         }
 
-        // 3. Prevent raw hex hash names (e.g. "F0DC299D809B9700") from displaying
         if (IsHexOrHash(appId))
         {
             return "Web Browser";
@@ -1335,217 +1352,10 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         return null;
     }
 
-    [RelayCommand]
-    public async Task TogglePlayPauseAsync()
-    {
-        var session = _currentSession ?? _manager?.GetCurrentSession();
-        if (session == null) return;
-
-        try
-        {
-            bool targetState = !IsPlaying;
-
-            _optimisticPlaybackTarget = targetState;
-            _optimisticUntilTimestamp = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 1.5);
-            IsPlaying = targetState;
-
-            if (!targetState)
-            {
-                _playbackTimer?.Stop();
-            }
-            else
-            {
-                _lastLocalTimestamp = Stopwatch.GetTimestamp();
-                _playbackTimer?.Start();
-            }
-
-            await session.TryTogglePlayPauseAsync();
-
-            _ = Task.Run(async () =>
-            {
-                for (int i = 0; i < 6; i++)
-                {
-                    await Task.Delay(100);
-                    if (_currentSession == null) break;
-                    var pb = _currentSession.GetPlaybackInfo();
-                    if (pb != null && (pb.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing) == targetState)
-                    {
-                        _optimisticUntilTimestamp = 0;
-                        if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
-                        {
-                            await disp.InvokeAsync(() => SyncPlaybackState(_currentSession));
-                        }
-                        break;
-                    }
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[MediaWidget] TogglePlayPause error: {ex.Message}");
-        }
-    }
-
-    [RelayCommand]
-    public async Task SkipNextAsync()
-    {
-        var session = _currentSession ?? _manager?.GetCurrentSession();
-        if (session == null) return;
-
-        try
-        {
-            await session.TrySkipNextAsync();
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(150);
-                if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
-                {
-                    await disp.InvokeAsync(async () =>
-                    {
-                        await UpdateMediaDetailsAsync();
-                        SyncPlaybackState(_currentSession);
-                    });
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[MediaWidget] SkipNext error: {ex.Message}");
-        }
-    }
-
-    [RelayCommand]
-    public async Task SkipPreviousAsync()
-    {
-        var session = _currentSession ?? _manager?.GetCurrentSession();
-        if (session == null) return;
-
-        try
-        {
-            await session.TrySkipPreviousAsync();
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(150);
-                if (Application.Current?.Dispatcher is Dispatcher disp && !disp.HasShutdownStarted)
-                {
-                    await disp.InvokeAsync(async () =>
-                    {
-                        await UpdateMediaDetailsAsync();
-                        SyncPlaybackState(_currentSession);
-                    });
-                }
-            });
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[MediaWidget] SkipPrevious error: {ex.Message}");
-        }
-    }
-
-    public override void Receive(HubVisibilityChangedMessage message)
-    {
-        base.Receive(message); // Routes to Pause()/Resume()
-    }
-
-    public override void Pause()
-    {
-        _isHubVisible = false;
-        _playbackTimer?.Stop();
-
-        // Release decoded album art bitmap from GPU/DirectX memory and WPF render tree
-        // while hidden, preventing working set growth (60 MB -> 240 MB+).
-        // Compressed raw bytes (_cachedThumbnailBytes) remain intact in memory for instant zero-latency restoration.
-        void ClearThumbnail()
-        {
-            Thumbnail = null;
-            HasThumbnail = false;
-        }
-
-        if (Application.Current?.Dispatcher is Dispatcher disp && !disp.CheckAccess())
-        {
-            disp.InvokeAsync(ClearThumbnail);
-        }
-        else
-        {
-            ClearThumbnail();
-        }
-    }
-
-    public override void Resume()
-    {
-        _isHubVisible = true;
-        var session = _currentSession ?? _manager?.GetCurrentSession();
-        if (session != null)
-        {
-            if (_hasPendingMetadataRefresh)
-            {
-                _hasPendingMetadataRefresh = false;
-                _ = UpdateMediaDetailsAsync();
-            }
-            else
-            {
-                // Hub restored without track change: re-decode cached thumbnail bytes instantly
-                void RestoreThumbnail()
-                {
-                    if (_cachedThumbnailBytes != null && Thumbnail == null)
-                    {
-                        var restoredBmp = CreateThumbnailFromBytes(_cachedThumbnailBytes);
-                        if (restoredBmp != null)
-                        {
-                            Thumbnail = restoredBmp;
-                            HasThumbnail = true;
-                        }
-                        else
-                        {
-                            _ = UpdateMediaDetailsAsync();
-                        }
-                    }
-                    else if (Thumbnail == null && HasMedia)
-                    {
-                        _ = UpdateMediaDetailsAsync();
-                    }
-                }
-
-                if (Application.Current?.Dispatcher is Dispatcher disp && !disp.CheckAccess())
-                {
-                    disp.InvokeAsync(RestoreThumbnail);
-                }
-                else
-                {
-                    RestoreThumbnail();
-                }
-            }
-
-            SyncTimelineProperties(session);
-            SyncPlaybackState(session);
-        }
-        else if (_hasPendingMetadataRefresh)
-        {
-            _hasPendingMetadataRefresh = false;
-            _ = RefreshSessionAsync();
-        }
-    }
-
-    protected override void LoadSettings(string? settingsJson)
-    {
-    }
-
-    public override void SaveSettings()
-    {
-        var settings = new MediaWidgetSettings();
-        Model.TargetPath = "media";
-        Model.SettingsJson = WidgetSerializer.Serialize(settings);
-        MainWindow.Current?.SaveGroupsAndLayout();
-    }
-
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
-            _seekRecoveryCts?.Cancel();
-            _seekRecoveryCts?.Dispose();
-            _seekRecoveryCts = null;
-
             if (_playbackTimer != null)
             {
                 _playbackTimer.Stop();
@@ -1553,28 +1363,23 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 _playbackTimer = null;
             }
 
-            if (_manager != null)
+            if (_mediaManager != null)
             {
                 try
                 {
-                    _manager.CurrentSessionChanged -= Manager_CurrentSessionChanged;
+                    _mediaManager.OnAnySessionOpened -= Manager_OnAnySessionOpened;
+                    _mediaManager.OnAnySessionClosed -= Manager_OnAnySessionClosed;
+                    _mediaManager.OnFocusedSessionChanged -= Manager_OnFocusedSessionChanged;
+                    _mediaManager.OnAnyPlaybackStateChanged -= Manager_OnAnyPlaybackStateChanged;
+                    _mediaManager.OnAnyMediaPropertyChanged -= Manager_OnAnyMediaPropertyChanged;
+                    _mediaManager.OnAnyTimelinePropertyChanged -= Manager_OnAnyTimelinePropertyChanged;
+                    _mediaManager.Dispose();
                 }
                 catch { }
-                _manager = null;
+                _mediaManager = null;
             }
 
-            if (_currentSession != null)
-            {
-                try
-                {
-                    _currentSession.MediaPropertiesChanged -= Session_MediaPropertiesChanged;
-                    _currentSession.PlaybackInfoChanged -= Session_PlaybackInfoChanged;
-                    _currentSession.TimelinePropertiesChanged -= Session_TimelinePropertiesChanged;
-                }
-                catch { }
-                _currentSession = null;
-            }
-
+            _activeSession = null;
             Thumbnail = null;
             _cachedThumbnailBytes = null;
         }

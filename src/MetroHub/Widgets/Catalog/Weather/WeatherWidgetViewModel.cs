@@ -21,8 +21,9 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
     private static readonly TimeSpan ResumeThreshold = TimeSpan.FromMinutes(15);
 
     private readonly WeatherService _weatherService = new();
-    private System.Threading.Timer? _refreshTimer;
     private CancellationTokenSource? _cts;
+    private Task? _refreshLoopTask;
+    private int _isFetching;
     private DateTime _lastFetchTime = DateTime.MinValue;
 
     private WeatherWidgetSettings _settings = new();
@@ -36,6 +37,14 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
     private string _conditionText = "Updating...";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(WeatherIconSource))]
+    private string _weatherIconName = "partly-cloudy-day";
+
+    public ImageSource WeatherIconSource => WeatherIcons.Get(WeatherIconName);
+
+    public ImageSource UvIndexIconSource => WeatherIcons.Get("uv-index");
+
+    [ObservableProperty]
     private string _weatherGlyph = "\uE9C5";
 
     [ObservableProperty]
@@ -43,6 +52,9 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
 
     [ObservableProperty]
     private string _feelsLikeText = "--°";
+
+    [ObservableProperty]
+    private string _feelsLikeShortText = "--°";
 
     [ObservableProperty]
     private string _highLowText = "--° / --°";
@@ -75,6 +87,30 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
     private string _ozoneText = "-- µg/m³";
 
     [ObservableProperty]
+    private string _highTempText = "--°";
+
+    [ObservableProperty]
+    private string _lowTempText = "--°";
+
+    [ObservableProperty]
+    private string _uvIndexText = "--";
+
+    [ObservableProperty]
+    private double _uvIndexValue;
+
+    [ObservableProperty]
+    private string _uvCategoryText = "UV --";
+
+    [ObservableProperty]
+    private SolidColorBrush _uvBrush = WeatherPalettes.UvPalette[UvCategory.Low].Brush;
+
+    [ObservableProperty]
+    private int _precipitationProbability;
+
+    [ObservableProperty]
+    private string _precipitationProbabilityText = "0%";
+
+    [ObservableProperty]
     private RadialGradientBrush _ambientGlowBrush = WeatherPalettes.CloudyGlow;
 
     [ObservableProperty]
@@ -87,25 +123,20 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
     private string _errorMessage = string.Empty;
 
     public bool IsFahrenheit => _settings.IsFahrenheit;
-
-    public ObservableCollection<HourlyWeatherItemViewModel> HourlyForecast { get; } = new();
-    public ObservableCollection<DailyWeatherItemViewModel> DailyForecast { get; } = new();
+    public bool IsAutoLocation => _settings.IsAutoLocation;
+    public string? CustomCity => _settings.CustomCity;
 
     // Responsive sizing flags
-    public bool IsCompact => Model.SpanX <= 2 && Model.SpanY <= 2;
-    public bool IsWide => Model.SpanX == 4 && Model.SpanY <= 2;
-    public bool IsBanner => Model.SpanX >= 6 && Model.SpanY <= 2;
-    public bool IsHero => Model.SpanY >= 3;
+    public bool IsCompact => false;
+    public bool IsWide => Model.SpanX <= 4 && Model.SpanY <= 2;
+    public bool IsSquareLarge => Model.SpanX == 4 && Model.SpanY >= 3;
+    public bool IsBanner => Model.SpanX == 8 && Model.SpanY == 2;
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new List<WidgetSize>
     {
-        WidgetSize.Medium,    // 2x2
         WidgetSize.Wide,      // 4x2 (Default)
-        WidgetSize.ExtraWide, // 6x2
-        WidgetSize.Banner,    // 8x2
-        WidgetSize.Banner3,   // 8x3
         WidgetSize.Large,     // 4x4
-        WidgetSize.Mega       // 8x4
+        WidgetSize.Banner     // 8x2
     };
 
     public WeatherWidgetViewModel(TileModel model) : base(model)
@@ -134,8 +165,8 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
         {
             OnPropertyChanged(nameof(IsCompact));
             OnPropertyChanged(nameof(IsWide));
+            OnPropertyChanged(nameof(IsSquareLarge));
             OnPropertyChanged(nameof(IsBanner));
-            OnPropertyChanged(nameof(IsHero));
         }
     }
 
@@ -167,7 +198,8 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
     public async Task RefreshAsync()
     {
         if (IsLoading) return;
-        await FetchWeatherCoreAsync(forceRefresh: true).ConfigureAwait(false);
+        var token = _cts?.Token ?? CancellationToken.None;
+        await FetchWeatherCoreAsync(forceRefresh: true, token).ConfigureAwait(false);
     }
 
     [RelayCommand]
@@ -183,46 +215,103 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
         }
     }
 
+    public async Task<bool> SetCustomCityAsync(string cityName, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(cityName)) return false;
+
+        var token = _cts?.Token ?? cancellationToken;
+        var location = await _weatherService.Location.SearchCityAsync(cityName.Trim(), token).ConfigureAwait(false);
+        if (location == null) return false;
+
+        _settings.IsAutoLocation = false;
+        _settings.CustomCity = location.City;
+        _settings.CustomLatitude = location.Latitude;
+        _settings.CustomLongitude = location.Longitude;
+        SaveSettings();
+
+        OnPropertyChanged(nameof(IsAutoLocation));
+        OnPropertyChanged(nameof(CustomCity));
+
+        await FetchWeatherCoreAsync(forceRefresh: true, token).ConfigureAwait(false);
+        return true;
+    }
+
+    public async Task UseAutoLocationAsync(CancellationToken cancellationToken = default)
+    {
+        _settings.IsAutoLocation = true;
+        _settings.CustomCity = null;
+        _settings.CustomLatitude = null;
+        _settings.CustomLongitude = null;
+        SaveSettings();
+
+        OnPropertyChanged(nameof(IsAutoLocation));
+        OnPropertyChanged(nameof(CustomCity));
+
+        var token = _cts?.Token ?? cancellationToken;
+        await FetchWeatherCoreAsync(forceRefresh: true, token).ConfigureAwait(false);
+    }
+
     public override void Resume()
     {
-        _cts?.Cancel();
+        Pause(); // Clean up existing loop/tokens if resuming
+
         _cts = new CancellationTokenSource();
+        var token = _cts.Token;
 
         // If resume occurs after threshold (15 minutes), refresh immediately
         if (_latestData == null || (DateTime.UtcNow - _lastFetchTime) >= ResumeThreshold)
         {
-            _ = FetchWeatherCoreAsync(forceRefresh: false);
+            _ = FetchWeatherCoreAsync(forceRefresh: false, token);
         }
 
-        // Arm 30-minute periodic timer
-        _refreshTimer?.Dispose();
-        _refreshTimer = new System.Threading.Timer(
-            _ => _ = FetchWeatherCoreAsync(forceRefresh: false),
-            null,
-            BackgroundPollingInterval,
-            BackgroundPollingInterval
-        );
+        // Arm 30-minute async periodic loop (zero ThreadPool thread hopping, 0 CPU idle)
+        _refreshLoopTask = RunPeriodicRefreshLoopAsync(token);
     }
 
     public override void Pause()
     {
-        _refreshTimer?.Dispose();
-        _refreshTimer = null;
-
         _cts?.Cancel();
+        _cts?.Dispose();
         _cts = null;
+        _refreshLoopTask = null;
     }
 
-    private async Task FetchWeatherCoreAsync(bool forceRefresh)
+    private async Task RunPeriodicRefreshLoopAsync(CancellationToken token)
     {
-        var token = _cts?.Token ?? CancellationToken.None;
+        try
+        {
+            using var timer = new PeriodicTimer(BackgroundPollingInterval);
+            while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
+            {
+                await FetchWeatherCoreAsync(forceRefresh: false, token).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected on Pause
+        }
+    }
+
+    private async Task FetchWeatherCoreAsync(bool forceRefresh, CancellationToken token = default)
+    {
         if (token.IsCancellationRequested) return;
 
-        await Application.Current.Dispatcher.InvokeAsync(() =>
+        // Concurrency guard: prevent simultaneous fetches from manual refresh vs timer tick
+        if (Interlocked.CompareExchange(ref _isFetching, 1, 0) != 0)
         {
-            IsLoading = true;
-            HasError = false;
-        });
+            return;
+        }
+
+        // Silent background refresh: only toggle loading indicator on manual user requests or initial load
+        bool shouldShowLoading = forceRefresh || _latestData == null;
+        if (shouldShowLoading)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                IsLoading = true;
+                HasError = false;
+            });
+        }
 
         try
         {
@@ -247,6 +336,8 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
 
             // 2. Fetch Open-Meteo Data
             var data = await _weatherService.FetchWeatherAsync(lat, lon, city, token).ConfigureAwait(false);
+            if (token.IsCancellationRequested) return;
+
             if (data != null)
             {
                 _latestData = data;
@@ -255,14 +346,14 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     ApplyWeatherToUi(data);
-                    IsLoading = false;
+                    if (shouldShowLoading) IsLoading = false;
                 });
             }
             else
             {
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    IsLoading = false;
+                    if (shouldShowLoading) IsLoading = false;
                     if (_latestData == null)
                     {
                         HasError = true;
@@ -279,13 +370,17 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
         {
             await Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                IsLoading = false;
+                if (shouldShowLoading) IsLoading = false;
                 if (_latestData == null)
                 {
                     HasError = true;
                     ErrorMessage = ex.Message;
                 }
             });
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _isFetching, 0);
         }
     }
 
@@ -302,26 +397,39 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
         if (current != null)
         {
             // Condition info & Ambient glow
-            var (glyph, desc, glow) = WeatherPalettes.GetConditionInfo(current.WeatherCode, current.IsDay == 1);
-            WeatherGlyph = glyph;
-            ConditionText = desc;
-            AmbientGlowBrush = glow;
+            var info = WeatherPalettes.GetConditionInfo(current.WeatherCode, current.IsDay == 1);
+            WeatherIconName = info.IconName;
+            WeatherGlyph = info.FallbackGlyph;
+            ConditionText = info.Description;
+            AmbientGlowBrush = info.Glow;
 
             // Temperature & Feels-Like
             TemperatureText = FormatTemp(current.Temperature);
             FeelsLikeText = $"Feels like {FormatTemp(current.ApparentTemperature)}";
+            FeelsLikeShortText = FormatTemp(current.ApparentTemperature);
 
             // Details
             HumidityText = $"{current.RelativeHumidity}%";
             WindSpeedText = $"{Math.Round(current.WindSpeed)} km/h";
             PrecipitationText = $"{current.Precipitation:0.0} mm";
+
+            // UV Index
+            double uv = current.UvIndex;
+            UvIndexValue = uv;
+            var uvCat = WeatherPalettes.GetUvCategory(uv);
+            var uvInfo = WeatherPalettes.UvPalette[uvCat];
+            UvIndexText = $"{uv:F1}";
+            UvCategoryText = $"{uvInfo.Label} ({uv:F1})";
+            UvBrush = uvInfo.Brush;
         }
 
         // Daily High / Low
         if (daily?.TemperatureMax != null && daily.TemperatureMax.Count > 0 &&
             daily?.TemperatureMin != null && daily.TemperatureMin.Count > 0)
         {
-            HighLowText = $"H: {FormatTemp(daily.TemperatureMax[0])}  L: {FormatTemp(daily.TemperatureMin[0])}";
+            HighTempText = FormatTemp(daily.TemperatureMax[0]);
+            LowTempText = FormatTemp(daily.TemperatureMin[0]);
+            HighLowText = $"H: {HighTempText}  L: {LowTempText}";
         }
 
         // AQI
@@ -345,67 +453,12 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
             AqiText = "--";
         }
 
-        // In-place mutation of HourlyForecast (5-12 items)
-        if (hourly?.Time != null && hourly.Temperature != null && hourly.WeatherCode != null)
+        // Precipitation Probability for compact & 4x4 cards
+        if (hourly?.PrecipitationProbability != null && hourly.PrecipitationProbability.Count > 0)
         {
-            int count = Math.Min(hourly.Time.Count, 12);
-            for (int i = 0; i < count; i++)
-            {
-                string timeStr = FormatHourlyTime(hourly.Time[i]);
-                string tempStr = FormatTemp(hourly.Temperature[i]);
-                int wCode = hourly.WeatherCode[i];
-                bool isDay = (hourly.IsDay != null && i < hourly.IsDay.Count) ? hourly.IsDay[i] == 1 : true;
-                var (hGlyph, _, _) = WeatherPalettes.GetConditionInfo(wCode, isDay);
-                int precipProb = (hourly.PrecipitationProbability != null && i < hourly.PrecipitationProbability.Count)
-                    ? hourly.PrecipitationProbability[i]
-                    : 0;
-
-                if (HourlyForecast.Count > i)
-                {
-                    HourlyForecast[i].Update(timeStr, tempStr, hGlyph, $"{precipProb}%", precipProb > 20);
-                }
-                else
-                {
-                    var item = new HourlyWeatherItemViewModel();
-                    item.Update(timeStr, tempStr, hGlyph, $"{precipProb}%", precipProb > 20);
-                    HourlyForecast.Add(item);
-                }
-            }
-
-            while (HourlyForecast.Count > count)
-            {
-                HourlyForecast.RemoveAt(HourlyForecast.Count - 1);
-            }
-        }
-
-        // In-place mutation of DailyForecast (5 days)
-        if (daily?.Time != null && daily.TemperatureMax != null && daily.TemperatureMin != null && daily.WeatherCode != null)
-        {
-            int count = Math.Min(daily.Time.Count, 5);
-            for (int i = 0; i < count; i++)
-            {
-                string dayStr = FormatDayOfWeek(daily.Time[i]);
-                int wCode = daily.WeatherCode[i];
-                var (dGlyph, _, _) = WeatherPalettes.GetConditionInfo(wCode, isDay: true);
-                string hlStr = $"{FormatTemp(daily.TemperatureMax[i])} / {FormatTemp(daily.TemperatureMin[i])}";
-                double uv = (daily.UvIndexMax != null && i < daily.UvIndexMax.Count) ? daily.UvIndexMax[i] : 0.0;
-
-                if (DailyForecast.Count > i)
-                {
-                    DailyForecast[i].Update(dayStr, dGlyph, hlStr, uv);
-                }
-                else
-                {
-                    var item = new DailyWeatherItemViewModel();
-                    item.Update(dayStr, dGlyph, hlStr, uv);
-                    DailyForecast.Add(item);
-                }
-            }
-
-            while (DailyForecast.Count > count)
-            {
-                DailyForecast.RemoveAt(DailyForecast.Count - 1);
-            }
+            int precipProb = hourly.PrecipitationProbability[0];
+            PrecipitationProbability = precipProb;
+            PrecipitationProbabilityText = $"{precipProb}%";
         }
     }
 
@@ -417,24 +470,6 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
             return $"{Math.Round(fahrenheit)}°";
         }
         return $"{Math.Round(tempCelsius)}°";
-    }
-
-    private static string FormatHourlyTime(string isoTime)
-    {
-        if (DateTime.TryParse(isoTime, out var dt))
-        {
-            return dt.ToString("h tt", CultureInfo.InvariantCulture).ToLowerInvariant();
-        }
-        return isoTime;
-    }
-
-    private static string FormatDayOfWeek(string isoDate)
-    {
-        if (DateTime.TryParse(isoDate, out var dt))
-        {
-            return dt.ToString("ddd", CultureInfo.InvariantCulture);
-        }
-        return isoDate;
     }
 
     protected override void Dispose(bool disposing)

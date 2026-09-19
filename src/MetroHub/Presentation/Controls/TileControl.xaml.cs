@@ -810,6 +810,37 @@ public partial class TileControl : UserControl
             }
             else if (tile.TileContent is Widgets.Catalog.Weather.WeatherWidgetViewModel weatherVm)
             {
+                var changeLocationItem = new MenuItem
+                {
+                    Header = "Change Location...",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Location24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                changeLocationItem.Click += (s, ev) =>
+                {
+                    MetroHub.MainWindow.Current?.ShowSetWeatherLocationDialog(weatherVm);
+                };
+
+                var autoLocationItem = new MenuItem
+                {
+                    Header = "Use Automatic Location (GPS / IP)",
+                    Tag = "WidgetCustomMenu",
+                    IsCheckable = true,
+                    IsChecked = weatherVm.IsAutoLocation,
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.MyLocation24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                autoLocationItem.Click += (s, ev) => _ = weatherVm.UseAutoLocationAsync();
+
                 var toggleUnitsItem = new MenuItem
                 {
                     Header = weatherVm.IsFahrenheit ? "Switch to Celsius (°C)" : "Switch to Fahrenheit (°F)",
@@ -837,9 +868,11 @@ public partial class TileControl : UserControl
                 refreshItem.Click += (s, ev) => _ = weatherVm.RefreshAsync();
 
                 var weatherDivider = new Separator { Tag = "WidgetCustomMenu" };
-                TileContextMenu.Items.Insert(1, toggleUnitsItem);
-                TileContextMenu.Items.Insert(2, refreshItem);
-                TileContextMenu.Items.Insert(3, weatherDivider);
+                TileContextMenu.Items.Insert(1, changeLocationItem);
+                TileContextMenu.Items.Insert(2, autoLocationItem);
+                TileContextMenu.Items.Insert(3, toggleUnitsItem);
+                TileContextMenu.Items.Insert(4, refreshItem);
+                TileContextMenu.Items.Insert(5, weatherDivider);
             }
         }
         else

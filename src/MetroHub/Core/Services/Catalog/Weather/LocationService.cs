@@ -16,6 +16,7 @@ public sealed class LocationService
 
     private readonly HttpClient _httpClient;
     private static readonly TimeSpan LocationTtl = TimeSpan.FromDays(7);
+    private static LocationCacheEntry? _memoryCachedLocation;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -29,10 +30,17 @@ public sealed class LocationService
 
     public async Task<LocationCacheEntry> ResolveLocationAsync(CancellationToken cancellationToken = default)
     {
-        // 1. Check disk cache first (7-day TTL)
+        // 1. Check in-memory cache first (avoids disk I/O completely on recurring 30-min timer)
+        if (_memoryCachedLocation != null && (DateTime.UtcNow - _memoryCachedLocation.TimestampUtc) < LocationTtl)
+        {
+            return _memoryCachedLocation;
+        }
+
+        // 2. Check disk cache if in-memory cache is cold (7-day TTL)
         var cached = LoadLocationFromCache();
         if (cached != null && (DateTime.UtcNow - cached.TimestampUtc) < LocationTtl)
         {
+            _memoryCachedLocation = cached;
             return cached;
         }
 
@@ -208,6 +216,7 @@ public sealed class LocationService
 
     public static void SaveLocationToCache(LocationCacheEntry entry)
     {
+        _memoryCachedLocation = entry;
         try
         {
             if (!Directory.Exists(AppDataDir))

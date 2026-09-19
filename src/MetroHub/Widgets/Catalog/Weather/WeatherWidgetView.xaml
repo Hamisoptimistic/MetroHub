@@ -11,9 +11,8 @@
              SnapsToDevicePixels="True"
              UseLayoutRounding="True"
              TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             TextOptions.TextRenderingMode="Grayscale"
+             TextOptions.TextHintingMode="Animated">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -53,402 +52,241 @@
 
     <widgets:WidgetCard Padding="0">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
-            <!-- Ambient Weather Condition Glow Layer -->
-            <Rectangle Fill="{Binding AmbientGlowBrush}"
-                       IsHitTestVisible="False"
-                       Opacity="0.85" />
+            <!-- 1. Atmospheric Ambient Condition Aura (Dynamic, 100% GPU-drawn frozen brush, 0 CPU/RAM) -->
+            <Border Background="{Binding AmbientGlowBrush}"
+                    CornerRadius="2"
+                    IsHitTestVisible="False" />
+
+            <!-- 2. Glass Top Specular Sheen (Subtle light catch across upper half) -->
+            <Border CornerRadius="2"
+                    IsHitTestVisible="False">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#15FFFFFF" Offset="0.0" />
+                        <GradientStop Color="#04FFFFFF" Offset="0.30" />
+                        <GradientStop Color="#00000000" Offset="0.65" />
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <!-- 3. Glass Top Rim Light (1px specular edge along top border) -->
+            <Border CornerRadius="2"
+                    BorderThickness="0,1,0,0"
+                    IsHitTestVisible="False">
+                <Border.BorderBrush>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="#00FFFFFF" Offset="0.0" />
+                        <GradientStop Color="#30FFFFFF" Offset="0.5" />
+                        <GradientStop Color="#00FFFFFF" Offset="1.0" />
+                    </LinearGradientBrush>
+                </Border.BorderBrush>
+            </Border>
 
             <!-- ======================================================= -->
-            <!-- 1. COMPACT 2x2 LAYOUT                                   -->
+            <!-- 1. WIDE 4x2 LAYOUT (Ultra-Clean Icon + Temperature)      -->
             <!-- ======================================================= -->
-            <Grid Visibility="{Binding IsCompact, Converter={StaticResource BoolToVis}}"
-                  Margin="20,16,20,16">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
-                <!-- Top: City & Unit Toggle -->
-                <Grid Grid.Row="0">
-                    <TextBlock Text="{Binding CityName}"
-                               FontSize="13"
-                               FontWeight="SemiBold"
-                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                               Foreground="#E0FFFFFF"
-                               TextTrimming="CharacterEllipsis"
-                               VerticalAlignment="Center"
-                               Margin="0,0,32,0" />
-
-                    <Button HorizontalAlignment="Right"
-                            Command="{Binding ToggleUnitsCommand}"
-                            Style="{StaticResource WeatherTransportButtonStyle}"
-                            Width="26" Height="22" Margin="0"
-                            ToolTip="Toggle °C / °F">
-                        <TextBlock Text="{Binding IsFahrenheit, Converter={x:Null}, FallbackValue='°C'}"
-                                   FontSize="11"
-                                   FontWeight="SemiBold"
-                                   Foreground="#A0FFFFFF" />
-                    </Button>
-                </Grid>
-
-                <!-- Center: Weather Glyph & Hero Temp -->
-                <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,4">
-                    <TextBlock Text="{Binding WeatherGlyph}"
-                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                               FontSize="34"
-                               Foreground="#FFFFFF"
-                               HorizontalAlignment="Center"
-                               Margin="0,0,0,2" />
-                    <TextBlock Text="{Binding TemperatureText}"
-                               FontSize="32"
-                               FontWeight="Light"
-                               FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                               Foreground="#FFFFFF"
-                               HorizontalAlignment="Center" />
-                </StackPanel>
-
-                <!-- Bottom: AQI Status Badge -->
-                <Border Grid.Row="2"
-                        Background="#20FFFFFF"
-                        BorderBrush="{Binding AqiBrush}"
-                        BorderThickness="1"
-                        CornerRadius="10"
-                        Padding="8,2"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center">
-                    <TextBlock Text="{Binding AqiCategoryText}"
-                               FontSize="10.5"
-                               FontWeight="SemiBold"
-                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                               Foreground="{Binding AqiBrush}" />
-                </Border>
-            </Grid>
-
-            <!-- ======================================================= -->
-            <!-- 2. WIDE 4x2 & BANNER 8x2 LAYOUT (Default & Standard)    -->
-            <!-- ======================================================= -->
-            <Grid Visibility="{Binding IsWide, Converter={StaticResource BoolToVis}}">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="46" />
-                </Grid.RowDefinitions>
-
-                <!-- Row 0: Hero Weather Bar (Universal 20px Clearance) -->
-                <Grid Grid.Row="0" Margin="20,12,20,4">
+            <Viewbox Visibility="{Binding IsWide, Converter={StaticResource BoolToVis}}"
+                     Margin="16,12,16,12"
+                     Stretch="Uniform"
+                     HorizontalAlignment="Stretch"
+                     VerticalAlignment="Center">
+                <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="12" /> <!-- Spacing -->
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Left Column: City, Condition, High/Low, Refresh -->
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{Binding CityName}"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                       Foreground="#FFFFFF"
-                                       TextTrimming="CharacterEllipsis"
-                                       MaxWidth="150"
-                                       VerticalAlignment="Center" />
+                    <!-- Left: Standardized Optical Weather Icon -->
+                    <Image Grid.Column="0"
+                           Source="{Binding WeatherIconSource}"
+                           Height="100" Width="100"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           SnapsToDevicePixels="True"
+                           VerticalAlignment="Center"
+                           RenderTransformOrigin="0.5,0.5">
+                        <Image.RenderTransform>
+                            <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
+                        </Image.RenderTransform>
+                        <Image.Effect>
+                            <DropShadowEffect BlurRadius="12" Direction="270" ShadowDepth="2" Opacity="0.25" Color="#000000" />
+                        </Image.Effect>
+                    </Image>
 
-                            <Button Command="{Binding RefreshCommand}"
-                                    Style="{StaticResource WeatherTransportButtonStyle}"
-                                    Width="24" Height="22" Margin="6,0,0,0"
-                                    ToolTip="Refresh Weather &amp; AQI">
-                                <TextBlock Text="&#xE72C;"
-                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                           FontSize="11"
-                                           Foreground="#A0FFFFFF" />
-                            </Button>
-                        </StackPanel>
+                    <!-- Right: Standardized Temperature (Matched height) -->
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding TemperatureText}"
+                               FontSize="110"
+                               FontWeight="Bold"
+                               FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                               Foreground="#FFFFFF"
+                               VerticalAlignment="Center"
+                               Margin="0,-6,0,0" />
+                </Grid>
+            </Viewbox>
 
+            <!-- ======================================================= -->
+            <!-- 2. LARGE 4x4 LAYOUT (Image 1 Modern Claymorphic Card)   -->
+            <!-- ======================================================= -->
+            <Grid Visibility="{Binding IsSquareLarge, Converter={StaticResource BoolToVis}}"
+                  Margin="22,20,22,18">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Top Row: Large Hero Icon (Left) + Large Temp & Condition (Right) -->
+                <Grid Grid.Row="0" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Large Weather Icon -->
+                    <Image Grid.Column="0"
+                           Source="{Binding WeatherIconSource}"
+                           Width="76" Height="76"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           SnapsToDevicePixels="True"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Center"
+                           RenderTransformOrigin="0.5,0.5">
+                        <Image.RenderTransform>
+                            <ScaleTransform ScaleX="1.4" ScaleY="1.4" />
+                        </Image.RenderTransform>
+                        <Image.Effect>
+                            <DropShadowEffect BlurRadius="16" Direction="270" ShadowDepth="4" Opacity="0.30" Color="#000000" />
+                        </Image.Effect>
+                    </Image>
+
+                    <!-- Right: Large Temperature & Condition -->
+                    <StackPanel Grid.Column="1"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Right">
+                        <TextBlock Text="{Binding TemperatureText}"
+                                   FontSize="54"
+                                   FontWeight="Bold"
+                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                   Foreground="#FFFFFF"
+                                   HorizontalAlignment="Right" />
                         <TextBlock Text="{Binding ConditionText}"
-                                   FontSize="12"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"
                                    FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   Foreground="#C0FFFFFF"
-                                   Margin="0,1,0,0" />
-
-                        <TextBlock Text="{Binding HighLowText}"
-                                   FontSize="11.5"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   Foreground="#80FFFFFF"
+                                   Foreground="#C5FFFFFF"
+                                   HorizontalAlignment="Right"
                                    Margin="0,2,0,0" />
                     </StackPanel>
+                </Grid>
 
-                    <!-- Right Column: Hero Temp & Glyph & AQI Badge -->
-                    <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <TextBlock Text="{Binding WeatherGlyph}"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                       FontSize="28"
-                                       Foreground="#FFFFFF"
-                                       VerticalAlignment="Center"
-                                       Margin="0,0,10,0" />
-
-                            <TextBlock Text="{Binding TemperatureText}"
-                                       FontSize="36"
-                                       FontWeight="Light"
-                                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                       Foreground="#FFFFFF"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-
-                        <Border Background="#20000000"
-                                BorderBrush="{Binding AqiBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="6,1.5"
-                                HorizontalAlignment="Right"
-                                Margin="0,3,0,0">
-                            <TextBlock Text="{Binding AqiCategoryText}"
-                                       FontSize="10"
-                                       FontWeight="SemiBold"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                       Foreground="{Binding AqiBrush}" />
-                        </Border>
+                <!-- Bottom Row: 3 Neat Metric Columns (AQI, Humidity, Precip) -->
+                <UniformGrid Grid.Row="1" Columns="3" VerticalAlignment="Center" Margin="0,16,0,6">
+                    <!-- Column 1: AQI -->
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="AQI"
+                                   FontSize="12"
+                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                   Foreground="#85FFFFFF"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="{Binding AqiText}"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                   Foreground="#FFFFFF"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,4,0,0" />
                     </StackPanel>
-                </Grid>
 
-                <!-- Universal Fluent Edge-to-Edge Hairline Divider -->
-                <Grid Grid.Row="1"
-                      VerticalAlignment="Top"
-                      Height="14"
-                      Margin="0,-7,0,0"
-                      Background="Transparent">
-                    <Border Height="1"
-                            VerticalAlignment="Center"
-                            Background="#15FFFFFF"
-                            SnapsToDevicePixels="True" />
-                </Grid>
+                    <!-- Column 2: Humidity -->
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="Humidity"
+                                   FontSize="12"
+                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                   Foreground="#85FFFFFF"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="{Binding HumidityText}"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                   Foreground="#FFFFFF"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,4,0,0" />
+                    </StackPanel>
 
-                <!-- Row 2: Docked 5-Hour Forecast Strip (20px Margin) -->
-                <ItemsControl Grid.Row="2"
-                              ItemsSource="{Binding HourlyForecast}"
-                              Margin="16,0,16,6"
-                              VerticalAlignment="Center">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <UniformGrid Rows="1" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding TimeString}"
-                                           FontSize="10"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                           Foreground="#80FFFFFF"
-                                           HorizontalAlignment="Center" />
-                                <TextBlock Text="{Binding Glyph}"
-                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                           FontSize="13"
-                                           Foreground="#FFFFFF"
-                                           HorizontalAlignment="Center"
-                                           Margin="0,2" />
-                                <TextBlock Text="{Binding TemperatureText}"
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
-                                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                           Foreground="#E0FFFFFF"
-                                           HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                    <!-- Column 3: Precipitation -->
+                    <StackPanel HorizontalAlignment="Center">
+                        <TextBlock Text="Precip"
+                                   FontSize="12"
+                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                   Foreground="#85FFFFFF"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="{Binding PrecipitationProbabilityText}"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                   Foreground="#FFFFFF"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,4,0,0" />
+                    </StackPanel>
+                </UniformGrid>
             </Grid>
 
             <!-- ======================================================= -->
-            <!-- 3. BANNER 8x2 / EXTRA WIDE 6x2 LAYOUT                   -->
+            <!-- 3. BANNER 8x2 LAYOUT                                   -->
             <!-- ======================================================= -->
-            <Grid Visibility="{Binding IsBanner, Converter={StaticResource BoolToVis}}">
+            <Grid Visibility="{Binding IsBanner, Converter={StaticResource BoolToVis}}"
+                  Margin="30,14,30,14"
+                  VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="220" />
+                    <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Left Hero Segment -->
-                <Grid Grid.Column="0" Margin="20,12,12,12">
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{Binding CityName}"
-                                   FontSize="15"
-                                   FontWeight="SemiBold"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   Foreground="#FFFFFF"
-                                   TextTrimming="CharacterEllipsis" />
-                        <TextBlock Text="{Binding ConditionText}"
-                                   FontSize="12"
-                                   Foreground="#B0FFFFFF"
-                                   Margin="0,1,0,0" />
-                        <TextBlock Text="{Binding HighLowText}"
-                                   FontSize="11"
-                                   Foreground="#70FFFFFF"
-                                   Margin="0,2,0,0" />
-                        <Border Background="#20000000"
-                                BorderBrush="{Binding AqiBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="6,1.5"
-                                HorizontalAlignment="Left"
-                                Margin="0,4,0,0">
-                            <TextBlock Text="{Binding AqiCategoryText}"
-                                       FontSize="10"
-                                       FontWeight="SemiBold"
-                                       Foreground="{Binding AqiBrush}" />
-                        </Border>
-                    </StackPanel>
-                </Grid>
+                <!-- Left: Details (Labels smaller & SemiBold, Values 15px Bold) -->
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left">
+                    <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif">
+                        <Run Text="AQI&#x20;" FontSize="12.5" FontWeight="SemiBold" Foreground="#C8FFFFFF" /><Run Text="{Binding AqiText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
+                    </TextBlock>
+                    <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                               Margin="0,6,0,0">
+                        <Run Text="Feels like&#x20;" FontSize="12.5" FontWeight="SemiBold" Foreground="#C8FFFFFF" /><Run Text="{Binding FeelsLikeShortText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
+                    </TextBlock>
+                    <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                               Margin="0,6,0,0">
+                        <Run Text="Humidity&#x20;" FontSize="12.5" FontWeight="SemiBold" Foreground="#C8FFFFFF" /><Run Text="{Binding HumidityText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
+                    </TextBlock>
+                </StackPanel>
 
-                <!-- Vertical Hairline Divider -->
-                <Border Grid.Column="1" Width="1" Background="#15FFFFFF" Margin="0,12" />
+                <!-- Center: Standardized Optical Weather Icon -->
+                <Image Grid.Column="1"
+                       Source="{Binding WeatherIconSource}"
+                       Height="66" Width="66"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       SnapsToDevicePixels="True"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       RenderTransformOrigin="0.5,0.5">
+                    <Image.RenderTransform>
+                        <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
+                    </Image.RenderTransform>
+                    <Image.Effect>
+                        <DropShadowEffect BlurRadius="12" Direction="270" ShadowDepth="2" Opacity="0.25" Color="#000000" />
+                    </Image.Effect>
+                </Image>
 
-                <!-- Extended Hourly Strip -->
-                <Grid Grid.Column="2" Margin="12,12,20,12">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,4">
-                        <TextBlock Text="{Binding WeatherGlyph}"
-                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                   FontSize="22"
-                                   Foreground="#FFFFFF"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,8,0" />
-                        <TextBlock Text="{Binding TemperatureText}"
-                                   FontSize="26"
-                                   FontWeight="Light"
-                                   Foreground="#FFFFFF"
-                                   VerticalAlignment="Center" />
-                        <Button Command="{Binding ToggleUnitsCommand}"
-                                Style="{StaticResource WeatherTransportButtonStyle}"
-                                Width="26" Height="22" Margin="8,0,0,0"
-                                ToolTip="Toggle °C / °F">
-                            <TextBlock Text="{Binding IsFahrenheit, Converter={x:Null}, FallbackValue='°C'}"
-                                       FontSize="11"
-                                       Foreground="#80FFFFFF" />
-                        </Button>
-                    </StackPanel>
-
-                    <ItemsControl Grid.Row="1"
-                                  ItemsSource="{Binding HourlyForecast}"
-                                  VerticalAlignment="Center">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <UniformGrid Rows="1" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding TimeString}" FontSize="9.5" Foreground="#70FFFFFF" HorizontalAlignment="Center" />
-                                    <TextBlock Text="{Binding Glyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13" Foreground="#FFFFFF" HorizontalAlignment="Center" Margin="0,2" />
-                                    <TextBlock Text="{Binding TemperatureText}" FontSize="11" FontWeight="SemiBold" Foreground="#E0FFFFFF" HorizontalAlignment="Center" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </Grid>
+                <!-- Right: Standardized Temperature (Matched optical height) -->
+                <TextBlock Grid.Column="2"
+                           Text="{Binding TemperatureText}"
+                           FontSize="72"
+                           FontWeight="Bold"
+                           FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                           Foreground="#FFFFFF"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           Margin="0,-4,0,0" />
             </Grid>
 
-            <!-- ======================================================= -->
-            <!-- 4. HERO / LARGE 4x4 & 8x3 COMPREHENSIVE LAYOUT          -->
-            <!-- ======================================================= -->
-            <Grid Visibility="{Binding IsHero, Converter={StaticResource BoolToVis}}" Margin="20,16,20,16">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
-                <!-- Top Header: City & Large Current Temp -->
-                <Grid Grid.Row="0">
-                    <StackPanel>
-                        <TextBlock Text="{Binding CityName}" FontSize="18" FontWeight="SemiBold" Foreground="#FFFFFF" />
-                        <TextBlock Text="{Binding ConditionText}" FontSize="13" Foreground="#B0FFFFFF" Margin="0,2,0,0" />
-                        <TextBlock Text="{Binding HighLowText}" FontSize="12" Foreground="#80FFFFFF" Margin="0,2,0,0" />
-                    </StackPanel>
-
-                    <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Orientation="Horizontal">
-                        <TextBlock Text="{Binding WeatherGlyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="36" Foreground="#FFFFFF" VerticalAlignment="Center" Margin="0,0,12,0" />
-                        <TextBlock Text="{Binding TemperatureText}" FontSize="44" FontWeight="Light" Foreground="#FFFFFF" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Grid>
-
-                <!-- AQI & Pollutant Breakdown Bar -->
-                <Border Grid.Row="1" Background="#15FFFFFF" CornerRadius="8" Padding="12,8" Margin="0,12,0,10">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Grid.Column="0" Background="#20000000" BorderBrush="{Binding AqiBrush}" BorderThickness="1" CornerRadius="6" Padding="6,2" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding AqiCategoryText}" FontSize="11" FontWeight="SemiBold" Foreground="{Binding AqiBrush}" />
-                        </Border>
-
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="12,0" VerticalAlignment="Center">
-                            <TextBlock Text="PM2.5: " FontSize="11" Foreground="#70FFFFFF" />
-                            <TextBlock Text="{Binding Pm25Text}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF" />
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="12,0" VerticalAlignment="Center">
-                            <TextBlock Text="PM10: " FontSize="11" Foreground="#70FFFFFF" />
-                            <TextBlock Text="{Binding Pm10Text}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF" />
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="12,0" VerticalAlignment="Center">
-                            <TextBlock Text="O₃: " FontSize="11" Foreground="#70FFFFFF" />
-                            <TextBlock Text="{Binding OzoneText}" FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF" />
-                        </StackPanel>
-                    </Grid>
-                </Border>
-
-                <!-- Middle: 5-Day Daily Forecast -->
-                <ItemsControl Grid.Row="2" ItemsSource="{Binding DailyForecast}" Margin="0,4,0,8">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="0,3">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="50" />
-                                    <ColumnDefinition Width="36" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="{Binding DayString}" FontSize="12.5" FontWeight="SemiBold" Foreground="#D0FFFFFF" VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="1" Text="{Binding Glyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14" Foreground="#FFFFFF" VerticalAlignment="Center" HorizontalAlignment="Center" />
-                                <TextBlock Grid.Column="3" Text="{Binding HighLowText}" FontSize="12" Foreground="#B0FFFFFF" VerticalAlignment="Center" />
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <!-- Bottom: Hourly Forecast Horizontal Strip -->
-                <ItemsControl Grid.Row="3" ItemsSource="{Binding HourlyForecast}" Margin="0,4,0,0">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <UniformGrid Rows="1" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="{Binding TimeString}" FontSize="10" Foreground="#70FFFFFF" HorizontalAlignment="Center" />
-                                <TextBlock Text="{Binding Glyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="13" Foreground="#FFFFFF" HorizontalAlignment="Center" Margin="0,2" />
-                                <TextBlock Text="{Binding TemperatureText}" FontSize="11" FontWeight="SemiBold" Foreground="#E0FFFFFF" HorizontalAlignment="Center" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </Grid>
 
             <!-- Loading Spinner Indicator -->
             <ProgressBar IsIndeterminate="{Binding IsLoading}"

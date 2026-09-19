@@ -114,6 +114,9 @@ public sealed class CurrentWeatherDto
 
     [JsonPropertyName("wind_speed_10m")]
     public double WindSpeed { get; set; }
+
+    [JsonPropertyName("uv_index")]
+    public double UvIndex { get; set; }
 }
 
 public sealed class HourlyWeatherDto
@@ -132,6 +135,9 @@ public sealed class HourlyWeatherDto
 
     [JsonPropertyName("is_day")]
     public List<int>? IsDay { get; set; }
+
+    [JsonPropertyName("uv_index")]
+    public List<double>? UvIndex { get; set; }
 }
 
 public sealed class DailyWeatherDto
@@ -150,6 +156,9 @@ public sealed class DailyWeatherDto
 
     [JsonPropertyName("uv_index_max")]
     public List<double>? UvIndexMax { get; set; }
+
+    [JsonPropertyName("precipitation_probability_max")]
+    public List<int>? PrecipitationProbabilityMax { get; set; }
 }
 
 public sealed class OpenMeteoAirQualityResponse

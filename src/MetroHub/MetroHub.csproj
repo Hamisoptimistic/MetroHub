@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Dubya.WindowsMediaController" Version="2.5.6" />
     <PackageReference Include="gong-wpf-dragdrop" Version="4.0.0" />
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.158" />
@@ -24,6 +25,10 @@
 
   <ItemGroup>
     <Resource Include="Assets\Fonts\**\*.ttf" />
+    <None Remove="Assets\Weather\Meteocons\*.png" />
+    <Resource Include="Assets\Weather\Meteocons\*.png" />
+    <None Remove="Assets\Weather\Glassmorphic\*.png" />
+    <Resource Include="Assets\Weather\Glassmorphic\*.png" />
     <None Update="Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

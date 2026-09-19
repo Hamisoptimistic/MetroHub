@@ -1,0 +1,122 @@
+<UserControl x:Class="MetroHub.Presentation.Controls.SetWeatherCityDialogControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d" 
+             Width="380"
+             MinWidth="380"
+             Focusable="False"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="ClearType"
+             TextOptions.TextHintingMode="Fixed">
+
+    <StackPanel Margin="0,4,0,0">
+        <!-- 1. Current Location Status Pill -->
+        <Border Background="#12FFFFFF"
+                BorderBrush="#20FFFFFF"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="12,8"
+                Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <ui:SymbolIcon Grid.Column="0" Symbol="Location24" FontSize="16" Foreground="#60CDFF" VerticalAlignment="Center" Margin="0,0,8,0" />
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="Currently Displaying" FontSize="11" Foreground="#80FFFFFF" />
+                    <TextBlock x:Name="CurrentLocationText" Text="Loading..." FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" Margin="0,1,0,0" />
+                </StackPanel>
+
+                <Border x:Name="CurrentLocationBadge"
+                        Grid.Column="2"
+                        Background="#2560CDFF"
+                        CornerRadius="4"
+                        Padding="6,2"
+                        VerticalAlignment="Center">
+                    <TextBlock x:Name="CurrentLocationBadgeText" Text="AUTO" FontSize="10" FontWeight="Bold" Foreground="#60CDFF" />
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- 2. City Name Input Field -->
+        <TextBlock Text="City Name"
+                   FontSize="12"
+                   FontWeight="SemiBold"
+                   Foreground="#C0FFFFFF"
+                   Margin="0,0,0,6" />
+
+        <Border Background="#1CFFFFFF"
+                BorderBrush="#35FFFFFF"
+                BorderThickness="1"
+                CornerRadius="6"
+                Height="38"
+                Padding="10,0,10,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <ui:SymbolIcon Grid.Column="0"
+                               Symbol="Search24"
+                               FontSize="16"
+                               Foreground="#80FFFFFF"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0" />
+
+                <TextBox x:Name="CityTextBox"
+                         Grid.Column="1"
+                         VerticalAlignment="Center"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Foreground="#FFFFFF"
+                         CaretBrush="#60CDFF"
+                         FontSize="13"
+                         TextChanged="OnCityTextChanged"
+                         KeyDown="OnCityKeyDown" />
+            </Grid>
+        </Border>
+
+        <!-- 3. Quick Auto-Location Action Button -->
+        <Button x:Name="AutoLocationButton"
+                Margin="0,8,0,0"
+                HorizontalAlignment="Left"
+                Background="Transparent"
+                BorderThickness="0"
+                Cursor="Hand"
+                Click="OnAutoLocationClick">
+            <StackPanel Orientation="Horizontal">
+                <ui:SymbolIcon Symbol="MyLocation24" FontSize="14" Foreground="#60CDFF" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <TextBlock Text="Reset to automatic location (GPS / IP)" FontSize="11.5" Foreground="#60CDFF" VerticalAlignment="Center" />
+            </StackPanel>
+        </Button>
+
+        <!-- 4. Status / Error Message Area -->
+        <StackPanel Margin="0,10,0,0">
+            <ProgressBar x:Name="SearchProgressBar"
+                         Height="2"
+                         IsIndeterminate="True"
+                         Foreground="#60CDFF"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Visibility="Collapsed"
+                         Margin="0,0,0,6" />
+
+            <TextBlock x:Name="StatusMessageText"
+                       Text=""
+                       FontSize="11.5"
+                       Foreground="#FF6B6B"
+                       Visibility="Collapsed"
+                       TextWrapping="Wrap" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

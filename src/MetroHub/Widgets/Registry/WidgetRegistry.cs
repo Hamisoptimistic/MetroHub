@@ -227,9 +227,7 @@ public static class WidgetRegistry
                 WidgetSize.Wide,      // 4x2
                 WidgetSize.ExtraWide, // 6x2
                 WidgetSize.Banner,    // 8x2
-                WidgetSize.Banner3,   // 8x3
-                WidgetSize.Large,     // 4x4
-                WidgetSize.Mega       // 8x4
+                WidgetSize.Large      // 4x4
             },
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Weather.WeatherWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Weather.WeatherWidgetView),

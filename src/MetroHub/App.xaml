@@ -17,6 +17,16 @@
             <FontFamily x:Key="AppIconFontFamily">Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif</FontFamily>
             <FontFamily x:Key="AppMonoFontFamily">Consolas, Cascadia Code, Segoe UI Mono, monospace</FontFamily>
 
+            <!-- Obsidian Acrylic ContentDialog Theme Tokens (WPF-UI 3.0.4) -->
+            <SolidColorBrush x:Key="ContentDialogBackground" Color="#F214161A" />
+            <SolidColorBrush x:Key="ContentDialogBorderBrush" Color="#35FFFFFF" />
+            <SolidColorBrush x:Key="ContentDialogSmokeFill" Color="#8A08080C" />
+            <SolidColorBrush x:Key="SmokeFillColorDefaultBrush" Color="#8A08080C" />
+            <SolidColorBrush x:Key="ContentDialogSeparatorBorderBrush" Color="#18FFFFFF" />
+            <SolidColorBrush x:Key="ContentDialogTopOverlay" Color="#08FFFFFF" />
+            <CornerRadius x:Key="DialogOverlayCornerRadius">10,10,0,0</CornerRadius>
+            <CornerRadius x:Key="DialogFooterCornerRadius">0,0,10,10</CornerRadius>
+
             <!-- Universal Fluent ScrollBar: 100% Transparent Track (No grey background gutter ever), Translucent White Thumb -->
             <Style x:Key="ScrollBarPageButtonStyle" TargetType="{x:Type RepeatButton}">
                 <Setter Property="OverridesDefaultStyle" Value="True" />

@@ -20,6 +20,7 @@ using Wpf.Ui.Controls;
 using MenuItem = System.Windows.Controls.MenuItem;
 using ContextMenu = System.Windows.Controls.ContextMenu;
 using Image = System.Windows.Controls.Image;
+using TextBlock = System.Windows.Controls.TextBlock;
 
 namespace MetroHub;
 
@@ -4427,34 +4428,36 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         }
     }
 
-    private AddWebLinkDialogControl? _webLinkDialog;
-    private AddWebLinkDialogControl GetOrCreateWebLinkDialog()
+    public void ShowSetWeatherLocationDialog(Widgets.Catalog.Weather.WeatherWidgetViewModel weatherVm)
     {
-        if (_webLinkDialog == null)
+        if (weatherVm == null) return;
+
+        using (EnterDialogScope())
         {
-            _webLinkDialog = new AddWebLinkDialogControl
-            {
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch
-            };
-            Grid.SetColumn(_webLinkDialog, 0);
-            Grid.SetColumnSpan(_webLinkDialog, 2);
-            Grid.SetRowSpan(_webLinkDialog, 2);
-            Panel.SetZIndex(_webLinkDialog, 5000);
-            _webLinkDialog.WebLinkCreated += OnWebLinkCreated;
-            RootGrid.Children.Add(_webLinkDialog);
+            AcrylicModalWindow.ShowWeatherLocation(this, weatherVm);
         }
-        return _webLinkDialog;
+    }
+
+    public void ShowAddWebLinkDialog(string? initialUrl = null)
+    {
+        using (EnterDialogScope())
+        {
+            var result = AcrylicModalWindow.ShowAddWebLink(this, initialUrl);
+            if (result != null)
+            {
+                OnWebLinkCreated(this, result);
+            }
+        }
     }
 
     private void OnSidebarAddWebLinkRequested(object? sender, string? initialUrl)
     {
-        GetOrCreateWebLinkDialog().ShowDialog(initialUrl);
+        ShowAddWebLinkDialog(initialUrl);
     }
 
     private void OnCanvasAddWebLinkClick(object sender, RoutedEventArgs e)
     {
-        GetOrCreateWebLinkDialog().ShowDialog();
+        ShowAddWebLinkDialog();
     }
 
     private void OnWebLinkCreated(object? sender, WebLinkCreatedEventArgs e)

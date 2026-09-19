@@ -37,6 +37,8 @@ public sealed class WeatherService
         Location = new LocationService(SharedHttpClient);
     }
 
+    private string? _lastSavedCurrentTime;
+
     public WeatherCacheEntry? GetCachedWeather()
     {
         try
@@ -44,7 +46,9 @@ public sealed class WeatherService
             if (File.Exists(WeatherCachePath))
             {
                 string json = File.ReadAllText(WeatherCachePath);
-                return JsonSerializer.Deserialize<WeatherCacheEntry>(json, JsonOptions);
+                var entry = JsonSerializer.Deserialize<WeatherCacheEntry>(json, JsonOptions);
+                _lastSavedCurrentTime = entry?.Forecast?.Current?.Time;
+                return entry;
             }
         }
         catch
@@ -65,10 +69,10 @@ public sealed class WeatherService
         {
             // 1. Weather Forecast URL
             string weatherUrl = $"https://api.open-meteo.com/v1/forecast?latitude={latitude:F4}&longitude={longitude:F4}" +
-                                "&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m" +
-                                "&hourly=temperature_2m,precipitation_probability,weather_code,is_day" +
-                                "&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max" +
-                                "&timezone=auto&forecast_days=6";
+                                "&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,uv_index" +
+                                "&hourly=temperature_2m,precipitation_probability,weather_code,is_day,uv_index" +
+                                "&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_probability_max" +
+                                "&timezone=auto&forecast_days=7";
 
             // 2. Air Quality URL
             string aqiUrl = $"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={latitude:F4}&longitude={longitude:F4}" +
@@ -96,7 +100,7 @@ public sealed class WeatherService
                 AirQuality = airQuality
             };
 
-            SaveWeatherCache(entry);
+            await SaveWeatherCacheAsync(entry, cancellationToken).ConfigureAwait(false);
             return entry;
         }
         catch
@@ -122,8 +126,14 @@ public sealed class WeatherService
         }
     }
 
-    private static void SaveWeatherCache(WeatherCacheEntry entry)
+    private async Task SaveWeatherCacheAsync(WeatherCacheEntry entry, CancellationToken cancellationToken)
     {
+        var currentTime = entry.Forecast?.Current?.Time;
+        if (currentTime != null && string.Equals(currentTime, _lastSavedCurrentTime, StringComparison.Ordinal))
+        {
+            return; // Identical forecast timeframe; avoid redundant disk rewrite
+        }
+
         try
         {
             if (!Directory.Exists(AppDataDir))
@@ -132,7 +142,8 @@ public sealed class WeatherService
             }
 
             string json = JsonSerializer.Serialize(entry, JsonOptions);
-            File.WriteAllText(WeatherCachePath, json);
+            await File.WriteAllTextAsync(WeatherCachePath, json, cancellationToken).ConfigureAwait(false);
+            _lastSavedCurrentTime = currentTime;
         }
         catch
         {

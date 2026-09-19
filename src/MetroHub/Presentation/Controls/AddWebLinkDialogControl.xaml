@@ -5,95 +5,21 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" 
-             d:DesignHeight="600" d:DesignWidth="800"
+             Width="420"
+             MinWidth="420"
              Focusable="False"
              SnapsToDevicePixels="True"
              UseLayoutRounding="True"
              TextOptions.TextFormattingMode="Ideal"
-            TextOptions.TextRenderingMode="Grayscale"
-            TextOptions.TextHintingMode="Animated">
+             TextOptions.TextRenderingMode="ClearType"
+             TextOptions.TextHintingMode="Fixed">
 
     <UserControl.Resources>
-        <!-- Ghost Button Style for Secondary / Cancel -->
-        <Style x:Key="DialogGhostButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#15FFFFFF" />
-            <Setter Property="BorderBrush" Value="#25FFFFFF" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="#E0FFFFFF" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontWeight" Value="Normal" />
-            <Setter Property="Padding" Value="16,6" />
-            <Setter Property="Height" Value="32" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="5"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#40FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#35FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Primary Accent Button Style -->
-        <Style x:Key="DialogPrimaryButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#000000" />
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Padding" Value="18,6" />
-            <Setter Property="Height" Value="32" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="5"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Opacity" Value="0.9" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Opacity" Value="0.75" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#30FFFFFF" />
-                                <Setter Property="Foreground" Value="#50FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
         <!-- Mini Paste Button Style -->
         <Style x:Key="MiniPasteButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#12FFFFFF" />
+            <Setter Property="Background" Value="#15FFFFFF" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#80FFFFFF" />
+            <Setter Property="Foreground" Value="#B0FFFFFF" />
             <Setter Property="FontSize" Value="11" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Padding" Value="8,2" />
@@ -111,29 +37,8 @@
                                 <Setter TargetName="BtnBorder" Property="Background" Value="#25FFFFFF" />
                                 <Setter Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Close / Dismiss Mini Button -->
-        <Style x:Key="DialogDismissButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Width" Value="28" />
-            <Setter Property="Height" Value="28" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder" Background="Transparent" CornerRadius="4" SnapsToDevicePixels="True">
-                            <ui:SymbolIcon Symbol="Dismiss20" FontSize="14" Foreground="#80FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#25FFFFFF" />
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#35FFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -142,239 +47,175 @@
         </Style>
     </UserControl.Resources>
 
-    <!-- Modal Backdrop Scrim (Clicking outside card cancels) -->
-    <Grid x:Name="OverlayRoot"
-          Background="#950A0A0C"
-          MouseDown="OnBackdropMouseDown">
-
-        <!-- Centered Windows 11 Fluent Content Dialog Card -->
-        <Border x:Name="DialogCard"
-                Width="460"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Background="#F0222226"
-                BorderBrush="#38FFFFFF"
+    <StackPanel Margin="0,4,0,0">
+        <!-- 1. Live Icon & Title Preview Card -->
+        <Border Background="#12FFFFFF"
+                BorderBrush="#20FFFFFF"
                 BorderThickness="1"
-                CornerRadius="10"
-                Padding="24,20,24,20"
-                MouseDown="OnCardMouseDown"
-                SnapsToDevicePixels="True">
-            <Border.CacheMode>
-                <BitmapCache SnapsToDevicePixels="True" RenderAtScale="1.0" />
-            </Border.CacheMode>
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="24" Direction="270" ShadowDepth="8" Opacity="0.45" Color="#000000" />
-            </Border.Effect>
+                CornerRadius="8"
+                Padding="14,10"
+                Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="46" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-            <StackPanel>
-                <!-- 1. Header: Title + Close Button -->
-                <Grid Margin="0,0,0,16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="Add Web Shortcut"
-                                   FontSize="18"
-                                   FontWeight="SemiBold"
-                                   Foreground="#FFFFFF" />
-                        <TextBlock Text="Add any website with its official full-color icon."
-                                   FontSize="12"
-                                   Foreground="#85FFFFFF"
-                                   Margin="0,3,0,0" />
-                    </StackPanel>
-
-                    <Button Grid.Column="1"
-                            Style="{StaticResource DialogDismissButtonStyle}"
-                            ToolTip="Close"
-                            Click="OnCancelClick" />
-                </Grid>
-
-                <!-- 2. Live Icon & Title Preview Card -->
-                <Border Background="#14FFFFFF"
-                        BorderBrush="#22FFFFFF"
-                        BorderThickness="1"
+                <!-- Icon Container (42x42) -->
+                <Border Grid.Column="0"
+                        Width="42"
+                        Height="42"
                         CornerRadius="8"
-                        Padding="14,10"
-                        Margin="0,0,0,16">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="48" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Icon Container (42x42) -->
-                        <Border Grid.Column="0"
-                                Width="42"
-                                Height="42"
-                                CornerRadius="8"
-                                Background="#1AFFFFFF"
-                                BorderBrush="#20FFFFFF"
-                                BorderThickness="1"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Center"
-                                SnapsToDevicePixels="True">
-                            <Grid>
-                                <!-- Real Official High-Res Favicon Image -->
-                                <Image x:Name="LivePreviewImage"
-                                       Width="28"
-                                       Height="28"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Visibility="Collapsed"
-                                       RenderOptions.BitmapScalingMode="HighQuality" />
-
-                                <!-- Fallback Vector Globe Icon -->
-                                <ui:SymbolIcon x:Name="LivePreviewFallbackIcon"
-                                               Symbol="Globe24"
-                                               FontSize="22"
-                                               Foreground="#60CDFF"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center" />
-
-                                <!-- Subtle Loading Indicator -->
-                                <ui:ProgressRing x:Name="LivePreviewSpinner"
-                                                 Width="18"
-                                                 Height="18"
-                                                 IsIndeterminate="False"
-                                                 HorizontalAlignment="Center"
-                                                 VerticalAlignment="Center"
-                                                 Visibility="Collapsed" />
-                            </Grid>
-                        </Border>
-
-                        <!-- Site Information -->
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0,0,0">
-                            <TextBlock x:Name="LivePreviewTitleText"
-                                       Text="Website Preview"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
-                                       Foreground="#FFFFFF"
-                                       TextTrimming="CharacterEllipsis" />
-                            <TextBlock x:Name="LivePreviewDomainText"
-                                       Text="Enter a URL below..."
-                                       FontSize="12"
-                                       Foreground="#80FFFFFF"
-                                       TextTrimming="CharacterEllipsis"
-                                       Margin="0,2,0,0" />
-                        </StackPanel>
-                    </Grid>
-                </Border>
-
-                <!-- 3. URL Input Field -->
-                <TextBlock Text="Website URL"
-                           FontSize="12"
-                           FontWeight="SemiBold"
-                           Foreground="#C0FFFFFF"
-                           Margin="0,0,0,6" />
-                <Border Background="#1CFFFFFF"
-                        BorderBrush="#35FFFFFF"
+                        Background="#1AFFFFFF"
+                        BorderBrush="#20FFFFFF"
                         BorderThickness="1"
-                        CornerRadius="6"
-                        Height="36"
-                        Padding="10,0,6,0">
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        SnapsToDevicePixels="True">
                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                        <!-- Real Official High-Res Favicon Image -->
+                        <Image x:Name="LivePreviewImage"
+                               Width="28"
+                               Height="28"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Visibility="Collapsed"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
 
-                        <ui:SymbolIcon Grid.Column="0"
+                        <!-- Fallback Vector Globe Icon -->
+                        <ui:SymbolIcon x:Name="LivePreviewFallbackIcon"
                                        Symbol="Globe24"
-                                       FontSize="16"
-                                       Foreground="#80FFFFFF"
-                                       VerticalAlignment="Center"
-                                       Margin="0,0,8,0" />
+                                       FontSize="22"
+                                       Foreground="#60CDFF"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
 
-                        <TextBox x:Name="UrlTextBox"
-                                 Grid.Column="1"
-                                 VerticalAlignment="Center"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Foreground="#FFFFFF"
-                                 CaretBrush="#60CDFF"
-                                 FontSize="13"
-                                 TextChanged="OnUrlTextChanged"
-                                 KeyDown="OnInputKeyDown" />
-
-                        <Button x:Name="PasteButton"
-                                Grid.Column="2"
-                                Content="Paste"
-                                Style="{StaticResource MiniPasteButtonStyle}"
-                                VerticalAlignment="Center"
-                                Click="OnPasteClick" />
+                        <!-- Subtle Loading Indicator -->
+                        <ui:ProgressRing x:Name="LivePreviewSpinner"
+                                         Width="18"
+                                         Height="18"
+                                         IsIndeterminate="False"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"
+                                         Visibility="Collapsed" />
                     </Grid>
                 </Border>
 
-                <!-- 4. Display Name Input Field -->
-                <TextBlock Text="Shortcut Name"
-                           FontSize="12"
-                           FontWeight="SemiBold"
-                           Foreground="#C0FFFFFF"
-                           Margin="0,14,0,6" />
-                <Border Background="#1CFFFFFF"
-                        BorderBrush="#35FFFFFF"
-                        BorderThickness="1"
-                        CornerRadius="6"
-                        Height="36"
-                        Padding="10,0,6,0">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-
-                        <ui:SymbolIcon Grid.Column="0"
-                                       Symbol="Rename24"
-                                       FontSize="16"
-                                       Foreground="#80FFFFFF"
-                                       VerticalAlignment="Center"
-                                       Margin="0,0,8,0" />
-
-                        <TextBox x:Name="TitleTextBox"
-                                 Grid.Column="1"
-                                 VerticalAlignment="Center"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Foreground="#FFFFFF"
-                                 CaretBrush="#60CDFF"
-                                 FontSize="13"
-                                 TextChanged="OnTitleTextChanged"
-                                 KeyDown="OnInputKeyDown" />
-                    </Grid>
-                </Border>
-
-                <!-- 5. Destination Checkboxes -->
-                <StackPanel Orientation="Horizontal" Margin="0,16,0,22">
-                    <CheckBox x:Name="AddToCanvasCheck"
-                              Content="Add to Canvas"
-                              IsChecked="True"
-                              Foreground="#E5FFFFFF"
-                              FontSize="13"
-                              Margin="0,0,24,0" />
-                    <CheckBox x:Name="AddToSidebarCheck"
-                              Content="Pin to Sidebar"
-                              IsChecked="True"
-                              Foreground="#E5FFFFFF"
-                              FontSize="13" />
+                <!-- Site Information -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="10,0,0,0">
+                    <TextBlock x:Name="LivePreviewTitleText"
+                               Text="Website Preview"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="#FFFFFF"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="LivePreviewDomainText"
+                               Text="Enter a URL below..."
+                               FontSize="12"
+                               Foreground="#80FFFFFF"
+                               TextTrimming="CharacterEllipsis"
+                               Margin="0,2,0,0" />
                 </StackPanel>
-
-                <!-- 6. Footer Buttons -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button x:Name="CancelButton"
-                            Content="Cancel"
-                            Style="{StaticResource DialogGhostButtonStyle}"
-                            Margin="0,0,10,0"
-                            Click="OnCancelClick" />
-                    <Button x:Name="AddButton"
-                            Content="Add Shortcut"
-                            Style="{StaticResource DialogPrimaryButtonStyle}"
-                            IsEnabled="False"
-                            Click="OnAddConfirmClick" />
-                </StackPanel>
-            </StackPanel>
+            </Grid>
         </Border>
-    </Grid>
+
+        <!-- 2. URL Input Field -->
+        <TextBlock Text="Website URL"
+                   FontSize="12"
+                   FontWeight="SemiBold"
+                   Foreground="#C0FFFFFF"
+                   Margin="0,0,0,6" />
+        <Border Background="#1CFFFFFF"
+                BorderBrush="#35FFFFFF"
+                BorderThickness="1"
+                CornerRadius="6"
+                Height="36"
+                Padding="10,0,6,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <ui:SymbolIcon Grid.Column="0"
+                               Symbol="Globe24"
+                               FontSize="16"
+                               Foreground="#80FFFFFF"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0" />
+
+                <TextBox x:Name="UrlTextBox"
+                         Grid.Column="1"
+                         VerticalAlignment="Center"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Foreground="#FFFFFF"
+                         CaretBrush="#60CDFF"
+                         FontSize="13"
+                         TextChanged="OnUrlTextChanged"
+                         KeyDown="OnInputKeyDown" />
+
+                <Button x:Name="PasteButton"
+                        Grid.Column="2"
+                        Content="Paste"
+                        Style="{StaticResource MiniPasteButtonStyle}"
+                        VerticalAlignment="Center"
+                        Click="OnPasteClick" />
+            </Grid>
+        </Border>
+
+        <!-- 3. Display Name Input Field -->
+        <TextBlock Text="Shortcut Name"
+                   FontSize="12"
+                   FontWeight="SemiBold"
+                   Foreground="#C0FFFFFF"
+                   Margin="0,14,0,6" />
+        <Border Background="#1CFFFFFF"
+                BorderBrush="#35FFFFFF"
+                BorderThickness="1"
+                CornerRadius="6"
+                Height="36"
+                Padding="10,0,6,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <ui:SymbolIcon Grid.Column="0"
+                               Symbol="Rename24"
+                               FontSize="16"
+                               Foreground="#80FFFFFF"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0" />
+
+                <TextBox x:Name="TitleTextBox"
+                         Grid.Column="1"
+                         VerticalAlignment="Center"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Foreground="#FFFFFF"
+                         CaretBrush="#60CDFF"
+                         FontSize="13"
+                         TextChanged="OnTitleTextChanged"
+                         KeyDown="OnInputKeyDown" />
+            </Grid>
+        </Border>
+
+        <!-- 4. Destination Checkboxes -->
+        <StackPanel Orientation="Horizontal" Margin="0,16,0,8">
+            <CheckBox x:Name="AddToCanvasCheck"
+                      Content="Add to Canvas"
+                      IsChecked="True"
+                      Foreground="#E5FFFFFF"
+                      FontSize="13"
+                      Margin="0,0,24,0" />
+            <CheckBox x:Name="AddToSidebarCheck"
+                      Content="Pin to Sidebar"
+                      IsChecked="True"
+                      Foreground="#E5FFFFFF"
+                      FontSize="13" />
+        </StackPanel>
+    </StackPanel>
 </UserControl>

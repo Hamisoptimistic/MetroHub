@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using MetroHub.Core.Services;
 
@@ -22,26 +21,23 @@ public sealed class WebLinkCreatedEventArgs : EventArgs
 
 public sealed partial class AddWebLinkDialogControl : UserControl
 {
-    public event EventHandler<WebLinkCreatedEventArgs>? WebLinkCreated;
-    public event EventHandler? DialogClosed;
+    public event EventHandler? UrlChanged;
+    public event EventHandler? EnterPressed;
 
-    private IDisposable? _dialogScope;
     private CancellationTokenSource? _debounceCts;
     private string? _resolvedIconPath;
     private bool _userManuallyEditedTitle;
 
+    public string CurrentUrl => UrlTextBox.Text.Trim();
+    public string CurrentTitle => TitleTextBox.Text.Trim();
+
     public AddWebLinkDialogControl()
     {
         InitializeComponent();
-        Visibility = Visibility.Collapsed;
     }
 
-    public void ShowDialog(string? prefillUrl = null)
+    public void Initialize(string? prefillUrl = null)
     {
-        _dialogScope?.Dispose();
-        _dialogScope = MainWindow.EnterDialogScope();
-
-        // Reset state
         _userManuallyEditedTitle = false;
         _resolvedIconPath = null;
         LivePreviewImage.Source = null;
@@ -51,12 +47,8 @@ public sealed partial class AddWebLinkDialogControl : UserControl
         LivePreviewSpinner.IsIndeterminate = false;
         LivePreviewTitleText.Text = "Website Preview";
         LivePreviewDomainText.Text = "Enter a URL below...";
-        AddButton.IsEnabled = false;
         AddToCanvasCheck.IsChecked = true;
         AddToSidebarCheck.IsChecked = true;
-
-        Visibility = Visibility.Visible;
-        Opacity = 0.0;
 
         if (!string.IsNullOrWhiteSpace(prefillUrl))
         {
@@ -67,67 +59,58 @@ public sealed partial class AddWebLinkDialogControl : UserControl
             UrlTextBox.Text = string.Empty;
             TitleTextBox.Text = string.Empty;
         }
-
-        var anim = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(150))
-        {
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
-        };
-        // Defer focus to anim.Completed per WPF_PERFORMANCE.md Rule #4 to prevent IME pump hitch
-        anim.Completed += (s, e) =>
-        {
-            if (!string.IsNullOrWhiteSpace(prefillUrl))
-            {
-                TitleTextBox.Focus();
-                TitleTextBox.SelectAll();
-            }
-            else
-            {
-                UrlTextBox.Focus();
-            }
-        };
-        BeginAnimation(OpacityProperty, anim);
     }
 
-    public void HideDialog()
+    public void FocusInput(bool selectTitle = false)
     {
-        _debounceCts?.Cancel();
-        _debounceCts = null;
-
-        var anim = new DoubleAnimation(Opacity, 0.0, TimeSpan.FromMilliseconds(100))
+        if (selectTitle && !string.IsNullOrWhiteSpace(UrlTextBox.Text))
         {
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn }
-        };
-        anim.Completed += (s, e) =>
+            TitleTextBox.Focus();
+            TitleTextBox.SelectAll();
+        }
+        else
         {
-            Visibility = Visibility.Collapsed;
-            LivePreviewImage.Source = null; // Instantly release decoded bitmap from memory
-            _resolvedIconPath = null;
-            UrlTextBox.Text = string.Empty;
-            TitleTextBox.Text = string.Empty;
-            _dialogScope?.Dispose();
-            _dialogScope = null;
-            DialogClosed?.Invoke(this, EventArgs.Empty);
-        };
-        BeginAnimation(OpacityProperty, anim);
-    }
-
-    private void OnBackdropMouseDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.OriginalSource == OverlayRoot)
-        {
-            HideDialog();
+            UrlTextBox.Focus();
+            UrlTextBox.SelectAll();
         }
     }
 
-    private void OnCardMouseDown(object sender, MouseButtonEventArgs e)
+    public void Cleanup()
     {
-        // Stop click from bubbling to backdrop
-        e.Handled = true;
+        _debounceCts?.Cancel();
+        _debounceCts = null;
+        LivePreviewImage.Source = null; // release decoded bitmap immediately
+        _resolvedIconPath = null;
     }
 
-    private void OnCancelClick(object sender, RoutedEventArgs e)
+    public WebLinkCreatedEventArgs? GetResult()
     {
-        HideDialog();
+        string raw = UrlTextBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+
+        string normalized = WebFaviconService.NormalizeUrl(raw);
+        string title = TitleTextBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            title = WebFaviconService.InferTitleFromUrl(normalized);
+        }
+
+        bool addToCanvas = AddToCanvasCheck.IsChecked == true;
+        bool addToSidebar = AddToSidebarCheck.IsChecked == true;
+
+        if (!addToCanvas && !addToSidebar)
+        {
+            addToCanvas = true;
+        }
+
+        return new WebLinkCreatedEventArgs
+        {
+            Url = normalized,
+            Title = title,
+            IconPath = _resolvedIconPath,
+            AddToCanvas = addToCanvas,
+            AddToSidebar = addToSidebar
+        };
     }
 
     private void OnPasteClick(object sender, RoutedEventArgs e)
@@ -154,9 +137,10 @@ public sealed partial class AddWebLinkDialogControl : UserControl
         _debounceCts = new CancellationTokenSource();
         var token = _debounceCts.Token;
 
+        UrlChanged?.Invoke(this, EventArgs.Empty);
+
         if (string.IsNullOrWhiteSpace(raw))
         {
-            AddButton.IsEnabled = false;
             LivePreviewTitleText.Text = "Website Preview";
             LivePreviewDomainText.Text = "Enter a URL below...";
             LivePreviewImage.Visibility = Visibility.Collapsed;
@@ -166,8 +150,6 @@ public sealed partial class AddWebLinkDialogControl : UserControl
             _resolvedIconPath = null;
             return;
         }
-
-        AddButton.IsEnabled = true;
 
         Task.Run(async () =>
         {
@@ -268,49 +250,8 @@ public sealed partial class AddWebLinkDialogControl : UserControl
     {
         if (e.Key == Key.Enter)
         {
-            if (AddButton.IsEnabled)
-            {
-                OnAddConfirmClick(sender, e);
-            }
+            EnterPressed?.Invoke(this, EventArgs.Empty);
             e.Handled = true;
         }
-        else if (e.Key == Key.Escape)
-        {
-            HideDialog();
-            e.Handled = true;
-        }
-    }
-
-    private void OnAddConfirmClick(object sender, RoutedEventArgs e)
-    {
-        string raw = UrlTextBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(raw)) return;
-
-        string normalized = WebFaviconService.NormalizeUrl(raw);
-        string title = TitleTextBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(title))
-        {
-            title = WebFaviconService.InferTitleFromUrl(normalized);
-        }
-
-        bool addToCanvas = AddToCanvasCheck.IsChecked == true;
-        bool addToSidebar = AddToSidebarCheck.IsChecked == true;
-
-        if (!addToCanvas && !addToSidebar)
-        {
-            // If neither checked, default to Canvas
-            addToCanvas = true;
-        }
-
-        WebLinkCreated?.Invoke(this, new WebLinkCreatedEventArgs
-        {
-            Url = normalized,
-            Title = title,
-            IconPath = _resolvedIconPath,
-            AddToCanvas = addToCanvas,
-            AddToSidebar = addToSidebar
-        });
-
-        HideDialog();
     }
 }

@@ -664,5 +664,13 @@
                                            Closing="OnDrawerClosing"
                                            Closed="OnDrawerClosed" />
         </Grid>
+
+        <!-- Universal WPF-UI Modal ContentDialog Host Presenter (Spans entire window above all layers) -->
+        <ContentPresenter x:Name="RootContentDialogPresenter"
+                          Grid.Column="0"
+                          Grid.ColumnSpan="2"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          Panel.ZIndex="9999" />
     </Grid>
 </controls:BorderlessFluentWindow>

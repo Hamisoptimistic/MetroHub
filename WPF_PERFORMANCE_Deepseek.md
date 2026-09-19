@@ -18,6 +18,7 @@ We've already fixed these bugs once. Don't reintroduce them.
 | 2–5% idle animation churn | IsIndeterminate="True" on collapsed spinners | Dynamic binding {Binding IsLoading} |
 | 700ms+ idle UIA tree walks | Default AutomationPeer on dense window | OnCreateAutomationPeer() => null |
 | 60 MB -> 240 MB+ RAM climb | Keeping decoded album art bitmaps in VRAM while hidden | Release Decoded Album Art on HideScreen() / Pause() |
+| Bloated 500ms SMTC polling loop | Polling OS media transport controls on DispatcherTimer | Event-driven architecture via Dubya.WindowsMediaController (0.0% idle CPU) |
 
 ## 1 - Timers
 
@@ -417,6 +418,7 @@ When implementing any new feature, widget, service, or control for MetroHub, you
 11. Never hardcode IsIndeterminate="True" on ProgressRing or ProgressBar. Always bind dynamically to the loading boolean (IsIndeterminate="{Binding IsLoading}") or toggle off in code-behind so animations don't tick in idle.
 12. Suppress UI Automation on dense fullscreen / canvas windows by overriding OnCreateAutomationPeer() to return null unless explicit accessibility peers are required.
 13. Release decoded album art bitmaps on hide (Thumbnail = null; HasThumbnail = false;). Cache raw compressed bytes and re-decode on resume to prevent working set bloat (60 MB -> 240 MB+).
+14. Never poll OS media sessions (SMTC) with a timer. Use event-driven subscriptions (Dubya.WindowsMediaController). Keep seekbar interpolation timer strictly limited to active playback, stopped on pause/hide/live.
 
 Before declaring a feature complete, run dotnet-counters for 20 seconds while the feature is idle and confirm CPU under 0.5%, allocation under 0.5 MB/s, and Gen0 under 1 per second. Report the numbers.
 
@@ -427,6 +429,7 @@ Before declaring a feature complete, run dotnet-counters for 20 seconds while th
     FREEZABLES   -> Freeze on creation, cache frozen instances
     BITMAPS      -> DecodePixelWidth at display size, Freeze
     ALBUM ART    -> Null on Pause(), re-decode from cached bytes on Resume()
+    MEDIA SMTC   -> Event-driven (WindowsMediaController), no polling loop, timer only while playing
     CACHES       -> Bounded, LRU, deterministic hashes
     THREADS      -> Task.Run for work, marshal only the result
     PROPERTIES   -> Diff before raise

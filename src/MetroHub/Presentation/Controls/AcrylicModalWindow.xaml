@@ -1,0 +1,378 @@
+<ui:FluentWindow x:Class="MetroHub.Presentation.Controls.AcrylicModalWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 WindowBackdropType="Acrylic"
+                 WindowCornerPreference="Round"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowStyle="None"
+                 ResizeMode="NoResize"
+                 ShowInTaskbar="False"
+                 WindowStartupLocation="CenterOwner"
+                 Width="455"
+                 Height="285"
+                 Background="Transparent"
+                 Foreground="#FFFFFF"
+                 FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                 TextOptions.TextFormattingMode="Ideal"
+                 TextOptions.TextRenderingMode="ClearType"
+                 SnapsToDevicePixels="True"
+                 UseLayoutRounding="True">
+
+    <Window.Resources>
+        <!-- Sleek Fluent Dismiss Button Style -->
+        <Style x:Key="ModalDismissButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="4" SnapsToDevicePixels="True">
+                            <ui:SymbolIcon Symbol="Dismiss16" FontSize="11" Foreground="#85FFFFFF" x:Name="Icon" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
+                                <Setter TargetName="Icon" Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Subtle Text Action Button Style -->
+        <Style x:Key="SubtleActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="1.0" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="False">
+                                <Setter Property="Opacity" Value="0.75" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- Outer Window Border with 1px Subtle Frosted Glass Rim -->
+    <Border Background="Transparent"
+            BorderBrush="#25FFFFFF"
+            BorderThickness="1"
+            CornerRadius="10"
+            SnapsToDevicePixels="True">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR (transparent to let Windows 11 DWM blur the wallpaper) -->
+                <ColumnDefinition Width="135" />
+                <!-- COLUMN 1: OBSIDIAN DARK CONTENT PANEL -->
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ========================================================= -->
+            <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR                        -->
+            <!-- ========================================================= -->
+            <Grid Grid.Column="0"
+                  Background="Transparent"
+                  PreviewMouseLeftButtonDown="OnWindowDrag">
+
+                <!-- 1px Right Glass Divider -->
+                <Border HorizontalAlignment="Right" Width="1" Background="#18FFFFFF" />
+
+                <Grid Margin="14,16,14,16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Top Glyph & Section Header -->
+                    <StackPanel Grid.Row="0">
+                        <!-- Mode 1: Weather Icon -->
+                        <Border x:Name="WeatherSidebarGlyph"
+                                Width="38" Height="38"
+                                CornerRadius="8"
+                                Background="#18FFFFFF"
+                                BorderBrush="#25FFFFFF"
+                                BorderThickness="1"
+                                HorizontalAlignment="Left"
+                                Margin="0,0,0,10"
+                                Visibility="Visible">
+                            <ui:SymbolIcon Symbol="WeatherPartlyCloudyDay24"
+                                           FontSize="20"
+                                           Foreground="#FFFFFF"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                        </Border>
+
+                        <!-- Mode 2: Web Link Live Favicon / Glyph -->
+                        <Border x:Name="WebLinkSidebarGlyph"
+                                Width="38" Height="38"
+                                CornerRadius="8"
+                                Background="#18FFFFFF"
+                                BorderBrush="#25FFFFFF"
+                                BorderThickness="1"
+                                HorizontalAlignment="Left"
+                                Margin="0,0,0,10"
+                                Visibility="Collapsed">
+                            <Grid>
+                                <Image x:Name="WebLinkFaviconImage"
+                                       Width="24" Height="24"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Visibility="Collapsed"
+                                       RenderOptions.BitmapScalingMode="HighQuality" />
+
+                                <ui:SymbolIcon x:Name="WebLinkFallbackIcon"
+                                               Symbol="Globe24"
+                                               FontSize="20"
+                                               Foreground="#FFFFFF"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+
+                                <ui:ProgressRing x:Name="WebLinkSidebarSpinner"
+                                                 Width="16" Height="16"
+                                                 IsIndeterminate="True"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center"
+                                                 Visibility="Collapsed" />
+                            </Grid>
+                        </Border>
+
+                        <TextBlock x:Name="SidebarTitleText"
+                                   Text="Weather"
+                                   FontSize="13.5"
+                                   FontWeight="SemiBold"
+                                   Foreground="#FFFFFF" />
+
+                        <TextBlock x:Name="SidebarSubtitleText"
+                                   Text="Location"
+                                   FontSize="11"
+                                   Foreground="#85FFFFFF"
+                                   Margin="0,1,0,0" />
+                    </StackPanel>
+
+                    <!-- Bottom Status / Context Pill -->
+                    <Border Grid.Row="2"
+                            Background="#12FFFFFF"
+                            BorderBrush="#20FFFFFF"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Padding="8,6">
+                        <StackPanel>
+                            <TextBlock x:Name="SidebarBadgeCategoryText"
+                                       Text="ACTIVE"
+                                       FontSize="9"
+                                       FontWeight="Bold"
+                                       Foreground="#65FFFFFF" />
+                            <TextBlock x:Name="SidebarBadgeValueText"
+                                       Text="Loading..."
+                                       FontSize="11.5"
+                                       FontWeight="SemiBold"
+                                       Foreground="#E0FFFFFF"
+                                       TextTrimming="CharacterEllipsis"
+                                       Margin="0,2,0,0" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- ========================================================= -->
+            <!-- COLUMN 1: OBSIDIAN DARK CONTENT PANEL                    -->
+            <!-- ========================================================= -->
+            <Border Grid.Column="1"
+                    Background="#1C1C1C"
+                    CornerRadius="0,9,9,0">
+                <Grid Margin="18,14,18,14">
+                    <Grid.RowDefinitions>
+                        <!-- Header (Title + Dismiss '✕') -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Body (Form Inputs) -->
+                        <RowDefinition Height="*" />
+                        <!-- Footer (Action Buttons) -->
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Grid Grid.Row="0" Margin="0,0,0,12" PreviewMouseLeftButtonDown="OnWindowDrag">
+                        <TextBlock x:Name="HeaderTitleText"
+                                   Text="Change Location"
+                                   FontSize="13.5"
+                                   FontWeight="SemiBold"
+                                   Foreground="#FFFFFF"
+                                   VerticalAlignment="Center" />
+
+                        <Button HorizontalAlignment="Right"
+                                Style="{StaticResource ModalDismissButtonStyle}"
+                                Click="OnCloseButtonClick" />
+                    </Grid>
+
+                    <!-- Body: Weather Form -->
+                    <Grid Grid.Row="1" x:Name="WeatherFormGrid" Visibility="Visible">
+                        <StackPanel>
+                            <TextBlock Text="City Name"
+                                       FontSize="11.5"
+                                       Foreground="#95FFFFFF"
+                                       Margin="0,0,0,5" />
+
+                            <!-- Clean Fluent TextBox with no colored indicators -->
+                            <ui:TextBox x:Name="WeatherCityInput"
+                                        Height="33"
+                                        FontSize="12.5"
+                                        Foreground="#FFFFFF"
+                                        Background="#15FFFFFF"
+                                        BorderBrush="#25FFFFFF"
+                                        CaretBrush="#FFFFFF"
+                                        PlaceholderText="e.g. London, Tokyo, New York..."
+                                        ClearButtonEnabled="False"
+                                        KeyDown="OnWeatherInputKeyDown"
+                                        TextChanged="OnWeatherInputTextChanged">
+                                <ui:TextBox.Icon>
+                                    <ui:SymbolIcon Symbol="Search24" FontSize="14" Foreground="#85FFFFFF" />
+                                </ui:TextBox.Icon>
+                            </ui:TextBox>
+
+                            <!-- Auto-Location Button -->
+                            <Button Margin="0,8,0,0"
+                                    Style="{StaticResource SubtleActionButtonStyle}"
+                                    Click="OnWeatherAutoLocationClick">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="MyLocation24" FontSize="13" Foreground="#B0FFFFFF" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="Reset to automatic location (GPS / IP)" FontSize="11" Foreground="#B0FFFFFF" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Status message / Progress ring -->
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <ui:ProgressRing x:Name="WeatherActionSpinner"
+                                                 Width="14" Height="14"
+                                                 IsIndeterminate="True"
+                                                 Visibility="Collapsed"
+                                                 Margin="0,0,6,0" />
+                                <TextBlock x:Name="WeatherStatusMessage"
+                                           FontSize="11"
+                                           Foreground="#CCCCCC"
+                                           TextWrapping="Wrap"
+                                           Visibility="Collapsed" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Body: Web Link Form -->
+                    <Grid Grid.Row="1" x:Name="WebLinkFormGrid" Visibility="Collapsed">
+                        <StackPanel>
+                            <!-- URL Input Header with Paste button -->
+                            <Grid Margin="0,0,0,5">
+                                <TextBlock Text="Website URL"
+                                           FontSize="11.5"
+                                           Foreground="#95FFFFFF"
+                                           VerticalAlignment="Center" />
+                                <Button HorizontalAlignment="Right"
+                                        Background="#18FFFFFF"
+                                        BorderThickness="0"
+                                        Padding="6,2"
+                                        Height="20"
+                                        Cursor="Hand"
+                                        Click="OnWebLinkPasteClick">
+                                    <TextBlock Text="Paste" FontSize="10.5" Foreground="#B0FFFFFF" />
+                                </Button>
+                            </Grid>
+
+                            <!-- Clean Fluent URL TextBox with no colored indicators -->
+                            <ui:TextBox x:Name="WebLinkUrlInput"
+                                        Height="33"
+                                        FontSize="12.5"
+                                        Foreground="#FFFFFF"
+                                        Background="#15FFFFFF"
+                                        BorderBrush="#25FFFFFF"
+                                        CaretBrush="#FFFFFF"
+                                        PlaceholderText="https://example.com"
+                                        ClearButtonEnabled="False"
+                                        KeyDown="OnWebLinkInputKeyDown"
+                                        TextChanged="OnWebLinkUrlTextChanged">
+                                <ui:TextBox.Icon>
+                                    <ui:SymbolIcon Symbol="Link24" FontSize="14" Foreground="#85FFFFFF" />
+                                </ui:TextBox.Icon>
+                            </ui:TextBox>
+
+                            <!-- Title Input -->
+                            <TextBlock Text="Shortcut Label (Optional)"
+                                       FontSize="11.5"
+                                       Foreground="#95FFFFFF"
+                                       Margin="0,7,0,5" />
+                            <ui:TextBox x:Name="WebLinkTitleInput"
+                                        Height="33"
+                                        FontSize="12.5"
+                                        Foreground="#FFFFFF"
+                                        Background="#15FFFFFF"
+                                        BorderBrush="#25FFFFFF"
+                                        CaretBrush="#FFFFFF"
+                                        PlaceholderText="e.g. GitHub"
+                                        ClearButtonEnabled="False"
+                                        KeyDown="OnWebLinkInputKeyDown"
+                                        TextChanged="OnWebLinkTitleTextChanged" />
+
+                            <!-- Options Checkboxes -->
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <CheckBox x:Name="WebLinkAddToCanvasCheck"
+                                          Content="Add tile to canvas"
+                                          IsChecked="True"
+                                          FontSize="11"
+                                          Foreground="#CCCCCC"
+                                          Margin="0,0,14,0" />
+                                <CheckBox x:Name="WebLinkAddToSidebarCheck"
+                                          Content="Add to sidebar"
+                                          IsChecked="True"
+                                          FontSize="11"
+                                          Foreground="#CCCCCC" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Footer: Action Buttons -->
+                    <Grid Grid.Row="2" Margin="0,6,0,0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <ui:Button x:Name="CancelButton"
+                                       Appearance="Secondary"
+                                       Content="Cancel"
+                                       Height="28"
+                                       MinWidth="70"
+                                       FontSize="12"
+                                       Margin="0,0,8,0"
+                                       Click="OnCancelButtonClick" />
+
+                            <ui:Button x:Name="PrimaryActionButton"
+                                       Appearance="Primary"
+                                       Content="Apply"
+                                       Height="28"
+                                       MinWidth="75"
+                                       FontSize="12"
+                                       Click="OnPrimaryActionButtonClick" />
+                        </StackPanel>
+                    </Grid>
+
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</ui:FluentWindow>
