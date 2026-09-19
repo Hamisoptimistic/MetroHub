@@ -1073,6 +1073,15 @@ public partial class AcrylicModalWindow : FluentWindow
         }
 
         string normalized = WebFaviconService.NormalizeUrl(raw);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            WebLinkFaviconImage.Source = null;
+            WebLinkFaviconImage.Visibility = Visibility.Collapsed;
+            WebLinkFallbackIcon.Visibility = Visibility.Visible;
+            WebLinkSidebarSpinner.Visibility = Visibility.Collapsed;
+            if (!_userManuallyEditedTitle) WebLinkTitleInput.Text = string.Empty;
+            return;
+        }
 
         if (!_userManuallyEditedTitle)
         {
@@ -1184,6 +1193,16 @@ public partial class AcrylicModalWindow : FluentWindow
         }
 
         string normalized = WebFaviconService.NormalizeUrl(raw);
+        if (string.IsNullOrWhiteSpace(normalized) ||
+            normalized.Equals("https://www/", StringComparison.OrdinalIgnoreCase) ||
+            normalized.Equals("https://www.", StringComparison.OrdinalIgnoreCase))
+        {
+            WebLinkStatusMessage.Text = "Please enter a valid website URL (e.g. www.google.com).";
+            WebLinkStatusMessage.Visibility = Visibility.Visible;
+            WebLinkUrlInput.Focus();
+            return;
+        }
+
         string title = WebLinkTitleInput.Text.Trim();
         if (string.IsNullOrWhiteSpace(title))
         {

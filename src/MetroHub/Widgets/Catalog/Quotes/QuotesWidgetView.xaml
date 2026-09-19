@@ -1,0 +1,143 @@
+<UserControl x:Class="MetroHub.Widgets.Catalog.Quotes.QuotesWidgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:widgets="clr-namespace:MetroHub.Widgets"
+             xmlns:local="clr-namespace:MetroHub.Widgets.Catalog.Quotes"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=local:QuotesWidgetViewModel}"
+             Focusable="False"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="ClearType"
+             TextOptions.TextHintingMode="Fixed"
+             RenderOptions.ClearTypeHint="Enabled">
+
+    <UserControl.Resources>
+        <!-- Fluent Flat Button Style for Hover Controls -->
+        <Style x:Key="QuoteActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="#E5E9F0" />
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="2"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Transparent WidgetCard to inherit the exact glass/acrylic tile background of other tiles -->
+    <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
+        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />    <!-- Row 0: Centered Scaling Quote Text -->
+                <RowDefinition Height="38" />   <!-- Row 1: Right-Aligned Author Attribution -->
+            </Grid.RowDefinitions>
+
+            <!-- Row 0: Adaptive Quote Text in Uniform DownOnly Viewbox -->
+            <Viewbox Grid.Row="0"
+                     Stretch="Uniform"
+                     StretchDirection="DownOnly"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center"
+                     Margin="36,18,36,6">
+                <TextBlock Text="{Binding DisplayText}"
+                           MaxWidth="440"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           FontFamily="{Binding QuoteFontFamily}"
+                           FontStyle="{Binding QuoteFontStyle}"
+                           FontWeight="{Binding QuoteFontWeight}"
+                           FontSize="19.5"
+                           Foreground="#FFF8EE"
+                           LineHeight="30"
+                           LineStackingStrategy="BlockLineHeight"
+                           TextOptions.TextFormattingMode="Ideal"
+                           TextOptions.TextRenderingMode="ClearType">
+                    <TextBlock.Effect>
+                        <DropShadowEffect BlurRadius="6" ShadowDepth="1.5" Direction="270" Opacity="0.55" Color="#000000" />
+                    </TextBlock.Effect>
+                </TextBlock>
+            </Viewbox>
+
+            <!-- Row 1: Author Attribution (Right-aligned, clean, no dividing line) -->
+            <Grid Grid.Row="1" Margin="28,0,28,10" VerticalAlignment="Center">
+                <TextBlock Text="{Binding DisplayAuthor}"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           FontSize="12.5"
+                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                           FontWeight="SemiBold"
+                           Foreground="#D8D2C6"
+                           TextOptions.TextFormattingMode="Ideal"
+                           TextOptions.TextRenderingMode="ClearType">
+                    <TextBlock.Effect>
+                        <DropShadowEffect BlurRadius="4" ShadowDepth="1" Direction="270" Opacity="0.4" Color="#000000" />
+                    </TextBlock.Effect>
+                </TextBlock>
+            </Grid>
+
+            <!-- Top-Right Hover Controls (Shuffle Only) -->
+            <StackPanel Grid.Row="0"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="0,8,10,0">
+                <StackPanel.Style>
+                    <Style TargetType="StackPanel">
+                        <Setter Property="Opacity" Value="0" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.25" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </StackPanel.Style>
+
+                <!-- Shuffle / Next Quote -->
+                <Button Command="{Binding NextQuoteCommand}"
+                        ToolTip="Next Quote"
+                        Style="{StaticResource QuoteActionButtonStyle}">
+                    <ui:SymbolIcon Symbol="ArrowShuffle24" FontSize="16" Foreground="#D0FFFFFF" />
+                </Button>
+            </StackPanel>
+        </Grid>
+    </widgets:WidgetCard>
+</UserControl>

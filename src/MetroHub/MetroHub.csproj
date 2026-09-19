@@ -25,10 +25,16 @@
 
   <ItemGroup>
     <Resource Include="Assets\Fonts\**\*.ttf" />
+    <None Remove="Assets\*.png" />
+    <Resource Include="Assets\*.png" />
+    <None Remove="Assets\Weather\*.png" />
+    <Resource Include="Assets\Weather\*.png" />
     <None Remove="Assets\Weather\Meteocons\*.png" />
     <Resource Include="Assets\Weather\Meteocons\*.png" />
     <None Remove="Assets\Weather\Glassmorphic\*.png" />
     <Resource Include="Assets\Weather\Glassmorphic\*.png" />
+    <None Remove="Assets\quotes.json" />
+    <Resource Include="Assets\quotes.json" />
     <None Update="Assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

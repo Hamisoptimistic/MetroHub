@@ -234,6 +234,22 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Wide,
             Factory: model => new MetroHub.Widgets.Catalog.Weather.WeatherWidgetViewModel(model)
         ));
+
+        // Register Daily Quotes widget
+        Register(new WidgetDefinition(
+            Id: "quotes",
+            DisplayName: "Daily Quotes",
+            Description: "Daily inspirational quotes and wisdom from timeless thinkers and historical figures",
+            Icon: SymbolRegular.TextQuote24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Banner3  // 8x3 only
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Quotes.QuotesWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Quotes.QuotesWidgetView),
+            DefaultSize: WidgetSize.Banner3,
+            Factory: model => new MetroHub.Widgets.Catalog.Quotes.QuotesWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)

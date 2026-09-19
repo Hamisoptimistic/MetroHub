@@ -87,23 +87,59 @@ public static partial class WebFaviconService
 
     /// <summary>
     /// Normalizes raw user input into a valid HTTPS web URL.
+    /// E.g. "www.youtube.com" -> "https://www.youtube.com/"
     /// E.g. "youtube.com" -> "https://youtube.com/"
     /// </summary>
     public static string NormalizeUrl(string input)
     {
         if (string.IsNullOrWhiteSpace(input)) return string.Empty;
 
-        string trimmed = input.Trim();
+        string trimmed = input.Trim().TrimEnd('/');
 
-        // Check if user entered an explicit scheme
-        if (!trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-            !trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        // Incomplete prefix checks while typing
+        if (trimmed.Equals("www", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("www.", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("http", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("http:", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("http:/", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("https", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("https:", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.Equals("https:/", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Empty;
+        }
+
+        // If it starts with "www.", prepend https://
+        if (trimmed.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
         {
             trimmed = "https://" + trimmed;
         }
+        else if (!trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                 !trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            // Naked domain without protocol (e.g. "google.com" or "music.youtube.com")
+            trimmed = "https://" + trimmed;
+        }
 
+        // If user typed e.g. "https://www.google" without TLD, check if it matches a known brand
         if (Uri.TryCreate(trimmed, UriKind.Absolute, out Uri? uri))
         {
+            string host = uri.Host.ToLowerInvariant().TrimEnd('.');
+            if (host.StartsWith("www.") && host.Length > 4)
+            {
+                host = host.Substring(4);
+            }
+
+            // If no dot in host, but matches known brand (e.g. "google"), append .com
+            if (!host.Contains('.') && KnownBrands.ContainsKey(host + ".com"))
+            {
+                string completed = $"https://{uri.Host}.com{uri.PathAndQuery}";
+                if (Uri.TryCreate(completed, UriKind.Absolute, out Uri? completedUri))
+                {
+                    return completedUri.AbsoluteUri;
+                }
+            }
+
             return uri.AbsoluteUri;
         }
 
@@ -113,19 +149,28 @@ public static partial class WebFaviconService
     /// <summary>
     /// Extracts the clean host/domain name from a URL.
     /// E.g. "https://www.youtube.com/watch?v=..." -> "youtube.com"
+    /// E.g. "www.youtube.com" -> "youtube.com"
     /// </summary>
     public static string ExtractDomain(string url)
     {
         if (string.IsNullOrWhiteSpace(url)) return string.Empty;
 
         string normalized = NormalizeUrl(url);
+        if (string.IsNullOrWhiteSpace(normalized)) return string.Empty;
+
         if (Uri.TryCreate(normalized, UriKind.Absolute, out Uri? uri))
         {
-            string host = uri.Host.ToLowerInvariant();
+            string host = uri.Host.ToLowerInvariant().TrimEnd('.');
             if (host.StartsWith("www."))
             {
-                host = host.Substring(4);
+                host = host.Length > 4 ? host.Substring(4) : string.Empty;
             }
+
+            if (host == "www" || string.IsNullOrWhiteSpace(host))
+            {
+                return string.Empty;
+            }
+
             return host;
         }
 
@@ -135,6 +180,7 @@ public static partial class WebFaviconService
     /// <summary>
     /// Automatically infers a clean display title from the URL.
     /// E.g. "https://open.spotify.com/..." -> "Spotify"
+    /// E.g. "www.youtube.com" -> "YouTube"
     /// </summary>
     public static string InferTitleFromUrl(string url)
     {
@@ -163,6 +209,18 @@ public static partial class WebFaviconService
                 return char.ToUpperInvariant(brand[0]) + brand.Substring(1);
             }
         }
+        else if (parts.Length == 1 && parts[0].Length > 0)
+        {
+            string single = parts[0];
+            foreach (var kvp in KnownBrands)
+            {
+                if (kvp.Key.StartsWith(single + ".", StringComparison.OrdinalIgnoreCase))
+                {
+                    return kvp.Value;
+                }
+            }
+            return char.ToUpperInvariant(single[0]) + single.Substring(1);
+        }
 
         return domain;
     }
@@ -175,6 +233,20 @@ public static partial class WebFaviconService
     {
         string domain = ExtractDomain(url);
         if (string.IsNullOrWhiteSpace(domain)) return null;
+
+        // If domain has no dot, check if it matches a known brand before attempting fetch
+        if (!domain.Contains('.'))
+        {
+            string candidate = domain + ".com";
+            if (KnownBrands.ContainsKey(candidate))
+            {
+                domain = candidate;
+            }
+            else
+            {
+                return null;
+            }
+        }
 
         // Check in-memory memoization
         if (_memoryCache.TryGetValue(domain, out string? memoized) && File.Exists(memoized))

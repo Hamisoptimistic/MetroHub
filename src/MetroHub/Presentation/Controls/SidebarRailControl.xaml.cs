@@ -208,8 +208,14 @@ public partial class SidebarRailControl : UserControl
                     }
                     break;
 
-                case SidebarShortcutType.Application:
                 case SidebarShortcutType.WebUrl:
+                    psi.FileName = target.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                                   target.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                        ? target
+                        : "https://" + target;
+                    break;
+
+                case SidebarShortcutType.Application:
                 case SidebarShortcutType.Command:
                 default:
                     psi.FileName = target;
@@ -247,8 +253,15 @@ public partial class SidebarRailControl : UserControl
                     }
                     break;
 
-                case SidebarShortcutType.Application:
                 case SidebarShortcutType.WebUrl:
+                    string webTarget = target.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                                       target.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                        ? target
+                        : "https://" + target;
+                    Process.Start(new ProcessStartInfo(webTarget) { UseShellExecute = true });
+                    break;
+
+                case SidebarShortcutType.Application:
                 case SidebarShortcutType.Command:
                 default:
                     Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });

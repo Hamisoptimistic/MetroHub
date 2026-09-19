@@ -95,7 +95,8 @@ public sealed class StorageService
                         bool isWebUrl = tile.TileType == TileType.WebUrl ||
                             (!string.IsNullOrWhiteSpace(tile.TargetPath) &&
                              (tile.TargetPath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                              tile.TargetPath.StartsWith("https://", StringComparison.OrdinalIgnoreCase)));
+                              tile.TargetPath.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+                              tile.TargetPath.StartsWith("www.", StringComparison.OrdinalIgnoreCase)));
 
                         if (isWebUrl)
                         {

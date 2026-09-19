@@ -249,9 +249,31 @@ public static class NativeMethods
 
         try
         {
+            string targetPath = path.Trim();
+            if (targetPath.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
+            {
+                targetPath = "https://" + targetPath;
+            }
+            else if (!targetPath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                     !targetPath.StartsWith("https://", StringComparison.OrdinalIgnoreCase) &&
+                     !targetPath.StartsWith("shell:", StringComparison.OrdinalIgnoreCase) &&
+                     !targetPath.Contains('\\') &&
+                     !File.Exists(targetPath) &&
+                     !Directory.Exists(targetPath) &&
+                     (targetPath.EndsWith(".com", StringComparison.OrdinalIgnoreCase) ||
+                      targetPath.EndsWith(".org", StringComparison.OrdinalIgnoreCase) ||
+                      targetPath.EndsWith(".net", StringComparison.OrdinalIgnoreCase) ||
+                      targetPath.EndsWith(".io", StringComparison.OrdinalIgnoreCase) ||
+                      targetPath.EndsWith(".tv", StringComparison.OrdinalIgnoreCase) ||
+                      targetPath.EndsWith(".app", StringComparison.OrdinalIgnoreCase) ||
+                      targetPath.EndsWith(".ai", StringComparison.OrdinalIgnoreCase)))
+            {
+                targetPath = "https://" + targetPath;
+            }
+
             var psi = new ProcessStartInfo
             {
-                FileName = path,
+                FileName = targetPath,
                 Arguments = args ?? string.Empty,
                 UseShellExecute = true
             };

@@ -325,7 +325,8 @@ public static class IconExtractorService
 
         // Never attempt Windows Shell file icon extraction on Web URLs
         if (filePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-            filePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            filePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+            filePath.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
         {
             return null;
         }

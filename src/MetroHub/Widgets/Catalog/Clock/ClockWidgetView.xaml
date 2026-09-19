@@ -25,6 +25,7 @@
             <Grid Visibility="{Binding IsWideOnly, Converter={StaticResource BoolToVis}}"
                   VerticalAlignment="Center" HorizontalAlignment="Center">
                 <clock:AnimatedTimeBlock Text="{Binding TimeString}"
+                                         EnableTextDepth="True"
                                          FontSize="68"
                                          FontWeight="{Binding ClockFontWeight}"
                                          FontFamily="{Binding ClockFontFamily}"
@@ -44,13 +45,14 @@
                 <!-- Time -->
                 <clock:AnimatedTimeBlock Grid.Column="0"
                                          Text="{Binding TimeString}"
+                                         EnableTextDepth="True"
                                          FontSize="68"
                                          FontWeight="{Binding ClockFontWeight}"
                                          FontFamily="{Binding ClockFontFamily}"
                                          Foreground="#FFFFFF"
                                          VerticalAlignment="Center" />
 
-                <!-- Full Date (e.g. Friday, 11 September) -->
+                <!-- Full Date (e.g. Friday, 11 September) - Razor-sharp, clean typography -->
                 <clock:AnimatedTimeBlock Grid.Column="1"
                                          Text="{Binding FullDateString}"
                                          FontSize="22"
@@ -66,6 +68,7 @@
                   VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <clock:AnimatedTimeBlock Text="{Binding TimeString}"
+                                             EnableTextDepth="True"
                                              FontSize="84"
                                              FontWeight="{Binding ClockFontWeight}"
                                              FontFamily="{Binding ClockFontFamily}"
@@ -73,7 +76,7 @@
                                              HorizontalAlignment="Center"
                                              VerticalAlignment="Center" />
 
-                    <!-- Full Date -->
+                    <!-- Full Date - Crisp, zero shadow -->
                     <clock:AnimatedTimeBlock Text="{Binding FullDateString}"
                                              FontSize="20"
                                              FontWeight="SemiBold"

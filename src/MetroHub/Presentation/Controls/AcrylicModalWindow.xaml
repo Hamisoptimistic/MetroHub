@@ -392,18 +392,20 @@
 
                 <!-- Vertically and Horizontally Centered Glyph Container -->
                 <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <!-- Mode 1: Weather Icon (No enclosing box) -->
+                    <!-- Mode 1: Weather Icon (Glassmorphic image) -->
                     <Border x:Name="WeatherSidebarGlyph"
                             Background="Transparent"
                             BorderThickness="0"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Visibility="Visible">
-                        <ui:SymbolIcon Symbol="WeatherPartlyCloudyDay24"
-                                       FontSize="38"
-                                       Foreground="#E5FFFFFF"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
+                        <Image Source="/Assets/Weather/Glassmorphic/cloudy-and-rainny.png"
+                               Width="72"
+                               Height="72"
+                               Stretch="Uniform"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
                     </Border>
 
                     <!-- Mode 2: Web Link Live Favicon / Glyph (No enclosing box) -->
@@ -421,12 +423,14 @@
                                    Visibility="Collapsed"
                                    RenderOptions.BitmapScalingMode="HighQuality" />
 
-                            <ui:SymbolIcon x:Name="WebLinkFallbackIcon"
-                                           Symbol="Globe24"
-                                           FontSize="38"
-                                           Foreground="#E5FFFFFF"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" />
+                            <Image x:Name="WebLinkFallbackIcon"
+                                   Source="/Assets/link.png"
+                                   Width="72"
+                                   Height="72"
+                                   Stretch="Uniform"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   RenderOptions.BitmapScalingMode="HighQuality" />
 
                             <ui:ProgressRing x:Name="WebLinkSidebarSpinner"
                                              Width="24" Height="24"

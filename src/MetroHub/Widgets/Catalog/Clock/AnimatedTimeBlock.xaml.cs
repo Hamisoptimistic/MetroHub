@@ -43,6 +43,48 @@ public partial class AnimatedTimeBlock : UserControl
             typeof(AnimatedTimeBlock),
             new PropertyMetadata(220));
 
+    public static readonly DependencyProperty EnableTextDepthProperty =
+        DependencyProperty.Register(
+            nameof(EnableTextDepth),
+            typeof(bool),
+            typeof(AnimatedTimeBlock),
+            new PropertyMetadata(false, OnTextDepthChangedStatic));
+
+    public bool EnableTextDepth
+    {
+        get => (bool)GetValue(EnableTextDepthProperty);
+        set => SetValue(EnableTextDepthProperty, value);
+    }
+
+    private static void OnTextDepthChangedStatic(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is AnimatedTimeBlock block)
+        {
+            block.UpdateTextDepth();
+        }
+    }
+
+    private void UpdateTextDepth()
+    {
+        if (LayoutRoot == null) return;
+
+        if (EnableTextDepth)
+        {
+            LayoutRoot.Effect = new System.Windows.Media.Effects.DropShadowEffect
+            {
+                BlurRadius = 26,
+                ShadowDepth = 4,
+                Direction = 270,
+                Opacity = 0.22,
+                Color = Color.FromRgb(0x08, 0x0E, 0x1A)
+            };
+        }
+        else
+        {
+            LayoutRoot.Effect = null;
+        }
+    }
+
     public string Text
     {
         get => (string)GetValue(TextProperty);
@@ -86,6 +128,7 @@ public partial class AnimatedTimeBlock : UserControl
     {
         _isLoaded = true;
         SyncStyling();
+        UpdateTextDepth();
 
         PartCurrentText.Text = Text;
         PartCurrentText.Opacity = 1.0;

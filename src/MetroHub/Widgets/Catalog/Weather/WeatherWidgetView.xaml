@@ -121,7 +121,11 @@
                                FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
                                Foreground="#FFFFFF"
                                VerticalAlignment="Center"
-                               Margin="0,-6,0,0" />
+                               Margin="0,-6,0,0">
+                        <TextBlock.Effect>
+                            <DropShadowEffect BlurRadius="28" Direction="270" ShadowDepth="4" Opacity="0.22" Color="#080E1A" />
+                        </TextBlock.Effect>
+                    </TextBlock>
                 </Grid>
             </Viewbox>
 
@@ -168,25 +172,29 @@
                                    FontWeight="Bold"
                                    FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
                                    Foreground="#FFFFFF"
-                                   HorizontalAlignment="Right" />
+                                   HorizontalAlignment="Right">
+                            <TextBlock.Effect>
+                                <DropShadowEffect BlurRadius="22" Direction="270" ShadowDepth="3.5" Opacity="0.20" Color="#080E1A" />
+                            </TextBlock.Effect>
+                        </TextBlock>
                         <TextBlock Text="{Binding ConditionText}"
                                    FontSize="15"
                                    FontWeight="SemiBold"
                                    FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   Foreground="#C5FFFFFF"
+                                   Foreground="#D8E2EC"
                                    HorizontalAlignment="Right"
                                    Margin="0,2,0,0" />
                     </StackPanel>
                 </Grid>
 
-                <!-- Bottom Row: 3 Neat Metric Columns (AQI, Humidity, Precip) -->
+                <!-- Bottom Row: 3 Neat Metric Columns (AQI, Humidity, Precip) - Razor-sharp text, zero shadow blur -->
                 <UniformGrid Grid.Row="1" Columns="3" VerticalAlignment="Center" Margin="0,16,0,6">
                     <!-- Column 1: AQI -->
                     <StackPanel HorizontalAlignment="Center">
                         <TextBlock Text="AQI"
                                    FontSize="12"
                                    FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   Foreground="#85FFFFFF"
+                                   Foreground="#95A8BE"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding AqiText}"
                                    FontSize="16"
@@ -202,7 +210,7 @@
                         <TextBlock Text="Humidity"
                                    FontSize="12"
                                    FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   Foreground="#85FFFFFF"
+                                   Foreground="#95A8BE"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding HumidityText}"
                                    FontSize="16"
@@ -218,7 +226,7 @@
                         <TextBlock Text="Precip"
                                    FontSize="12"
                                    FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   Foreground="#85FFFFFF"
+                                   Foreground="#95A8BE"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding PrecipitationProbabilityText}"
                                    FontSize="16"
@@ -243,18 +251,18 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Left: Details (Labels smaller & SemiBold, Values 15px Bold) -->
+                <!-- Left: Details (Labels crisp & muted, Values 15px Bold pure white) -->
                 <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left">
                     <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif">
-                        <Run Text="AQI&#x20;" FontSize="12.5" FontWeight="SemiBold" Foreground="#C8FFFFFF" /><Run Text="{Binding AqiText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
+                        <Run Text="AQI&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="#95A8BE" /><Run Text="{Binding AqiText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
                     </TextBlock>
                     <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                Margin="0,6,0,0">
-                        <Run Text="Feels like&#x20;" FontSize="12.5" FontWeight="SemiBold" Foreground="#C8FFFFFF" /><Run Text="{Binding FeelsLikeShortText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
+                        <Run Text="Feels like&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="#95A8BE" /><Run Text="{Binding FeelsLikeShortText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
                     </TextBlock>
                     <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                Margin="0,6,0,0">
-                        <Run Text="Humidity&#x20;" FontSize="12.5" FontWeight="SemiBold" Foreground="#C8FFFFFF" /><Run Text="{Binding HumidityText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
+                        <Run Text="Humidity&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="#95A8BE" /><Run Text="{Binding HumidityText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
                     </TextBlock>
                 </StackPanel>
 
@@ -271,11 +279,11 @@
                         <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
                     </Image.RenderTransform>
                     <Image.Effect>
-                        <DropShadowEffect BlurRadius="12" Direction="270" ShadowDepth="2" Opacity="0.25" Color="#000000" />
+                        <DropShadowEffect BlurRadius="16" Direction="270" ShadowDepth="2" Opacity="0.20" Color="#080E1A" />
                     </Image.Effect>
                 </Image>
 
-                <!-- Right: Standardized Temperature (Matched optical height) -->
+                <!-- Right: Standardized Temperature (Ultra-soft ambient floating elevation) -->
                 <TextBlock Grid.Column="2"
                            Text="{Binding TemperatureText}"
                            FontSize="72"
@@ -284,7 +292,11 @@
                            Foreground="#FFFFFF"
                            HorizontalAlignment="Right"
                            VerticalAlignment="Center"
-                           Margin="0,-4,0,0" />
+                           Margin="0,-4,0,0">
+                    <TextBlock.Effect>
+                        <DropShadowEffect BlurRadius="26" Direction="270" ShadowDepth="4" Opacity="0.22" Color="#080E1A" />
+                    </TextBlock.Effect>
+                </TextBlock>
             </Grid>
 
 

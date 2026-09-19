@@ -202,6 +202,11 @@ public partial class TileControl : UserControl
                     weatherVm.ToggleUnits();
                     return;
                 }
+                if (tile.TileContent is Widgets.Catalog.Quotes.QuotesWidgetViewModel quotesVm)
+                {
+                    quotesVm.NextQuote();
+                    return;
+                }
                 return;
             }
 
@@ -226,7 +231,7 @@ public partial class TileControl : UserControl
 
     public void AnimatePressDown()
     {
-        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" or "photos" or "volume" or "notepad" or "network" or "brightness" or "power" })
+        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" or "photos" or "volume" or "notepad" or "network" or "brightness" or "power" or "quotes" })
         {
             return;
         }
@@ -942,6 +947,132 @@ public partial class TileControl : UserControl
                 var mediaDivider = new Separator { Tag = "WidgetCustomMenu" };
                 TileContextMenu.Items.Insert(1, styleItem);
                 TileContextMenu.Items.Insert(2, mediaDivider);
+            }
+            else if (tile.TileContent is Widgets.Catalog.Quotes.QuotesWidgetViewModel quotesVm)
+            {
+                var nextQuoteItem = new MenuItem
+                {
+                    Header = "Next Quote",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.ArrowShuffle24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                nextQuoteItem.Click += (s, ev) => quotesVm.NextQuote();
+
+                var copyQuoteItem = new MenuItem
+                {
+                    Header = "Copy Quote",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Copy24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                copyQuoteItem.Click += (s, ev) => quotesVm.CopyQuote();
+
+                var fontMenuItem = new MenuItem
+                {
+                    Header = "Font",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.TextFont24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+
+                var itemMerriweather = new MenuItem
+                {
+                    Header = "Merriweather",
+                    IsCheckable = true,
+                    IsChecked = quotesVm.SelectedFont == Widgets.Catalog.Quotes.QuoteFontFamilyChoice.Merriweather
+                };
+                itemMerriweather.Click += (s, ev) => quotesVm.SetFont(Widgets.Catalog.Quotes.QuoteFontFamilyChoice.Merriweather);
+
+                var itemQuintessential = new MenuItem
+                {
+                    Header = "Quintessential",
+                    IsCheckable = true,
+                    IsChecked = quotesVm.SelectedFont == Widgets.Catalog.Quotes.QuoteFontFamilyChoice.Quintessential
+                };
+                itemQuintessential.Click += (s, ev) => quotesVm.SetFont(Widgets.Catalog.Quotes.QuoteFontFamilyChoice.Quintessential);
+
+                var itemGeorgia = new MenuItem
+                {
+                    Header = "Georgia",
+                    IsCheckable = true,
+                    IsChecked = quotesVm.SelectedFont == Widgets.Catalog.Quotes.QuoteFontFamilyChoice.Georgia
+                };
+                itemGeorgia.Click += (s, ev) => quotesVm.SetFont(Widgets.Catalog.Quotes.QuoteFontFamilyChoice.Georgia);
+
+                var itemPalatino = new MenuItem
+                {
+                    Header = "Palatino Linotype",
+                    IsCheckable = true,
+                    IsChecked = quotesVm.SelectedFont == Widgets.Catalog.Quotes.QuoteFontFamilyChoice.Palatino
+                };
+                itemPalatino.Click += (s, ev) => quotesVm.SetFont(Widgets.Catalog.Quotes.QuoteFontFamilyChoice.Palatino);
+
+                var itemSegoe = new MenuItem
+                {
+                    Header = "Segoe UI",
+                    IsCheckable = true,
+                    IsChecked = quotesVm.SelectedFont == Widgets.Catalog.Quotes.QuoteFontFamilyChoice.SegoeUI
+                };
+                itemSegoe.Click += (s, ev) => quotesVm.SetFont(Widgets.Catalog.Quotes.QuoteFontFamilyChoice.SegoeUI);
+
+                fontMenuItem.Items.Add(itemMerriweather);
+                fontMenuItem.Items.Add(itemQuintessential);
+                fontMenuItem.Items.Add(itemGeorgia);
+                fontMenuItem.Items.Add(itemPalatino);
+                fontMenuItem.Items.Add(itemSegoe);
+
+                fontMenuItem.Items.Add(new Separator());
+
+                var styleSubItem = new MenuItem
+                {
+                    Header = "Style",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.TextItalic24,
+                        FontSize = 18,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+
+                var itemRegular = new MenuItem
+                {
+                    Header = "Regular",
+                    IsCheckable = true,
+                    IsChecked = quotesVm.SelectedStyle == Widgets.Catalog.Quotes.QuoteFontStyleChoice.Regular
+                };
+                itemRegular.Click += (s, ev) => quotesVm.SetStyle(Widgets.Catalog.Quotes.QuoteFontStyleChoice.Regular);
+
+                var itemItalic = new MenuItem
+                {
+                    Header = "Italic",
+                    IsCheckable = true,
+                    IsChecked = quotesVm.SelectedStyle == Widgets.Catalog.Quotes.QuoteFontStyleChoice.Italic
+                };
+                itemItalic.Click += (s, ev) => quotesVm.SetStyle(Widgets.Catalog.Quotes.QuoteFontStyleChoice.Italic);
+
+                styleSubItem.Items.Add(itemRegular);
+                styleSubItem.Items.Add(itemItalic);
+
+                fontMenuItem.Items.Add(styleSubItem);
+
+                var quotesDivider = new Separator { Tag = "WidgetCustomMenu" };
+                TileContextMenu.Items.Insert(1, nextQuoteItem);
+                TileContextMenu.Items.Insert(2, copyQuoteItem);
+                TileContextMenu.Items.Insert(3, fontMenuItem);
+                TileContextMenu.Items.Insert(4, quotesDivider);
             }
         }
         else

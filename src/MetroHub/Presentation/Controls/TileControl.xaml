@@ -19,6 +19,7 @@
              xmlns:brightness="clr-namespace:MetroHub.Widgets.Catalog.Brightness"
              xmlns:power="clr-namespace:MetroHub.Widgets.Catalog.Power"
              xmlns:weather="clr-namespace:MetroHub.Widgets.Catalog.Weather"
+             xmlns:quotes="clr-namespace:MetroHub.Widgets.Catalog.Quotes"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -199,6 +200,11 @@
         <!-- 13. Weather & Air Quality Widget DataTemplate -->
         <DataTemplate DataType="{x:Type weather:WeatherWidgetViewModel}">
             <weather:WeatherWidgetView />
+        </DataTemplate>
+
+        <!-- 14. Quotes Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type quotes:QuotesWidgetViewModel}">
+            <quotes:QuotesWidgetView />
         </DataTemplate>
     </UserControl.Resources>
 
