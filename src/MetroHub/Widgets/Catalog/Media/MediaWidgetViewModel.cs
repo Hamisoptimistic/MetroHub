@@ -93,6 +93,14 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     [ObservableProperty]
     private Color _seekbarGlowColor = DefaultSeekbarColor;
 
+    [ObservableProperty]
+    private Brush _ambientGlowBrush = Brushes.Transparent;
+
+    private MediaWidgetSettings _settings = new();
+    private Color? _currentAuraColor;
+
+    public bool IsAmbientGlowEnabled => _settings.IsAmbientGlowEnabled;
+
     public double AlbumArtSize => Model.SpanY >= 4 ? 132.0 : 104.0;
 
     [ObservableProperty]
@@ -424,6 +432,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         byte[]? rawBytes = null;
         Color seekbarColor = DefaultSeekbarColor;
         SolidColorBrush seekbarBrush = DefaultSeekbarBrush;
+        Brush ambientGlowBrush = Brushes.Transparent;
 
         if (props.Thumbnail != null)
         {
@@ -431,6 +440,10 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             if (bmp is BitmapSource bs)
             {
                 (seekbarBrush, seekbarColor) = ExtractSeekbarBrush(bs);
+                if (_settings.IsAmbientGlowEnabled)
+                {
+                    ambientGlowBrush = CreateAlbumAuraGlow(seekbarColor);
+                }
             }
         }
 
@@ -448,6 +461,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             HasThumbnail = bmp != null;
             SeekbarBrush = seekbarBrush;
             SeekbarGlowColor = seekbarColor;
+            _currentAuraColor = (bmp != null) ? seekbarColor : null;
+            AmbientGlowBrush = (_settings.IsAmbientGlowEnabled && bmp != null) ? ambientGlowBrush : Brushes.Transparent;
             HasMedia = true;
 
             if (_isLiveLocked)
@@ -897,6 +912,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         Thumbnail = null;
         HasThumbnail = false;
         _cachedThumbnailBytes = null;
+        _currentAuraColor = null;
+        AmbientGlowBrush = Brushes.Transparent;
         SeekbarBrush = DefaultSeekbarBrush;
         SeekbarGlowColor = DefaultSeekbarColor;
         IsPlaying = false;
@@ -968,14 +985,47 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    protected override void LoadSettings(string? settingsJson) { }
+    protected override void LoadSettings(string? settingsJson)
+    {
+        if (string.IsNullOrWhiteSpace(settingsJson)) return;
+        try
+        {
+            var parsed = WidgetSerializer.Deserialize<MediaWidgetSettings>(settingsJson);
+            if (parsed != null)
+            {
+                _settings = parsed;
+                OnPropertyChanged(nameof(IsAmbientGlowEnabled));
+                if (!_settings.IsAmbientGlowEnabled)
+                {
+                    AmbientGlowBrush = Brushes.Transparent;
+                }
+            }
+        }
+        catch { }
+    }
 
     public override void SaveSettings()
     {
-        var settings = new MediaWidgetSettings();
         Model.TargetPath = "media";
-        Model.SettingsJson = WidgetSerializer.Serialize(settings);
+        Model.SettingsJson = WidgetSerializer.Serialize(_settings);
         MainWindow.Current?.SaveGroupsAndLayout();
+    }
+
+    public void SetAmbientGlow(bool enabled)
+    {
+        if (_settings.IsAmbientGlowEnabled == enabled) return;
+        _settings.IsAmbientGlowEnabled = enabled;
+        SaveSettings();
+        OnPropertyChanged(nameof(IsAmbientGlowEnabled));
+
+        if (enabled && HasThumbnail && _currentAuraColor.HasValue)
+        {
+            AmbientGlowBrush = CreateAlbumAuraGlow(_currentAuraColor.Value);
+        }
+        else
+        {
+            AmbientGlowBrush = Brushes.Transparent;
+        }
     }
 
     private void RunOnUi(Action action)
@@ -1056,6 +1106,28 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         {
             return null;
         }
+    }
+
+    private static RadialGradientBrush CreateAlbumAuraGlow(Color color)
+    {
+        // 4-stop radial gradient radiating from behind the album artwork,
+        // softly dispersing across the obsidian card and fading to transparent.
+        var brush = new RadialGradientBrush
+        {
+            GradientOrigin = new Point(0.82, 0.45),
+            Center = new Point(0.82, 0.45),
+            RadiusX = 1.30,
+            RadiusY = 1.45,
+            GradientStops = new GradientStopCollection
+            {
+                new GradientStop(Color.FromArgb(0x44, color.R, color.G, color.B), 0.0),  // Vivid core aura directly behind album
+                new GradientStop(Color.FromArgb(0x28, color.R, color.G, color.B), 0.35), // Smooth luminous dispersion
+                new GradientStop(Color.FromArgb(0x12, color.R, color.G, color.B), 0.70), // Subtle ambient bleed
+                new GradientStop(Color.FromArgb(0x00, 0, 0, 0), 1.0)                    // Fades seamlessly into deep glass
+            }
+        };
+        brush.Freeze();
+        return brush;
     }
 
     private static (SolidColorBrush, Color) ExtractSeekbarBrush(BitmapSource bitmap)

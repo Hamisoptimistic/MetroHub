@@ -5036,7 +5036,9 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
         if (targetGroup != null)
         {
-            string? iconPathG = IconExtractorService.ExtractAndCacheIcon(item.TargetPath);
+            string? iconPathG = item.TileType == TileType.WebUrl
+                ? null
+                : IconExtractorService.ExtractAndCacheIcon(item.TargetPath);
             int pinSpanX = Math.Min(item.SpanX > 0 ? item.SpanX : 2, 4);
             int pinSpanY = item.SpanY > 0 ? item.SpanY : 2;
             var groupTile = new TileModel
@@ -5063,6 +5065,24 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             groupTile.Y = GridPlacementService.PixelYFromRow(pinSlotRow);
 
             Tiles.Add(groupTile);
+
+            if (item.TileType == TileType.WebUrl)
+            {
+                string targetUrl = item.TargetPath;
+                var createdTile = groupTile;
+                _ = Task.Run(async () =>
+                {
+                    string? fetched = await WebFaviconService.GetFaviconPathAsync(targetUrl).ConfigureAwait(false);
+                    if (!string.IsNullOrWhiteSpace(fetched))
+                    {
+                        await Dispatcher.InvokeAsync(() =>
+                        {
+                            createdTile.IconPath = fetched;
+                            StorageService.SaveLayout(Tiles);
+                        });
+                    }
+                });
+            }
             var mod = GridPlacementService.PlaceTileInGroup(
                 groupTile, pinSlotCol, pinSlotRow, pinSlotCol, pinSlotRow, targetGroup, Tiles);
             var pushed = GridPlacementService.PushLowerGroupsDown(targetGroup, Groups, Tiles);
@@ -5105,7 +5125,9 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             maxCols,
             Groups);
 
-        string? iconPath = IconExtractorService.ExtractAndCacheIcon(item.TargetPath);
+        string? iconPath = item.TileType == TileType.WebUrl
+            ? null
+            : IconExtractorService.ExtractAndCacheIcon(item.TargetPath);
 
         var tile = new TileModel
         {
@@ -5123,6 +5145,24 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         };
 
         Tiles.Add(tile);
+
+        if (item.TileType == TileType.WebUrl)
+        {
+            string targetUrl = item.TargetPath;
+            var createdTile = tile;
+            _ = Task.Run(async () =>
+            {
+                string? fetched = await WebFaviconService.GetFaviconPathAsync(targetUrl).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(fetched))
+                {
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                        createdTile.IconPath = fetched;
+                        StorageService.SaveLayout(Tiles);
+                    });
+                }
+            });
+        }
 
         if (Groups != null && Groups.Count > 0)
         {

@@ -867,12 +867,81 @@ public partial class TileControl : UserControl
                 };
                 refreshItem.Click += (s, ev) => _ = weatherVm.RefreshAsync();
 
+                var styleItem = new MenuItem
+                {
+                    Header = "Style",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Color24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+
+                var ambientGlowItem = new MenuItem
+                {
+                    Header = "Ambient Glow",
+                    IsCheckable = true,
+                    IsChecked = weatherVm.IsAmbientGlowEnabled
+                };
+                ambientGlowItem.Click += (s, ev) => weatherVm.SetAmbientGlow(true);
+
+                var noneStyleItem = new MenuItem
+                {
+                    Header = "None",
+                    IsCheckable = true,
+                    IsChecked = !weatherVm.IsAmbientGlowEnabled
+                };
+                noneStyleItem.Click += (s, ev) => weatherVm.SetAmbientGlow(false);
+
+                styleItem.Items.Add(ambientGlowItem);
+                styleItem.Items.Add(noneStyleItem);
+
                 var weatherDivider = new Separator { Tag = "WidgetCustomMenu" };
                 TileContextMenu.Items.Insert(1, changeLocationItem);
                 TileContextMenu.Items.Insert(2, autoLocationItem);
                 TileContextMenu.Items.Insert(3, toggleUnitsItem);
-                TileContextMenu.Items.Insert(4, refreshItem);
-                TileContextMenu.Items.Insert(5, weatherDivider);
+                TileContextMenu.Items.Insert(4, styleItem);
+                TileContextMenu.Items.Insert(5, refreshItem);
+                TileContextMenu.Items.Insert(6, weatherDivider);
+            }
+            else if (tile.TileContent is Widgets.Catalog.Media.MediaWidgetViewModel mediaVm)
+            {
+                var styleItem = new MenuItem
+                {
+                    Header = "Style",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Color24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+
+                var ambientGlowItem = new MenuItem
+                {
+                    Header = "Ambient Glow",
+                    IsCheckable = true,
+                    IsChecked = mediaVm.IsAmbientGlowEnabled
+                };
+                ambientGlowItem.Click += (s, ev) => mediaVm.SetAmbientGlow(true);
+
+                var noneStyleItem = new MenuItem
+                {
+                    Header = "None",
+                    IsCheckable = true,
+                    IsChecked = !mediaVm.IsAmbientGlowEnabled
+                };
+                noneStyleItem.Click += (s, ev) => mediaVm.SetAmbientGlow(false);
+
+                styleItem.Items.Add(ambientGlowItem);
+                styleItem.Items.Add(noneStyleItem);
+
+                var mediaDivider = new Separator { Tag = "WidgetCustomMenu" };
+                TileContextMenu.Items.Insert(1, styleItem);
+                TileContextMenu.Items.Insert(2, mediaDivider);
             }
         }
         else

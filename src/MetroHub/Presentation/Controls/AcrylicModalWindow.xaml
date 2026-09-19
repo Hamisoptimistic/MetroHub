@@ -443,7 +443,7 @@
             <!-- COLUMN 1: OBSIDIAN DARK CONTENT PANEL                    -->
             <!-- ========================================================= -->
             <Border Grid.Column="1"
-                    Background="#1C1C1C"
+                    Background="#232323"
                     CornerRadius="0,2,2,0"
                     RenderOptions.ClearTypeHint="Enabled">
                 <Grid Margin="24,20,24,20">
@@ -495,7 +495,7 @@
                                        AllowsTransparency="True"
                                        PopupAnimation="Fade">
                                     <Border Width="{Binding ActualWidth, ElementName=WeatherCityInput}"
-                                            Background="#202020"
+                                            Background="#232323"
                                             BorderBrush="#40FFFFFF"
                                             BorderThickness="1"
                                             CornerRadius="0,0,2,2"

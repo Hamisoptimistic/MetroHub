@@ -7,4 +7,5 @@ public class WeatherWidgetSettings
     public string? CustomCity { get; set; }
     public double? CustomLatitude { get; set; }
     public double? CustomLongitude { get; set; }
+    public bool IsAmbientGlowEnabled { get; set; } = true;
 }

@@ -65,6 +65,12 @@
                 <RowDefinition Height="38" />   <!-- Row 1: Fluent Acrylic Strip: Sound Source (Left) + Controls (Far Right) -->
             </Grid.RowDefinitions>
 
+            <!-- 0. Dynamic Ambient Album Aura (100% GPU-drawn frozen brush, 0 CPU/RAM) -->
+            <Border Grid.RowSpan="2"
+                    Background="{Binding AmbientGlowBrush}"
+                    CornerRadius="2"
+                    IsHitTestVisible="False" />
+
             <!-- Row 0: Top Section (Track Info + Elevated Album Art) -->
             <Grid Grid.Row="0">
                 <!-- Album Art Container on Right Side -->

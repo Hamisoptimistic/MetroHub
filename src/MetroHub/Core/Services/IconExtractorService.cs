@@ -323,6 +323,13 @@ public static class IconExtractorService
     {
         if (string.IsNullOrWhiteSpace(filePath)) return null;
 
+        // Never attempt Windows Shell file icon extraction on Web URLs
+        if (filePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            filePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
         if (_iconPathCache.TryGetValue(filePath, out var memoized) && File.Exists(memoized))
         {
             return memoized;

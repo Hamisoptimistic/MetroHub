@@ -111,7 +111,7 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
     private string _precipitationProbabilityText = "0%";
 
     [ObservableProperty]
-    private RadialGradientBrush _ambientGlowBrush = WeatherPalettes.CloudyGlow;
+    private Brush _ambientGlowBrush = WeatherPalettes.CloudyGlow;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -125,6 +125,7 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
     public bool IsFahrenheit => _settings.IsFahrenheit;
     public bool IsAutoLocation => _settings.IsAutoLocation;
     public string? CustomCity => _settings.CustomCity;
+    public bool IsAmbientGlowEnabled => _settings.IsAmbientGlowEnabled;
 
     // Responsive sizing flags
     public bool IsCompact => false;
@@ -180,9 +181,31 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
             {
                 _settings = parsed;
                 OnPropertyChanged(nameof(IsFahrenheit));
+                OnPropertyChanged(nameof(IsAmbientGlowEnabled));
+                if (!_settings.IsAmbientGlowEnabled)
+                {
+                    AmbientGlowBrush = System.Windows.Media.Brushes.Transparent;
+                }
             }
         }
         catch { }
+    }
+
+    public void SetAmbientGlow(bool enabled)
+    {
+        if (_settings.IsAmbientGlowEnabled == enabled) return;
+        _settings.IsAmbientGlowEnabled = enabled;
+        SaveSettings();
+        OnPropertyChanged(nameof(IsAmbientGlowEnabled));
+
+        if (_latestData != null)
+        {
+            ApplyWeatherToUi(_latestData);
+        }
+        else
+        {
+            AmbientGlowBrush = enabled ? WeatherPalettes.CloudyGlow : System.Windows.Media.Brushes.Transparent;
+        }
     }
 
     public override void SaveSettings()
@@ -419,7 +442,7 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
             WeatherIconName = info.IconName;
             WeatherGlyph = info.FallbackGlyph;
             ConditionText = info.Description;
-            AmbientGlowBrush = info.Glow;
+            AmbientGlowBrush = _settings.IsAmbientGlowEnabled ? info.Glow : System.Windows.Media.Brushes.Transparent;
 
             // Temperature & Feels-Like
             TemperatureText = FormatTemp(current.Temperature);

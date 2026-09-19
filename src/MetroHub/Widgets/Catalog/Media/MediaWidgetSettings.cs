@@ -5,4 +5,5 @@ namespace MetroHub.Widgets.Catalog.Media;
 /// </summary>
 public class MediaWidgetSettings
 {
+    public bool IsAmbientGlowEnabled { get; set; } = true;
 }

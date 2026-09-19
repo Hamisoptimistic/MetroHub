@@ -1,6 +1,9 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Windows;
 using MetroHub.Core.Models;
 
 namespace MetroHub.Core.Services;
@@ -14,6 +17,7 @@ public sealed class StorageService
     private static readonly string GroupsPath = Path.Combine(AppDataDir, "groups.json");
     private static readonly string SettingsPath = Path.Combine(AppDataDir, "settings.json");
     private static readonly string AppsCachePath = Path.Combine(AppDataDir, "apps_cache.json");
+    private static readonly string IconCacheDir = Path.Combine(AppDataDir, "icons");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -79,6 +83,68 @@ public sealed class StorageService
                             tile.X = GridPlacementService.PixelXFromCol(tile.Col);
                             tile.Y = GridPlacementService.PixelYFromRow(tile.Row);
                             iconsRefreshed = true;
+                        }
+
+                        // Skip widget tiles; they render dynamic custom views
+                        if (tile.TileType == TileType.Widget)
+                        {
+                            continue;
+                        }
+
+                        // Web URLs: never pass to Windows Shell icon extractor; preserve or recover WebFavicon
+                        bool isWebUrl = tile.TileType == TileType.WebUrl ||
+                            (!string.IsNullOrWhiteSpace(tile.TargetPath) &&
+                             (tile.TargetPath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                              tile.TargetPath.StartsWith("https://", StringComparison.OrdinalIgnoreCase)));
+
+                        if (isWebUrl)
+                        {
+                            tile.TileType = TileType.WebUrl;
+
+                            bool isBogusOrMissing = string.IsNullOrWhiteSpace(tile.IconPath) ||
+                                                    !File.Exists(tile.IconPath) ||
+                                                    Path.GetFileName(tile.IconPath).StartsWith("v5_", StringComparison.OrdinalIgnoreCase);
+
+                            string domain = WebFaviconService.ExtractDomain(tile.TargetPath);
+                            if (!string.IsNullOrWhiteSpace(domain))
+                            {
+                                string safeDomain = Regex.Replace(domain, @"[^a-zA-Z0-9_\-\.]", "_");
+                                string hash = IconExtractorService.ComputeDeterministicHash(domain);
+                                string cachedPath = Path.Combine(IconCacheDir, $"web_{safeDomain}_{hash}.png");
+
+                                if (File.Exists(cachedPath) && new FileInfo(cachedPath).Length > 200)
+                                {
+                                    if (tile.IconPath != cachedPath)
+                                    {
+                                        if (!string.IsNullOrWhiteSpace(tile.IconPath) &&
+                                            Path.GetFileName(tile.IconPath).StartsWith("v5_", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            try { if (File.Exists(tile.IconPath)) File.Delete(tile.IconPath); } catch { }
+                                        }
+
+                                        tile.IconPath = cachedPath;
+                                        iconsRefreshed = true;
+                                    }
+                                }
+                                else if (isBogusOrMissing)
+                                {
+                                    string targetUrl = tile.TargetPath;
+                                    var targetTile = tile;
+                                    _ = Task.Run(async () =>
+                                    {
+                                        string? fetched = await WebFaviconService.GetFaviconPathAsync(targetUrl).ConfigureAwait(false);
+                                        if (!string.IsNullOrWhiteSpace(fetched) && File.Exists(fetched))
+                                        {
+                                            Application.Current?.Dispatcher.InvokeAsync(() =>
+                                            {
+                                                targetTile.IconPath = fetched;
+                                                SaveLayout(tiles);
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                            continue;
                         }
 
                         if (!string.IsNullOrWhiteSpace(tile.TargetPath))
