@@ -236,6 +236,24 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
         return true;
     }
 
+    public async Task<bool> SetCustomLocationAsync(string cityName, double latitude, double longitude, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(cityName)) return false;
+
+        _settings.IsAutoLocation = false;
+        _settings.CustomCity = cityName.Trim();
+        _settings.CustomLatitude = Math.Round(latitude, 4);
+        _settings.CustomLongitude = Math.Round(longitude, 4);
+        SaveSettings();
+
+        OnPropertyChanged(nameof(IsAutoLocation));
+        OnPropertyChanged(nameof(CustomCity));
+
+        var token = _cts?.Token ?? cancellationToken;
+        await FetchWeatherCoreAsync(forceRefresh: true, token).ConfigureAwait(false);
+        return true;
+    }
+
     public async Task UseAutoLocationAsync(CancellationToken cancellationToken = default)
     {
         _settings.IsAutoLocation = true;

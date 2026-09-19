@@ -86,9 +86,24 @@ public class WidgetSegmentedItem : ListBoxItem
         while (cur != null)
         {
             if (cur is WidgetSegmentedControl wsc) return wsc;
-            cur = VisualTreeHelper.GetParent(cur) ?? LogicalTreeHelper.GetParent(cur);
+            cur = GetParent(cur);
         }
         return null;
+    }
+
+    private static DependencyObject? GetParent(DependencyObject? node)
+    {
+        if (node == null) return null;
+        if (node is Visual || node is System.Windows.Media.Media3D.Visual3D)
+        {
+            var parent = VisualTreeHelper.GetParent(node);
+            if (parent != null) return parent;
+        }
+        if (node is FrameworkElement fe)
+            return fe.Parent ?? fe.TemplatedParent ?? LogicalTreeHelper.GetParent(node);
+        if (node is FrameworkContentElement fce)
+            return fce.Parent ?? fce.TemplatedParent ?? LogicalTreeHelper.GetParent(node);
+        return LogicalTreeHelper.GetParent(node);
     }
 
     static WidgetSegmentedItem()

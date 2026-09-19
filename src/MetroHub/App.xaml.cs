@@ -20,6 +20,29 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Global crash logging
+        AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+        {
+            try
+            {
+                string crashLog = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetroHub", "crash.log");
+                Directory.CreateDirectory(Path.GetDirectoryName(crashLog)!);
+                File.WriteAllText(crashLog, args.ExceptionObject?.ToString() ?? "Unknown unhandled exception");
+            }
+            catch { }
+        };
+
+        DispatcherUnhandledException += (s, args) =>
+        {
+            try
+            {
+                string crashLog = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetroHub", "crash.log");
+                Directory.CreateDirectory(Path.GetDirectoryName(crashLog)!);
+                File.WriteAllText(crashLog, args.Exception.ToString());
+            }
+            catch { }
+        };
+
         // Grant permission for this process and any instances to manage foreground window
         NativeMethods.AllowSetForegroundWindow(NativeMethods.ASFW_ANY);
 

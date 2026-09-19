@@ -1,5 +1,13 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -10,6 +18,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shell;
 using MetroHub.Core.Services;
+using MetroHub.Core.Services.Catalog.Weather;
 using MetroHub.Widgets.Catalog.Weather;
 using Wpf.Ui.Controls;
 
@@ -29,6 +38,24 @@ public partial class AcrylicModalWindow : FluentWindow
     private string? _resolvedIconPath;
     private bool _userManuallyEditedTitle;
     private WebLinkCreatedEventArgs? _webLinkResult;
+    private bool _isFullyActivated;
+    private DateTime _shownTime;
+
+    private const int DebounceMs = 300;
+
+    private static readonly JsonSerializerOptions s_jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    private CancellationTokenSource? _searchCts;
+    private int _searchGeneration;
+    private bool _suppressSearch;
+    private string? _activeKey;
+    private bool _errorShown;
+    private GeoResult? _selectedLocation;
+    private readonly Dictionary<string, IReadOnlyList<GeoResult>> _queryCache = new(50, StringComparer.OrdinalIgnoreCase);
+    internal ObservableCollection<GeoResult> Suggestions { get; } = new();
 
     public WebLinkCreatedEventArgs? WebLinkResult => _webLinkResult;
 
@@ -36,6 +63,23 @@ public partial class AcrylicModalWindow : FluentWindow
     {
         InitializeComponent();
         Background = Brushes.Transparent;
+        WeatherSuggestionsList.ItemsSource = Suggestions;
+        IsVisibleChanged += OnWindowIsVisibleChanged;
+    }
+
+    private void OnWindowIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (IsVisible)
+        {
+            _errorShown = false;
+            _activeKey = null;
+        }
+        else
+        {
+            CancelPendingSearch();
+            HideSuggestions();
+            _queryCache.Clear();
+        }
     }
 
     protected override void OnBackdropTypeChanged(WindowBackdropType oldValue, WindowBackdropType newValue)
@@ -56,6 +100,7 @@ public partial class AcrylicModalWindow : FluentWindow
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
+        _shownTime = DateTime.UtcNow;
         Background = Brushes.Transparent;
 
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
@@ -68,6 +113,29 @@ public partial class AcrylicModalWindow : FluentWindow
             }
 
             ApplyAcrylicBackdrop(hwnd);
+
+            // Completely hide modal window from Windows Alt+Tab switcher
+            int exStyle = NativeMethods.GetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE);
+            NativeMethods.SetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE, exStyle | NativeMethods.WS_EX_TOOLWINDOW);
+
+            // Responsive scaling: clamp modal to fit comfortably on small displays/high DPI
+            var workArea = SystemParameters.WorkArea;
+            if (workArea.Width > 0 && workArea.Height > 0)
+            {
+                Width = Math.Min(620, Math.Max(480, workArea.Width * 0.85));
+                Height = Math.Min(360, Math.Max(300, workArea.Height * 0.85));
+            }
+
+            if (Owner != null && Owner.ActualWidth > 0 && Owner.ActualHeight > 0)
+            {
+                Left = Owner.Left + (Owner.ActualWidth - Width) / 2;
+                Top = Owner.Top + (Owner.ActualHeight - Height) / 2;
+            }
+            else if (workArea.Width > 0 && workArea.Height > 0)
+            {
+                Left = workArea.Left + (workArea.Width - Width) / 2;
+                Top = workArea.Top + (workArea.Height - Height) / 2;
+            }
         }
 
         var chrome = WindowChrome.GetWindowChrome(this);
@@ -88,8 +156,8 @@ public partial class AcrylicModalWindow : FluentWindow
             int darkVal = 1;
             NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkVal, sizeof(int));
 
-            // Windows 11 rounded corners
-            int cornerVal = 2; // DWMWCP_ROUND
+            // Windows 11 rounded corners suppressed for cohesive 2px radius
+            int cornerVal = 1; // DWMWCP_DONOTROUND
             NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerVal, sizeof(int));
 
             // Suppress harsh OS non-client border
@@ -113,32 +181,60 @@ public partial class AcrylicModalWindow : FluentWindow
         catch { }
     }
 
+    protected override void OnActivated(EventArgs e)
+    {
+        base.OnActivated(e);
+        _isFullyActivated = true;
+    }
+
+    protected override void OnDeactivated(EventArgs e)
+    {
+        base.OnDeactivated(e);
+
+        // Ignore premature deactivation during show/transition
+        if (!_isFullyActivated || (DateTime.UtcNow - _shownTime).TotalMilliseconds < 150)
+        {
+            return;
+        }
+
+        try
+        {
+            if (IsVisible)
+            {
+                DialogResult = false;
+                Close();
+            }
+        }
+        catch { }
+    }
+
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
-        base.OnPreviewKeyDown(e);
         if (e.Key == Key.Escape)
         {
             DialogResult = false;
             Close();
             e.Handled = true;
+            return;
         }
-    }
 
-    private void OnWindowDrag(object sender, MouseButtonEventArgs e)
-    {
-        if (e.LeftButton == MouseButtonState.Pressed)
+        // Close on Alt+Tab so switching tasks cleanly dismisses the modal
+        if ((e.Key == Key.System && e.SystemKey == Key.Tab) ||
+            ((Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt && (e.Key == Key.Tab || e.SystemKey == Key.Tab)))
         {
-            DragMove();
+            try
+            {
+                DialogResult = false;
+            }
+            catch { }
+            Close();
+            return;
         }
+
+        base.OnPreviewKeyDown(e);
     }
 
     private void OnCloseButtonClick(object sender, RoutedEventArgs e)
-    {
-        DialogResult = false;
-        Close();
-    }
-
-    private void OnCancelButtonClick(object sender, RoutedEventArgs e)
     {
         DialogResult = false;
         Close();
@@ -154,51 +250,574 @@ public partial class AcrylicModalWindow : FluentWindow
         WeatherSidebarGlyph.Visibility = Visibility.Visible;
         WebLinkSidebarGlyph.Visibility = Visibility.Collapsed;
 
-        SidebarTitleText.Text = "Weather";
-        SidebarSubtitleText.Text = "Location";
-        SidebarBadgeCategoryText.Text = "CURRENT";
-
-        string currentCity = !string.IsNullOrWhiteSpace(weatherVm.CityName) ? weatherVm.CityName : "Local";
-        SidebarBadgeValueText.Text = currentCity;
-
         HeaderTitleText.Text = "Change Location";
         PrimaryActionButton.Content = "Apply";
+        PrimaryActionButton.IsEnabled = true;
 
         WeatherFormGrid.Visibility = Visibility.Visible;
         WebLinkFormGrid.Visibility = Visibility.Collapsed;
 
-        WeatherCityInput.Text = weatherVm.CustomCity ?? string.Empty;
+        SetCityText(weatherVm.CustomCity ?? string.Empty);
+
         WeatherStatusMessage.Text = string.Empty;
         WeatherStatusMessage.Visibility = Visibility.Collapsed;
         WeatherActionSpinner.Visibility = Visibility.Collapsed;
-
-        PrimaryActionButton.IsEnabled = !string.IsNullOrWhiteSpace(WeatherCityInput.Text);
+        _selectedLocation = null;
 
         Loaded += (s, e) =>
         {
-            WeatherCityInput.Focus();
-            WeatherCityInput.SelectAll();
+            Dispatcher.InvokeAsync(() =>
+            {
+                _suppressSearch = true;
+                try
+                {
+                    WeatherCityInput.Focus();
+                    WeatherCityInput.SelectAll();
+                }
+                finally
+                {
+                    _suppressSearch = false;
+                }
+            }, System.Windows.Threading.DispatcherPriority.Input);
         };
     }
 
-    private void OnWeatherInputTextChanged(object sender, TextChangedEventArgs e)
+    private void SetCityText(string text)
     {
-        PrimaryActionButton.IsEnabled = !string.IsNullOrWhiteSpace(WeatherCityInput.Text);
+        CancelPendingSearch();
+        HideSuggestions();
+        _suppressSearch = true;
+        try
+        {
+            WeatherCityInput.Text = text;
+        }
+        finally
+        {
+            _suppressSearch = false;
+        }
+    }
+
+    private static string? NormalizeQuery(string raw)
+    {
+        try
+        {
+            var s = raw.Normalize(NormalizationForm.FormC);
+            var sb = new StringBuilder(s.Length);
+            var pendingSpace = false;
+            foreach (var ch in s)
+            {
+                if (char.IsControl(ch) || char.IsWhiteSpace(ch)) { pendingSpace = sb.Length > 0; continue; }
+                if (pendingSpace) { sb.Append(' '); pendingSpace = false; }
+                sb.Append(ch);
+            }
+            if (sb.Length > 100) sb.Length = 100;
+            if (sb.Length > 0 && char.IsHighSurrogate(sb[^1])) sb.Length--;
+            return sb.ToString();
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+    }
+
+    private static bool LongEnough(string location)
+    {
+        var n = new StringInfo(location).LengthInTextElements;
+        if (n >= 3) return true;
+        if (n < 2) return false;
+        foreach (var r in location.EnumerateRunes())
+        {
+            if (Rune.IsLetter(r) && r.Value >= 0x0900) return true;
+        }
+        return false;
+    }
+
+    private static (string Location, string? Qualifier) ParseQuery(string normalized)
+    {
+        int commaIndex = normalized.IndexOf(',');
+        if (commaIndex < 0)
+        {
+            return (normalized.Trim(), null);
+        }
+
+        string loc = normalized[..commaIndex].Trim();
+        string remainder = normalized[(commaIndex + 1)..].Trim();
+        int nextComma = remainder.IndexOf(',');
+        string qual = (nextComma >= 0 ? remainder[..nextComma] : remainder).Trim();
+        return (loc, string.IsNullOrEmpty(qual) ? null : qual);
+    }
+
+    private void CancelPendingSearch()
+    {
+        _activeKey = null;
+        _searchGeneration++;
+        var cts = _searchCts;
+        _searchCts = null;
+        if (cts is null) return;
+        try
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
+        catch { }
+    }
+
+    private bool IsCurrent(int generation, CancellationToken token)
+        => generation == _searchGeneration && !token.IsCancellationRequested;
+
+    private async void OnWeatherInputTextChanged(object sender, TextChangedEventArgs e)
+    {
         WeatherStatusMessage.Visibility = Visibility.Collapsed;
+
+        if (_suppressSearch) return;
+
+        var raw = WeatherCityInput.Text;
+        var normalized = NormalizeQuery(raw);
+
+        if (string.IsNullOrEmpty(normalized) || !normalized.Any(char.IsLetterOrDigit))
+        {
+            CancelPendingSearch();
+            HideSuggestions();
+            _selectedLocation = null;
+            return;
+        }
+
+        var (location, qualifier) = ParseQuery(normalized);
+        if (!LongEnough(location))
+        {
+            CancelPendingSearch();
+            HideSuggestions();
+            _selectedLocation = null;
+            return;
+        }
+
+        // Skip identical work: if the key hasn't changed (e.g. trailing space typed), return before cancelling
+        if (string.Equals(normalized, _activeKey, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        CancelPendingSearch();
+        _selectedLocation = null;
+
+        if (_queryCache.TryGetValue(normalized, out var cachedResults))
+        {
+            ShowSuggestions(cachedResults);
+            return;
+        }
+
+        _searchCts = new CancellationTokenSource();
+        var token = _searchCts.Token;
+        var generation = _searchGeneration;
+        _activeKey = normalized;
+
+        try
+        {
+            await SearchAsync(normalized, location, qualifier, generation, token);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // Superseded or window closed: expected, ignore
+        }
+        catch (Exception ex)
+        {
+            _activeKey = null;
+            if (IsCurrent(generation, token))
+            {
+                HandleSearchException(ex);
+            }
+        }
+    }
+
+    private async Task SearchAsync(string query, string location, string? qualifier, int generation, CancellationToken token)
+    {
+        await Task.Delay(DebounceMs, token);
+        if (!IsCurrent(generation, token)) return;
+
+        (IReadOnlyList<GeoResult> Results, int RawCount) openMeteoResult = ([], 0);
+        try
+        {
+            openMeteoResult = await GeocodeOpenMeteoAsync(location, qualifier, token);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            HandleSearchException(ex);
+            return;
+        }
+
+        if (!IsCurrent(generation, token)) return;
+
+        IReadOnlyList<GeoResult> results = openMeteoResult.Results;
+
+        // Photon is called ONLY when Open-Meteo returned 0 results before any client-side qualifier filtering
+        // and only if the query contains letters
+        if (openMeteoResult.RawCount == 0 && query.Any(char.IsLetter))
+        {
+            try
+            {
+                results = await GeocodePhotonAsync(query, token);
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch
+            {
+                results = [];
+            }
+
+            if (!IsCurrent(generation, token)) return;
+        }
+
+        results = PostProcessResults(results);
+
+        if (_queryCache.Count >= 50)
+        {
+            _queryCache.Clear();
+        }
+        _queryCache[query] = results;
+
+        ShowSuggestions(results);
+    }
+
+    private async Task<(IReadOnlyList<GeoResult> Results, int RawCount)> GeocodeOpenMeteoAsync(
+        string location, string? qualifier, CancellationToken token)
+    {
+        string nameParam;
+        int count;
+
+        if (string.IsNullOrEmpty(qualifier))
+        {
+            nameParam = location;
+            count = 8;
+        }
+        else if (qualifier.Length <= 2)
+        {
+            nameParam = $"{location}, {qualifier}";
+            count = 8;
+        }
+        else
+        {
+            nameParam = location;
+            count = 50;
+        }
+
+        var url = "https://geocoding-api.open-meteo.com/v1/search"
+                + $"?name={Uri.EscapeDataString(nameParam)}&count={count}&language=en&format=json";
+
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
+        timeout.CancelAfter(TimeSpan.FromSeconds(5));
+
+        using var response = await WeatherService.SharedHttpClient.GetAsync(
+            url, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return ([], 0);
+        }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token);
+        var body = await JsonSerializer.DeserializeAsync<OpenMeteoGeocodingResponse>(
+            stream, s_jsonOptions, timeout.Token);
+
+        var rawList = body?.Results ?? [];
+        var validated = ValidateAndFilterGeoResults(rawList);
+        int rawCount = validated.Count;
+
+        if (qualifier != null && qualifier.Length >= 3)
+        {
+            var compareInfo = CultureInfo.InvariantCulture.CompareInfo;
+            const CompareOptions options = CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace;
+
+            var filtered = new List<GeoResult>(8);
+            foreach (var r in validated)
+            {
+                bool matchAdmin = r.Admin1 != null && compareInfo.IsPrefix(r.Admin1, qualifier, options);
+                bool matchCountry = r.Country != null && compareInfo.IsPrefix(r.Country, qualifier, options);
+                if (matchAdmin || matchCountry)
+                {
+                    filtered.Add(r);
+                    if (filtered.Count == 8) break;
+                }
+            }
+            return (filtered, rawCount);
+        }
+
+        return (validated.Take(8).ToList(), rawCount);
+    }
+
+    private async Task<IReadOnlyList<GeoResult>> GeocodePhotonAsync(string query, CancellationToken token)
+    {
+        var url = $"https://photon.komoot.io/api/?q={Uri.EscapeDataString(query)}&limit=5&osm_tag=place";
+
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
+        timeout.CancelAfter(TimeSpan.FromSeconds(4));
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.UserAgent.ParseAdd("MetroHub/1.0");
+
+        using var response = await WeatherService.SharedHttpClient.SendAsync(
+            request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return [];
+        }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(timeout.Token);
+        var body = await JsonSerializer.DeserializeAsync<PhotonResponse>(stream, s_jsonOptions, timeout.Token);
+
+        if (body?.Features == null) return [];
+
+        var list = new List<GeoResult>(body.Features.Count);
+        foreach (var feat in body.Features)
+        {
+            var coords = feat.Geometry?.Coordinates;
+            var name = feat.Properties?.Name;
+            if (coords == null || coords.Length < 2 || string.IsNullOrWhiteSpace(name))
+            {
+                continue;
+            }
+
+            double lon = coords[0];
+            double lat = coords[1];
+
+            if (lat < -90.0 || lat > 90.0 || lon < -180.0 || lon > 180.0)
+            {
+                continue;
+            }
+
+            list.Add(new GeoResult(
+                Name: name.Trim(),
+                Latitude: lat,
+                Longitude: lon,
+                Admin1: feat.Properties?.State,
+                Admin2: null,
+                Country: feat.Properties?.Country,
+                Timezone: null));
+        }
+
+        return list;
+    }
+
+    private static List<GeoResult> ValidateAndFilterGeoResults(IEnumerable<GeoResult> source)
+    {
+        var valid = new List<GeoResult>();
+        foreach (var r in source)
+        {
+            if (string.IsNullOrWhiteSpace(r.Name) || !r.Latitude.HasValue || !r.Longitude.HasValue)
+            {
+                continue;
+            }
+
+            double lat = r.Latitude.Value;
+            double lon = r.Longitude.Value;
+            if (lat < -90.0 || lat > 90.0 || lon < -180.0 || lon > 180.0)
+            {
+                continue;
+            }
+
+            valid.Add(r);
+        }
+        return valid;
+    }
+
+    private static IReadOnlyList<GeoResult> PostProcessResults(IReadOnlyList<GeoResult> list)
+    {
+        if (list.Count == 0) return list;
+
+        var deduped = new List<GeoResult>(list.Count);
+        foreach (var item in list)
+        {
+            bool isDuplicate = false;
+            foreach (var existing in deduped)
+            {
+                if (string.Equals(item.Name, existing.Name, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(item.Admin1, existing.Admin1, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(item.Country, existing.Country, StringComparison.OrdinalIgnoreCase) &&
+                    Math.Abs(item.Latitude!.Value - existing.Latitude!.Value) < 0.01 &&
+                    Math.Abs(item.Longitude!.Value - existing.Longitude!.Value) < 0.01)
+                {
+                    isDuplicate = true;
+                    break;
+                }
+            }
+            if (!isDuplicate)
+            {
+                deduped.Add(item);
+            }
+        }
+
+        for (int i = 0; i < deduped.Count; i++)
+        {
+            var cur = deduped[i];
+            bool hasCollision = false;
+            for (int j = 0; j < deduped.Count; j++)
+            {
+                if (i != j)
+                {
+                    var other = deduped[j];
+                    if (string.Equals(cur.Name, other.Name, StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(cur.Admin1, other.Admin1, StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(cur.Country, other.Country, StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasCollision = true;
+                        break;
+                    }
+                }
+            }
+
+            var parts = new List<string>(3);
+            if (hasCollision && !string.IsNullOrWhiteSpace(cur.Admin2))
+            {
+                parts.Add(cur.Admin2.Trim());
+            }
+            if (!string.IsNullOrWhiteSpace(cur.Admin1))
+            {
+                parts.Add(cur.Admin1.Trim());
+            }
+            if (!string.IsNullOrWhiteSpace(cur.Country) && !string.Equals(cur.Country.Trim(), cur.Admin1?.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                parts.Add(cur.Country.Trim());
+            }
+
+            cur.DisplaySubtitle = string.Join(", ", parts);
+        }
+
+        return deduped;
+    }
+
+    private void ShowSuggestions(IReadOnlyList<GeoResult> results)
+    {
+        if (!WeatherCityInput.IsKeyboardFocused && !WeatherSuggestionsList.IsKeyboardFocused && !WeatherSuggestionsList.IsKeyboardFocusWithin)
+        {
+            return;
+        }
+
+        if (results.Count == 0)
+        {
+            HideSuggestions();
+            return;
+        }
+
+        Suggestions.Clear();
+        foreach (var r in results)
+        {
+            Suggestions.Add(r);
+        }
+
+        WeatherSuggestionsPopup.IsOpen = true;
+    }
+
+    private void HideSuggestions()
+    {
+        WeatherSuggestionsPopup.IsOpen = false;
+        Suggestions.Clear();
+    }
+
+    private void HandleSearchException(Exception ex)
+    {
+        try
+        {
+            if (ex is OperationCanceledException or TimeoutException or JsonException or UriFormatException)
+            {
+                return;
+            }
+
+            if (ex is HttpRequestException)
+            {
+                if (_errorShown) return;
+                _errorShown = true;
+                WeatherStatusMessage.Text = "Network unreachable. Check your internet connection.";
+                WeatherStatusMessage.Visibility = Visibility.Visible;
+            }
+        }
+        catch { }
     }
 
     private void OnWeatherInputKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter && PrimaryActionButton.IsEnabled)
+        if (e.Key == Key.Down && WeatherSuggestionsPopup.IsOpen && Suggestions.Count > 0)
         {
+            CancelPendingSearch();
+            WeatherSuggestionsList.Focus();
+            WeatherSuggestionsList.SelectedIndex = 0;
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Tab && WeatherSuggestionsPopup.IsOpen)
+        {
+            CancelPendingSearch();
+            HideSuggestions();
+            return;
+        }
+
+        if (e.Key == Key.Escape && WeatherSuggestionsPopup.IsOpen)
+        {
+            CancelPendingSearch();
+            HideSuggestions();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Enter)
+        {
+            CancelPendingSearch();
+            HideSuggestions();
             ApplyWeatherLocation();
             e.Handled = true;
         }
     }
 
+    private void OnSuggestionListMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (WeatherSuggestionsList.SelectedItem is GeoResult selected)
+        {
+            CancelPendingSearch();
+            SelectSuggestion(selected);
+            e.Handled = true;
+        }
+    }
+
+    private void OnSuggestionsListKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            if (WeatherSuggestionsList.SelectedItem is GeoResult selected)
+            {
+                CancelPendingSearch();
+                SelectSuggestion(selected);
+                e.Handled = true;
+            }
+        }
+        else if (e.Key is Key.Escape or Key.Tab)
+        {
+            CancelPendingSearch();
+            HideSuggestions();
+            WeatherCityInput.Focus();
+            e.Handled = true;
+        }
+    }
+
+    private void SelectSuggestion(GeoResult selected)
+    {
+        _selectedLocation = selected;
+        SetCityText(selected.Name);
+        WeatherCityInput.CaretIndex = WeatherCityInput.Text.Length;
+        WeatherCityInput.Focus();
+    }
+
     private async void OnWeatherAutoLocationClick(object sender, RoutedEventArgs e)
     {
         if (_weatherVm == null) return;
+
+        HideSuggestions();
+        CancelPendingSearch();
 
         WeatherActionSpinner.Visibility = Visibility.Visible;
         WeatherStatusMessage.Visibility = Visibility.Collapsed;
@@ -223,7 +842,16 @@ public partial class AcrylicModalWindow : FluentWindow
     {
         if (_weatherVm == null) return;
         string query = WeatherCityInput.Text.Trim();
-        if (string.IsNullOrWhiteSpace(query)) return;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            WeatherStatusMessage.Text = "Please enter a city or location name.";
+            WeatherStatusMessage.Visibility = Visibility.Visible;
+            WeatherCityInput.Focus();
+            return;
+        }
+
+        HideSuggestions();
+        CancelPendingSearch();
 
         WeatherActionSpinner.Visibility = Visibility.Visible;
         WeatherStatusMessage.Visibility = Visibility.Collapsed;
@@ -231,7 +859,19 @@ public partial class AcrylicModalWindow : FluentWindow
 
         try
         {
-            bool success = await _weatherVm.SetCustomCityAsync(query);
+            bool success;
+            if (_selectedLocation != null &&
+                _selectedLocation.Latitude.HasValue &&
+                _selectedLocation.Longitude.HasValue &&
+                string.Equals(_selectedLocation.Name.Trim(), query, StringComparison.OrdinalIgnoreCase))
+            {
+                success = await _weatherVm.SetCustomLocationAsync(_selectedLocation.Name, _selectedLocation.Latitude.Value, _selectedLocation.Longitude.Value);
+            }
+            else
+            {
+                success = await _weatherVm.SetCustomCityAsync(query);
+            }
+
             WeatherActionSpinner.Visibility = Visibility.Collapsed;
 
             if (success)
@@ -269,11 +909,6 @@ public partial class AcrylicModalWindow : FluentWindow
         WeatherSidebarGlyph.Visibility = Visibility.Collapsed;
         WebLinkSidebarGlyph.Visibility = Visibility.Visible;
 
-        SidebarTitleText.Text = "Web Link";
-        SidebarSubtitleText.Text = "Quick Access";
-        SidebarBadgeCategoryText.Text = "DOMAIN";
-        SidebarBadgeValueText.Text = "Website";
-
         WebLinkFaviconImage.Source = null;
         WebLinkFaviconImage.Visibility = Visibility.Collapsed;
         WebLinkFallbackIcon.Visibility = Visibility.Visible;
@@ -285,8 +920,7 @@ public partial class AcrylicModalWindow : FluentWindow
         WeatherFormGrid.Visibility = Visibility.Collapsed;
         WebLinkFormGrid.Visibility = Visibility.Visible;
 
-        WebLinkAddToCanvasCheck.IsChecked = true;
-        WebLinkAddToSidebarCheck.IsChecked = true;
+        WebLinkDestBothRadio.IsChecked = true;
 
         if (!string.IsNullOrWhiteSpace(initialUrl))
         {
@@ -298,27 +932,30 @@ public partial class AcrylicModalWindow : FluentWindow
             WebLinkTitleInput.Text = string.Empty;
         }
 
-        PrimaryActionButton.IsEnabled = !string.IsNullOrWhiteSpace(WebLinkUrlInput.Text);
+        PrimaryActionButton.IsEnabled = true;
 
         Loaded += (s, e) =>
         {
-            if (!string.IsNullOrWhiteSpace(initialUrl))
+            Dispatcher.InvokeAsync(() =>
             {
-                WebLinkTitleInput.Focus();
-                WebLinkTitleInput.SelectAll();
-            }
-            else
-            {
-                WebLinkUrlInput.Focus();
-                WebLinkUrlInput.SelectAll();
-            }
+                if (!string.IsNullOrWhiteSpace(initialUrl))
+                {
+                    WebLinkTitleInput.Focus();
+                    WebLinkTitleInput.SelectAll();
+                }
+                else
+                {
+                    WebLinkUrlInput.Focus();
+                    WebLinkUrlInput.SelectAll();
+                }
+            }, System.Windows.Threading.DispatcherPriority.Input);
         };
     }
 
     private void OnWebLinkUrlTextChanged(object sender, TextChangedEventArgs e)
     {
+        WebLinkStatusMessage.Visibility = Visibility.Collapsed;
         string raw = WebLinkUrlInput.Text.Trim();
-        PrimaryActionButton.IsEnabled = !string.IsNullOrWhiteSpace(raw);
 
         _debounceCts?.Cancel();
         _debounceCts = new CancellationTokenSource();
@@ -326,7 +963,6 @@ public partial class AcrylicModalWindow : FluentWindow
 
         if (string.IsNullOrWhiteSpace(raw))
         {
-            SidebarBadgeValueText.Text = "Website";
             WebLinkFaviconImage.Source = null;
             WebLinkFaviconImage.Visibility = Visibility.Collapsed;
             WebLinkFallbackIcon.Visibility = Visibility.Visible;
@@ -336,16 +972,6 @@ public partial class AcrylicModalWindow : FluentWindow
         }
 
         string normalized = WebFaviconService.NormalizeUrl(raw);
-
-        try
-        {
-            var uri = new Uri(normalized);
-            SidebarBadgeValueText.Text = uri.Host.Replace("www.", "");
-        }
-        catch
-        {
-            SidebarBadgeValueText.Text = "Website";
-        }
 
         if (!_userManuallyEditedTitle)
         {
@@ -421,7 +1047,7 @@ public partial class AcrylicModalWindow : FluentWindow
 
     private void OnWebLinkInputKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter && PrimaryActionButton.IsEnabled)
+        if (e.Key == Key.Enter)
         {
             ApplyWebLink();
             e.Handled = true;
@@ -448,7 +1074,13 @@ public partial class AcrylicModalWindow : FluentWindow
     private void ApplyWebLink()
     {
         string raw = WebLinkUrlInput.Text.Trim();
-        if (string.IsNullOrWhiteSpace(raw)) return;
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            WebLinkStatusMessage.Text = "Please enter a website URL.";
+            WebLinkStatusMessage.Visibility = Visibility.Visible;
+            WebLinkUrlInput.Focus();
+            return;
+        }
 
         string normalized = WebFaviconService.NormalizeUrl(raw);
         string title = WebLinkTitleInput.Text.Trim();
@@ -457,13 +1089,16 @@ public partial class AcrylicModalWindow : FluentWindow
             title = WebFaviconService.InferTitleFromUrl(normalized);
         }
 
+        bool addToCanvas = WebLinkDestBothRadio.IsChecked == true || WebLinkDestCanvasRadio.IsChecked == true;
+        bool addToSidebar = WebLinkDestBothRadio.IsChecked == true || WebLinkDestSidebarRadio.IsChecked == true;
+
         _webLinkResult = new WebLinkCreatedEventArgs
         {
             Url = normalized,
             Title = title,
             IconPath = _resolvedIconPath,
-            AddToCanvas = WebLinkAddToCanvasCheck.IsChecked == true,
-            AddToSidebar = WebLinkAddToSidebarCheck.IsChecked == true
+            AddToCanvas = addToCanvas,
+            AddToSidebar = addToSidebar
         };
 
         DialogResult = true;
@@ -488,6 +1123,10 @@ public partial class AcrylicModalWindow : FluentWindow
     {
         base.OnClosed(e);
 
+        CancelPendingSearch();
+        Suggestions.Clear();
+        _queryCache.Clear();
+
         _debounceCts?.Cancel();
         _debounceCts?.Dispose();
         _debounceCts = null;
@@ -496,6 +1135,41 @@ public partial class AcrylicModalWindow : FluentWindow
         _resolvedIconPath = null;
         _weatherVm = null;
     }
+
+    #region Geocoding DTOs
+
+    internal sealed record GeoResult(
+        [property: JsonPropertyName("name")] string Name,
+        [property: JsonPropertyName("latitude")] double? Latitude,
+        [property: JsonPropertyName("longitude")] double? Longitude,
+        [property: JsonPropertyName("admin1")] string? Admin1,
+        [property: JsonPropertyName("admin2")] string? Admin2,
+        [property: JsonPropertyName("country")] string? Country,
+        [property: JsonPropertyName("timezone")] string? Timezone)
+    {
+        [JsonIgnore]
+        public string DisplaySubtitle { get; set; } = string.Empty;
+    }
+
+    internal sealed record OpenMeteoGeocodingResponse(
+        [property: JsonPropertyName("results")] List<GeoResult>? Results);
+
+    internal sealed record PhotonResponse(
+        [property: JsonPropertyName("features")] List<PhotonFeature>? Features);
+
+    internal sealed record PhotonFeature(
+        [property: JsonPropertyName("geometry")] PhotonGeometry? Geometry,
+        [property: JsonPropertyName("properties")] PhotonProperties? Properties);
+
+    internal sealed record PhotonGeometry(
+        [property: JsonPropertyName("coordinates")] double[]? Coordinates);
+
+    internal sealed record PhotonProperties(
+        [property: JsonPropertyName("name")] string? Name,
+        [property: JsonPropertyName("state")] string? State,
+        [property: JsonPropertyName("country")] string? Country);
+
+    #endregion
 
     #region Static Helper Methods
 

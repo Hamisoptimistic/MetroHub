@@ -20,7 +20,7 @@ public sealed class WeatherService
         ConnectTimeout = TimeSpan.FromSeconds(5)
     };
 
-    private static readonly HttpClient SharedHttpClient = new(SharedHandler)
+    internal static readonly HttpClient SharedHttpClient = new(SharedHandler)
     {
         Timeout = TimeSpan.FromSeconds(10)
     };
@@ -67,15 +67,19 @@ public sealed class WeatherService
     {
         try
         {
+            // Format coordinates with invariant culture to prevent comma decimals in European locales
+            string latStr = latitude.ToString("F4", System.Globalization.CultureInfo.InvariantCulture);
+            string lonStr = longitude.ToString("F4", System.Globalization.CultureInfo.InvariantCulture);
+
             // 1. Weather Forecast URL
-            string weatherUrl = $"https://api.open-meteo.com/v1/forecast?latitude={latitude:F4}&longitude={longitude:F4}" +
+            string weatherUrl = $"https://api.open-meteo.com/v1/forecast?latitude={latStr}&longitude={lonStr}" +
                                 "&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,uv_index" +
                                 "&hourly=temperature_2m,precipitation_probability,weather_code,is_day,uv_index" +
                                 "&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_probability_max" +
                                 "&timezone=auto&forecast_days=7";
 
             // 2. Air Quality URL
-            string aqiUrl = $"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={latitude:F4}&longitude={longitude:F4}" +
+            string aqiUrl = $"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={latStr}&longitude={lonStr}" +
                             "&current=us_aqi,pm2_5,pm10,nitrogen_dioxide,ozone,sulphur_dioxide,carbon_monoxide" +
                             "&timezone=auto";
 

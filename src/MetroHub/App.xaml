@@ -27,6 +27,74 @@
             <CornerRadius x:Key="DialogOverlayCornerRadius">10,10,0,0</CornerRadius>
             <CornerRadius x:Key="DialogFooterCornerRadius">0,0,10,10</CornerRadius>
 
+            <!-- Cohesive Fluent Action Button Styles (Matching Sleek Wi-Fi Connect & Modal Submit) -->
+            <Style x:Key="FluentCohesiveActionButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="#1CFFFFFF" />
+                <Setter Property="BorderBrush" Value="#2AFFFFFF" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Foreground" Value="#F5FFFFFF" />
+                <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+                <Setter Property="UseLayoutRounding" Value="True" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="ButtonBorder"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="2"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  Margin="{TemplateBinding Padding}"
+                                                  SnapsToDevicePixels="True" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="ButtonBorder" Property="Background" Value="#30FFFFFF" />
+                                    <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#48FFFFFF" />
+                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="ButtonBorder" Property="Background" Value="#14FFFFFF" />
+                                    <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#20FFFFFF" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.35" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="FluentCohesiveSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentCohesiveActionButtonStyle}">
+                <Setter Property="Background" Value="#10FFFFFF" />
+                <Setter Property="BorderBrush" Value="#1CFFFFFF" />
+                <Setter Property="Foreground" Value="#B5FFFFFF" />
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="#22FFFFFF" />
+                        <Setter Property="BorderBrush" Value="#38FFFFFF" />
+                        <Setter Property="Foreground" Value="#FFFFFF" />
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Background" Value="#0AFFFFFF" />
+                        <Setter Property="BorderBrush" Value="#14FFFFFF" />
+                    </Trigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.35" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
             <!-- Universal Fluent ScrollBar: 100% Transparent Track (No grey background gutter ever), Translucent White Thumb -->
             <Style x:Key="ScrollBarPageButtonStyle" TargetType="{x:Type RepeatButton}">
                 <Setter Property="OverridesDefaultStyle" Value="True" />

@@ -83,12 +83,25 @@ public partial class MainWindow : BorderlessFluentWindow
                 win.Dispatcher.InvokeAsync(() =>
                 {
                     win.IsDialogOpen = false;
-                    try
+                    IntPtr foreHwnd = NativeMethods.GetForegroundWindow();
+                    IntPtr winHwnd = new WindowInteropHelper(win).Handle;
+
+                    if (foreHwnd != IntPtr.Zero && foreHwnd != winHwnd)
                     {
-                        win.Activate();
-                        win.Focus();
+                        if (win.IsVisible && !win._isDismissing)
+                        {
+                            win.HideScreen();
+                        }
                     }
-                    catch { }
+                    else
+                    {
+                        try
+                        {
+                            win.Activate();
+                            win.Focus();
+                        }
+                        catch { }
+                    }
                 });
             }
         });
@@ -102,24 +115,35 @@ public partial class MainWindow : BorderlessFluentWindow
         var win = Current;
         if (win == null) return;
 
-        if (win.Dispatcher.CheckAccess())
+        Action action = () =>
         {
             win.IsDialogOpen = isOpen;
             if (!isOpen)
             {
-                try { win.Activate(); win.Focus(); } catch { }
-            }
-        }
-        else
-        {
-            win.Dispatcher.InvokeAsync(() =>
-            {
-                win.IsDialogOpen = isOpen;
-                if (!isOpen)
+                IntPtr foreHwnd = NativeMethods.GetForegroundWindow();
+                IntPtr winHwnd = new WindowInteropHelper(win).Handle;
+
+                if (foreHwnd != IntPtr.Zero && foreHwnd != winHwnd)
+                {
+                    if (win.IsVisible && !win._isDismissing)
+                    {
+                        win.HideScreen();
+                    }
+                }
+                else
                 {
                     try { win.Activate(); win.Focus(); } catch { }
                 }
-            });
+            }
+        };
+
+        if (win.Dispatcher.CheckAccess())
+        {
+            action();
+        }
+        else
+        {
+            win.Dispatcher.InvokeAsync(action);
         }
     }
 
@@ -237,6 +261,29 @@ public partial class MainWindow : BorderlessFluentWindow
         }
     }
 
+    private static DependencyObject? GetVisualOrLogicalParent(DependencyObject? node)
+    {
+        if (node == null) return null;
+
+        if (node is Visual || node is System.Windows.Media.Media3D.Visual3D)
+        {
+            var parent = VisualTreeHelper.GetParent(node);
+            if (parent != null) return parent;
+        }
+
+        if (node is FrameworkElement fe)
+        {
+            return fe.Parent ?? fe.TemplatedParent ?? LogicalTreeHelper.GetParent(node);
+        }
+
+        if (node is FrameworkContentElement fce)
+        {
+            return fce.Parent ?? fce.TemplatedParent ?? LogicalTreeHelper.GetParent(node);
+        }
+
+        return LogicalTreeHelper.GetParent(node);
+    }
+
     private static bool IsDescendantOf(DependencyObject? node, DependencyObject root)
     {
         while (node != null)
@@ -252,26 +299,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 continue;
             }
 
-            if (node is Visual || node is System.Windows.Media.Media3D.Visual3D)
-            {
-                var parent = VisualTreeHelper.GetParent(node);
-                if (parent == null && node is FrameworkElement fe)
-                {
-                    node = fe.Parent ?? fe.TemplatedParent;
-                }
-                else
-                {
-                    node = parent;
-                }
-            }
-            else if (node is FrameworkContentElement fce)
-            {
-                node = fce.Parent ?? fce.TemplatedParent;
-            }
-            else
-            {
-                node = LogicalTreeHelper.GetParent(node);
-            }
+            node = GetVisualOrLogicalParent(node);
         }
 
         return false;
@@ -2731,7 +2759,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 }
             }
 
-            current = VisualTreeHelper.GetParent(current);
+            current = GetVisualOrLogicalParent(current);
         }
 
         return false;
@@ -2742,7 +2770,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         while (child != null)
         {
             if (child is T parent) return parent;
-            child = VisualTreeHelper.GetParent(child);
+            child = GetVisualOrLogicalParent(child);
         }
 
         return null;
@@ -4662,6 +4690,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
     {
+        if (parent is not Visual && parent is not System.Windows.Media.Media3D.Visual3D) return null;
         for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
         {
             var child = VisualTreeHelper.GetChild(parent, i);

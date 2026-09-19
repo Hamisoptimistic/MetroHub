@@ -148,19 +148,34 @@ public partial class NetworkWidgetView : UserControl
         }
     }
 
+    private static DependencyObject? GetParent(DependencyObject? node)
+    {
+        if (node == null) return null;
+        if (node is Visual || node is System.Windows.Media.Media3D.Visual3D)
+        {
+            var parent = VisualTreeHelper.GetParent(node);
+            if (parent != null) return parent;
+        }
+        if (node is FrameworkElement fe)
+            return fe.Parent ?? fe.TemplatedParent ?? LogicalTreeHelper.GetParent(node);
+        if (node is FrameworkContentElement fce)
+            return fce.Parent ?? fce.TemplatedParent ?? LogicalTreeHelper.GetParent(node);
+        return LogicalTreeHelper.GetParent(node);
+    }
+
     private static T? FindVisualParent<T>(DependencyObject? child) where T : DependencyObject
     {
         while (child != null)
         {
             if (child is T parent) return parent;
-            child = VisualTreeHelper.GetParent(child);
+            child = GetParent(child);
         }
         return null;
     }
 
     private static T? FindVisualChild<T>(DependencyObject? parent) where T : DependencyObject
     {
-        if (parent == null) return null;
+        if (parent is not Visual && parent is not System.Windows.Media.Media3D.Visual3D) return null;
         int childCount = VisualTreeHelper.GetChildrenCount(parent);
         for (int i = 0; i < childCount; i++)
         {
