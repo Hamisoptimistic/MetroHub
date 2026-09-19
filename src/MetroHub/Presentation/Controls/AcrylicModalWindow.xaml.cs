@@ -259,6 +259,13 @@ public partial class AcrylicModalWindow : FluentWindow
 
         SetCityText(weatherVm.CustomCity ?? string.Empty);
 
+        string activeLocation = !string.IsNullOrWhiteSpace(weatherVm.CustomCity)
+            ? weatherVm.CustomCity
+            : (!string.IsNullOrWhiteSpace(weatherVm.CityName) && weatherVm.CityName != "Locating..." ? weatherVm.CityName : "Automatic (GPS / IP)");
+
+        CurrentLocationText.Text = $"Current Location: {activeLocation}";
+        CurrentLocationPanel.Visibility = Visibility.Visible;
+
         WeatherStatusMessage.Text = string.Empty;
         WeatherStatusMessage.Visibility = Visibility.Collapsed;
         WeatherActionSpinner.Visibility = Visibility.Collapsed;
@@ -710,12 +717,14 @@ public partial class AcrylicModalWindow : FluentWindow
             Suggestions.Add(r);
         }
 
+        WeatherSuggestionsList.SelectedIndex = -1;
         WeatherSuggestionsPopup.IsOpen = true;
     }
 
     private void HideSuggestions()
     {
         WeatherSuggestionsPopup.IsOpen = false;
+        WeatherSuggestionsList.SelectedIndex = -1;
         Suggestions.Clear();
     }
 
@@ -739,67 +748,158 @@ public partial class AcrylicModalWindow : FluentWindow
         catch { }
     }
 
-    private void OnWeatherInputKeyDown(object sender, KeyEventArgs e)
+    private void OnWeatherInputPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Down && WeatherSuggestionsPopup.IsOpen && Suggestions.Count > 0)
+        if (e.Key == Key.Down)
         {
-            CancelPendingSearch();
-            WeatherSuggestionsList.Focus();
-            WeatherSuggestionsList.SelectedIndex = 0;
-            e.Handled = true;
-            return;
-        }
+            if (WeatherSuggestionsPopup.IsOpen && Suggestions.Count > 0)
+            {
+                CancelPendingSearch();
+                if (WeatherSuggestionsList.SelectedIndex < Suggestions.Count - 1)
+                {
+                    WeatherSuggestionsList.SelectedIndex++;
+                }
+                else
+                {
+                    WeatherSuggestionsList.SelectedIndex = 0;
+                }
 
-        if (e.Key == Key.Tab && WeatherSuggestionsPopup.IsOpen)
-        {
-            CancelPendingSearch();
-            HideSuggestions();
-            return;
+                WeatherSuggestionsList.ScrollIntoView(WeatherSuggestionsList.SelectedItem);
+                e.Handled = true;
+                return;
+            }
         }
-
-        if (e.Key == Key.Escape && WeatherSuggestionsPopup.IsOpen)
+        else if (e.Key == Key.Up)
         {
-            CancelPendingSearch();
-            HideSuggestions();
-            e.Handled = true;
-            return;
+            if (WeatherSuggestionsPopup.IsOpen && Suggestions.Count > 0)
+            {
+                CancelPendingSearch();
+                if (WeatherSuggestionsList.SelectedIndex > 0)
+                {
+                    WeatherSuggestionsList.SelectedIndex--;
+                    WeatherSuggestionsList.ScrollIntoView(WeatherSuggestionsList.SelectedItem);
+                }
+                else if (WeatherSuggestionsList.SelectedIndex == 0)
+                {
+                    WeatherSuggestionsList.SelectedIndex = -1;
+                }
+                else if (WeatherSuggestionsList.SelectedIndex < 0)
+                {
+                    WeatherSuggestionsList.SelectedIndex = Suggestions.Count - 1;
+                    WeatherSuggestionsList.ScrollIntoView(WeatherSuggestionsList.SelectedItem);
+                }
+
+                e.Handled = true;
+                return;
+            }
         }
-
-        if (e.Key == Key.Enter)
+        else if (e.Key == Key.Enter)
         {
             CancelPendingSearch();
+            if (WeatherSuggestionsPopup.IsOpen && WeatherSuggestionsList.SelectedItem is GeoResult selected)
+            {
+                SelectSuggestion(selected);
+            }
             HideSuggestions();
             ApplyWeatherLocation();
             e.Handled = true;
+            return;
         }
-    }
-
-    private void OnSuggestionListMouseUp(object sender, MouseButtonEventArgs e)
-    {
-        if (WeatherSuggestionsList.SelectedItem is GeoResult selected)
+        else if (e.Key == Key.Escape)
         {
-            CancelPendingSearch();
-            SelectSuggestion(selected);
-            e.Handled = true;
-        }
-    }
-
-    private void OnSuggestionsListKeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter)
-        {
-            if (WeatherSuggestionsList.SelectedItem is GeoResult selected)
+            if (WeatherSuggestionsPopup.IsOpen)
             {
                 CancelPendingSearch();
-                SelectSuggestion(selected);
+                HideSuggestions();
+                e.Handled = true;
+                return;
+            }
+        }
+        else if (e.Key == Key.Tab)
+        {
+            if (WeatherSuggestionsPopup.IsOpen)
+            {
+                CancelPendingSearch();
+                if (WeatherSuggestionsList.SelectedItem is GeoResult selected)
+                {
+                    SelectSuggestion(selected);
+                }
+                HideSuggestions();
+            }
+        }
+    }
+
+    private void OnSuggestionsListPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Down)
+        {
+            if (WeatherSuggestionsList.SelectedIndex < Suggestions.Count - 1)
+            {
+                WeatherSuggestionsList.SelectedIndex++;
+                WeatherSuggestionsList.ScrollIntoView(WeatherSuggestionsList.SelectedItem);
+            }
+            else
+            {
+                WeatherSuggestionsList.SelectedIndex = 0;
+            }
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Up)
+        {
+            if (WeatherSuggestionsList.SelectedIndex > 0)
+            {
+                WeatherSuggestionsList.SelectedIndex--;
+                WeatherSuggestionsList.ScrollIntoView(WeatherSuggestionsList.SelectedItem);
                 e.Handled = true;
             }
+            else
+            {
+                WeatherSuggestionsList.SelectedIndex = -1;
+                WeatherCityInput.Focus();
+                WeatherCityInput.CaretIndex = WeatherCityInput.Text.Length;
+                e.Handled = true;
+            }
+        }
+        else if (e.Key == Key.Enter)
+        {
+            CancelPendingSearch();
+            if (WeatherSuggestionsList.SelectedItem is GeoResult selected)
+            {
+                SelectSuggestion(selected);
+            }
+            HideSuggestions();
+            ApplyWeatherLocation();
+            e.Handled = true;
         }
         else if (e.Key is Key.Escape or Key.Tab)
         {
             CancelPendingSearch();
             HideSuggestions();
             WeatherCityInput.Focus();
+            e.Handled = true;
+        }
+    }
+
+    private void OnSuggestionListMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        var dep = e.OriginalSource as DependencyObject;
+        while (dep != null && dep is not ListBoxItem && dep != WeatherSuggestionsList)
+        {
+            dep = VisualTreeHelper.GetParent(dep);
+        }
+
+        if (dep is ListBoxItem lbi && lbi.DataContext is GeoResult clicked)
+        {
+            CancelPendingSearch();
+            SelectSuggestion(clicked);
+            e.Handled = true;
+            return;
+        }
+
+        if (WeatherSuggestionsList.SelectedItem is GeoResult selected)
+        {
+            CancelPendingSearch();
+            SelectSuggestion(selected);
             e.Handled = true;
         }
     }
@@ -919,6 +1019,7 @@ public partial class AcrylicModalWindow : FluentWindow
 
         WeatherFormGrid.Visibility = Visibility.Collapsed;
         WebLinkFormGrid.Visibility = Visibility.Visible;
+        CurrentLocationPanel.Visibility = Visibility.Collapsed;
 
         WebLinkDestBothRadio.IsChecked = true;
 
