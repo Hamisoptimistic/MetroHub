@@ -9,6 +9,15 @@ namespace MetroHub.Presentation.Controls;
 
 public partial class FluentVolumeSlider : UserControl
 {
+    private static readonly SolidColorBrush DefaultProgressBrush = new((Color)ColorConverter.ConvertFromString("#00B4D8"));
+    private static readonly SolidColorBrush DefaultPointerOverBrush = new((Color)ColorConverter.ConvertFromString("#33C9E8"));
+
+    static FluentVolumeSlider()
+    {
+        DefaultProgressBrush.Freeze();
+        DefaultPointerOverBrush.Freeze();
+    }
+
     public static readonly DependencyProperty ValueProperty =
         DependencyProperty.Register(
             nameof(Value),
@@ -61,6 +70,32 @@ public partial class FluentVolumeSlider : UserControl
         set => SetValue(IsMutedProperty, value);
     }
 
+    public static readonly DependencyProperty ProgressBrushProperty =
+        DependencyProperty.Register(
+            nameof(ProgressBrush),
+            typeof(Brush),
+            typeof(FluentVolumeSlider),
+            new PropertyMetadata(null, OnProgressBrushChanged));
+
+    public Brush? ProgressBrush
+    {
+        get => (Brush?)GetValue(ProgressBrushProperty);
+        set => SetValue(ProgressBrushProperty, value);
+    }
+
+    public static readonly DependencyProperty ProgressPointerOverBrushProperty =
+        DependencyProperty.Register(
+            nameof(ProgressPointerOverBrush),
+            typeof(Brush),
+            typeof(FluentVolumeSlider),
+            new PropertyMetadata(null));
+
+    public Brush? ProgressPointerOverBrush
+    {
+        get => (Brush?)GetValue(ProgressPointerOverBrushProperty);
+        set => SetValue(ProgressPointerOverBrushProperty, value);
+    }
+
     public static readonly DependencyProperty IsDraggingProperty =
         DependencyProperty.Register(
             nameof(IsDragging),
@@ -80,7 +115,15 @@ public partial class FluentVolumeSlider : UserControl
     public FluentVolumeSlider()
     {
         InitializeComponent();
-        Loaded += (s, e) => UpdateVisuals();
+        Loaded += (s, e) =>
+        {
+            ApplyProgressBrush();
+            UpdateVisuals();
+        };
+        IsEnabledChanged += (s, e) =>
+        {
+            Opacity = IsEnabled ? 1.0 : 0.4;
+        };
     }
 
     private static void OnValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -107,10 +150,32 @@ public partial class FluentVolumeSlider : UserControl
         }
     }
 
+    private static void OnProgressBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is FluentVolumeSlider slider)
+        {
+            slider.ApplyProgressBrush();
+        }
+    }
+
+    /// <summary>
+    /// Applies the ProgressBrush (or system accent fallback) to the fill track and thumb pip.
+    /// </summary>
+    private void ApplyProgressBrush()
+    {
+        var brush = ProgressBrush ?? DefaultProgressBrush;
+
+        if (ProgressFill != null) ProgressFill.Background = brush;
+        if (ThumbDot != null) ThumbDot.Fill = brush;
+    }
+
     private void UpdateMutedVisuals()
     {
-        ProgressFill.Opacity = IsMuted ? 0.35 : 1.0;
-        SliderThumb.Opacity = IsMuted ? 0.45 : (_isDragging || IsMouseOver ? 1.0 : 0.0);
+        if (ProgressFill != null) ProgressFill.Opacity = IsMuted ? 0.35 : 1.0;
+        if (SliderThumb != null)
+        {
+            SliderThumb.Opacity = (_isDragging || IsMouseOver) ? (IsMuted ? 0.45 : 1.0) : 0.0;
+        }
     }
 
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
@@ -130,9 +195,9 @@ public partial class FluentVolumeSlider : UserControl
 
         double ratio = Math.Clamp((Value - Minimum) / range, 0.0, 1.0);
 
-        ProgressClip.Rect = new Rect(0, -5, ratio * width, 24);
+        ProgressClip.Rect = new Rect(0, -10, ratio * width, 40);
 
-        double thumbWidth = SliderThumb.ActualWidth > 0 ? SliderThumb.ActualWidth : 5;
+        const double thumbWidth = 12.0;
         double maxThumbLeft = Math.Max(0, width - thumbWidth);
         double thumbLeft = ratio * maxThumbLeft;
 
@@ -144,7 +209,18 @@ public partial class FluentVolumeSlider : UserControl
         double width = RootContainer.ActualWidth;
         if (width <= 0) return;
 
-        double ratio = Math.Clamp(pos.X / width, 0.0, 1.0);
+        const double thumbWidth = 12.0;
+        double maxThumbLeft = width - thumbWidth;
+        double ratio;
+        if (maxThumbLeft > 0)
+        {
+            ratio = Math.Clamp((pos.X - (thumbWidth / 2.0)) / maxThumbLeft, 0.0, 1.0);
+        }
+        else
+        {
+            ratio = Math.Clamp(pos.X / width, 0.0, 1.0);
+        }
+
         double range = Maximum - Minimum;
         double newVal = Minimum + (ratio * range);
 
@@ -248,24 +324,50 @@ public partial class FluentVolumeSlider : UserControl
         var duration = TimeSpan.FromMilliseconds(160);
         var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
 
-        // 1. Thumb Opacity: 0 when resting, 1.0 when hovered or scrubbing
+        // 1. Circle Thumb Opacity: hidden by default at rest (0), appears when hovered or dragging (1.0)
         double targetOpacity = (isHovered || isDragging) ? (IsMuted ? 0.45 : 1.0) : 0.0;
         var thumbOpacityAnim = new DoubleAnimation(targetOpacity, duration) { EasingFunction = easing };
-        SliderThumb.BeginAnimation(OpacityProperty, thumbOpacityAnim);
+        SliderThumb?.BeginAnimation(OpacityProperty, thumbOpacityAnim);
 
-        // 2. Vertical Pill Thumb Scale: 0.6x0.7 resting -> 1.0x1.0 hover -> 1.2x1.1 dragging
-        double targetScaleX = isDragging ? 1.2 : (isHovered ? 1.0 : 0.6);
-        double targetScaleY = isDragging ? 1.1 : (isHovered ? 1.0 : 0.7);
-        var scaleXAnim = new DoubleAnimation(targetScaleX, duration) { EasingFunction = easing };
-        var scaleYAnim = new DoubleAnimation(targetScaleY, duration) { EasingFunction = easing };
-        ThumbScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
-        ThumbScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
+        // 2. Smooth scale feedback: 0.85 at rest -> 1.0 on hover -> 1.08 on dragging
+        double targetScale = isDragging ? 1.08 : (isHovered ? 1.0 : 0.85);
+        var scaleXAnim = new DoubleAnimation(targetScale, duration) { EasingFunction = easing };
+        var scaleYAnim = new DoubleAnimation(targetScale, duration) { EasingFunction = easing };
+        ThumbScale?.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
+        ThumbScale?.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
 
-        // 3. Track Height: 3px resting -> 4.5px on hover/drag
-        double targetHeight = (isHovered || isDragging) ? 4.5 : 3.0;
+        // 3. Pip color feedback: subtle brightened tint on hover/drag
+        if (ThumbDot != null)
+        {
+            if (isHovered || isDragging)
+            {
+                ThumbDot.Fill = ProgressPointerOverBrush ?? GetEffectivePointerOverBrush();
+            }
+            else
+            {
+                ThumbDot.Fill = ProgressBrush ?? DefaultProgressBrush;
+            }
+        }
+
+        // 4. Track Height: subtle grow from 4px to 4.5px on hover/drag
+        double targetHeight = (isHovered || isDragging) ? 4.5 : 4.0;
         var trackHeightAnim = new DoubleAnimation(targetHeight, duration) { EasingFunction = easing };
         TrackTrough?.BeginAnimation(HeightProperty, trackHeightAnim);
         TrackBg?.BeginAnimation(HeightProperty, trackHeightAnim);
         ProgressFill?.BeginAnimation(HeightProperty, trackHeightAnim);
+    }
+
+    private Brush GetEffectivePointerOverBrush()
+    {
+        if (ProgressPointerOverBrush != null) return ProgressPointerOverBrush;
+        if (ProgressBrush is SolidColorBrush scb)
+        {
+            Color c = scb.Color;
+            byte r = (byte)Math.Min(255, c.R + 40);
+            byte g = (byte)Math.Min(255, c.G + 40);
+            byte b = (byte)Math.Min(255, c.B + 40);
+            return new SolidColorBrush(Color.FromArgb(c.A, r, g, b));
+        }
+        return DefaultPointerOverBrush;
     }
 }

@@ -117,9 +117,25 @@ public partial class MediaWidgetView : UserControl
 
         if (SeekThumbTranslate != null)
         {
-            double thumbLeft = Math.Clamp(fillWidth - 2.5, 0, Math.Max(0, totalWidth - 5.0));
+            const double thumbWidth = 12.0;
+            double maxThumbLeft = Math.Max(0, totalWidth - thumbWidth);
+            double thumbLeft = ratio * maxThumbLeft;
             SeekThumbTranslate.X = thumbLeft;
         }
+    }
+
+    private double CalculateRatioFromPosition(Point pos)
+    {
+        double totalWidth = SeekbarContainer.ActualWidth;
+        if (totalWidth <= 0) return 0.0;
+
+        const double thumbWidth = 12.0;
+        double maxThumbLeft = totalWidth - thumbWidth;
+        if (maxThumbLeft > 0)
+        {
+            return Math.Clamp((pos.X - (thumbWidth / 2.0)) / maxThumbLeft, 0.0, 1.0);
+        }
+        return Math.Clamp(pos.X / totalWidth, 0.0, 1.0);
     }
 
     private void Seekbar_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -168,8 +184,7 @@ public partial class MediaWidgetView : UserControl
         AnimateHoverState(true, isDragging: true);
         _vm.StartScrubbing();
 
-        double x = e.GetPosition(SeekbarContainer).X;
-        double ratio = Math.Clamp(x / Math.Max(1.0, SeekbarContainer.ActualWidth), 0.0, 1.0);
+        double ratio = CalculateRatioFromPosition(e.GetPosition(SeekbarContainer));
         UpdateProgressVisuals(ratio);
     }
 
@@ -178,8 +193,7 @@ public partial class MediaWidgetView : UserControl
         if (_isDragging && _vm != null)
         {
             e.Handled = true;
-            double x = e.GetPosition(SeekbarContainer).X;
-            double ratio = Math.Clamp(x / Math.Max(1.0, SeekbarContainer.ActualWidth), 0.0, 1.0);
+            double ratio = CalculateRatioFromPosition(e.GetPosition(SeekbarContainer));
             UpdateProgressVisuals(ratio);
         }
     }
@@ -197,8 +211,7 @@ public partial class MediaWidgetView : UserControl
 
             if (_vm != null)
             {
-                double x = e.GetPosition(SeekbarContainer).X;
-                double ratio = Math.Clamp(x / Math.Max(1.0, SeekbarContainer.ActualWidth), 0.0, 1.0);
+                double ratio = CalculateRatioFromPosition(e.GetPosition(SeekbarContainer));
                 _vm.StopScrubbing(ratio);
             }
         }
@@ -222,20 +235,19 @@ public partial class MediaWidgetView : UserControl
         var duration = TimeSpan.FromMilliseconds(160);
         var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
 
-        // 1. Thumb Opacity: 0 when resting, 1 when hovered or scrubbing
+        // 1. Circular Thumb Opacity: 0 when resting, 1 when hovered or scrubbing
         double targetOpacity = (isHovered || isDragging) ? 1.0 : 0.0;
         var thumbOpacityAnim = new DoubleAnimation(targetOpacity, duration) { EasingFunction = easing };
-        SeekThumb.BeginAnimation(OpacityProperty, thumbOpacityAnim);
+        SeekThumb?.BeginAnimation(OpacityProperty, thumbOpacityAnim);
 
-        // 2. Vertical Pill Thumb Scale: 0.6x0.7 resting -> 1.0x1.0 hover -> 1.2x1.1 dragging
-        double targetScaleX = isDragging ? 1.2 : (isHovered ? 1.0 : 0.6);
-        double targetScaleY = isDragging ? 1.1 : (isHovered ? 1.0 : 0.7);
-        var scaleXAnim = new DoubleAnimation(targetScaleX, duration) { EasingFunction = easing };
-        var scaleYAnim = new DoubleAnimation(targetScaleY, duration) { EasingFunction = easing };
-        SeekThumbScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
-        SeekThumbScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
+        // 2. Circular Thumb Scale: 0.85 resting -> 1.0 hover -> 1.08 dragging
+        double targetScale = isDragging ? 1.08 : (isHovered ? 1.0 : 0.85);
+        var scaleXAnim = new DoubleAnimation(targetScale, duration) { EasingFunction = easing };
+        var scaleYAnim = new DoubleAnimation(targetScale, duration) { EasingFunction = easing };
+        SeekThumbScale?.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
+        SeekThumbScale?.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
 
-        // 3. Track Height: 2px resting -> 4px on hover/drag
+        // 3. Track Height: 2px resting -> 4px on hover/drag (matching Brightness slider default size)
         double targetHeight = (isHovered || isDragging) ? 4.0 : 2.0;
         var trackHeightAnim = new DoubleAnimation(targetHeight, duration) { EasingFunction = easing };
         SeekTrackBg?.BeginAnimation(HeightProperty, trackHeightAnim);

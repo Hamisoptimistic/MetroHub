@@ -148,6 +148,8 @@
                                             IsMuted="{Binding IsMasterMuted}"
                                             Minimum="0"
                                             Maximum="100"
+                                            ProgressBrush="#00B4D8"
+                                            ProgressPointerOverBrush="#33C9E8"
                                             Tag="InteractiveControl"
                                             SnapsToDevicePixels="True" />
 
@@ -412,6 +414,8 @@
                                                                 Margin="6,0"
                                                                 VerticalAlignment="Center"
                                                                 Value="{Binding Volume, Mode=TwoWay}"
+                                                                ProgressBrush="#00B4D8"
+                                                                ProgressPointerOverBrush="#33C9E8"
                                                                 IsMuted="{Binding IsMuted}" />
                                     <TextBlock Grid.Column="2"
                                                Text="{Binding VolumePercentText}"

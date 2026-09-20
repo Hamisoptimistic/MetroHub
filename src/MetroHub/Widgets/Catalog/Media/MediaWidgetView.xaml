@@ -341,27 +341,28 @@
                     </Border.Clip>
                 </Border>
 
-                <!-- 3. Sleek Fluent Vertical Pill Thumb (Appears on Hover/Scrubbing) -->
-                <Border x:Name="SeekThumb"
-                        Width="4"
-                        Height="12"
-                        CornerRadius="2"
-                        Background="#FFFFFF"
-                        BorderBrush="{Binding SeekbarBrush}"
-                        BorderThickness="1"
-                        HorizontalAlignment="Left"
-                        VerticalAlignment="Center"
-                        Opacity="0"
-                        SnapsToDevicePixels="True"
-                        IsHitTestVisible="False"
-                        RenderTransformOrigin="0.5,0.5">
-                    <Border.RenderTransform>
+                <!-- 3. Fluent Circular Thumb Container (Identical to Volume/Brightness slider) -->
+                <Grid x:Name="SeekThumb"
+                      HorizontalAlignment="Left"
+                      VerticalAlignment="Center"
+                      IsHitTestVisible="False"
+                      Opacity="0"
+                      RenderTransformOrigin="0.5,0.5">
+                    <Grid.RenderTransform>
                         <TransformGroup>
-                            <ScaleTransform x:Name="SeekThumbScale" ScaleX="0.6" ScaleY="0.7" />
+                            <ScaleTransform x:Name="SeekThumbScale" ScaleX="0.85" ScaleY="0.85" />
                             <TranslateTransform x:Name="SeekThumbTranslate" X="0" />
                         </TransformGroup>
-                    </Border.RenderTransform>
-                </Border>
+                    </Grid.RenderTransform>
+
+                    <!-- Clean minimal circular dot thumb using dynamic album art brush -->
+                    <Ellipse x:Name="SeekThumbDot"
+                             Width="12"
+                             Height="12"
+                             Fill="{Binding SeekbarBrush}"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center" />
+                </Grid>
             </Grid>
         </Grid>
     </widgets:WidgetCard>

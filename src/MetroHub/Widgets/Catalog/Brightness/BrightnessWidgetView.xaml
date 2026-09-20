@@ -115,6 +115,8 @@
                                             Value="{Binding MasterBrightness, Mode=TwoWay}"
                                             Minimum="0"
                                             Maximum="100"
+                                            ProgressBrush="#00B4D8"
+                                            ProgressPointerOverBrush="#33C9E8"
                                             Tag="InteractiveControl"
                                             SnapsToDevicePixels="True" />
 
@@ -168,7 +170,9 @@
                                    FontWeight="SemiBold"
                                    Foreground="#FFFFFF"
                                    VerticalAlignment="Center"
-                                   HorizontalAlignment="Center">
+                                   HorizontalAlignment="Center"
+                                   Margin="0,-1,0,0"
+                                   Typography.NumeralAlignment="Tabular">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Opacity" Value="0.0" />
@@ -334,17 +338,21 @@
                                                                             IsEnabled="{Binding IsSupported}"
                                                                             Minimum="0"
                                                                             Maximum="100"
+                                                                            ProgressBrush="#00B4D8"
+                                                                            ProgressPointerOverBrush="#33C9E8"
                                                                             Tag="InteractiveControl"
                                                                             SnapsToDevicePixels="True" />
 
-                                                <!-- 5. Brightness Percentage Text -->
+                                                <!-- 5. Brightness Percentage Text (Optically centered to slider track across all monitor rows) -->
                                                 <TextBlock Grid.Column="4"
                                                            Text="{Binding BrightnessPercentText}"
                                                            FontSize="12"
                                                            FontWeight="SemiBold"
                                                            Foreground="#FFFFFF"
                                                            VerticalAlignment="Center"
-                                                           HorizontalAlignment="Right" />
+                                                           HorizontalAlignment="Right"
+                                                           Margin="0,-2,0,0"
+                                                           Typography.NumeralAlignment="Tabular" />
                                             </Grid>
                                         </Border>
                                     </DataTemplate>

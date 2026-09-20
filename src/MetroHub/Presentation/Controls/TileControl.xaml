@@ -22,6 +22,7 @@
              xmlns:quotes="clr-namespace:MetroHub.Widgets.Catalog.Quotes"
              xmlns:habit="clr-namespace:MetroHub.Widgets.Catalog.Habit"
              xmlns:dino="clr-namespace:MetroHub.Widgets.Catalog.Dino"
+             xmlns:caffeine="clr-namespace:MetroHub.Widgets.Catalog.Caffeine"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -218,6 +219,11 @@
         <DataTemplate DataType="{x:Type dino:DinoWidgetViewModel}">
             <dino:DinoWidgetView />
         </DataTemplate>
+
+        <!-- 17. Caffeine & Light Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type caffeine:CaffeineWidgetViewModel}">
+            <caffeine:CaffeineWidgetView />
+        </DataTemplate>
     </UserControl.Resources>
 
     <Border x:Name="RootBorder"
@@ -323,6 +329,9 @@
                                 <Setter Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
                             <DataTrigger Binding="{Binding TargetPath}" Value="power">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding TargetPath}" Value="caffeine">
                                 <Setter Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
                         </Style.Triggers>

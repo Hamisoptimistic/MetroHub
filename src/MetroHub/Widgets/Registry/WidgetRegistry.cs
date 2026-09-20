@@ -282,6 +282,23 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Banner3,
             Factory: model => new MetroHub.Widgets.Catalog.Dino.DinoWidgetViewModel(model)
         ));
+
+        // Register Caffeine & Light widget
+        Register(new WidgetDefinition(
+            Id: "caffeine",
+            DisplayName: "Caffeine & Light",
+            Description: "Keep system/display awake and adjust display warmth/night light",
+            Icon: SymbolRegular.DrinkCoffee24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Banner3, // 8x3 (504x184 px)
+                WidgetSize.Mega     // 8x4
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Caffeine.CaffeineWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Caffeine.CaffeineWidgetView),
+            DefaultSize: WidgetSize.Banner3,
+            Factory: model => new MetroHub.Widgets.Catalog.Caffeine.CaffeineWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)

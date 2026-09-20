@@ -406,23 +406,30 @@
                       SizeChanged="ProgressBarContainer_SizeChanged"
                       SnapsToDevicePixels="True">
 
-                    <!-- 1. Background Track (2px tall hairline) -->
-                    <Border Height="2"
+                    <!-- 1. Dark Glass Background Under-Groove (4px tall) -->
+                    <Border Height="4"
                             VerticalAlignment="Center"
-                            Background="#14FFFFFF"
-                            CornerRadius="1"
+                            Background="#45000000"
+                            CornerRadius="2"
                             SnapsToDevicePixels="True" />
 
-                    <!-- 2. Elapsed Progress Fill Track: Luminous Glowing Fill in Phase Color -->
+                    <!-- 2. Frosted Unfilled Track Background (4px tall) -->
+                    <Border Height="4"
+                            VerticalAlignment="Center"
+                            Background="#35FFFFFF"
+                            CornerRadius="2"
+                            SnapsToDevicePixels="True" />
+
+                    <!-- 3. Elapsed Progress Fill Track: Night Light Cyan Bar (4px tall) -->
                     <Border x:Name="ProgressFill"
-                            Height="2"
+                            Height="4"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"
-                            Background="{Binding GlowSolidBrush}"
-                            CornerRadius="1"
+                            Background="#00B4D8"
+                            CornerRadius="2"
                             SnapsToDevicePixels="True">
                         <Border.Clip>
-                            <RectangleGeometry x:Name="ProgressClip" Rect="0,-5,0,12" />
+                            <RectangleGeometry x:Name="ProgressClip" Rect="0,-5,0,24" />
                         </Border.Clip>
                     </Border>
                 </Grid>

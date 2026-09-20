@@ -4,8 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
-             Height="16"
-             MinHeight="14"
+             Height="20"
+             MinHeight="18"
              Focusable="False"
              Cursor="Hand"
              ClipToBounds="False"
@@ -24,56 +24,57 @@
           SizeChanged="OnSizeChanged"
           SnapsToDevicePixels="True">
 
-        <!-- 1. Dark Glass Background Under-Groove (3px tall, matching Media Player) -->
+        <!-- 1. Dark Glass Background Under-Groove (4px tall) -->
         <Border x:Name="TrackTrough"
-                Height="3"
+                Height="4"
                 VerticalAlignment="Center"
                 Background="#45000000"
-                CornerRadius="1.5"
+                CornerRadius="2"
                 SnapsToDevicePixels="True" />
 
-        <!-- 2. Frosted Unfilled Track Background (3px tall, matching Media Player) -->
+        <!-- 2. Frosted Unfilled Track Background (4px tall) -->
         <Border x:Name="TrackBg"
-                Height="3"
+                Height="4"
                 VerticalAlignment="Center"
                 Background="#35FFFFFF"
-                CornerRadius="1.5"
+                CornerRadius="2"
                 SnapsToDevicePixels="True" />
 
-        <!-- 3. Active Luminous Accent Progress Fill (3px tall) -->
+        <!-- 3. Active Luminous Accent Progress Fill (4px tall) -->
         <Border x:Name="ProgressFill"
-                Height="3"
+                Height="4"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Center"
-                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
-                CornerRadius="1.5"
+                Background="#00B4D8"
+                CornerRadius="2"
                 SnapsToDevicePixels="True">
             <Border.Clip>
-                <RectangleGeometry x:Name="ProgressClip" Rect="0,-5,0,14" />
+                <RectangleGeometry x:Name="ProgressClip" Rect="0,-10,0,40" />
             </Border.Clip>
         </Border>
 
-        <!-- 4. Sleek Fluent Vertical Pill Thumb (5x14px, appears on hover/drag, matching Media Player) -->
-        <Border x:Name="SliderThumb"
-                Width="5"
-                Height="14"
-                CornerRadius="2.5"
-                Background="#FFFFFF"
-                BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
-                BorderThickness="1"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Center"
-                Opacity="0"
-                SnapsToDevicePixels="True"
-                IsHitTestVisible="False"
-                RenderTransformOrigin="0.5,0.5">
-            <Border.RenderTransform>
+        <!-- 4. Fluent Thumb Container (Circular thumb with accent pip, hidden at rest) -->
+        <Grid x:Name="SliderThumb"
+              HorizontalAlignment="Left"
+              VerticalAlignment="Center"
+              IsHitTestVisible="False"
+              Opacity="0"
+              RenderTransformOrigin="0.5,0.5">
+            <Grid.RenderTransform>
                 <TransformGroup>
-                    <ScaleTransform x:Name="ThumbScale" ScaleX="0.6" ScaleY="0.7" />
+                    <ScaleTransform x:Name="ThumbScale" ScaleX="0.85" ScaleY="0.85" />
                     <TranslateTransform x:Name="ThumbTranslate" X="0" />
                 </TransformGroup>
-            </Border.RenderTransform>
-        </Border>
+            </Grid.RenderTransform>
+
+            <!-- Clean minimal accent dot thumb -->
+            <Ellipse x:Name="ThumbDot"
+                     Width="12"
+                     Height="12"
+                     Fill="#00B4D8"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center" />
+        </Grid>
 
     </Grid>
 </UserControl>

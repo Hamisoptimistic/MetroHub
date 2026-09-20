@@ -1,0 +1,711 @@
+<UserControl x:Class="MetroHub.Widgets.Catalog.Caffeine.CaffeineWidgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:widgets="clr-namespace:MetroHub.Widgets"
+             xmlns:caffeine="clr-namespace:MetroHub.Widgets.Catalog.Caffeine"
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=caffeine:CaffeineWidgetViewModel}"
+             Focusable="False"
+             FocusVisualStyle="{x:Null}"
+             ClipToBounds="True"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="ClearType"
+             TextOptions.TextHintingMode="Fixed"
+             RenderOptions.ClearTypeHint="Enabled">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- Strips default dotted focus border across all controls -->
+        <Style TargetType="{x:Type Control}">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        </Style>
+
+        <!-- Fluent Icon Anti-Aliasing Style: Eliminates staircase pixelation on curved vector glyphs -->
+        <Style TargetType="{x:Type ui:SymbolIcon}">
+            <Setter Property="SnapsToDevicePixels" Value="False" />
+            <Setter Property="UseLayoutRounding" Value="False" />
+            <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+            <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
+        </Style>
+
+        <!-- Cohesive Fluent Action Button Style (Matches Wi-Fi Action / Modal Button) -->
+        <Style x:Key="FluentModeButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#1CFFFFFF" />
+            <Setter Property="BorderBrush" Value="#2AFFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#F5FFFFFF" />
+            <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Padding" Value="10,5,8,5" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"
+                                              SnapsToDevicePixels="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#30FFFFFF" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#48FFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#14FFFFFF" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#20FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.35" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Fluent Green ToggleSwitch Style (Active Green #00E676 track when ON) -->
+        <Style x:Key="FluentGreenToggleSwitchStyle" TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource {x:Type ui:ToggleSwitch}}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Style.Resources>
+                <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#00E676" />
+                <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#00FF85" />
+                <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#00CC6A" />
+                <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="#8000E676" />
+                <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#00E676" />
+                <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#00FF85" />
+                <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="#00CC6A" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#000000" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#1A1A1A" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#000000" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#000000" />
+
+                <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="Transparent" />
+                <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#0DFFFFFF" />
+                <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#18FFFFFF" />
+                <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled" Color="Transparent" />
+                <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="#70FFFFFF" />
+                <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="#90FFFFFF" />
+                <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="#55FFFFFF" />
+                <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled" Color="#35FFFFFF" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#CECECE" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="#FFFFFF" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#B0B0B0" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="#60FFFFFF" />
+
+                <SolidColorBrush x:Key="SystemAccentColorBrush" Color="#00E676" />
+                <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#00E676" />
+                <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="#00CC6A" />
+            </Style.Resources>
+        </Style>
+
+        <!-- Fluent Amber ToggleSwitch Style (Warm Amber #FFB900 track when ON) -->
+        <Style x:Key="FluentAmberToggleSwitchStyle" TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource {x:Type ui:ToggleSwitch}}">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Style.Resources>
+                <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#FFB900" />
+                <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#FFC629" />
+                <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#E5A600" />
+                <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="#80FFB900" />
+                <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#FFB900" />
+                <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#FFC629" />
+                <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="#E5A600" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#000000" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#1A1A1A" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#000000" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#000000" />
+
+                <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="Transparent" />
+                <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#0DFFFFFF" />
+                <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#18FFFFFF" />
+                <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled" Color="Transparent" />
+                <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="#70FFFFFF" />
+                <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="#90FFFFFF" />
+                <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="#55FFFFFF" />
+                <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled" Color="#35FFFFFF" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#CECECE" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="#FFFFFF" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#B0B0B0" />
+                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="#60FFFFFF" />
+
+                <SolidColorBrush x:Key="SystemAccentColorBrush" Color="#FFB900" />
+                <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#FFB900" />
+                <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="#E5A600" />
+            </Style.Resources>
+        </Style>
+
+        <!-- Caffeine WidgetTile Style: balanced optical spacing that clears the separator line without over-expanding -->
+        <Style TargetType="{x:Type widgets:WidgetTile}" BasedOn="{StaticResource WidgetTileStyle}">
+            <Setter Property="Height" Value="72" />
+            <Setter Property="IconSize" Value="22" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type widgets:WidgetTile}">
+                        <Border x:Name="TileBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                SnapsToDevicePixels="True"
+                                UseLayoutRounding="True">
+                            <Grid HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,0,4"
+                                  SnapsToDevicePixels="True">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="24" />
+                                    <RowDefinition Height="4" />
+                                    <RowDefinition Height="16" />
+                                </Grid.RowDefinitions>
+
+                                <Grid Grid.Row="0"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      SnapsToDevicePixels="True">
+                                    <ui:SymbolIcon x:Name="PART_SymbolIcon"
+                                                   Symbol="{TemplateBinding Symbol}"
+                                                   FontSize="{TemplateBinding IconSize}"
+                                                   Foreground="{TemplateBinding Foreground}"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   SnapsToDevicePixels="True"
+                                                   Visibility="Collapsed" />
+                                    <ContentControl x:Name="PART_IconContent"
+                                                    Content="{TemplateBinding Icon}"
+                                                    FontFamily="{DynamicResource AppIconFontFamily}"
+                                                    FontSize="{TemplateBinding IconSize}"
+                                                    Foreground="{TemplateBinding Foreground}"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    SnapsToDevicePixels="True" />
+                                </Grid>
+
+                                <TextBlock Grid.Row="2"
+                                           Text="{TemplateBinding Header}"
+                                           FontSize="11.5"
+                                           FontWeight="SemiBold"
+                                           Foreground="#FFFFFF"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           TextAlignment="Center"
+                                           SnapsToDevicePixels="True" />
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="HasSymbol" Value="True">
+                                <Setter TargetName="PART_SymbolIcon" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="PART_IconContent" Property="Visibility" Value="Collapsed" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#55FFFFFF" />
+                                <Setter Property="Panel.ZIndex" Value="10" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#75FFFFFF" />
+                                <Setter Property="Panel.ZIndex" Value="10" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.3" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="Transparent" SnapsToDevicePixels="True">
+        <Grid.RowDefinitions>
+            <!-- ROW 0: Reusable Modular Top Tiles Strip (Balanced 72px Height) -->
+            <RowDefinition Height="72" />
+            <!-- ROW 1: Active Panel Content -->
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ========================================================================= -->
+        <!-- ROW 0: TOP 2-TILE REGION (WidgetTiles & WidgetTile with sliding indicator) -->
+        <!-- ========================================================================= -->
+        <widgets:WidgetTiles Grid.Row="0"
+                             SelectedValue="{Binding CurrentPanel, Mode=TwoWay}"
+                             Height="72">
+            <widgets:WidgetTile Value="Caffeine"
+                                Header="Caffeine"
+                                IndicatorBrush="{Binding CaffeineTileIndicatorBrush}"
+                                ToolTip="System sleep prevention &amp; display awake management">
+                <widgets:WidgetTile.Icon>
+                    <Grid Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <!-- 1. Coffee Mug Base Icon -->
+                        <ui:SymbolIcon Symbol="DrinkCoffee24"
+                                       FontSize="22"
+                                       Foreground="#FFFFFF"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       SnapsToDevicePixels="False" />
+
+                        <!-- 2. Subtle Animated Steam Wisps (Dormant when inactive or Hub closed) -->
+                        <Canvas Width="24" Height="24"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Visibility="{Binding IsSteamAnimating, Converter={StaticResource BoolToVis}}"
+                                ClipToBounds="False">
+
+                            <!-- Left Steam Curve -->
+                            <Path Data="M 8.5,6.5 C 7.5,4.8 9.5,3.2 8.5,1.0"
+                                  Stroke="#D0FFFFFF"
+                                  StrokeThickness="1.2"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  Opacity="0">
+                                <Path.RenderTransform>
+                                    <TranslateTransform />
+                                </Path.RenderTransform>
+                                <Path.Style>
+                                    <Style TargetType="Path">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSteamAnimating}" Value="True">
+                                                <DataTrigger.EnterActions>
+                                                    <BeginStoryboard x:Name="Wisp1Storyboard">
+                                                        <Storyboard RepeatBehavior="Forever">
+                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                                             From="1.5" To="-5.5"
+                                                                             Duration="0:0:2.2" />
+                                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity"
+                                                                                           Duration="0:0:2.2">
+                                                                <DiscreteDoubleKeyFrame KeyTime="0:0:0.0" Value="0.0" />
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.7" Value="0.8" />
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:2.2" Value="0.0" />
+                                                            </DoubleAnimationUsingKeyFrames>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.EnterActions>
+                                                <DataTrigger.ExitActions>
+                                                    <StopStoryboard BeginStoryboardName="Wisp1Storyboard" />
+                                                </DataTrigger.ExitActions>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>
+                            </Path>
+
+                            <!-- Right Steam Curve (Phase-shifted for continuous natural wafting) -->
+                            <Path Data="M 12.5,6.5 C 13.5,4.8 11.5,3.2 12.5,1.0"
+                                  Stroke="#D0FFFFFF"
+                                  StrokeThickness="1.2"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  Opacity="0">
+                                <Path.RenderTransform>
+                                    <TranslateTransform />
+                                </Path.RenderTransform>
+                                <Path.Style>
+                                    <Style TargetType="Path">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSteamAnimating}" Value="True">
+                                                <DataTrigger.EnterActions>
+                                                    <BeginStoryboard x:Name="Wisp2Storyboard">
+                                                        <Storyboard RepeatBehavior="Forever">
+                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                                             From="1.5" To="-5.5"
+                                                                             Duration="0:0:2.2"
+                                                                             BeginTime="0:0:1.1" />
+                                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity"
+                                                                                           Duration="0:0:2.2"
+                                                                                           BeginTime="0:0:1.1">
+                                                                <DiscreteDoubleKeyFrame KeyTime="0:0:0.0" Value="0.0" />
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.7" Value="0.8" />
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:2.2" Value="0.0" />
+                                                            </DoubleAnimationUsingKeyFrames>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.EnterActions>
+                                                <DataTrigger.ExitActions>
+                                                    <StopStoryboard BeginStoryboardName="Wisp2Storyboard" />
+                                                </DataTrigger.ExitActions>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Path.Style>
+                            </Path>
+                        </Canvas>
+                    </Grid>
+                </widgets:WidgetTile.Icon>
+            </widgets:WidgetTile>
+
+            <widgets:WidgetTile Value="NightLight"
+                                Header="Night Light"
+                                IndicatorBrush="{Binding NightLightTileIndicatorBrush}"
+                                ToolTip="Display hardware warmth &amp; blue light reduction">
+                <widgets:WidgetTile.Icon>
+                    <Grid Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <!-- Warm Sun Breathing Aura (Only active when Night Light is on + Hub visible) -->
+                        <Border Width="18" Height="18"
+                                CornerRadius="9"
+                                Background="#FFB900"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Opacity="0">
+                            <Border.Effect>
+                                <BlurEffect Radius="10" />
+                            </Border.Effect>
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Opacity" Value="0" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsWarmSunAnimating}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard x:Name="AuraStoryboard">
+                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         From="0.25" To="0.70"
+                                                                         Duration="0:0:2.4" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <StopStoryboard BeginStoryboardName="AuraStoryboard" />
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+
+                        <!-- Night Light Symbol: Shifts to Warm Amber when active -->
+                        <ui:SymbolIcon Symbol="Lightbulb24"
+                                       FontSize="22"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       SnapsToDevicePixels="False">
+                            <ui:SymbolIcon.Style>
+                                <Style TargetType="{x:Type ui:SymbolIcon}">
+                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNightLightEnabled}" Value="True">
+                                            <Setter Property="Foreground" Value="#FFD54F" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:SymbolIcon.Style>
+                        </ui:SymbolIcon>
+                    </Grid>
+                </widgets:WidgetTile.Icon>
+            </widgets:WidgetTile>
+        </widgets:WidgetTiles>
+
+        <!-- ========================================================================= -->
+        <!-- ROW 1: LOWER PANEL REGION                                                 -->
+        <!-- ========================================================================= -->
+        <Grid Grid.Row="1" Background="Transparent" SnapsToDevicePixels="True">
+
+            <!-- ==================== 1. CAFFEINE PANEL ==================== -->
+            <Grid Visibility="{Binding IsCaffeinePanel, Converter={StaticResource BoolToVis}}"
+                  Margin="20,6,20,6"
+                  SnapsToDevicePixels="True">
+                <Grid.RowDefinitions>
+                    <!-- Row 0: Mode Selection (2 Equal-Height Centered Rows) -->
+                    <RowDefinition Height="*" />
+                    <!-- Row 1: Keep Screen On -->
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Row 0: Mode Row -->
+                <Grid Grid.Row="0" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Mode Title & Subtitle (Icon vertically centered with combined text height) -->
+                    <Grid Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <ui:SymbolIcon Grid.Column="0"
+                                       Symbol="Power24"
+                                       FontSize="22"
+                                       Foreground="#E0FFFFFF"
+                                       Margin="0,0,10,0"
+                                       VerticalAlignment="Center" />
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ModeTitle}"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       FontSize="13.5"
+                                       FontWeight="SemiBold"
+                                       Foreground="#FFFFFF"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding ModeSubtitle}"
+                                       FontFamily="{DynamicResource AppFontFamily}"
+                                       FontSize="11"
+                                       Foreground="#70FFFFFF"
+                                       Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Right: Standard WPF-UI Button with Dynamic State Content & Flyout Menu -->
+                    <ui:Button Grid.Column="1"
+                               Appearance="Secondary"
+                               Click="ModeButton_Click"
+                               VerticalAlignment="Center"
+                               Padding="12,6,10,6"
+                               Cursor="Hand"
+                               ToolTip="Select awake mode">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ModeButtonText}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,6,0" />
+                            <ui:SymbolIcon Symbol="ChevronDown16"
+                                           FontSize="11"
+                                           Foreground="#B5FFFFFF"
+                                           VerticalAlignment="Center" />
+                        </StackPanel>
+
+                        <!-- Authentic Flyout Menu -->
+                        <ui:Button.ContextMenu>
+                            <ContextMenu Placement="Bottom">
+                                <MenuItem Header="Off"
+                                          Command="{Binding SetPassiveModeCommand}">
+                                    <MenuItem.Icon>
+                                        <Border Width="3" Height="14"
+                                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                CornerRadius="1.5"
+                                                Visibility="{Binding IsModePassive, Converter={StaticResource BoolToVis}}" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Keep awake indefinitely"
+                                          Command="{Binding SetIndefiniteModeCommand}">
+                                    <MenuItem.Icon>
+                                        <Border Width="3" Height="14"
+                                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                CornerRadius="1.5"
+                                                Visibility="{Binding IsModeIndefinite, Converter={StaticResource BoolToVis}}" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="Keep awake for a time interval">
+                                    <MenuItem.Icon>
+                                        <Border Width="3" Height="14"
+                                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                CornerRadius="1.5"
+                                                Visibility="{Binding IsModeTimed, Converter={StaticResource BoolToVis}}" />
+                                    </MenuItem.Icon>
+                                    <!-- Standard Presets Submenu (15m, 30m, 1h, 2h, 4h) -->
+                                    <MenuItem Header="15 minutes"
+                                              Command="{Binding SetTimedModeCommand}"
+                                              CommandParameter="15" />
+                                    <MenuItem Header="30 minutes"
+                                              Command="{Binding SetTimedModeCommand}"
+                                              CommandParameter="30" />
+                                    <MenuItem Header="1 hour"
+                                              Command="{Binding SetTimedModeCommand}"
+                                              CommandParameter="60" />
+                                    <MenuItem Header="2 hours"
+                                              Command="{Binding SetTimedModeCommand}"
+                                              CommandParameter="120" />
+                                    <MenuItem Header="4 hours"
+                                              Command="{Binding SetTimedModeCommand}"
+                                              CommandParameter="240" />
+                                </MenuItem>
+                            </ContextMenu>
+                        </ui:Button.ContextMenu>
+                    </ui:Button>
+                </Grid>
+
+                <!-- Row 1: Keep Screen On Row -->
+                <Grid Grid.Row="1" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Keep Screen On (Icon vertically centered with combined text height) -->
+                    <Grid Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <ui:SymbolIcon Grid.Column="0"
+                                       Symbol="Desktop24"
+                                       FontSize="22"
+                                       Foreground="#E0FFFFFF"
+                                       Margin="0,0,10,0"
+                                       VerticalAlignment="Center" />
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="Keep screen on"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       FontSize="13.5"
+                                       FontWeight="SemiBold"
+                                       Foreground="#FFFFFF"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="Requires Caffeine to be turned on"
+                                       FontFamily="{DynamicResource AppFontFamily}"
+                                       FontSize="11"
+                                       Foreground="#70FFFFFF"
+                                       Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Quick Action: Turn Off Displays Immediately -->
+                        <ui:Button Command="{Binding TurnOffDisplaysCommand}"
+                                   Appearance="Secondary"
+                                   VerticalAlignment="Center"
+                                   Padding="10,5,10,5"
+                                   Margin="0,0,14,0"
+                                   Cursor="Hand"
+                                   ToolTip="Instantly power down all displays into low-power standby (moving mouse or typing wakes them)">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <ui:SymbolIcon Symbol="WeatherMoon24"
+                                               FontSize="14"
+                                               Margin="0,0,6,0"
+                                               Foreground="#D0FFFFFF"
+                                               VerticalAlignment="Center" />
+                                <TextBlock Text="Turn Off Screens"
+                                           FontSize="11.5"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </ui:Button>
+
+                        <ui:ToggleSwitch Style="{StaticResource FluentGreenToggleSwitchStyle}"
+                                         IsChecked="{Binding KeepScreenOn, Mode=TwoWay}"
+                                         IsEnabled="{Binding CanToggleKeepScreenOn}"
+                                         VerticalAlignment="Center"
+                                         Cursor="Hand" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+
+            <!-- ==================== 2. NIGHT LIGHT PANEL ==================== -->
+            <Grid Visibility="{Binding IsNightLightPanel, Converter={StaticResource BoolToVis}}"
+                  Margin="20,6,20,6"
+                  SnapsToDevicePixels="True">
+                <Grid.RowDefinitions>
+                    <!-- Row 0: Top Header (2 Equal-Height Centered Rows) -->
+                    <RowDefinition Height="*" />
+                    <!-- Row 1: Warmth Slider & Readout -->
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Row 0: Header -->
+                <Grid Grid.Row="0" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Lightbulb + Status (Icon vertically centered with combined text height) -->
+                    <Grid Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <ui:SymbolIcon Grid.Column="0"
+                                       Symbol="Lightbulb24"
+                                       FontSize="22"
+                                       Foreground="#E0FFFFFF"
+                                       Margin="0,0,10,0"
+                                       VerticalAlignment="Center" />
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding NightLightStatusTitle}"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       FontSize="13.5"
+                                       FontWeight="SemiBold"
+                                       Foreground="#FFFFFF"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding NightLightStatusSubtitle}"
+                                       FontFamily="{DynamicResource AppFontFamily}"
+                                       FontSize="11"
+                                       Foreground="#70FFFFFF"
+                                       Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Right: Green ToggleSwitch (Unified across widget) -->
+                    <ui:ToggleSwitch Grid.Column="1"
+                                     Style="{StaticResource FluentGreenToggleSwitchStyle}"
+                                     IsChecked="{Binding IsNightLightEnabled, Mode=TwoWay}"
+                                     IsEnabled="{Binding IsNightLightSupported}"
+                                     ToolTip="{Binding NightLightSupportTooltip}"
+                                     VerticalAlignment="Center"
+                                     Cursor="Hand" />
+                </Grid>
+
+                <!-- Row 1: Strength Slider & Percentage Readout -->
+                <Grid Grid.Row="1" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Warmth Icon (Aligned, neutral #E0FFFFFF, 22px) -->
+                    <ui:SymbolIcon Grid.Column="0"
+                                   Symbol="WeatherSunny24"
+                                   FontSize="22"
+                                   Foreground="#E0FFFFFF"
+                                   Margin="0,0,10,0"
+                                   VerticalAlignment="Center" />
+
+                    <!-- Fluent Volume/Progress Slider with WPF-UI Circular Thumb & Active Track Fill -->
+                    <controls:FluentVolumeSlider Grid.Column="1"
+                                                Minimum="0"
+                                                Maximum="100"
+                                                Value="{Binding NightLightStrength, Mode=TwoWay}"
+                                                ProgressBrush="#00B4D8"
+                                                ProgressPointerOverBrush="#33C9E8"
+                                                Height="20"
+                                                IsEnabled="{Binding IsNightLightSupported}"
+                                                ToolTip="{Binding NightLightSupportTooltip}"
+                                                VerticalAlignment="Center"
+                                                Cursor="Hand" />
+
+                    <!-- Percentage Strength Readout (Vertically centered to slider track line) -->
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding NightLightStrengthText}"
+                               FontFamily="{DynamicResource AppFontFamily}"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Foreground="#E0FFFFFF"
+                               Width="44"
+                               TextAlignment="Right"
+                               Typography.NumeralAlignment="Tabular"
+                               VerticalAlignment="Center"
+                               Margin="12,-2.5,0,0" />
+                </Grid>
+            </Grid>
+
+        </Grid>
+    </Grid>
+</UserControl>
