@@ -17,22 +17,22 @@
              RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
-        <!-- Windows 10 Calendar Palette Tokens -->
-        <SolidColorBrush x:Key="MonthBlockBrush" Color="#4822609A" />
-        <SolidColorBrush x:Key="TodayBadgeBrush" Color="#0078D7" />
-        <SolidColorBrush x:Key="OutOfMonthTextBrush" Color="#60FFFFFF" />
+        <!-- Windows Calendar Palette Tokens (Aligned with Habit Widget) -->
+        <SolidColorBrush x:Key="MonthBlockBrush" Color="#18FFFFFF" />
+        <SolidColorBrush x:Key="OutOfMonthTextBrush" Color="#40FFFFFF" />
         <SolidColorBrush x:Key="CurrentMonthTextBrush" Color="#FFFFFF" />
-        <SolidColorBrush x:Key="WeekdayHeaderBrush" Color="#FFFFFF" />
+        <SolidColorBrush x:Key="WeekdayHeaderBrush" Color="#80FFFFFF" />
         <SolidColorBrush x:Key="CellHoverBrush" Color="#18FFFFFF" />
 
-        <!-- Nav Button Style -->
+        <!-- 28x28 Transparent Month Stepper Navigation Button Style -->
         <Style x:Key="CalendarNavButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#E0FFFFFF" />
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="30" />
+            <Setter Property="Foreground" Value="#C0FFFFFF" />
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -48,7 +48,7 @@
                                 <Setter Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#40FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -61,57 +61,55 @@
     <widgets:WidgetCard Padding="18,16">
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" /> <!-- Header: Month/Year + Up/Down Arrows -->
+                <RowDefinition Height="Auto" /> <!-- Header: Month/Year + Chevron Navigation -->
                 <RowDefinition Height="Auto" /> <!-- Day-of-week headers: Su Mo Tu We Th Fr Sa -->
                 <RowDefinition Height="*" />    <!-- 42-day Month Grid -->
             </Grid.RowDefinitions>
 
-            <!-- 1. Header Bar -->
-            <Grid Grid.Row="0" Margin="2,0,2,12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+            <!-- 1. Header Bar: Habit-matched chevrons and centered title -->
+            <Grid Grid.Row="0" Margin="2,0,2,8">
+                <!-- Left Chevron Button -->
+                <Button HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Command="{Binding PreviousMonthCommand}"
+                        ToolTip="Previous Month"
+                        Style="{StaticResource CalendarNavButtonStyle}">
+                    <ui:SymbolIcon Symbol="ChevronLeft24" FontSize="16" />
+                </Button>
 
-                <!-- Static Month/Year Title (Display only, clicking does not alter date) -->
-                <TextBlock Grid.Column="0"
+                <!-- Center Month / Year Title (Static Text) -->
+                <TextBlock HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
                            Text="{Binding MonthYearTitle}"
-                           FontSize="22"
-                           FontWeight="SemiBold"
-                           FontFamily="{DynamicResource AppDisplayFontFamily}"
-                           Foreground="#FFFFFF"
-                           VerticalAlignment="Center" />
+                           FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                           FontSize="15"
+                           FontWeight="Bold"
+                           Foreground="#FFFFFF" />
 
-                <!-- Vertical Navigation Buttons (↑ and ↓) -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Style="{StaticResource CalendarNavButtonStyle}"
-                            Command="{Binding PreviousMonthCommand}"
-                            ToolTip="Previous month"
-                            Margin="0,0,4,0">
-                        <ui:SymbolIcon Symbol="ArrowUp20" FontSize="18" />
-                    </Button>
-                    <Button Style="{StaticResource CalendarNavButtonStyle}"
-                            Command="{Binding NextMonthCommand}"
-                            ToolTip="Next month">
-                        <ui:SymbolIcon Symbol="ArrowDown20" FontSize="18" />
-                    </Button>
-                </StackPanel>
+                <!-- Right Chevron Button -->
+                <Button HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Command="{Binding NextMonthCommand}"
+                        ToolTip="Next Month"
+                        Style="{StaticResource CalendarNavButtonStyle}">
+                    <ui:SymbolIcon Symbol="ChevronRight24" FontSize="16" />
+                </Button>
             </Grid>
 
             <!-- 2. Weekday Header (Su, Mo, Tu, We, Th, Fr, Sa) -->
-            <UniformGrid Grid.Row="1" Columns="7" Margin="0,0,0,8">
-                <TextBlock Text="Su" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                <TextBlock Text="Mo" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                <TextBlock Text="Tu" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                <TextBlock Text="We" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                <TextBlock Text="Th" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                <TextBlock Text="Fr" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                <TextBlock Text="Sa" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource WeekdayHeaderBrush}" />
+            <UniformGrid Grid.Row="1" Columns="7" Margin="0,0,0,6">
+                <TextBlock Text="Su" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                <TextBlock Text="Mo" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                <TextBlock Text="Tu" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                <TextBlock Text="We" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                <TextBlock Text="Th" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                <TextBlock Text="Fr" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                <TextBlock Text="Sa" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
             </UniformGrid>
 
             <!-- 3. 42-Day Grid Area (Seamless Single-Polygon Month Backplate + Number Grid) -->
             <Grid Grid.Row="2">
-                <!-- Seamless Single-Polygon Month Backplate: Renders month as 1 continuous shape, eliminating all internal lines/seams -->
+                <!-- Seamless Single-Polygon Month Backplate: Renders month as 1 continuous shape in neutral grey -->
                 <calendar:CalendarMonthBackplate
                     FirstDayOffset="{Binding FirstDayOffset}"
                     DaysInMonth="{Binding DaysInMonth}"
@@ -146,23 +144,6 @@
                                                   CommandParameter="{Binding}" />
                                 </Border.InputBindings>
                                 <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                                    <!-- Today Accent Square Badge -->
-                                    <Border x:Name="TodayBadge"
-                                            Visibility="Collapsed"
-                                            Background="{StaticResource TodayBadgeBrush}"
-                                            CornerRadius="2"
-                                            Margin="4"
-                                            SnapsToDevicePixels="True" />
-
-                                    <!-- Selection Outline (when clicked and not today) -->
-                                    <Border x:Name="SelectionBadge"
-                                            Visibility="Collapsed"
-                                            BorderBrush="#80FFFFFF"
-                                            BorderThickness="1"
-                                            CornerRadius="2"
-                                            Margin="4"
-                                            SnapsToDevicePixels="True" />
-
                                     <!-- Hover Overlay -->
                                     <Border x:Name="HoverOverlay"
                                             Opacity="0"
@@ -174,10 +155,29 @@
                                                Text="{Binding DayText}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
-                                               FontSize="15"
+                                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                               FontSize="13.5"
                                                FontWeight="Normal"
                                                Foreground="{StaticResource OutOfMonthTextBrush}"
                                                SnapsToDevicePixels="True" />
+
+                                    <!-- Active Date Pill Indicator (Below the date) -->
+                                    <Border x:Name="TodayPill"
+                                            Width="14"
+                                            Height="3.5"
+                                            CornerRadius="2"
+                                            Background="#60CDFF"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Bottom"
+                                            Margin="0,0,0,3"
+                                            Visibility="Collapsed"
+                                            IsHitTestVisible="False"
+                                            RenderOptions.EdgeMode="Unspecified"
+                                            SnapsToDevicePixels="False">
+                                        <Border.Effect>
+                                            <DropShadowEffect Color="#60CDFF" BlurRadius="4" ShadowDepth="0" Opacity="0.8" />
+                                        </Border.Effect>
+                                    </Border>
                                 </Grid>
                             </Border>
 
@@ -188,16 +188,10 @@
                                     <Setter TargetName="DayLabel" Property="FontWeight" Value="SemiBold" />
                                 </DataTrigger>
 
-                                <!-- Today: Bright Blue Accent Square Badge -->
+                                <!-- Today: Bright Blue Accent Pill Below Date -->
                                 <DataTrigger Binding="{Binding IsToday}" Value="True">
-                                    <Setter TargetName="TodayBadge" Property="Visibility" Value="Visible" />
-                                    <Setter TargetName="DayLabel" Property="Foreground" Value="#FFFFFF" />
+                                    <Setter TargetName="TodayPill" Property="Visibility" Value="Visible" />
                                     <Setter TargetName="DayLabel" Property="FontWeight" Value="Bold" />
-                                </DataTrigger>
-
-                                <!-- Selected Date -->
-                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                    <Setter TargetName="SelectionBadge" Property="Visibility" Value="Visible" />
                                 </DataTrigger>
 
                                 <!-- Mouse Hover -->

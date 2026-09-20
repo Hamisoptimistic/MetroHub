@@ -296,7 +296,7 @@
                         RenderOptions.EdgeMode="Aliased"
                         SnapsToDevicePixels="True" />
 
-                    <ItemsControl ItemsSource="{Binding Days}" RenderOptions.EdgeMode="Aliased">
+                    <ItemsControl ItemsSource="{Binding Days}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <local:SeamlessCalendarGrid Rows="6" Columns="7" />
@@ -374,9 +374,9 @@
                                                    VerticalAlignment="Center"
                                                    SnapsToDevicePixels="True" />
 
-                                        <!-- Small Active Date Dot Indicator (Below the date) -->
-                                        <Border x:Name="TodayDot"
-                                                Width="3.5"
+                                        <!-- Active Date Pill Indicator (Below the date) -->
+                                        <Border x:Name="TodayPill"
+                                                Width="14"
                                                 Height="3.5"
                                                 CornerRadius="2"
                                                 Background="#60CDFF"
@@ -385,9 +385,10 @@
                                                 Margin="0,0,0,3"
                                                 Visibility="Collapsed"
                                                 IsHitTestVisible="False"
-                                                SnapsToDevicePixels="True">
+                                                RenderOptions.EdgeMode="Unspecified"
+                                                SnapsToDevicePixels="False">
                                             <Border.Effect>
-                                                <DropShadowEffect Color="#60CDFF" BlurRadius="4" ShadowDepth="0" Opacity="0.9" />
+                                                <DropShadowEffect Color="#60CDFF" BlurRadius="4" ShadowDepth="0" Opacity="0.8" />
                                             </Border.Effect>
                                         </Border>
                                     </Grid>
@@ -402,7 +403,7 @@
 
                                     <!-- Today (Active Date Indicator) -->
                                     <DataTrigger Binding="{Binding IsToday}" Value="True">
-                                        <Setter TargetName="TodayDot" Property="Visibility" Value="Visible" />
+                                        <Setter TargetName="TodayPill" Property="Visibility" Value="Visible" />
                                         <Setter TargetName="DayLabel" Property="FontWeight" Value="Bold" />
                                     </DataTrigger>
 
@@ -419,34 +420,6 @@
                                         <Setter TargetName="DayLabel" Property="Foreground" Value="#FFFFFF" />
                                         <Setter TargetName="DayLabel" Property="FontWeight" Value="Bold" />
                                     </DataTrigger>
-
-                                    <!-- Today Marked Done: Crisp White Dot -->
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding IsToday}" Value="True" />
-                                            <Condition Binding="{Binding IsDone}" Value="True" />
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter TargetName="TodayDot" Property="Background" Value="#FFFFFF" />
-                                        <Setter TargetName="TodayDot" Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect Color="#FFFFFF" BlurRadius="4" ShadowDepth="0" Opacity="0.8" />
-                                            </Setter.Value>
-                                        </Setter>
-                                    </MultiDataTrigger>
-
-                                    <!-- Today Marked Failed: Crisp White Dot -->
-                                    <MultiDataTrigger>
-                                        <MultiDataTrigger.Conditions>
-                                            <Condition Binding="{Binding IsToday}" Value="True" />
-                                            <Condition Binding="{Binding IsFailed}" Value="True" />
-                                        </MultiDataTrigger.Conditions>
-                                        <Setter TargetName="TodayDot" Property="Background" Value="#FFFFFF" />
-                                        <Setter TargetName="TodayDot" Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect Color="#FFFFFF" BlurRadius="4" ShadowDepth="0" Opacity="0.8" />
-                                            </Setter.Value>
-                                        </Setter>
-                                    </MultiDataTrigger>
 
                                     <!-- Mouse Hover -->
                                     <Trigger Property="IsMouseOver" Value="True">

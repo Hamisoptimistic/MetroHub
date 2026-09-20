@@ -158,6 +158,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     private int _lastDisplayedPosSeconds = -1;
     private int _lastDisplayedDurSeconds = -1;
     private bool _isHubVisible = true;
+    private TimeSpan _lastWidgetSeekPosition = TimeSpan.Zero;
+    private long _lastWidgetSeekTimestamp = 0;
 
     public MediaWidgetViewModel(TileModel model) : base(model)
     {
@@ -394,6 +396,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             _lastTimelinePosition = TimeSpan.Zero;
             _lastLocalTimestamp = Stopwatch.GetTimestamp();
             _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
+            _lastWidgetSeekPosition = TimeSpan.Zero;
+            _lastWidgetSeekTimestamp = 0;
             _zeroDurationDetectedAt = 0;
             _trackChangedAt = Stopwatch.GetTimestamp();
             _transientZeroDetectedAt = 0;
@@ -491,6 +495,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 _lastTimelinePosition = TimeSpan.Zero;
                 _lastLocalTimestamp = Stopwatch.GetTimestamp();
                 _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
+                _lastWidgetSeekPosition = TimeSpan.Zero;
+                _lastWidgetSeekTimestamp = 0;
                 _suppressExternalPositionUpdatesUntil = 0;
                 _transientZeroDetectedAt = 0;
                 _trackDuration = TimeSpan.Zero;
@@ -580,11 +586,29 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             }
         }
 
+        bool wasPlaying = IsPlaying;
         IsPlaying = isPlaying;
 
         if (_isHubVisible && isPlaying && HasMedia && !IsLive)
         {
-            _lastLocalTimestamp = Stopwatch.GetTimestamp();
+            lock (_stateLock)
+            {
+                long now = Stopwatch.GetTimestamp();
+                if (!wasPlaying || _playbackTimer?.IsEnabled != true)
+                {
+                    double elapsed = (double)(now - _lastLocalTimestamp) / Stopwatch.Frequency;
+                    if (elapsed > 0 && wasPlaying)
+                    {
+                        double newPos = _lastTimelinePosition.TotalSeconds + (elapsed * _playbackRate);
+                        if (DurationSeconds > 0 && newPos > DurationSeconds) newPos = DurationSeconds;
+                        _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
+                        PositionSeconds = newPos;
+                        ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
+                        UpdateTimeDisplay(PositionSeconds, DurationSeconds);
+                    }
+                    _lastLocalTimestamp = now;
+                }
+            }
             if (_playbackTimer?.IsEnabled != true)
             {
                 _playbackTimer?.Start();
@@ -592,6 +616,24 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         }
         else
         {
+            if (wasPlaying && !isPlaying)
+            {
+                lock (_stateLock)
+                {
+                    long now = Stopwatch.GetTimestamp();
+                    double elapsed = (double)(now - _lastLocalTimestamp) / Stopwatch.Frequency;
+                    if (elapsed > 0)
+                    {
+                        double newPos = _lastTimelinePosition.TotalSeconds + (elapsed * _playbackRate);
+                        if (DurationSeconds > 0 && newPos > DurationSeconds) newPos = DurationSeconds;
+                        _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
+                        PositionSeconds = newPos;
+                        ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
+                        UpdateTimeDisplay(PositionSeconds, DurationSeconds);
+                    }
+                    _lastLocalTimestamp = now;
+                }
+            }
             _playbackTimer?.Stop();
         }
     }
@@ -730,12 +772,37 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 }
 
                 TimeSpan calculatedPos = incomingPos;
-                if (IsPlaying && incomingUpdateTime > DateTimeOffset.MinValue)
+                bool hasValidTimestamp = incomingUpdateTime > DateTimeOffset.MinValue && incomingUpdateTime.Year > 2000;
+
+                if (IsPlaying && hasValidTimestamp)
                 {
                     var diff = (DateTimeOffset.UtcNow - incomingUpdateTime).TotalSeconds;
-                    if (diff >= 0)
+                    if (diff >= 0 && diff < 86400)
                     {
                         calculatedPos += TimeSpan.FromSeconds(diff * _playbackRate);
+                    }
+                }
+                else if (IsPlaying && !hasValidTimestamp)
+                {
+                    // Media player (Spotify, browser, etc.) does not supply LastUpdatedTime.
+                    // If incomingPos is an echo of our own widget seek and we've already progressed past it,
+                    // do not rewind back to the static seek anchor.
+                    if (_lastWidgetSeekTimestamp > 0 && Math.Abs((incomingPos - _lastWidgetSeekPosition).TotalSeconds) <= 2.5)
+                    {
+                        if (_lastTimelinePosition >= _lastWidgetSeekPosition)
+                        {
+                            return;
+                        }
+                    }
+
+                    // Also reject if incomingPos is behind our smoothly extrapolated position
+                    if (_lastTimelinePosition > TimeSpan.Zero && calculatedPos <= _lastTimelinePosition)
+                    {
+                        double lag = (_lastTimelinePosition - calculatedPos).TotalSeconds;
+                        if (lag < 90.0)
+                        {
+                            return; // Ignore stale un-timestamped rewind
+                        }
                     }
                 }
 
@@ -763,7 +830,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 }
                 _transientZeroDetectedAt = 0;
 
-                if (incomingUpdateTime > DateTimeOffset.MinValue)
+                if (hasValidTimestamp)
                 {
                     _lastAcceptedOsUpdateTime = incomingUpdateTime;
                 }
@@ -893,7 +960,9 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             ProgressRatio = ratio;
             _lastTimelinePosition = TimeSpan.FromSeconds(targetSeconds);
             _lastLocalTimestamp = Stopwatch.GetTimestamp();
-            _suppressExternalPositionUpdatesUntil = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 1.2);
+            _lastWidgetSeekPosition = TimeSpan.FromSeconds(targetSeconds);
+            _lastWidgetSeekTimestamp = Stopwatch.GetTimestamp();
+            _suppressExternalPositionUpdatesUntil = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 2.5);
             _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
         }
         UpdateTimeDisplay(PositionSeconds, DurationSeconds);
@@ -923,6 +992,21 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
             if (!targetState)
             {
+                lock (_stateLock)
+                {
+                    long now = Stopwatch.GetTimestamp();
+                    double elapsed = (double)(now - _lastLocalTimestamp) / Stopwatch.Frequency;
+                    if (elapsed > 0)
+                    {
+                        double newPos = _lastTimelinePosition.TotalSeconds + (elapsed * _playbackRate);
+                        if (DurationSeconds > 0 && newPos > DurationSeconds) newPos = DurationSeconds;
+                        _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
+                        PositionSeconds = newPos;
+                        ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
+                        UpdateTimeDisplay(PositionSeconds, DurationSeconds);
+                    }
+                    _lastLocalTimestamp = now;
+                }
                 _playbackTimer?.Stop();
             }
             else if (_isHubVisible && HasMedia && !IsLive)
@@ -1000,6 +1084,10 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         _lastDisplayedDurSeconds = -1;
         IsLive = false;
         CanSeek = true;
+        _lastTimelinePosition = TimeSpan.Zero;
+        _lastLocalTimestamp = Stopwatch.GetTimestamp();
+        _lastWidgetSeekPosition = TimeSpan.Zero;
+        _lastWidgetSeekTimestamp = 0;
         _playbackTimer?.Stop();
     }
 
@@ -1008,18 +1096,53 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         _isHubVisible = false;
         _playbackTimer?.Stop();
 
-        // Release decoded album art bitmap from GPU/DirectX memory
-        // Compressed raw bytes (_cachedThumbnailBytes) remain intact in managed memory (~20 KB)
-        RunOnUi(() =>
+        lock (_stateLock)
         {
-            Thumbnail = null;
-            HasThumbnail = false;
-        });
+            if (IsPlaying && !IsLive && HasMedia)
+            {
+                long now = Stopwatch.GetTimestamp();
+                double elapsed = (double)(now - _lastLocalTimestamp) / Stopwatch.Frequency;
+                if (elapsed > 0)
+                {
+                    double newPos = _lastTimelinePosition.TotalSeconds + (elapsed * _playbackRate);
+                    if (DurationSeconds > 0 && newPos > DurationSeconds)
+                    {
+                        newPos = DurationSeconds;
+                    }
+                    _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
+                    PositionSeconds = newPos;
+                    ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
+                }
+                _lastLocalTimestamp = now;
+            }
+        }
     }
 
     public override void Resume()
     {
         _isHubVisible = true;
+
+        lock (_stateLock)
+        {
+            if (IsPlaying && !IsLive && HasMedia)
+            {
+                long now = Stopwatch.GetTimestamp();
+                double elapsedWhileHidden = (double)(now - _lastLocalTimestamp) / Stopwatch.Frequency;
+                if (elapsedWhileHidden > 0)
+                {
+                    double newPos = _lastTimelinePosition.TotalSeconds + (elapsedWhileHidden * _playbackRate);
+                    if (DurationSeconds > 0 && newPos > DurationSeconds)
+                    {
+                        newPos = DurationSeconds;
+                    }
+                    _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
+                    PositionSeconds = newPos;
+                    ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
+                    UpdateTimeDisplay(PositionSeconds, DurationSeconds);
+                }
+                _lastLocalTimestamp = now;
+            }
+        }
 
         RunOnUi(() =>
         {
@@ -1035,7 +1158,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
             if (IsPlaying && HasMedia && !IsLive)
             {
-                _lastLocalTimestamp = Stopwatch.GetTimestamp();
                 _playbackTimer?.Start();
             }
         });
