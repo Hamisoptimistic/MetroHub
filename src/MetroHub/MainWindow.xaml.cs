@@ -1275,6 +1275,18 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         InstalledAppsService.PauseWatchers();
         UninstallWinEventHook();
 
+        // ── GC Diagnostic: managed vs native leak detection ──
+        var beforeMB = GC.GetTotalMemory(false) / 1024 / 1024;
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        var afterMB = GC.GetTotalMemory(false) / 1024 / 1024;
+        double wsMB;
+        using (var proc = System.Diagnostics.Process.GetCurrentProcess())
+            wsMB = proc.WorkingSet64 / (1024.0 * 1024.0);
+        MetroHub.Core.Services.HiddenDiagnosticsLogger.Log(
+            $"[GC DIAG] Managed heap: {beforeMB} MB → {afterMB} MB (freed {beforeMB - afterMB} MB) | Working Set: {wsMB:0.0} MB");
+
         DismissWithAnimation();
     }
 

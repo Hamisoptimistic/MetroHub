@@ -16,7 +16,7 @@ public static class HiddenDiagnosticsLogger
     /// Set to true whenever you want to record hidden-state diagnostics and resource tracking to hidden_diagnostics.log.
     /// Disabled by default to ensure zero disk I/O, zero CPU overhead, and zero diagnostic memory footprint.
     /// </summary>
-    public static bool IsEnabled { get; set; } = false;
+    public static bool IsEnabled { get; set; } = true;
 
     private static string _logFilePath = @"d:\MetroHub\hidden_diagnostics.log";
     private static readonly object _lock = new();
@@ -26,12 +26,10 @@ public static class HiddenDiagnosticsLogger
 
     static HiddenDiagnosticsLogger()
     {
-        if (!IsEnabled) return;
-
         try
         {
             string dir = Path.GetDirectoryName(_logFilePath) ?? string.Empty;
-            if (!Directory.Exists(dir))
+            if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir))
             {
                 _logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "hidden_diagnostics.log");
             }
@@ -50,6 +48,12 @@ public static class HiddenDiagnosticsLogger
         double wsMb = GetWorkingSetMb();
         string state = isVisible ? "SHOWN (Foreground Active)" : "HIDDEN (Background Dormant)";
         WriteEntry($"[TRANSITION] MetroHub is now {state} | Working Set: {wsMb:0.0} MB");
+    }
+
+    public static void Log(string message)
+    {
+        if (!IsEnabled) return;
+        WriteEntry(message);
     }
 
     public static void LogHiddenEvent(string source, string eventName, string? details = null)
