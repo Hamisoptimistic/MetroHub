@@ -1318,6 +1318,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(IsWifiTurnedOffBannerVisible))]
     [NotifyPropertyChangedFor(nameof(WifiTransitionStatusText))]
     [NotifyPropertyChangedFor(nameof(HasNoAvailableNetworks))]
+    [NotifyPropertyChangedFor(nameof(IsWifiTransitioning))]
     private bool _isWifiRadioBusy;
 
     private bool? _optimisticWifiRadioTarget;
@@ -1329,6 +1330,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     public bool IsWifiContentVisible => HasWifiAdapter && IsWifiRadioOn && !IsWifiRadioBusy;
     public bool IsWifiTurnedOffBannerVisible => HasWifiAdapter && IsWifiRadioDisabled && !IsWifiRadioBusy;
     public string WifiTransitionStatusText => IsWifiRadioOn ? "Turning on Wi-Fi..." : "Turning off Wi-Fi...";
+    public bool IsWifiTransitioning => IsWifiRadioBusy;
 
     public bool IsWifiRadioEnabled
     {
@@ -1347,6 +1349,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         OnPropertyChanged(nameof(IsWifiRadioDisabled));
         OnPropertyChanged(nameof(CanToggleWifiRadio));
         OnPropertyChanged(nameof(IsWifiRadioBusy));
+        OnPropertyChanged(nameof(IsWifiTransitioning));
         OnPropertyChanged(nameof(IsWifiContentVisible));
         OnPropertyChanged(nameof(IsWifiTurnedOffBannerVisible));
         OnPropertyChanged(nameof(WifiTransitionStatusText));

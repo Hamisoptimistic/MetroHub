@@ -99,7 +99,7 @@
 
                     <!-- Left: Standardized Optical Weather Icon -->
                     <Image Grid.Column="0"
-                           Source="{Binding WeatherIconSource}"
+                           Source="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                            Height="100" Width="100"
                            RenderOptions.BitmapScalingMode="HighQuality"
                            SnapsToDevicePixels="True"
@@ -148,7 +148,7 @@
 
                     <!-- Left: Large Weather Icon -->
                     <Image Grid.Column="0"
-                           Source="{Binding WeatherIconSource}"
+                           Source="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                            Width="76" Height="76"
                            RenderOptions.BitmapScalingMode="HighQuality"
                            SnapsToDevicePixels="True"
@@ -268,7 +268,7 @@
 
                 <!-- Center: Standardized Optical Weather Icon -->
                 <Image Grid.Column="1"
-                       Source="{Binding WeatherIconSource}"
+                       Source="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                        Height="66" Width="66"
                        RenderOptions.BitmapScalingMode="HighQuality"
                        SnapsToDevicePixels="True"

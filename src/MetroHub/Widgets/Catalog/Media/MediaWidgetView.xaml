@@ -89,7 +89,7 @@
                             RenderOptions.BitmapScalingMode="HighQuality"
                             Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}">
                         <Border.Background>
-                            <ImageBrush ImageSource="{Binding Thumbnail}"
+                            <ImageBrush ImageSource="{Binding Thumbnail, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                                         Stretch="UniformToFill"
                                         RenderOptions.BitmapScalingMode="HighQuality" />
                         </Border.Background>

@@ -1157,7 +1157,7 @@
                             </Style>
                         </Grid.Style>
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <ui:ProgressRing IsIndeterminate="{Binding IsWifiTransitioning}"
+                            <ui:ProgressRing IsIndeterminate="{Binding IsWifiRadioBusy}"
                                              Width="36"
                                              Height="36"
                                              Foreground="#FFFFFF"

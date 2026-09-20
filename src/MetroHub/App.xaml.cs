@@ -15,6 +15,7 @@ public partial class App : Application
     private static Mutex? _singleInstanceMutex;
     private static bool _ownsMutex;
     private static EventWaitHandle? _wakeEvent;
+    private static RegisteredWaitHandle? _registeredWakeHandle;
     private TaskbarIcon? _notifyIcon;
     private MainWindow? _mainWindow;
 
@@ -43,6 +44,8 @@ public partial class App : Application
             catch { }
         };
 
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
         // Grant permission for this process and any instances to manage foreground window
         NativeMethods.AllowSetForegroundWindow(NativeMethods.ASFW_ANY);
 
@@ -68,16 +71,21 @@ public partial class App : Application
         try
         {
             _wakeEvent = new EventWaitHandle(false, EventResetMode.AutoReset, EventName);
-            Task.Run(() =>
-            {
-                while (_wakeEvent.WaitOne())
+            _registeredWakeHandle = ThreadPool.RegisterWaitForSingleObject(
+                _wakeEvent,
+                (state, timedOut) =>
                 {
-                    Dispatcher.Invoke(() =>
+                    if (!timedOut)
                     {
-                        _mainWindow?.ShowScreen();
-                    });
-                }
-            });
+                        Dispatcher.InvokeAsync(() =>
+                        {
+                            _mainWindow?.ShowScreen();
+                        });
+                    }
+                },
+                null,
+                -1,
+                false);
         }
         catch { }
 
@@ -166,6 +174,18 @@ public partial class App : Application
         {
             _notifyIcon.Dispose();
             _notifyIcon = null;
+        }
+
+        if (_registeredWakeHandle != null)
+        {
+            _registeredWakeHandle.Unregister(null);
+            _registeredWakeHandle = null;
+        }
+
+        if (_wakeEvent != null)
+        {
+            _wakeEvent.Dispose();
+            _wakeEvent = null;
         }
 
         if (_singleInstanceMutex != null)

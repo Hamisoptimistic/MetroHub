@@ -388,7 +388,7 @@
 
                                 <Grid Width="22" Height="22">
                                     <!-- Real Application / Shell Icon (when CustomIconPath exists) -->
-                                    <Image Source="{Binding CustomIconPath}"
+                                    <Image Source="{Binding CustomIconPath, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                                            Width="20"
                                            Height="20"
                                            HorizontalAlignment="Center"

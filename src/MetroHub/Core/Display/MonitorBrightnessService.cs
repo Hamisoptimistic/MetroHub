@@ -387,11 +387,15 @@ public sealed class MonitorBrightnessService : IDisposable
 
     #region WMI Internal Panel Support
 
+    private static volatile bool _isWmiBrightnessSupported = true;
+
     private sealed record WmiDisplayInfo(string Id, string InstanceName, string FriendlyName, uint CurrentBrightness);
 
     private static List<WmiDisplayInfo> GetWmiInternalDisplays()
     {
         var results = new List<WmiDisplayInfo>();
+        if (!_isWmiBrightnessSupported) return results;
+
         try
         {
             var monitorNames = GetWmiMonitorNames();
@@ -436,7 +440,14 @@ public sealed class MonitorBrightnessService : IDisposable
                 }
             }
         }
-        catch { }
+        catch (ManagementException)
+        {
+            _isWmiBrightnessSupported = false;
+        }
+        catch
+        {
+            _isWmiBrightnessSupported = false;
+        }
         return results;
     }
 

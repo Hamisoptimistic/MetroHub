@@ -349,7 +349,7 @@
                                                         </Grid.ColumnDefinitions>
 
                                                         <Image Grid.Column="0"
-                                                               Source="{Binding Icon}"
+                                                               Source="{Binding Icon, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                                                                Width="22"
                                                                Height="22"
                                                                HorizontalAlignment="Center"
@@ -420,7 +420,7 @@
                                         </Grid.ColumnDefinitions>
 
                                         <Image Grid.Column="0"
-                                               Source="{Binding Icon}"
+                                               Source="{Binding Icon, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                                                Width="22"
                                                Height="22"
                                                HorizontalAlignment="Center"

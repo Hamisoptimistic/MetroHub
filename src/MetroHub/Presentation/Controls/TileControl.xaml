@@ -46,7 +46,7 @@
                   
                 <!-- 1x1 Small Tile Layout (56x56) -->
                 <Grid Visibility="{Binding IsSmall, Converter={StaticResource BoolToVis}}">
-                    <Image Source="{Binding IconPath}"
+                    <Image Source="{Binding IconPath, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Width="28" Height="28"
@@ -57,7 +57,7 @@
 
                 <!-- 2x2 Medium Tile Layout (120x120) -->
                 <Grid Visibility="{Binding IsMedium, Converter={StaticResource BoolToVis}}">
-                    <Image Source="{Binding IconPath}"
+                    <Image Source="{Binding IconPath, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Width="44" Height="44"
@@ -85,7 +85,7 @@
 
                 <!-- 4x2 Wide Tile Layout (248x120) -->
                 <Grid Visibility="{Binding IsWide, Converter={StaticResource BoolToVis}}">
-                    <Image Source="{Binding IconPath}"
+                    <Image Source="{Binding IconPath, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Width="46" Height="46"

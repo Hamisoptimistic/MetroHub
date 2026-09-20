@@ -96,6 +96,12 @@ public static class NativeMethods
         // Banned GC.Collect / EmptyWorkingSet removed per WPF_PERFORMANCE_Deepseek.md Rule 8
     }
 
+    [DllImport("user32.dll")]
+    public static extern uint GetGuiResources(IntPtr hProcess, uint uiFlags);
+
+    public const uint GR_GDIOBJECTS = 0;
+    public const uint GR_USEROBJECTS = 1;
+
     #endregion
 
     #region Hotkeys
