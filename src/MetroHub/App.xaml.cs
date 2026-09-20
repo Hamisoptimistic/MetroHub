@@ -143,8 +143,25 @@ public partial class App : Application
         _notifyIcon.ContextMenu = menu;
     }
 
+    protected override void OnSessionEnding(SessionEndingCancelEventArgs e)
+    {
+        try
+        {
+            _mainWindow?.SaveGroupsAndLayout();
+        }
+        catch { }
+
+        base.OnSessionEnding(e);
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
+        try
+        {
+            _mainWindow?.SaveGroupsAndLayout();
+        }
+        catch { }
+
         if (_notifyIcon != null)
         {
             _notifyIcon.Dispose();

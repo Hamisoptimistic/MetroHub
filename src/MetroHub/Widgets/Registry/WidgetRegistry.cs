@@ -250,6 +250,22 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Banner3,
             Factory: model => new MetroHub.Widgets.Catalog.Quotes.QuotesWidgetViewModel(model)
         ));
+
+        // Register Habit Tracker widget
+        Register(new WidgetDefinition(
+            Id: "habit",
+            DisplayName: "Habit Tracker",
+            Description: "Dedicated single-habit monthly streak matrix and daily accountability tracker",
+            Icon: SymbolRegular.TargetArrow24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Huge // 8x6
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Habit.HabitWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Habit.HabitWidgetView),
+            DefaultSize: WidgetSize.Huge,
+            Factory: model => new MetroHub.Widgets.Catalog.Habit.HabitWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)

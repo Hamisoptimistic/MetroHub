@@ -207,6 +207,10 @@ public partial class TileControl : UserControl
                     quotesVm.NextQuote();
                     return;
                 }
+                if (tile.TileContent is Widgets.Catalog.Habit.HabitWidgetViewModel)
+                {
+                    return;
+                }
                 return;
             }
 
@@ -231,7 +235,7 @@ public partial class TileControl : UserControl
 
     public void AnimatePressDown()
     {
-        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" or "photos" or "volume" or "notepad" or "network" or "brightness" or "power" or "quotes" })
+        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" or "photos" or "volume" or "notepad" or "network" or "brightness" or "power" or "quotes" or "habit" })
         {
             return;
         }
@@ -1073,6 +1077,78 @@ public partial class TileControl : UserControl
                 TileContextMenu.Items.Insert(2, copyQuoteItem);
                 TileContextMenu.Items.Insert(3, fontMenuItem);
                 TileContextMenu.Items.Insert(4, quotesDivider);
+            }
+            else if (tile.TileContent is Widgets.Catalog.Habit.HabitWidgetViewModel habitVm)
+            {
+                var editHabitItem = new MenuItem
+                {
+                    Header = "Edit Habit...",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Edit24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                editHabitItem.Click += (s, ev) => habitVm.EditHabit();
+
+                var markTodayItem = new MenuItem
+                {
+                    Header = "Toggle Today (Done / Unmarked)",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.CheckmarkCircle24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                markTodayItem.Click += (s, ev) => habitVm.ToggleToday();
+
+                var jumpCurrentMonthItem = new MenuItem
+                {
+                    Header = "Jump to Current Month",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.CalendarToday24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                jumpCurrentMonthItem.Click += (s, ev) => habitVm.JumpToCurrentMonth();
+
+                var resetItem = new MenuItem
+                {
+                    Header = "Reset All Habit Data...",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Delete24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                resetItem.Click += (s, ev) =>
+                {
+                    var result = System.Windows.MessageBox.Show(
+                        $"Are you sure you want to reset all tracking data for '{habitVm.HabitName}'? This cannot be undone.",
+                        "Reset Habit Data",
+                        System.Windows.MessageBoxButton.YesNo,
+                        System.Windows.MessageBoxImage.Warning);
+                    if (result == System.Windows.MessageBoxResult.Yes)
+                    {
+                        habitVm.ResetAllData();
+                    }
+                };
+
+                var habitDivider = new Separator { Tag = "WidgetCustomMenu" };
+                TileContextMenu.Items.Insert(1, editHabitItem);
+                TileContextMenu.Items.Insert(2, markTodayItem);
+                TileContextMenu.Items.Insert(3, jumpCurrentMonthItem);
+                TileContextMenu.Items.Insert(4, resetItem);
+                TileContextMenu.Items.Insert(5, habitDivider);
             }
         }
         else

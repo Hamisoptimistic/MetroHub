@@ -20,6 +20,7 @@
              xmlns:power="clr-namespace:MetroHub.Widgets.Catalog.Power"
              xmlns:weather="clr-namespace:MetroHub.Widgets.Catalog.Weather"
              xmlns:quotes="clr-namespace:MetroHub.Widgets.Catalog.Quotes"
+             xmlns:habit="clr-namespace:MetroHub.Widgets.Catalog.Habit"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -205,6 +206,11 @@
         <!-- 14. Quotes Widget DataTemplate -->
         <DataTemplate DataType="{x:Type quotes:QuotesWidgetViewModel}">
             <quotes:QuotesWidgetView />
+        </DataTemplate>
+
+        <!-- 15. Habit Tracker Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type habit:HabitWidgetViewModel}">
+            <habit:HabitWidgetView />
         </DataTemplate>
     </UserControl.Resources>
 

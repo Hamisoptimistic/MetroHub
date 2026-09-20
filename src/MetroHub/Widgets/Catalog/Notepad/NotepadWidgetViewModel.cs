@@ -239,6 +239,19 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
             };
 
             Model.SettingsJson = WidgetSerializer.Serialize(settings);
+
+            var mw = MainWindow.Current;
+            if (mw != null)
+            {
+                if (mw.Dispatcher.CheckAccess())
+                {
+                    mw.SaveGroupsAndLayout();
+                }
+                else
+                {
+                    mw.Dispatcher.Invoke(() => mw.SaveGroupsAndLayout());
+                }
+            }
         }
         catch
         {

@@ -1265,6 +1265,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         Keyboard.ClearFocus();
         FocusManager.SetFocusedElement(this, this);
         MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(false));
+        try { SaveGroupsAndLayout(); } catch { }
         if (!Settings.SidebarPinned)
         {
             HideSidebarRail(immediate: true);
@@ -5826,6 +5827,8 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
+        try { SaveGroupsAndLayout(); } catch { }
+
         if (!_isClosingToExit)
         {
             e.Cancel = true;
@@ -5842,6 +5845,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     public void ExitApplication()
     {
         _isClosingToExit = true;
+        try { SaveGroupsAndLayout(); } catch { }
         InstalledAppsService.PauseWatchers();
         UninstallWinEventHook();
         _hotkeyService.Dispose();
