@@ -21,6 +21,7 @@
              xmlns:weather="clr-namespace:MetroHub.Widgets.Catalog.Weather"
              xmlns:quotes="clr-namespace:MetroHub.Widgets.Catalog.Quotes"
              xmlns:habit="clr-namespace:MetroHub.Widgets.Catalog.Habit"
+             xmlns:dino="clr-namespace:MetroHub.Widgets.Catalog.Dino"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -211,6 +212,11 @@
         <!-- 15. Habit Tracker Widget DataTemplate -->
         <DataTemplate DataType="{x:Type habit:HabitWidgetViewModel}">
             <habit:HabitWidgetView />
+        </DataTemplate>
+
+        <!-- 16. Chrome Dino Runner Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type dino:DinoWidgetViewModel}">
+            <dino:DinoWidgetView />
         </DataTemplate>
     </UserControl.Resources>
 

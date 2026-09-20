@@ -1,0 +1,214 @@
+<UserControl x:Class="MetroHub.Widgets.Catalog.Dino.DinoWidgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MetroHub.Widgets.Catalog.Dino"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=local:DinoWidgetViewModel}"
+             Focusable="True"
+             Width="504" 
+             Height="184"
+             ClipToBounds="True"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True"
+             RenderOptions.EdgeMode="Aliased"
+             RenderOptions.BitmapScalingMode="NearestNeighbor"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="ClearType">
+
+    <Grid x:Name="RootGrid" Background="#F7F7F7" ClipToBounds="True">
+        <!-- Main Game Canvas -->
+        <Canvas x:Name="GameCanvas" Width="504" Height="184" ClipToBounds="True">
+            <!-- 1. Celestial / Night Sky Layer (Moon & Stars) -->
+            <Path x:Name="MoonShape" 
+                  Data="{x:Static local:DinoGeometries.Moon}" 
+                  Canvas.Left="430" 
+                  Canvas.Top="20" 
+                  Fill="#E8EAED" 
+                  Opacity="0.0" />
+
+            <Path x:Name="Star1" 
+                  Data="{x:Static local:DinoGeometries.Star}" 
+                  Canvas.Left="130" 
+                  Canvas.Top="35" 
+                  Fill="#E8EAED" 
+                  Opacity="0.0" />
+
+            <Path x:Name="Star2" 
+                  Data="{x:Static local:DinoGeometries.Star}" 
+                  Canvas.Left="270" 
+                  Canvas.Top="22" 
+                  Fill="#E8EAED" 
+                  Opacity="0.0" />
+
+            <Path x:Name="Star3" 
+                  Data="{x:Static local:DinoGeometries.Star}" 
+                  Canvas.Left="370" 
+                  Canvas.Top="48" 
+                  Fill="#E8EAED" 
+                  Opacity="0.0" />
+
+            <!-- 2. Clouds Layer (Drifting) -->
+            <Path x:Name="Cloud1" 
+                  Data="{x:Static local:DinoGeometries.Cloud}" 
+                  Canvas.Left="150" 
+                  Canvas.Top="32" 
+                  Fill="#C4C4C4" 
+                  Opacity="0.75" />
+
+            <Path x:Name="Cloud2" 
+                  Data="{x:Static local:DinoGeometries.Cloud}" 
+                  Canvas.Left="390" 
+                  Canvas.Top="50" 
+                  Fill="#C4C4C4" 
+                  Opacity="0.75" />
+
+            <!-- 3. Ground Line & Scrolling Bumps -->
+            <Line x:Name="GroundBaseLine" 
+                  X1="0" Y1="145" 
+                  X2="504" Y2="145" 
+                  Stroke="#535353" 
+                  StrokeThickness="1" />
+
+            <!-- Scrolling Ground Pebbles & Bumps Group 1 & 2 -->
+            <Canvas x:Name="GroundTrack1" Canvas.Left="0" Canvas.Top="146">
+                <Rectangle Canvas.Left="25" Canvas.Top="1" Width="3" Height="1" Fill="#737373" />
+                <Rectangle Canvas.Left="60" Canvas.Top="3" Width="6" Height="1" Fill="#737373" />
+                <Rectangle Canvas.Left="115" Canvas.Top="1" Width="4" Height="1" Fill="#737373" />
+                <Rectangle Canvas.Left="180" Canvas.Top="2" Width="8" Height="1" Fill="#737373" />
+                <Rectangle Canvas.Left="245" Canvas.Top="1" Width="3" Height="1" Fill="#737373" />
+                <Rectangle Canvas.Left="310" Canvas.Top="3" Width="5" Height="1" Fill="#737373" />
+                <Rectangle Canvas.Left="380" Canvas.Top="2" Width="7" Height="1" Fill="#737373" />
+                <Rectangle Canvas.Left="450" Canvas.Top="1" Width="4" Height="1" Fill="#737373" />
+            </Canvas>
+
+            <Canvas x:Name="GroundTrack2" Canvas.Left="504" Canvas.Top="146">
+                <Rectangle Canvas.Left="25" Canvas.Top="1" Width="3" Height="1" Fill="#737373" />
+                <Rectangle Canvas.Left="60" Canvas.Top="3" Width="6" Height="1" Fill="#737373" />
+                <Rectangle Canvas.Left="115" Canvas.Top="1" Width="4" Height="1" Fill="#737373" />
+                <Rectangle Canvas.Left="180" Canvas.Top="2" Width="8" Height="1" Fill="#737373" />
+                <Rectangle Canvas.Left="245" Canvas.Top="1" Width="3" Height="1" Fill="#737373" />
+                <Rectangle Canvas.Left="310" Canvas.Top="3" Width="5" Height="1" Fill="#737373" />
+                <Rectangle Canvas.Left="380" Canvas.Top="2" Width="7" Height="1" Fill="#737373" />
+                <Rectangle Canvas.Left="450" Canvas.Top="1" Width="4" Height="1" Fill="#737373" />
+            </Canvas>
+
+            <!-- 4. Pre-allocated Obstacle Paths (Max 4 concurrent on screen) -->
+            <Path x:Name="Obstacle0" Fill="#535353" Visibility="Collapsed" />
+            <Path x:Name="Obstacle1" Fill="#535353" Visibility="Collapsed" />
+            <Path x:Name="Obstacle2" Fill="#535353" Visibility="Collapsed" />
+            <Path x:Name="Obstacle3" Fill="#535353" Visibility="Collapsed" />
+
+            <!-- 5. Dino Player Sprite -->
+            <Path x:Name="DinoShape" 
+                  Data="{x:Static local:DinoGeometries.DinoStandingIdle}" 
+                  Canvas.Left="40" 
+                  Canvas.Top="99" 
+                  Fill="#535353" />
+
+            <!-- 6. HUD Layer (Score & High Score) -->
+            <StackPanel Orientation="Horizontal" Canvas.Right="16" Canvas.Top="12">
+                <TextBlock x:Name="HighScoreText" 
+                           Text="" 
+                           FontFamily="Consolas, Lucida Console, Courier New, Segoe UI" 
+                           FontSize="12" 
+                           FontWeight="Bold" 
+                           Foreground="#737373" 
+                           Margin="0,0,14,0" />
+
+                <TextBlock x:Name="CurrentScoreText" 
+                           Text="00000" 
+                           FontFamily="Consolas, Lucida Console, Courier New, Segoe UI" 
+                           FontSize="12" 
+                           FontWeight="Bold" 
+                           Foreground="#535353" />
+            </StackPanel>
+
+            <!-- 7. Overlays (Idle / GameOver / Paused) -->
+            <!-- Idle Overlay Prompt -->
+            <Border x:Name="IdleOverlay" 
+                    Canvas.Left="0" Canvas.Top="0" 
+                    Width="504" Height="184" 
+                    Background="Transparent" 
+                    Visibility="Visible">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,30,0,0">
+                    <TextBlock Text="SPACE OR CLICK TO JUMP" 
+                               FontFamily="Consolas, Lucida Console, Courier New, Segoe UI" 
+                               FontSize="12" 
+                               FontWeight="Bold" 
+                               Foreground="#737373" 
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+            </Border>
+
+            <!-- GameOver Overlay -->
+            <Border x:Name="GameOverOverlay" 
+                    Canvas.Left="0" Canvas.Top="0" 
+                    Width="504" Height="184" 
+                    Background="Transparent" 
+                    Visibility="Collapsed"
+                    MouseLeftButtonDown="OnGameOverClicked">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-10,0,0">
+                    <TextBlock x:Name="GameOverText"
+                               Text="G A M E   O V E R" 
+                               FontFamily="Consolas, Lucida Console, Courier New, Segoe UI" 
+                               FontSize="16" 
+                               FontWeight="Bold" 
+                               Foreground="#535353" 
+                               HorizontalAlignment="Center" 
+                               Margin="0,0,0,14" />
+
+                    <!-- Restart Button Icon -->
+                    <Border x:Name="RestartButton" 
+                            Width="44" Height="40" 
+                            CornerRadius="4"
+                            HorizontalAlignment="Center" 
+                            Cursor="Hand"
+                            Background="Transparent"
+                            MouseLeftButtonDown="OnRestartButtonClicked">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Opacity" Value="0.9" />
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Opacity" Value="1.0" />
+                                        <Setter Property="Background" Value="#15000000" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Path x:Name="RestartIconPath"
+                              Data="{x:Static local:DinoGeometries.RestartIcon}" 
+                              Fill="#535353" 
+                              HorizontalAlignment="Center" 
+                              VerticalAlignment="Center" />
+                    </Border>
+                </StackPanel>
+            </Border>
+
+            <!-- Paused Overlay -->
+            <Border x:Name="PausedOverlay" 
+                    Canvas.Left="0" Canvas.Top="0" 
+                    Width="504" Height="184" 
+                    Background="#20000000" 
+                    Visibility="Collapsed">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="PAUSED" 
+                               FontFamily="Consolas, Lucida Console, Courier New, Segoe UI" 
+                               FontSize="15" 
+                               FontWeight="Bold" 
+                               Foreground="#535353" 
+                               HorizontalAlignment="Center" 
+                               Margin="0,0,0,6" />
+                    <TextBlock Text="PRESS SPACE OR CLICK TO RESUME" 
+                               FontFamily="Consolas, Lucida Console, Courier New, Segoe UI" 
+                               FontSize="11" 
+                               FontWeight="SemiBold" 
+                               Foreground="#737373" 
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+            </Border>
+        </Canvas>
+    </Grid>
+</UserControl>

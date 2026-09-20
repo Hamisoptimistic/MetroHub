@@ -211,6 +211,10 @@ public partial class TileControl : UserControl
                 {
                     return;
                 }
+                if (tile.TileContent is Widgets.Catalog.Dino.DinoWidgetViewModel)
+                {
+                    return;
+                }
                 return;
             }
 
@@ -235,7 +239,7 @@ public partial class TileControl : UserControl
 
     public void AnimatePressDown()
     {
-        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" or "photos" or "volume" or "notepad" or "network" or "brightness" or "power" or "quotes" or "habit" })
+        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" or "photos" or "volume" or "notepad" or "network" or "brightness" or "power" or "quotes" or "habit" or "dino" })
         {
             return;
         }
@@ -1149,6 +1153,85 @@ public partial class TileControl : UserControl
                 TileContextMenu.Items.Insert(3, jumpCurrentMonthItem);
                 TileContextMenu.Items.Insert(4, resetItem);
                 TileContextMenu.Items.Insert(5, habitDivider);
+            }
+            else if (tile.TileContent is Widgets.Catalog.Dino.DinoWidgetViewModel dinoVm)
+            {
+                // 1. Mute Sound Toggle
+                var muteItem = new MenuItem
+                {
+                    Header = "Mute Sound",
+                    Tag = "WidgetCustomMenu",
+                    IsCheckable = true,
+                    IsChecked = dinoVm.IsMuted,
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = dinoVm.IsMuted ? Wpf.Ui.Controls.SymbolRegular.SpeakerOff24 : Wpf.Ui.Controls.SymbolRegular.Speaker224,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                muteItem.Click += (s, ev) => dinoVm.ToggleMute();
+
+                // 2. Reduced Motion Submenu
+                var motionItem = new MenuItem
+                {
+                    Header = "Reduced Motion",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Accessibility24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+
+                var autoMotionItem = new MenuItem
+                {
+                    Header = "Follow Windows Setting",
+                    IsCheckable = true,
+                    IsChecked = dinoVm.ReducedMotion == null
+                };
+                autoMotionItem.Click += (s, ev) => dinoVm.SetReducedMotion(null);
+
+                var onMotionItem = new MenuItem
+                {
+                    Header = "Enabled (Low Motion)",
+                    IsCheckable = true,
+                    IsChecked = dinoVm.ReducedMotion == true
+                };
+                onMotionItem.Click += (s, ev) => dinoVm.SetReducedMotion(true);
+
+                var offMotionItem = new MenuItem
+                {
+                    Header = "Disabled (Full Animation)",
+                    IsCheckable = true,
+                    IsChecked = dinoVm.ReducedMotion == false
+                };
+                offMotionItem.Click += (s, ev) => dinoVm.SetReducedMotion(false);
+
+                motionItem.Items.Add(autoMotionItem);
+                motionItem.Items.Add(onMotionItem);
+                motionItem.Items.Add(offMotionItem);
+
+                // 3. Reset High Score
+                var resetScoreItem = new MenuItem
+                {
+                    Header = "Reset High Score",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.ArrowReset24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                resetScoreItem.Click += (s, ev) => dinoVm.ResetHighScore();
+
+                var dinoDivider = new Separator { Tag = "WidgetCustomMenu" };
+                TileContextMenu.Items.Insert(1, muteItem);
+                TileContextMenu.Items.Insert(2, motionItem);
+                TileContextMenu.Items.Insert(3, resetScoreItem);
+                TileContextMenu.Items.Insert(4, dinoDivider);
             }
         }
         else

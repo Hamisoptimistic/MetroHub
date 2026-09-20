@@ -31,6 +31,8 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
 
     private HabitWidgetSettings _settings = new();
     private DateTime _currentDisplayMonth;
+    private DateTime _lastCheckedDate = DateTime.Today;
+    private System.Threading.Timer? _midnightTimer;
 
     [ObservableProperty]
     private string _habitName = string.Empty;
@@ -94,6 +96,7 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
 
         DateTime now = DateTime.Today;
         _currentDisplayMonth = new DateTime(now.Year, now.Month, 1);
+        _lastCheckedDate = now;
 
         LoadSettings(model.SettingsJson);
 
@@ -114,6 +117,7 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
 
         RebuildMonthGrid();
         RecalculateStreak();
+        StartMidnightTimer();
     }
 
     protected override void LoadSettings(string? settingsJson)
@@ -168,7 +172,90 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
     public override void Pause()
     {
         base.Pause();
+        StopMidnightTimer();
         SaveSettings();
+    }
+
+    public override void Resume()
+    {
+        base.Resume();
+        CheckDateRollover();
+        StartMidnightTimer();
+    }
+
+    private void StartMidnightTimer()
+    {
+        TimeSpan timeToMidnight = (DateTime.Today.AddDays(1) - DateTime.Now).Add(TimeSpan.FromSeconds(1));
+        if (timeToMidnight <= TimeSpan.Zero || timeToMidnight > TimeSpan.FromDays(1))
+        {
+            timeToMidnight = TimeSpan.FromSeconds(1);
+        }
+
+        if (_midnightTimer == null)
+        {
+            _midnightTimer = new System.Threading.Timer(_ =>
+            {
+                CheckDateRollover();
+            }, null, timeToMidnight, Timeout.InfiniteTimeSpan);
+        }
+        else
+        {
+            _midnightTimer.Change(timeToMidnight, Timeout.InfiniteTimeSpan);
+        }
+    }
+
+    private void StopMidnightTimer()
+    {
+        _midnightTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+    }
+
+    public void CheckDateRollover()
+    {
+        DateTime today = DateTime.Today;
+        if (today == _lastCheckedDate) return;
+
+        _lastCheckedDate = today;
+
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher != null && !dispatcher.CheckAccess())
+        {
+            dispatcher.InvokeAsync(ApplyDateRollover);
+        }
+        else
+        {
+            ApplyDateRollover();
+        }
+    }
+
+    private void ApplyDateRollover()
+    {
+        DateTime today = DateTime.Today;
+
+        // If currently displaying the month that just ended, advance to the new month
+        bool wasViewingPriorMonth = _currentDisplayMonth.Year == _lastCheckedDate.AddDays(-1).Year &&
+                                   _currentDisplayMonth.Month == _lastCheckedDate.AddDays(-1).Month;
+
+        if (wasViewingPriorMonth && (_currentDisplayMonth.Year != today.Year || _currentDisplayMonth.Month != today.Month))
+        {
+            _currentDisplayMonth = new DateTime(today.Year, today.Month, 1);
+            RebuildMonthGrid();
+        }
+        else if (Days.Count == 42)
+        {
+            // Update in-place without destroying and recreating 42 UI elements
+            foreach (var day in Days)
+            {
+                day.IsToday = day.Date.Date == today;
+                day.IsFuture = day.Date.Date > today;
+            }
+        }
+        else
+        {
+            RebuildMonthGrid();
+        }
+
+        RecalculateStreak();
+        StartMidnightTimer();
     }
 
     public void RebuildMonthGrid()
@@ -421,5 +508,17 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
         {
             SetupSelectedIcon = icon;
         }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            StopMidnightTimer();
+            _midnightTimer?.Dispose();
+            _midnightTimer = null;
+        }
+
+        base.Dispose(disposing);
     }
 }

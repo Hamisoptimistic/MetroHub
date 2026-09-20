@@ -15,8 +15,17 @@ public partial class HabitDayViewModel : ObservableObject
     public int DayNumber => Date.Day;
     public string DayText => Date.Day.ToString();
     public bool IsCurrentMonth { get; }
-    public bool IsToday { get; }
-    public bool IsFuture { get; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsTodayUnmarked))]
+    [NotifyPropertyChangedFor(nameof(ToolTipText))]
+    private bool _isToday;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsClickable))]
+    [NotifyPropertyChangedFor(nameof(ToolTipText))]
+    private bool _isFuture;
+
     public bool IsClickable => !IsFuture && IsCurrentMonth;
 
     [ObservableProperty]
@@ -36,8 +45,8 @@ public partial class HabitDayViewModel : ObservableObject
         Date = date;
         DateKey = date.Year * 10000 + date.Month * 100 + date.Day;
         IsCurrentMonth = isCurrentMonth;
-        IsToday = isToday;
-        IsFuture = isFuture;
+        _isToday = isToday;
+        _isFuture = isFuture;
         _state = state;
     }
 

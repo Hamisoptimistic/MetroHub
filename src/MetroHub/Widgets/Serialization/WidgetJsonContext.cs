@@ -27,6 +27,7 @@ namespace MetroHub.Widgets.Serialization;
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Network.NetworkWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Brightness.BrightnessWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Habit.HabitWidgetSettings))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.Dino.DinoWidgetSettings))]
 public partial class WidgetJsonContext : JsonSerializerContext
 {
 }

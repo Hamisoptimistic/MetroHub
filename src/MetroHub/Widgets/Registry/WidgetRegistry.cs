@@ -266,6 +266,22 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Huge,
             Factory: model => new MetroHub.Widgets.Catalog.Habit.HabitWidgetViewModel(model)
         ));
+
+        // Register Chrome Dino Endless Runner widget
+        Register(new WidgetDefinition(
+            Id: "dino",
+            DisplayName: "T-Rex Runner",
+            Description: "Classic Chrome Dino endless runner game with retro monochrome aesthetics",
+            Icon: SymbolRegular.Games24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Banner3 // 8x3 only (504x184 px)
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Dino.DinoWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Dino.DinoWidgetView),
+            DefaultSize: WidgetSize.Banner3,
+            Factory: model => new MetroHub.Widgets.Catalog.Dino.DinoWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)
