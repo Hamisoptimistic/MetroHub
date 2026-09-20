@@ -23,6 +23,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 {
     private MediaManager? _mediaManager;
     private MediaManager.MediaSession? _activeSession;
+    private volatile bool _isMediaManagerStarted;
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
@@ -198,8 +199,9 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             _mediaManager.OnAnyTimelinePropertyChanged += Manager_OnAnyTimelinePropertyChanged;
 
             await _mediaManager.StartAsync();
+            _isMediaManagerStarted = true;
 
-            var initial = _mediaManager.GetFocusedSession() ?? _mediaManager.CurrentMediaSessions.Values.FirstOrDefault();
+            var initial = SafeGetFallbackSession();
             if (initial != null)
             {
                 SetActiveSession(initial);
@@ -211,94 +213,172 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         }
         catch (Exception ex)
         {
+            _isMediaManagerStarted = false;
             Debug.WriteLine($"[MediaWidget] Init failed: {ex.Message}");
             RunOnUi(ResetToNoMedia);
         }
     }
 
+    private MediaManager.MediaSession? SafeGetFallbackSession(string? excludeSessionId = null)
+    {
+        if (!_isMediaManagerStarted || _mediaManager == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var focused = _mediaManager.GetFocusedSession();
+            if (focused != null && (excludeSessionId == null || focused.Id != excludeSessionId))
+            {
+                return focused;
+            }
+
+            var sessions = _mediaManager.CurrentMediaSessions;
+            if (sessions != null)
+            {
+                return excludeSessionId == null
+                    ? sessions.Values.FirstOrDefault()
+                    : sessions.Values.FirstOrDefault(s => s.Id != excludeSessionId);
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // Thrown if MediaManager has not completed StartAsync or is currently shutting down
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MediaWidget] SafeGetFallbackSession failed: {ex.Message}");
+        }
+
+        return null;
+    }
+
     private void Manager_OnFocusedSessionChanged(MediaManager.MediaSession? mediaSession)
     {
-        if (mediaSession != null)
+        try
         {
-            SetActiveSession(mediaSession);
-        }
-        else
-        {
-            var next = _mediaManager?.GetFocusedSession() ?? _mediaManager?.CurrentMediaSessions.Values.FirstOrDefault();
-            if (next != null)
+            if (mediaSession != null)
             {
-                SetActiveSession(next);
+                SetActiveSession(mediaSession);
             }
             else
             {
-                RunOnUi(ResetToNoMedia);
+                var next = SafeGetFallbackSession();
+                if (next != null)
+                {
+                    SetActiveSession(next);
+                }
+                else
+                {
+                    RunOnUi(ResetToNoMedia);
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MediaWidget] OnFocusedSessionChanged failed: {ex.Message}");
         }
     }
 
     private void Manager_OnAnySessionOpened(MediaManager.MediaSession mediaSession)
     {
-        if (_activeSession == null)
+        try
         {
-            SetActiveSession(mediaSession);
+            if (_activeSession == null)
+            {
+                SetActiveSession(mediaSession);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MediaWidget] OnAnySessionOpened failed: {ex.Message}");
         }
     }
 
     private void Manager_OnAnySessionClosed(MediaManager.MediaSession mediaSession)
     {
-        if (_activeSession == null || _activeSession.Id == mediaSession.Id)
+        try
         {
-            var next = _mediaManager?.GetFocusedSession() ?? _mediaManager?.CurrentMediaSessions.Values.FirstOrDefault(s => s.Id != mediaSession.Id);
-            if (next != null)
+            if (_activeSession == null || _activeSession.Id == mediaSession.Id)
             {
-                SetActiveSession(next);
+                var next = SafeGetFallbackSession(excludeSessionId: mediaSession.Id);
+                if (next != null)
+                {
+                    SetActiveSession(next);
+                }
+                else
+                {
+                    RunOnUi(ResetToNoMedia);
+                }
             }
-            else
-            {
-                RunOnUi(ResetToNoMedia);
-            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MediaWidget] OnAnySessionClosed failed: {ex.Message}");
         }
     }
 
     private void Manager_OnAnyPlaybackStateChanged(MediaManager.MediaSession mediaSession, GlobalSystemMediaTransportControlsSessionPlaybackInfo playbackInfo)
     {
-        if (playbackInfo == null) return;
-
-        // Auto-switch to newly playing session if our current session is inactive/different (Android music notification pattern)
-        if (_activeSession == null || _activeSession.Id != mediaSession.Id)
+        try
         {
-            if (playbackInfo.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing)
+            if (playbackInfo == null) return;
+
+            // Auto-switch to newly playing session if our current session is inactive/different (Android music notification pattern)
+            if (_activeSession == null || _activeSession.Id != mediaSession.Id)
             {
-                SetActiveSession(mediaSession);
-                return;
+                if (playbackInfo.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing)
+                {
+                    SetActiveSession(mediaSession);
+                    return;
+                }
+            }
+
+            if (_activeSession != null && _activeSession.Id == mediaSession.Id)
+            {
+                RunOnUi(() => ApplyPlaybackInfo(playbackInfo));
             }
         }
-
-        if (_activeSession != null && _activeSession.Id == mediaSession.Id)
+        catch (Exception ex)
         {
-            RunOnUi(() => ApplyPlaybackInfo(playbackInfo));
+            Debug.WriteLine($"[MediaWidget] OnAnyPlaybackStateChanged failed: {ex.Message}");
         }
     }
 
     private void Manager_OnAnyMediaPropertyChanged(MediaManager.MediaSession mediaSession, GlobalSystemMediaTransportControlsSessionMediaProperties mediaProperties)
     {
-        if (_activeSession == null)
+        try
         {
-            SetActiveSession(mediaSession);
-            return;
-        }
+            if (_activeSession == null)
+            {
+                SetActiveSession(mediaSession);
+                return;
+            }
 
-        if (_activeSession.Id == mediaSession.Id)
+            if (_activeSession.Id == mediaSession.Id)
+            {
+                _ = ApplyMediaPropertiesAsync(mediaSession, mediaProperties);
+            }
+        }
+        catch (Exception ex)
         {
-            _ = ApplyMediaPropertiesAsync(mediaSession, mediaProperties);
+            Debug.WriteLine($"[MediaWidget] OnAnyMediaPropertyChanged failed: {ex.Message}");
         }
     }
 
     private void Manager_OnAnyTimelinePropertyChanged(MediaManager.MediaSession mediaSession, GlobalSystemMediaTransportControlsSessionTimelineProperties timelineProperties)
     {
-        if (_activeSession != null && _activeSession.Id == mediaSession.Id)
+        try
         {
-            RunOnUi(() => ApplyTimelineProperties(timelineProperties));
+            if (_activeSession != null && _activeSession.Id == mediaSession.Id)
+            {
+                RunOnUi(() => ApplyTimelineProperties(timelineProperties));
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MediaWidget] OnAnyTimelinePropertyChanged failed: {ex.Message}");
         }
     }
 
@@ -1423,6 +1503,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     {
         if (disposing)
         {
+            _isMediaManagerStarted = false;
             if (_playbackTimer != null)
             {
                 _playbackTimer.Stop();

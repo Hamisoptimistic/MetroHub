@@ -138,20 +138,27 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
 
         _cursorTimer = new System.Threading.Timer(_ =>
         {
-            if (!_isHubVisible || Monitors.Count <= 1) return;
-            var lastMonitors = _brightnessService.LastMonitors;
-            if (lastMonitors.Count == 0) return;
-
-            string? cursorMonitorId = _brightnessService.GetCurrentCursorMonitorId(lastMonitors);
-            if (string.IsNullOrEmpty(cursorMonitorId)) return;
-
-            // Diff before dispatch: check if active monitor changed
-            if (string.Equals(_activeMonitorId, cursorMonitorId, StringComparison.OrdinalIgnoreCase))
+            try
             {
-                return;
-            }
+                if (!_isHubVisible || Monitors.Count <= 1) return;
+                var lastMonitors = _brightnessService.LastMonitors;
+                if (lastMonitors.Count == 0) return;
 
-            Application.Current?.Dispatcher.InvokeAsync(() => ProcessCursorMonitorChange(cursorMonitorId));
+                string? cursorMonitorId = _brightnessService.GetCurrentCursorMonitorId(lastMonitors);
+                if (string.IsNullOrEmpty(cursorMonitorId)) return;
+
+                // Diff before dispatch: check if active monitor changed
+                if (string.Equals(_activeMonitorId, cursorMonitorId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+
+                Application.Current?.Dispatcher.InvokeAsync(() => ProcessCursorMonitorChange(cursorMonitorId));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[BrightnessWidget] Cursor tracking error: {ex.Message}");
+            }
         }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
 
         RefreshAll();
@@ -395,15 +402,22 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
 
         _ = Task.Run(async () =>
         {
-            var monitors = await _brightnessService.GetConnectedMonitorsAsync().ConfigureAwait(false);
-            if (!_isHubVisible) return;
-
-            if (Application.Current?.Dispatcher is { } dispatcher)
+            try
             {
-                await dispatcher.InvokeAsync(() =>
+                var monitors = await _brightnessService.GetConnectedMonitorsAsync().ConfigureAwait(false);
+                if (!_isHubVisible) return;
+
+                if (Application.Current?.Dispatcher is { } dispatcher)
                 {
-                    UpdateMonitorsCollection(monitors);
-                });
+                    await dispatcher.InvokeAsync(() =>
+                    {
+                        UpdateMonitorsCollection(monitors);
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[BrightnessWidget] RefreshAll error: {ex.Message}");
             }
         });
     }

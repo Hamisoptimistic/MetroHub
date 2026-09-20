@@ -256,7 +256,14 @@ public sealed partial class VolumeWidgetViewModel : WidgetViewModelBase
 
         Task.Run(() =>
         {
-            _audioService.SetDefaultPlaybackDevice(device.Id);
+            try
+            {
+                _audioService.SetDefaultPlaybackDevice(device.Id);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[VolumeWidget] SetDefaultPlaybackDevice failed: {ex.Message}");
+            }
         });
     }
 
@@ -337,28 +344,35 @@ public sealed partial class VolumeWidgetViewModel : WidgetViewModelBase
     {
         _ = Task.Run(() =>
         {
-            var rawSessions = _audioService.GetAppSessions();
-            Application.Current?.Dispatcher.InvokeAsync(() =>
+            try
             {
-                if (!_isHubVisible) return;
-
-                AppSessions.Clear();
-                foreach (var s in rawSessions)
+                var rawSessions = _audioService.GetAppSessions();
+                Application.Current?.Dispatcher.InvokeAsync(() =>
                 {
-                    var item = new AppSessionItemViewModel(
-                        onVolumeChanged: (pid, vol) => _audioService.SetAppVolume(pid, vol),
-                        onMuteChanged: (pid, mute) => _audioService.SetAppMute(pid, mute))
+                    if (!_isHubVisible) return;
+
+                    AppSessions.Clear();
+                    foreach (var s in rawSessions)
                     {
-                        ProcessId = s.ProcessId,
-                        ProcessName = s.ProcessName,
-                        DisplayName = s.DisplayName,
-                        IconSource = s.IconSource,
-                        IsSystemSounds = s.IsSystemSounds
-                    };
-                    item.UpdateFromAudioService(s.Volume, s.IsMuted);
-                    AppSessions.Add(item);
-                }
-            });
+                        var item = new AppSessionItemViewModel(
+                            onVolumeChanged: (pid, vol) => _audioService.SetAppVolume(pid, vol),
+                            onMuteChanged: (pid, mute) => _audioService.SetAppMute(pid, mute))
+                        {
+                            ProcessId = s.ProcessId,
+                            ProcessName = s.ProcessName,
+                            DisplayName = s.DisplayName,
+                            IconSource = s.IconSource,
+                            IsSystemSounds = s.IsSystemSounds
+                        };
+                        item.UpdateFromAudioService(s.Volume, s.IsMuted);
+                        AppSessions.Add(item);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[VolumeWidget] RefreshAppSessions failed: {ex.Message}");
+            }
         });
     }
 
