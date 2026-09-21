@@ -418,8 +418,8 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <!-- 0: Clean Vertical Spec List (Adapter, DNS, IPv4, MAC, Session Uptime) -->
-                        <Grid Grid.Row="0" Margin="0,4,0,4" VerticalAlignment="Center">
+                        <!-- 0: Clean Vertical Spec List (Adapter, DNS, IPv4, MAC, Session Uptime, Link Speed, IP Assignment, MTU) -->
+                        <Grid Grid.Row="0" Margin="0,4,0,4" VerticalAlignment="Top">
                             <Grid.RowDefinitions>
                                 <!-- 0: Adapter -->
                                 <RowDefinition Height="Auto" />
@@ -430,6 +430,12 @@
                                 <!-- 3: MAC -->
                                 <RowDefinition Height="Auto" />
                                 <!-- 4: Session Uptime -->
+                                <RowDefinition Height="Auto" />
+                                <!-- 5: Link Speed -->
+                                <RowDefinition Height="Auto" />
+                                <!-- 6: IP Assignment -->
+                                <RowDefinition Height="Auto" />
+                                <!-- 7: MTU -->
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
@@ -543,9 +549,69 @@
                                        FontWeight="SemiBold"
                                        Foreground="#FFFFFF"
                                        VerticalAlignment="Center"
-                                       Margin="0,0,0,0" />
+                                       Margin="0,0,0,8" />
                             <TextBlock Grid.Row="4" Grid.Column="1"
                                        Text="{Binding Ethernet.DurationString}"
+                                       Typography.NumeralAlignment="Tabular"
+                                       FontSize="13.5"
+                                       FontWeight="Normal"
+                                       Foreground="#D0FFFFFF"
+                                       HorizontalAlignment="Right"
+                                       TextAlignment="Right"
+                                       TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center"
+                                       Margin="16,0,0,8" />
+
+                            <!-- 6. LINK SPEED -->
+                            <TextBlock Grid.Row="5" Grid.Column="0"
+                                       Text="Link Speed:"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Foreground="#FFFFFF"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,0,8" />
+                            <TextBlock Grid.Row="5" Grid.Column="1"
+                                       Text="{Binding Ethernet.LinkSpeedString}"
+                                       Typography.NumeralAlignment="Tabular"
+                                       FontSize="13.5"
+                                       FontWeight="Normal"
+                                       Foreground="#D0FFFFFF"
+                                       HorizontalAlignment="Right"
+                                       TextAlignment="Right"
+                                       TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center"
+                                       Margin="16,0,0,8" />
+
+                            <!-- 7. IP ASSIGNMENT -->
+                            <TextBlock Grid.Row="6" Grid.Column="0"
+                                       Text="IP Assignment:"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Foreground="#FFFFFF"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,0,8" />
+                            <TextBlock Grid.Row="6" Grid.Column="1"
+                                       Text="{Binding Ethernet.IpAssignment}"
+                                       FontSize="13.5"
+                                       FontWeight="Normal"
+                                       Foreground="#D0FFFFFF"
+                                       HorizontalAlignment="Right"
+                                       TextAlignment="Right"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding Ethernet.IpAssignment}"
+                                       VerticalAlignment="Center"
+                                       Margin="16,0,0,8" />
+
+                            <!-- 8. MTU -->
+                            <TextBlock Grid.Row="7" Grid.Column="0"
+                                       Text="MTU:"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Foreground="#FFFFFF"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,0,0" />
+                            <TextBlock Grid.Row="7" Grid.Column="1"
+                                       Text="{Binding Ethernet.MtuString}"
                                        Typography.NumeralAlignment="Tabular"
                                        FontSize="13.5"
                                        FontWeight="Normal"

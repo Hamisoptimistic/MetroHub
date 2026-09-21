@@ -155,6 +155,17 @@ public sealed class EthernetProvider
                 info.SubnetMask = ipv4Unicast.IPv4Mask?.ToString() ?? "--";
             }
 
+            try
+            {
+                var ipv4Props = ipProps.GetIPv4Properties();
+                if (ipv4Props != null)
+                {
+                    info.IpAssignment = ipv4Props.IsDhcpEnabled ? "Automatic (DHCP)" : "Manual (Static)";
+                    info.Mtu = ipv4Props.Mtu;
+                }
+            }
+            catch { }
+
             var gateway = ipProps.GatewayAddresses
                 .FirstOrDefault(ga => ga.Address.AddressFamily == AddressFamily.InterNetwork);
             if (gateway != null)

@@ -38,6 +38,9 @@ public sealed class EthernetInfo
     public TimeSpan LinkDuration { get; set; } = TimeSpan.Zero;
     public string DurationString => FormatDuration(LinkDuration);
     public string MacAddress { get; set; } = "--";
+    public string IpAssignment { get; set; } = "--";
+    public int Mtu { get; set; }
+    public string MtuString => Mtu > 0 ? $"{Mtu} bytes" : "--";
     public ulong BytesReceived { get; set; }
     public ulong BytesSent { get; set; }
     public string DataUsageString => FormatDataUsage(BytesReceived, BytesSent);
