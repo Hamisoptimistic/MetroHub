@@ -295,23 +295,6 @@ public interface IAudioEndpointVolumeCallback
     int OnNotify(IntPtr pNotifyData);
 }
 
-[ComImport]
-[Guid("C02216F6-0388-4E45-AC2C-BEFB08B042A1")]
-[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IAudioMeterInformation
-{
-    [PreserveSig]
-    int GetPeakValue(out float pfPeak);
-
-    [PreserveSig]
-    int GetMeteringChannelCount(out uint pnChannelCount);
-
-    [PreserveSig]
-    int GetChannelsPeakValues(uint u32ChannelCount, [Out, MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 0)] float[] afPeakValues);
-
-    [PreserveSig]
-    int QueryHardwareSupport(out uint pdwHardwareSupportMask);
-}
 
 [ComImport]
 [Guid("77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F")]

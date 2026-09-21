@@ -58,13 +58,9 @@
               HorizontalAlignment="Left"
               VerticalAlignment="Center"
               IsHitTestVisible="False"
-              Opacity="0"
-              RenderTransformOrigin="0.5,0.5">
+              Opacity="0">
             <Grid.RenderTransform>
-                <TransformGroup>
-                    <ScaleTransform x:Name="ThumbScale" ScaleX="0.85" ScaleY="0.85" />
-                    <TranslateTransform x:Name="ThumbTranslate" X="0" />
-                </TransformGroup>
+                <TranslateTransform x:Name="ThumbTranslate" X="0" />
             </Grid.RenderTransform>
 
             <!-- Clean minimal accent dot thumb -->

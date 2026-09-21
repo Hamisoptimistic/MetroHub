@@ -5,7 +5,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Audio;
@@ -148,11 +147,6 @@ public sealed partial class VolumeWidgetViewModel : WidgetViewModelBase
     public ObservableCollection<AudioDeviceItemViewModel> Devices { get; } = new();
     public ObservableCollection<AppSessionItemViewModel> AppSessions { get; } = new();
 
-    [ObservableProperty]
-    private bool _isAudioStreaming;
-
-    private System.Threading.Timer? _streamingCheckTimer;
-
     public VolumeWidgetViewModel(TileModel model) : base(model)
     {
         _audioService = AudioService.Instance;
@@ -164,30 +158,7 @@ public sealed partial class VolumeWidgetViewModel : WidgetViewModelBase
 
         Model.PropertyChanged += OnModelPropertyChanged;
 
-        _streamingCheckTimer = new System.Threading.Timer(
-            OnStreamingCheckTimerCallback,
-            null,
-            _isHubVisible ? TimeSpan.Zero : Timeout.InfiniteTimeSpan,
-            _isHubVisible ? TimeSpan.FromMilliseconds(180) : Timeout.InfiniteTimeSpan);
-
         RefreshAll();
-    }
-
-    private void OnStreamingCheckTimerCallback(object? state)
-    {
-        if (!_isHubVisible) return;
-
-        bool streaming = _audioService.CheckIsAudioStreaming();
-        if (IsAudioStreaming != streaming)
-        {
-            Application.Current?.Dispatcher.InvokeAsync(() =>
-            {
-                if (_isHubVisible)
-                {
-                    IsAudioStreaming = streaming;
-                }
-            });
-        }
     }
 
     private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -445,24 +416,18 @@ public sealed partial class VolumeWidgetViewModel : WidgetViewModelBase
     public override void Pause()
     {
         _isHubVisible = false;
-        _streamingCheckTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-        IsAudioStreaming = false;
     }
 
     public override void Resume()
     {
         _isHubVisible = true;
         RefreshAll();
-        _streamingCheckTimer?.Change(TimeSpan.Zero, TimeSpan.FromMilliseconds(180));
     }
 
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
-            _streamingCheckTimer?.Dispose();
-            _streamingCheckTimer = null;
-
             Model.PropertyChanged -= OnModelPropertyChanged;
             _audioService.MasterVolumeChanged -= OnAudioServiceMasterVolumeChanged;
             _audioService.DefaultDeviceChanged -= OnAudioServiceDefaultDeviceChanged;

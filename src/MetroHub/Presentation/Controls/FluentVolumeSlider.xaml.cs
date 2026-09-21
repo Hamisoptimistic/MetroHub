@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 
 namespace MetroHub.Presentation.Controls;
 
@@ -236,7 +235,7 @@ public partial class FluentVolumeSlider : UserControl
         _isDragging = true;
         IsDragging = true;
         RootContainer.CaptureMouse();
-        AnimateHoverState(true, isDragging: true);
+        UpdateHoverState(true, isDragging: true);
 
         Point pt = e.GetPosition(RootContainer);
         UpdateValueFromPosition(pt);
@@ -261,20 +260,8 @@ public partial class FluentVolumeSlider : UserControl
             RootContainer.ReleaseMouseCapture();
 
             bool isMouseStillOver = RootContainer.IsMouseOver;
-            AnimateHoverState(isMouseStillOver, isDragging: false);
-
-            _dragReleaseTimer?.Stop();
-            _dragReleaseTimer = new System.Windows.Threading.DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(650)
-            };
-            _dragReleaseTimer.Tick += (s, ev) =>
-            {
-                _dragReleaseTimer?.Stop();
-                _dragReleaseTimer = null;
-                IsDragging = false;
-            };
-            _dragReleaseTimer.Start();
+            UpdateHoverState(isMouseStillOver, isDragging: false);
+            ScheduleDragRelease(650);
         }
     }
 
@@ -289,25 +276,14 @@ public partial class FluentVolumeSlider : UserControl
 
         // Flash percentage temporarily on wheel scroll as well
         IsDragging = true;
-        _dragReleaseTimer?.Stop();
-        _dragReleaseTimer = new System.Windows.Threading.DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(750)
-        };
-        _dragReleaseTimer.Tick += (s, ev) =>
-        {
-            _dragReleaseTimer?.Stop();
-            _dragReleaseTimer = null;
-            IsDragging = false;
-        };
-        _dragReleaseTimer.Start();
+        ScheduleDragRelease(750);
     }
 
     private void OnMouseEnter(object sender, MouseEventArgs e)
     {
         if (!_isDragging)
         {
-            AnimateHoverState(true, isDragging: false);
+            UpdateHoverState(true, isDragging: false);
         }
     }
 
@@ -315,46 +291,39 @@ public partial class FluentVolumeSlider : UserControl
     {
         if (!_isDragging)
         {
-            AnimateHoverState(false, isDragging: false);
+            UpdateHoverState(false, isDragging: false);
         }
     }
 
-    private void AnimateHoverState(bool isHovered, bool isDragging)
+    private void ScheduleDragRelease(int milliseconds)
     {
-        var duration = TimeSpan.FromMilliseconds(160);
-        var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+        _dragReleaseTimer?.Stop();
+        _dragReleaseTimer ??= new System.Windows.Threading.DispatcherTimer();
+        _dragReleaseTimer.Interval = TimeSpan.FromMilliseconds(milliseconds);
+        _dragReleaseTimer.Tick -= OnDragReleaseTimerTick;
+        _dragReleaseTimer.Tick += OnDragReleaseTimerTick;
+        _dragReleaseTimer.Start();
+    }
 
-        // 1. Circle Thumb Opacity: hidden by default at rest (0), appears when hovered or dragging (1.0)
-        double targetOpacity = (isHovered || isDragging) ? (IsMuted ? 0.45 : 1.0) : 0.0;
-        var thumbOpacityAnim = new DoubleAnimation(targetOpacity, duration) { EasingFunction = easing };
-        SliderThumb?.BeginAnimation(OpacityProperty, thumbOpacityAnim);
+    private void OnDragReleaseTimerTick(object? sender, EventArgs e)
+    {
+        _dragReleaseTimer?.Stop();
+        IsDragging = false;
+    }
 
-        // 2. Smooth scale feedback: 0.85 at rest -> 1.0 on hover -> 1.08 on dragging
-        double targetScale = isDragging ? 1.08 : (isHovered ? 1.0 : 0.85);
-        var scaleXAnim = new DoubleAnimation(targetScale, duration) { EasingFunction = easing };
-        var scaleYAnim = new DoubleAnimation(targetScale, duration) { EasingFunction = easing };
-        ThumbScale?.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
-        ThumbScale?.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
-
-        // 3. Pip color feedback: subtle brightened tint on hover/drag
-        if (ThumbDot != null)
+    private void UpdateHoverState(bool isHovered, bool isDragging)
+    {
+        if (SliderThumb != null)
         {
-            if (isHovered || isDragging)
-            {
-                ThumbDot.Fill = ProgressPointerOverBrush ?? GetEffectivePointerOverBrush();
-            }
-            else
-            {
-                ThumbDot.Fill = ProgressBrush ?? DefaultProgressBrush;
-            }
+            SliderThumb.Opacity = (isHovered || isDragging) ? (IsMuted ? 0.45 : 1.0) : 0.0;
         }
 
-        // 4. Track Height: subtle grow from 4px to 4.5px on hover/drag
-        double targetHeight = (isHovered || isDragging) ? 4.5 : 4.0;
-        var trackHeightAnim = new DoubleAnimation(targetHeight, duration) { EasingFunction = easing };
-        TrackTrough?.BeginAnimation(HeightProperty, trackHeightAnim);
-        TrackBg?.BeginAnimation(HeightProperty, trackHeightAnim);
-        ProgressFill?.BeginAnimation(HeightProperty, trackHeightAnim);
+        if (ThumbDot != null)
+        {
+            ThumbDot.Fill = (isHovered || isDragging)
+                ? (ProgressPointerOverBrush ?? GetEffectivePointerOverBrush())
+                : (ProgressBrush ?? DefaultProgressBrush);
+        }
     }
 
     private Brush GetEffectivePointerOverBrush()

@@ -11,8 +11,9 @@
              SnapsToDevicePixels="True"
              UseLayoutRounding="True"
              TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="Grayscale"
-             TextOptions.TextHintingMode="Animated">
+             TextOptions.TextRenderingMode="ClearType"
+             TextOptions.TextHintingMode="Fixed"
+             RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -97,18 +98,21 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Left: Standardized Optical Living Weather Icon -->
-                    <weather:LivingWeatherIcon Grid.Column="0"
-                                               IconSource="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
-                                               ConditionSlug="{Binding WeatherIconName}"
-                                               IsLiveAnimating="{Binding IsLiveAnimating}"
-                                               Height="100" Width="100"
-                                               VerticalAlignment="Center"
-                                               RenderTransformOrigin="0.5,0.5">
-                        <weather:LivingWeatherIcon.RenderTransform>
+                    <!-- Left: Standardized Optical Weather Icon -->
+                    <Image Grid.Column="0"
+                           Source="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                           Height="100" Width="100"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           SnapsToDevicePixels="True"
+                           VerticalAlignment="Center"
+                           RenderTransformOrigin="0.5,0.5">
+                        <Image.RenderTransform>
                             <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
-                        </weather:LivingWeatherIcon.RenderTransform>
-                    </weather:LivingWeatherIcon>
+                        </Image.RenderTransform>
+                        <Image.Effect>
+                            <DropShadowEffect BlurRadius="14" Direction="270" ShadowDepth="3" Opacity="0.28" Color="#000000" />
+                        </Image.Effect>
+                    </Image>
 
                     <!-- Right: Standardized Temperature (Matched height) -->
                     <TextBlock Grid.Column="2"
@@ -143,19 +147,22 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Left: Large Living Weather Icon -->
-                    <weather:LivingWeatherIcon Grid.Column="0"
-                                               IconSource="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
-                                               ConditionSlug="{Binding WeatherIconName}"
-                                               IsLiveAnimating="{Binding IsLiveAnimating}"
-                                               Width="76" Height="76"
-                                               HorizontalAlignment="Left"
-                                               VerticalAlignment="Center"
-                                               RenderTransformOrigin="0.5,0.5">
-                        <weather:LivingWeatherIcon.RenderTransform>
+                    <!-- Left: Large Weather Icon -->
+                    <Image Grid.Column="0"
+                           Source="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                           Width="76" Height="76"
+                           RenderOptions.BitmapScalingMode="HighQuality"
+                           SnapsToDevicePixels="True"
+                           HorizontalAlignment="Left"
+                           VerticalAlignment="Center"
+                           RenderTransformOrigin="0.5,0.5">
+                        <Image.RenderTransform>
                             <ScaleTransform ScaleX="1.4" ScaleY="1.4" />
-                        </weather:LivingWeatherIcon.RenderTransform>
-                    </weather:LivingWeatherIcon>
+                        </Image.RenderTransform>
+                        <Image.Effect>
+                            <DropShadowEffect BlurRadius="14" Direction="270" ShadowDepth="3" Opacity="0.28" Color="#000000" />
+                        </Image.Effect>
+                    </Image>
 
                     <!-- Right: Large Temperature & Condition -->
                     <StackPanel Grid.Column="1"
@@ -260,19 +267,22 @@
                     </TextBlock>
                 </StackPanel>
 
-                <!-- Center: Standardized Optical Living Weather Icon -->
-                <weather:LivingWeatherIcon Grid.Column="1"
-                                           IconSource="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
-                                           ConditionSlug="{Binding WeatherIconName}"
-                                           IsLiveAnimating="{Binding IsLiveAnimating}"
-                                           Height="66" Width="66"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           RenderTransformOrigin="0.5,0.5">
-                    <weather:LivingWeatherIcon.RenderTransform>
+                <!-- Center: Standardized Optical Weather Icon -->
+                <Image Grid.Column="1"
+                       Source="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                       Height="66" Width="66"
+                       RenderOptions.BitmapScalingMode="HighQuality"
+                       SnapsToDevicePixels="True"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       RenderTransformOrigin="0.5,0.5">
+                    <Image.RenderTransform>
                         <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
-                    </weather:LivingWeatherIcon.RenderTransform>
-                </weather:LivingWeatherIcon>
+                    </Image.RenderTransform>
+                    <Image.Effect>
+                        <DropShadowEffect BlurRadius="14" Direction="270" ShadowDepth="3" Opacity="0.28" Color="#000000" />
+                    </Image.Effect>
+                </Image>
 
                 <!-- Right: Standardized Temperature (Ultra-soft ambient floating elevation) -->
                 <TextBlock Grid.Column="2"
