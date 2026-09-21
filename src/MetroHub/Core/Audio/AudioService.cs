@@ -38,6 +38,8 @@ public sealed class AudioService : IDisposable
     private IMMDevice? _defaultRenderDevice;
     private IAudioEndpointVolume? _endpointVolume;
     private IAudioSessionManager2? _sessionManager;
+    private IAudioMeterInformation? _audioMeter;
+    private long _lastAudioStreamingTimestamp;
 
     private readonly EndpointNotificationCallback _endpointListener;
     private readonly EndpointVolumeCallback _volumeListener;
@@ -60,7 +62,11 @@ public sealed class AudioService : IDisposable
 
         _endpointListener.DefaultDeviceChanged += OnDefaultDeviceChanged;
         _endpointListener.DeviceListChanged += () => DeviceListChanged?.Invoke();
-        _volumeListener.VolumeChanged += (vol, mute) => MasterVolumeChanged?.Invoke(vol, mute);
+        _volumeListener.VolumeChanged += (vol, mute) =>
+        {
+            if (mute || vol <= 0.001f) _lastAudioStreamingTimestamp = 0;
+            MasterVolumeChanged?.Invoke(vol, mute);
+        };
         _sessionListener.SessionCreated += () => SessionsChanged?.Invoke();
 
         InitializeCoreAudio();
@@ -103,6 +109,7 @@ public sealed class AudioService : IDisposable
                 SafeRelease(ref _sessionManager);
             }
 
+            SafeRelease(ref _audioMeter);
             SafeRelease(ref _defaultRenderDevice);
 
             int hr = _enumerator.GetDefaultAudioEndpoint(EDataFlow.eRender, ERole.eMultimedia, out _defaultRenderDevice);
@@ -130,6 +137,14 @@ public sealed class AudioService : IDisposable
                 {
                     _sessionManager = sessionMgr;
                     _sessionManager.RegisterSessionNotification(_sessionListener);
+                }
+
+                // 3. Activate IAudioMeterInformation for real-time soundwave streaming detection
+                var iidMeter = typeof(IAudioMeterInformation).GUID;
+                hr = _defaultRenderDevice.Activate(ref iidMeter, CLSCTX.INPROC_SERVER, IntPtr.Zero, out var meterObj);
+                if (hr == 0 && meterObj is IAudioMeterInformation meter)
+                {
+                    _audioMeter = meter;
                 }
             }
         }
@@ -191,12 +206,56 @@ public sealed class AudioService : IDisposable
         if (_endpointVolume == null) return;
         try
         {
+            if (mute) _lastAudioStreamingTimestamp = 0;
             _endpointVolume.SetMute(mute, ref _emptyGuid);
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[AudioService] SetMasterMute failed: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Reads the instantaneous master render peak volume level [0.0 - 1.0]. Takes &lt; 1 microsecond.
+    /// </summary>
+    public float GetMasterPeakValue()
+    {
+        if (_audioMeter == null) return 0f;
+        try
+        {
+            int hr = _audioMeter.GetPeakValue(out float peak);
+            return hr == 0 ? peak : 0f;
+        }
+        catch
+        {
+            return 0f;
+        }
+    }
+
+    /// <summary>
+    /// Checks whether audio is actively streaming through the default endpoint.
+    /// Incorporates a 1.2-second smooth decay window to prevent arc jitter during pauses between words or beats.
+    /// Returns false immediately when muted or volume is at 0.
+    /// </summary>
+    public bool CheckIsAudioStreaming()
+    {
+        float peak = GetMasterPeakValue();
+        if (peak > 0.003f)
+        {
+            _lastAudioStreamingTimestamp = Stopwatch.GetTimestamp();
+            return true;
+        }
+
+        if (_lastAudioStreamingTimestamp > 0)
+        {
+            double elapsedSeconds = (double)(Stopwatch.GetTimestamp() - _lastAudioStreamingTimestamp) / Stopwatch.Frequency;
+            if (elapsedSeconds < 1.2)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     #endregion
@@ -684,6 +743,7 @@ public sealed class AudioService : IDisposable
 
         SafeRelease(ref _endpointVolume);
         SafeRelease(ref _sessionManager);
+        SafeRelease(ref _audioMeter);
         SafeRelease(ref _defaultRenderDevice);
         SafeRelease(ref _enumerator);
 

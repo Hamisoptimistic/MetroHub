@@ -88,6 +88,84 @@
 
         <!-- Universal 4px Fluent Floating ScrollBar: Invisible by default, reveals on scroll/hover via AutoHideScrollBehavior -->
         <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
+
+        <!-- 3 Subtle Radiating Soundwave Arcs Pulsing Outward When Audio Streams -->
+        <Storyboard x:Key="SoundwavePulseStoryboard" RepeatBehavior="Forever">
+            <!-- Arc 1: Inner Wave Pulse & Subtle Expand -->
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="WaveArc1"
+                                           Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)">
+                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="0.85" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.35" Value="1.25" KeySpline="0.2,0.8,0.4,1" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.7" Value="1.0" />
+                <SplineDoubleKeyFrame KeyTime="0:0:1.2" Value="0.85" />
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="WaveArc1"
+                                           Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)">
+                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="0.85" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.35" Value="1.25" KeySpline="0.2,0.8,0.4,1" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.7" Value="1.0" />
+                <SplineDoubleKeyFrame KeyTime="0:0:1.2" Value="0.85" />
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="WaveArc1"
+                                           Storyboard.TargetProperty="Opacity">
+                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="0.35" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.35" Value="1.0" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.7" Value="0.6" />
+                <SplineDoubleKeyFrame KeyTime="0:0:1.2" Value="0.35" />
+            </DoubleAnimationUsingKeyFrames>
+
+            <!-- Arc 2: Middle Wave Pulse (Offset by 0.18s) -->
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="WaveArc2"
+                                           Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)">
+                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="0.85" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.18" Value="0.85" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.53" Value="1.28" KeySpline="0.2,0.8,0.4,1" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.88" Value="1.0" />
+                <SplineDoubleKeyFrame KeyTime="0:0:1.2" Value="0.85" />
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="WaveArc2"
+                                           Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)">
+                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="0.85" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.18" Value="0.85" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.53" Value="1.28" KeySpline="0.2,0.8,0.4,1" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.88" Value="1.0" />
+                <SplineDoubleKeyFrame KeyTime="0:0:1.2" Value="0.85" />
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="WaveArc2"
+                                           Storyboard.TargetProperty="Opacity">
+                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="0.25" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.18" Value="0.25" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.53" Value="1.0" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.88" Value="0.5" />
+                <SplineDoubleKeyFrame KeyTime="0:0:1.2" Value="0.25" />
+            </DoubleAnimationUsingKeyFrames>
+
+            <!-- Arc 3: Outer Wave Pulse (Offset by 0.36s) -->
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="WaveArc3"
+                                           Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)">
+                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="0.85" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.36" Value="0.85" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.71" Value="1.32" KeySpline="0.2,0.8,0.4,1" />
+                <SplineDoubleKeyFrame KeyTime="0:0:1.06" Value="1.0" />
+                <SplineDoubleKeyFrame KeyTime="0:0:1.2" Value="0.85" />
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="WaveArc3"
+                                           Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)">
+                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="0.85" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.36" Value="0.85" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.71" Value="1.32" KeySpline="0.2,0.8,0.4,1" />
+                <SplineDoubleKeyFrame KeyTime="0:0:1.06" Value="1.0" />
+                <SplineDoubleKeyFrame KeyTime="0:0:1.2" Value="0.85" />
+            </DoubleAnimationUsingKeyFrames>
+            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="WaveArc3"
+                                           Storyboard.TargetProperty="Opacity">
+                <SplineDoubleKeyFrame KeyTime="0:0:0.0" Value="0.15" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.36" Value="0.15" />
+                <SplineDoubleKeyFrame KeyTime="0:0:0.71" Value="0.9" />
+                <SplineDoubleKeyFrame KeyTime="0:0:1.06" Value="0.35" />
+                <SplineDoubleKeyFrame KeyTime="0:0:1.2" Value="0.15" />
+            </DoubleAnimationUsingKeyFrames>
+        </Storyboard>
     </UserControl.Resources>
 
     <!-- Transparent WidgetCard with Padding="0" so dividers run border-to-border (like Focus Timer & Media Player) -->
@@ -161,7 +239,7 @@
                         ToolTip="Mute / Unmute Master Volume"
                         MinWidth="34">
                     <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- 1. Speaker / Mute Glyph Icon -->
+                        <!-- 1. Speaker / Mute Glyph Icon (Static Fallback / Muted) -->
                         <TextBlock x:Name="MuteIcon"
                                    Text="{Binding MasterGlyph}"
                                    FontFamily="{DynamicResource AppIconFontFamily}"
@@ -172,7 +250,18 @@
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Opacity" Value="1.0" />
+                                    <Setter Property="Visibility" Value="Visible" />
                                     <Style.Triggers>
+                                        <!-- Hide static icon when audio is actively streaming and not muted -->
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsAudioStreaming}" Value="True" />
+                                                <Condition Binding="{Binding IsMasterMuted}" Value="False" />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </MultiDataTrigger>
+
+                                        <!-- Cross-fade to % readout when dragging slider -->
                                         <DataTrigger Binding="{Binding IsDragging, ElementName=MasterVolumeSlider}" Value="True">
                                             <DataTrigger.EnterActions>
                                                 <BeginStoryboard>
@@ -196,7 +285,104 @@
                             </TextBlock.Style>
                         </TextBlock>
 
-                        <!-- 2. Volume Percentage Number (e.g. 76%) Shown While Dragging -->
+                        <!-- 2. Living Animated Speaker with 3 Radiating Soundwave Arcs (Pulsing Outward When Audio Streams) -->
+                        <Grid x:Name="LivingSpeakerContainer"
+                              Width="20" Height="16"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              IsHitTestVisible="False">
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Setter Property="Opacity" Value="1.0" />
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsAudioStreaming}" Value="True" />
+                                                <Condition Binding="{Binding IsMasterMuted}" Value="False" />
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </MultiDataTrigger>
+                                        <DataTrigger Binding="{Binding IsDragging, ElementName=MasterVolumeSlider}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         To="0.0" Duration="0:0:0.12" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         To="1.0" Duration="0:0:0.25" />
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+
+                            <!-- Base Speaker Cone (Pointing right) -->
+                            <Path Data="M 1,5.5 L 4,5.5 L 7.5,2.5 L 7.5,13.5 L 4,10.5 L 1,10.5 Z"
+                                  Fill="#FFFFFF"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Center"
+                                  SnapsToDevicePixels="True" />
+
+                            <!-- 3 Subtle Curved Soundwave Arcs Radiating Outward -->
+                            <!-- Arc 1: Inner Wave -->
+                            <Path x:Name="WaveArc1"
+                                  Data="M 10,5.8 A 3,3 0 0 1 10,10.2"
+                                  Stroke="#FFFFFF"
+                                  StrokeThickness="1.25"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Center"
+                                  RenderTransformOrigin="0,0.5"
+                                  SnapsToDevicePixels="False">
+                                <Path.RenderTransform>
+                                    <ScaleTransform x:Name="WaveScale1" ScaleX="1.0" ScaleY="1.0" />
+                                </Path.RenderTransform>
+                            </Path>
+
+                            <!-- Arc 2: Middle Wave -->
+                            <Path x:Name="WaveArc2"
+                                  Data="M 12.5,4 A 5.5,5.5 0 0 1 12.5,12"
+                                  Stroke="#FFFFFF"
+                                  StrokeThickness="1.25"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Center"
+                                  RenderTransformOrigin="0,0.5"
+                                  SnapsToDevicePixels="False">
+                                <Path.RenderTransform>
+                                    <ScaleTransform x:Name="WaveScale2" ScaleX="1.0" ScaleY="1.0" />
+                                </Path.RenderTransform>
+                            </Path>
+
+                            <!-- Arc 3: Outer Wave -->
+                            <Path x:Name="WaveArc3"
+                                  Data="M 15,2.2 A 8,8 0 0 1 15,13.8"
+                                  Stroke="#FFFFFF"
+                                  StrokeThickness="1.25"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Center"
+                                  RenderTransformOrigin="0,0.5"
+                                  SnapsToDevicePixels="False">
+                                <Path.RenderTransform>
+                                    <ScaleTransform x:Name="WaveScale3" ScaleX="1.0" ScaleY="1.0" />
+                                </Path.RenderTransform>
+                            </Path>
+                        </Grid>
+
+                        <!-- 3. Volume Percentage Number (e.g. 76%) Shown While Dragging -->
                         <TextBlock x:Name="VolumePercentageText"
                                    Text="{Binding MasterVolumePercentText}"
                                    FontSize="11.5"

@@ -55,6 +55,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
     </UserControl.Resources>
 
     <!-- Transparent WidgetCard to inherit the exact glass/acrylic tile background of other tiles -->
@@ -320,26 +321,61 @@
                     </Style>
                 </Grid.Style>
 
-                <!-- 1. Background Track (2px tall hairline, identical to Focus Timer #14FFFFFF) -->
-                <Border x:Name="SeekTrackBg"
-                        Height="2"
-                        VerticalAlignment="Center"
-                        Background="#14FFFFFF"
-                        CornerRadius="1"
-                        SnapsToDevicePixels="True" />
+                <!-- 1. Hairline Fluent Seekbar Track Group (Smooth GPU ScaleY transform on hover/drag - zero layout invalidation) -->
+                <Grid x:Name="SeekTrackGroup"
+                      VerticalAlignment="Center"
+                      RenderTransformOrigin="0.5,0.5">
+                    <Grid.RenderTransform>
+                        <ScaleTransform x:Name="SeekTrackScale" ScaleY="1.0" />
+                    </Grid.RenderTransform>
 
-                <!-- 2. Elapsed Progress Fill Track: Accent Color Bar -->
-                <Border x:Name="SeekProgressFill"
-                        Height="2"
-                        HorizontalAlignment="Stretch"
-                        VerticalAlignment="Center"
-                        Background="{Binding SeekbarBrush}"
-                        CornerRadius="1"
-                        SnapsToDevicePixels="True">
-                    <Border.Clip>
-                        <RectangleGeometry x:Name="SeekProgressClip" Rect="0,-5,0,14" />
-                    </Border.Clip>
-                </Border>
+                    <!-- Background Hairline Track (2px tall #14FFFFFF) -->
+                    <Border x:Name="SeekTrackBg"
+                            Height="2"
+                            Background="#14FFFFFF"
+                            CornerRadius="1"
+                            SnapsToDevicePixels="True" />
+
+                    <!-- Elapsed Progress Fill Track: Accent Color Bar + Luminous Specular Shimmer -->
+                    <Grid x:Name="SeekProgressContainer"
+                          Height="2"
+                          HorizontalAlignment="Stretch"
+                          SnapsToDevicePixels="True">
+                        <Grid.Clip>
+                            <RectangleGeometry x:Name="SeekProgressClip" Rect="0,-5,0,24" />
+                        </Grid.Clip>
+
+                        <!-- Base Played Accent Color Bar -->
+                        <Border x:Name="SeekProgressFill"
+                                Height="2"
+                                Background="{Binding SeekbarBrush}"
+                                CornerRadius="1"
+                                SnapsToDevicePixels="True" />
+
+                        <!-- Luminous Light Reflection Sweeping Across Played Track -->
+                        <Rectangle x:Name="SeekShimmer"
+                                   Width="70"
+                                   Height="6"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Left"
+                                   IsHitTestVisible="False"
+                                   Opacity="0.0"
+                                   SnapsToDevicePixels="True">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#00FFFFFF" Offset="0.0" />
+                                    <GradientStop Color="#60FFFFFF" Offset="0.25" />
+                                    <GradientStop Color="#E8FFFFFF" Offset="0.5" />
+                                    <GradientStop Color="#60FFFFFF" Offset="0.75" />
+                                    <GradientStop Color="#00FFFFFF" Offset="1.0" />
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                            <Rectangle.RenderTransform>
+                                <TranslateTransform x:Name="SeekShimmerTranslate" X="-80" />
+                            </Rectangle.RenderTransform>
+                        </Rectangle>
+                    </Grid>
+                </Grid>
 
                 <!-- 3. Fluent Circular Thumb Container (Identical to Volume/Brightness slider) -->
                 <Grid x:Name="SeekThumb"

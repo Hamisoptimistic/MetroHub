@@ -122,6 +122,9 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
     [ObservableProperty]
     private string _errorMessage = string.Empty;
 
+    [ObservableProperty]
+    private bool _isLiveAnimating = true;
+
     public bool IsFahrenheit => _settings.IsFahrenheit;
     public bool IsAutoLocation => _settings.IsAutoLocation;
     public string? CustomCity => _settings.CustomCity;
@@ -296,6 +299,8 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
     {
         Pause(); // Clean up existing loop/tokens if resuming
 
+        IsLiveAnimating = true;
+
         _cts = new CancellationTokenSource();
         var token = _cts.Token;
 
@@ -311,6 +316,7 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
 
     public override void Pause()
     {
+        IsLiveAnimating = false;
         _cts?.Cancel();
         _cts?.Dispose();
         _cts = null;

@@ -19,6 +19,7 @@ public partial class MediaWidgetView : UserControl
         DataContextChanged += OnDataContextChanged;
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+        IsVisibleChanged += OnIsVisibleChanged;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -33,15 +34,22 @@ public partial class MediaWidgetView : UserControl
             _vm.PropertyChanged -= OnViewModelPropertyChanged;
             _vm.PropertyChanged += OnViewModelPropertyChanged;
             UpdateProgressVisuals(_vm.ProgressRatio);
+            UpdateShimmerAnimation();
         }
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        StopShimmerAnimation();
         if (_vm != null)
         {
             _vm.PropertyChanged -= OnViewModelPropertyChanged;
         }
+    }
+
+    private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        UpdateShimmerAnimation();
     }
 
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -67,6 +75,9 @@ public partial class MediaWidgetView : UserControl
         }
     }
 
+    private System.Windows.Threading.DispatcherTimer? _shimmerDelayTimer;
+    private bool _isShimmerSweeping;
+
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (_isDragging) return;
@@ -79,6 +90,7 @@ public partial class MediaWidgetView : UserControl
             if (_vm != null)
             {
                 UpdateProgressVisuals(_vm.ProgressRatio);
+                UpdateShimmerAnimation();
             }
         }
         else if (e.PropertyName == nameof(MediaWidgetViewModel.HasMedia) && _vm != null)
@@ -87,6 +99,7 @@ public partial class MediaWidgetView : UserControl
             {
                 UpdateProgressVisuals(0);
             }
+            UpdateShimmerAnimation();
         }
         else if (e.PropertyName is nameof(MediaWidgetViewModel.IsLive) or nameof(MediaWidgetViewModel.CanSeek))
         {
@@ -99,6 +112,108 @@ public partial class MediaWidgetView : UserControl
             {
                 UpdateProgressVisuals(_vm.ProgressRatio);
             }
+            UpdateShimmerAnimation();
+        }
+    }
+
+    private void UpdateShimmerAnimation()
+    {
+        if (_vm == null)
+        {
+            StopShimmerAnimation();
+            return;
+        }
+
+        bool shouldAnimate = _vm.IsPlaying && _vm.HasMedia && !_vm.IsLive && !_isDragging && _vm.ProgressRatio > 0.005 && IsLoaded && IsVisible;
+        if (shouldAnimate)
+        {
+            StartShimmerCycle();
+        }
+        else
+        {
+            StopShimmerAnimation();
+        }
+    }
+
+    private void StartShimmerCycle()
+    {
+        if (_isShimmerSweeping || _shimmerDelayTimer != null) return;
+        TriggerNextShimmerSweep();
+    }
+
+    private void TriggerNextShimmerSweep()
+    {
+        _shimmerDelayTimer?.Stop();
+        _shimmerDelayTimer = null;
+
+        if (_vm == null || !_vm.IsPlaying || !_vm.HasMedia || _vm.IsLive || _isDragging || !IsLoaded || !IsVisible)
+        {
+            StopShimmerAnimation();
+            return;
+        }
+
+        double totalWidth = SeekbarContainer.ActualWidth;
+        if (totalWidth <= 0) return;
+
+        double fillWidth = totalWidth * Math.Clamp(_vm.ProgressRatio, 0.0, 1.0);
+        if (fillWidth < 8) return;
+
+        _isShimmerSweeping = true;
+
+        var sweepDuration = TimeSpan.FromMilliseconds(1350);
+        var sweepAnim = new DoubleAnimation(-70, fillWidth + 10, sweepDuration)
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        var opacityAnim = new DoubleAnimationUsingKeyFrames();
+        opacityAnim.KeyFrames.Add(new SplineDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+        opacityAnim.KeyFrames.Add(new SplineDoubleKeyFrame(0.95, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(200))));
+        opacityAnim.KeyFrames.Add(new SplineDoubleKeyFrame(0.95, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1050))));
+        opacityAnim.KeyFrames.Add(new SplineDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1350))));
+
+        sweepAnim.Completed += (s, e) =>
+        {
+            _isShimmerSweeping = false;
+            if (SeekShimmer != null) SeekShimmer.Opacity = 0.0;
+
+            if (_vm != null && _vm.IsPlaying && IsLoaded && IsVisible)
+            {
+                _shimmerDelayTimer?.Stop();
+                _shimmerDelayTimer = new System.Windows.Threading.DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(2200)
+                };
+                _shimmerDelayTimer.Tick += (ts, te) =>
+                {
+                    _shimmerDelayTimer?.Stop();
+                    _shimmerDelayTimer = null;
+                    TriggerNextShimmerSweep();
+                };
+                _shimmerDelayTimer.Start();
+            }
+        };
+
+        SeekShimmer?.BeginAnimation(OpacityProperty, opacityAnim);
+        SeekShimmerTranslate?.BeginAnimation(TranslateTransform.XProperty, sweepAnim);
+    }
+
+    private void StopShimmerAnimation()
+    {
+        _shimmerDelayTimer?.Stop();
+        _shimmerDelayTimer = null;
+        _isShimmerSweeping = false;
+
+        SeekShimmer?.BeginAnimation(OpacityProperty, null);
+        SeekShimmerTranslate?.BeginAnimation(TranslateTransform.XProperty, null);
+
+        if (SeekShimmer != null)
+        {
+            SeekShimmer.Opacity = 0.0;
+        }
+        if (SeekShimmerTranslate != null)
+        {
+            SeekShimmerTranslate.X = -80;
         }
     }
 
@@ -143,6 +258,7 @@ public partial class MediaWidgetView : UserControl
         if (_vm != null)
         {
             UpdateProgressVisuals(_vm.ProgressRatio);
+            UpdateShimmerAnimation();
         }
     }
 
@@ -180,6 +296,7 @@ public partial class MediaWidgetView : UserControl
         if (_vm == null || !_vm.HasMedia || _vm.IsLive || !_vm.CanSeek) return;
 
         _isDragging = true;
+        StopShimmerAnimation();
         SeekbarContainer.CaptureMouse();
         AnimateHoverState(true, isDragging: true);
         _vm.StartScrubbing();
@@ -213,6 +330,7 @@ public partial class MediaWidgetView : UserControl
             {
                 double ratio = CalculateRatioFromPosition(e.GetPosition(SeekbarContainer));
                 _vm.StopScrubbing(ratio);
+                UpdateShimmerAnimation();
             }
         }
     }
@@ -226,6 +344,7 @@ public partial class MediaWidgetView : UserControl
             if (_vm != null)
             {
                 _vm.StopScrubbing(_vm.ProgressRatio);
+                UpdateShimmerAnimation();
             }
         }
     }
@@ -247,10 +366,9 @@ public partial class MediaWidgetView : UserControl
         SeekThumbScale?.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
         SeekThumbScale?.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
 
-        // 3. Track Height: 2px resting -> 4px on hover/drag (matching Brightness slider default size)
-        double targetHeight = (isHovered || isDragging) ? 4.0 : 2.0;
-        var trackHeightAnim = new DoubleAnimation(targetHeight, duration) { EasingFunction = easing };
-        SeekTrackBg?.BeginAnimation(HeightProperty, trackHeightAnim);
-        SeekProgressFill?.BeginAnimation(HeightProperty, trackHeightAnim);
+        // 3. Track Height: 1.0 resting (2px) -> 1.8 on hover/drag (3.6px) via GPU ScaleY (zero layout passes, zero NaN)
+        double targetScaleY = (isHovered || isDragging) ? 1.8 : 1.0;
+        var trackAnim = new DoubleAnimation(targetScaleY, duration) { EasingFunction = easing };
+        SeekTrackScale?.BeginAnimation(ScaleTransform.ScaleYProperty, trackAnim);
     }
 }
