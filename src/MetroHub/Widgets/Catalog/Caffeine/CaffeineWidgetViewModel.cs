@@ -31,6 +31,7 @@ public sealed partial class CaffeineWidgetViewModel : WidgetViewModelBase
 
     #region Frozen Indicator Brushes (Freezable Hygiene)
 
+    private static readonly Brush ActiveScreenOffBrush = CreateFrozenBrush(Color.FromRgb(0x38, 0xBD, 0xF8));   // Electric Sky Blue (#38BDF8)
     private static readonly Brush ActiveCaffeineBrush = CreateFrozenBrush(Color.FromRgb(0x00, 0xE6, 0x76));    // Electric Green
     private static readonly Brush ActiveNightLightBrush = CreateFrozenBrush(Color.FromRgb(0xFF, 0xB9, 0x00));  // Amber Warmth
     private static readonly Brush InactiveTileBrush = CreateFrozenBrush(Color.FromArgb(0x38, 0xFF, 0xFF, 0xFF)); // Subtle Translucent
@@ -53,21 +54,41 @@ public sealed partial class CaffeineWidgetViewModel : WidgetViewModelBase
     #region Navigation & Tile Strip
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsScreenOffPanel))]
     [NotifyPropertyChangedFor(nameof(IsCaffeinePanel))]
     [NotifyPropertyChangedFor(nameof(IsNightLightPanel))]
-    private string _currentPanel = "Caffeine";
+    private string _currentPanel = "ScreenOff";
 
+    public bool IsScreenOffPanel => string.Equals(CurrentPanel, "ScreenOff", StringComparison.OrdinalIgnoreCase);
     public bool IsCaffeinePanel => string.Equals(CurrentPanel, "Caffeine", StringComparison.OrdinalIgnoreCase);
     public bool IsNightLightPanel => string.Equals(CurrentPanel, "NightLight", StringComparison.OrdinalIgnoreCase);
 
+    public SymbolRegular ScreenOffTileSymbol => SymbolRegular.WeatherMoon24;
     public SymbolRegular CaffeineTileSymbol => SymbolRegular.DrinkCoffee24;
     public SymbolRegular NightLightTileSymbol => SymbolRegular.Lightbulb24;
 
+    public Brush ScreenOffTileIndicatorBrush => ActiveScreenOffBrush;
     public Brush CaffeineTileIndicatorBrush => _powerService.IsAwakeActive ? ActiveCaffeineBrush : InactiveTileBrush;
     public Brush NightLightTileIndicatorBrush => _nightLightService.IsEnabled ? ActiveNightLightBrush : InactiveTileBrush;
 
     public bool IsSteamAnimating => IsAwakeActive && _isHubVisible;
     public bool IsWarmSunAnimating => IsNightLightEnabled && _isHubVisible;
+
+    #endregion
+
+    #region Screen Off State & Properties
+
+    public bool CinematicFade
+    {
+        get => _settings.CinematicFade;
+        set
+        {
+            if (_settings.CinematicFade == value) return;
+            _settings.CinematicFade = value;
+            SaveSettings();
+            OnPropertyChanged();
+        }
+    }
 
     #endregion
 
@@ -287,7 +308,14 @@ public sealed partial class CaffeineWidgetViewModel : WidgetViewModelBase
     [RelayCommand]
     private async Task TurnOffDisplays()
     {
-        await _powerService.TurnOffDisplaysAsync();
+        if (CinematicFade)
+        {
+            await CinematicFadeService.Instance.FadeAndTurnOffAsync();
+        }
+        else
+        {
+            await _powerService.TurnOffDisplaysAsync();
+        }
     }
 
     #endregion
@@ -410,6 +438,7 @@ public sealed partial class CaffeineWidgetViewModel : WidgetViewModelBase
         OnPropertyChanged(nameof(IsNightLightEnabled));
         OnPropertyChanged(nameof(IsWarmSunAnimating));
         OnPropertyChanged(nameof(NightLightStrength));
+        OnPropertyChanged(nameof(ScreenOffTileIndicatorBrush));
         OnPropertyChanged(nameof(CaffeineTileIndicatorBrush));
         OnPropertyChanged(nameof(NightLightTileIndicatorBrush));
 

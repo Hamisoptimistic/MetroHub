@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MetroHub.Core.Display;
 using MetroHub.Core.Models;
 using MetroHub.Widgets;
 using Wpf.Ui.Controls;
@@ -115,6 +116,14 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
     private void ExecuteAction(string? action)
     {
         if (string.IsNullOrEmpty(action)) return;
+
+        // Lock executes immediately with cinematic fade (no 5-second countdown)
+        if (string.Equals(action, "Lock", StringComparison.OrdinalIgnoreCase))
+        {
+            CancelPendingCountdown();
+            ExecutePowerAction("Lock");
+            return;
+        }
 
         // If this tile is already counting down, clicking it cancels the countdown!
         if (string.Equals(_pendingAction, action, StringComparison.OrdinalIgnoreCase))
@@ -231,26 +240,38 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
         ResetAllTileDisplays();
     }
 
-    private static void ExecutePowerAction(string action)
+    private static async void ExecutePowerAction(string action)
     {
         try
         {
             switch (action)
             {
                 case "Lock":
-                    Process.Start(new ProcessStartInfo("rundll32.exe", "user32.dll,LockWorkStation") { UseShellExecute = true });
+                    await CinematicFadeService.Instance.FadeAndExecuteAsync(() =>
+                    {
+                        CinematicFadeService.LockWorkStation();
+                    }, fadeDurationMs: 450, holdDurationMs: 50);
                     break;
 
                 case "Sleep":
-                    Process.Start(new ProcessStartInfo("rundll32.exe", "powrprof.dll,SetSuspendState 0,1,0") { UseShellExecute = true });
+                    await CinematicFadeService.Instance.FadeAndExecuteAsync(() =>
+                    {
+                        CinematicFadeService.SetSuspendState(false, false, false);
+                    }, fadeDurationMs: 600, holdDurationMs: 250);
                     break;
 
                 case "Restart":
-                    Process.Start(new ProcessStartInfo("shutdown.exe", "/r /t 0") { CreateNoWindow = true, UseShellExecute = false });
+                    await CinematicFadeService.Instance.FadeAndExecuteAsync(() =>
+                    {
+                        Process.Start(new ProcessStartInfo("shutdown.exe", "/r /t 0") { CreateNoWindow = true, UseShellExecute = false });
+                    }, fadeDurationMs: 650, holdDurationMs: 300);
                     break;
 
                 case "Shutdown":
-                    Process.Start(new ProcessStartInfo("shutdown.exe", "/s /t 0") { CreateNoWindow = true, UseShellExecute = false });
+                    await CinematicFadeService.Instance.FadeAndExecuteAsync(() =>
+                    {
+                        Process.Start(new ProcessStartInfo("shutdown.exe", "/s /t 0") { CreateNoWindow = true, UseShellExecute = false });
+                    }, fadeDurationMs: 650, holdDurationMs: 300);
                     break;
             }
         }

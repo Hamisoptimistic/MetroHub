@@ -191,7 +191,7 @@ public sealed class SpeedTestService
                     StatusMessage = "Measuring latency..."
                 });
 
-                await Task.Delay(60, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(120, cancellationToken).ConfigureAwait(false);
             }
 
             // If 0 probes succeeded in total, do not proceed to download/upload
@@ -241,6 +241,7 @@ public sealed class SpeedTestService
 
             // Rolling queue for stable, silky-smooth 400ms sliding-window live gauge rate
             var downloadRollingSamples = new Queue<(long Time, long Bytes)>();
+            long lastDownloadLatencyTimestamp = downloadStart;
 
             // Background worker tasks downloading chunks
             var downloadTasks = Enumerable.Range(0, downloadStreams).Select(async _ =>
@@ -328,9 +329,13 @@ public sealed class SpeedTestService
                 double elapsedMs = elapsedSec * 1000.0;
                 double phaseProg = Math.Clamp(elapsedMs / testDurationMs, 0.0, 1.0);
 
-                var (liveP, liveJ) = latencyTracker.GetLiveMetrics();
-                if (liveP.HasValue) measuredPing = liveP.Value;
-                if (liveJ.HasValue) measuredJitter = liveJ.Value;
+                if ((now - lastDownloadLatencyTimestamp) * 1000.0 / Stopwatch.Frequency >= 500.0)
+                {
+                    var (liveP, liveJ) = latencyTracker.GetLiveMetrics();
+                    if (liveP.HasValue) measuredPing = liveP.Value;
+                    if (liveJ.HasValue) measuredJitter = liveJ.Value;
+                    lastDownloadLatencyTimestamp = now;
+                }
 
                 progress.Report(new SpeedTestProgress
                 {
@@ -413,6 +418,7 @@ public sealed class SpeedTestService
 
             // Rolling queue for stable, silky-smooth 400ms sliding-window live gauge rate
             var uploadRollingSamples = new Queue<(long Time, long Bytes)>();
+            long lastUploadLatencyTimestamp = uploadStart;
 
             // 64KB pre-allocated chunk buffer
             var uploadChunk = new byte[65536];
@@ -510,9 +516,13 @@ public sealed class SpeedTestService
                 double elapsedMs = elapsedSec * 1000.0;
                 double phaseProg = Math.Clamp(elapsedMs / uploadDurationMs, 0.0, 1.0);
 
-                var (liveP, liveJ) = latencyTracker.GetLiveMetrics();
-                if (liveP.HasValue) measuredPing = liveP.Value;
-                if (liveJ.HasValue) measuredJitter = liveJ.Value;
+                if ((now - lastUploadLatencyTimestamp) * 1000.0 / Stopwatch.Frequency >= 500.0)
+                {
+                    var (liveP, liveJ) = latencyTracker.GetLiveMetrics();
+                    if (liveP.HasValue) measuredPing = liveP.Value;
+                    if (liveJ.HasValue) measuredJitter = liveJ.Value;
+                    lastUploadLatencyTimestamp = now;
+                }
 
                 progress.Report(new SpeedTestProgress
                 {

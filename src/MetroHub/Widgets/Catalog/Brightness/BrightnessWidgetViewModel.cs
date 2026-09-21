@@ -82,8 +82,9 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
-        WidgetSize.Mega,       // 8x4
-        WidgetSize.SlimBanner  // 8x1
+        WidgetSize.SlimWide,   // 4x1
+        WidgetSize.SlimBanner, // 8x1
+        WidgetSize.Mega        // 8x4
     };
 
     [ObservableProperty]
@@ -140,7 +141,11 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
         {
             try
             {
-                if (!_isHubVisible || Monitors.Count <= 1) return;
+                if (!_isHubVisible || Monitors.Count <= 1)
+                {
+                    _cursorTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+                    return;
+                }
                 var lastMonitors = _brightnessService.LastMonitors;
                 if (lastMonitors.Count == 0) return;
 
@@ -159,9 +164,10 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
             {
                 System.Diagnostics.Debug.WriteLine($"[BrightnessWidget] Cursor tracking error: {ex.Message}");
             }
-        }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        }, null, Timeout.Infinite, Timeout.Infinite); // Starts dormant until multi-monitor detected
 
         RefreshAll();
+        UpdateCursorTimerState();
     }
 
     protected override void LoadSettings(string? settingsJson)
@@ -482,6 +488,19 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
                 }
             }
         }
+        UpdateCursorTimerState();
+    }
+
+    private void UpdateCursorTimerState()
+    {
+        if (_isHubVisible && Monitors.Count > 1)
+        {
+            _cursorTimer?.Change(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        }
+        else
+        {
+            _cursorTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+        }
     }
 
     private void OnBrightnessServiceMonitorsChanged(object? sender, IReadOnlyList<MonitorDevice> updatedMonitors)
@@ -496,14 +515,16 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
 
     public override void Pause()
     {
+        base.Pause();
         _isHubVisible = false;
-        _cursorTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+        UpdateCursorTimerState();
     }
 
     public override void Resume()
     {
+        base.Resume();
         _isHubVisible = true;
-        _cursorTimer?.Change(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+        UpdateCursorTimerState();
         RefreshAll();
     }
 

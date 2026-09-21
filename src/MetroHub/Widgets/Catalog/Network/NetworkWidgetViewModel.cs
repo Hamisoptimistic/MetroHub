@@ -1071,22 +1071,24 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         SpeedTestPhaseProgress = 0;
         SpeedTestArcBrush = BlueIndicatorBrush;
 
+        long lastTextUpdateTimestamp = 0;
+        SpeedTestPhase lastReportedPhase = SpeedTestPhase.Connecting;
+
         var progress = new Progress<SpeedTestProgress>(p =>
         {
+            long now = Stopwatch.GetTimestamp();
+            bool phaseChanged = p.Phase != lastReportedPhase;
+            lastReportedPhase = p.Phase;
+
             SpeedTestPhase = p.Phase;
             if (!string.IsNullOrEmpty(p.StatusMessage))
                 SpeedTestStatusMessage = p.StatusMessage;
 
             if (p.IsMeteredConnection) IsMeteredNetwork = true;
-            if (p.PingMs.HasValue) SpeedTestPingMs = p.PingMs.Value;
-            if (p.JitterMs.HasValue) SpeedTestJitterMs = p.JitterMs.Value;
-            if (p.FinalDownloadMbps.HasValue) SpeedTestDownloadMbps = p.FinalDownloadMbps.Value;
-            if (p.FinalUploadMbps.HasValue) SpeedTestUploadMbps = p.FinalUploadMbps.Value;
-
-            SpeedTestInstantaneousMbps = p.InstantaneousMbps;
             SpeedTestPeakMbps = p.PeakMbps;
             SpeedTestPhaseProgress = p.PhaseProgress;
 
+            // Live gauge needle is ALWAYS 100% fluid and updated on every sample
             if (p.Phase == SpeedTestPhase.Download)
             {
                 SpeedTestArcBrush = BlueIndicatorBrush;
@@ -1107,14 +1109,32 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                 SpeedTestGaugeMbps = 0;
             }
 
-            OnPropertyChanged(nameof(SpeedTestMainNumberDisplay));
-            OnPropertyChanged(nameof(SpeedTestMainUnitDisplay));
-            OnPropertyChanged(nameof(SpeedTestDownloadDisplay));
-            OnPropertyChanged(nameof(SpeedTestUploadDisplay));
-            OnPropertyChanged(nameof(SpeedTestDownloadShortDisplay));
-            OnPropertyChanged(nameof(SpeedTestUploadShortDisplay));
-            OnPropertyChanged(nameof(SpeedTestPingDisplay));
-            OnPropertyChanged(nameof(SpeedTestJitterDisplay));
+            // Immediately apply final completed metrics
+            if (p.FinalDownloadMbps.HasValue) SpeedTestDownloadMbps = p.FinalDownloadMbps.Value;
+            if (p.FinalUploadMbps.HasValue) SpeedTestUploadMbps = p.FinalUploadMbps.Value;
+
+            // Decoupled numerical text throttling (~130ms) for human readability and flicker elimination
+            bool isCompleted = p.Phase is SpeedTestPhase.Completed or SpeedTestPhase.Failed or SpeedTestPhase.Cancelled;
+            double elapsedTextMs = (now - lastTextUpdateTimestamp) * 1000.0 / Stopwatch.Frequency;
+
+            if (phaseChanged || isCompleted || elapsedTextMs >= 130.0)
+            {
+                lastTextUpdateTimestamp = now;
+
+                if (p.PingMs.HasValue) SpeedTestPingMs = p.PingMs.Value;
+                if (p.JitterMs.HasValue) SpeedTestJitterMs = p.JitterMs.Value;
+
+                SpeedTestInstantaneousMbps = p.InstantaneousMbps;
+
+                OnPropertyChanged(nameof(SpeedTestMainNumberDisplay));
+                OnPropertyChanged(nameof(SpeedTestMainUnitDisplay));
+                OnPropertyChanged(nameof(SpeedTestDownloadDisplay));
+                OnPropertyChanged(nameof(SpeedTestUploadDisplay));
+                OnPropertyChanged(nameof(SpeedTestDownloadShortDisplay));
+                OnPropertyChanged(nameof(SpeedTestUploadShortDisplay));
+                OnPropertyChanged(nameof(SpeedTestPingDisplay));
+                OnPropertyChanged(nameof(SpeedTestJitterDisplay));
+            }
         });
 
         try

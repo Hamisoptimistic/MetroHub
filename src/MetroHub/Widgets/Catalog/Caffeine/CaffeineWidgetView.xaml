@@ -249,6 +249,24 @@
         <widgets:WidgetTiles Grid.Row="0"
                              SelectedValue="{Binding CurrentPanel, Mode=TwoWay}"
                              Height="72">
+            <!-- 0. Screen Off Tile -->
+            <widgets:WidgetTile Value="ScreenOff"
+                                Header="Screen Off"
+                                IndicatorBrush="{Binding ScreenOffTileIndicatorBrush}"
+                                ToolTip="Instant display standby &amp; wake management">
+                <widgets:WidgetTile.Icon>
+                    <Grid Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ui:SymbolIcon Symbol="WeatherMoon24"
+                                       FontSize="22"
+                                       Foreground="#FFFFFF"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       SnapsToDevicePixels="False" />
+                    </Grid>
+                </widgets:WidgetTile.Icon>
+            </widgets:WidgetTile>
+
+            <!-- 1. Caffeine Tile -->
             <widgets:WidgetTile Value="Caffeine"
                                 Header="Caffeine"
                                 IndicatorBrush="{Binding CaffeineTileIndicatorBrush}"
@@ -418,6 +436,123 @@
         <!-- ========================================================================= -->
         <Grid Grid.Row="1" Background="Transparent" SnapsToDevicePixels="True">
 
+            <!-- ==================== 0. SCREEN OFF PANEL ==================== -->
+            <Grid Visibility="{Binding IsScreenOffPanel, Converter={StaticResource BoolToVis}}"
+                  Margin="20,6,20,6"
+                  SnapsToDevicePixels="True">
+                <Grid.RowDefinitions>
+                    <!-- Row 0: Master Turn Off Screens Action (2 Equal-Height Centered Rows) -->
+                    <RowDefinition Height="*" />
+                    <!-- Row 1: Wake On Keypress Only Toggle -->
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Row 0: Master Turn Off Screens Action -->
+                <Grid Grid.Row="0" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: WeatherMoon24 Icon + Title + Subtitle -->
+                    <Grid Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <ui:SymbolIcon Grid.Column="0"
+                                       Symbol="WeatherMoon24"
+                                       FontSize="22"
+                                       Foreground="#E0FFFFFF"
+                                       Margin="0,0,10,0"
+                                       VerticalAlignment="Center" />
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="Turn off screens"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       FontSize="13.5"
+                                       FontWeight="SemiBold"
+                                       Foreground="#FFFFFF"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="Puts all connected displays into low-power standby"
+                                       FontFamily="{DynamicResource AppFontFamily}"
+                                       FontSize="11"
+                                       Foreground="#70FFFFFF"
+                                       Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Right: Cohesive Fluent Action Button [ 🌙 Turn Off Now ] -->
+                    <ui:Button Grid.Column="1"
+                               Appearance="Secondary"
+                               Command="{Binding TurnOffDisplaysCommand}"
+                               VerticalAlignment="Center"
+                               Padding="12,6,12,6"
+                               Cursor="Hand"
+                               ToolTip="Instantly powers down all displays into standby (takes effect after a 500ms release grace period)">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <ui:SymbolIcon Symbol="WeatherMoon24"
+                                           FontSize="13"
+                                           Margin="0,0,6,0"
+                                           Foreground="#38BDF8"
+                                           VerticalAlignment="Center" />
+                            <TextBlock Text="Turn Off Now"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ui:Button>
+                </Grid>
+
+                <!-- Row 1: Cinematic Fade-Out Toggle -->
+                <Grid Grid.Row="1" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Sparkle24 Icon + Title + Subtitle -->
+                    <Grid Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <ui:SymbolIcon Grid.Column="0"
+                                       Symbol="Sparkle24"
+                                       FontSize="22"
+                                       Foreground="#E0FFFFFF"
+                                       Margin="0,0,10,0"
+                                       VerticalAlignment="Center" />
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="Cinematic fade-out"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       FontSize="13.5"
+                                       FontWeight="SemiBold"
+                                       Foreground="#FFFFFF"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="Smoothly dims displays to black before entering standby"
+                                       FontFamily="{DynamicResource AppFontFamily}"
+                                       FontSize="11"
+                                       Foreground="#70FFFFFF"
+                                       Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Right: Fluent ToggleSwitch -->
+                    <ui:ToggleSwitch Grid.Column="1"
+                                     Style="{StaticResource FluentGreenToggleSwitchStyle}"
+                                     IsChecked="{Binding CinematicFade, Mode=TwoWay}"
+                                     VerticalAlignment="Center"
+                                     Cursor="Hand"
+                                     ToolTip="When enabled, displays smoothly fade to pitch black (macOS style) before turning off" />
+                </Grid>
+            </Grid>
+
             <!-- ==================== 1. CAFFEINE PANEL ==================== -->
             <Grid Visibility="{Binding IsCaffeinePanel, Converter={StaticResource BoolToVis}}"
                   Margin="20,6,20,6"
@@ -573,34 +708,13 @@
                         </StackPanel>
                     </Grid>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <!-- Quick Action: Turn Off Displays Immediately -->
-                        <ui:Button Command="{Binding TurnOffDisplaysCommand}"
-                                   Appearance="Secondary"
-                                   VerticalAlignment="Center"
-                                   Padding="10,5,10,5"
-                                   Margin="0,0,14,0"
-                                   Cursor="Hand"
-                                   ToolTip="Instantly power down all displays into low-power standby (moving mouse or typing wakes them)">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <ui:SymbolIcon Symbol="WeatherMoon24"
-                                               FontSize="14"
-                                               Margin="0,0,6,0"
-                                               Foreground="#D0FFFFFF"
-                                               VerticalAlignment="Center" />
-                                <TextBlock Text="Turn Off Screens"
-                                           FontSize="11.5"
-                                           FontWeight="SemiBold"
-                                           VerticalAlignment="Center" />
-                            </StackPanel>
-                        </ui:Button>
-
-                        <ui:ToggleSwitch Style="{StaticResource FluentGreenToggleSwitchStyle}"
-                                         IsChecked="{Binding KeepScreenOn, Mode=TwoWay}"
-                                         IsEnabled="{Binding CanToggleKeepScreenOn}"
-                                         VerticalAlignment="Center"
-                                         Cursor="Hand" />
-                    </StackPanel>
+                    <!-- Right: Fluent ToggleSwitch -->
+                    <ui:ToggleSwitch Grid.Column="1"
+                                     Style="{StaticResource FluentGreenToggleSwitchStyle}"
+                                     IsChecked="{Binding KeepScreenOn, Mode=TwoWay}"
+                                     IsEnabled="{Binding CanToggleKeepScreenOn}"
+                                     VerticalAlignment="Center"
+                                     Cursor="Hand" />
                 </Grid>
             </Grid>
 

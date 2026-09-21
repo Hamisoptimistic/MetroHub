@@ -58,34 +58,80 @@
                 <RowDefinition Height="38" />   <!-- Row 1: Right-Aligned Author Attribution -->
             </Grid.RowDefinitions>
 
-            <!-- Row 0: Adaptive Quote Text in Uniform DownOnly Viewbox -->
+            <!-- Row 0: Adaptive Quote Text in Uniform DownOnly Viewbox with Smooth Typewriter Effect -->
             <Viewbox Grid.Row="0"
                      Stretch="Uniform"
                      StretchDirection="DownOnly"
                      HorizontalAlignment="Center"
                      VerticalAlignment="Center"
                      Margin="36,18,36,6">
-                <TextBlock Text="{Binding DisplayText}"
-                           MaxWidth="440"
-                           TextWrapping="Wrap"
-                           TextAlignment="Center"
-                           FontFamily="{Binding QuoteFontFamily}"
-                           FontStyle="{Binding QuoteFontStyle}"
-                           FontWeight="{Binding QuoteFontWeight}"
-                           FontSize="19.5"
-                           Foreground="#FFF8EE"
-                           LineHeight="30"
-                           LineStackingStrategy="BlockLineHeight"
-                           TextOptions.TextFormattingMode="Ideal"
-                           TextOptions.TextRenderingMode="ClearType">
-                    <TextBlock.Effect>
-                        <DropShadowEffect BlurRadius="6" ShadowDepth="1.5" Direction="270" Opacity="0.55" Color="#000000" />
-                    </TextBlock.Effect>
-                </TextBlock>
+                <Grid MaxWidth="440" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <!-- Ghost anchor: Locks Viewbox geometry to full quote dimensions so scale is locked and never shifts mid-type -->
+                    <TextBlock Text="{Binding DisplayText}"
+                               MaxWidth="440"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               FontFamily="{Binding QuoteFontFamily}"
+                               FontStyle="{Binding QuoteFontStyle}"
+                               FontWeight="{Binding QuoteFontWeight}"
+                               FontSize="19.5"
+                               Foreground="Transparent"
+                               LineHeight="30"
+                               LineStackingStrategy="BlockLineHeight"
+                               IsHitTestVisible="False"
+                               TextOptions.TextFormattingMode="Ideal"
+                               TextOptions.TextRenderingMode="ClearType" />
+
+                    <!-- Live Typewriter TextBlock -->
+                    <TextBlock MaxWidth="440"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               FontFamily="{Binding QuoteFontFamily}"
+                               FontStyle="{Binding QuoteFontStyle}"
+                               FontWeight="{Binding QuoteFontWeight}"
+                               FontSize="19.5"
+                               Foreground="#FFF8EE"
+                               LineHeight="30"
+                               LineStackingStrategy="BlockLineHeight"
+                               TextOptions.TextFormattingMode="Ideal"
+                               TextOptions.TextRenderingMode="ClearType">
+                        <Run Text="{Binding RevealedText, Mode=OneWay}" /><InlineUIContainer BaselineAlignment="Center"><Border Width="1.5"
+                                        Height="19"
+                                        Background="#90FFFFFF"
+                                        Margin="2,0,-3.5,0"
+                                        Opacity="{Binding CursorOpacity, Mode=OneWay}"
+                                        SnapsToDevicePixels="True" /></InlineUIContainer>
+                        <TextBlock.Effect>
+                            <DropShadowEffect BlurRadius="8" ShadowDepth="1.5" Direction="270" Opacity="0.5" Color="#000000" />
+                        </TextBlock.Effect>
+                    </TextBlock>
+                </Grid>
             </Viewbox>
 
-            <!-- Row 1: Author Attribution (Right-aligned, clean, no dividing line) -->
-            <Grid Grid.Row="1" Margin="28,0,28,10" VerticalAlignment="Center">
+            <!-- Row 1: Author Attribution (Fades in smoothly when quote finishes typing) -->
+            <Grid Grid.Row="1" Margin="28,0,28,10" VerticalAlignment="Center" HorizontalAlignment="Right">
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Opacity" Value="1" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsAuthorVisible}" Value="False">
+                                <Setter Property="Opacity" Value="0" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsAuthorVisible}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             To="1"
+                                                             Duration="0:0:0.35" />
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
                 <TextBlock Text="{Binding DisplayAuthor}"
                            HorizontalAlignment="Right"
                            VerticalAlignment="Center"

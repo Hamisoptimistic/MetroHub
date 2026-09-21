@@ -12,4 +12,5 @@ public sealed class CaffeineWidgetSettings
     public double NightLightStrength { get; set; } = 50.0;
     public bool KeepScreenOn { get; set; } = false;
     public int SelectedMinutes { get; set; } = 30;
+    public bool CinematicFade { get; set; } = true;
 }

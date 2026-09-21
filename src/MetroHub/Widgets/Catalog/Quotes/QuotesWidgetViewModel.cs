@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -34,6 +36,17 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(DisplayAuthorName))]
     [NotifyPropertyChangedFor(nameof(DisplayAuthor))]
     private QuoteModel? _currentQuote;
+
+    [ObservableProperty]
+    private string _revealedText = string.Empty;
+
+    [ObservableProperty]
+    private double _cursorOpacity = 0.0;
+
+    [ObservableProperty]
+    private bool _isAuthorVisible = true;
+
+    private CancellationTokenSource? _typingCts;
 
     [ObservableProperty]
     private QuoteFontFamilyChoice _selectedFont = QuoteFontFamilyChoice.Merriweather;
@@ -198,7 +211,7 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase
         return (int)(hash % (uint)_quotes.Count);
     }
 
-    private void UpdateCurrentQuote()
+    private void UpdateCurrentQuote(bool animate = false)
     {
         if (_quotes.Count == 0) return;
         if (_currentQuoteIndex < 0 || _currentQuoteIndex >= _quotes.Count)
@@ -206,6 +219,88 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase
             _currentQuoteIndex = 0;
         }
         CurrentQuote = _quotes[_currentQuoteIndex];
+
+        _typingCts?.Cancel();
+        _typingCts?.Dispose();
+        _typingCts = null;
+
+        if (!animate)
+        {
+            RevealedText = DisplayText;
+            CursorOpacity = 0.0;
+            IsAuthorVisible = true;
+        }
+        else
+        {
+            RevealedText = string.Empty;
+            CursorOpacity = 1.0;
+            IsAuthorVisible = false;
+            _typingCts = new CancellationTokenSource();
+            var token = _typingCts.Token;
+            _ = RevealQuoteTypewriterAsync(DisplayText, token);
+        }
+    }
+
+    private async Task RevealQuoteTypewriterAsync(string fullQuote, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(fullQuote))
+        {
+            RevealedText = string.Empty;
+            CursorOpacity = 0.0;
+            IsAuthorVisible = true;
+            return;
+        }
+
+        CursorOpacity = 1.0;
+        var builder = new StringBuilder(fullQuote.Length);
+
+        for (int i = 0; i < fullQuote.Length; i++)
+        {
+            if (token.IsCancellationRequested) return;
+
+            char c = fullQuote[i];
+            builder.Append(c);
+            RevealedText = builder.ToString();
+
+            // Smooth typing cadence: 50-60 Hz for characters, natural organic micro-pauses for punctuation
+            int delayMs = c switch
+            {
+                '.' or '!' or '?' => 130,
+                ',' or ';' or ':' => 75,
+                '—' or '-' => 50,
+                ' ' => 22,
+                _ => 16
+            };
+
+            try
+            {
+                await Task.Delay(delayMs, token);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+        }
+
+        if (token.IsCancellationRequested) return;
+
+        RevealedText = fullQuote;
+
+        // Hold cleanly on the finished quote for 250ms with zero jumping or layout shift, then dismiss cursor
+        try
+        {
+            await Task.Delay(250, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (!token.IsCancellationRequested)
+        {
+            CursorOpacity = 0.0;
+            IsAuthorVisible = true;
+        }
     }
 
     public void SetFont(QuoteFontFamilyChoice font)
@@ -255,7 +350,7 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase
         } while (nextIdx == _currentQuoteIndex && _quotes.Count > 1);
 
         _currentQuoteIndex = nextIdx;
-        UpdateCurrentQuote();
+        UpdateCurrentQuote(animate: true);
         SaveSettings();
     }
 
@@ -319,10 +414,27 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase
         MainWindow.Current?.SaveGroupsAndLayout();
     }
 
+    public override void Pause()
+    {
+        base.Pause();
+        if (_typingCts != null)
+        {
+            _typingCts.Cancel();
+            _typingCts.Dispose();
+            _typingCts = null;
+            RevealedText = DisplayText;
+            CursorOpacity = 0.0;
+            IsAuthorVisible = true;
+        }
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
+            _typingCts?.Cancel();
+            _typingCts?.Dispose();
+            _typingCts = null;
             _copiedFeedbackTimer?.Stop();
             _copiedFeedbackTimer = null;
         }

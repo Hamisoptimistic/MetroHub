@@ -189,6 +189,7 @@ public static class WidgetRegistry
             Icon: SymbolRegular.BrightnessHigh24,
             AllowedSizes: new[]
             {
+                WidgetSize.SlimWide,   // 4x1
                 WidgetSize.SlimBanner, // 8x1
                 WidgetSize.Mega        // 8x4
             },

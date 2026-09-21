@@ -1520,12 +1520,13 @@
                                                FontSize="22"
                                                FontWeight="Bold"
                                                Foreground="#FFFFFF"
+                                               TextOptions.TextFormattingMode="Display"
                                                Typography.NumeralAlignment="Tabular" />
-                                    <TextBlock Text=" Mbps"
+                                    <TextBlock Text="Mbps"
                                                FontSize="12.5"
                                                Foreground="#80FFFFFF"
                                                VerticalAlignment="Bottom"
-                                               Margin="0,0,0,2" />
+                                               Margin="4,0,0,2" />
                                 </StackPanel>
                             </StackPanel>
 
@@ -1543,12 +1544,13 @@
                                                FontSize="22"
                                                FontWeight="Bold"
                                                Foreground="#FFFFFF"
+                                               TextOptions.TextFormattingMode="Display"
                                                Typography.NumeralAlignment="Tabular" />
-                                    <TextBlock Text=" Mbps"
+                                    <TextBlock Text="Mbps"
                                                FontSize="12.5"
                                                Foreground="#80FFFFFF"
                                                VerticalAlignment="Bottom"
-                                               Margin="0,0,0,2" />
+                                               Margin="4,0,0,2" />
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
@@ -1573,15 +1575,17 @@
 
                             <!-- Left: Ping (Flush with left end of separator) -->
                             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
-                                <TextBlock Text="Ping "
+                                <TextBlock Text="Ping"
                                            FontSize="11.5"
                                            Foreground="#75FFFFFF"
-                                           VerticalAlignment="Center" />
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding SpeedTestPingDisplay}"
                                            FontSize="11.5"
                                            FontWeight="SemiBold"
                                            Foreground="#FFFFFF"
                                            VerticalAlignment="Center"
+                                           TextOptions.TextFormattingMode="Display"
                                            Typography.NumeralAlignment="Tabular" />
                             </StackPanel>
 
@@ -1602,15 +1606,17 @@
 
                             <!-- Right: Jitter (Flush with right end of separator) -->
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                <TextBlock Text="Jitter "
+                                <TextBlock Text="Jitter"
                                            FontSize="11.5"
                                            Foreground="#75FFFFFF"
-                                           VerticalAlignment="Center" />
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding SpeedTestJitterDisplay}"
                                            FontSize="11.5"
                                            FontWeight="SemiBold"
                                            Foreground="#FFFFFF"
                                            VerticalAlignment="Center"
+                                           TextOptions.TextFormattingMode="Display"
                                            Typography.NumeralAlignment="Tabular" />
                             </StackPanel>
                         </Grid>
