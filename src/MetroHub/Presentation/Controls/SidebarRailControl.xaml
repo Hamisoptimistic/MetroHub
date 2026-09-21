@@ -187,7 +187,7 @@
         </Grid.RowDefinitions>
 
         <!-- 1. Top Section: Pin & All Apps -->
-        <StackPanel Grid.Row="0" Margin="0,10,0,6">
+        <StackPanel Grid.Row="0" Margin="0,10,0,0">
             <!-- Pin / Unpin Toggle -->
             <Button x:Name="PinButton"
                     Style="{StaticResource RailButtonStyle}"
@@ -202,7 +202,7 @@
                     Style="{StaticResource RailButtonStyle}"
                     ToolTip="All apps"
                     Click="OnAppsToggleClick">
-                <ui:SymbolIcon Symbol="AppsList24" FontSize="20"
+                <ui:SymbolIcon Symbol="AppsListDetail24" FontSize="22"
                                Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" />
             </Button>
         </StackPanel>
@@ -222,7 +222,7 @@
                       Drop="OnShortcutsDrop">
             <Grid x:Name="ShortcutsContainer">
                 <ItemsControl x:Name="ShortcutsItemsControl"
-                              Margin="0,2,0,2">
+                              Margin="0">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type models:SidebarShortcutItem}">
                             <Grid x:Name="ItemRowContainer"
@@ -493,7 +493,7 @@
     </ScrollViewer>
 
         <!-- 3. Bottom Section: Add Shortcut & Power -->
-        <StackPanel Grid.Row="2" Margin="0,6,0,10">
+        <StackPanel Grid.Row="2" Margin="0,0,0,10">
             <!-- Add Shortcut Button (+) -->
             <Button x:Name="AddShortcutButton"
                     Style="{StaticResource RailButtonStyle}"

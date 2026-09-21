@@ -67,7 +67,7 @@ public sealed partial class CaffeineWidgetViewModel : WidgetViewModelBase
     public SymbolRegular CaffeineTileSymbol => SymbolRegular.DrinkCoffee24;
     public SymbolRegular NightLightTileSymbol => SymbolRegular.Lightbulb24;
 
-    public Brush ScreenOffTileIndicatorBrush => ActiveScreenOffBrush;
+    public Brush ScreenOffTileIndicatorBrush => InactiveTileBrush;
     public Brush CaffeineTileIndicatorBrush => _powerService.IsAwakeActive ? ActiveCaffeineBrush : InactiveTileBrush;
     public Brush NightLightTileIndicatorBrush => _nightLightService.IsEnabled ? ActiveNightLightBrush : InactiveTileBrush;
 

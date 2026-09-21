@@ -1050,6 +1050,10 @@ public partial class MainWindow : BorderlessFluentWindow
         {
             var sb = openStoryboard.Clone();
             Timeline.SetDesiredFrameRate(sb, NativeMethods.GetScreenRefreshRate());
+            sb.Completed += (s, e) =>
+            {
+                if (RootGrid != null) RootGrid.Opacity = 1.0;
+            };
             sb.Begin(this);
         }
         else
@@ -1062,6 +1066,9 @@ public partial class MainWindow : BorderlessFluentWindow
     public void DismissWithAnimation()
     {
         if (_isDismissing || !IsVisible) return;
+
+        // Immediately disable hit-testing so tiles/widgets cannot be clicked during exit fade
+        if (RootGrid != null) RootGrid.IsHitTestVisible = false;
 
         if (_isDragging || _isPotentialDrag || _isRubberBanding)
         {
@@ -1088,12 +1095,26 @@ public partial class MainWindow : BorderlessFluentWindow
                 Topmost = false;
 
                 // Reset back cleanly
-                if (RootGrid != null) RootGrid.Opacity = 0.0;
+                if (RootGrid != null)
+                {
+                    RootGrid.Opacity = 0.0;
+                    RootGrid.IsHitTestVisible = true;
+                }
                 if (RootTranslate != null)
                 {
                     RootTranslate.X = 0.0;
                     RootTranslate.Y = 0.0;
                 }
+
+                // Defer GC cleanup to idle priority after window is hidden
+                Dispatcher.InvokeAsync(() =>
+                {
+                    var beforeMB = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    GC.Collect();
+                    MetroHub.Core.Services.HiddenDiagnosticsLogger.LogMemorySnapshot("HUB HIDE (Post-GC Cleanup)", beforeMB);
+                }, DispatcherPriority.ApplicationIdle);
             };
             sb.Begin(this);
         }
@@ -1103,6 +1124,16 @@ public partial class MainWindow : BorderlessFluentWindow
             _isDismissing = false;
             _isFullyActivated = false;
             Topmost = false;
+            if (RootGrid != null) RootGrid.IsHitTestVisible = true;
+
+            Dispatcher.InvokeAsync(() =>
+            {
+                var beforeMB = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+                MetroHub.Core.Services.HiddenDiagnosticsLogger.LogMemorySnapshot("HUB HIDE (Post-GC Cleanup)", beforeMB);
+            }, DispatcherPriority.ApplicationIdle);
         }
     }
 
@@ -1200,6 +1231,14 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         _isDismissing = false;
         _lastShownTime = DateTime.UtcNow;
         _isFullyActivated = false;
+
+        // Phase 1 (Invisible Layout Pre-computation): Keep RootGrid invisible while HWND, DWM backdrop, and layouts initialize
+        if (RootGrid != null)
+        {
+            RootGrid.Opacity = 0.0;
+            RootGrid.IsHitTestVisible = true;
+        }
+
         SnapToWorkArea();
         Show();
         WindowState = WindowState.Normal;
@@ -1219,6 +1258,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         UpdateLayoutMetrics();
         UpdateExposedAddSlots();
 
+        // Phase 2 (Cohesive Fluent Entrance): Dispatch once WPF completes Measure, Arrange, and initial GPU render
         Dispatcher.InvokeAsync(() =>
         {
             if (hwnd != IntPtr.Zero)
@@ -1228,9 +1268,9 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             Activate();
             Focus();
             Keyboard.Focus(this);
-        }, DispatcherPriority.Render);
 
-        PlayOpenAnimation();
+            PlayOpenAnimation();
+        }, DispatcherPriority.Render);
 
         // Defer widget wake-up and service resumption to background priority so UI opens instantly without frame drops
         Dispatcher.InvokeAsync(() =>
@@ -1276,13 +1316,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         InstalledAppsService.PauseWatchers();
         UninstallWinEventHook();
 
-        // ── Comprehensive Memory Diagnostic: Managed vs Unmanaged Leak Analysis ──
-        var beforeMB = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-        MetroHub.Core.Services.HiddenDiagnosticsLogger.LogMemorySnapshot("HUB HIDE (Post-GC Cleanup)", beforeMB);
-
+        // Dismiss immediately without UI freeze (GC cleanup is deferred to ApplicationIdle in DismissWithAnimation)
         DismissWithAnimation();
     }
 

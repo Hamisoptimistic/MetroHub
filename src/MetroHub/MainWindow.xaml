@@ -34,24 +34,24 @@
         Drop="OnWindowDrop">
 
     <controls:BorderlessFluentWindow.Resources>
-        <!-- Windows 11 Fluent Instant Appearance (Zero Translation, Fast Opacity Pop) -->
+        <!-- Windows 11 Fluent Pure Opacity Entrance (144 FPS Hardware Accelerated, Zero Layout Jitter) -->
         <Storyboard x:Key="OpenStoryboard">
             <DoubleAnimation Storyboard.TargetName="RootGrid"
                              Storyboard.TargetProperty="Opacity"
                              From="0.0" To="1.0"
-                             Duration="0:0:0.08">
+                             Duration="0:0:0.12">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut" />
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
         </Storyboard>
 
-        <!-- Windows 11 Fluent Instant Exit (Zero Translation, Fast Opacity Pop) -->
+        <!-- Windows 11 Fluent Pure Opacity Exit (70ms Snappy Responsive Dismissal) -->
         <Storyboard x:Key="ExitStoryboard">
             <DoubleAnimation Storyboard.TargetName="RootGrid"
                              Storyboard.TargetProperty="Opacity"
                              From="1.0" To="0.0"
-                             Duration="0:0:0.06">
+                             Duration="0:0:0.07">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseIn" />
                 </DoubleAnimation.EasingFunction>

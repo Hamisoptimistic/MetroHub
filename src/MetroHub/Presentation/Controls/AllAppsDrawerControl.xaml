@@ -226,7 +226,7 @@
 
             <Grid x:Name="DrawerHeaderGrid" Grid.Row="0" Margin="16,14,16,6">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <ui:SymbolIcon Symbol="AppsList24" FontSize="18" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" Margin="0,0,8,0" />
+                    <ui:SymbolIcon Symbol="AppsListDetail24" FontSize="18" Foreground="#EAEAEA" Margin="0,0,8,0" VerticalAlignment="Center" />
                     <TextBlock Text="All apps"
                                FontSize="14"
                                FontWeight="SemiBold"
@@ -241,7 +241,7 @@
                             Margin="0,0,4,0"
                             Click="OnRefreshClick">
                         <ui:SymbolIcon x:Name="RefreshIcon"
-                                       Symbol="ArrowSync24"
+                                       Symbol="ArrowClockwise24"
                                        FontSize="14"
                                        Foreground="#A0FFFFFF"
                                        RenderTransformOrigin="0.5,0.5">

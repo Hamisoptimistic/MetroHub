@@ -484,25 +484,18 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Right: Cohesive Fluent Action Button [ 🌙 Turn Off Now ] -->
+                    <!-- Right: Cohesive Fluent Action Button [ Turn Off Now ] -->
                     <ui:Button Grid.Column="1"
                                Appearance="Secondary"
                                Command="{Binding TurnOffDisplaysCommand}"
                                VerticalAlignment="Center"
-                               Padding="12,6,12,6"
+                               Padding="14,6,14,6"
                                Cursor="Hand"
                                ToolTip="Instantly powers down all displays into standby (takes effect after a 500ms release grace period)">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <ui:SymbolIcon Symbol="WeatherMoon24"
-                                           FontSize="13"
-                                           Margin="0,0,6,0"
-                                           Foreground="#38BDF8"
-                                           VerticalAlignment="Center" />
-                            <TextBlock Text="Turn Off Now"
-                                       FontSize="12"
-                                       FontWeight="SemiBold"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
+                        <TextBlock Text="Turn Off Now"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
                     </ui:Button>
                 </Grid>
 
