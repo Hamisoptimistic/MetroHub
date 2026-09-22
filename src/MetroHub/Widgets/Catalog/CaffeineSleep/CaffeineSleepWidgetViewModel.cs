@@ -35,6 +35,7 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
     private static readonly Brush ActiveCaffeineBrush = CreateFrozenBrush(Color.FromRgb(0x00, 0xE6, 0x76));    // Electric Green
     private static readonly Brush ActiveNightLightBrush = CreateFrozenBrush(Color.FromRgb(0xFF, 0xB9, 0x00));  // Amber Warmth
     private static readonly Brush InactiveTileBrush = CreateFrozenBrush(Color.FromArgb(0x38, 0xFF, 0xFF, 0xFF)); // Subtle Translucent
+    private static readonly Brush WhiteIndicatorBrush = CreateFrozenBrush(Color.FromRgb(0xFF, 0xFF, 0xFF));     // Solid Crisp White
 
     private static SolidColorBrush CreateFrozenBrush(Color color)
     {
@@ -67,9 +68,9 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
     public SymbolRegular CaffeineTileSymbol => SymbolRegular.DrinkCoffee24;
     public SymbolRegular NightLightTileSymbol => SymbolRegular.Lightbulb24;
 
-    public Brush ScreenOffTileIndicatorBrush => InactiveTileBrush;
-    public Brush CaffeineTileIndicatorBrush => _powerService.IsAwakeActive ? ActiveCaffeineBrush : InactiveTileBrush;
-    public Brush NightLightTileIndicatorBrush => _nightLightService.IsEnabled ? ActiveNightLightBrush : InactiveTileBrush;
+    public Brush ScreenOffTileIndicatorBrush => WhiteIndicatorBrush;
+    public Brush CaffeineTileIndicatorBrush => WhiteIndicatorBrush;
+    public Brush NightLightTileIndicatorBrush => WhiteIndicatorBrush;
 
     public bool IsSteamAnimating => IsAwakeActive && _isHubVisible;
     public bool IsWarmSunAnimating => IsNightLightEnabled && _isHubVisible;

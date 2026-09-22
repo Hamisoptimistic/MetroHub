@@ -278,6 +278,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     private static readonly Brush AmberIndicatorBrush = CreateFrozenBrush("#FFB703");
     private static readonly Brush PurpleIndicatorBrush = CreateFrozenBrush("#A855F7");
     private static readonly Brush MutedIndicatorBrush = CreateFrozenBrush("#80FFFFFF");
+    private static readonly Brush WhiteIndicatorBrush = CreateFrozenBrush("#FFFFFF");
 
     private static Brush CreateFrozenBrush(string hex)
     {
@@ -323,20 +324,9 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
 
     public Brush KillNetStatusBrush => AdaptersStatusBrush;
 
-    public Brush SpeedStatusBrush
-    {
-        get
-        {
-            bool isLinked = IsEthernetConnected || IsWifiConnected;
-            if (!isLinked)
-                return RedIndicatorBrush;
-            if (IsLocalOnlyNoInternet)
-                return AmberIndicatorBrush;
-            return BlueIndicatorBrush;
-        }
-    }
+    public Brush SpeedStatusBrush => WhiteIndicatorBrush;
 
-    public Brush DataUsageStatusBrush => GreenIndicatorBrush;
+    public Brush DataUsageStatusBrush => WhiteIndicatorBrush;
     public Brush HotspotStatusBrush => DataUsageStatusBrush;
 
 
