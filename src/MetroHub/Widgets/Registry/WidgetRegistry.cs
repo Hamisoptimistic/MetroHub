@@ -35,7 +35,8 @@ public static class WidgetRegistry
                 WidgetSize.Banner
             },
             ViewModelType: typeof(StubWidgetViewModel),
-            Factory: model => new StubWidgetViewModel(model)
+            Factory: model => new StubWidgetViewModel(model),
+            Category: "Lifestyle"
         ));
 
         // Register Clock widget
@@ -55,7 +56,8 @@ public static class WidgetRegistry
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Clock.ClockWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Clock.ClockWidgetView),
             DefaultSize: WidgetSize.Wide,
-            Factory: model => new MetroHub.Widgets.Catalog.Clock.ClockWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.Clock.ClockWidgetViewModel(model),
+            Category: "Productivity"
         ));
 
         // Register Calendar widget
@@ -71,7 +73,8 @@ public static class WidgetRegistry
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Calendar.CalendarWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Calendar.CalendarWidgetView),
             DefaultSize: WidgetSize.Huge,
-            Factory: model => new MetroHub.Widgets.Catalog.Calendar.CalendarWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.Calendar.CalendarWidgetViewModel(model),
+            Category: "Productivity"
         ));
 
         // Register Media Player widget (Groove Live Tile style)
@@ -91,27 +94,8 @@ public static class WidgetRegistry
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Media.MediaWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Media.MediaWidgetView),
             DefaultSize: WidgetSize.Mega,
-            Factory: model => new MetroHub.Widgets.Catalog.Media.MediaWidgetViewModel(model)
-        ));
-
-        // Register Microsoft Zune Handheld Widget
-        Register(new WidgetDefinition(
-            Id: "zune",
-            DisplayName: "Zune Player",
-            Description: "Authentic Microsoft Zune handheld music player with physical squircle controls",
-            Icon: SymbolRegular.Play24,
-            AllowedSizes: new[]
-            {
-                WidgetSize.PortraitLarge, // 4x6 (Zune Handheld)
-                WidgetSize.SlimWide,      // 4x1
-                WidgetSize.ExtraWide,     // 6x2
-                WidgetSize.Banner3,       // 8x3
-                WidgetSize.Mega           // 8x4
-            },
-            ViewModelType: typeof(MetroHub.Widgets.Catalog.Media.MediaWidgetViewModel),
-            ViewType: typeof(MetroHub.Widgets.Catalog.Media.MediaWidgetView),
-            DefaultSize: WidgetSize.PortraitLarge,
-            Factory: model => new MetroHub.Widgets.Catalog.Media.MediaWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.Media.MediaWidgetViewModel(model),
+            Category: "Sound"
         ));
 
         // Register Focus / Pomodoro widget
@@ -129,7 +113,8 @@ public static class WidgetRegistry
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Pomodoro.PomodoroWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Pomodoro.PomodoroWidgetView),
             DefaultSize: WidgetSize.Mega,
-            Factory: model => new MetroHub.Widgets.Catalog.Pomodoro.PomodoroWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.Pomodoro.PomodoroWidgetViewModel(model),
+            Category: "Productivity"
         ));
 
         // Register Photo Stream widget
@@ -147,14 +132,15 @@ public static class WidgetRegistry
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Photos.PhotosWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Photos.PhotosWidgetView),
             DefaultSize: WidgetSize.Large,
-            Factory: model => new MetroHub.Widgets.Catalog.Photos.PhotosWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.Photos.PhotosWidgetViewModel(model),
+            Category: "Lifestyle"
         ));
 
-        // Register Volume & Audio widget
+        // Register Audio Controls widget
         Register(new WidgetDefinition(
-            Id: "volume",
-            DisplayName: "Volume & Audio",
-            Description: "Master volume, output device switcher, and per-app volume mixer",
+            Id: "audio_controls",
+            DisplayName: "Audio Controls",
+            Description: "Master volume slider, output device switcher, and per-app audio mixer",
             Icon: SymbolRegular.Speaker224,
             AllowedSizes: new[]
             {
@@ -163,10 +149,11 @@ public static class WidgetRegistry
                 WidgetSize.Mega,       // 8x4
                 WidgetSize.Huge        // 8x6
             },
-            ViewModelType: typeof(MetroHub.Widgets.Catalog.Volume.VolumeWidgetViewModel),
-            ViewType: typeof(MetroHub.Widgets.Catalog.Volume.VolumeWidgetView),
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.AudioControls.AudioControlsWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.AudioControls.AudioControlsWidgetView),
             DefaultSize: WidgetSize.Mega,
-            Factory: model => new MetroHub.Widgets.Catalog.Volume.VolumeWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.AudioControls.AudioControlsWidgetViewModel(model),
+            Category: "Sound"
         ));
 
         // Register Notes & Tasks (Notepad / Todo) widget
@@ -185,7 +172,8 @@ public static class WidgetRegistry
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetView),
             DefaultSize: WidgetSize.Mega,
-            Factory: model => new MetroHub.Widgets.Catalog.Notepad.NotepadWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.Notepad.NotepadWidgetViewModel(model),
+            Category: "Productivity"
         ));
 
         // Register Network & Internet widget
@@ -201,13 +189,14 @@ public static class WidgetRegistry
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Network.NetworkWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Network.NetworkWidgetView),
             DefaultSize: WidgetSize.Huge,
-            Factory: model => new MetroHub.Widgets.Catalog.Network.NetworkWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.Network.NetworkWidgetViewModel(model),
+            Category: "Lifestyle"
         ));
 
-        // Register Display & Brightness widget
+        // Register Brightness Controls widget
         Register(new WidgetDefinition(
-            Id: "brightness",
-            DisplayName: "Display & Brightness",
+            Id: "brightness_controls",
+            DisplayName: "Brightness Controls",
             Description: "Multi-monitor hardware brightness control, DDC/CI sync, and Day/Night profiles",
             Icon: SymbolRegular.BrightnessHigh24,
             AllowedSizes: new[]
@@ -216,16 +205,17 @@ public static class WidgetRegistry
                 WidgetSize.SlimBanner, // 8x1
                 WidgetSize.Mega        // 8x4
             },
-            ViewModelType: typeof(MetroHub.Widgets.Catalog.Brightness.BrightnessWidgetViewModel),
-            ViewType: typeof(MetroHub.Widgets.Catalog.Brightness.BrightnessWidgetView),
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.BrightnessControls.BrightnessControlsWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.BrightnessControls.BrightnessControlsWidgetView),
             DefaultSize: WidgetSize.Mega,
-            Factory: model => new MetroHub.Widgets.Catalog.Brightness.BrightnessWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.BrightnessControls.BrightnessControlsWidgetViewModel(model),
+            Category: "Display"
         ));
 
-        // Register Power & Session Hub widget
+        // Register Power widget
         Register(new WidgetDefinition(
             Id: "power",
-            DisplayName: "Power & Session",
+            DisplayName: "Power",
             Description: "Quick Lock, Sleep, Restart, and Shut Down tiles",
             Icon: SymbolRegular.Power28,
             AllowedSizes: new[]
@@ -236,7 +226,8 @@ public static class WidgetRegistry
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Power.PowerWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Power.PowerWidgetView),
             DefaultSize: WidgetSize.Banner,
-            Factory: model => new MetroHub.Widgets.Catalog.Power.PowerWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.Power.PowerWidgetViewModel(model),
+            Category: "Quick Actions"
         ));
 
         // Register Weather & AQI widget
@@ -256,7 +247,8 @@ public static class WidgetRegistry
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Weather.WeatherWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Weather.WeatherWidgetView),
             DefaultSize: WidgetSize.Wide,
-            Factory: model => new MetroHub.Widgets.Catalog.Weather.WeatherWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.Weather.WeatherWidgetViewModel(model),
+            Category: "Lifestyle"
         ));
 
         // Register Daily Quotes widget
@@ -272,7 +264,8 @@ public static class WidgetRegistry
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Quotes.QuotesWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Quotes.QuotesWidgetView),
             DefaultSize: WidgetSize.Banner3,
-            Factory: model => new MetroHub.Widgets.Catalog.Quotes.QuotesWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.Quotes.QuotesWidgetViewModel(model),
+            Category: "Lifestyle"
         ));
 
         // Register Habit Tracker widget
@@ -288,7 +281,8 @@ public static class WidgetRegistry
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Habit.HabitWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Habit.HabitWidgetView),
             DefaultSize: WidgetSize.Huge,
-            Factory: model => new MetroHub.Widgets.Catalog.Habit.HabitWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.Habit.HabitWidgetViewModel(model),
+            Category: "Productivity"
         ));
 
         // Register Chrome Dino Endless Runner widget
@@ -304,13 +298,14 @@ public static class WidgetRegistry
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Dino.DinoWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Dino.DinoWidgetView),
             DefaultSize: WidgetSize.Banner3,
-            Factory: model => new MetroHub.Widgets.Catalog.Dino.DinoWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.Dino.DinoWidgetViewModel(model),
+            Category: "Lifestyle"
         ));
 
-        // Register Caffeine & Light widget
+        // Register Caffeine & Sleep widget
         Register(new WidgetDefinition(
-            Id: "caffeine",
-            DisplayName: "Caffeine & Light",
+            Id: "caffeine_sleep",
+            DisplayName: "Caffeine & Sleep",
             Description: "Keep system/display awake and adjust display warmth/night light",
             Icon: SymbolRegular.DrinkCoffee24,
             AllowedSizes: new[]
@@ -318,10 +313,11 @@ public static class WidgetRegistry
                 WidgetSize.Banner3, // 8x3 (504x184 px)
                 WidgetSize.Mega     // 8x4
             },
-            ViewModelType: typeof(MetroHub.Widgets.Catalog.Caffeine.CaffeineWidgetViewModel),
-            ViewType: typeof(MetroHub.Widgets.Catalog.Caffeine.CaffeineWidgetView),
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.CaffeineSleep.CaffeineSleepWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.CaffeineSleep.CaffeineSleepWidgetView),
             DefaultSize: WidgetSize.Banner3,
-            Factory: model => new MetroHub.Widgets.Catalog.Caffeine.CaffeineWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.CaffeineSleep.CaffeineSleepWidgetViewModel(model),
+            Category: "Display"
         ));
 
         // Register Quick Controls (3-in-1 Media, Volume, Brightness) widget
@@ -339,7 +335,8 @@ public static class WidgetRegistry
             ViewModelType: typeof(MetroHub.Widgets.Catalog.QuickControls.QuickControlsWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.QuickControls.QuickControlsWidgetView),
             DefaultSize: WidgetSize.Wide3,
-            Factory: model => new MetroHub.Widgets.Catalog.QuickControls.QuickControlsWidgetViewModel(model)
+            Factory: model => new MetroHub.Widgets.Catalog.QuickControls.QuickControlsWidgetViewModel(model),
+            Category: "Quick Actions"
         ));
     }
 
@@ -365,6 +362,26 @@ public static class WidgetRegistry
     public static IWidgetViewModel CreateViewModelForTile(TileModel tile)
     {
         string widgetId = !string.IsNullOrWhiteSpace(tile.TargetPath) ? tile.TargetPath : "stub";
+        if (string.Equals(widgetId, "zune", StringComparison.OrdinalIgnoreCase))
+        {
+            tile.TargetPath = "media";
+            widgetId = "media";
+        }
+        if (string.Equals(widgetId, "volume", StringComparison.OrdinalIgnoreCase))
+        {
+            tile.TargetPath = "audio_controls";
+            widgetId = "audio_controls";
+        }
+        if (string.Equals(widgetId, "brightness", StringComparison.OrdinalIgnoreCase))
+        {
+            tile.TargetPath = "brightness_controls";
+            widgetId = "brightness_controls";
+        }
+        if (string.Equals(widgetId, "caffeine", StringComparison.OrdinalIgnoreCase))
+        {
+            tile.TargetPath = "caffeine_sleep";
+            widgetId = "caffeine_sleep";
+        }
         if (TryGet(widgetId, out var def) && def != null)
         {
             return def.CreateViewModel(tile);

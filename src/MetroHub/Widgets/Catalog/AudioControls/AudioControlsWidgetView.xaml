@@ -1,13 +1,13 @@
-<UserControl x:Class="MetroHub.Widgets.Catalog.Volume.VolumeWidgetView"
+<UserControl x:Class="MetroHub.Widgets.Catalog.AudioControls.AudioControlsWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:widgets="clr-namespace:MetroHub.Widgets"
-             xmlns:volume="clr-namespace:MetroHub.Widgets.Catalog.Volume"
+             xmlns:audiocontrols="clr-namespace:MetroHub.Widgets.Catalog.AudioControls"
              xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
              mc:Ignorable="d" 
-             d:DataContext="{d:DesignInstance Type=volume:VolumeWidgetViewModel}"
+             d:DataContext="{d:DesignInstance Type=audiocontrols:AudioControlsWidgetViewModel}"
              Focusable="False"
              SnapsToDevicePixels="True"
              UseLayoutRounding="True"
@@ -251,9 +251,9 @@
                                   Padding="0,0,8,0">
                         <ItemsControl ItemsSource="{Binding Devices}">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type volume:AudioDeviceItemViewModel}">
+                                <DataTemplate DataType="{x:Type audiocontrols:AudioDeviceItemViewModel}">
                                     <Button Style="{StaticResource DeviceListItemButtonStyle}"
-                                            Command="{Binding DataContext.SelectDeviceCommand, RelativeSource={RelativeSource AncestorType={x:Type volume:VolumeWidgetView}}}"
+                                            Command="{Binding DataContext.SelectDeviceCommand, RelativeSource={RelativeSource AncestorType={x:Type audiocontrols:AudioControlsWidgetView}}}"
                                             CommandParameter="{Binding}">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -349,67 +349,6 @@
                         SnapsToDevicePixels="True" />
             </Grid>
         </Grid>
-
-            <!-- ========================================================================= -->
-            <!-- PER-APP VOLUME MIXER (TEMPORARILY COMMENTED OUT - TO BE IMPLEMENTED LATER) -->
-            <!-- ========================================================================= -->
-            <!--
-            <ScrollViewer Style="{StaticResource MinimalScrollViewerStyle}">
-                <ItemsControl ItemsSource="{Binding AppSessions}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type volume:AppSessionItemViewModel}">
-                            <Border Background="#0DFFFFFF"
-                                    CornerRadius="4"
-                                    Padding="10,6"
-                                    Margin="0,2,0,3"
-                                    SnapsToDevicePixels="True">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="130" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="36" />
-                                        <ColumnDefinition Width="32" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Border Width="20" Height="20" Margin="0,0,8,0" CornerRadius="2">
-                                            <Image Source="{Binding IconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}" Width="20" Height="20" />
-                                        </Border>
-                                        <TextBlock Text="{Binding DisplayName}"
-                                                   FontSize="12"
-                                                   Foreground="#E0FFFFFF"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   MaxWidth="98"
-                                                   VerticalAlignment="Center" />
-                                    </StackPanel>
-                                    <controls:FluentVolumeSlider Grid.Column="1"
-                                                                Margin="6,0"
-                                                                VerticalAlignment="Center"
-                                                                Value="{Binding Volume, Mode=TwoWay}"
-                                                                ProgressBrush="#00B4D8"
-                                                                ProgressPointerOverBrush="#33C9E8"
-                                                                IsMuted="{Binding IsMuted}" />
-                                    <TextBlock Grid.Column="2"
-                                               Text="{Binding VolumePercentText}"
-                                               FontSize="11"
-                                               Foreground="#B0FFFFFF"
-                                               VerticalAlignment="Center"
-                                               HorizontalAlignment="Right" />
-                                    <Button Grid.Column="3"
-                                            Margin="4,0,0,0"
-                                            Command="{Binding DataContext.ToggleAppMuteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}">
-                                        <TextBlock Text="{Binding VolumeGlyph}"
-                                                   FontFamily="{DynamicResource AppIconFontFamily}"
-                                                   FontSize="12"
-                                                   Foreground="#C0FFFFFF" />
-                                    </Button>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-            -->
         </Grid>
     </widgets:WidgetCard>
 </UserControl>

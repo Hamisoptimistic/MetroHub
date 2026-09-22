@@ -11,7 +11,7 @@ using MetroHub.Core.Audio;
 using MetroHub.Core.Models;
 using MetroHub.Widgets.Serialization;
 
-namespace MetroHub.Widgets.Catalog.Volume;
+namespace MetroHub.Widgets.Catalog.AudioControls;
 
 public partial class AudioDeviceItemViewModel : ObservableObject
 {
@@ -91,7 +91,7 @@ public partial class AppSessionItemViewModel : ObservableObject
     }
 }
 
-public sealed partial class VolumeWidgetViewModel : WidgetViewModelBase
+public sealed partial class AudioControlsWidgetViewModel : WidgetViewModelBase
 {
     private readonly AudioService _audioService;
     private bool _isHubVisible = true;
@@ -147,7 +147,7 @@ public sealed partial class VolumeWidgetViewModel : WidgetViewModelBase
     public ObservableCollection<AudioDeviceItemViewModel> Devices { get; } = new();
     public ObservableCollection<AppSessionItemViewModel> AppSessions { get; } = new();
 
-    public VolumeWidgetViewModel(TileModel model) : base(model)
+    public AudioControlsWidgetViewModel(TileModel model) : base(model)
     {
         _audioService = AudioService.Instance;
 
@@ -174,7 +174,7 @@ public sealed partial class VolumeWidgetViewModel : WidgetViewModelBase
         if (string.IsNullOrWhiteSpace(settingsJson)) return;
         try
         {
-            var settings = WidgetSerializer.Deserialize<VolumeWidgetSettings>(settingsJson);
+            var settings = WidgetSerializer.Deserialize<AudioControlsWidgetSettings>(settingsJson);
             if (settings != null && !string.IsNullOrWhiteSpace(settings.DefaultTab))
             {
                 CurrentTab = settings.DefaultTab;
@@ -185,11 +185,11 @@ public sealed partial class VolumeWidgetViewModel : WidgetViewModelBase
 
     public override void SaveSettings()
     {
-        var settings = new VolumeWidgetSettings
+        var settings = new AudioControlsWidgetSettings
         {
             DefaultTab = CurrentTab
         };
-        Model.TargetPath = "volume";
+        Model.TargetPath = "audio_controls";
         Model.SettingsJson = WidgetSerializer.Serialize(settings);
     }
 
@@ -262,7 +262,7 @@ public sealed partial class VolumeWidgetViewModel : WidgetViewModelBase
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[VolumeWidget] SetDefaultPlaybackDevice failed: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[AudioControlsWidget] SetDefaultPlaybackDevice failed: {ex.Message}");
             }
         });
     }
@@ -371,7 +371,7 @@ public sealed partial class VolumeWidgetViewModel : WidgetViewModelBase
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[VolumeWidget] RefreshAppSessions failed: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[AudioControlsWidget] RefreshAppSessions failed: {ex.Message}");
             }
         });
     }

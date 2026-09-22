@@ -5234,19 +5234,68 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             return;
         }
 
-        foreach (var def in widgets)
+        var categories = new[]
         {
-            var mi = new MenuItem
+            "Quick Actions",
+            "Sound",
+            "Display",
+            "Productivity",
+            "Lifestyle"
+        };
+
+        bool isFirstGroup = true;
+
+        foreach (var categoryName in categories)
+        {
+            var categoryWidgets = widgets
+                .Where(w => string.Equals(w.Category, categoryName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (categoryWidgets.Count == 0) continue;
+
+            if (!isFirstGroup)
             {
-                Header = def.DisplayName,
-                Icon = new Wpf.Ui.Controls.SymbolIcon { Symbol = def.Icon, FontSize = 18, Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF)) },
-                Tag = def,
-                Cursor = Cursors.Hand,
-                MinHeight = 32,
-                Padding = new Thickness(10, 4, 14, 4)
+                widgetsMenu.Items.Add(new Separator
+                {
+                    Margin = new Thickness(6, 4, 6, 4),
+                    Opacity = 0.35
+                });
+            }
+            isFirstGroup = false;
+
+            // Section Header (non-selectable, subtle typography)
+            var headerItem = new MenuItem
+            {
+                Header = categoryName.ToUpperInvariant(),
+                IsEnabled = false,
+                FontSize = 10.5,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(Color.FromArgb(0x90, 0xFF, 0xFF, 0xFF)),
+                Padding = new Thickness(10, 4, 14, 2),
+                MinHeight = 22,
+                Focusable = false
             };
-            mi.Click += OnWidgetMenuItemClick;
-            widgetsMenu.Items.Add(mi);
+            widgetsMenu.Items.Add(headerItem);
+
+            foreach (var def in categoryWidgets)
+            {
+                var mi = new MenuItem
+                {
+                    Header = def.DisplayName,
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = def.Icon,
+                        FontSize = 18,
+                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                    },
+                    Tag = def,
+                    Cursor = Cursors.Hand,
+                    MinHeight = 32,
+                    Padding = new Thickness(10, 4, 14, 4)
+                };
+                mi.Click += OnWidgetMenuItemClick;
+                widgetsMenu.Items.Add(mi);
+            }
         }
     }
 

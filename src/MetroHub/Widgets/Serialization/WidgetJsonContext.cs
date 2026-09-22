@@ -21,14 +21,15 @@ namespace MetroHub.Widgets.Serialization;
 [JsonSerializable(typeof(MediaWidgetSettings))]
 [JsonSerializable(typeof(PomodoroWidgetSettings))]
 [JsonSerializable(typeof(PhotosWidgetSettings))]
-[JsonSerializable(typeof(MetroHub.Widgets.Catalog.Volume.VolumeWidgetSettings))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.AudioControls.AudioControlsWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Notepad.TodoTaskItem))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Network.NetworkWidgetSettings))]
-[JsonSerializable(typeof(MetroHub.Widgets.Catalog.Brightness.BrightnessWidgetSettings))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.BrightnessControls.BrightnessControlsWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Habit.HabitWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Dino.DinoWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.QuickControls.QuickControlsWidgetSettings))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.CaffeineSleep.CaffeineSleepWidgetSettings))]
 public partial class WidgetJsonContext : JsonSerializerContext
 {
 }

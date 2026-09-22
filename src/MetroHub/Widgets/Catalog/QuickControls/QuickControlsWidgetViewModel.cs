@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using MetroHub.Core.Models;
-using MetroHub.Widgets.Catalog.Brightness;
+using MetroHub.Widgets.Catalog.BrightnessControls;
 using MetroHub.Widgets.Catalog.Media;
-using MetroHub.Widgets.Catalog.Volume;
+using MetroHub.Widgets.Catalog.AudioControls;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.QuickControls;
@@ -16,8 +16,8 @@ public sealed partial class QuickControlsWidgetViewModel : WidgetViewModelBase
     private readonly TileModel _brightnessSubModel;
 
     public MediaWidgetViewModel Media { get; }
-    public VolumeWidgetViewModel Volume { get; }
-    public BrightnessWidgetViewModel Brightness { get; }
+    public AudioControlsWidgetViewModel Volume { get; }
+    public BrightnessControlsWidgetViewModel Brightness { get; }
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
@@ -40,19 +40,19 @@ public sealed partial class QuickControlsWidgetViewModel : WidgetViewModelBase
             Id = model.Id + "_volume",
             SpanX = model.SpanX,
             SpanY = 1,
-            TargetPath = "volume"
+            TargetPath = "audio_controls"
         };
         _brightnessSubModel = new TileModel
         {
             Id = model.Id + "_brightness",
             SpanX = model.SpanX,
             SpanY = 1,
-            TargetPath = "brightness"
+            TargetPath = "brightness_controls"
         };
 
         Media = new MediaWidgetViewModel(_mediaSubModel);
-        Volume = new VolumeWidgetViewModel(_volumeSubModel);
-        Brightness = new BrightnessWidgetViewModel(_brightnessSubModel);
+        Volume = new AudioControlsWidgetViewModel(_volumeSubModel);
+        Brightness = new BrightnessControlsWidgetViewModel(_brightnessSubModel);
 
         Model.PropertyChanged += OnModelPropertyChanged;
     }

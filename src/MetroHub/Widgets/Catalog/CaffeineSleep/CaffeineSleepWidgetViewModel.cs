@@ -12,14 +12,14 @@ using MetroHub.Core.Power;
 using MetroHub.Widgets.Serialization;
 using Wpf.Ui.Controls;
 
-namespace MetroHub.Widgets.Catalog.Caffeine;
+namespace MetroHub.Widgets.Catalog.CaffeineSleep;
 
 /// <summary>
-/// High-performance ViewModel for the Caffeine & Light widget.
+/// High-performance ViewModel for the Caffeine & Sleep widget.
 /// Manages system power sleep prevention and hardware GPU display gamma warmth
 /// with zero idle CPU, dormant background timers, and full multi-instance ref-counting.
 /// </summary>
-public sealed partial class CaffeineWidgetViewModel : WidgetViewModelBase
+public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
 {
     private readonly PowerAwakeService _powerService;
     private readonly NightLightService _nightLightService;
@@ -27,7 +27,7 @@ public sealed partial class CaffeineWidgetViewModel : WidgetViewModelBase
     private System.Threading.Timer? _uiTimer;
     private bool _isHubVisible = true;
     private string _lastFormattedCountdown = string.Empty;
-    private CaffeineWidgetSettings _settings = new();
+    private CaffeineSleepWidgetSettings _settings = new();
 
     #region Frozen Indicator Brushes (Freezable Hygiene)
 
@@ -191,7 +191,7 @@ public sealed partial class CaffeineWidgetViewModel : WidgetViewModelBase
 
     #endregion
 
-    public CaffeineWidgetViewModel(TileModel model) : base(model)
+    public CaffeineSleepWidgetViewModel(TileModel model) : base(model)
     {
         _powerService = PowerAwakeService.Instance;
         _nightLightService = NightLightService.Instance;
@@ -222,7 +222,7 @@ public sealed partial class CaffeineWidgetViewModel : WidgetViewModelBase
         if (string.IsNullOrWhiteSpace(settingsJson)) return;
         try
         {
-            var parsed = WidgetSerializer.Deserialize<CaffeineWidgetSettings>(settingsJson);
+            var parsed = WidgetSerializer.Deserialize<CaffeineSleepWidgetSettings>(settingsJson);
             if (parsed != null)
             {
                 _settings = parsed;
@@ -242,6 +242,7 @@ public sealed partial class CaffeineWidgetViewModel : WidgetViewModelBase
         try
         {
             _settings.LastPanel = CurrentPanel;
+            Model.TargetPath = "caffeine_sleep";
             Model.SettingsJson = WidgetSerializer.Serialize(_settings);
         }
         catch { }

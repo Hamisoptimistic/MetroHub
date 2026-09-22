@@ -18,7 +18,8 @@ public record WidgetDefinition(
     Type ViewModelType,
     Type? ViewType = null,
     WidgetSize? DefaultSize = null,
-    Func<TileModel, IWidgetViewModel>? Factory = null
+    Func<TileModel, IWidgetViewModel>? Factory = null,
+    string Category = "Lifestyle"
 )
 {
     public WidgetSize InitialSize => DefaultSize ?? (AllowedSizes.Count > 0 ? AllowedSizes[0] : WidgetSize.Medium);

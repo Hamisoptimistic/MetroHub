@@ -2,14 +2,14 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 
-namespace MetroHub.Widgets.Catalog.Caffeine;
+namespace MetroHub.Widgets.Catalog.CaffeineSleep;
 
 /// <summary>
-/// Interaction logic for CaffeineWidgetView.xaml
+/// Interaction logic for CaffeineSleepWidgetView.xaml
 /// </summary>
-public partial class CaffeineWidgetView : UserControl
+public partial class CaffeineSleepWidgetView : UserControl
 {
-    public CaffeineWidgetView()
+    public CaffeineSleepWidgetView()
     {
         InitializeComponent();
     }

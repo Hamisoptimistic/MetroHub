@@ -1,12 +1,12 @@
 using System;
 
-namespace MetroHub.Widgets.Catalog.Caffeine;
+namespace MetroHub.Widgets.Catalog.CaffeineSleep;
 
 /// <summary>
-/// Persisted state for the Caffeine & Light widget.
+/// Persisted state for the Caffeine &amp; Sleep widget.
 /// Round-trips cleanly through TileModel.SettingsJson.
 /// </summary>
-public sealed class CaffeineWidgetSettings
+public sealed class CaffeineSleepWidgetSettings
 {
     public string LastPanel { get; set; } = "Caffeine";
     public double NightLightStrength { get; set; } = 50.0;

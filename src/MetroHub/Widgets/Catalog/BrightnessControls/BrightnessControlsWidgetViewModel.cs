@@ -11,7 +11,7 @@ using MetroHub.Core.Display;
 using MetroHub.Core.Models;
 using MetroHub.Widgets.Serialization;
 
-namespace MetroHub.Widgets.Catalog.Brightness;
+namespace MetroHub.Widgets.Catalog.BrightnessControls;
 
 public partial class MonitorItemViewModel : ObservableObject
 {
@@ -72,7 +72,7 @@ public partial class MonitorItemViewModel : ObservableObject
     }
 }
 
-public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
+public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelBase
 {
     private readonly MonitorBrightnessService _brightnessService;
     private System.Threading.Timer? _cursorTimer;
@@ -101,15 +101,15 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(LinkTooltip))]
     private bool _isLinked = true;
 
-    public string LinkGlyph => IsLinked ? "\uE71B" : "\uE77A"; // Link vs Unlink
-    public string LinkTooltip => IsLinked ? "Monitors Linked (Sync All)" : "Monitors Independent (Individual)";
+    public string LinkGlyph => IsLinked ? "\uE71B" : "\uE77A"; // Link vs Unlink glyph
+    public string LinkTooltip => IsLinked ? "Monitors are synchronized (Click to adjust independently)" : "Monitors are independent (Click to synchronize)";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(MasterGlyph))]
     [NotifyPropertyChangedFor(nameof(NightModeTooltip))]
     private bool _isNightMode;
 
-    public string NightModeTooltip => IsNightMode ? "Switch to Day Mode (80%)" : "Switch to Night Mode (25%)";
+    public string NightModeTooltip => IsNightMode ? "Night Mode Active (Click to switch to Day profile)" : "Day Mode Active (Click to switch to Night profile)";
 
     [ObservableProperty]
     private double _dayBrightness = 80.0;
@@ -118,7 +118,7 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
     private double _nightBrightness = 25.0;
 
     [ObservableProperty]
-    private string _activeMonitorName = "Display";
+    private string _activeMonitorName = "Primary Display";
 
     [ObservableProperty]
     private string _activeMonitorIcon = "\uE7F4";
@@ -129,42 +129,43 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
 
     public ObservableCollection<MonitorItemViewModel> Monitors { get; } = new();
 
-    public BrightnessWidgetViewModel(TileModel model) : base(model)
+    public BrightnessControlsWidgetViewModel(TileModel model) : base(model)
     {
         _brightnessService = MonitorBrightnessService.Instance;
-
         _brightnessService.MonitorsChanged += OnBrightnessServiceMonitorsChanged;
 
         Model.PropertyChanged += OnModelPropertyChanged;
 
+        // Initialize 1-second background timer for auto cursor screen detection
         _cursorTimer = new System.Threading.Timer(_ =>
         {
+            if (!_isHubVisible) return;
             try
             {
-                if (!_isHubVisible || Monitors.Count <= 1)
-                {
-                    _cursorTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-                    return;
-                }
                 var lastMonitors = _brightnessService.LastMonitors;
-                if (lastMonitors.Count == 0) return;
-
                 string? cursorMonitorId = _brightnessService.GetCurrentCursorMonitorId(lastMonitors);
-                if (string.IsNullOrEmpty(cursorMonitorId)) return;
 
-                // Diff before dispatch: check if active monitor changed
-                if (string.Equals(_activeMonitorId, cursorMonitorId, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(cursorMonitorId))
                 {
-                    return;
-                }
+                    // If user manually clicked a monitor, only reset pin if cursor moves to a different screen
+                    if (!string.IsNullOrEmpty(_pinnedCursorMonitorId) &&
+                        string.Equals(_pinnedCursorMonitorId, cursorMonitorId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return;
+                    }
+                    _pinnedCursorMonitorId = null;
 
-                Application.Current?.Dispatcher.InvokeAsync(() => ProcessCursorMonitorChange(cursorMonitorId));
+                    Application.Current?.Dispatcher.InvokeAsync(() =>
+                    {
+                        ProcessCursorMonitorChange(cursorMonitorId);
+                    });
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[BrightnessWidget] Cursor tracking error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[BrightnessControlsWidget] Cursor tracking error: {ex.Message}");
             }
-        }, null, Timeout.Infinite, Timeout.Infinite); // Starts dormant until multi-monitor detected
+        }, null, Timeout.Infinite, Timeout.Infinite);
 
         RefreshAll();
         UpdateCursorTimerState();
@@ -175,7 +176,7 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
         if (string.IsNullOrWhiteSpace(settingsJson)) return;
         try
         {
-            var settings = WidgetSerializer.Deserialize<BrightnessWidgetSettings>(settingsJson);
+            var settings = WidgetSerializer.Deserialize<BrightnessControlsWidgetSettings>(settingsJson);
             if (settings != null)
             {
                 IsLinked = settings.IsLinked;
@@ -189,14 +190,14 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
 
     public override void SaveSettings()
     {
-        var settings = new BrightnessWidgetSettings
+        var settings = new BrightnessControlsWidgetSettings
         {
             IsLinked = IsLinked,
             IsNightMode = IsNightMode,
             DayBrightness = DayBrightness,
             NightBrightness = NightBrightness
         };
-        Model.TargetPath = "brightness";
+        Model.TargetPath = "brightness_controls";
         Model.SettingsJson = WidgetSerializer.Serialize(settings);
     }
 
@@ -423,7 +424,7 @@ public sealed partial class BrightnessWidgetViewModel : WidgetViewModelBase
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[BrightnessWidget] RefreshAll error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[BrightnessControlsWidget] RefreshAll error: {ex.Message}");
             }
         });
     }

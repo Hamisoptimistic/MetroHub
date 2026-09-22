@@ -13,16 +13,16 @@
              xmlns:media="clr-namespace:MetroHub.Widgets.Catalog.Media"
              xmlns:pomodoro="clr-namespace:MetroHub.Widgets.Catalog.Pomodoro"
              xmlns:photos="clr-namespace:MetroHub.Widgets.Catalog.Photos"
-             xmlns:volume="clr-namespace:MetroHub.Widgets.Catalog.Volume"
+             xmlns:audiocontrols="clr-namespace:MetroHub.Widgets.Catalog.AudioControls"
              xmlns:notepad="clr-namespace:MetroHub.Widgets.Catalog.Notepad"
              xmlns:network="clr-namespace:MetroHub.Widgets.Catalog.Network"
-             xmlns:brightness="clr-namespace:MetroHub.Widgets.Catalog.Brightness"
+             xmlns:brightnesscontrols="clr-namespace:MetroHub.Widgets.Catalog.BrightnessControls"
              xmlns:power="clr-namespace:MetroHub.Widgets.Catalog.Power"
              xmlns:weather="clr-namespace:MetroHub.Widgets.Catalog.Weather"
              xmlns:quotes="clr-namespace:MetroHub.Widgets.Catalog.Quotes"
              xmlns:habit="clr-namespace:MetroHub.Widgets.Catalog.Habit"
              xmlns:dino="clr-namespace:MetroHub.Widgets.Catalog.Dino"
-             xmlns:caffeine="clr-namespace:MetroHub.Widgets.Catalog.Caffeine"
+             xmlns:caffeinesleep="clr-namespace:MetroHub.Widgets.Catalog.CaffeineSleep"
              xmlns:quickcontrols="clr-namespace:MetroHub.Widgets.Catalog.QuickControls"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
@@ -176,9 +176,9 @@
             <photos:PhotosWidgetView />
         </DataTemplate>
 
-        <!-- 8. Volume & Audio Mixer Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type volume:VolumeWidgetViewModel}">
-            <volume:VolumeWidgetView />
+        <!-- 8. Audio Controls Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type audiocontrols:AudioControlsWidgetViewModel}">
+            <audiocontrols:AudioControlsWidgetView />
         </DataTemplate>
 
         <!-- 9. Notes & Tasks (Notepad / To-Do) Widget DataTemplate -->
@@ -191,12 +191,12 @@
             <network:NetworkWidgetView />
         </DataTemplate>
 
-        <!-- 11. Display & Brightness Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type brightness:BrightnessWidgetViewModel}">
-            <brightness:BrightnessWidgetView />
+        <!-- 11. Brightness Controls Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type brightnesscontrols:BrightnessControlsWidgetViewModel}">
+            <brightnesscontrols:BrightnessControlsWidgetView />
         </DataTemplate>
 
-        <!-- 12. Power & Session Hub Widget DataTemplate -->
+        <!-- 12. Power Widget DataTemplate -->
         <DataTemplate DataType="{x:Type power:PowerWidgetViewModel}">
             <power:PowerWidgetView />
         </DataTemplate>
@@ -221,9 +221,9 @@
             <dino:DinoWidgetView />
         </DataTemplate>
 
-        <!-- 17. Caffeine & Light Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type caffeine:CaffeineWidgetViewModel}">
-            <caffeine:CaffeineWidgetView />
+        <!-- 17. Caffeine & Sleep Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type caffeinesleep:CaffeineSleepWidgetViewModel}">
+            <caffeinesleep:CaffeineSleepWidgetView />
         </DataTemplate>
 
         <!-- 18. Quick Controls Widget DataTemplate -->
