@@ -1724,7 +1724,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
             _isPotentialDrag = true;
             _isDragging = false;
-            if (!(tile.TileType == TileType.Widget && (tile.TargetPath == "calendar" || tile.TargetPath == "media" || tile.TargetPath == "zune" || tile.TargetPath == "pomodoro" || tile.TargetPath == "photos" || tile.TargetPath == "volume" || tile.TargetPath == "notepad" || tile.TargetPath == "network")))
+            if (!(tile.TileType == TileType.Widget && !string.Equals(tile.TargetPath, "stub", StringComparison.OrdinalIgnoreCase)))
             {
                 _draggedControl.AnimatePressDown();
             }
@@ -5257,8 +5257,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             {
                 widgetsMenu.Items.Add(new Separator
                 {
-                    Margin = new Thickness(6, 4, 6, 4),
-                    Opacity = 0.35
+                    Margin = new Thickness(8, 5, 8, 5)
                 });
             }
             isFirstGroup = false;

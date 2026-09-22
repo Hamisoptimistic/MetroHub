@@ -340,6 +340,9 @@
                             <DataTrigger Binding="{Binding TargetPath}" Value="caffeine">
                                 <Setter Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
+                            <DataTrigger Binding="{Binding TargetPath}" Value="caffeine_sleep">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
