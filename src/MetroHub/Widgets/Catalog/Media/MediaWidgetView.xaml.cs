@@ -88,7 +88,8 @@ public partial class MediaWidgetView : UserControl
                            or nameof(MediaWidgetViewModel.DurationSeconds)
                            or nameof(MediaWidgetViewModel.PositionSeconds)
                            or nameof(MediaWidgetViewModel.IsPlaying)
-                           or nameof(MediaWidgetViewModel.IsSlimMode))
+                           or nameof(MediaWidgetViewModel.IsSlimMode)
+                           or nameof(MediaWidgetViewModel.IsZuneMode))
         {
             if (_vm != null)
             {
@@ -156,7 +157,10 @@ public partial class MediaWidgetView : UserControl
         }
 
         bool isSlim = _vm.IsSlimMode;
-        FrameworkElement? container = isSlim ? SlimSeekbarContainer : SeekbarContainer;
+        bool isZune = _vm.IsZuneMode;
+        FrameworkElement? container = isSlim ? SlimSeekbarContainer 
+                                    : isZune ? ZuneSeekbarContainer 
+                                    : SeekbarContainer;
         if (container == null) return;
 
         double totalWidth = container.ActualWidth;
@@ -180,8 +184,12 @@ public partial class MediaWidgetView : UserControl
         opacityAnim.KeyFrames.Add(new SplineDoubleKeyFrame(0.95, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1050))));
         opacityAnim.KeyFrames.Add(new SplineDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1350))));
 
-        Rectangle? shimmer = isSlim ? SlimSeekShimmer : SeekShimmer;
-        TranslateTransform? shimmerTranslate = isSlim ? SlimSeekShimmerTranslate : SeekShimmerTranslate;
+        Rectangle? shimmer = isSlim ? SlimSeekShimmer 
+                           : isZune ? ZuneSeekShimmer 
+                           : SeekShimmer;
+        TranslateTransform? shimmerTranslate = isSlim ? SlimSeekShimmerTranslate 
+                                             : isZune ? ZuneSeekShimmerTranslate 
+                                             : SeekShimmerTranslate;
 
         sweepAnim.Completed += (s, e) =>
         {
@@ -219,6 +227,8 @@ public partial class MediaWidgetView : UserControl
         SeekShimmerTranslate?.BeginAnimation(TranslateTransform.XProperty, null);
         SlimSeekShimmer?.BeginAnimation(OpacityProperty, null);
         SlimSeekShimmerTranslate?.BeginAnimation(TranslateTransform.XProperty, null);
+        ZuneSeekShimmer?.BeginAnimation(OpacityProperty, null);
+        ZuneSeekShimmerTranslate?.BeginAnimation(TranslateTransform.XProperty, null);
 
         if (SeekShimmer != null)
         {
@@ -235,6 +245,14 @@ public partial class MediaWidgetView : UserControl
         if (SlimSeekShimmerTranslate != null)
         {
             SlimSeekShimmerTranslate.X = -60;
+        }
+        if (ZuneSeekShimmer != null)
+        {
+            ZuneSeekShimmer.Opacity = 0.0;
+        }
+        if (ZuneSeekShimmerTranslate != null)
+        {
+            ZuneSeekShimmerTranslate.X = -80;
         }
     }
 
@@ -276,6 +294,24 @@ public partial class MediaWidgetView : UserControl
             {
                 double maxThumbLeft = Math.Max(0, totalWidth - thumbWidth);
                 SlimSeekThumbTranslate.X = ratio * maxThumbLeft;
+            }
+        }
+
+        // Zune Seekbar
+        if (ZuneSeekbarContainer != null && ZuneSeekbarContainer.ActualWidth > 0)
+        {
+            double totalWidth = ZuneSeekbarContainer.ActualWidth;
+            double fillWidth = totalWidth * ratio;
+
+            if (ZuneSeekProgressClip != null)
+            {
+                ZuneSeekProgressClip.Rect = new Rect(0, -5, fillWidth, 24);
+            }
+
+            if (ZuneSeekThumbTranslate != null)
+            {
+                double maxThumbLeft = Math.Max(0, totalWidth - thumbWidth);
+                ZuneSeekThumbTranslate.X = ratio * maxThumbLeft;
             }
         }
     }
@@ -406,6 +442,7 @@ public partial class MediaWidgetView : UserControl
         var thumbOpacityAnim = new DoubleAnimation(targetOpacity, duration) { EasingFunction = easing };
         SeekThumb?.BeginAnimation(OpacityProperty, thumbOpacityAnim);
         SlimSeekThumb?.BeginAnimation(OpacityProperty, thumbOpacityAnim);
+        ZuneSeekThumb?.BeginAnimation(OpacityProperty, thumbOpacityAnim);
 
         // 2. Circular Thumb Scale: 0.85 resting -> 1.0 hover -> 1.08 dragging
         double targetScale = isDragging ? 1.08 : (isHovered ? 1.0 : 0.85);
@@ -415,11 +452,14 @@ public partial class MediaWidgetView : UserControl
         SeekThumbScale?.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
         SlimSeekThumbScale?.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
         SlimSeekThumbScale?.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
+        ZuneSeekThumbScale?.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
+        ZuneSeekThumbScale?.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
 
         // 3. Track Height: 1.0 resting (2px) -> 1.8 on hover/drag (3.6px) via GPU ScaleY (zero layout passes, zero NaN)
         double targetScaleY = (isHovered || isDragging) ? 1.8 : 1.0;
         var trackAnim = new DoubleAnimation(targetScaleY, duration) { EasingFunction = easing };
         SeekTrackScale?.BeginAnimation(ScaleTransform.ScaleYProperty, trackAnim);
         SlimSeekTrackScale?.BeginAnimation(ScaleTransform.ScaleYProperty, trackAnim);
+        ZuneSeekTrackScale?.BeginAnimation(ScaleTransform.ScaleYProperty, trackAnim);
     }
 }

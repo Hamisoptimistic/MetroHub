@@ -27,6 +27,7 @@ public record WidgetSize(int SpanX, int SpanY, string DisplayName)
     // Large & Hero Dashboards
     public static readonly WidgetSize Large = new(4, 4, "Large (4x4)");
     public static readonly WidgetSize LargeWide = new(6, 4, "Large Wide (6x4)");
+    public static readonly WidgetSize SquareLarge = new(6, 6, "Square Large (6x6)");
     public static readonly WidgetSize Mega = new(8, 4, "Mega (8x4)");
     public static readonly WidgetSize Huge = new(8, 6, "Huge (8x6)");
     public static readonly WidgetSize Canvas = new(8, 8, "Canvas (8x8)");

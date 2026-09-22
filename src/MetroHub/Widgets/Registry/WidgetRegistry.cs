@@ -82,10 +82,11 @@ public static class WidgetRegistry
             Icon: SymbolRegular.Play24,
             AllowedSizes: new[]
             {
-                WidgetSize.SlimWide,  // 4x1
-                WidgetSize.ExtraWide, // 6x2
-                WidgetSize.Banner3,   // 8x3
-                WidgetSize.Mega       // 8x4
+                WidgetSize.SlimWide,    // 4x1
+                WidgetSize.ExtraWide,   // 6x2
+                WidgetSize.SquareLarge, // 6x6 (Zune HD)
+                WidgetSize.Banner3,     // 8x3
+                WidgetSize.Mega         // 8x4
             },
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Media.MediaWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Media.MediaWidgetView),

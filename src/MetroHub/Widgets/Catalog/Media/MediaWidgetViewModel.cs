@@ -27,10 +27,11 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
-        WidgetSize.SlimWide,  // 4x1
-        WidgetSize.ExtraWide, // 6x2
-        WidgetSize.Banner3,   // 8x3
-        WidgetSize.Mega       // 8x4
+        WidgetSize.SlimWide,    // 4x1
+        WidgetSize.ExtraWide,   // 6x2
+        WidgetSize.SquareLarge, // 6x6
+        WidgetSize.Banner3,     // 8x3
+        WidgetSize.Mega         // 8x4
     };
 
     [ObservableProperty]
@@ -101,7 +102,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     public bool IsAmbientGlowEnabled => _settings.IsAmbientGlowEnabled;
 
     public bool IsSlimMode => Model.SpanY == 1;
-    public bool IsStandardMode => Model.SpanY > 1;
+    public bool IsZuneMode => Model.SpanX == 6 && Model.SpanY == 6;
+    public bool IsStandardMode => Model.SpanY > 1 && !IsZuneMode;
 
     public double AlbumArtSize => Model.SpanY switch
     {
@@ -192,7 +194,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     public MediaWidgetViewModel(TileModel model) : base(model)
     {
         bool isValidSize = (model.SpanX == 8 && (model.SpanY == 4 || model.SpanY == 3)) ||
-                           (model.SpanX == 6 && model.SpanY == 2) ||
+                           (model.SpanX == 6 && (model.SpanY == 2 || model.SpanY == 6)) ||
                            (model.SpanX == 4 && model.SpanY == 1);
         if (!isValidSize)
         {
@@ -205,6 +207,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
             {
                 OnPropertyChanged(nameof(IsSlimMode));
+                OnPropertyChanged(nameof(IsZuneMode));
                 OnPropertyChanged(nameof(IsStandardMode));
                 OnPropertyChanged(nameof(AlbumArtSize));
                 OnPropertyChanged(nameof(ShowAlbumRow));
