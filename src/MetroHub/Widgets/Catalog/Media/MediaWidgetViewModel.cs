@@ -27,8 +27,9 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
-        WidgetSize.Banner3, // 8x3
-        WidgetSize.Mega     // 8x4
+        WidgetSize.ExtraWide, // 6x2
+        WidgetSize.Banner3,   // 8x3
+        WidgetSize.Mega       // 8x4
     };
 
     [ObservableProperty]
@@ -41,6 +42,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     private string _album = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowAlbumRow))]
     private bool _hasAlbum;
 
     [ObservableProperty]
@@ -97,7 +99,26 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public bool IsAmbientGlowEnabled => _settings.IsAmbientGlowEnabled;
 
-    public double AlbumArtSize => Model.SpanY >= 4 ? 132.0 : 104.0;
+    public double AlbumArtSize => Model.SpanY switch
+    {
+        >= 4 => 132.0,
+        3 => 104.0,
+        _ => 64.0
+    };
+
+    public bool ShowAlbumRow => Model.SpanY >= 3 && HasAlbum;
+    public Thickness TrackInfoMargin => Model.SpanY <= 2 ? new Thickness(16, 0, 96, 0) : new Thickness(20, 0, 175, 0);
+    public Thickness AlbumArtMargin => Model.SpanY <= 2 ? new Thickness(0, 0, 16, 0) : new Thickness(0, 0, 20, 0);
+    public double TrackTitleFontSize => Model.SpanY <= 2 ? 15.0 : 17.0;
+    public double ArtistFontSize => Model.SpanY <= 2 ? 13.0 : 14.0;
+    public Thickness PlaybackBarPadding => Model.SpanY <= 2 ? new Thickness(16, 0, 16, 0) : new Thickness(20, 0, 20, 0);
+    public Thickness TransportControlsMargin => Model.SpanY <= 2 ? new Thickness(-6, 0, 0, 0) : new Thickness(-9.5, 0, 0, 0);
+    public double FallbackWatermarkFontSize => Model.SpanY switch
+    {
+        >= 4 => 36.0,
+        3 => 32.0,
+        _ => 24.0
+    };
 
     [ObservableProperty]
     private bool _isPlaying;
@@ -163,7 +184,9 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public MediaWidgetViewModel(TileModel model) : base(model)
     {
-        if (model.SpanX != 8 || (model.SpanY != 4 && model.SpanY != 3))
+        bool isValidSize = (model.SpanX == 8 && (model.SpanY == 4 || model.SpanY == 3)) ||
+                           (model.SpanX == 6 && model.SpanY == 2);
+        if (!isValidSize)
         {
             model.SpanX = 8;
             model.SpanY = 4;
@@ -174,6 +197,14 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
             {
                 OnPropertyChanged(nameof(AlbumArtSize));
+                OnPropertyChanged(nameof(ShowAlbumRow));
+                OnPropertyChanged(nameof(TrackInfoMargin));
+                OnPropertyChanged(nameof(AlbumArtMargin));
+                OnPropertyChanged(nameof(TrackTitleFontSize));
+                OnPropertyChanged(nameof(ArtistFontSize));
+                OnPropertyChanged(nameof(PlaybackBarPadding));
+                OnPropertyChanged(nameof(TransportControlsMargin));
+                OnPropertyChanged(nameof(FallbackWatermarkFontSize));
             }
         };
 

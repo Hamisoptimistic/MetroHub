@@ -77,7 +77,7 @@
                 <!-- Album Art Container on Right Side -->
                 <Grid HorizontalAlignment="Right"
                       VerticalAlignment="Center"
-                      Margin="0,0,20,0">
+                      Margin="{Binding AlbumArtMargin}">
 
                     <!-- 1. Album Cover with Guaranteed 2px Rounded Corners matching Tiles -->
                     <Border Width="{Binding AlbumArtSize}"
@@ -117,7 +117,7 @@
                         </Border.Style>
                         <TextBlock Text="&#xE8D6;"
                                    FontFamily="{DynamicResource AppIconFontFamily}"
-                                   FontSize="36"
+                                   FontSize="{Binding FallbackWatermarkFontSize}"
                                    Foreground="#25FFFFFF"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
@@ -127,11 +127,11 @@
                 <!-- Left Content: Track Title, Artist, Album/Feature -->
                 <Grid HorizontalAlignment="Left"
                       VerticalAlignment="Center"
-                      Margin="20,0,175,0">
+                      Margin="{Binding TrackInfoMargin}">
                     <StackPanel>
                         <!-- Track Title -->
                         <TextBlock Text="{Binding Title}"
-                                   FontSize="17"
+                                   FontSize="{Binding TrackTitleFontSize}"
                                    FontWeight="SemiBold"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    Foreground="#FFFFFF"
@@ -141,7 +141,7 @@
 
                         <!-- Artist Name -->
                         <TextBlock Text="{Binding Artist}"
-                                   FontSize="14"
+                                   FontSize="{Binding ArtistFontSize}"
                                    FontWeight="Normal"
                                    Foreground="#D2D7E2"
                                    TextTrimming="CharacterEllipsis"
@@ -164,7 +164,7 @@
 
                         <!-- Album / Feature Detail with Note Glyph (♫) -->
                         <StackPanel Orientation="Horizontal"
-                                    Visibility="{Binding HasAlbum, Converter={StaticResource BoolToVis}}"
+                                    Visibility="{Binding ShowAlbumRow, Converter={StaticResource BoolToVis}}"
                                     Margin="0,1,0,0">
                             <TextBlock Text="&#xE8D6;"
                                        FontFamily="{DynamicResource AppIconFontFamily}"
@@ -190,13 +190,13 @@
                     BorderThickness="0"
                     CornerRadius="0,0,2,2"
                     SnapsToDevicePixels="True"
-                    Padding="20,0,20,0">
+                    Padding="{Binding PlaybackBarPadding}">
                 <Grid>
                     <!-- Transport Controls (< ▷ >) Aligned with Title Name on Left -->
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
-                                Margin="-9.5,0,0,0">
+                                Margin="{Binding TransportControlsMargin}">
                         <!-- Previous Track (<) -->
                         <Button Style="{StaticResource MediaTransportButtonStyle}"
                                 Command="{Binding SkipPreviousCommand}"
