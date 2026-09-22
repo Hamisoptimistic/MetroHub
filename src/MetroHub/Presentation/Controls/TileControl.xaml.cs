@@ -239,7 +239,7 @@ public partial class TileControl : UserControl
 
     public void AnimatePressDown()
     {
-        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "pomodoro" or "photos" or "volume" or "notepad" or "network" or "brightness" or "power" or "quotes" or "habit" or "dino" })
+        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "calendar" or "media" or "zune" or "pomodoro" or "photos" or "volume" or "notepad" or "network" or "brightness" or "power" or "quotes" or "habit" or "dino" })
         {
             return;
         }
@@ -921,6 +921,29 @@ public partial class TileControl : UserControl
             }
             else if (tile.TileContent is Widgets.Catalog.Media.MediaWidgetViewModel mediaVm)
             {
+                var zuneActionItem = new MenuItem
+                {
+                    Header = mediaVm.IsZuneMode ? "Switch to Standard Player (8x4)" : "Switch to Zune Player (4x6)",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.MusicNote224,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                zuneActionItem.Click += (s, ev) =>
+                {
+                    if (mediaVm.IsZuneMode)
+                    {
+                        ResizeTileTo(8, 4);
+                    }
+                    else
+                    {
+                        ResizeTileTo(4, 6);
+                    }
+                };
+
                 var styleItem = new MenuItem
                 {
                     Header = "Style",
@@ -953,8 +976,9 @@ public partial class TileControl : UserControl
                 styleItem.Items.Add(noneStyleItem);
 
                 var mediaDivider = new Separator { Tag = "WidgetCustomMenu" };
-                TileContextMenu.Items.Insert(1, styleItem);
-                TileContextMenu.Items.Insert(2, mediaDivider);
+                TileContextMenu.Items.Insert(1, zuneActionItem);
+                TileContextMenu.Items.Insert(2, styleItem);
+                TileContextMenu.Items.Insert(3, mediaDivider);
             }
             else if (tile.TileContent is Widgets.Catalog.Quotes.QuotesWidgetViewModel quotesVm)
             {

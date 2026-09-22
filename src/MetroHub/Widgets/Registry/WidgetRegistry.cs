@@ -94,6 +94,26 @@ public static class WidgetRegistry
             Factory: model => new MetroHub.Widgets.Catalog.Media.MediaWidgetViewModel(model)
         ));
 
+        // Register Microsoft Zune Handheld Widget
+        Register(new WidgetDefinition(
+            Id: "zune",
+            DisplayName: "Zune Player",
+            Description: "Authentic Microsoft Zune handheld music player with physical squircle controls",
+            Icon: SymbolRegular.Play24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.PortraitLarge, // 4x6 (Zune Handheld)
+                WidgetSize.SlimWide,      // 4x1
+                WidgetSize.ExtraWide,     // 6x2
+                WidgetSize.Banner3,       // 8x3
+                WidgetSize.Mega           // 8x4
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Media.MediaWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Media.MediaWidgetView),
+            DefaultSize: WidgetSize.PortraitLarge,
+            Factory: model => new MetroHub.Widgets.Catalog.Media.MediaWidgetViewModel(model)
+        ));
+
         // Register Focus / Pomodoro widget
         Register(new WidgetDefinition(
             Id: "pomodoro",

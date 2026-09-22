@@ -1724,7 +1724,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
             _isPotentialDrag = true;
             _isDragging = false;
-            if (!(tile.TileType == TileType.Widget && (tile.TargetPath == "calendar" || tile.TargetPath == "media" || tile.TargetPath == "pomodoro" || tile.TargetPath == "photos" || tile.TargetPath == "volume" || tile.TargetPath == "notepad" || tile.TargetPath == "network")))
+            if (!(tile.TileType == TileType.Widget && (tile.TargetPath == "calendar" || tile.TargetPath == "media" || tile.TargetPath == "zune" || tile.TargetPath == "pomodoro" || tile.TargetPath == "photos" || tile.TargetPath == "volume" || tile.TargetPath == "notepad" || tile.TargetPath == "network")))
             {
                 _draggedControl.AnimatePressDown();
             }

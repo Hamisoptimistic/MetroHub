@@ -1247,7 +1247,10 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public override void SaveSettings()
     {
-        Model.TargetPath = "media";
+        if (string.IsNullOrWhiteSpace(Model.TargetPath) || (Model.TargetPath != "zune" && Model.TargetPath != "media"))
+        {
+            Model.TargetPath = IsZuneMode ? "zune" : "media";
+        }
         Model.SettingsJson = WidgetSerializer.Serialize(_settings);
         MainWindow.Current?.SaveGroupsAndLayout();
     }
