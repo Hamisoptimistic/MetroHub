@@ -76,6 +76,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     /// when MetroHub is hidden, and instantly re-decoded with 0ms latency when restored.
     /// </summary>
     private byte[]? _cachedThumbnailBytes;
+    private int _currentThumbnailWidth;
 
     private static readonly Color DefaultSeekbarColor = Color.FromRgb(0x4C, 0x9E, 0xFF);
     private static readonly SolidColorBrush DefaultSeekbarBrush = CreateFrozenSolidBrush(DefaultSeekbarColor);
@@ -529,11 +530,13 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         bool isLiveTitle = !isMusicApp && HasLiveTitleKeyword(cleanTitle);
 
         string newTrackId = $"{cleanArtist}|{cleanTitle}|{cleanAlbum}";
+        bool isSameTrack = false;
         lock (_stateLock)
         {
             if (!string.Equals(_currentTrackId, newTrackId, StringComparison.Ordinal))
             {
                 _currentTrackId = newTrackId;
+                _currentThumbnailWidth = 0;
                 _isLiveLocked = isLiveTitle;
                 _lastObservedDuration = TimeSpan.Zero;
                 _lastTimelinePosition = TimeSpan.Zero;
@@ -547,9 +550,13 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 _zeroDurationDetectedAt = 0;
                 _trackChangedAt = Stopwatch.GetTimestamp();
             }
-            else if (isLiveTitle)
+            else
             {
-                _isLiveLocked = true;
+                isSameTrack = true;
+                if (isLiveTitle)
+                {
+                    _isLiveLocked = true;
+                }
             }
         }
 
@@ -558,18 +565,43 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         Color seekbarColor = DefaultSeekbarColor;
         SolidColorBrush seekbarBrush = DefaultSeekbarBrush;
         Brush ambientGlowBrush = Brushes.Transparent;
+        bool updateArtwork = false;
 
         if (props.Thumbnail != null)
         {
             (bmp, rawBytes) = await LoadThumbnailAsync(props.Thumbnail);
             if (bmp is BitmapSource bs)
             {
-                (seekbarBrush, seekbarColor) = ExtractSeekbarBrush(bs);
-                if (_settings.IsAmbientGlowEnabled)
+                int incomingWidth = bs.PixelWidth;
+                lock (_stateLock)
                 {
-                    ambientGlowBrush = CreateAlbumAuraGlow(seekbarColor);
+                    // Bloat-free Anti-Downgrade Guard:
+                    // If YouTube Music / browser sends a low-res image (e.g. 120px) ~1s after
+                    // sending the authentic high-res 544px image for the same track, keep the high-res one!
+                    if (!isSameTrack || _currentThumbnailWidth == 0 || incomingWidth >= _currentThumbnailWidth)
+                    {
+                        _currentThumbnailWidth = incomingWidth;
+                        updateArtwork = true;
+                    }
+                }
+
+                if (updateArtwork)
+                {
+                    (seekbarBrush, seekbarColor) = ExtractSeekbarBrush(bs);
+                    if (_settings.IsAmbientGlowEnabled)
+                    {
+                        ambientGlowBrush = CreateAlbumAuraGlow(seekbarColor);
+                    }
                 }
             }
+            else if (!isSameTrack)
+            {
+                updateArtwork = true;
+            }
+        }
+        else if (!isSameTrack)
+        {
+            updateArtwork = true;
         }
 
         RunOnUi(() =>
@@ -581,13 +613,16 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             Album = cleanAlbum;
             HasAlbum = hasAlbum;
             SourceName = cleanSource;
-            _cachedThumbnailBytes = rawBytes;
-            Thumbnail = bmp;
-            HasThumbnail = bmp != null;
-            SeekbarBrush = seekbarBrush;
-            SeekbarGlowColor = seekbarColor;
-            _currentAuraColor = (bmp != null) ? seekbarColor : null;
-            AmbientGlowBrush = (_settings.IsAmbientGlowEnabled && bmp != null) ? ambientGlowBrush : Brushes.Transparent;
+            if (updateArtwork)
+            {
+                _cachedThumbnailBytes = rawBytes;
+                Thumbnail = bmp;
+                HasThumbnail = bmp != null;
+                SeekbarBrush = seekbarBrush;
+                SeekbarGlowColor = seekbarColor;
+                _currentAuraColor = (bmp != null) ? seekbarColor : null;
+                AmbientGlowBrush = (_settings.IsAmbientGlowEnabled && bmp != null) ? ambientGlowBrush : Brushes.Transparent;
+            }
             HasMedia = true;
 
             if (_isLiveLocked)
@@ -1115,6 +1150,10 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         Thumbnail = null;
         HasThumbnail = false;
         _cachedThumbnailBytes = null;
+        lock (_stateLock)
+        {
+            _currentThumbnailWidth = 0;
+        }
         _currentAuraColor = null;
         AmbientGlowBrush = Brushes.Transparent;
         SeekbarBrush = DefaultSeekbarBrush;
@@ -1301,7 +1340,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             bitmap.BeginInit();
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.StreamSource = memory;
-            bitmap.DecodePixelWidth = 400;
             bitmap.EndInit();
             bitmap.Freeze();
 
@@ -1331,7 +1369,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             bitmap.BeginInit();
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.StreamSource = memory;
-            bitmap.DecodePixelWidth = 400;
             bitmap.EndInit();
             bitmap.Freeze();
 
