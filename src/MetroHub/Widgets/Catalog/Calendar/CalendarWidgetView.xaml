@@ -169,11 +169,11 @@
                                             Background="#60CDFF"
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Bottom"
-                                            Margin="0,0,0,3"
+                                            Margin="1.5,0,0,3"
                                             Visibility="Collapsed"
                                             IsHitTestVisible="False"
                                             RenderOptions.EdgeMode="Unspecified"
-                                            SnapsToDevicePixels="False">
+                                            SnapsToDevicePixels="True">
                                         <Border.Effect>
                                             <DropShadowEffect Color="#60CDFF" BlurRadius="4" ShadowDepth="0" Opacity="0.8" />
                                         </Border.Effect>

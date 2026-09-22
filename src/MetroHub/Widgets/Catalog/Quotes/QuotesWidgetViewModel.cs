@@ -55,7 +55,7 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase
     private QuoteFontStyleChoice _selectedStyle = QuoteFontStyleChoice.Italic;
 
     [ObservableProperty]
-    private string _quoteFontFamily = "pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather, Georgia, serif";
+    private string _quoteFontFamily = "pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather, Georgia";
 
     [ObservableProperty]
     private FontStyle _quoteFontStyle = FontStyles.Italic;
@@ -321,12 +321,12 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase
     {
         QuoteFontFamily = SelectedFont switch
         {
-            QuoteFontFamilyChoice.Merriweather => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather, Georgia, serif",
-            QuoteFontFamilyChoice.Quintessential => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Quintessential, Georgia, serif",
-            QuoteFontFamilyChoice.Georgia => "Georgia, 'Times New Roman', serif",
-            QuoteFontFamilyChoice.Palatino => "'Palatino Linotype', Georgia, serif",
-            QuoteFontFamilyChoice.SegoeUI => "Segoe UI Variable Text, Segoe UI, sans-serif",
-            _ => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather, Georgia, serif"
+            QuoteFontFamilyChoice.Merriweather => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather, Georgia",
+            QuoteFontFamilyChoice.Quintessential => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Quintessential, Georgia",
+            QuoteFontFamilyChoice.Georgia => "Georgia, Times New Roman",
+            QuoteFontFamilyChoice.Palatino => "Palatino Linotype, Georgia",
+            QuoteFontFamilyChoice.SegoeUI => "Segoe UI Variable Text, Segoe UI",
+            _ => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather, Georgia"
         };
 
         QuoteFontStyle = SelectedStyle switch
