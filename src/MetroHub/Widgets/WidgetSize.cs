@@ -15,7 +15,9 @@ public record WidgetSize(int SpanX, int SpanY, string DisplayName)
     public static readonly WidgetSize SlimWide = new(4, 1, "Slim Wide (4x1)");
     public static readonly WidgetSize SlimBanner = new(8, 1, "Slim Banner (8x1)");
     public static readonly WidgetSize Wide = new(4, 2, "Wide (4x2)");
+    public static readonly WidgetSize Wide3 = new(4, 3, "Wide (4x3)");
     public static readonly WidgetSize ExtraWide = new(6, 2, "Extra Wide (6x2)");
+    public static readonly WidgetSize ExtraWide3 = new(6, 3, "Extra Wide (6x3)");
     public static readonly WidgetSize Banner = new(8, 2, "Banner (8x2)");
     public static readonly WidgetSize Banner3 = new(8, 3, "Banner (8x3)");
 

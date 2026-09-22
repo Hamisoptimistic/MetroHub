@@ -23,6 +23,7 @@
              xmlns:habit="clr-namespace:MetroHub.Widgets.Catalog.Habit"
              xmlns:dino="clr-namespace:MetroHub.Widgets.Catalog.Dino"
              xmlns:caffeine="clr-namespace:MetroHub.Widgets.Catalog.Caffeine"
+             xmlns:quickcontrols="clr-namespace:MetroHub.Widgets.Catalog.QuickControls"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -223,6 +224,11 @@
         <!-- 17. Caffeine & Light Widget DataTemplate -->
         <DataTemplate DataType="{x:Type caffeine:CaffeineWidgetViewModel}">
             <caffeine:CaffeineWidgetView />
+        </DataTemplate>
+
+        <!-- 18. Quick Controls Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type quickcontrols:QuickControlsWidgetViewModel}">
+            <quickcontrols:QuickControlsWidgetView />
         </DataTemplate>
     </UserControl.Resources>
 

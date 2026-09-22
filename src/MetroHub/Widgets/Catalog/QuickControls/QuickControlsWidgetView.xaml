@@ -1,0 +1,430 @@
+<UserControl x:Class="MetroHub.Widgets.Catalog.QuickControls.QuickControlsWidgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:widgets="clr-namespace:MetroHub.Widgets"
+             xmlns:quickcontrols="clr-namespace:MetroHub.Widgets.Catalog.QuickControls"
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=quickcontrols:QuickControlsWidgetViewModel}"
+             Focusable="False"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="ClearType"
+             TextOptions.TextHintingMode="Fixed"
+             RenderOptions.ClearTypeHint="Enabled">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- Media & Volume Transport Button Style: Borderless, Transparent, 2px Corner Radius -->
+        <Style x:Key="TransportButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="2"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.3" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Transparent unified WidgetCard without dividing lines -->
+    <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
+        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True" Background="Transparent">
+            <Grid.RowDefinitions>
+                <!-- Row 0: Media Player Strip (~56px) -->
+                <RowDefinition Height="*" />
+                <!-- Row 1: Master Volume Strip (~56px) -->
+                <RowDefinition Height="*" />
+                <!-- Row 2: Master Brightness Strip (~56px) -->
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- ============================================================= -->
+            <!-- ROW 0: MEDIA PLAYER SLIM CONTROLLER                           -->
+            <!-- [ ▷ Play ] ========== Seekbar / No media ========== [ 1:24 ]  -->
+            <!-- ============================================================= -->
+            <Grid Grid.Row="0" Margin="14,0,14,0" Background="Transparent" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Col 0: Play/Pause Button -->
+                <Button Grid.Column="0"
+                        Style="{StaticResource TransportButtonStyle}"
+                        Command="{Binding Media.TogglePlayPauseCommand}"
+                        IsEnabled="{Binding Media.CanPlayPause}"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Left"
+                        ToolTip="Play / Pause">
+                    <TextBlock FontFamily="{DynamicResource AppIconFontFamily}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="&#xE768;" />
+                                <Setter Property="FontSize" Value="15" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Media.IsPlaying}" Value="True">
+                                        <Setter Property="Text" Value="&#xE769;" />
+                                        <Setter Property="FontSize" Value="16" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Button>
+
+                <!-- Col 1: Center Area (Seekbar or 'No media playing' label) -->
+                <Grid Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
+                    <!-- Idle State: 'No media playing' subtle text -->
+                    <TextBlock Text="No media playing"
+                               FontSize="12"
+                               FontWeight="Normal"
+                               Foreground="#55FFFFFF"
+                               FontFamily="{DynamicResource AppDisplayFontFamily}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"
+                               Visibility="{Binding Media.HasNoMedia, Converter={StaticResource BoolToVis}}" />
+
+                    <!-- Active State: Interactive Hairline Seekbar -->
+                    <Grid x:Name="MediaSeekbarContainer"
+                          Height="18"
+                          VerticalAlignment="Center"
+                          Background="Transparent"
+                          Cursor="Hand"
+                          Focusable="False"
+                          Tag="InteractiveControl"
+                          Visibility="{Binding Media.HasMedia, Converter={StaticResource BoolToVis}}"
+                          PreviewMouseLeftButtonDown="Seekbar_PreviewMouseLeftButtonDown"
+                          MouseEnter="Seekbar_MouseEnter"
+                          MouseLeave="Seekbar_MouseLeave"
+                          MouseLeftButtonDown="Seekbar_MouseLeftButtonDown"
+                          MouseMove="Seekbar_MouseMove"
+                          MouseLeftButtonUp="Seekbar_MouseLeftButtonUp"
+                          LostMouseCapture="Seekbar_LostMouseCapture"
+                          SizeChanged="Seekbar_SizeChanged"
+                          SnapsToDevicePixels="True">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Media.HasMedia}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Media.IsLive}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Media.CanSeek}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+
+                        <!-- Track Group -->
+                        <Grid x:Name="MediaSeekTrackGroup"
+                              VerticalAlignment="Center"
+                              RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform x:Name="MediaSeekTrackScale" ScaleY="1.0" />
+                            </Grid.RenderTransform>
+
+                            <!-- Background Hairline Track -->
+                            <Border x:Name="MediaSeekTrackBg"
+                                    Height="2"
+                                    Background="#14FFFFFF"
+                                    CornerRadius="1"
+                                    SnapsToDevicePixels="True" />
+
+                            <!-- Elapsed Progress Track -->
+                            <Grid x:Name="MediaSeekProgressContainer"
+                                  Height="2"
+                                  HorizontalAlignment="Stretch"
+                                  SnapsToDevicePixels="True">
+                                <Grid.Clip>
+                                    <RectangleGeometry x:Name="MediaSeekProgressClip" Rect="0,-5,0,24" />
+                                </Grid.Clip>
+                                <Border x:Name="MediaSeekProgressFill"
+                                        Height="2"
+                                        Background="{Binding Media.SeekbarBrush}"
+                                        CornerRadius="1"
+                                        SnapsToDevicePixels="True" />
+
+                                <!-- Shimmer Light Reflection -->
+                                <Rectangle x:Name="MediaSeekShimmer"
+                                           Width="50"
+                                           Height="6"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Left"
+                                           IsHitTestVisible="False"
+                                           Opacity="0.0"
+                                           SnapsToDevicePixels="True">
+                                    <Rectangle.Fill>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#00FFFFFF" Offset="0.0" />
+                                            <GradientStop Color="#60FFFFFF" Offset="0.25" />
+                                            <GradientStop Color="#E8FFFFFF" Offset="0.5" />
+                                            <GradientStop Color="#60FFFFFF" Offset="0.75" />
+                                            <GradientStop Color="#00FFFFFF" Offset="1.0" />
+                                        </LinearGradientBrush>
+                                    </Rectangle.Fill>
+                                    <Rectangle.RenderTransform>
+                                        <TranslateTransform x:Name="MediaSeekShimmerTranslate" X="-60" />
+                                    </Rectangle.RenderTransform>
+                                </Rectangle>
+                            </Grid>
+                        </Grid>
+
+                        <!-- Circular Thumb -->
+                        <Grid x:Name="MediaSeekThumb"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              IsHitTestVisible="False"
+                              Opacity="0"
+                              RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform x:Name="MediaSeekThumbScale" ScaleX="0.85" ScaleY="0.85" />
+                                    <TranslateTransform x:Name="MediaSeekThumbTranslate" X="0" />
+                                </TransformGroup>
+                            </Grid.RenderTransform>
+                            <Ellipse x:Name="MediaSeekThumbDot"
+                                     Width="12"
+                                     Height="12"
+                                     Fill="{Binding Media.SeekbarBrush}"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center" />
+                        </Grid>
+                    </Grid>
+                </Grid>
+
+                <!-- Col 2: Track Timing Readout -->
+                <TextBlock Grid.Column="2"
+                           Text="{Binding Media.TimeDisplayString}"
+                           FontSize="11.5"
+                           FontWeight="Normal"
+                           Foreground="#C8FFFFFF"
+                           Typography.NumeralAlignment="Tabular"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right"
+                           SnapsToDevicePixels="True"
+                           Visibility="{Binding Media.HasMedia, Converter={StaticResource BoolToVis}}" />
+            </Grid>
+
+            <!-- ============================================================= -->
+            <!-- ROW 1: MASTER AUDIO STRIP                                     -->
+            <!-- [ 🎧 Logo ] =========== Seekbar =========== [ 🔊 Mute ]       -->
+            <!-- ============================================================= -->
+            <Grid Grid.Row="1" Margin="14,0,14,0" Background="Transparent" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <!-- Col 0: Output Logo Icon -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Col 1: Master Volume Seekbar -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Col 2: Mute Button -->
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- 1. Output Logo -->
+                <Button Grid.Column="0"
+                        Style="{StaticResource TransportButtonStyle}"
+                        HorizontalAlignment="Left"
+                        Command="{Binding Volume.ToggleNextDeviceCommand}"
+                        ToolTip="{Binding Volume.ActiveDeviceName}">
+                    <TextBlock Text="{Binding Volume.ActiveDeviceIcon}"
+                               FontFamily="{DynamicResource AppIconFontFamily}"
+                               FontSize="16"
+                               Foreground="#FFFFFF"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center" />
+                </Button>
+
+                <!-- 2. Master Volume Seekbar -->
+                <controls:FluentVolumeSlider x:Name="MasterVolumeSlider"
+                                            Grid.Column="1"
+                                            Margin="12,0"
+                                            VerticalAlignment="Center"
+                                            Value="{Binding Volume.MasterVolume, Mode=TwoWay}"
+                                            IsMuted="{Binding Volume.IsMasterMuted}"
+                                            Minimum="0"
+                                            Maximum="100"
+                                            ProgressBrush="#00B4D8"
+                                            ProgressPointerOverBrush="#33C9E8"
+                                            Tag="InteractiveControl"
+                                            SnapsToDevicePixels="True" />
+
+                <!-- 3. Mute Button / % Display -->
+                <Button Grid.Column="2"
+                        Style="{StaticResource TransportButtonStyle}"
+                        HorizontalAlignment="Right"
+                        Command="{Binding Volume.ToggleMasterMuteCommand}"
+                        ToolTip="Mute / Unmute Master Volume"
+                        MinWidth="34">
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <!-- Speaker / Mute Glyph Icon -->
+                        <TextBlock Text="{Binding Volume.MasterGlyph}"
+                                   FontFamily="{DynamicResource AppIconFontFamily}"
+                                   FontSize="15"
+                                   Foreground="#FFFFFF"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDragging, ElementName=MasterVolumeSlider}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- Volume % Number Shown While Dragging -->
+                        <TextBlock Text="{Binding Volume.MasterVolumePercentText}"
+                                   FontSize="11.5"
+                                   FontWeight="SemiBold"
+                                   Foreground="#FFFFFF"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDragging, ElementName=MasterVolumeSlider}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Button>
+            </Grid>
+
+            <!-- ============================================================= -->
+            <!-- ROW 2: MASTER BRIGHTNESS STRIP                                -->
+            <!-- [ ☼ Mode ] =========== Seekbar =========== [ 🔗 Link ]        -->
+            <!-- ============================================================= -->
+            <Grid Grid.Row="2" Margin="14,0,14,0" Background="Transparent" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <!-- Col 0: Day / Night Mode Icon -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Col 1: Master Brightness Seekbar -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Col 2: Link / Sync Button -->
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- 1. Day / Night Toggle Button -->
+                <Button Grid.Column="0"
+                        Style="{StaticResource TransportButtonStyle}"
+                        HorizontalAlignment="Left"
+                        Command="{Binding Brightness.ToggleNightModeCommand}"
+                        ToolTip="{Binding Brightness.NightModeTooltip}">
+                    <TextBlock Text="{Binding Brightness.MasterGlyph}"
+                               FontFamily="{DynamicResource AppIconFontFamily}"
+                               FontSize="16"
+                               Foreground="#FFFFFF"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center" />
+                </Button>
+
+                <!-- 2. Master Brightness Seekbar -->
+                <controls:FluentVolumeSlider x:Name="MasterBrightnessSlider"
+                                            Grid.Column="1"
+                                            Margin="12,0"
+                                            VerticalAlignment="Center"
+                                            Value="{Binding Brightness.MasterBrightness, Mode=TwoWay}"
+                                            Minimum="0"
+                                            Maximum="100"
+                                            ProgressBrush="#00B4D8"
+                                            ProgressPointerOverBrush="#33C9E8"
+                                            Tag="InteractiveControl"
+                                            SnapsToDevicePixels="True" />
+
+                <!-- 3. Link / Sync Button / % Display -->
+                <Button Grid.Column="2"
+                        Style="{StaticResource TransportButtonStyle}"
+                        HorizontalAlignment="Right"
+                        Command="{Binding Brightness.ToggleLinkCommand}"
+                        ToolTip="{Binding Brightness.LinkTooltip}"
+                        MinWidth="34">
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <!-- Link Glyph Icon -->
+                        <TextBlock Text="{Binding Brightness.LinkGlyph}"
+                                   FontFamily="{DynamicResource AppIconFontFamily}"
+                                   FontSize="15"
+                                   Foreground="#FFFFFF"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDragging, ElementName=MasterBrightnessSlider}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- Brightness % Number Shown While Dragging -->
+                        <TextBlock Text="{Binding Brightness.MasterBrightnessPercentText}"
+                                   FontSize="11.5"
+                                   FontWeight="SemiBold"
+                                   Foreground="#FFFFFF"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,-1,0,0"
+                                   Typography.NumeralAlignment="Tabular">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDragging, ElementName=MasterBrightnessSlider}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Button>
+            </Grid>
+
+        </Grid>
+    </widgets:WidgetCard>
+</UserControl>

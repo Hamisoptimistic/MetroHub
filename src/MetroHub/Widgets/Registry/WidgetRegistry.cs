@@ -323,6 +323,24 @@ public static class WidgetRegistry
             DefaultSize: WidgetSize.Banner3,
             Factory: model => new MetroHub.Widgets.Catalog.Caffeine.CaffeineWidgetViewModel(model)
         ));
+
+        // Register Quick Controls (3-in-1 Media, Volume, Brightness) widget
+        Register(new WidgetDefinition(
+            Id: "quick_controls",
+            DisplayName: "Quick Controls",
+            Description: "Unified master media playback, volume, and screen brightness deck",
+            Icon: SymbolRegular.SlideSize24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Wide3,      // 4x3
+                WidgetSize.ExtraWide3, // 6x3
+                WidgetSize.Banner3     // 8x3
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.QuickControls.QuickControlsWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.QuickControls.QuickControlsWidgetView),
+            DefaultSize: WidgetSize.Wide3,
+            Factory: model => new MetroHub.Widgets.Catalog.QuickControls.QuickControlsWidgetViewModel(model)
+        ));
     }
 
     public static void Register(WidgetDefinition definition)
