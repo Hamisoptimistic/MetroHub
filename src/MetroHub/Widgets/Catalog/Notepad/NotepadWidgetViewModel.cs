@@ -64,6 +64,11 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
 
     public bool IsNumberedActiveInNotes => IsNotesView && IsNumberedActive;
 
+    public string? CurrentTileSelection =>
+        IsTodoView ? "Todo" :
+        IsBulletActiveInNotes ? "Bullets" :
+        IsNumberedActiveInNotes ? "Numbered" : null;
+
     public int RemainingTasksCount => Tasks.Count(t => !t.IsCompleted);
 
     public int CompletedTasksCount => Tasks.Count(t => t.IsCompleted);
@@ -126,6 +131,7 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
         OnPropertyChanged(nameof(IsTodoView));
         OnPropertyChanged(nameof(IsBulletActiveInNotes));
         OnPropertyChanged(nameof(IsNumberedActiveInNotes));
+        OnPropertyChanged(nameof(CurrentTileSelection));
         if (!_isSettingsLoaded) return;
         ScheduleSave();
     }
@@ -136,6 +142,7 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
         OnPropertyChanged(nameof(IsNumberedActive));
         OnPropertyChanged(nameof(IsBulletActiveInNotes));
         OnPropertyChanged(nameof(IsNumberedActiveInNotes));
+        OnPropertyChanged(nameof(CurrentTileSelection));
     }
 
     #endregion

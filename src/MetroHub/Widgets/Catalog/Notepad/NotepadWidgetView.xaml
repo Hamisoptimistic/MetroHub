@@ -30,43 +30,109 @@
         <!-- Universal 4px Fluent Floating ScrollBar: Invisible by default, reveals on scroll/hover via AutoHideScrollBehavior -->
         <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
 
-        <!-- Fluent Icon Anti-Aliasing Style: Eliminates staircase pixelation on curved vector glyphs -->
-        <Style TargetType="{x:Type ui:SymbolIcon}">
-            <Setter Property="SnapsToDevicePixels" Value="False" />
-            <Setter Property="UseLayoutRounding" Value="False" />
-            <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
-            <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
-        </Style>
-
-        <!-- Toolbar Icon Button Style (Borderless, subtle hover, no harsh opaque box) -->
-        <Style x:Key="NotepadToolbarButtonStyle" TargetType="Button">
+        <!-- Compact Network-Style Icon Tile (40x38, perfectly centered 16px icon, space-efficient) -->
+        <Style x:Key="NotepadTileStyle" TargetType="{x:Type widgets:WidgetTile}">
             <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#B5FFFFFF" />
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="28" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Foreground" Value="#90FFFFFF" />
+            <Setter Property="IconSize" Value="16" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Tag" Value="InteractiveControl" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="UseLayoutRounding" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border"
+                    <ControlTemplate TargetType="{x:Type widgets:WidgetTile}">
+                        <Border x:Name="TileBorder"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="4"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                SnapsToDevicePixels="True"
+                                UseLayoutRounding="True">
+                            <Grid HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  SnapsToDevicePixels="True">
+                                <ui:SymbolIcon x:Name="PART_SymbolIcon"
+                                               Symbol="{TemplateBinding Symbol}"
+                                               FontSize="{TemplateBinding IconSize}"
+                                               Foreground="{TemplateBinding Foreground}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               SnapsToDevicePixels="True"
+                                               Visibility="Collapsed" />
+                                <ContentControl x:Name="PART_IconContent"
+                                                Content="{TemplateBinding Icon}"
+                                                FontFamily="{DynamicResource AppIconFontFamily}"
+                                                FontSize="{TemplateBinding IconSize}"
+                                                Foreground="{TemplateBinding Foreground}"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                SnapsToDevicePixels="True" />
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
+                            <Trigger Property="HasSymbol" Value="True">
+                                <Setter TargetName="PART_SymbolIcon" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="PART_IconContent" Property="Visibility" Value="Collapsed" />
+                            </Trigger>
+                            <!-- Hover state: Crisp White icon illumination -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#18FFFFFF" />
                                 <Setter Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
+                            <!-- Pressed state -->
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#2AFFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                            <!-- Selected state: Solid crisp White icon -->
+                            <Trigger Property="IsSelected" Value="True">
                                 <Setter Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Custom WidgetTiles Style for Notes Header (removes 144px duplicate bottom border so only the full-width hairline border is present) -->
+        <Style x:Key="NotepadTilesStripStyle" TargetType="{x:Type widgets:WidgetTiles}" BasedOn="{StaticResource WidgetTilesStyle}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type widgets:WidgetTiles}">
+                        <Grid x:Name="PART_HostGrid" Background="Transparent" SnapsToDevicePixels="True">
+                            <!-- Tiles Host -->
+                            <ItemsPresenter SnapsToDevicePixels="True" />
+
+                            <!-- Hardware-Accelerated Sliding Active Indicator -->
+                            <Border x:Name="PART_SlidingIndicator"
+                                    Height="{TemplateBinding IndicatorHeight}"
+                                    VerticalAlignment="Bottom"
+                                    HorizontalAlignment="Left"
+                                    Width="0"
+                                    CornerRadius="{TemplateBinding IndicatorCornerRadius}"
+                                    Opacity="0"
+                                    Panel.ZIndex="25"
+                                    SnapsToDevicePixels="True">
+                                <Border.RenderTransform>
+                                    <TranslateTransform x:Name="PART_IndicatorTransform" X="0" />
+                                </Border.RenderTransform>
+                                <Border.Effect>
+                                    <DropShadowEffect x:Name="PART_IndicatorShadow"
+                                                      Color="#FFFFFF"
+                                                      BlurRadius="8"
+                                                      ShadowDepth="0"
+                                                      Opacity="0.8"
+                                                      RenderingBias="Performance" />
+                                </Border.Effect>
+                            </Border>
+                        </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -221,95 +287,64 @@
     <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" Tag="InteractiveControl">
         <Grid.RowDefinitions>
             <!-- Row 0: Centered Top Menu Toolbar -->
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="38" />
             <!-- Row 1: Focus Timer-Identical Border-to-Border Hairline Separator -->
             <RowDefinition Height="Auto" />
             <!-- Row 2: Active Content Area (Notes or To-Do) -->
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-            <!-- ========================================================================= -->
-            <!-- ROW 0: TOP CENTERED TOOLBAR (WPF-UI ICONS ONLY, CENTERED, NO TEXT)        -->
-            <!-- ========================================================================= -->
-            <Grid Grid.Row="0" Margin="0,7,0,7">
-                <!-- Centered 3 Icons: Bullet List, Numbered List, To-Do Checklist -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <!-- 1. Bullet List Icon Button (WPF-UI Symbol: TextBulletListTree24) -->
-                    <Button x:Name="BulletListButton"
-                            Click="BulletListButton_Click"
-                            ToolTip="Bullet List"
-                            Margin="3,0">
-                        <ui:SymbolIcon Symbol="TextBulletListTree24"
-                                       FontSize="16"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center" />
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource NotepadToolbarButtonStyle}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsBulletActiveInNotes}" Value="True">
-                                        <Setter Property="Background" Value="#22FFFFFF" />
-                                        <Setter Property="Foreground" Value="#FFFFFF" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+        <!-- ========================================================================= -->
+        <!-- ROW 0: TOP CENTERED TILE STRIP (NETWORK WIDGET STYLE, 40x38, WHITE GLOW) -->
+        <!-- ========================================================================= -->
+        <Grid Grid.Row="0" SnapsToDevicePixels="True" UseLayoutRounding="True">
+            <widgets:WidgetTiles x:Name="NotesTileStrip"
+                                 Style="{StaticResource NotepadTilesStripStyle}"
+                                 Height="38"
+                                 Width="120"
+                                 HorizontalAlignment="Center"
+                                 VerticalAlignment="Center"
+                                 IndicatorHeight="2"
+                                 IndicatorCornerRadius="0"
+                                 SelectedValue="{Binding CurrentTileSelection, Mode=OneWay}">
+                <!-- 1. Bullet List Tile -->
+                <widgets:WidgetTile Style="{StaticResource NotepadTileStyle}"
+                                    x:Name="BulletListTile"
+                                    Value="Bullets"
+                                    Symbol="TextBulletListTree24"
+                                    IndicatorBrush="#FFFFFF"
+                                    ToolTip="Bullet List"
+                                    Click="BulletListTile_Click" />
 
-                    <!-- 2. Numbered List Icon Button (WPF-UI Symbol: TextNumberListLtr16) -->
-                    <Button x:Name="NumberedListButton"
-                            Click="NumberedListButton_Click"
-                            ToolTip="Numbered List"
-                            Margin="3,0">
-                        <ui:SymbolIcon Symbol="TextNumberListLtr16"
-                                       FontSize="16"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center" />
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource NotepadToolbarButtonStyle}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsNumberedActiveInNotes}" Value="True">
-                                        <Setter Property="Background" Value="#22FFFFFF" />
-                                        <Setter Property="Foreground" Value="#FFFFFF" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+                <!-- 2. Numbered List Tile -->
+                <widgets:WidgetTile Style="{StaticResource NotepadTileStyle}"
+                                    x:Name="NumberedListTile"
+                                    Value="Numbered"
+                                    Symbol="TextNumberListLtr16"
+                                    IndicatorBrush="#FFFFFF"
+                                    ToolTip="Numbered List"
+                                    Click="NumberedListTile_Click" />
 
-                    <!-- 3. To-Do List Icon Button (WPF-UI Symbol: CheckmarkCircle32) -->
-                    <Button x:Name="TodoListButton"
-                            Click="TodoListButton_Click"
-                            ToolTip="To-Do Checklist"
-                            Margin="3,0">
-                        <ui:SymbolIcon Symbol="CheckmarkCircle32"
-                                       FontSize="16"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center" />
-                        <Button.Style>
-                            <Style TargetType="Button" BasedOn="{StaticResource NotepadToolbarButtonStyle}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsTodoView}" Value="True">
-                                        <Setter Property="Background" Value="#22FFFFFF" />
-                                        <Setter Property="Foreground" Value="#FFFFFF" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-                </StackPanel>
-            </Grid>
+                <!-- 3. To-Do Checklist Tile -->
+                <widgets:WidgetTile Style="{StaticResource NotepadTileStyle}"
+                                    x:Name="TodoListTile"
+                                    Value="Todo"
+                                    Symbol="CheckmarkCircle32"
+                                    IndicatorBrush="#FFFFFF"
+                                    ToolTip="To-Do Checklist"
+                                    Click="TodoListTile_Click" />
+            </widgets:WidgetTiles>
+        </Grid>
 
-            <!-- ========================================================================= -->
-            <!-- ROW 1: HAIRLINE SEPARATOR (IDENTICAL TO FOCUS TIMER & OTHER WIDGETS)      -->
-            <!-- Runs border-to-border (100% full width, zero margin)                      -->
-            <!-- ========================================================================= -->
-            <Border Grid.Row="1"
-                    Height="2"
-                    HorizontalAlignment="Stretch"
-                    Background="#14FFFFFF"
-                    CornerRadius="1"
-                    Margin="0"
-                    SnapsToDevicePixels="True" />
+        <!-- ========================================================================= -->
+        <!-- ROW 1: HAIRLINE SEPARATOR (IDENTICAL TO FOCUS TIMER & NETWORK WIDGET)     -->
+        <!-- Runs border-to-border (100% full width, zero margin)                      -->
+        <!-- ========================================================================= -->
+        <Border Grid.Row="1"
+                Height="1"
+                HorizontalAlignment="Stretch"
+                Background="#14FFFFFF"
+                SnapsToDevicePixels="True" />
 
             <!-- ========================================================================= -->
             <!-- ROW 2: CONTENT AREA (NOTES OR TO-DO)                                      -->

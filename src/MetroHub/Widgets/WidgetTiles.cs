@@ -196,7 +196,31 @@ public class WidgetTiles : Selector
 
     private void SyncSelectionFromValue(object? val)
     {
-        if (val == null || Items.Count == 0) return;
+        if (Items.Count == 0) return;
+
+        if (val == null)
+        {
+            _isInternalSync = true;
+            try
+            {
+                SelectedIndex = -1;
+                SelectedItem = null;
+                for (int j = 0; j < Items.Count; j++)
+                {
+                    if (Items[j] is WidgetTile t)
+                    {
+                        t.IsSelected = false;
+                    }
+                }
+            }
+            finally
+            {
+                _isInternalSync = false;
+            }
+
+            UpdateIndicator(animate: IsLoaded);
+            return;
+        }
 
         for (int i = 0; i < Items.Count; i++)
         {

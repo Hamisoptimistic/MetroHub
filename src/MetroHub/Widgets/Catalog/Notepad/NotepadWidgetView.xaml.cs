@@ -16,7 +16,7 @@ public partial class NotepadWidgetView : UserControl
         InitializeComponent();
     }
 
-    private void BulletListButton_Click(object sender, RoutedEventArgs e)
+    private void BulletListTile_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not NotepadWidgetViewModel vm) return;
 
@@ -32,7 +32,7 @@ public partial class NotepadWidgetView : UserControl
         NotesEditorTextBox.Select(Math.Clamp(caret, 0, NotesEditorTextBox.Text.Length), len);
     }
 
-    private void NumberedListButton_Click(object sender, RoutedEventArgs e)
+    private void NumberedListTile_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not NotepadWidgetViewModel vm) return;
 
@@ -48,7 +48,7 @@ public partial class NotepadWidgetView : UserControl
         NotesEditorTextBox.Select(Math.Clamp(caret, 0, NotesEditorTextBox.Text.Length), len);
     }
 
-    private void TodoListButton_Click(object sender, RoutedEventArgs e)
+    private void TodoListTile_Click(object sender, RoutedEventArgs e)
     {
         if (DataContext is not NotepadWidgetViewModel vm) return;
 

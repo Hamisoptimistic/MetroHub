@@ -457,8 +457,9 @@
                                 </Border.ContextMenu>
                                 <Rectangle Height="1"
                                            Margin="10,0"
-                                           Fill="#25FFFFFF"
+                                           Fill="#45FFFFFF"
                                            SnapsToDevicePixels="True"
+                                           UseLayoutRounding="True"
                                            VerticalAlignment="Center" />
                             </Border>
                         </Grid>

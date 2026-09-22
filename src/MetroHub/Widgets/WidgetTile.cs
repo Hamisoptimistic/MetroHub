@@ -147,6 +147,19 @@ public class WidgetTile : ListBoxItem
         set => SetValue(HeaderProperty, value);
     }
 
+    public static readonly RoutedEvent ClickEvent =
+        EventManager.RegisterRoutedEvent(
+            nameof(Click),
+            RoutingStrategy.Bubble,
+            typeof(RoutedEventHandler),
+            typeof(WidgetTile));
+
+    public event RoutedEventHandler Click
+    {
+        add => AddHandler(ClickEvent, value);
+        remove => RemoveHandler(ClickEvent, value);
+    }
+
     public Brush IndicatorBrush
     {
         get => (Brush)GetValue(IndicatorBrushProperty);
@@ -176,6 +189,7 @@ public class WidgetTile : ListBoxItem
         if (pt.X >= 0 && pt.X <= ActualWidth && pt.Y >= 0 && pt.Y <= ActualHeight)
         {
             FindParentControl()?.NotifyTileClicked(this);
+            RaiseEvent(new RoutedEventArgs(ClickEvent, this));
         }
         e.Handled = true;
     }
@@ -186,12 +200,32 @@ public class WidgetTile : ListBoxItem
         SetValue(IsPressedPropertyKey, false);
     }
 
+    protected override void OnLostFocus(RoutedEventArgs e)
+    {
+        base.OnLostFocus(e);
+        if (IsMouseCaptured)
+        {
+            ReleaseMouseCapture();
+        }
+        SetValue(IsPressedPropertyKey, false);
+    }
+
+    protected override void OnVisualParentChanged(DependencyObject oldParent)
+    {
+        base.OnVisualParentChanged(oldParent);
+        if (IsMouseCaptured)
+        {
+            ReleaseMouseCapture();
+        }
+    }
+
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
         if (e.Key == Key.Enter || e.Key == Key.Space)
         {
             FindParentControl()?.NotifyTileClicked(this);
+            RaiseEvent(new RoutedEventArgs(ClickEvent, this));
             e.Handled = true;
         }
     }

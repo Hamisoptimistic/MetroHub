@@ -63,39 +63,40 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <!-- Fluent Icon Anti-Aliasing Style: Eliminates staircase pixelation on curved vector glyphs -->
-        <Style TargetType="{x:Type ui:SymbolIcon}">
-            <Setter Property="SnapsToDevicePixels" Value="False" />
-            <Setter Property="UseLayoutRounding" Value="False" />
-            <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
-            <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
-        </Style>
     </UserControl.Resources>
 
     <widgets:WidgetCard Padding="0" Background="Transparent" VerticalAlignment="Stretch">
-        <UniformGrid Rows="1" SnapsToDevicePixels="True" VerticalAlignment="Stretch">
+        <UniformGrid Rows="1" SnapsToDevicePixels="True" UseLayoutRounding="True" VerticalAlignment="Stretch">
             <!-- Lock -->
             <Button Style="{StaticResource PowerActionButtonStyle}"
                     Command="{Binding ExecuteActionCommand}"
                     CommandParameter="Lock"
                     ToolTip="{Binding LockTooltip}">
-                <Grid HorizontalAlignment="Center"
+                <Grid HorizontalAlignment="Stretch"
                       VerticalAlignment="Center"
                       Margin="0,0,0,2"
                       SnapsToDevicePixels="True">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
+                        <!-- Fixed 28px height for optical icon center (identical to Network WidgetTile) -->
+                        <RowDefinition Height="28" />
+                        <!-- Fixed 5px spacing -->
+                        <RowDefinition Height="5" />
+                        <!-- Text baseline -->
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <ui:SymbolIcon Grid.Row="0"
-                                   Symbol="{Binding LockSymbol}"
-                                   Foreground="{Binding LockForeground}"
-                                   FontSize="24"
-                                   Margin="{Binding IconMargin}"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="1"
+
+                    <Grid Grid.Row="0"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          SnapsToDevicePixels="True">
+                        <ui:SymbolIcon Symbol="{Binding LockSymbol}"
+                                       Foreground="{Binding LockForeground}"
+                                       FontSize="24"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       SnapsToDevicePixels="True" />
+                    </Grid>
+                    <TextBlock Grid.Row="2"
                                Text="{Binding LockHeader}"
                                Foreground="{Binding LockForeground}"
                                Visibility="{Binding TextVisibility}"
@@ -113,22 +114,31 @@
                     Command="{Binding ExecuteActionCommand}"
                     CommandParameter="Sleep"
                     ToolTip="{Binding SleepTooltip}">
-                <Grid HorizontalAlignment="Center"
+                <Grid HorizontalAlignment="Stretch"
                       VerticalAlignment="Center"
                       Margin="0,0,0,2"
                       SnapsToDevicePixels="True">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
+                        <!-- Fixed 28px height for optical icon center (identical to Network WidgetTile) -->
+                        <RowDefinition Height="28" />
+                        <!-- Fixed 5px spacing -->
+                        <RowDefinition Height="5" />
+                        <!-- Text baseline -->
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <ui:SymbolIcon Grid.Row="0"
-                                   Symbol="{Binding SleepSymbol}"
-                                   Foreground="{Binding SleepForeground}"
-                                   FontSize="24"
-                                   Margin="{Binding IconMargin}"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="1"
+
+                    <Grid Grid.Row="0"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          SnapsToDevicePixels="True">
+                        <ui:SymbolIcon Symbol="{Binding SleepSymbol}"
+                                       Foreground="{Binding SleepForeground}"
+                                       FontSize="24"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       SnapsToDevicePixels="True" />
+                    </Grid>
+                    <TextBlock Grid.Row="2"
                                Text="{Binding SleepHeader}"
                                Foreground="{Binding SleepForeground}"
                                Visibility="{Binding TextVisibility}"
@@ -146,22 +156,31 @@
                     Command="{Binding ExecuteActionCommand}"
                     CommandParameter="Restart"
                     ToolTip="{Binding RestartTooltip}">
-                <Grid HorizontalAlignment="Center"
+                <Grid HorizontalAlignment="Stretch"
                       VerticalAlignment="Center"
                       Margin="0,0,0,2"
                       SnapsToDevicePixels="True">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
+                        <!-- Fixed 28px height for optical icon center (identical to Network WidgetTile) -->
+                        <RowDefinition Height="28" />
+                        <!-- Fixed 5px spacing -->
+                        <RowDefinition Height="5" />
+                        <!-- Text baseline -->
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <ui:SymbolIcon Grid.Row="0"
-                                   Symbol="{Binding RestartSymbol}"
-                                   Foreground="{Binding RestartForeground}"
-                                   FontSize="24"
-                                   Margin="{Binding IconMargin}"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="1"
+
+                    <Grid Grid.Row="0"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          SnapsToDevicePixels="True">
+                        <ui:SymbolIcon Symbol="{Binding RestartSymbol}"
+                                       Foreground="{Binding RestartForeground}"
+                                       FontSize="24"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       SnapsToDevicePixels="True" />
+                    </Grid>
+                    <TextBlock Grid.Row="2"
                                Text="{Binding RestartHeader}"
                                Foreground="{Binding RestartForeground}"
                                Visibility="{Binding TextVisibility}"
@@ -179,22 +198,31 @@
                     Command="{Binding ExecuteActionCommand}"
                     CommandParameter="Shutdown"
                     ToolTip="{Binding ShutdownTooltip}">
-                <Grid HorizontalAlignment="Center"
+                <Grid HorizontalAlignment="Stretch"
                       VerticalAlignment="Center"
                       Margin="0,0,0,2"
                       SnapsToDevicePixels="True">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
+                        <!-- Fixed 28px height for optical icon center (identical to Network WidgetTile) -->
+                        <RowDefinition Height="28" />
+                        <!-- Fixed 5px spacing -->
+                        <RowDefinition Height="5" />
+                        <!-- Text baseline -->
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-                    <ui:SymbolIcon Grid.Row="0"
-                                   Symbol="{Binding ShutdownSymbol}"
-                                   Foreground="{Binding ShutdownForeground}"
-                                   FontSize="24"
-                                   Margin="{Binding IconMargin}"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center" />
-                    <TextBlock Grid.Row="1"
+
+                    <Grid Grid.Row="0"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"
+                          SnapsToDevicePixels="True">
+                        <ui:SymbolIcon Symbol="{Binding ShutdownSymbol}"
+                                       Foreground="{Binding ShutdownForeground}"
+                                       FontSize="24"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       SnapsToDevicePixels="True" />
+                    </Grid>
+                    <TextBlock Grid.Row="2"
                                Text="{Binding ShutdownHeader}"
                                Foreground="{Binding ShutdownForeground}"
                                Visibility="{Binding TextVisibility}"

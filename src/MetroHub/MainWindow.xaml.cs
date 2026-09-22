@@ -5255,10 +5255,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
             if (!isFirstGroup)
             {
-                widgetsMenu.Items.Add(new Separator
-                {
-                    Margin = new Thickness(8, 5, 8, 5)
-                });
+                widgetsMenu.Items.Add(new Separator());
             }
             isFirstGroup = false;
 
