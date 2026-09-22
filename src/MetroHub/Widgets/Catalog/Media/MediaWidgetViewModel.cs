@@ -27,6 +27,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
+        WidgetSize.SlimWide,  // 4x1
         WidgetSize.ExtraWide, // 6x2
         WidgetSize.Banner3,   // 8x3
         WidgetSize.Mega       // 8x4
@@ -99,6 +100,9 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public bool IsAmbientGlowEnabled => _settings.IsAmbientGlowEnabled;
 
+    public bool IsSlimMode => Model.SpanY == 1;
+    public bool IsStandardMode => Model.SpanY > 1;
+
     public double AlbumArtSize => Model.SpanY switch
     {
         >= 4 => 132.0,
@@ -124,7 +128,10 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     private bool _isPlaying;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasNoMedia))]
     private bool _hasMedia;
+
+    public bool HasNoMedia => !HasMedia;
 
     [ObservableProperty]
     private bool _canPlayPause = true;
@@ -185,7 +192,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     public MediaWidgetViewModel(TileModel model) : base(model)
     {
         bool isValidSize = (model.SpanX == 8 && (model.SpanY == 4 || model.SpanY == 3)) ||
-                           (model.SpanX == 6 && model.SpanY == 2);
+                           (model.SpanX == 6 && model.SpanY == 2) ||
+                           (model.SpanX == 4 && model.SpanY == 1);
         if (!isValidSize)
         {
             model.SpanX = 8;
@@ -196,6 +204,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         {
             if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
             {
+                OnPropertyChanged(nameof(IsSlimMode));
+                OnPropertyChanged(nameof(IsStandardMode));
                 OnPropertyChanged(nameof(AlbumArtSize));
                 OnPropertyChanged(nameof(ShowAlbumRow));
                 OnPropertyChanged(nameof(TrackInfoMargin));

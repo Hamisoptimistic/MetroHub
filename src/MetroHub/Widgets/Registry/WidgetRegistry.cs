@@ -82,6 +82,7 @@ public static class WidgetRegistry
             Icon: SymbolRegular.Play24,
             AllowedSizes: new[]
             {
+                WidgetSize.SlimWide,  // 4x1
                 WidgetSize.ExtraWide, // 6x2
                 WidgetSize.Banner3,   // 8x3
                 WidgetSize.Mega       // 8x4

@@ -61,16 +61,20 @@
     <!-- Transparent WidgetCard to inherit the exact glass/acrylic tile background of other tiles -->
     <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />    <!-- Row 0: Track Info + Album Art -->
-                <RowDefinition Height="38" />   <!-- Row 1: Fluent Acrylic Strip: Sound Source (Left) + Controls (Far Right) -->
-            </Grid.RowDefinitions>
-
             <!-- 0. Dynamic Ambient Album Aura (100% GPU-drawn frozen brush, 0 CPU/RAM) -->
-            <Border Grid.RowSpan="2"
-                    Background="{Binding AmbientGlowBrush}"
+            <Border Background="{Binding AmbientGlowBrush}"
                     CornerRadius="2"
                     IsHitTestVisible="False" />
+
+            <!-- ============================================================= -->
+            <!-- 1. STANDARD LAYOUT (6x2, 8x3, 8x4)                            -->
+            <!-- ============================================================= -->
+            <Grid Visibility="{Binding IsStandardMode, Converter={StaticResource BoolToVis}}"
+                  SnapsToDevicePixels="True" UseLayoutRounding="True">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />    <!-- Row 0: Track Info + Album Art -->
+                    <RowDefinition Height="38" />   <!-- Row 1: Fluent Acrylic Strip: Sound Source (Left) + Controls (Far Right) -->
+                </Grid.RowDefinitions>
 
             <!-- Row 0: Top Section (Track Info + Elevated Album Art) -->
             <Grid Grid.Row="0">
@@ -399,6 +403,189 @@
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center" />
                 </Grid>
+            </Grid>
+            </Grid>
+
+            <!-- ============================================================= -->
+            <!-- 2. SLIM CONTROLLER LAYOUT (4x1: 248x56px)                     -->
+            <!-- [ ▷ Play ] ========== Seekbar / No media ========== [ 1:24 ]  -->
+            <!-- ============================================================= -->
+            <Grid Visibility="{Binding IsSlimMode, Converter={StaticResource BoolToVis}}"
+                  Margin="14,0,14,0"
+                  VerticalAlignment="Center"
+                  SnapsToDevicePixels="True"
+                  UseLayoutRounding="True">
+                <Grid.ColumnDefinitions>
+                    <!-- Col 0: Single Play/Pause Button -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Col 1: Center Area (Seekbar or 'No media playing' label) -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Col 2: Track Timing Readout -->
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Col 0: Play/Pause Button -->
+                <Button Grid.Column="0"
+                        Style="{StaticResource MediaTransportButtonStyle}"
+                        Command="{Binding TogglePlayPauseCommand}"
+                        IsEnabled="{Binding CanPlayPause}"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Left"
+                        ToolTip="Play / Pause">
+                    <TextBlock FontFamily="{DynamicResource AppIconFontFamily}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="&#xE768;" />
+                                <Setter Property="FontSize" Value="15" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                        <Setter Property="Text" Value="&#xE769;" />
+                                        <Setter Property="FontSize" Value="16" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Button>
+
+                <!-- Col 1: Center Area -->
+                <Grid Grid.Column="1" Margin="10,0,10,0" VerticalAlignment="Center">
+                    <!-- Idle State: 'No media playing' subtle text -->
+                    <TextBlock Text="No media playing"
+                               FontSize="12"
+                               FontWeight="Normal"
+                               Foreground="#55FFFFFF"
+                               FontFamily="{DynamicResource AppDisplayFontFamily}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"
+                               Visibility="{Binding HasNoMedia, Converter={StaticResource BoolToVis}}" />
+
+                    <!-- Active State: Interactive Hairline Seekbar -->
+                    <Grid x:Name="SlimSeekbarContainer"
+                          Height="18"
+                          VerticalAlignment="Center"
+                          Background="Transparent"
+                          Cursor="Hand"
+                          Focusable="False"
+                          Tag="InteractiveControl"
+                          Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}"
+                          PreviewMouseLeftButtonDown="Seekbar_PreviewMouseLeftButtonDown"
+                          MouseEnter="Seekbar_MouseEnter"
+                          MouseLeave="Seekbar_MouseLeave"
+                          MouseLeftButtonDown="Seekbar_MouseLeftButtonDown"
+                          MouseMove="Seekbar_MouseMove"
+                          MouseLeftButtonUp="Seekbar_MouseLeftButtonUp"
+                          LostMouseCapture="Seekbar_LostMouseCapture"
+                          SizeChanged="Seekbar_SizeChanged"
+                          SnapsToDevicePixels="True">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasMedia}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsLive}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding CanSeek}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+
+                        <!-- Track Group -->
+                        <Grid x:Name="SlimSeekTrackGroup"
+                              VerticalAlignment="Center"
+                              RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform x:Name="SlimSeekTrackScale" ScaleY="1.0" />
+                            </Grid.RenderTransform>
+
+                            <!-- Background Hairline Track -->
+                            <Border x:Name="SlimSeekTrackBg"
+                                    Height="2"
+                                    Background="#14FFFFFF"
+                                    CornerRadius="1"
+                                    SnapsToDevicePixels="True" />
+
+                            <!-- Elapsed Progress Track -->
+                            <Grid x:Name="SlimSeekProgressContainer"
+                                  Height="2"
+                                  HorizontalAlignment="Stretch"
+                                  SnapsToDevicePixels="True">
+                                <Grid.Clip>
+                                    <RectangleGeometry x:Name="SlimSeekProgressClip" Rect="0,-5,0,24" />
+                                </Grid.Clip>
+                                <Border x:Name="SlimSeekProgressFill"
+                                        Height="2"
+                                        Background="{Binding SeekbarBrush}"
+                                        CornerRadius="1"
+                                        SnapsToDevicePixels="True" />
+
+                                <!-- Shimmer Light Reflection -->
+                                <Rectangle x:Name="SlimSeekShimmer"
+                                           Width="50"
+                                           Height="6"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Left"
+                                           IsHitTestVisible="False"
+                                           Opacity="0.0"
+                                           SnapsToDevicePixels="True">
+                                    <Rectangle.Fill>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#00FFFFFF" Offset="0.0" />
+                                            <GradientStop Color="#60FFFFFF" Offset="0.25" />
+                                            <GradientStop Color="#E8FFFFFF" Offset="0.5" />
+                                            <GradientStop Color="#60FFFFFF" Offset="0.75" />
+                                            <GradientStop Color="#00FFFFFF" Offset="1.0" />
+                                        </LinearGradientBrush>
+                                    </Rectangle.Fill>
+                                    <Rectangle.RenderTransform>
+                                        <TranslateTransform x:Name="SlimSeekShimmerTranslate" X="-60" />
+                                    </Rectangle.RenderTransform>
+                                </Rectangle>
+                            </Grid>
+                        </Grid>
+
+                        <!-- Circular Thumb -->
+                        <Grid x:Name="SlimSeekThumb"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              IsHitTestVisible="False"
+                              Opacity="0"
+                              RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform x:Name="SlimSeekThumbScale" ScaleX="0.85" ScaleY="0.85" />
+                                    <TranslateTransform x:Name="SlimSeekThumbTranslate" X="0" />
+                                </TransformGroup>
+                            </Grid.RenderTransform>
+                            <Ellipse x:Name="SlimSeekThumbDot"
+                                     Width="12"
+                                     Height="12"
+                                     Fill="{Binding SeekbarBrush}"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center" />
+                        </Grid>
+                    </Grid>
+                </Grid>
+
+                <!-- Col 2: Track Timing Readout -->
+                <TextBlock Grid.Column="2"
+                           Text="{Binding TimeDisplayString}"
+                           FontSize="11.5"
+                           FontWeight="Normal"
+                           Foreground="#C8FFFFFF"
+                           Typography.NumeralAlignment="Tabular"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right"
+                           SnapsToDevicePixels="True"
+                           Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}" />
             </Grid>
         </Grid>
     </widgets:WidgetCard>

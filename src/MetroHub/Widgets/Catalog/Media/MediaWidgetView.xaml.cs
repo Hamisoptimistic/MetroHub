@@ -5,12 +5,14 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Shapes;
 
 namespace MetroHub.Widgets.Catalog.Media;
 
 public partial class MediaWidgetView : UserControl
 {
     private bool _isDragging = false;
+    private FrameworkElement? _activeDragContainer;
     private MediaWidgetViewModel? _vm;
 
     public MediaWidgetView()
@@ -85,7 +87,8 @@ public partial class MediaWidgetView : UserControl
         if (e.PropertyName is nameof(MediaWidgetViewModel.ProgressRatio)
                            or nameof(MediaWidgetViewModel.DurationSeconds)
                            or nameof(MediaWidgetViewModel.PositionSeconds)
-                           or nameof(MediaWidgetViewModel.IsPlaying))
+                           or nameof(MediaWidgetViewModel.IsPlaying)
+                           or nameof(MediaWidgetViewModel.IsSlimMode))
         {
             if (_vm != null)
             {
@@ -152,7 +155,11 @@ public partial class MediaWidgetView : UserControl
             return;
         }
 
-        double totalWidth = SeekbarContainer.ActualWidth;
+        bool isSlim = _vm.IsSlimMode;
+        FrameworkElement? container = isSlim ? SlimSeekbarContainer : SeekbarContainer;
+        if (container == null) return;
+
+        double totalWidth = container.ActualWidth;
         if (totalWidth <= 0) return;
 
         double fillWidth = totalWidth * Math.Clamp(_vm.ProgressRatio, 0.0, 1.0);
@@ -161,7 +168,8 @@ public partial class MediaWidgetView : UserControl
         _isShimmerSweeping = true;
 
         var sweepDuration = TimeSpan.FromMilliseconds(1350);
-        var sweepAnim = new DoubleAnimation(-70, fillWidth + 10, sweepDuration)
+        double shimmerStart = isSlim ? -50 : -70;
+        var sweepAnim = new DoubleAnimation(shimmerStart, fillWidth + 10, sweepDuration)
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
@@ -172,10 +180,13 @@ public partial class MediaWidgetView : UserControl
         opacityAnim.KeyFrames.Add(new SplineDoubleKeyFrame(0.95, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1050))));
         opacityAnim.KeyFrames.Add(new SplineDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(1350))));
 
+        Rectangle? shimmer = isSlim ? SlimSeekShimmer : SeekShimmer;
+        TranslateTransform? shimmerTranslate = isSlim ? SlimSeekShimmerTranslate : SeekShimmerTranslate;
+
         sweepAnim.Completed += (s, e) =>
         {
             _isShimmerSweeping = false;
-            if (SeekShimmer != null) SeekShimmer.Opacity = 0.0;
+            if (shimmer != null) shimmer.Opacity = 0.0;
 
             if (_vm != null && _vm.IsPlaying && IsLoaded && IsVisible)
             {
@@ -194,8 +205,8 @@ public partial class MediaWidgetView : UserControl
             }
         };
 
-        SeekShimmer?.BeginAnimation(OpacityProperty, opacityAnim);
-        SeekShimmerTranslate?.BeginAnimation(TranslateTransform.XProperty, sweepAnim);
+        shimmer?.BeginAnimation(OpacityProperty, opacityAnim);
+        shimmerTranslate?.BeginAnimation(TranslateTransform.XProperty, sweepAnim);
     }
 
     private void StopShimmerAnimation()
@@ -206,6 +217,8 @@ public partial class MediaWidgetView : UserControl
 
         SeekShimmer?.BeginAnimation(OpacityProperty, null);
         SeekShimmerTranslate?.BeginAnimation(TranslateTransform.XProperty, null);
+        SlimSeekShimmer?.BeginAnimation(OpacityProperty, null);
+        SlimSeekShimmerTranslate?.BeginAnimation(TranslateTransform.XProperty, null);
 
         if (SeekShimmer != null)
         {
@@ -215,33 +228,61 @@ public partial class MediaWidgetView : UserControl
         {
             SeekShimmerTranslate.X = -80;
         }
+        if (SlimSeekShimmer != null)
+        {
+            SlimSeekShimmer.Opacity = 0.0;
+        }
+        if (SlimSeekShimmerTranslate != null)
+        {
+            SlimSeekShimmerTranslate.X = -60;
+        }
     }
 
     private void UpdateProgressVisuals(double ratio)
     {
-        double totalWidth = SeekbarContainer.ActualWidth;
-        if (totalWidth <= 0) return;
-
         ratio = Math.Clamp(ratio, 0.0, 1.0);
-        double fillWidth = totalWidth * ratio;
-        
-        if (SeekProgressClip != null)
+        const double thumbWidth = 12.0;
+
+        // Standard Seekbar
+        if (SeekbarContainer != null && SeekbarContainer.ActualWidth > 0)
         {
-            SeekProgressClip.Rect = new Rect(0, -5, fillWidth, 24);
+            double totalWidth = SeekbarContainer.ActualWidth;
+            double fillWidth = totalWidth * ratio;
+
+            if (SeekProgressClip != null)
+            {
+                SeekProgressClip.Rect = new Rect(0, -5, fillWidth, 24);
+            }
+
+            if (SeekThumbTranslate != null)
+            {
+                double maxThumbLeft = Math.Max(0, totalWidth - thumbWidth);
+                SeekThumbTranslate.X = ratio * maxThumbLeft;
+            }
         }
 
-        if (SeekThumbTranslate != null)
+        // Slim Seekbar
+        if (SlimSeekbarContainer != null && SlimSeekbarContainer.ActualWidth > 0)
         {
-            const double thumbWidth = 12.0;
-            double maxThumbLeft = Math.Max(0, totalWidth - thumbWidth);
-            double thumbLeft = ratio * maxThumbLeft;
-            SeekThumbTranslate.X = thumbLeft;
+            double totalWidth = SlimSeekbarContainer.ActualWidth;
+            double fillWidth = totalWidth * ratio;
+
+            if (SlimSeekProgressClip != null)
+            {
+                SlimSeekProgressClip.Rect = new Rect(0, -5, fillWidth, 24);
+            }
+
+            if (SlimSeekThumbTranslate != null)
+            {
+                double maxThumbLeft = Math.Max(0, totalWidth - thumbWidth);
+                SlimSeekThumbTranslate.X = ratio * maxThumbLeft;
+            }
         }
     }
 
-    private double CalculateRatioFromPosition(Point pos)
+    private double CalculateRatioFromPosition(Point pos, FrameworkElement container)
     {
-        double totalWidth = SeekbarContainer.ActualWidth;
+        double totalWidth = container.ActualWidth;
         if (totalWidth <= 0) return 0.0;
 
         const double thumbWidth = 12.0;
@@ -282,26 +323,27 @@ public partial class MediaWidgetView : UserControl
     {
         // Intercept tunneling mouse down event to completely prevent parent tile activation/drag
         e.Handled = true;
-        HandleSeekStart(e);
+        HandleSeekStart(e, sender as FrameworkElement ?? SeekbarContainer);
     }
 
     private void Seekbar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
-        HandleSeekStart(e);
+        HandleSeekStart(e, sender as FrameworkElement ?? SeekbarContainer);
     }
 
-    private void HandleSeekStart(MouseButtonEventArgs e)
+    private void HandleSeekStart(MouseButtonEventArgs e, FrameworkElement container)
     {
         if (_vm == null || !_vm.HasMedia || _vm.IsLive || !_vm.CanSeek) return;
 
         _isDragging = true;
+        _activeDragContainer = container;
         StopShimmerAnimation();
-        SeekbarContainer.CaptureMouse();
+        container.CaptureMouse();
         AnimateHoverState(true, isDragging: true);
         _vm.StartScrubbing();
 
-        double ratio = CalculateRatioFromPosition(e.GetPosition(SeekbarContainer));
+        double ratio = CalculateRatioFromPosition(e.GetPosition(container), container);
         UpdateProgressVisuals(ratio);
     }
 
@@ -310,7 +352,8 @@ public partial class MediaWidgetView : UserControl
         if (_isDragging && _vm != null)
         {
             e.Handled = true;
-            double ratio = CalculateRatioFromPosition(e.GetPosition(SeekbarContainer));
+            var container = _activeDragContainer ?? sender as FrameworkElement ?? SeekbarContainer;
+            double ratio = CalculateRatioFromPosition(e.GetPosition(container), container);
             UpdateProgressVisuals(ratio);
         }
     }
@@ -321,14 +364,16 @@ public partial class MediaWidgetView : UserControl
         {
             e.Handled = true;
             _isDragging = false;
-            SeekbarContainer.ReleaseMouseCapture();
+            var container = _activeDragContainer ?? sender as FrameworkElement ?? SeekbarContainer;
+            container.ReleaseMouseCapture();
+            _activeDragContainer = null;
 
-            bool isMouseStillOver = SeekbarContainer.IsMouseOver;
+            bool isMouseStillOver = container.IsMouseOver;
             AnimateHoverState(isMouseStillOver, isDragging: false);
 
             if (_vm != null)
             {
-                double ratio = CalculateRatioFromPosition(e.GetPosition(SeekbarContainer));
+                double ratio = CalculateRatioFromPosition(e.GetPosition(container), container);
                 _vm.StopScrubbing(ratio);
                 UpdateShimmerAnimation();
             }
@@ -340,7 +385,9 @@ public partial class MediaWidgetView : UserControl
         if (_isDragging)
         {
             _isDragging = false;
-            AnimateHoverState(SeekbarContainer.IsMouseOver, isDragging: false);
+            var container = _activeDragContainer ?? sender as FrameworkElement ?? SeekbarContainer;
+            _activeDragContainer = null;
+            AnimateHoverState(container.IsMouseOver, isDragging: false);
             if (_vm != null)
             {
                 _vm.StopScrubbing(_vm.ProgressRatio);
@@ -358,6 +405,7 @@ public partial class MediaWidgetView : UserControl
         double targetOpacity = (isHovered || isDragging) ? 1.0 : 0.0;
         var thumbOpacityAnim = new DoubleAnimation(targetOpacity, duration) { EasingFunction = easing };
         SeekThumb?.BeginAnimation(OpacityProperty, thumbOpacityAnim);
+        SlimSeekThumb?.BeginAnimation(OpacityProperty, thumbOpacityAnim);
 
         // 2. Circular Thumb Scale: 0.85 resting -> 1.0 hover -> 1.08 dragging
         double targetScale = isDragging ? 1.08 : (isHovered ? 1.0 : 0.85);
@@ -365,10 +413,13 @@ public partial class MediaWidgetView : UserControl
         var scaleYAnim = new DoubleAnimation(targetScale, duration) { EasingFunction = easing };
         SeekThumbScale?.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
         SeekThumbScale?.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
+        SlimSeekThumbScale?.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);
+        SlimSeekThumbScale?.BeginAnimation(ScaleTransform.ScaleYProperty, scaleYAnim);
 
         // 3. Track Height: 1.0 resting (2px) -> 1.8 on hover/drag (3.6px) via GPU ScaleY (zero layout passes, zero NaN)
         double targetScaleY = (isHovered || isDragging) ? 1.8 : 1.0;
         var trackAnim = new DoubleAnimation(targetScaleY, duration) { EasingFunction = easing };
         SeekTrackScale?.BeginAnimation(ScaleTransform.ScaleYProperty, trackAnim);
+        SlimSeekTrackScale?.BeginAnimation(ScaleTransform.ScaleYProperty, trackAnim);
     }
 }
