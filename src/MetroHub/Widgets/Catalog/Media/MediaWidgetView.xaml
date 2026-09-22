@@ -58,12 +58,12 @@
 
         <!-- Zune Pad Flanking Buttons (Previous / Next) -->
         <Style x:Key="ZuneSideButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#1CFFFFFF" />
-            <Setter Property="Foreground" Value="#D0FFFFFF" />
+            <Setter Property="Background" Value="#14FFFFFF" />
+            <Setter Property="Foreground" Value="#B0FFFFFF" />
             <Setter Property="BorderBrush" Value="#25FFFFFF" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Width" Value="38" />
-            <Setter Property="Height" Value="38" />
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
             <Setter Property="Template">
@@ -73,18 +73,18 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="19"
+                                CornerRadius="16"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="SideBorder" Property="Background" Value="#35FFFFFF" />
-                                <Setter TargetName="SideBorder" Property="BorderBrush" Value="#45FFFFFF" />
+                                <Setter TargetName="SideBorder" Property="Background" Value="#2AFFFFFF" />
+                                <Setter TargetName="SideBorder" Property="BorderBrush" Value="#40FFFFFF" />
                                 <Setter Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="SideBorder" Property="Background" Value="#55FFFFFF" />
+                                <Setter TargetName="SideBorder" Property="Background" Value="#45FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.25" />
@@ -98,11 +98,10 @@
 
         <!-- Zune Pad Center Squircle Touch Disc -->
         <Style x:Key="ZunePadButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#25000000" />
-            <Setter Property="BorderThickness" Value="2" />
-            <Setter Property="BorderBrush" Value="#45FFFFFF" />
-            <Setter Property="Width" Value="66" />
-            <Setter Property="Height" Value="66" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Width" Value="68" />
+            <Setter Property="Height" Value="68" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
@@ -114,26 +113,43 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <!-- Outer Squircle Bezel (Matches the iconic Zune Pad rim) -->
-                        <Border x:Name="OuterRim"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="20"
+                        <!-- Outer Brushed Chrome Squircle Bezel -->
+                        <Border x:Name="ChromeBezel"
+                                Width="68"
+                                Height="68"
+                                CornerRadius="21"
+                                BorderThickness="2.2"
                                 SnapsToDevicePixels="True">
-                            <!-- Inner Concave Dish / Tactile Pad -->
+                            <Border.BorderBrush>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#E6ECF2" Offset="0.0" />
+                                    <GradientStop Color="#A0A9B5" Offset="0.4" />
+                                    <GradientStop Color="#5A626E" Offset="0.75" />
+                                    <GradientStop Color="#909AA8" Offset="1.0" />
+                                </LinearGradientBrush>
+                            </Border.BorderBrush>
+                            <Border.Background>
+                                <RadialGradientBrush Center="0.5,0.45" RadiusX="0.65" RadiusY="0.65">
+                                    <GradientStop Color="#22252A" Offset="0.0" />
+                                    <GradientStop Color="#131417" Offset="0.8" />
+                                    <GradientStop Color="#090A0C" Offset="1.0" />
+                                </RadialGradientBrush>
+                            </Border.Background>
+
+                            <!-- Inner Concave Touch Dish -->
                             <Border x:Name="InnerDish"
-                                    Margin="3"
-                                    CornerRadius="17"
-                                    Background="#22FFFFFF"
+                                    Margin="2.5"
+                                    CornerRadius="18"
+                                    Background="#0AFFFFFF"
+                                    BorderThickness="1"
+                                    BorderBrush="#18FFFFFF"
                                     SnapsToDevicePixels="True">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="OuterRim" Property="BorderBrush" Value="{Binding SeekbarBrush}" />
-                                <Setter TargetName="InnerDish" Property="Background" Value="#35FFFFFF" />
+                                <Setter TargetName="InnerDish" Property="Background" Value="#22FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="RenderTransform">
@@ -141,7 +157,7 @@
                                         <ScaleTransform ScaleX="0.94" ScaleY="0.94" />
                                     </Setter.Value>
                                 </Setter>
-                                <Setter TargetName="InnerDish" Property="Background" Value="#50FFFFFF" />
+                                <Setter TargetName="InnerDish" Property="Background" Value="#38FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.3" />
@@ -686,345 +702,263 @@
             </Grid>
 
             <!-- ============================================================= -->
-            <!-- 3. ZUNE HD DIGITAL CONTROLLER LAYOUT (6x6: 376x376px)         -->
+            <!-- 3. AUTHENTIC ZUNE HANDHELD HARDWARE LAYOUT (4x6: 248x376px)   -->
             <!-- ============================================================= -->
             <Grid Visibility="{Binding IsZuneMode, Converter={StaticResource BoolToVis}}"
                   SnapsToDevicePixels="True"
-                  UseLayoutRounding="True"
-                  ClipToBounds="True">
+                  UseLayoutRounding="True">
 
-                <!-- Dynamic Full-Bleed Ambient Backdrop -->
-                <!-- A. Idle Backdrop (Pure Minimalist Obsidian) -->
-                <Border Background="#0D1117"
-                        Visibility="{Binding HasNoMedia, Converter={StaticResource BoolToVis}}"
-                        SnapsToDevicePixels="True" />
+                <!-- 1. The Physical Matte Obsidian Polycarbonate Chassis -->
+                <Border CornerRadius="16"
+                        Background="#121316"
+                        BorderBrush="#2A2C32"
+                        BorderThickness="1.2"
+                        SnapsToDevicePixels="True">
+                    <Grid SnapsToDevicePixels="True">
+                        <Grid.RowDefinitions>
+                            <!-- Row 0: Upper Display Screen Bezel (Recessed window) -->
+                            <RowDefinition Height="222" />
+                            <!-- Row 1: Bottom Hardware Chin with Zune Pad -->
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
 
-                <!-- B. Active Media Backdrop: Album Artwork + Cinematic Dark Vignette Overlay -->
-                <Grid Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}">
-                    <!-- Ambient Blurred / Tinted Artwork -->
-                    <Image Source="{Binding AlbumArtImage}"
-                           Stretch="UniformToFill"
-                           Opacity="0.38"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           IsHitTestVisible="False"
-                           SnapsToDevicePixels="True" />
-
-                    <!-- Multi-Stop Cinematic Vignette Gradient -->
-                    <Border SnapsToDevicePixels="True" IsHitTestVisible="False">
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                <GradientStop Color="#EB090C12" Offset="0.0" />
-                                <GradientStop Color="#90090C12" Offset="0.35" />
-                                <GradientStop Color="#B0090C12" Offset="0.65" />
-                                <GradientStop Color="#F806080C" Offset="1.0" />
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
-                </Grid>
-
-                <!-- ========================================================= -->
-                <!-- IDLE / STANDBY STATE: Clean Minimalist Zune Branding       -->
-                <!-- ========================================================= -->
-                <Grid Visibility="{Binding HasNoMedia, Converter={StaticResource BoolToVis}}"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- Iconic lowercase 'zune' wordmark -->
-                        <TextBlock Text="zune"
-                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                   FontSize="44"
-                                   FontWeight="Light"
-                                   Foreground="#55FFFFFF"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,0,0,6" />
-                        <!-- Minimalist subtitle -->
-                        <TextBlock Text="ready for music"
-                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                   FontSize="13"
-                                   FontWeight="Normal"
-                                   Foreground="#30FFFFFF"
-                                   HorizontalAlignment="Center" />
-                    </StackPanel>
-                </Grid>
-
-                <!-- ========================================================= -->
-                <!-- ACTIVE NOW PLAYING STATE                                  -->
-                <!-- ========================================================= -->
-                <Grid Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}"
-                      SnapsToDevicePixels="True">
-                    <Grid.RowDefinitions>
-                        <!-- Row 0: Top Header ('now playing') -->
-                        <RowDefinition Height="Auto" />
-                        <!-- Row 1: Oversized Zune Typography (Artist, Song, Album) -->
-                        <RowDefinition Height="*" />
-                        <!-- Row 2: Seekbar & Tabular Timers -->
-                        <RowDefinition Height="Auto" />
-                        <!-- Row 3: The Digital Zune Pad Controls -->
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-
-                    <!-- Row 0: Top Header -->
-                    <Grid Grid.Row="0" Margin="22,20,22,0">
-                        <TextBlock Text="now playing"
-                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                   FontSize="13.5"
-                                   FontWeight="Normal"
-                                   Foreground="#70FFFFFF"
-                                   HorizontalAlignment="Left"
-                                   VerticalAlignment="Center" />
-
-                        <!-- Subtle Music Glyph Indicator -->
-                        <TextBlock Text="&#xE8D6;"
-                                   FontFamily="{DynamicResource AppIconFontFamily}"
-                                   FontSize="13"
-                                   Foreground="#40FFFFFF"
-                                   HorizontalAlignment="Right"
-                                   VerticalAlignment="Center" />
-                    </Grid>
-
-                    <!-- Row 1: Oversized Zune Metro Typography -->
-                    <Grid Grid.Row="1" Margin="22,8,22,8" VerticalAlignment="Center">
-                        <StackPanel VerticalAlignment="Center">
-                            <!-- Artist Name: Giant, ultra-clean light typography -->
-                            <TextBlock Text="{Binding Artist}"
-                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       FontSize="28"
-                                       FontWeight="Light"
-                                       Foreground="#FFFFFFFF"
-                                       TextTrimming="CharacterEllipsis"
-                                       TextWrapping="Wrap"
-                                       MaxHeight="70"
-                                       LineHeight="34" />
-
-                            <!-- Track Title: Crisp accent colored or high-contrast font -->
-                            <TextBlock Text="{Binding Title}"
-                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       FontSize="20"
-                                       FontWeight="SemiBold"
-                                       Foreground="{Binding SeekbarBrush}"
-                                       TextTrimming="CharacterEllipsis"
-                                       TextWrapping="Wrap"
-                                       MaxHeight="54"
-                                       Margin="0,5,0,0" />
-
-                            <!-- Album Name (if available) -->
-                            <TextBlock Text="{Binding Album}"
-                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       FontSize="13.5"
-                                       FontWeight="Normal"
-                                       Foreground="#80FFFFFF"
-                                       TextTrimming="CharacterEllipsis"
-                                       Margin="0,4,0,0"
-                                       Visibility="{Binding HasAlbum, Converter={StaticResource BoolToVis}}" />
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Row 2: Interactive Hairline Seekbar & Tabular Timestamps -->
-                    <Grid Grid.Row="2" Margin="22,0,22,12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Elapsed Position Display -->
-                        <TextBlock Grid.Column="0"
-                                   Text="{Binding PositionDisplayString}"
-                                   FontSize="11.5"
-                                   FontWeight="Normal"
-                                   Foreground="#90FFFFFF"
-                                   Typography.NumeralAlignment="Tabular"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,10,0" />
-
-                        <!-- Hairline Seekbar Track Group -->
-                        <Grid Grid.Column="1"
-                              x:Name="ZuneSeekbarContainer"
-                              Height="18"
-                              VerticalAlignment="Center"
-                              Background="Transparent"
-                              Cursor="Hand"
-                              Focusable="False"
-                              Tag="InteractiveControl"
-                              PreviewMouseLeftButtonDown="Seekbar_PreviewMouseLeftButtonDown"
-                              MouseEnter="Seekbar_MouseEnter"
-                              MouseLeave="Seekbar_MouseLeave"
-                              MouseLeftButtonDown="Seekbar_MouseLeftButtonDown"
-                              MouseMove="Seekbar_MouseMove"
-                              MouseLeftButtonUp="Seekbar_MouseLeftButtonUp"
-                              LostMouseCapture="Seekbar_LostMouseCapture"
-                              SizeChanged="Seekbar_SizeChanged"
-                              SnapsToDevicePixels="True">
-                            <Grid.Style>
-                                <Style TargetType="Grid">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasMedia}" Value="False">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsLive}" Value="True">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding CanSeek}" Value="False">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Grid.Style>
-
-                            <!-- 1. Hairline Fluent Seekbar Track Group -->
-                            <Grid x:Name="ZuneSeekTrackGroup"
-                                  VerticalAlignment="Center"
-                                  RenderTransformOrigin="0.5,0.5">
-                                <Grid.RenderTransform>
-                                    <ScaleTransform x:Name="ZuneSeekTrackScale" ScaleY="1.0" />
-                                </Grid.RenderTransform>
-
-                                <!-- Background Track -->
-                                <Border x:Name="ZuneSeekTrackBg"
-                                        Height="2"
-                                        Background="#1FFFFFFF"
-                                        CornerRadius="1"
-                                        SnapsToDevicePixels="True" />
-
-                                <!-- Progress Container -->
-                                <Grid x:Name="ZuneSeekProgressContainer"
-                                      Height="2"
-                                      HorizontalAlignment="Stretch"
-                                      SnapsToDevicePixels="True">
-                                    <Grid.Clip>
-                                        <RectangleGeometry x:Name="ZuneSeekProgressClip" Rect="0,-5,0,24" />
-                                    </Grid.Clip>
-
-                                    <!-- Fill Track -->
-                                    <Border x:Name="ZuneSeekProgressFill"
-                                            Height="2"
-                                            Background="{Binding SeekbarBrush}"
-                                            CornerRadius="1"
-                                            SnapsToDevicePixels="True" />
-
-                                    <!-- Specular Sweep Shimmer -->
-                                    <Rectangle x:Name="ZuneSeekShimmer"
-                                               Width="70"
-                                               Height="6"
-                                               VerticalAlignment="Center"
-                                               HorizontalAlignment="Left"
-                                               IsHitTestVisible="False"
-                                               Opacity="0.0"
-                                               SnapsToDevicePixels="True">
-                                        <Rectangle.Fill>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                <GradientStop Color="#00FFFFFF" Offset="0.0" />
-                                                <GradientStop Color="#60FFFFFF" Offset="0.25" />
-                                                <GradientStop Color="#E8FFFFFF" Offset="0.5" />
-                                                <GradientStop Color="#60FFFFFF" Offset="0.75" />
-                                                <GradientStop Color="#00FFFFFF" Offset="1.0" />
-                                            </LinearGradientBrush>
-                                        </Rectangle.Fill>
-                                        <Rectangle.RenderTransform>
-                                            <TranslateTransform x:Name="ZuneSeekShimmerTranslate" X="-80" />
-                                        </Rectangle.RenderTransform>
-                                    </Rectangle>
+                        <!-- ========================================================= -->
+                        <!-- ROW 0: UPPER GLOSSY GLASS DISPLAY SCREEN                  -->
+                        <!-- ========================================================= -->
+                        <Border Grid.Row="0"
+                                Margin="12,12,12,0"
+                                CornerRadius="4"
+                                Background="#050608"
+                                BorderBrush="#050505"
+                                BorderThickness="1.5"
+                                ClipToBounds="True"
+                                SnapsToDevicePixels="True">
+                            <Grid SnapsToDevicePixels="True">
+                                <!-- A. Idle / Standby Sleep Screen: Deep OLED black + glowing zune logo -->
+                                <Grid Visibility="{Binding HasNoMedia, Converter={StaticResource BoolToVis}}"
+                                      Background="#05070A">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <!-- Soft glowing zune logo -->
+                                        <TextBlock Text="zune"
+                                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                                   FontSize="30"
+                                                   FontWeight="Light"
+                                                   Foreground="#50FFFFFF"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,0,0,3" />
+                                        <TextBlock Text="standby"
+                                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                                   FontSize="10.5"
+                                                   FontWeight="Normal"
+                                                   Foreground="#25FFFFFF"
+                                                   HorizontalAlignment="Center" />
+                                    </StackPanel>
                                 </Grid>
-                            </Grid>
 
-                            <!-- Circular Thumb -->
-                            <Grid x:Name="ZuneSeekThumb"
-                                  HorizontalAlignment="Left"
-                                  VerticalAlignment="Center"
-                                  IsHitTestVisible="False"
-                                  Opacity="0"
-                                  RenderTransformOrigin="0.5,0.5">
-                                <Grid.RenderTransform>
-                                    <TransformGroup>
-                                        <ScaleTransform x:Name="ZuneSeekThumbScale" ScaleX="0.85" ScaleY="0.85" />
-                                        <TranslateTransform x:Name="ZuneSeekThumbTranslate" X="0" />
-                                    </TransformGroup>
-                                </Grid.RenderTransform>
-                                <Ellipse x:Name="ZuneSeekThumbDot"
-                                         Width="12"
-                                         Height="12"
-                                         Fill="{Binding SeekbarBrush}"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center" />
-                            </Grid>
-                        </Grid>
-
-                        <!-- Total Duration Display -->
-                        <TextBlock Grid.Column="2"
-                                   Text="{Binding DurationDisplayString}"
-                                   FontSize="11.5"
-                                   FontWeight="Normal"
-                                   Foreground="#90FFFFFF"
-                                   Typography.NumeralAlignment="Tabular"
-                                   VerticalAlignment="Center"
-                                   Margin="10,0,0,0" />
-                    </Grid>
-
-                    <!-- Row 3: Digital Zune Pad Tribute (Tactile Brushed Disc + Flanking Controls) -->
-                    <Grid Grid.Row="3" Margin="0,0,0,22" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <!-- Left: Previous Track Button (<) -->
-                            <Button Style="{StaticResource ZuneSideButtonStyle}"
-                                    Command="{Binding SkipPreviousCommand}"
-                                    IsEnabled="{Binding CanSkipPrevious}"
-                                    ToolTip="Previous Track"
-                                    VerticalAlignment="Center"
-                                    Margin="0,0,16,0">
-                                <TextBlock Text="&#xE76B;"
-                                           FontFamily="{DynamicResource AppIconFontFamily}"
-                                           FontSize="15"
+                                <!-- B. Active Media Screen: Full-Bleed Artwork + Frosted Glass Marquee + Seekbar -->
+                                <Grid Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}">
+                                    <!-- High-Res Album Art filling the screen window -->
+                                    <Image Source="{Binding AlbumArtImage}"
+                                           Stretch="UniformToFill"
+                                           HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
-                                           HorizontalAlignment="Center" />
-                            </Button>
+                                           SnapsToDevicePixels="True" />
 
-                            <!-- Center: Iconic Zune Pad Squircle Touch Disc -->
-                            <Button Style="{StaticResource ZunePadButtonStyle}"
-                                    Command="{Binding TogglePlayPauseCommand}"
-                                    IsEnabled="{Binding CanPlayPause}"
-                                    ToolTip="Play / Pause"
-                                    VerticalAlignment="Center">
-                                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <!-- Play/Pause Glyph -->
-                                    <TextBlock FontFamily="{DynamicResource AppIconFontFamily}"
+                                    <!-- Dark Frosted Status Overlay docked at the bottom of the screen -->
+                                    <Border VerticalAlignment="Bottom"
+                                            Background="#D0080A0E"
+                                            Padding="10,6,10,7"
+                                            SnapsToDevicePixels="True">
+                                        <StackPanel>
+                                            <!-- Track Title -->
+                                            <TextBlock Text="{Binding Title}"
+                                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                                       FontSize="13"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="#FFFFFF"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       TextWrapping="NoWrap"
+                                                       SnapsToDevicePixels="True" />
+                                            <!-- Artist Name -->
+                                            <TextBlock Text="{Binding Artist}"
+                                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                                       FontSize="11"
+                                                       FontWeight="Normal"
+                                                       Foreground="#A5FFFFFF"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       TextWrapping="NoWrap"
+                                                       Margin="0,1,0,0"
+                                                       SnapsToDevicePixels="True" />
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Hairline Seekbar running across the very bottom of the screen -->
+                                    <Grid x:Name="ZuneSeekbarContainer"
+                                          Height="14"
+                                          VerticalAlignment="Bottom"
+                                          Background="Transparent"
+                                          Cursor="Hand"
+                                          Focusable="False"
+                                          Tag="InteractiveControl"
+                                          PreviewMouseLeftButtonDown="Seekbar_PreviewMouseLeftButtonDown"
+                                          MouseEnter="Seekbar_MouseEnter"
+                                          MouseLeave="Seekbar_MouseLeave"
+                                          MouseLeftButtonDown="Seekbar_MouseLeftButtonDown"
+                                          MouseMove="Seekbar_MouseMove"
+                                          MouseLeftButtonUp="Seekbar_MouseLeftButtonUp"
+                                          LostMouseCapture="Seekbar_LostMouseCapture"
+                                          SizeChanged="Seekbar_SizeChanged"
+                                          SnapsToDevicePixels="True">
+                                        <!-- Seekbar Hairline Track -->
+                                        <Grid x:Name="ZuneSeekTrackGroup"
+                                              VerticalAlignment="Center"
+                                              RenderTransformOrigin="0.5,0.5">
+                                            <Grid.RenderTransform>
+                                                <ScaleTransform x:Name="ZuneSeekTrackScale" ScaleY="1.0" />
+                                            </Grid.RenderTransform>
+
+                                            <!-- Base Hairline Background -->
+                                            <Border x:Name="ZuneSeekTrackBg"
+                                                    Height="2"
+                                                    Background="#35FFFFFF"
+                                                    SnapsToDevicePixels="True" />
+
+                                            <!-- Progress Fill -->
+                                            <Grid x:Name="ZuneSeekProgressContainer"
+                                                  Height="2"
+                                                  HorizontalAlignment="Stretch"
+                                                  SnapsToDevicePixels="True">
+                                                <Grid.Clip>
+                                                    <RectangleGeometry x:Name="ZuneSeekProgressClip" Rect="0,-5,0,24" />
+                                                </Grid.Clip>
+                                                <Border x:Name="ZuneSeekProgressFill"
+                                                        Height="2"
+                                                        Background="{Binding SeekbarBrush}"
+                                                        SnapsToDevicePixels="True" />
+
+                                                <Rectangle x:Name="ZuneSeekShimmer"
+                                                           Width="50"
+                                                           Height="6"
+                                                           VerticalAlignment="Center"
+                                                           HorizontalAlignment="Left"
+                                                           IsHitTestVisible="False"
+                                                           Opacity="0.0"
+                                                           SnapsToDevicePixels="True">
+                                                    <Rectangle.Fill>
+                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                            <GradientStop Color="#00FFFFFF" Offset="0.0" />
+                                                            <GradientStop Color="#70FFFFFF" Offset="0.5" />
+                                                            <GradientStop Color="#00FFFFFF" Offset="1.0" />
+                                                        </LinearGradientBrush>
+                                                    </Rectangle.Fill>
+                                                    <Rectangle.RenderTransform>
+                                                        <TranslateTransform x:Name="ZuneSeekShimmerTranslate" X="-60" />
+                                                    </Rectangle.RenderTransform>
+                                                </Rectangle>
+                                            </Grid>
+                                        </Grid>
+
+                                        <!-- Circular Thumb Dot -->
+                                        <Grid x:Name="ZuneSeekThumb"
+                                              HorizontalAlignment="Left"
+                                              VerticalAlignment="Center"
+                                              IsHitTestVisible="False"
+                                              Opacity="0"
+                                              RenderTransformOrigin="0.5,0.5">
+                                            <Grid.RenderTransform>
+                                                <TransformGroup>
+                                                    <ScaleTransform x:Name="ZuneSeekThumbScale" ScaleX="0.85" ScaleY="0.85" />
+                                                    <TranslateTransform x:Name="ZuneSeekThumbTranslate" X="0" />
+                                                </TransformGroup>
+                                            </Grid.RenderTransform>
+                                            <Ellipse x:Name="ZuneSeekThumbDot"
+                                                     Width="10"
+                                                     Height="10"
+                                                     Fill="{Binding SeekbarBrush}"
+                                                     HorizontalAlignment="Center"
+                                                     VerticalAlignment="Center" />
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+
+                                <!-- C. Authentic Diagonal Glass Glare Reflection (Matches the photo) -->
+                                <Rectangle IsHitTestVisible="False" SnapsToDevicePixels="True">
+                                    <Rectangle.Fill>
+                                        <LinearGradientBrush StartPoint="0.1,0" EndPoint="0.85,1">
+                                            <GradientStop Color="#30FFFFFF" Offset="0.0" />
+                                            <GradientStop Color="#18FFFFFF" Offset="0.22" />
+                                            <GradientStop Color="#00FFFFFF" Offset="0.50" />
+                                        </LinearGradientBrush>
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                            </Grid>
+                        </Border>
+
+                        <!-- ========================================================= -->
+                        <!-- ROW 1: BOTTOM HARDWARE CHIN (PHYSICAL CONTROLS)           -->
+                        <!-- ========================================================= -->
+                        <Grid Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <!-- Left Button: Back / Previous Track (<) -->
+                                <Button Style="{StaticResource ZuneSideButtonStyle}"
+                                        Command="{Binding SkipPreviousCommand}"
+                                        IsEnabled="{Binding CanSkipPrevious}"
+                                        ToolTip="Back / Previous"
+                                        VerticalAlignment="Center"
+                                        Margin="0,0,10,0">
+                                    <TextBlock Text="&#xE76B;"
+                                               FontFamily="{DynamicResource AppIconFontFamily}"
+                                               FontSize="13"
+                                               Foreground="#9EFFFFFF"
                                                VerticalAlignment="Center"
-                                               HorizontalAlignment="Center"
-                                               Foreground="#FFFFFFFF">
+                                               HorizontalAlignment="Center" />
+                                </Button>
+
+                                <!-- Center: Iconic Zune Pad (Silver Squircle Bezel + Concave Dark Pad) -->
+                                <Button Style="{StaticResource ZunePadButtonStyle}"
+                                        Command="{Binding SkipNextCommand}"
+                                        IsEnabled="{Binding CanSkipNext}"
+                                        ToolTip="Next Track / Scrub"
+                                        VerticalAlignment="Center">
+                                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <!-- Subtle navigation arrow glyph -->
+                                        <TextBlock Text="&#xE76C;"
+                                                   FontFamily="{DynamicResource AppIconFontFamily}"
+                                                   FontSize="15"
+                                                   Foreground="#70FFFFFF"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Center" />
+                                    </Grid>
+                                </Button>
+
+                                <!-- Right Button: Play / Pause (▷||) -->
+                                <Button Style="{StaticResource ZuneSideButtonStyle}"
+                                        Command="{Binding TogglePlayPauseCommand}"
+                                        IsEnabled="{Binding CanPlayPause}"
+                                        ToolTip="Play / Pause"
+                                        VerticalAlignment="Center"
+                                        Margin="10,0,0,0">
+                                    <TextBlock FontFamily="{DynamicResource AppIconFontFamily}"
+                                               FontSize="13"
+                                               Foreground="#9EFFFFFF"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Text" Value="&#xE768;" />
-                                                <Setter Property="FontSize" Value="22" />
-                                                <Setter Property="Margin" Value="2,0,0,0" />
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsPlaying}" Value="True">
                                                         <Setter Property="Text" Value="&#xE769;" />
-                                                        <Setter Property="FontSize" Value="22" />
-                                                        <Setter Property="Margin" Value="0" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </TextBlock.Style>
                                     </TextBlock>
-                                </Grid>
-                            </Button>
-
-                            <!-- Right: Next Track Button (>) -->
-                            <Button Style="{StaticResource ZuneSideButtonStyle}"
-                                    Command="{Binding SkipNextCommand}"
-                                    IsEnabled="{Binding CanSkipNext}"
-                                    ToolTip="Next Track"
-                                    VerticalAlignment="Center"
-                                    Margin="16,0,0,0">
-                                <TextBlock Text="&#xE76C;"
-                                           FontFamily="{DynamicResource AppIconFontFamily}"
-                                           FontSize="15"
-                                           VerticalAlignment="Center"
-                                           HorizontalAlignment="Center" />
-                            </Button>
-                        </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
                     </Grid>
-                </Grid>
+                </Border>
             </Grid>
         </Grid>
     </widgets:WidgetCard>
