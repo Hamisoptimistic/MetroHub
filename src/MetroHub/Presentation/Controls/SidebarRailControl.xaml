@@ -176,8 +176,12 @@
         </ContextMenu>
     </UserControl.Resources>
 
-    <Grid Background="Transparent">
-        <Grid.RowDefinitions>
+    <Border Background="{DynamicResource SidebarBackground}"
+            BorderBrush="{DynamicResource SidebarBorder}"
+            BorderThickness="0,0,1,0"
+            SnapsToDevicePixels="True">
+        <Grid Background="Transparent">
+            <Grid.RowDefinitions>
             <!-- Top Section: Pin + All Apps Toggle -->
             <RowDefinition Height="Auto" />
             <!-- Center Section: User Custom Shortcuts List -->
@@ -549,5 +553,6 @@
                 </Button.ContextMenu>
             </Button>
         </StackPanel>
-    </Grid>
+        </Grid>
+    </Border>
 </UserControl>

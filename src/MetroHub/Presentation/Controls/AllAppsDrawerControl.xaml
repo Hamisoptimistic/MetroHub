@@ -207,10 +207,11 @@
             </Border.Background>
         </Border>
 
-        <!-- Main Drawer Container: NO BORDER, Transparent Background allowing Main Window's Acrylic Obsidian to shine through -->
+        <!-- Main Drawer Container: Frosted Acrylic Flyout Surface with crisp 1px separator -->
         <Border x:Name="DrawerContainer"
-                Background="Transparent"
-                BorderThickness="0"
+                Background="{DynamicResource DrawerBackground}"
+                BorderBrush="{DynamicResource DrawerBorder}"
+                BorderThickness="0,0,1,0"
                 SnapsToDevicePixels="True"
                 UseLayoutRounding="True">
 

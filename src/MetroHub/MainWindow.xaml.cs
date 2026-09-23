@@ -832,7 +832,7 @@ public partial class MainWindow : BorderlessFluentWindow
         byte alpha = (byte)(255 * dim);
         var scrimColor = ThemeService.IsDarkTheme 
             ? Color.FromArgb(alpha, 0, 0, 0) 
-            : Color.FromArgb((byte)(alpha * 0.75), 255, 255, 255);
+            : Color.FromArgb((byte)Math.Clamp(130 + (dim * 110), 140, 235), 255, 255, 255);
         var scrimBrush = new SolidColorBrush(scrimColor);
         scrimBrush.Freeze();
         WallpaperScrim.Background = scrimBrush;

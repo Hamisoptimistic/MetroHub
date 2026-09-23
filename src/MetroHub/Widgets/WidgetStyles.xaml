@@ -312,8 +312,8 @@
                             <Border x:Name="PART_BottomRevealBorder" SnapsToDevicePixels="True" Opacity="0">
                                 <Border.Background>
                                     <RadialGradientBrush x:Name="PART_BottomRevealBrush" MappingMode="Absolute" RadiusX="160" RadiusY="160">
-                                        <GradientStop Color="#FFFFFFFF" Offset="0.0" />
-                                        <GradientStop Color="#60FFFFFF" Offset="0.5" />
+                                        <GradientStop Color="{DynamicResource RevealEdgeCenterColor}" Offset="0.0" />
+                                        <GradientStop Color="{DynamicResource RevealEdgeMidColor}" Offset="0.5" />
                                         <GradientStop Color="#00000000" Offset="1.0" />
                                     </RadialGradientBrush>
                                 </Border.Background>

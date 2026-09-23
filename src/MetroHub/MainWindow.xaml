@@ -621,7 +621,7 @@
                 </Border>
                 <TextBlock Text=" to close   •   Press " FontSize="11" Foreground="{DynamicResource TextSecondary}" />
                 <Border Background="{DynamicResource HoverSheen}" CornerRadius="4" Padding="5,1" Margin="2,0">
-                    <TextBlock Text="{Binding HotkeyDisplayString, FallbackValue='Ctrl + `'}" FontSize="10" FontWeight="SemiBold" Foreground="#60CDFF" />
+                    <TextBlock Text="{Binding HotkeyDisplayString, FallbackValue='Ctrl + `'}" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" />
                 </Border>
                 <TextBlock Text=" to toggle   •   Drag any app from desktop to pin" FontSize="11" Foreground="{DynamicResource TextSecondary}" />
             </StackPanel>
@@ -643,7 +643,7 @@
                 IsHitTestVisible="False"
                 Panel.ZIndex="3000">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <ui:SymbolIcon x:Name="NotificationToastIcon" Symbol="Info24" FontSize="18" Foreground="#60CDFF" Margin="0,0,10,0" />
+                <ui:SymbolIcon x:Name="NotificationToastIcon" Symbol="Info24" FontSize="18" Foreground="{DynamicResource AccentBrush}" Margin="0,0,10,0" />
                 <TextBlock x:Name="NotificationToastText" Text="" Foreground="{DynamicResource TextPrimary}" FontSize="13" FontWeight="Medium" VerticalAlignment="Center" />
             </StackPanel>
         </Border>

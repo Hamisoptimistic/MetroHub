@@ -98,6 +98,22 @@
     <Color x:Key="AcrylicTintColor">#99F3F3F3</Color>
     <SolidColorBrush x:Key="AcrylicTint" Color="#99F3F3F3" />
     <SolidColorBrush x:Key="AcrylicTintBrush" Color="#99F3F3F3" />
+    <!-- Navigation & Drawer Surfaces -->
+    <Color x:Key="SidebarBackgroundColor">#E6F6F7F9</Color>
+    <SolidColorBrush x:Key="SidebarBackground" Color="#E6F6F7F9" />
+    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="#E6F6F7F9" />
+
+    <Color x:Key="SidebarBorderColor">#18000000</Color>
+    <SolidColorBrush x:Key="SidebarBorder" Color="#18000000" />
+    <SolidColorBrush x:Key="SidebarBorderBrush" Color="#18000000" />
+
+    <Color x:Key="DrawerBackgroundColor">#F4F6F7F9</Color>
+    <SolidColorBrush x:Key="DrawerBackground" Color="#F4F6F7F9" />
+    <SolidColorBrush x:Key="DrawerBackgroundBrush" Color="#F4F6F7F9" />
+
+    <Color x:Key="DrawerBorderColor">#18000000</Color>
+    <SolidColorBrush x:Key="DrawerBorder" Color="#18000000" />
+    <SolidColorBrush x:Key="DrawerBorderBrush" Color="#18000000" />
 
     <!-- Modals & ContentDialog -->
     <Color x:Key="DialogBackgroundColor">#F2F5F5F5</Color>
@@ -136,5 +152,11 @@
 
     <!-- Shadows & Depth -->
     <Color x:Key="CardShadowColor">#18000000</Color>
+
+    <!-- Fluent Reveal Highlight -->
+    <Color x:Key="RevealFillCenterColor">#12000000</Color>
+    <Color x:Key="RevealFillMidColor">#06000000</Color>
+    <Color x:Key="RevealEdgeCenterColor">#40000000</Color>
+    <Color x:Key="RevealEdgeMidColor">#15000000</Color>
 
 </ResourceDictionary>

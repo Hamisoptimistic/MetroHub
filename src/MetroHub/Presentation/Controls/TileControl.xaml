@@ -348,8 +348,8 @@
                 </Border.Style>
                 <Border.Background>
                     <RadialGradientBrush x:Name="RevealFillBrush" MappingMode="Absolute" RadiusX="200" RadiusY="200">
-                        <GradientStop Color="#35FFFFFF" Offset="0.0" />
-                        <GradientStop Color="#14FFFFFF" Offset="0.5" />
+                        <GradientStop Color="{DynamicResource RevealFillCenterColor}" Offset="0.0" />
+                        <GradientStop Color="{DynamicResource RevealFillMidColor}" Offset="0.5" />
                         <GradientStop Color="#00000000" Offset="1.0" />
                     </RadialGradientBrush>
                 </Border.Background>
@@ -369,8 +369,8 @@
                     Opacity="0">
                 <Border.BorderBrush>
                     <RadialGradientBrush x:Name="RevealEdgeBrush" MappingMode="Absolute" RadiusX="160" RadiusY="160">
-                        <GradientStop Color="#FFFFFFFF" Offset="0.0" />
-                        <GradientStop Color="#60FFFFFF" Offset="0.5" />
+                        <GradientStop Color="{DynamicResource RevealEdgeCenterColor}" Offset="0.0" />
+                        <GradientStop Color="{DynamicResource RevealEdgeMidColor}" Offset="0.5" />
                         <GradientStop Color="#00000000" Offset="1.0" />
                     </RadialGradientBrush>
                 </Border.BorderBrush>
