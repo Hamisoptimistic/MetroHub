@@ -30,10 +30,10 @@
             <!-- ========================================================================= -->
             <!-- UNIVERSAL FLUENT GEOMETRY & INTERACTION TOKENS                            -->
             <!-- ========================================================================= -->
-            <!-- Standard Control & Button Corner Radius (Matches Sidebar Hover Pill) -->
-            <CornerRadius x:Key="ControlCornerRadius">5</CornerRadius>
-            <CornerRadius x:Key="ControlCornerRadiusSmall">4</CornerRadius>
-            <CornerRadius x:Key="ControlCornerRadiusLarge">8</CornerRadius>
+            <!-- Standard Control & Button Corner Radius (Universal 2px for all buttons & controls) -->
+            <CornerRadius x:Key="ControlCornerRadius">2</CornerRadius>
+            <CornerRadius x:Key="ControlCornerRadiusSmall">2</CornerRadius>
+            <CornerRadius x:Key="ControlCornerRadiusLarge">4</CornerRadius>
 
             <!-- ContextMenu & Dropdown Container / Item Radius (Crisp 2px) -->
             <CornerRadius x:Key="ContextMenuCornerRadius">2</CornerRadius>
@@ -42,6 +42,7 @@
             <SolidColorBrush x:Key="FluentHoverBrush" Color="#12FFFFFF" />
             <SolidColorBrush x:Key="FluentPressedBrush" Color="#1EFFFFFF" />
             <SolidColorBrush x:Key="FluentHoverBorderBrush" Color="Transparent" />
+
 
             <!-- Cohesive Fluent Action Button Styles (Matching Sleek Wi-Fi Connect & Modal Submit) -->
             <Style x:Key="FluentCohesiveActionButtonStyle" TargetType="Button">

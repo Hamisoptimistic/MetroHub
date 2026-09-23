@@ -150,7 +150,8 @@ public sealed class NetworkDataUsageService
                 {
                     try
                     {
-                        var usages = await profile.GetNetworkUsageAsync(startTime, now, DataUsageGranularity.Total, states);
+                        var usagesTask = profile.GetNetworkUsageAsync(startTime, now, DataUsageGranularity.Total, states).AsTask();
+                        var usages = await usagesTask.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
                         ulong pRx = 0;
                         ulong pTx = 0;
                         if (usages != null)
@@ -169,7 +170,7 @@ public sealed class NetworkDataUsageService
                     }
                 });
 
-                var results = await Task.WhenAll(tasks).ConfigureAwait(false);
+                var results = await Task.WhenAll(tasks).WaitAsync(TimeSpan.FromSeconds(3)).ConfigureAwait(false);
                 ulong totalRx = 0;
                 ulong totalTx = 0;
                 foreach (var res in results)

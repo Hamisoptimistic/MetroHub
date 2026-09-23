@@ -4,6 +4,11 @@
                     xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
                     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
 
+    <!-- Fallback Design Tokens for Parse-Time Safety -->
+    <CornerRadius x:Key="ControlCornerRadius">2</CornerRadius>
+    <SolidColorBrush x:Key="FluentHoverBrush" Color="#12FFFFFF" />
+    <SolidColorBrush x:Key="FluentPressedBrush" Color="#1EFFFFFF" />
+
     <!-- 
         Shared WidgetCard Shell Style (Phase 0.2)
         Consistent dark card surface, hairline border, uniform corner radius, and internal padding.
@@ -75,7 +80,7 @@
                 <ControlTemplate TargetType="{x:Type widgets:WidgetSegmentedItem}">
                     <Border x:Name="ButtonBackground"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="{StaticResource ControlCornerRadius}"
+                            CornerRadius="{DynamicResource ControlCornerRadius}"
                             SnapsToDevicePixels="True">
                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -84,12 +89,12 @@
                     <ControlTemplate.Triggers>
                         <!-- Hover state: soft text brighten, subtle glass sheen, zero borders -->
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ButtonBackground" Property="Background" Value="{StaticResource FluentHoverBrush}" />
+                            <Setter TargetName="ButtonBackground" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
                             <Setter Property="Foreground" Value="#E0FFFFFF" />
                         </Trigger>
                         <!-- Pressed state -->
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="ButtonBackground" Property="Background" Value="{StaticResource FluentPressedBrush}" />
+                            <Setter TargetName="ButtonBackground" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
                             <Setter Property="Foreground" Value="#FFFFFF" />
                         </Trigger>
                         <!-- Selected state: bright pure white text -->
@@ -102,7 +107,7 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsSelected" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ButtonBackground" Property="Background" Value="{StaticResource FluentHoverBrush}" />
+                            <Setter TargetName="ButtonBackground" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
                             <Setter Property="Foreground" Value="#FFFFFF" />
                         </MultiTrigger>
                     </ControlTemplate.Triggers>

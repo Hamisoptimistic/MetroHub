@@ -45,7 +45,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Border"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="{StaticResource ControlCornerRadiusSmall}"
+                                CornerRadius="{StaticResource ControlCornerRadius}"
                                 SnapsToDevicePixels="True">
                             <ui:SymbolIcon x:Name="CopyIcon"
                                            Symbol="Copy16"
@@ -69,54 +69,32 @@
             </Setter>
         </Style>
 
-        <!-- Sleek Micro Icon Button Style (Generic ContentPresenter) matching Media Player Style -->
-        <Style x:Key="MicroIconButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
+        <!-- Sleek Micro Icon Button Style: Fully inherits Universal Fluent Ghost Button (2px corner radius, exact sidebar hover) -->
+        <Style x:Key="MicroIconButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}">
             <Setter Property="Width" Value="32" />
             <Setter Property="Height" Value="28" />
-            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="0" />
             <Setter Property="Focusable" Value="False" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="{StaticResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="{StaticResource FluentHoverBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="{StaticResource FluentPressedBrush}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
-        <!-- Universal 4px Fluent Floating ScrollBar: Invisible by default, reveals on scroll/hover via AutoHideScrollBehavior -->
-        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
-
-        <!-- Cohesive Fluent Button Style for Wi-Fi Network Actions (Connect / Disconnect) -->
+        <!-- Wi-Fi Connect Action Button (Matching App.xaml Cohesive Action Button Style) -->
         <Style x:Key="FluentWifiActionButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentCohesiveActionButtonStyle}">
             <Setter Property="Width" Value="76" />
             <Setter Property="Height" Value="28" />
             <Setter Property="Focusable" Value="False" />
         </Style>
 
+        <!-- Wi-Fi Secondary Action Button (Forget / Disconnect / Cancel) -->
         <Style x:Key="FluentWifiDisconnectButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentCohesiveSecondaryButtonStyle}">
             <Setter Property="Width" Value="76" />
             <Setter Property="Height" Value="28" />
             <Setter Property="Focusable" Value="False" />
         </Style>
+
+        <!-- Universal 4px Fluent Floating ScrollBar: Invisible by default, reveals on scroll/hover via AutoHideScrollBehavior -->
+        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
+
+
 
         <!-- Clean Modern "START" Action Button (Pure typography, zero circular box, electric blue hover glow) -->
         <Style x:Key="SpeedPureGoButtonStyle" TargetType="Button">
@@ -679,7 +657,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Top Header: [ 📶 ] Wi-Fi  [ RefreshButton ] [ ToggleSwitch ] -->
-                    <Grid Grid.Row="0" Height="26" Margin="0,0,0,10">
+                    <Grid Grid.Row="0" MinHeight="28" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -713,7 +691,7 @@
                                     ToolTip="Scan for Wi-Fi networks">
                                 <ui:SymbolIcon Symbol="ArrowClockwise24"
                                                FontSize="16"
-                                               Foreground="#D0FFFFFF"
+                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                                RenderTransformOrigin="0.5,0.5">
                                     <ui:SymbolIcon.RenderTransform>
                                         <RotateTransform Angle="0" />
@@ -1036,8 +1014,8 @@
                                                     <Button Content="Forget"
                                                             Command="{Binding DataContext.ForgetWifiNetworkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                             CommandParameter="{Binding}"
-                                                            Width="80"
-                                                            Height="26"
+                                                            Width="76"
+                                                            Height="28"
                                                             Margin="0,0,6,0">
                                                         <Button.Style>
                                                             <Style TargetType="Button" BasedOn="{StaticResource FluentWifiDisconnectButtonStyle}">
@@ -1062,8 +1040,8 @@
                                                             BorderBrush="#18FFFFFF"
                                                             BorderThickness="1"
                                                             CornerRadius="2"
-                                                            Width="80"
-                                                            Height="26">
+                                                            Width="76"
+                                                            Height="28">
                                                         <ui:ProgressRing IsIndeterminate="{Binding IsConnecting}"
                                                                          Width="14"
                                                                          Height="14"
@@ -1076,8 +1054,8 @@
                                                     <Button Content="Disconnect"
                                                             Command="{Binding DataContext.DisconnectWifiNetworkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                             CommandParameter="{Binding}"
-                                                            Width="80"
-                                                            Height="26">
+                                                            Width="76"
+                                                            Height="28">
                                                         <Button.Style>
                                                             <Style TargetType="Button" BasedOn="{StaticResource FluentWifiDisconnectButtonStyle}">
                                                                 <Setter Property="Visibility" Value="Collapsed" />
@@ -1098,8 +1076,8 @@
                                                     <Button Content="Connect"
                                                             Command="{Binding DataContext.ConnectWifiNetworkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                             CommandParameter="{Binding}"
-                                                            Width="80"
-                                                            Height="26">
+                                                            Width="76"
+                                                            Height="28">
                                                         <Button.Style>
                                                             <Style TargetType="Button" BasedOn="{StaticResource FluentWifiActionButtonStyle}">
                                                                 <Setter Property="Visibility" Value="Collapsed" />
@@ -1138,16 +1116,16 @@
                                                                 Style="{StaticResource FluentWifiDisconnectButtonStyle}"
                                                                 Command="{Binding DataContext.CancelWifiPasswordCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                 CommandParameter="{Binding ElementName=WifiPasswordBox}"
-                                                                Width="80"
-                                                                Height="26"
+                                                                Width="68"
+                                                                Height="28"
                                                                 Margin="0,0,6,0" />
 
                                                         <Button Content="Connect"
                                                                 Style="{StaticResource FluentWifiActionButtonStyle}"
                                                                 Command="{Binding DataContext.ConnectWithPasswordCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                 CommandParameter="{Binding ElementName=WifiPasswordBox}"
-                                                                Width="80"
-                                                                Height="26" />
+                                                                Width="76"
+                                                                Height="28" />
                                                     </StackPanel>
                                                 </StackPanel>
                                             </StackPanel>
@@ -1283,7 +1261,7 @@
                                     ToolTip="Scan for hardware adapters">
                             <ui:SymbolIcon Symbol="ArrowClockwise24"
                                            FontSize="16"
-                                           Foreground="#D0FFFFFF"
+                                           Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                            RenderTransformOrigin="0.5,0.5">
                                 <ui:SymbolIcon.RenderTransform>
                                     <RotateTransform Angle="0" />
