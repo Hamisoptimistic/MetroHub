@@ -37,6 +37,9 @@ public partial class DinoWidgetView : UserControl
         CurrentScoreText.Foreground = _spriteBrush;
         GameOverText.Foreground = _spriteBrush;
         RestartIconPath.Fill = _spriteBrush;
+        IdlePromptText.Foreground = _groundBrush;
+        PausedTitleText.Foreground = _spriteBrush;
+        PausedSubtitleText.Foreground = _groundBrush;
 
         for (int i = 0; i < _obstaclePaths.Length; i++)
         {
@@ -119,6 +122,9 @@ public partial class DinoWidgetView : UserControl
             HighScoreText.Foreground = SystemColors.GrayTextBrush;
             GameOverText.Foreground = SystemColors.WindowTextBrush;
             RestartIconPath.Fill = SystemColors.WindowTextBrush;
+            IdlePromptText.Foreground = SystemColors.GrayTextBrush;
+            PausedTitleText.Foreground = SystemColors.WindowTextBrush;
+            PausedSubtitleText.Foreground = SystemColors.GrayTextBrush;
 
             MoonShape.Opacity = 0.0;
             Star1.Opacity = 0.0;

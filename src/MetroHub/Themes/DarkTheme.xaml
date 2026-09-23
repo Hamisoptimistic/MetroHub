@@ -48,6 +48,17 @@
     <SolidColorBrush x:Key="GlassBorderSecondary" Color="#15FFFFFF" />
     <SolidColorBrush x:Key="GlassBorderSecondaryBrush" Color="#15FFFFFF" />
 
+    <!-- Sub-surface / Inset Backplates -->
+    <Color x:Key="SubSurfaceColor">#18FFFFFF</Color>
+    <SolidColorBrush x:Key="SubSurface" Color="#18FFFFFF" />
+    <SolidColorBrush x:Key="SubSurfaceBrush" Color="#18FFFFFF" />
+
+    <!-- Input Field Surfaces -->
+    <Color x:Key="InputBackgroundColor">#2A2A2A</Color>
+    <SolidColorBrush x:Key="InputBackground" Color="#2A2A2A" />
+    <SolidColorBrush x:Key="InputBackgroundHover" Color="#303030" />
+    <SolidColorBrush x:Key="InputBackgroundFocused" Color="#353535" />
+
     <!-- Interactive Sheens -->
     <Color x:Key="HoverSheenColor">#12FFFFFF</Color>
     <SolidColorBrush x:Key="HoverSheen" Color="#12FFFFFF" />

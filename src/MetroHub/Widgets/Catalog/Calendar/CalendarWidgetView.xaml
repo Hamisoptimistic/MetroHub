@@ -17,18 +17,11 @@
              RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
-        <!-- Windows Calendar Palette Tokens (Aligned with Habit Widget) -->
-        <SolidColorBrush x:Key="MonthBlockBrush" Color="#18FFFFFF" />
-        <SolidColorBrush x:Key="OutOfMonthTextBrush" Color="#40FFFFFF" />
-        <SolidColorBrush x:Key="CurrentMonthTextBrush" Color="#FFFFFF" />
-        <SolidColorBrush x:Key="WeekdayHeaderBrush" Color="#80FFFFFF" />
-        <SolidColorBrush x:Key="CellHoverBrush" Color="#18FFFFFF" />
-
         <!-- 28x28 Transparent Month Stepper Navigation Button Style -->
         <Style x:Key="CalendarNavButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#C0FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
             <Setter Property="Width" Value="28" />
             <Setter Property="Height" Value="28" />
             <Setter Property="Cursor" Value="Hand" />
@@ -44,11 +37,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource HoverSheen}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -84,7 +77,7 @@
                            FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
                            FontSize="15"
                            FontWeight="Bold"
-                           Foreground="#FFFFFF" />
+                           Foreground="{DynamicResource TextPrimary}" />
 
                 <!-- Right Chevron Button -->
                 <Button HorizontalAlignment="Right"
@@ -98,13 +91,13 @@
 
             <!-- 2. Weekday Header (Su, Mo, Tu, We, Th, Fr, Sa) -->
             <UniformGrid Grid.Row="1" Columns="7" Margin="0,0,0,6">
-                <TextBlock Text="Su" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                <TextBlock Text="Mo" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                <TextBlock Text="Tu" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                <TextBlock Text="We" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                <TextBlock Text="Th" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                <TextBlock Text="Fr" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                <TextBlock Text="Sa" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                <TextBlock Text="Su" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
+                <TextBlock Text="Mo" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
+                <TextBlock Text="Tu" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
+                <TextBlock Text="We" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
+                <TextBlock Text="Th" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
+                <TextBlock Text="Fr" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
+                <TextBlock Text="Sa" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{DynamicResource TextSecondary}" />
             </UniformGrid>
 
             <!-- 3. 42-Day Grid Area (Seamless Single-Polygon Month Backplate + Number Grid) -->
@@ -113,7 +106,7 @@
                 <calendar:CalendarMonthBackplate
                     FirstDayOffset="{Binding FirstDayOffset}"
                     DaysInMonth="{Binding DaysInMonth}"
-                    FillBrush="{StaticResource MonthBlockBrush}"
+                    FillBrush="{DynamicResource SubSurface}"
                     SnapsToDevicePixels="True" />
 
                 <ItemsControl ItemsSource="{Binding Days}">
@@ -147,7 +140,7 @@
                                     <!-- Hover Overlay -->
                                     <Border x:Name="HoverOverlay"
                                             Opacity="0"
-                                            Background="{StaticResource CellHoverBrush}"
+                                            Background="{DynamicResource HoverSheen}"
                                             SnapsToDevicePixels="True" />
 
                                     <!-- Day Number Text -->
@@ -158,7 +151,7 @@
                                                FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                                FontSize="13.5"
                                                FontWeight="Normal"
-                                               Foreground="{StaticResource OutOfMonthTextBrush}"
+                                               Foreground="{DynamicResource TextMuted}"
                                                SnapsToDevicePixels="True" />
 
                                     <!-- Active Date Pill Indicator (Below the date) -->
@@ -182,9 +175,9 @@
                             </Border>
 
                             <DataTemplate.Triggers>
-                                <!-- Current Month: SemiBold White Text (Background is rendered seamlessly by Backplate) -->
+                                <!-- Current Month: SemiBold Text (Background is rendered seamlessly by Backplate) -->
                                 <DataTrigger Binding="{Binding IsCurrentMonth}" Value="True">
-                                    <Setter TargetName="DayLabel" Property="Foreground" Value="{StaticResource CurrentMonthTextBrush}" />
+                                    <Setter TargetName="DayLabel" Property="Foreground" Value="{DynamicResource TextPrimary}" />
                                     <Setter TargetName="DayLabel" Property="FontWeight" Value="SemiBold" />
                                 </DataTrigger>
 

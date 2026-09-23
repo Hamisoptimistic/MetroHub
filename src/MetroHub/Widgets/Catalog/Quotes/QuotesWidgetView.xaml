@@ -21,7 +21,7 @@
         <Style x:Key="QuoteActionButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#E5E9F0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
             <Setter Property="Width" Value="28" />
             <Setter Property="Height" Value="26" />
             <Setter Property="Cursor" Value="Hand" />
@@ -37,11 +37,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource HoverSheen}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -90,19 +90,19 @@
                                FontStyle="{Binding QuoteFontStyle}"
                                FontWeight="{Binding QuoteFontWeight}"
                                FontSize="19.5"
-                               Foreground="#FFF8EE"
+                               Foreground="{DynamicResource TextPrimary}"
                                LineHeight="30"
                                LineStackingStrategy="BlockLineHeight"
                                TextOptions.TextFormattingMode="Ideal"
                                TextOptions.TextRenderingMode="ClearType">
                         <Run Text="{Binding RevealedText, Mode=OneWay}" /><InlineUIContainer BaselineAlignment="Center"><Border Width="1.5"
                                         Height="19"
-                                        Background="#90FFFFFF"
+                                        Background="{DynamicResource TextSecondary}"
                                         Margin="2,0,-3.5,0"
                                         Opacity="{Binding CursorOpacity, Mode=OneWay}"
                                         SnapsToDevicePixels="True" /></InlineUIContainer>
                         <TextBlock.Effect>
-                            <DropShadowEffect BlurRadius="8" ShadowDepth="1.5" Direction="270" Opacity="0.5" Color="#000000" />
+                            <DropShadowEffect BlurRadius="6" ShadowDepth="1" Direction="270" Opacity="0.25" Color="{DynamicResource CardShadowColor}" />
                         </TextBlock.Effect>
                     </TextBlock>
                 </Grid>
@@ -138,11 +138,11 @@
                            FontSize="12.5"
                            FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                            FontWeight="SemiBold"
-                           Foreground="#D8D2C6"
+                           Foreground="{DynamicResource TextSecondary}"
                            TextOptions.TextFormattingMode="Ideal"
                            TextOptions.TextRenderingMode="ClearType">
                     <TextBlock.Effect>
-                        <DropShadowEffect BlurRadius="4" ShadowDepth="1" Direction="270" Opacity="0.4" Color="#000000" />
+                        <DropShadowEffect BlurRadius="3" ShadowDepth="1" Direction="270" Opacity="0.2" Color="{DynamicResource CardShadowColor}" />
                     </TextBlock.Effect>
                 </TextBlock>
             </Grid>
@@ -181,7 +181,7 @@
                 <Button Command="{Binding NextQuoteCommand}"
                         ToolTip="Next Quote"
                         Style="{StaticResource QuoteActionButtonStyle}">
-                    <ui:SymbolIcon Symbol="ArrowShuffle24" FontSize="16" Foreground="#D0FFFFFF" />
+                    <ui:SymbolIcon Symbol="ArrowShuffle24" FontSize="16" Foreground="{DynamicResource TextSecondary}" />
                 </Button>
             </StackPanel>
         </Grid>

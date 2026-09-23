@@ -38,7 +38,7 @@
             <Setter Property="Margin" Value="0" />
             <Setter Property="Width" Value="40" />
             <Setter Property="Height" Value="38" />
-            <Setter Property="Foreground" Value="#90FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
             <Setter Property="IconSize" Value="16" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
@@ -83,17 +83,17 @@
                                 <Setter TargetName="PART_SymbolIcon" Property="Visibility" Value="Visible" />
                                 <Setter TargetName="PART_IconContent" Property="Visibility" Value="Collapsed" />
                             </Trigger>
-                            <!-- Hover state: Crisp White icon illumination -->
+                            <!-- Hover state: Crisp icon illumination -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <!-- Pressed state -->
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
-                            <!-- Selected state: Solid crisp White icon -->
+                            <!-- Selected state: Solid crisp icon -->
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -125,7 +125,7 @@
                                 </Border.RenderTransform>
                                 <Border.Effect>
                                     <DropShadowEffect x:Name="PART_IndicatorShadow"
-                                                      Color="#FFFFFF"
+                                                      Color="{DynamicResource TextPrimaryColor}"
                                                       BlurRadius="8"
                                                       ShadowDepth="0"
                                                       Opacity="0.8"
@@ -157,26 +157,26 @@
                                 Height="18"
                                 CornerRadius="9"
                                 BorderThickness="1.5"
-                                BorderBrush="#60FFFFFF"
+                                BorderBrush="{DynamicResource TextTertiary}"
                                 Background="Transparent"
                                 SnapsToDevicePixels="True">
                             <TextBlock x:Name="CheckIcon"
                                        Text="&#xE73E;"
                                        FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="9"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        Visibility="Collapsed" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="RingBorder" Property="BorderBrush" Value="#A5FFFFFF" />
-                                <Setter TargetName="RingBorder" Property="Background" Value="#10FFFFFF" />
+                                <Setter TargetName="RingBorder" Property="BorderBrush" Value="{DynamicResource TextSecondary}" />
+                                <Setter TargetName="RingBorder" Property="Background" Value="{DynamicResource HoverSheen}" />
                             </Trigger>
                             <DataTrigger Binding="{Binding IsCompleted}" Value="True">
-                                <Setter TargetName="RingBorder" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="RingBorder" Property="BorderBrush" Value="#35FFFFFF" />
+                                <Setter TargetName="RingBorder" Property="Background" Value="{DynamicResource GlassCard}" />
+                                <Setter TargetName="RingBorder" Property="BorderBrush" Value="{DynamicResource GlassBorder}" />
                                 <Setter TargetName="CheckIcon" Property="Visibility" Value="Visible" />
                             </DataTrigger>
                         </ControlTemplate.Triggers>
@@ -189,7 +189,7 @@
         <Style x:Key="TodoDeleteButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#50FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextTertiary}" />
             <Setter Property="Width" Value="24" />
             <Setter Property="Height" Value="24" />
             <Setter Property="Cursor" Value="Hand" />
@@ -208,11 +208,11 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Opacity" Value="1.0" />
-                                <Setter TargetName="DeleteBorder" Property="Background" Value="#25FF453A" />
-                                <Setter Property="Foreground" Value="#FF6B6B" />
+                                <Setter TargetName="DeleteBorder" Property="Background" Value="{DynamicResource DangerHoverBackground}" />
+                                <Setter Property="Foreground" Value="{DynamicResource DangerText}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="DeleteBorder" Property="Background" Value="#45FF453A" />
+                                <Setter TargetName="DeleteBorder" Property="Background" Value="{DynamicResource DangerHoverBackground}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -225,8 +225,8 @@
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}" />
             <Setter Property="SelectionBrush" Value="#503A86FF" />
             <Setter Property="SelectionOpacity" Value="0.6" />
             <Setter Property="FontSize" Value="15" />
@@ -252,8 +252,8 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}" />
             <Setter Property="SelectionBrush" Value="#503A86FF" />
             <Setter Property="SelectionOpacity" Value="0.6" />
             <Setter Property="FontSize" Value="13.5" />
@@ -312,7 +312,7 @@
                                     x:Name="BulletListTile"
                                     Value="Bullets"
                                     Symbol="TextBulletListTree24"
-                                    IndicatorBrush="#FFFFFF"
+                                    IndicatorBrush="{DynamicResource ActiveIndicator}"
                                     ToolTip="Bullet List"
                                     Click="BulletListTile_Click" />
 
@@ -321,7 +321,7 @@
                                     x:Name="NumberedListTile"
                                     Value="Numbered"
                                     Symbol="TextNumberListLtr16"
-                                    IndicatorBrush="#FFFFFF"
+                                    IndicatorBrush="{DynamicResource ActiveIndicator}"
                                     ToolTip="Numbered List"
                                     Click="NumberedListTile_Click" />
 
@@ -330,7 +330,7 @@
                                     x:Name="TodoListTile"
                                     Value="Todo"
                                     Symbol="CheckmarkCircle32"
-                                    IndicatorBrush="#FFFFFF"
+                                    IndicatorBrush="{DynamicResource ActiveIndicator}"
                                     ToolTip="To-Do Checklist"
                                     Click="TodoListTile_Click" />
             </widgets:WidgetTiles>
@@ -343,7 +343,7 @@
         <Border Grid.Row="1"
                 Height="1"
                 HorizontalAlignment="Stretch"
-                Background="#14FFFFFF"
+                Background="{DynamicResource SeparatorLine}"
                 SnapsToDevicePixels="True" />
 
             <!-- ========================================================================= -->
@@ -370,7 +370,7 @@
 
                     <!-- Watermark Placeholder (Hidden immediately when typing) -->
                     <TextBlock Text="Note it down, you know you'll forget"
-                               Foreground="#35FFFFFF"
+                               Foreground="{DynamicResource TextMuted}"
                                FontSize="15"
                                IsHitTestVisible="False"
                                Margin="4,2,0,0">
@@ -400,8 +400,8 @@
 
                     <!-- Microsoft To-Do Style Acrylic Input Bar -->
                     <Border Grid.Row="0"
-                            Background="#14FFFFFF"
-                            BorderBrush="#18FFFFFF"
+                            Background="{DynamicResource GlassCard}"
+                            BorderBrush="{DynamicResource GlassBorder}"
                             BorderThickness="1"
                             CornerRadius="4"
                             Height="38"
@@ -421,7 +421,7 @@
                                     Height="18"
                                     CornerRadius="9"
                                     BorderThickness="1.5"
-                                    BorderBrush="#60FFFFFF"
+                                    BorderBrush="{DynamicResource TextTertiary}"
                                     Background="Transparent"
                                     Margin="0,0,10,0"
                                     VerticalAlignment="Center"
@@ -439,7 +439,7 @@
 
                                 <!-- Watermark Placeholder with clean breathing room from caret -->
                                 <TextBlock Text="Touch Grass"
-                                           Foreground="#50FFFFFF"
+                                           Foreground="{DynamicResource TextMuted}"
                                            FontSize="13.5"
                                            VerticalAlignment="Center"
                                            IsHitTestVisible="False"
@@ -507,12 +507,12 @@
                                                        FontSize="14">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="#FFFFFF" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsCompleted}" Value="True">
-                                                                <Setter Property="TextDecorations" Value="Strikethrough" />
-                                                                <Setter Property="Foreground" Value="#50FFFFFF" />
-                                                            </DataTrigger>
+                                                             <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                                                                 <Setter Property="TextDecorations" Value="Strikethrough" />
+                                                                 <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
                                                 </TextBlock.Style>
@@ -547,13 +547,13 @@
 
                         <TextBlock Grid.Column="0"
                                    Text="{Binding TasksSummary}"
-                                   Foreground="#50FFFFFF"
+                                   Foreground="{DynamicResource TextSecondary}"
                                    FontSize="12"
                                    VerticalAlignment="Center" />
 
                         <Button Grid.Column="1"
                                 Content="Clear completed"
-                                Foreground="#70FFFFFF"
+                                Foreground="{DynamicResource TextSecondary}"
                                 Background="Transparent"
                                 BorderThickness="0"
                                 FontSize="12"
@@ -572,7 +572,7 @@
                                                 </Border>
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Foreground" Value="#FF6B6B" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource DangerText}" />
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>

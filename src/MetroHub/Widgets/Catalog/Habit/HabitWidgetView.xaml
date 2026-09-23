@@ -18,13 +18,12 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
-        <SolidColorBrush x:Key="MonthBackplateBrush" Color="#18FFFFFF" />
 
         <!-- 28x28 Transparent Month Stepper Navigation Button Style -->
         <Style x:Key="HabitNavButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#C0FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
             <Setter Property="Width" Value="28" />
             <Setter Property="Height" Value="28" />
             <Setter Property="Cursor" Value="Hand" />
@@ -40,11 +39,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource HoverSheen}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -67,7 +66,7 @@
                             <Path x:Name="Icon"
                                   Width="10" Height="10"
                                   Data="M 0.5,0.5 L 9.5,9.5 M 0.5,9.5 L 9.5,0.5"
-                                  Stroke="#85FFFFFF"
+                                  Stroke="{DynamicResource TextSecondary}"
                                   StrokeThickness="1.2"
                                   StrokeStartLineCap="Round"
                                   StrokeEndLineCap="Round"
@@ -79,11 +78,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="Icon" Property="Stroke" Value="#FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource HoverSheen}" />
+                                <Setter TargetName="Icon" Property="Stroke" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -96,8 +95,8 @@
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Height" Value="34" />
             <Setter Property="FontSize" Value="12.5" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimary}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="UseLayoutRounding" Value="True" />
@@ -105,8 +104,8 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border x:Name="BoxBorder"
-                                Background="#2A2A2A"
-                                BorderBrush="#35FFFFFF"
+                                Background="{DynamicResource InputBackground}"
+                                BorderBrush="{DynamicResource GlassBorder}"
                                 BorderThickness="1"
                                 CornerRadius="2"
                                 SnapsToDevicePixels="True">
@@ -118,7 +117,7 @@
                                 <ui:SymbolIcon x:Name="PrefixIcon"
                                                Symbol="Edit20"
                                                FontSize="14"
-                                               Foreground="#85FFFFFF"
+                                               Foreground="{DynamicResource TextSecondary}"
                                                VerticalAlignment="Center"
                                                Margin="0,0,8,0" />
                                 <ScrollViewer x:Name="PART_ContentHost"
@@ -131,14 +130,14 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#303030" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#50FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#B0FFFFFF" />
+                                <Setter TargetName="BoxBorder" Property="Background" Value="{DynamicResource InputBackgroundHover}" />
+                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
+                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#353535" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#80FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="BoxBorder" Property="Background" Value="{DynamicResource InputBackgroundFocused}" />
+                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -148,8 +147,8 @@
 
         <!-- 34x34 Fluent Icon Choice Button Style (CornerRadius: 2px) -->
         <Style x:Key="HabitIconChoiceButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#15FFFFFF" />
-            <Setter Property="BorderBrush" Value="#25FFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource GlassCard}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource GlassBorder}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Width" Value="34" />
             <Setter Property="Height" Value="34" />
@@ -169,11 +168,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="Border" Property="BorderBrush" Value="#60FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource HoverSheen}" />
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -251,7 +250,7 @@
                                    FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
                                    FontSize="15"
                                    FontWeight="Bold"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                     </Button>
@@ -279,7 +278,7 @@
                                        FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                        FontSize="11.5"
                                        FontWeight="SemiBold"
-                                       Foreground="#80FFFFFF"
+                                       Foreground="{DynamicResource TextSecondary}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center" />
                         </DataTemplate>
@@ -292,7 +291,7 @@
                     <local:HabitMonthBackplate
                         FirstDayOffset="{Binding FirstDayOffset}"
                         DaysInMonth="{Binding DaysInMonth}"
-                        FillBrush="{StaticResource MonthBackplateBrush}"
+                        FillBrush="{DynamicResource SubSurface}"
                         RenderOptions.EdgeMode="Aliased"
                         SnapsToDevicePixels="True" />
 
@@ -355,7 +354,7 @@
 
                                         <!-- Hover Overlay (Translucent fill, flush rectangular, zero gaps) -->
                                         <Border x:Name="HoverOverlay"
-                                                Background="#25FFFFFF"
+                                                Background="{DynamicResource HoverSheen}"
                                                 BorderThickness="0"
                                                 CornerRadius="0"
                                                 Margin="0"
@@ -369,7 +368,7 @@
                                                    FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                                    FontSize="13"
                                                    FontWeight="SemiBold"
-                                                   Foreground="#FFFFFF"
+                                                   Foreground="{DynamicResource TextPrimary}"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
                                                    SnapsToDevicePixels="True" />
@@ -397,7 +396,7 @@
                                 <DataTemplate.Triggers>
                                     <!-- Days Outside Current Month -->
                                     <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False">
-                                        <Setter TargetName="DayLabel" Property="Foreground" Value="#40FFFFFF" />
+                                        <Setter TargetName="DayLabel" Property="Foreground" Value="{DynamicResource TextMuted}" />
                                         <Setter TargetName="DayLabel" Property="FontWeight" Value="Normal" />
                                     </DataTrigger>
 
@@ -452,7 +451,7 @@
                                    FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
                                    FontSize="16"
                                    FontWeight="Bold"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center"
                                    TextTrimming="CharacterEllipsis" />
                     </StackPanel>
@@ -480,7 +479,7 @@
                                    SnapsToDevicePixels="True">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="#80FFFFFF" />
+                                    <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding HasStreak}" Value="True">
                                             <Setter Property="Foreground" Value="#FF7A00" />
@@ -497,9 +496,9 @@
             <!-- 2. IN-TILE SETUP CARD (First Drop or Right-Click 'Edit')    -->
             <!-- ============================================================ -->
             <Border Visibility="{Binding IsSetupMode, Converter={StaticResource BoolToVis}}"
-                    Background="#232323"
+                    Background="{DynamicResource DialogBackground}"
                     CornerRadius="2"
-                    BorderBrush="#35FFFFFF"
+                    BorderBrush="{DynamicResource DialogBorder}"
                     BorderThickness="1"
                     Padding="20,16"
                     SnapsToDevicePixels="True">
@@ -517,7 +516,7 @@
                                    FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                    FontSize="14.5"
                                    FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center" />
 
                         <Button HorizontalAlignment="Right"
@@ -530,7 +529,7 @@
                     <StackPanel Grid.Row="1" Margin="0,0,0,16">
                         <TextBlock Text="Habit Name"
                                    FontSize="12"
-                                   Foreground="#95FFFFFF"
+                                   Foreground="{DynamicResource TextSecondary}"
                                    Margin="0,0,0,6" />
                         <TextBox x:Name="HabitNameInput"
                                  Style="{StaticResource FluentDarkInputWithIconStyle}"
@@ -546,14 +545,14 @@
                                     <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="TargetArrow24">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
+                                                <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
                                                 <Setter Property="BorderBrush" Value="#0B9E76" />
                                                 <Setter Property="BorderThickness" Value="1.5" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Button.Style>
-                                <ui:SymbolIcon Symbol="TargetArrow24" FontSize="16" Foreground="#FFFFFF" />
+                                <ui:SymbolIcon Symbol="TargetArrow24" FontSize="16" Foreground="{DynamicResource TextPrimary}" />
                             </Button>
 
                             <Button Command="{Binding SelectIconCommand}" CommandParameter="PersonRunning20" ToolTip="Running">
@@ -561,14 +560,14 @@
                                     <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="PersonRunning20">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
+                                                <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
                                                 <Setter Property="BorderBrush" Value="#0B9E76" />
                                                 <Setter Property="BorderThickness" Value="1.5" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Button.Style>
-                                <ui:SymbolIcon Symbol="PersonRunning20" FontSize="16" Foreground="#FFFFFF" />
+                                <ui:SymbolIcon Symbol="PersonRunning20" FontSize="16" Foreground="{DynamicResource TextPrimary}" />
                             </Button>
 
                             <Button Command="{Binding SelectIconCommand}" CommandParameter="Book24" ToolTip="Reading">
@@ -576,14 +575,14 @@
                                     <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Book24">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
+                                                <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
                                                 <Setter Property="BorderBrush" Value="#0B9E76" />
                                                 <Setter Property="BorderThickness" Value="1.5" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Button.Style>
-                                <ui:SymbolIcon Symbol="Book24" FontSize="16" Foreground="#FFFFFF" />
+                                <ui:SymbolIcon Symbol="Book24" FontSize="16" Foreground="{DynamicResource TextPrimary}" />
                             </Button>
 
                             <Button Command="{Binding SelectIconCommand}" CommandParameter="Code24" ToolTip="Coding">
@@ -591,14 +590,14 @@
                                     <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Code24">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
+                                                <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
                                                 <Setter Property="BorderBrush" Value="#0B9E76" />
                                                 <Setter Property="BorderThickness" Value="1.5" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Button.Style>
-                                <ui:SymbolIcon Symbol="Code24" FontSize="16" Foreground="#FFFFFF" />
+                                <ui:SymbolIcon Symbol="Code24" FontSize="16" Foreground="{DynamicResource TextPrimary}" />
                             </Button>
 
                             <Button Command="{Binding SelectIconCommand}" CommandParameter="BrainCircuit24" ToolTip="Brain / Mind">
@@ -606,14 +605,14 @@
                                     <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="BrainCircuit24">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
+                                                <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
                                                 <Setter Property="BorderBrush" Value="#0B9E76" />
                                                 <Setter Property="BorderThickness" Value="1.5" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Button.Style>
-                                <ui:SymbolIcon Symbol="BrainCircuit24" FontSize="16" Foreground="#FFFFFF" />
+                                <ui:SymbolIcon Symbol="BrainCircuit24" FontSize="16" Foreground="{DynamicResource TextPrimary}" />
                             </Button>
 
                             <Button Command="{Binding SelectIconCommand}" CommandParameter="Prohibited24" ToolTip="Avoid / Prohibited">
@@ -621,14 +620,14 @@
                                     <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Prohibited24">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
+                                                <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
                                                 <Setter Property="BorderBrush" Value="#0B9E76" />
                                                 <Setter Property="BorderThickness" Value="1.5" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Button.Style>
-                                <ui:SymbolIcon Symbol="Prohibited24" FontSize="16" Foreground="#FFFFFF" />
+                                <ui:SymbolIcon Symbol="Prohibited24" FontSize="16" Foreground="{DynamicResource TextPrimary}" />
                             </Button>
 
                             <Button Command="{Binding SelectIconCommand}" CommandParameter="Dumbbell24" ToolTip="Workout">
@@ -636,14 +635,14 @@
                                     <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Dumbbell24">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
+                                                <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
                                                 <Setter Property="BorderBrush" Value="#0B9E76" />
                                                 <Setter Property="BorderThickness" Value="1.5" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Button.Style>
-                                <ui:SymbolIcon Symbol="Dumbbell24" FontSize="16" Foreground="#FFFFFF" />
+                                <ui:SymbolIcon Symbol="Dumbbell24" FontSize="16" Foreground="{DynamicResource TextPrimary}" />
                             </Button>
 
                             <Button Command="{Binding SelectIconCommand}" CommandParameter="Drop24" ToolTip="Hydration">
@@ -651,14 +650,14 @@
                                     <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Drop24">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
+                                                <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
                                                 <Setter Property="BorderBrush" Value="#0B9E76" />
                                                 <Setter Property="BorderThickness" Value="1.5" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Button.Style>
-                                <ui:SymbolIcon Symbol="Drop24" FontSize="16" Foreground="#FFFFFF" />
+                                <ui:SymbolIcon Symbol="Drop24" FontSize="16" Foreground="{DynamicResource TextPrimary}" />
                             </Button>
                         </WrapPanel>
                     </StackPanel>

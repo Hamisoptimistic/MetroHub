@@ -22,7 +22,7 @@
         <Style x:Key="PomodoroTransportButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#E5E9F0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
             <Setter Property="Width" Value="32" />
             <Setter Property="Height" Value="28" />
             <Setter Property="Cursor" Value="Hand" />
@@ -40,11 +40,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource HoverSheen}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.3" />
@@ -62,7 +62,7 @@
             <Setter Property="Height" Value="7" />
             <Setter Property="CornerRadius" Value="3.5" />
             <Setter Property="Margin" Value="2.5,0" />
-            <Setter Property="Background" Value="#25FFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
         </Style>
     </UserControl.Resources>
@@ -90,7 +90,7 @@
                     <!-- Centered Radial Progress Ring -->
                     <Grid Width="96" Height="96" Margin="0,0,16,0">
                         <!-- Ring Background Track -->
-                        <Path Stroke="#18FFFFFF"
+                        <Path Stroke="{DynamicResource SeparatorLine}"
                               StrokeThickness="6"
                               SnapsToDevicePixels="True">
                             <Path.Data>
@@ -129,7 +129,7 @@
                                    FontSize="28"
                                    FontWeight="SemiBold"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    Margin="0,0,0,6" />
 
                         <!-- Transport Controls Aligned with Text Above: Reset, Play/Pause, Skip -->
@@ -216,7 +216,7 @@
                             <TextBlock Text="{Binding PhaseTitle}"
                                        FontSize="17"
                                        FontWeight="SemiBold"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        Margin="0,0,0,3" />
 
                             <!-- Big Time Readout (Matches Artist Name) -->
@@ -231,7 +231,7 @@
                             <TextBlock Text="{Binding StatusString}"
                                        FontSize="13"
                                        FontWeight="Normal"
-                                       Foreground="#9DA5B4"
+                                       Foreground="{DynamicResource TextSecondary}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Grid>
@@ -250,7 +250,7 @@
                             <!-- Inner Circular Ring Gauge -->
                             <Grid Width="{Binding RingSize}" Height="{Binding RingSize}">
                                 <!-- Background Track Ring -->
-                                <Path Stroke="#18FFFFFF"
+                                <Path Stroke="{DynamicResource SeparatorLine}"
                                       StrokeThickness="6"
                                       SnapsToDevicePixels="True">
                                     <Path.Data>
@@ -280,7 +280,7 @@
 
                 <!-- Row 1: Bottom Docked Bar (Transport Controls on Left, Cycle Dots on Right) -->
                 <Border Grid.Row="1"
-                        Background="#14000000"
+                        Background="{DynamicResource HoverSheen}"
                         BorderThickness="0"
                         CornerRadius="0,0,2,2"
                         SnapsToDevicePixels="True"
@@ -409,14 +409,14 @@
                     <!-- 1. Dark Glass Background Under-Groove (4px tall) -->
                     <Border Height="4"
                             VerticalAlignment="Center"
-                            Background="#45000000"
+                            Background="{DynamicResource SeparatorLine}"
                             CornerRadius="2"
                             SnapsToDevicePixels="True" />
 
                     <!-- 2. Frosted Unfilled Track Background (4px tall) -->
                     <Border Height="4"
                             VerticalAlignment="Center"
-                            Background="#35FFFFFF"
+                            Background="{DynamicResource GlassBorder}"
                             CornerRadius="2"
                             SnapsToDevicePixels="True" />
 

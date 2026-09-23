@@ -133,7 +133,8 @@
                     Background="Transparent" 
                     Visibility="Visible">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,30,0,0">
-                    <TextBlock Text="SPACE OR CLICK TO JUMP" 
+                    <TextBlock x:Name="IdlePromptText"
+                               Text="SPACE OR CLICK TO JUMP" 
                                FontFamily="Consolas, Lucida Console, Courier New, Segoe UI" 
                                FontSize="12" 
                                FontWeight="Bold" 
@@ -161,7 +162,7 @@
 
                     <!-- Restart Button Icon -->
                     <Border x:Name="RestartButton" 
-                            Width="44" Height="40" 
+                             Width="44" Height="40" 
                             CornerRadius="4"
                             HorizontalAlignment="Center" 
                             Cursor="Hand"
@@ -194,14 +195,16 @@
                     Background="#20000000" 
                     Visibility="Collapsed">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="PAUSED" 
+                    <TextBlock x:Name="PausedTitleText"
+                               Text="PAUSED" 
                                FontFamily="Consolas, Lucida Console, Courier New, Segoe UI" 
                                FontSize="15" 
                                FontWeight="Bold" 
                                Foreground="#535353" 
                                HorizontalAlignment="Center" 
                                Margin="0,0,0,6" />
-                    <TextBlock Text="PRESS SPACE OR CLICK TO RESUME" 
+                    <TextBlock x:Name="PausedSubtitleText"
+                               Text="PRESS SPACE OR CLICK TO RESUME" 
                                FontFamily="Consolas, Lucida Console, Courier New, Segoe UI" 
                                FontSize="11" 
                                FontWeight="SemiBold" 
