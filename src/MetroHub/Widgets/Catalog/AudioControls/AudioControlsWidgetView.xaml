@@ -1,4 +1,4 @@
-<UserControl x:Class="MetroHub.Widgets.Catalog.AudioControls.AudioControlsWidgetView"
+﻿<UserControl x:Class="MetroHub.Widgets.Catalog.AudioControls.AudioControlsWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -34,7 +34,6 @@
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="Height" Value="38" />
             <Setter Property="Margin" Value="0,2,0,2" />
-            <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Template">

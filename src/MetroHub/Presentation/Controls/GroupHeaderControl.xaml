@@ -1,4 +1,4 @@
-<UserControl x:Class="MetroHub.Presentation.Controls.GroupHeaderControl"
+﻿<UserControl x:Class="MetroHub.Presentation.Controls.GroupHeaderControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -213,7 +213,6 @@
                 <Button x:Name="LockButton"
                         Width="28" Height="28"
                         Padding="0"
-                        Cursor="Hand"
                         FocusVisualStyle="{x:Null}"
                         ToolTip="Lock group"
                         Click="OnLockClick"

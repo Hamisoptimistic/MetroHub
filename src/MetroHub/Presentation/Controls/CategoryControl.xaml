@@ -1,4 +1,4 @@
-<UserControl x:Class="MetroHub.Presentation.Controls.CategoryControl"
+﻿<UserControl x:Class="MetroHub.Presentation.Controls.CategoryControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -34,7 +34,6 @@
                     Foreground="#A0FFFFFF"
                     Background="#1AFFFFFF"
                     BorderThickness="0"
-                    Cursor="Hand"
                     ToolTip="Add shortcut to this category"
                     Click="OnAddTileClick">
                 <Button.Resources>
@@ -71,7 +70,6 @@
                 BorderThickness="1"
                 BorderBrush="#33FFFFFF"
                 Background="#0DFFFFFF"
-                Cursor="Hand"
                 ToolTip="Click or Drop .exe/.lnk here to pin"
                 MouseDown="OnGhostTileMouseDown"
                 MouseEnter="OnGhostTileMouseEnter"

@@ -52,7 +52,6 @@
     <!-- Named style: inherits full ControlTemplate from WPF-UI's DefaultUiToggleSwitchStyle -->
     <Style x:Key="FluentGreenToggleSwitchStyle" TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource DefaultUiToggleSwitchStyle}">
         <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Style.Resources>
             <!-- ON state: Active Green #00E676 track with Solid Black #000000 knob -->
@@ -150,7 +149,6 @@
         <Setter Property="FontSize" Value="12" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Height" Value="28" />
-        <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -272,7 +270,6 @@
         <Setter Property="Height" Value="76" />
         <Setter Property="Foreground" Value="#FFFFFF" />
         <Setter Property="IconSize" Value="24" />
-        <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />

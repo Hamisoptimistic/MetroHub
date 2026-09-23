@@ -1,4 +1,4 @@
-<UserControl x:Class="MetroHub.Widgets.Catalog.Notepad.NotepadWidgetView"
+﻿<UserControl x:Class="MetroHub.Widgets.Catalog.Notepad.NotepadWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -40,7 +40,6 @@
             <Setter Property="Height" Value="38" />
             <Setter Property="Foreground" Value="#90FFFFFF" />
             <Setter Property="IconSize" Value="16" />
-            <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -146,7 +145,6 @@
             <Setter Property="Height" Value="18" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0" />
-            <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Template">
@@ -192,7 +190,6 @@
             <Setter Property="Foreground" Value="#50FFFFFF" />
             <Setter Property="Width" Value="24" />
             <Setter Property="Height" Value="24" />
-            <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Focusable" Value="False" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Opacity" Value="0.4" />
@@ -557,7 +554,6 @@
                                 Background="Transparent"
                                 BorderThickness="0"
                                 FontSize="12"
-                                Cursor="Hand"
                                 Focusable="False"
                                 FocusVisualStyle="{x:Null}"
                                 Command="{Binding ClearCompletedCommand}"
