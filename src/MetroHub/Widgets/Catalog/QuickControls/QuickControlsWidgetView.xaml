@@ -23,7 +23,7 @@
         <Style x:Key="TransportButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
             <Setter Property="Width" Value="28" />
             <Setter Property="Height" Value="28" />
             <Setter Property="Cursor" Value="Hand" />
@@ -39,10 +39,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource HoverSheen}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.3" />
@@ -110,7 +110,7 @@
                     <TextBlock Text="No media playing"
                                FontSize="12"
                                FontWeight="Normal"
-                               Foreground="#55FFFFFF"
+                               Foreground="{DynamicResource TextTertiary}"
                                FontFamily="{DynamicResource AppDisplayFontFamily}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
@@ -163,7 +163,7 @@
                             <!-- Background Hairline Track -->
                             <Border x:Name="MediaSeekTrackBg"
                                     Height="2"
-                                    Background="#14FFFFFF"
+                                    Background="{DynamicResource HoverSheen}"
                                     CornerRadius="1"
                                     SnapsToDevicePixels="True" />
 
@@ -234,7 +234,7 @@
                            Text="{Binding Media.TimeDisplayString}"
                            FontSize="11.5"
                            FontWeight="Normal"
-                           Foreground="#C8FFFFFF"
+                           Foreground="{DynamicResource TextSecondary}"
                            Typography.NumeralAlignment="Tabular"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Right"
@@ -265,7 +265,7 @@
                     <TextBlock Text="{Binding Volume.ActiveDeviceIcon}"
                                FontFamily="{DynamicResource AppIconFontFamily}"
                                FontSize="16"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimary}"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center" />
                 </Button>
@@ -279,8 +279,7 @@
                                             IsMuted="{Binding Volume.IsMasterMuted}"
                                             Minimum="0"
                                             Maximum="100"
-                                            ProgressBrush="#00B4D8"
-                                            ProgressPointerOverBrush="#33C9E8"
+                                            ProgressBrush="{DynamicResource AccentColorBrush}"
                                             Tag="InteractiveControl"
                                             SnapsToDevicePixels="True" />
 
@@ -296,7 +295,7 @@
                         <TextBlock Text="{Binding Volume.MasterGlyph}"
                                    FontFamily="{DynamicResource AppIconFontFamily}"
                                    FontSize="15"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
                             <TextBlock.Style>
@@ -315,7 +314,7 @@
                         <TextBlock Text="{Binding Volume.MasterVolumePercentText}"
                                    FontSize="11.5"
                                    FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
                             <TextBlock.Style>
@@ -356,7 +355,7 @@
                     <TextBlock Text="{Binding Brightness.MasterGlyph}"
                                FontFamily="{DynamicResource AppIconFontFamily}"
                                FontSize="16"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimary}"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center" />
                 </Button>
@@ -369,8 +368,7 @@
                                             Value="{Binding Brightness.MasterBrightness, Mode=TwoWay}"
                                             Minimum="0"
                                             Maximum="100"
-                                            ProgressBrush="#00B4D8"
-                                            ProgressPointerOverBrush="#33C9E8"
+                                            ProgressBrush="{DynamicResource AccentColorBrush}"
                                             Tag="InteractiveControl"
                                             SnapsToDevicePixels="True" />
 
@@ -386,7 +384,7 @@
                         <TextBlock Text="{Binding Brightness.LinkGlyph}"
                                    FontFamily="{DynamicResource AppIconFontFamily}"
                                    FontSize="15"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
                             <TextBlock.Style>
@@ -405,7 +403,7 @@
                         <TextBlock Text="{Binding Brightness.MasterBrightnessPercentText}"
                                    FontSize="11.5"
                                    FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center"
                                    Margin="0,-1,0,0"

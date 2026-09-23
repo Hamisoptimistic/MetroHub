@@ -13,6 +13,7 @@ using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
 using MetroHub.Core.Network;
 using MetroHub.Core.Network.Interop;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Serialization;
 using Wpf.Ui.Controls;
 
@@ -139,12 +140,29 @@ public partial class WifiNetworkItemViewModel : ObservableObject
         _ => "\uE701"   // Wi-Fi full (4 bars)
     };
 
-    public string WifiIconColor => "#FFFFFF";
-    public string SubtitleColor => IsConnected ? "#A0FFFFFF" : "#80FFFFFF";
-    public string StatusBadgeColor => IsConnected ? "#FFFFFF" : (IsProfileKnown ? "#0091FF" : (IsEnterprise ? "#FFB703" : "#B0FFFFFF"));
-    public string StatusBadgeBackground => IsConnected ? "#1AFFFFFF" : (IsProfileKnown ? "#1A0091FF" : (IsEnterprise ? "#1AFFB703" : "#12FFFFFF"));
-    public string IndicatorPillColor => IsConnected ? (HasInternet ? "#00E676" : "#FFB703") : (IsExpanded ? "#FFFFFF" : "Transparent");
+    public string WifiIconColor => ThemeService.IsDarkTheme ? "#FFFFFF" : "#1A1A1A";
+    public string SubtitleColor => ThemeService.IsDarkTheme
+        ? (IsConnected ? "#A0FFFFFF" : "#80FFFFFF")
+        : (IsConnected ? "#A0000000" : "#80000000");
+    public string StatusBadgeColor => IsConnected
+        ? (ThemeService.IsDarkTheme ? "#FFFFFF" : "#1A1A1A")
+        : (IsProfileKnown ? "#0091FF" : (IsEnterprise ? "#FFB703" : (ThemeService.IsDarkTheme ? "#B0FFFFFF" : "#80000000")));
+    public string StatusBadgeBackground => IsConnected
+        ? (ThemeService.IsDarkTheme ? "#1AFFFFFF" : "#1A000000")
+        : (IsProfileKnown ? "#1A0091FF" : (IsEnterprise ? "#1AFFB703" : (ThemeService.IsDarkTheme ? "#12FFFFFF" : "#10000000")));
+    public string IndicatorPillColor => IsConnected
+        ? (HasInternet ? "#00E676" : "#FFB703")
+        : (IsExpanded ? (ThemeService.IsDarkTheme ? "#FFFFFF" : "#1A1A1A") : "Transparent");
     public string EyeGlyph => IsPasswordVisible ? "\uED1B" : "\uED1A"; // EyeOff / Eye
+
+    public void NotifyThemeChanged()
+    {
+        OnPropertyChanged(nameof(WifiIconColor));
+        OnPropertyChanged(nameof(SubtitleColor));
+        OnPropertyChanged(nameof(StatusBadgeColor));
+        OnPropertyChanged(nameof(StatusBadgeBackground));
+        OnPropertyChanged(nameof(IndicatorPillColor));
+    }
 }
 
 public partial class PhysicalAdapterItemViewModel : ObservableObject
@@ -277,8 +295,13 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     private static readonly Brush RedIndicatorBrush = CreateFrozenBrush("#FF3B30");
     private static readonly Brush AmberIndicatorBrush = CreateFrozenBrush("#FFB703");
     private static readonly Brush PurpleIndicatorBrush = CreateFrozenBrush("#A855F7");
-    private static readonly Brush MutedIndicatorBrush = CreateFrozenBrush("#80FFFFFF");
-    private static readonly Brush WhiteIndicatorBrush = CreateFrozenBrush("#FFFFFF");
+    private static readonly Brush DarkMutedIndicatorBrush = CreateFrozenBrush("#80FFFFFF");
+    private static readonly Brush LightMutedIndicatorBrush = CreateFrozenBrush("#80000000");
+    private static readonly Brush DarkWhiteIndicatorBrush = CreateFrozenBrush("#FFFFFF");
+    private static readonly Brush LightWhiteIndicatorBrush = CreateFrozenBrush("#1A1A1A");
+
+    public static Brush MutedIndicatorBrush => ThemeService.IsDarkTheme ? DarkMutedIndicatorBrush : LightMutedIndicatorBrush;
+    public static Brush WhiteIndicatorBrush => ThemeService.IsDarkTheme ? DarkWhiteIndicatorBrush : LightWhiteIndicatorBrush;
 
     private static Brush CreateFrozenBrush(string hex)
     {
@@ -799,6 +822,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
 
         RefreshAll();
         _throughputService.Start();
+        ThemeService.ThemeChanged += OnThemeChanged;
     }
 
     public override void Initialize(TileModel model)
@@ -1277,8 +1301,8 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             if (IsEthernetNoInternet)
                 return "#FFB703"; // Warning Amber
             if (!HasEthernetAdapter || IsEthernetDisabled || !IsEthernetConnected)
-                return "#85FFFFFF";
-            return "#FFFFFF";
+                return ThemeService.IsDarkTheme ? "#85FFFFFF" : "#85000000";
+            return ThemeService.IsDarkTheme ? "#FFFFFF" : "#1A1A1A";
         }
     }
 
@@ -1466,8 +1490,8 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             if (IsWifiNoInternet)
                 return "#FFB703"; // Warning Amber
             if (!HasWifiAdapter || IsWifiRadioDisabled || !IsWifiConnected)
-                return "#85FFFFFF";
-            return "#FFFFFF";
+                return ThemeService.IsDarkTheme ? "#85FFFFFF" : "#85000000";
+            return ThemeService.IsDarkTheme ? "#FFFFFF" : "#1A1A1A";
         }
     }
 
@@ -2949,10 +2973,24 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         return false;
     }
 
+    private void OnThemeChanged(object? sender, AppTheme theme)
+    {
+        OnPropertyChanged(nameof(EthernetPanelTitleColor));
+        OnPropertyChanged(nameof(WifiPanelTitleColor));
+        OnPropertyChanged(nameof(SpeedStatusBrush));
+        OnPropertyChanged(nameof(DataUsageStatusBrush));
+        OnPropertyChanged(nameof(HotspotStatusBrush));
+        foreach (var net in AvailableNetworks)
+        {
+            net.NotifyThemeChanged();
+        }
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
+            ThemeService.ThemeChanged -= OnThemeChanged;
             CancelSpeedTest();
             _toastCts?.Cancel();
             _toastCts?.Dispose();

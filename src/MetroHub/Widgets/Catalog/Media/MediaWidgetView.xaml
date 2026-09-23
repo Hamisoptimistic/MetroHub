@@ -22,7 +22,7 @@
         <Style x:Key="MediaTransportButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#E5E9F0" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
             <Setter Property="Width" Value="32" />
             <Setter Property="Height" Value="28" />
             <Setter Property="Cursor" Value="Hand" />
@@ -40,11 +40,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource HoverSheen}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.3" />
@@ -58,9 +58,9 @@
 
         <!-- Zune Pad Flanking Buttons (Previous / Next) -->
         <Style x:Key="ZuneSideButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#14FFFFFF" />
-            <Setter Property="Foreground" Value="#B0FFFFFF" />
-            <Setter Property="BorderBrush" Value="#25FFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource GlassBorder}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Width" Value="32" />
             <Setter Property="Height" Value="32" />
@@ -79,12 +79,12 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="SideBorder" Property="Background" Value="#2AFFFFFF" />
-                                <Setter TargetName="SideBorder" Property="BorderBrush" Value="#40FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="SideBorder" Property="Background" Value="{DynamicResource GlassCardHover}" />
+                                <Setter TargetName="SideBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="SideBorder" Property="Background" Value="#45FFFFFF" />
+                                <Setter TargetName="SideBorder" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.25" />
@@ -98,9 +98,9 @@
 
         <!-- Zune Play/Pause Sleek Button: Circular glass button matching chevron style -->
         <Style x:Key="ZunePadButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#1CFFFFFF" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="BorderBrush" Value="#30FFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource GlassCard}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource GlassBorder}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Width" Value="38" />
             <Setter Property="Height" Value="38" />
@@ -119,12 +119,12 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="PlayBorder" Property="Background" Value="#32FFFFFF" />
-                                <Setter TargetName="PlayBorder" Property="BorderBrush" Value="#48FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="PlayBorder" Property="Background" Value="{DynamicResource GlassCardHover}" />
+                                <Setter TargetName="PlayBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="PlayBorder" Property="Background" Value="#45FFFFFF" />
+                                <Setter TargetName="PlayBorder" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.25" />
@@ -167,7 +167,7 @@
                     <Border Width="{Binding AlbumArtSize}"
                             Height="{Binding AlbumArtSize}"
                             CornerRadius="2"
-                            BorderBrush="#38FFFFFF"
+                            BorderBrush="{DynamicResource GlassBorder}"
                             BorderThickness="1"
                             SnapsToDevicePixels="True"
                             UseLayoutRounding="True"
@@ -184,8 +184,8 @@
                     <Border Width="{Binding AlbumArtSize}"
                             Height="{Binding AlbumArtSize}"
                             CornerRadius="2"
-                            Background="#14FFFFFF"
-                            BorderBrush="#20FFFFFF"
+                            Background="{DynamicResource HoverSheen}"
+                            BorderBrush="{DynamicResource GlassBorder}"
                             BorderThickness="1"
                             SnapsToDevicePixels="True"
                             UseLayoutRounding="True">
@@ -202,7 +202,7 @@
                         <TextBlock Text="&#xE8D6;"
                                    FontFamily="{DynamicResource AppIconFontFamily}"
                                    FontSize="{Binding FallbackWatermarkFontSize}"
-                                   Foreground="#25FFFFFF"
+                                   Foreground="{DynamicResource TextMuted}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                     </Border>
@@ -218,7 +218,7 @@
                                    FontSize="{Binding TrackTitleFontSize}"
                                    FontWeight="SemiBold"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap"
                                    Margin="0,0,0,3" />
@@ -227,7 +227,7 @@
                         <TextBlock Text="{Binding Artist}"
                                    FontSize="{Binding ArtistFontSize}"
                                    FontWeight="Normal"
-                                   Foreground="#D2D7E2"
+                                   Foreground="{DynamicResource TextSecondary}"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap"
                                    Margin="0,0,0,4">
@@ -253,13 +253,13 @@
                             <TextBlock Text="&#xE8D6;"
                                        FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="11"
-                                       Foreground="#9DA5B4"
+                                       Foreground="{DynamicResource TextTertiary}"
                                        VerticalAlignment="Center"
                                        Margin="0,1,6,0" />
                             <TextBlock Text="{Binding Album}"
                                        FontSize="13"
                                        FontWeight="Normal"
-                                       Foreground="#9DA5B4"
+                                       Foreground="{DynamicResource TextTertiary}"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"
                                        VerticalAlignment="Center" />
@@ -270,7 +270,7 @@
 
             <!-- Row 1: Bottom Docked Bar: Transport Controls + Live Playback Time (Matches Focus Timer) -->
             <Border Grid.Row="1"
-                    Background="#14000000"
+                    Background="{DynamicResource HoverSheen}"
                     BorderThickness="0"
                     CornerRadius="0,0,2,2"
                     SnapsToDevicePixels="True"
@@ -345,7 +345,7 @@
                                        HorizontalAlignment="Right"
                                        FontSize="13"
                                        FontWeight="Normal"
-                                       Foreground="#D0FFFFFF"
+                                       Foreground="{DynamicResource TextSecondary}"
                                        SnapsToDevicePixels="True">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
@@ -416,7 +416,7 @@
                     <!-- Background Hairline Track (2px tall #14FFFFFF) -->
                     <Border x:Name="SeekTrackBg"
                             Height="2"
-                            Background="#14FFFFFF"
+                            Background="{DynamicResource HoverSheen}"
                             CornerRadius="1"
                             SnapsToDevicePixels="True" />
 
@@ -536,7 +536,7 @@
                     <TextBlock Text="No media playing"
                                FontSize="12"
                                FontWeight="Normal"
-                               Foreground="#55FFFFFF"
+                               Foreground="{DynamicResource TextTertiary}"
                                FontFamily="{DynamicResource AppDisplayFontFamily}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
@@ -589,7 +589,7 @@
                             <!-- Background Hairline Track -->
                             <Border x:Name="SlimSeekTrackBg"
                                     Height="2"
-                                    Background="#14FFFFFF"
+                                    Background="{DynamicResource HoverSheen}"
                                     CornerRadius="1"
                                     SnapsToDevicePixels="True" />
 
@@ -660,7 +660,7 @@
                            Text="{Binding TimeDisplayString}"
                            FontSize="11.5"
                            FontWeight="Normal"
-                           Foreground="#C8FFFFFF"
+                           Foreground="{DynamicResource TextSecondary}"
                            Typography.NumeralAlignment="Tabular"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Right"
@@ -746,7 +746,7 @@
                             <TextBlock Text="&#xE8D6;"
                                        FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="48"
-                                       Foreground="#18FFFFFF"
+                                       Foreground="{DynamicResource TextMuted}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center" />
                         </Border>
@@ -768,15 +768,9 @@
                 <!-- ROW 1: TRANSLUCENT ACRYLIC CHIN (PHYSICAL CONTROLS)       -->
                 <!-- ========================================================= -->
                 <Border Grid.Row="1"
+                        Background="{DynamicResource GlassCard}"
                         CornerRadius="0,0,2,2"
                         SnapsToDevicePixels="True">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Color="#1CFFFFFF" Offset="0.0" />
-                            <GradientStop Color="#08FFFFFF" Offset="0.4" />
-                            <GradientStop Color="#14000000" Offset="1.0" />
-                        </LinearGradientBrush>
-                    </Border.Background>
 
                     <Grid VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="16,4,16,6">
                         <Grid.RowDefinitions>
@@ -793,7 +787,7 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="15"
                                        FontWeight="SemiBold"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"
                                        HorizontalAlignment="Center"
@@ -807,7 +801,7 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="13.5"
                                        FontWeight="Normal"
-                                       Foreground="#CAD7EA"
+                                       Foreground="{DynamicResource TextSecondary}"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"
                                        HorizontalAlignment="Center"
@@ -836,7 +830,7 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="12"
                                        FontWeight="Normal"
-                                       Foreground="#90FFFFFF"
+                                       Foreground="{DynamicResource TextTertiary}"
                                        HorizontalAlignment="Center"
                                        TextAlignment="Center"
                                        Margin="0,2,0,0"
@@ -875,7 +869,7 @@
                                 <TextBlock Text="&#xE76B;"
                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="13"
-                                           Foreground="#B5FFFFFF"
+                                           Foreground="{DynamicResource TextSecondary}"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Center" />
                             </Button>
@@ -888,7 +882,7 @@
                                     VerticalAlignment="Center">
                                 <TextBlock FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="16"
-                                           Foreground="#FFFFFF"
+                                           Foreground="{DynamicResource TextPrimary}"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Center">
                                     <TextBlock.Style>
@@ -916,7 +910,7 @@
                                 <TextBlock Text="&#xE76C;"
                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="13"
-                                           Foreground="#B5FFFFFF"
+                                           Foreground="{DynamicResource TextSecondary}"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Center" />
                             </Button>
@@ -969,7 +963,7 @@
                         <!-- Base Hairline Background Track (Divider line) -->
                         <Border x:Name="ZuneSeekTrackBg"
                                 Height="2"
-                                Background="#50FFFFFF"
+                                Background="{DynamicResource SeparatorLine}"
                                 CornerRadius="0"
                                 SnapsToDevicePixels="True" />
 

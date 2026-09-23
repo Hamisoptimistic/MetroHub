@@ -23,7 +23,7 @@
         <Style x:Key="BrightnessTransportButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
             <Setter Property="Width" Value="28" />
             <Setter Property="Height" Value="28" />
             <Setter Property="Cursor" Value="Hand" />
@@ -39,10 +39,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource HoverSheen}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.3" />
@@ -102,7 +102,7 @@
                     <TextBlock Text="{Binding MasterGlyph}"
                                 FontFamily="{DynamicResource AppIconFontFamily}"
                                 FontSize="16"
-                                Foreground="#FFFFFF"
+                                Foreground="{DynamicResource TextPrimary}"
                                 VerticalAlignment="Center"
                                 HorizontalAlignment="Center" />
                 </Button>
@@ -115,8 +115,7 @@
                                             Value="{Binding MasterBrightness, Mode=TwoWay}"
                                             Minimum="0"
                                             Maximum="100"
-                                            ProgressBrush="#00B4D8"
-                                            ProgressPointerOverBrush="#33C9E8"
+                                            ProgressBrush="{DynamicResource AccentColorBrush}"
                                             Tag="InteractiveControl"
                                             SnapsToDevicePixels="True" />
 
@@ -133,7 +132,7 @@
                                    Text="{Binding LinkGlyph}"
                                    FontFamily="{DynamicResource AppIconFontFamily}"
                                    FontSize="15"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
                             <TextBlock.Style>
@@ -168,7 +167,7 @@
                                    Text="{Binding MasterBrightnessPercentText}"
                                    FontSize="11.5"
                                    FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center"
                                    Margin="0,-1,0,0"
@@ -220,7 +219,7 @@
                 </Grid.Style>
 
                 <!-- 1. Docked Display List Container -->
-                <Border Background="#14000000"
+                <Border Background="{DynamicResource HoverSheen}"
                         BorderThickness="0"
                         CornerRadius="0,0,2,2"
                         SnapsToDevicePixels="True"
@@ -239,7 +238,7 @@
                                    Text="Displays &amp; Brightness"
                                    FontSize="12"
                                    FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    Margin="6,2,0,8"
                                    SnapsToDevicePixels="True" />
 
@@ -256,13 +255,13 @@
                                                 SnapsToDevicePixels="True">
                                             <Border.Style>
                                                 <Style TargetType="Border">
-                                                    <Setter Property="Background" Value="#08FFFFFF" />
+                                                    <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
                                                     <Style.Triggers>
                                                         <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Background" Value="#1AFFFFFF" />
+                                                            <Setter Property="Background" Value="{DynamicResource GlassCardHover}" />
                                                         </Trigger>
                                                         <DataTrigger Binding="{Binding IsCurrentCursorMonitor}" Value="True">
-                                                            <Setter Property="Background" Value="#14FFFFFF" />
+                                                            <Setter Property="Background" Value="{DynamicResource PressedSheen}" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -286,7 +285,7 @@
                                                         Width="3"
                                                         Height="16"
                                                         HorizontalAlignment="Left"
-                                                        Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                        Background="{DynamicResource AccentColorBrush}"
                                                         CornerRadius="1.5"
                                                         Visibility="{Binding IsCurrentCursorMonitor, Converter={StaticResource BoolToVis}}" />
 
@@ -295,7 +294,7 @@
                                                            Text="{Binding DeviceTypeGlyph}"
                                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                                            FontSize="16"
-                                                           Foreground="#FFFFFF"
+                                                           Foreground="{DynamicResource TextPrimary}"
                                                            VerticalAlignment="Center"
                                                            HorizontalAlignment="Left" />
 
@@ -304,10 +303,10 @@
                                                     <TextBlock Text="{Binding FriendlyName}"
                                                                FontSize="13"
                                                                FontWeight="Normal"
-                                                               Foreground="#FFFFFF"
+                                                               Foreground="{DynamicResource TextPrimary}"
                                                                TextTrimming="CharacterEllipsis" />
                                                     <TextBlock FontSize="11"
-                                                               Foreground="#80FFFFFF"
+                                                               Foreground="{DynamicResource TextTertiary}"
                                                                Margin="0,1,0,0">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
@@ -338,8 +337,7 @@
                                                                             IsEnabled="{Binding IsSupported}"
                                                                             Minimum="0"
                                                                             Maximum="100"
-                                                                            ProgressBrush="#00B4D8"
-                                                                            ProgressPointerOverBrush="#33C9E8"
+                                                                            ProgressBrush="{DynamicResource AccentColorBrush}"
                                                                             Tag="InteractiveControl"
                                                                             SnapsToDevicePixels="True" />
 
@@ -348,7 +346,7 @@
                                                            Text="{Binding BrightnessPercentText}"
                                                            FontSize="12"
                                                            FontWeight="SemiBold"
-                                                           Foreground="#FFFFFF"
+                                                           Foreground="{DynamicResource TextPrimary}"
                                                            VerticalAlignment="Center"
                                                            HorizontalAlignment="Right"
                                                            Margin="0,-2,0,0"
@@ -370,7 +368,7 @@
                       SnapsToDevicePixels="True">
                     <Border Height="2"
                             VerticalAlignment="Center"
-                            Background="#14FFFFFF"
+                            Background="{DynamicResource SeparatorLine}"
                             CornerRadius="1"
                             SnapsToDevicePixels="True" />
                 </Grid>

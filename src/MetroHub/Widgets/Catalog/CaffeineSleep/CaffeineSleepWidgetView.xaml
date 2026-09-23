@@ -37,10 +37,10 @@
 
         <!-- Cohesive Fluent Action Button Style (Matches Wi-Fi Action / Modal Button) -->
         <Style x:Key="FluentModeButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#1CFFFFFF" />
-            <Setter Property="BorderBrush" Value="#2AFFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource GlassCard}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource GlassBorder}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="#F5FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
             <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
             <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
@@ -65,13 +65,13 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#30FFFFFF" />
-                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#48FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource GlassCardHover}" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#14FFFFFF" />
-                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#20FFFFFF" />
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource PressedSheen}" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource GlassBorder}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.35" />
@@ -100,19 +100,6 @@
                 <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#000000" />
                 <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#000000" />
 
-                <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="Transparent" />
-                <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#0DFFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#18FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled" Color="Transparent" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="#70FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="#90FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="#55FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled" Color="#35FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#CECECE" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="#FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#B0B0B0" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="#60FFFFFF" />
-
                 <SolidColorBrush x:Key="SystemAccentColorBrush" Color="#00E676" />
                 <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#00E676" />
                 <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="#00CC6A" />
@@ -136,19 +123,6 @@
                 <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#1A1A1A" />
                 <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#000000" />
                 <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#000000" />
-
-                <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="Transparent" />
-                <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#0DFFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#18FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled" Color="Transparent" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="#70FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="#90FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="#55FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled" Color="#35FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#CECECE" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="#FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#B0B0B0" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="#60FFFFFF" />
 
                 <SolidColorBrush x:Key="SystemAccentColorBrush" Color="#FFB900" />
                 <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#FFB900" />
@@ -205,7 +179,7 @@
                                            Text="{TemplateBinding Header}"
                                            FontSize="11.5"
                                            FontWeight="SemiBold"
-                                           Foreground="#FFFFFF"
+                                           Foreground="{DynamicResource TextPrimary}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
                                            TextAlignment="Center"
@@ -218,11 +192,11 @@
                                 <Setter TargetName="PART_IconContent" Property="Visibility" Value="Collapsed" />
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#55FFFFFF" />
+                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
                                 <Setter Property="Panel.ZIndex" Value="10" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#75FFFFFF" />
+                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
                                 <Setter Property="Panel.ZIndex" Value="10" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
@@ -258,7 +232,7 @@
                     <Grid Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <ui:SymbolIcon Symbol="WeatherMoon24"
                                        FontSize="22"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        SnapsToDevicePixels="False" />
@@ -276,7 +250,7 @@
                         <!-- 1. Coffee Mug Base Icon -->
                         <ui:SymbolIcon Symbol="DrinkCoffee24"
                                        FontSize="22"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        SnapsToDevicePixels="False" />
@@ -290,7 +264,7 @@
 
                             <!-- Left Steam Curve -->
                             <Path Data="M 8.5,6.5 C 7.5,4.8 9.5,3.2 8.5,1.0"
-                                  Stroke="#D0FFFFFF"
+                                  Stroke="{DynamicResource TextSecondary}"
                                   StrokeThickness="1.2"
                                   StrokeStartLineCap="Round"
                                   StrokeEndLineCap="Round"
@@ -328,7 +302,7 @@
 
                             <!-- Right Steam Curve (Phase-shifted for continuous natural wafting) -->
                             <Path Data="M 12.5,6.5 C 13.5,4.8 11.5,3.2 12.5,1.0"
-                                  Stroke="#D0FFFFFF"
+                                  Stroke="{DynamicResource TextSecondary}"
                                   StrokeThickness="1.2"
                                   StrokeStartLineCap="Round"
                                   StrokeEndLineCap="Round"
@@ -417,7 +391,7 @@
                                        SnapsToDevicePixels="False">
                             <ui:SymbolIcon.Style>
                                 <Style TargetType="{x:Type ui:SymbolIcon}">
-                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsNightLightEnabled}" Value="True">
                                             <Setter Property="Foreground" Value="#FFD54F" />
@@ -464,7 +438,7 @@
                         <ui:SymbolIcon Grid.Column="0"
                                        Symbol="WeatherMoon24"
                                        FontSize="22"
-                                       Foreground="#E0FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        Margin="0,0,10,0"
                                        VerticalAlignment="Center" />
 
@@ -473,12 +447,12 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="13.5"
                                        FontWeight="SemiBold"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="Puts all connected displays into low-power standby"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="11"
-                                       Foreground="#70FFFFFF"
+                                       Foreground="{DynamicResource TextTertiary}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -516,7 +490,7 @@
                         <ui:SymbolIcon Grid.Column="0"
                                        Symbol="Sparkle24"
                                        FontSize="22"
-                                       Foreground="#E0FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        Margin="0,0,10,0"
                                        VerticalAlignment="Center" />
 
@@ -525,12 +499,12 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="13.5"
                                        FontWeight="SemiBold"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="Smoothly dims displays to black before entering standby"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="11"
-                                       Foreground="#70FFFFFF"
+                                       Foreground="{DynamicResource TextTertiary}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -574,7 +548,7 @@
                         <ui:SymbolIcon Grid.Column="0"
                                        Symbol="Power24"
                                        FontSize="22"
-                                       Foreground="#E0FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        Margin="0,0,10,0"
                                        VerticalAlignment="Center" />
 
@@ -583,12 +557,12 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="13.5"
                                        FontWeight="SemiBold"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding ModeSubtitle}"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="11"
-                                       Foreground="#70FFFFFF"
+                                       Foreground="{DynamicResource TextTertiary}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -610,7 +584,7 @@
                                        Margin="0,0,6,0" />
                             <ui:SymbolIcon Symbol="ChevronDown16"
                                            FontSize="11"
-                                           Foreground="#B5FFFFFF"
+                                           Foreground="{DynamicResource TextSecondary}"
                                            VerticalAlignment="Center" />
                         </StackPanel>
 
@@ -621,7 +595,7 @@
                                           Command="{Binding SetPassiveModeCommand}">
                                     <MenuItem.Icon>
                                         <Border Width="3" Height="14"
-                                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                Background="{DynamicResource AccentColorBrush}"
                                                 CornerRadius="1.5"
                                                 Visibility="{Binding IsModePassive, Converter={StaticResource BoolToVis}}" />
                                     </MenuItem.Icon>
@@ -630,7 +604,7 @@
                                           Command="{Binding SetIndefiniteModeCommand}">
                                     <MenuItem.Icon>
                                         <Border Width="3" Height="14"
-                                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                Background="{DynamicResource AccentColorBrush}"
                                                 CornerRadius="1.5"
                                                 Visibility="{Binding IsModeIndefinite, Converter={StaticResource BoolToVis}}" />
                                     </MenuItem.Icon>
@@ -638,7 +612,7 @@
                                 <MenuItem Header="Keep awake for a time interval">
                                     <MenuItem.Icon>
                                         <Border Width="3" Height="14"
-                                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                Background="{DynamicResource AccentColorBrush}"
                                                 CornerRadius="1.5"
                                                 Visibility="{Binding IsModeTimed, Converter={StaticResource BoolToVis}}" />
                                     </MenuItem.Icon>
@@ -681,7 +655,7 @@
                         <ui:SymbolIcon Grid.Column="0"
                                        Symbol="Desktop24"
                                        FontSize="22"
-                                       Foreground="#E0FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        Margin="0,0,10,0"
                                        VerticalAlignment="Center" />
 
@@ -690,12 +664,12 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="13.5"
                                        FontWeight="SemiBold"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="Requires Caffeine to be turned on"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="11"
-                                       Foreground="#70FFFFFF"
+                                       Foreground="{DynamicResource TextTertiary}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -739,7 +713,7 @@
                         <ui:SymbolIcon Grid.Column="0"
                                        Symbol="Lightbulb24"
                                        FontSize="22"
-                                       Foreground="#E0FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        Margin="0,0,10,0"
                                        VerticalAlignment="Center" />
 
@@ -748,12 +722,12 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="13.5"
                                        FontWeight="SemiBold"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding NightLightStatusSubtitle}"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="11"
-                                       Foreground="#70FFFFFF"
+                                       Foreground="{DynamicResource TextTertiary}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -781,7 +755,7 @@
                     <ui:SymbolIcon Grid.Column="0"
                                    Symbol="WeatherSunny24"
                                    FontSize="22"
-                                   Foreground="#E0FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    Margin="0,0,10,0"
                                    VerticalAlignment="Center" />
 
@@ -790,8 +764,7 @@
                                                 Minimum="0"
                                                 Maximum="100"
                                                 Value="{Binding NightLightStrength, Mode=TwoWay}"
-                                                ProgressBrush="#00B4D8"
-                                                ProgressPointerOverBrush="#33C9E8"
+                                                ProgressBrush="{DynamicResource AccentColorBrush}"
                                                 Height="20"
                                                 IsEnabled="{Binding IsNightLightSupported}"
                                                 ToolTip="{Binding NightLightSupportTooltip}"
@@ -804,7 +777,7 @@
                                FontFamily="{DynamicResource AppFontFamily}"
                                FontSize="13"
                                FontWeight="SemiBold"
-                               Foreground="#E0FFFFFF"
+                               Foreground="{DynamicResource TextPrimary}"
                                Width="44"
                                TextAlignment="Right"
                                Typography.NumeralAlignment="Tabular"

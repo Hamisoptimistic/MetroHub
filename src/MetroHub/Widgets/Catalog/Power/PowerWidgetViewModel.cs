@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Display;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets;
 using Wpf.Ui.Controls;
 
@@ -22,7 +23,10 @@ namespace MetroHub.Widgets.Catalog.Power;
 public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
 {
     private static readonly SolidColorBrush RedBrush = new((Color)ColorConverter.ConvertFromString("#FF5252"));
-    private static readonly SolidColorBrush WhiteBrush = Brushes.White;
+
+    private static Brush GetDefaultForeground() =>
+        Application.Current?.TryFindResource("TextPrimary") as Brush
+        ?? (ThemeService.IsDarkTheme ? Brushes.White : Brushes.Black);
 
     static PowerWidgetViewModel()
     {
@@ -47,7 +51,7 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
     private SymbolRegular _lockSymbol = SymbolRegular.LockClosed24;
 
     [ObservableProperty]
-    private Brush _lockForeground = WhiteBrush;
+    private Brush _lockForeground = GetDefaultForeground();
 
     [ObservableProperty]
     private string _lockTooltip = "Lock";
@@ -60,7 +64,7 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
     private SymbolRegular _sleepSymbol = SymbolRegular.WeatherMoon24;
 
     [ObservableProperty]
-    private Brush _sleepForeground = WhiteBrush;
+    private Brush _sleepForeground = GetDefaultForeground();
 
     [ObservableProperty]
     private string _sleepTooltip = "Sleep";
@@ -73,7 +77,7 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
     private SymbolRegular _restartSymbol = SymbolRegular.ArrowCounterclockwise24;
 
     [ObservableProperty]
-    private Brush _restartForeground = WhiteBrush;
+    private Brush _restartForeground = GetDefaultForeground();
 
     [ObservableProperty]
     private string _restartTooltip = "Restart";
@@ -86,7 +90,7 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
     private SymbolRegular _shutdownSymbol = SymbolRegular.Power24;
 
     [ObservableProperty]
-    private Brush _shutdownForeground = WhiteBrush;
+    private Brush _shutdownForeground = GetDefaultForeground();
 
     [ObservableProperty]
     private string _shutdownTooltip = "Shut Down";
@@ -110,6 +114,21 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
         _countdownTimer.Tick += (s, e) => OnCountdownTick();
 
         Model.PropertyChanged += OnModelPropertyChanged;
+        ThemeService.ThemeChanged += OnThemeChanged;
+        ResetAllTileDisplays();
+    }
+
+    private void OnThemeChanged(object? sender, AppTheme theme)
+    {
+        var defaultBrush = GetDefaultForeground();
+        if (!string.Equals(_pendingAction, "Lock", StringComparison.OrdinalIgnoreCase))
+            LockForeground = defaultBrush;
+        if (!string.Equals(_pendingAction, "Sleep", StringComparison.OrdinalIgnoreCase))
+            SleepForeground = defaultBrush;
+        if (!string.Equals(_pendingAction, "Restart", StringComparison.OrdinalIgnoreCase))
+            RestartForeground = defaultBrush;
+        if (!string.Equals(_pendingAction, "Shutdown", StringComparison.OrdinalIgnoreCase))
+            ShutdownForeground = defaultBrush;
     }
 
     [RelayCommand]
@@ -211,24 +230,25 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
 
     private void ResetAllTileDisplays()
     {
+        var defaultBrush = GetDefaultForeground();
         LockHeader = "Lock";
         LockSymbol = SymbolRegular.LockClosed24;
-        LockForeground = WhiteBrush;
+        LockForeground = defaultBrush;
         LockTooltip = "Lock";
 
         SleepHeader = "Sleep";
         SleepSymbol = SymbolRegular.WeatherMoon24;
-        SleepForeground = WhiteBrush;
+        SleepForeground = defaultBrush;
         SleepTooltip = "Sleep";
 
         RestartHeader = "Restart";
         RestartSymbol = SymbolRegular.ArrowCounterclockwise24;
-        RestartForeground = WhiteBrush;
+        RestartForeground = defaultBrush;
         RestartTooltip = "Restart";
 
         ShutdownHeader = "Shut Down";
         ShutdownSymbol = SymbolRegular.Power24;
-        ShutdownForeground = WhiteBrush;
+        ShutdownForeground = defaultBrush;
         ShutdownTooltip = "Shut Down";
     }
 
@@ -303,6 +323,7 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
     {
         if (disposing)
         {
+            ThemeService.ThemeChanged -= OnThemeChanged;
             Model.PropertyChanged -= OnModelPropertyChanged;
             _countdownTimer.Stop();
         }

@@ -22,7 +22,7 @@
         <Style x:Key="WeatherTransportButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#E0FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
             <Setter Property="Width" Value="32" />
             <Setter Property="Height" Value="28" />
             <Setter Property="Cursor" Value="Hand" />
@@ -38,11 +38,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource HoverSheen}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#40FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -120,7 +120,7 @@
                                FontSize="110"
                                FontWeight="Bold"
                                FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimary}"
                                VerticalAlignment="Center"
                                Margin="0,-6,0,0">
                         <TextBlock.Effect>
@@ -172,7 +172,7 @@
                                    FontSize="54"
                                    FontWeight="Bold"
                                    FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    HorizontalAlignment="Right">
                             <TextBlock.Effect>
                                 <DropShadowEffect BlurRadius="22" Direction="270" ShadowDepth="3.5" Opacity="0.20" Color="#080E1A" />
@@ -182,7 +182,7 @@
                                    FontSize="15"
                                    FontWeight="SemiBold"
                                    FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   Foreground="#D8E2EC"
+                                   Foreground="{DynamicResource TextSecondary}"
                                    HorizontalAlignment="Right"
                                    Margin="0,2,0,0" />
                     </StackPanel>
@@ -195,13 +195,13 @@
                         <TextBlock Text="AQI"
                                    FontSize="12"
                                    FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   Foreground="#95A8BE"
+                                   Foreground="{DynamicResource TextTertiary}"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding AqiText}"
                                    FontSize="16"
                                    FontWeight="Bold"
                                    FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    HorizontalAlignment="Center"
                                    Margin="0,4,0,0" />
                     </StackPanel>
@@ -211,13 +211,13 @@
                         <TextBlock Text="Humidity"
                                    FontSize="12"
                                    FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   Foreground="#95A8BE"
+                                   Foreground="{DynamicResource TextTertiary}"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding HumidityText}"
                                    FontSize="16"
                                    FontWeight="Bold"
                                    FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    HorizontalAlignment="Center"
                                    Margin="0,4,0,0" />
                     </StackPanel>
@@ -227,13 +227,13 @@
                         <TextBlock Text="Precip"
                                    FontSize="12"
                                    FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   Foreground="#95A8BE"
+                                   Foreground="{DynamicResource TextTertiary}"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding PrecipitationProbabilityText}"
                                    FontSize="16"
                                    FontWeight="Bold"
                                    FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    HorizontalAlignment="Center"
                                    Margin="0,4,0,0" />
                     </StackPanel>
@@ -255,15 +255,15 @@
                 <!-- Left: Details (Labels crisp & muted, Values 15px Bold pure white) -->
                 <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left">
                     <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif">
-                        <Run Text="AQI&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="#95A8BE" /><Run Text="{Binding AqiText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
+                        <Run Text="AQI&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="{DynamicResource TextTertiary}" /><Run Text="{Binding AqiText}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
                     </TextBlock>
                     <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                Margin="0,6,0,0">
-                        <Run Text="Feels like&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="#95A8BE" /><Run Text="{Binding FeelsLikeShortText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
+                        <Run Text="Feels like&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="{DynamicResource TextTertiary}" /><Run Text="{Binding FeelsLikeShortText}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
                     </TextBlock>
                     <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                                Margin="0,6,0,0">
-                        <Run Text="Humidity&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="#95A8BE" /><Run Text="{Binding HumidityText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
+                        <Run Text="Humidity&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="{DynamicResource TextTertiary}" /><Run Text="{Binding HumidityText}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
                     </TextBlock>
                 </StackPanel>
 
@@ -290,7 +290,7 @@
                            FontSize="72"
                            FontWeight="Bold"
                            FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                           Foreground="#FFFFFF"
+                           Foreground="{DynamicResource TextPrimary}"
                            HorizontalAlignment="Right"
                            VerticalAlignment="Center"
                            Margin="0,-4,0,0">
@@ -306,7 +306,7 @@
                          Height="2"
                          VerticalAlignment="Top"
                          Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"
-                         Foreground="#60CDFF"
+                         Foreground="{DynamicResource AccentColorBrush}"
                          Background="Transparent"
                          BorderThickness="0" />
         </Grid>

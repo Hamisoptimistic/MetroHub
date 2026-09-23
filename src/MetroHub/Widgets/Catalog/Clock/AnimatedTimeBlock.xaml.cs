@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Catalog.Clock;
 
@@ -75,7 +76,7 @@ public partial class AnimatedTimeBlock : UserControl
                 BlurRadius = 26,
                 ShadowDepth = 4,
                 Direction = 270,
-                Opacity = 0.22,
+                Opacity = ThemeService.IsDarkTheme ? 0.22 : 0.08,
                 Color = Color.FromRgb(0x08, 0x0E, 0x1A)
             };
         }
@@ -122,11 +123,13 @@ public partial class AnimatedTimeBlock : UserControl
         }
 
         Loaded += OnControlLoaded;
+        Unloaded += OnControlUnloaded;
     }
 
     private void OnControlLoaded(object sender, RoutedEventArgs e)
     {
         _isLoaded = true;
+        ThemeService.ThemeChanged += OnThemeChanged;
         SyncStyling();
         UpdateTextDepth();
 
@@ -137,6 +140,20 @@ public partial class AnimatedTimeBlock : UserControl
         PartPreviousText.Text = string.Empty;
         PartPreviousText.Opacity = 0.0;
         PartPreviousTransform.Y = 0;
+    }
+
+    private void OnControlUnloaded(object sender, RoutedEventArgs e)
+    {
+        ThemeService.ThemeChanged -= OnThemeChanged;
+    }
+
+    private void OnThemeChanged(object? sender, AppTheme theme)
+    {
+        Dispatcher.InvokeAsync(() =>
+        {
+            SyncStyling();
+            UpdateTextDepth();
+        });
     }
 
     protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)

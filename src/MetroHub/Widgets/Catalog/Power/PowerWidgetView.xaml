@@ -50,12 +50,12 @@
                         <ControlTemplate.Triggers>
                             <!-- Hover state: illuminates vertical dividing borders only, exactly like Network widget -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#55FFFFFF" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
                                 <Setter Property="Panel.ZIndex" Value="10" />
                             </Trigger>
                             <!-- Pressed state -->
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#75FFFFFF" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
                                 <Setter Property="Panel.ZIndex" Value="10" />
                             </Trigger>
                         </ControlTemplate.Triggers>

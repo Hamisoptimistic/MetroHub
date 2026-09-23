@@ -23,7 +23,7 @@
         <Style x:Key="VolumeTransportButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
             <Setter Property="Width" Value="28" />
             <Setter Property="Height" Value="28" />
             <Setter Property="Cursor" Value="Hand" />
@@ -39,10 +39,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource HoverSheen}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.3" />
@@ -58,7 +58,7 @@
         <Style x:Key="DeviceListItemButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
             <Setter Property="Height" Value="38" />
             <Setter Property="Margin" Value="0,2,0,2" />
             <Setter Property="Cursor" Value="Hand" />
@@ -75,10 +75,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CardBorder" Property="Background" Value="#18FFFFFF" />
+                                <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource HoverSheen}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="CardBorder" Property="Background" Value="#28FFFFFF" />
+                                <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -135,7 +135,7 @@
                     <TextBlock Text="{Binding ActiveDeviceIcon}"
                                FontFamily="{DynamicResource AppIconFontFamily}"
                                FontSize="16"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimary}"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center" />
                 </Button>
@@ -149,8 +149,7 @@
                                             IsMuted="{Binding IsMasterMuted}"
                                             Minimum="0"
                                             Maximum="100"
-                                            ProgressBrush="#00B4D8"
-                                            ProgressPointerOverBrush="#33C9E8"
+                                            ProgressBrush="{DynamicResource AccentColorBrush}"
                                             Tag="InteractiveControl"
                                             SnapsToDevicePixels="True" />
 
@@ -167,7 +166,7 @@
                                    Text="{Binding MasterGlyph}"
                                    FontFamily="{DynamicResource AppIconFontFamily}"
                                    FontSize="15"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
                             <TextBlock.Style>
@@ -187,7 +186,7 @@
                                    Text="{Binding MasterVolumePercentText}"
                                    FontSize="11.5"
                                    FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
                             <TextBlock.Style>
@@ -222,7 +221,7 @@
                 </Grid.Style>
 
                 <!-- 1. Docked Output Device List Container -->
-                <Border Background="#14000000"
+                <Border Background="{DynamicResource HoverSheen}"
                         BorderThickness="0"
                         CornerRadius="0,0,2,2"
                         SnapsToDevicePixels="True"
@@ -241,7 +240,7 @@
                                Text="Output Device"
                                FontSize="12"
                                FontWeight="SemiBold"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimary}"
                                Margin="6,2,0,8"
                                SnapsToDevicePixels="True" />
 
@@ -278,35 +277,35 @@
                                                                 Width="3"
                                                                 Height="16"
                                                                 HorizontalAlignment="Left"
-                                                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                                Background="{DynamicResource AccentColorBrush}"
                                                                 CornerRadius="1.5"
                                                                 Visibility="{Binding IsDefault, Converter={StaticResource BoolToVis}}" />
 
-                                                        <!-- 2. Hardware Device Glyph (🎧, 🖥, 🔊) ALL WHITE -->
+                                                        <!-- 2. Hardware Device Glyph (🎧, 🖥, 🔊) -->
                                                         <TextBlock Grid.Column="1"
                                                                    Text="{Binding IconGlyph}"
                                                                    FontFamily="{DynamicResource AppIconFontFamily}"
                                                                    FontSize="16"
-                                                                   Foreground="#FFFFFF"
+                                                                   Foreground="{DynamicResource TextPrimary}"
                                                                    VerticalAlignment="Center"
                                                                    HorizontalAlignment="Left" />
 
-                                                        <!-- 3. Device Friendly Name (WHITE) -->
+                                                        <!-- 3. Device Friendly Name -->
                                                         <TextBlock Grid.Column="2"
                                                                    Text="{Binding Name}"
                                                                    FontSize="13"
                                                                    FontWeight="Normal"
-                                                                   Foreground="#FFFFFF"
+                                                                   Foreground="{DynamicResource TextPrimary}"
                                                                    TextTrimming="CharacterEllipsis"
                                                                    VerticalAlignment="Center"
                                                                    Margin="2,0" />
 
-                                                        <!-- 4. Active Selection Checkmark (WHITE) -->
+                                                        <!-- 4. Active Selection Checkmark -->
                                                         <TextBlock Grid.Column="3"
                                                                    Text="&#xE73E;"
                                                                    FontFamily="{DynamicResource AppIconFontFamily}"
                                                                    FontSize="13"
-                                                                   Foreground="#FFFFFF"
+                                                                   Foreground="{DynamicResource TextPrimary}"
                                                                    HorizontalAlignment="Right"
                                                                    VerticalAlignment="Center"
                                                                    Visibility="{Binding IsDefault, Converter={StaticResource BoolToVis}}" />
@@ -315,15 +314,15 @@
                                                 <ControlTemplate.Triggers>
                                                     <!-- Selected / Default Device Highlight -->
                                                     <DataTrigger Binding="{Binding IsDefault}" Value="True">
-                                                        <Setter TargetName="ItemBorder" Property="Background" Value="#1EFFFFFF" />
+                                                        <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource PressedSheen}" />
                                                     </DataTrigger>
                                                     <!-- Mouse Hover Highlight -->
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="ItemBorder" Property="Background" Value="#25FFFFFF" />
+                                                        <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource HoverSheen}" />
                                                     </Trigger>
                                                     <!-- Mouse Pressed Highlight -->
                                                     <Trigger Property="IsPressed" Value="True">
-                                                        <Setter TargetName="ItemBorder" Property="Background" Value="#35FFFFFF" />
+                                                        <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource PressedSheen}" />
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -344,7 +343,7 @@
                   SnapsToDevicePixels="True">
                 <Border Height="2"
                         VerticalAlignment="Center"
-                        Background="#14FFFFFF"
+                        Background="{DynamicResource SeparatorLine}"
                         CornerRadius="1"
                         SnapsToDevicePixels="True" />
             </Grid>
