@@ -52,20 +52,19 @@
             </Setter>
         </Style>
 
-        <!-- Modern Fluent App Item Style: CornerRadius="2" matching Tiles -->
+        <!-- Modern Fluent App Item Style: Matches Sidebar Hover Pill -->
         <Style x:Key="AppRowContainerStyle" TargetType="Border">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderThickness" Value="0" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="CornerRadius" Value="2" />
+            <Setter Property="CornerRadius" Value="{StaticResource ControlCornerRadius}" />
             <Setter Property="Margin" Value="8,1,8,1" />
             <Setter Property="Padding" Value="7,4" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#18FFFFFF" />
-                    <Setter Property="BorderBrush" Value="#2AFFFFFF" />
+                    <Setter Property="Background" Value="{StaticResource FluentHoverBrush}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -74,7 +73,7 @@
         <Style x:Key="FluentSearchListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderThickness" Value="0" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="Margin" Value="8,1,8,1" />
             <Setter Property="Padding" Value="7,4" />
@@ -87,7 +86,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="2"
+                                CornerRadius="{StaticResource ControlCornerRadius}"
                                 Padding="{TemplateBinding Padding}"
                                 SnapsToDevicePixels="True">
                             <Grid>
@@ -106,17 +105,14 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#18FFFFFF" />
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#2AFFFFFF" />
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource FluentHoverBrush}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#45FFFFFF" />
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource FluentPressedBrush}" />
                                 <Setter TargetName="AccentPill" Property="Visibility" Value="Visible" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#45FFFFFF" />
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource FluentPressedBrush}" />
                                 <Setter TargetName="AccentPill" Property="Visibility" Value="Visible" />
                             </Trigger>
                             <MultiTrigger>
@@ -124,8 +120,7 @@
                                     <Condition Property="IsSelected" Value="True" />
                                     <Condition Property="IsMouseOver" Value="True" />
                                 </MultiTrigger.Conditions>
-                                <Setter TargetName="Bd" Property="Background" Value="#30FFFFFF" />
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#55FFFFFF" />
+                                <Setter TargetName="Bd" Property="Background" Value="#25FFFFFF" />
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -133,7 +128,7 @@
             </Setter>
         </Style>
 
-        <!-- Modern Mini Pin Button Style: CornerRadius="2" matching Tiles -->
+        <!-- Modern Mini Pin Button Style: Matches Sidebar Hover Pill -->
         <Style x:Key="MiniPinButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -147,15 +142,15 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Bdr"
                                 Background="Transparent"
-                                CornerRadius="2">
+                                CornerRadius="{StaticResource ControlCornerRadiusSmall}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bdr" Property="Background" Value="#25FFFFFF" />
+                                <Setter TargetName="Bdr" Property="Background" Value="{StaticResource FluentHoverBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bdr" Property="Background" Value="#35FFFFFF" />
+                                <Setter TargetName="Bdr" Property="Background" Value="{StaticResource FluentPressedBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -263,7 +258,7 @@
                     x:Name="SearchBorder"
                     Margin="14,4,14,12"
                     Height="34"
-                    CornerRadius="2"
+                    CornerRadius="{StaticResource ControlCornerRadius}"
                     Background="#14FFFFFF"
                     BorderThickness="0"
                     SnapsToDevicePixels="True">

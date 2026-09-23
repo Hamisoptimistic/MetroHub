@@ -27,11 +27,27 @@
             <CornerRadius x:Key="DialogOverlayCornerRadius">10,10,0,0</CornerRadius>
             <CornerRadius x:Key="DialogFooterCornerRadius">0,0,10,10</CornerRadius>
 
+            <!-- ========================================================================= -->
+            <!-- UNIVERSAL FLUENT GEOMETRY & INTERACTION TOKENS                            -->
+            <!-- ========================================================================= -->
+            <!-- Standard Control & Button Corner Radius (Matches Sidebar Hover Pill) -->
+            <CornerRadius x:Key="ControlCornerRadius">5</CornerRadius>
+            <CornerRadius x:Key="ControlCornerRadiusSmall">4</CornerRadius>
+            <CornerRadius x:Key="ControlCornerRadiusLarge">8</CornerRadius>
+
+            <!-- ContextMenu & Dropdown Container / Item Radius (Crisp 2px) -->
+            <CornerRadius x:Key="ContextMenuCornerRadius">2</CornerRadius>
+
+            <!-- Universal Fluent Dark-Glass Interaction Brushes (Matching Sidebar Sheen) -->
+            <SolidColorBrush x:Key="FluentHoverBrush" Color="#12FFFFFF" />
+            <SolidColorBrush x:Key="FluentPressedBrush" Color="#1EFFFFFF" />
+            <SolidColorBrush x:Key="FluentHoverBorderBrush" Color="Transparent" />
+
             <!-- Cohesive Fluent Action Button Styles (Matching Sleek Wi-Fi Connect & Modal Submit) -->
             <Style x:Key="FluentCohesiveActionButtonStyle" TargetType="Button">
                 <Setter Property="Background" Value="#1CFFFFFF" />
-                <Setter Property="BorderBrush" Value="#2AFFFFFF" />
-                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="Foreground" Value="#F5FFFFFF" />
                 <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
                 <Setter Property="FontSize" Value="12" />
@@ -49,7 +65,7 @@
                                     Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="2"
+                                    CornerRadius="{StaticResource ControlCornerRadius}"
                                     SnapsToDevicePixels="True">
                                 <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                                   VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -58,13 +74,12 @@
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="ButtonBorder" Property="Background" Value="#30FFFFFF" />
-                                    <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#48FFFFFF" />
+                                    <Setter TargetName="ButtonBorder" Property="Background" Value="#25FFFFFF" />
                                     <Setter Property="Foreground" Value="#FFFFFF" />
                                 </Trigger>
                                 <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="ButtonBorder" Property="Background" Value="#14FFFFFF" />
-                                    <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#20FFFFFF" />
+                                    <Setter TargetName="ButtonBorder" Property="Background" Value="{StaticResource FluentPressedBrush}" />
+                                    <Setter Property="Foreground" Value="#FFFFFF" />
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.35" />
@@ -77,23 +92,70 @@
 
             <Style x:Key="FluentCohesiveSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentCohesiveActionButtonStyle}">
                 <Setter Property="Background" Value="#10FFFFFF" />
-                <Setter Property="BorderBrush" Value="#1CFFFFFF" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="Foreground" Value="#B5FFFFFF" />
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#22FFFFFF" />
-                        <Setter Property="BorderBrush" Value="#38FFFFFF" />
+                        <Setter Property="Background" Value="{StaticResource FluentHoverBrush}" />
                         <Setter Property="Foreground" Value="#FFFFFF" />
                     </Trigger>
                     <Trigger Property="IsPressed" Value="True">
-                        <Setter Property="Background" Value="#0AFFFFFF" />
-                        <Setter Property="BorderBrush" Value="#14FFFFFF" />
+                        <Setter Property="Background" Value="{StaticResource FluentPressedBrush}" />
                     </Trigger>
                     <Trigger Property="IsEnabled" Value="False">
                         <Setter Property="Opacity" Value="0.35" />
                     </Trigger>
                 </Style.Triggers>
             </Style>
+
+            <!-- Universal Fluent Ghost Button Style (Icon / Toolbar / Header Buttons) -->
+            <Style x:Key="FluentGhostButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Foreground" Value="#95FFFFFF" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+                <Setter Property="UseLayoutRounding" Value="True" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="PillBorder"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="{StaticResource ControlCornerRadius}"
+                                    SnapsToDevicePixels="True"
+                                    UseLayoutRounding="True">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  Margin="{TemplateBinding Padding}"
+                                                  SnapsToDevicePixels="True" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="PillBorder" Property="Background" Value="{StaticResource FluentHoverBrush}" />
+                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="PillBorder" Property="Background" Value="{StaticResource FluentPressedBrush}" />
+                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="PillBorder" Property="Opacity" Value="0.35" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Implicit Default Button Style: All standard Buttons inherit sidebar hover by default -->
+            <Style TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}" />
 
             <!-- Universal Fluent ScrollBar: 100% Transparent Track (No grey background gutter ever), Translucent White Thumb -->
             <Style x:Key="ScrollBarPageButtonStyle" TargetType="{x:Type RepeatButton}">
@@ -368,7 +430,7 @@
                             <Border x:Name="Border"
                                     BorderThickness="1"
                                     Padding="0,3,0,3"
-                                    CornerRadius="8"
+                                    CornerRadius="{StaticResource ContextMenuCornerRadius}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     Background="{TemplateBinding Background}"
                                     SnapsToDevicePixels="True"
@@ -439,7 +501,7 @@
             <ControlTemplate x:Key="UniversalFluentSubmenuItemTemplate" TargetType="{x:Type MenuItem}">
                 <Border x:Name="Border"
                         Background="Transparent"
-                        CornerRadius="4"
+                        CornerRadius="{StaticResource ContextMenuCornerRadius}"
                         Margin="4,1,4,1"
                         SnapsToDevicePixels="True"
                         UseLayoutRounding="True">
@@ -516,7 +578,7 @@
                 <Grid>
                     <Border x:Name="Border"
                             Background="Transparent"
-                            CornerRadius="4"
+                            CornerRadius="{StaticResource ContextMenuCornerRadius}"
                             Margin="4,1,4,1"
                             SnapsToDevicePixels="True"
                             UseLayoutRounding="True">
@@ -573,7 +635,7 @@
                         <Border x:Name="SubmenuBorder"
                                 BorderThickness="1"
                                 Padding="0,3,0,3"
-                                CornerRadius="8"
+                                CornerRadius="{StaticResource ContextMenuCornerRadius}"
                                 BorderBrush="{DynamicResource ContextMenuBorderBrush}"
                                 Background="{DynamicResource ContextMenuBackground}"
                                 Margin="8,6,8,12"

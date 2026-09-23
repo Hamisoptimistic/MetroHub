@@ -45,7 +45,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Border"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="2"
+                                CornerRadius="{StaticResource ControlCornerRadiusSmall}"
                                 SnapsToDevicePixels="True">
                             <ui:SymbolIcon x:Name="CopyIcon"
                                            Symbol="Copy16"
@@ -56,11 +56,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#1CFFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource FluentHoverBrush}" />
                                 <Setter TargetName="CopyIcon" Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#2EFFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource FluentPressedBrush}" />
                                 <Setter TargetName="CopyIcon" Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -84,17 +84,17 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Border"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="2"
+                                CornerRadius="{StaticResource ControlCornerRadius}"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource FluentHoverBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource FluentPressedBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -815,15 +815,14 @@
                                                 <Border x:Name="ItemBorder"
                                                         Background="{TemplateBinding Background}"
                                                         BorderBrush="{TemplateBinding BorderBrush}"
-                                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                                        CornerRadius="2"
+                                                        BorderThickness="0"
+                                                        CornerRadius="{StaticResource ControlCornerRadius}"
                                                         SnapsToDevicePixels="True">
                                                     <ContentPresenter />
                                                 </Border>
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="#0AFFFFFF" />
-                                                        <Setter Property="BorderBrush" Value="#14FFFFFF" />
+                                                        <Setter Property="Background" Value="{StaticResource FluentHoverBrush}" />
                                                     </Trigger>
                                                     <DataTrigger Binding="{Binding IsExpanded}" Value="True">
                                                         <Setter Property="Background" Value="#0DFFFFFF" />
@@ -1333,20 +1332,18 @@
                             <ItemsControl ItemsSource="{Binding PhysicalAdapters}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type network:PhysicalAdapterItemViewModel}">
-                                        <!-- 56px Card Matching Wi-Fi UI Convention, hover-only container, 2px CornerRadius -->
+                                        <!-- 56px Card Matching Wi-Fi UI Convention, hover-only container, 5px CornerRadius -->
                                         <Border Height="56"
-                                                CornerRadius="2"
-                                                BorderThickness="1"
+                                                CornerRadius="{StaticResource ControlCornerRadius}"
+                                                BorderThickness="0"
                                                 Margin="0,0,0,4"
                                                 SnapsToDevicePixels="True">
                                             <Border.Style>
                                                 <Style TargetType="Border">
                                                     <Setter Property="Background" Value="Transparent" />
-                                                    <Setter Property="BorderBrush" Value="Transparent" />
                                                     <Style.Triggers>
                                                         <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Background" Value="#14FFFFFF" />
-                                                            <Setter Property="BorderBrush" Value="#25FFFFFF" />
+                                                            <Setter Property="Background" Value="{StaticResource FluentHoverBrush}" />
                                                         </Trigger>
                                                     </Style.Triggers>
                                                 </Style>

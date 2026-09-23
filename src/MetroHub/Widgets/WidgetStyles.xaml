@@ -75,7 +75,7 @@
                 <ControlTemplate TargetType="{x:Type widgets:WidgetSegmentedItem}">
                     <Border x:Name="ButtonBackground"
                             Background="{TemplateBinding Background}"
-                            CornerRadius="2"
+                            CornerRadius="{StaticResource ControlCornerRadius}"
                             SnapsToDevicePixels="True">
                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
@@ -84,12 +84,12 @@
                     <ControlTemplate.Triggers>
                         <!-- Hover state: soft text brighten, subtle glass sheen, zero borders -->
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ButtonBackground" Property="Background" Value="#0DFFFFFF" />
+                            <Setter TargetName="ButtonBackground" Property="Background" Value="{StaticResource FluentHoverBrush}" />
                             <Setter Property="Foreground" Value="#E0FFFFFF" />
                         </Trigger>
                         <!-- Pressed state -->
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="ButtonBackground" Property="Background" Value="#18FFFFFF" />
+                            <Setter TargetName="ButtonBackground" Property="Background" Value="{StaticResource FluentPressedBrush}" />
                             <Setter Property="Foreground" Value="#FFFFFF" />
                         </Trigger>
                         <!-- Selected state: bright pure white text -->
@@ -102,7 +102,7 @@
                                 <Condition Property="IsMouseOver" Value="True" />
                                 <Condition Property="IsSelected" Value="True" />
                             </MultiTrigger.Conditions>
-                            <Setter TargetName="ButtonBackground" Property="Background" Value="#0DFFFFFF" />
+                            <Setter TargetName="ButtonBackground" Property="Background" Value="{StaticResource FluentHoverBrush}" />
                             <Setter Property="Foreground" Value="#FFFFFF" />
                         </MultiTrigger>
                     </ControlTemplate.Triggers>

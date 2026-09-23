@@ -485,18 +485,18 @@
                     </Grid>
 
                     <!-- Right: Cohesive Fluent Action Button [ Turn Off Now ] -->
-                    <ui:Button Grid.Column="1"
-                               Appearance="Secondary"
-                               Command="{Binding TurnOffDisplaysCommand}"
-                               VerticalAlignment="Center"
-                               Padding="14,6,14,6"
-                               Cursor="Hand"
-                               ToolTip="Instantly powers down all displays into standby (takes effect after a 500ms release grace period)">
+                    <Button Grid.Column="1"
+                            Style="{StaticResource FluentCohesiveSecondaryButtonStyle}"
+                            Command="{Binding TurnOffDisplaysCommand}"
+                            VerticalAlignment="Center"
+                            Padding="14,6,14,6"
+                            Cursor="Hand"
+                            ToolTip="Instantly powers down all displays into standby (takes effect after a 500ms release grace period)">
                         <TextBlock Text="Turn Off Now"
                                    FontSize="12"
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Center" />
-                    </ui:Button>
+                    </Button>
                 </Grid>
 
                 <!-- Row 1: Cinematic Fade-Out Toggle -->
@@ -594,14 +594,14 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Right: Standard WPF-UI Button with Dynamic State Content & Flyout Menu -->
-                    <ui:Button Grid.Column="1"
-                               Appearance="Secondary"
-                               Click="ModeButton_Click"
-                               VerticalAlignment="Center"
-                               Padding="12,6,10,6"
-                               Cursor="Hand"
-                               ToolTip="Select awake mode">
+                    <!-- Right: Cohesive Fluent Button with Dynamic State Content & Flyout Menu -->
+                    <Button Grid.Column="1"
+                            Style="{StaticResource FluentCohesiveSecondaryButtonStyle}"
+                            Click="ModeButton_Click"
+                            VerticalAlignment="Center"
+                            Padding="12,6,10,6"
+                            Cursor="Hand"
+                            ToolTip="Select awake mode">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="{Binding ModeButtonText}"
                                        FontSize="12"
@@ -615,7 +615,7 @@
                         </StackPanel>
 
                         <!-- Authentic Flyout Menu -->
-                        <ui:Button.ContextMenu>
+                        <Button.ContextMenu>
                             <ContextMenu Placement="Bottom">
                                 <MenuItem Header="Off"
                                           Command="{Binding SetPassiveModeCommand}">
@@ -660,8 +660,8 @@
                                               CommandParameter="240" />
                                 </MenuItem>
                             </ContextMenu>
-                        </ui:Button.ContextMenu>
-                    </ui:Button>
+                        </Button.ContextMenu>
+                    </Button>
                 </Grid>
 
                 <!-- Row 1: Keep Screen On Row -->
