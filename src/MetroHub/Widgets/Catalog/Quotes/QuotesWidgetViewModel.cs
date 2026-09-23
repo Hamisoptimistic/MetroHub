@@ -55,7 +55,7 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase
     private QuoteFontStyleChoice _selectedStyle = QuoteFontStyleChoice.Italic;
 
     [ObservableProperty]
-    private string _quoteFontFamily = "pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather, Georgia";
+    private string _quoteFontFamily = "pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather 18pt, pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather, Merriweather 18pt, Merriweather, Georgia";
 
     [ObservableProperty]
     private FontStyle _quoteFontStyle = FontStyles.Italic;
@@ -321,12 +321,12 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase
     {
         QuoteFontFamily = SelectedFont switch
         {
-            QuoteFontFamilyChoice.Merriweather => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather, Georgia",
+            QuoteFontFamilyChoice.Merriweather => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather 18pt, pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather, Merriweather 18pt, Merriweather, Georgia",
             QuoteFontFamilyChoice.Quintessential => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Quintessential, Georgia",
             QuoteFontFamilyChoice.Georgia => "Georgia, Times New Roman",
             QuoteFontFamilyChoice.Palatino => "Palatino Linotype, Georgia",
             QuoteFontFamilyChoice.SegoeUI => "Segoe UI Variable Text, Segoe UI",
-            _ => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather, Georgia"
+            _ => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather 18pt, pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather, Merriweather 18pt, Merriweather, Georgia"
         };
 
         QuoteFontStyle = SelectedStyle switch

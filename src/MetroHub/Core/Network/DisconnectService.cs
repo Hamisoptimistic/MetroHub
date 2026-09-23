@@ -304,35 +304,8 @@ public sealed class DisconnectService
         {
             try
             {
-                string adminState = isEnable ? "ENABLED" : "DISABLED";
-                string safeNetshName = adapterName.Replace("\"", "\\\"");
-
-                // 1. Primary Engine: Native netsh.exe with SW_HIDE (ProcessWindowStyle.Hidden)
-                // Ultra-fast (<20ms), does NOT trigger Windows Terminal, zero console window
-                var netshPsi = new ProcessStartInfo
-                {
-                    FileName = "netsh.exe",
-                    Arguments = $"interface set interface name=\"{safeNetshName}\" admin={adminState}",
-                    UseShellExecute = true,
-                    Verb = "runas",
-                    WindowStyle = ProcessWindowStyle.Hidden,
-                    CreateNoWindow = true
-                };
-
-                using (var netshProc = Process.Start(netshPsi))
-                {
-                    if (netshProc != null)
-                    {
-                        // Give user plenty of time (15 seconds) to review and accept the UAC prompt
-                        if (netshProc.WaitForExit(15000) && netshProc.ExitCode == 0)
-                        {
-                            return true;
-                        }
-                    }
-                }
-
-                // 2. Secondary Engine: Headless PowerShell fallback via conhost.exe
-                // Escape single quotes for PowerShell string literal safely
+                // Single reliable engine: Headless PowerShell Enable-NetAdapter / Disable-NetAdapter
+                // Prompts UAC exactly once and works consistently across all adapter types (Wi-Fi, Ethernet, USB, Virtual).
                 string safePsName = adapterName.Replace("'", "''");
                 string psCmd = isEnable ? "Enable-NetAdapter" : "Disable-NetAdapter";
 

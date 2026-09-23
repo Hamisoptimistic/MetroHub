@@ -251,8 +251,7 @@ namespace MetroHub.Presentation.Controls
                 {
                     From = 0,
                     To = 360,
-                    Duration = TimeSpan.FromMilliseconds(650),
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                    Duration = TimeSpan.FromMilliseconds(750)
                 };
                 RefreshIconRotation.BeginAnimation(RotateTransform.AngleProperty, anim);
             }
