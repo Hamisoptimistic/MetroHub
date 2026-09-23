@@ -203,6 +203,8 @@ public partial class MainWindow : BorderlessFluentWindow
         SidebarRail.InitializeSettings(Settings);
         SidebarRail.PinToggled += OnSidebarPinToggled;
         SidebarRail.ShortcutsChanged += OnSidebarShortcutsChanged;
+        SidebarRail.ThemeToggleRequested += (s, e) => ApplyConfiguredBackdrop();
+        ThemeService.ThemeChanged += (s, theme) => Dispatcher.InvokeAsync(ApplyConfiguredBackdrop);
         UpdateSidebarVisibilityInitial();
 
         if (AllAppsDrawer != null)
@@ -670,10 +672,11 @@ public partial class MainWindow : BorderlessFluentWindow
         }
 
         bool isWallpaper = IsWallpaperBackdrop(Settings.BackdropType);
+        bool isDark = ThemeService.IsDarkTheme;
 
         if (isWallpaper)
         {
-            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_NONE);
+            NativeMethods.ApplyMica(hwnd, dark: isDark, NativeMethods.DWMSBT_NONE);
             if (RootGrid != null)
             {
                 RootGrid.Background = System.Windows.Media.Brushes.Transparent;
@@ -695,17 +698,20 @@ public partial class MainWindow : BorderlessFluentWindow
 
             if (string.Equals(Settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase))
             {
-                NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW);
+                NativeMethods.ApplyMica(hwnd, dark: isDark, NativeMethods.DWMSBT_TRANSIENTWINDOW);
                 if (RootGrid != null)
                 {
-                    var acrylicBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0x99, 0x0D, 0x0D, 0x11));
+                    var acrylicColor = isDark
+                        ? System.Windows.Media.Color.FromArgb(0x99, 0x0D, 0x0D, 0x11)
+                        : System.Windows.Media.Color.FromArgb(0x99, 0xF3, 0xF3, 0xF3);
+                    var acrylicBrush = new SolidColorBrush(acrylicColor);
                     acrylicBrush.Freeze();
                     RootGrid.Background = acrylicBrush;
                 }
             }
             else if (string.Equals(Settings.BackdropType, "MicaAlt", StringComparison.OrdinalIgnoreCase))
             {
-                NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TABBEDWINDOW);
+                NativeMethods.ApplyMica(hwnd, dark: isDark, NativeMethods.DWMSBT_TABBEDWINDOW);
                 if (RootGrid != null)
                 {
                     RootGrid.Background = System.Windows.Media.Brushes.Transparent;
@@ -713,7 +719,7 @@ public partial class MainWindow : BorderlessFluentWindow
             }
             else
             {
-                NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
+                NativeMethods.ApplyMica(hwnd, dark: isDark, NativeMethods.DWMSBT_MAINWINDOW);
                 if (RootGrid != null)
                 {
                     RootGrid.Background = System.Windows.Media.Brushes.Transparent;
@@ -824,7 +830,10 @@ public partial class MainWindow : BorderlessFluentWindow
         // Apply scrim dim opacity immediately with frozen Freezable brush
         double dim = Math.Clamp(Settings.WallpaperDimOpacity, 0.1, 0.9);
         byte alpha = (byte)(255 * dim);
-        var scrimBrush = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
+        var scrimColor = ThemeService.IsDarkTheme 
+            ? Color.FromArgb(alpha, 0, 0, 0) 
+            : Color.FromArgb((byte)(alpha * 0.75), 255, 255, 255);
+        var scrimBrush = new SolidColorBrush(scrimColor);
         scrimBrush.Freeze();
         WallpaperScrim.Background = scrimBrush;
 

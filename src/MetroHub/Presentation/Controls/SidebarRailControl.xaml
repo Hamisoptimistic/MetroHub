@@ -506,6 +506,15 @@
                                Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" />
             </Button>
 
+            <!-- Theme Toggle Button (Light / Dark) -->
+            <Button x:Name="ThemeToggleButton"
+                    Style="{StaticResource RailButtonStyle}"
+                    ToolTip="Switch to Light mode"
+                    Click="OnThemeToggleClick">
+                <ui:SymbolIcon x:Name="ThemeToggleIcon" Symbol="WeatherMoon24" FontSize="19"
+                               Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" />
+            </Button>
+
             <!-- Power Button with Context Menu -->
             <Button x:Name="PowerButton"
                     Style="{StaticResource RailButtonStyle}"

@@ -1,0 +1,129 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- =================================================================== -->
+    <!-- MetroHub Design System — Dark Theme Tokens                         -->
+    <!-- Windows 11 Fluent Dark (Mica / Frosted Glass)                       -->
+    <!-- =================================================================== -->
+
+    <!-- Text & Typography -->
+    <Color x:Key="TextPrimaryColor">#FFFFFF</Color>
+    <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFFFFF" />
+
+    <Color x:Key="TextSecondaryColor">#A0FFFFFF</Color>
+    <SolidColorBrush x:Key="TextSecondary" Color="#A0FFFFFF" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#A0FFFFFF" />
+
+    <Color x:Key="TextTertiaryColor">#70FFFFFF</Color>
+    <SolidColorBrush x:Key="TextTertiary" Color="#70FFFFFF" />
+    <SolidColorBrush x:Key="TextTertiaryBrush" Color="#70FFFFFF" />
+
+    <Color x:Key="TextMutedColor">#40FFFFFF</Color>
+    <SolidColorBrush x:Key="TextMuted" Color="#40FFFFFF" />
+    <SolidColorBrush x:Key="TextMutedBrush" Color="#40FFFFFF" />
+
+    <Color x:Key="TextOnAccentColor">#FFFFFF</Color>
+    <SolidColorBrush x:Key="TextOnAccent" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="TextOnAccentBrush" Color="#FFFFFF" />
+
+    <!-- Glass & Card Surfaces -->
+    <Color x:Key="GlassCardColor">#1CFFFFFF</Color>
+    <SolidColorBrush x:Key="GlassCard" Color="#1CFFFFFF" />
+    <SolidColorBrush x:Key="GlassCardBrush" Color="#1CFFFFFF" />
+
+    <Color x:Key="GlassCardHoverColor">#28FFFFFF</Color>
+    <SolidColorBrush x:Key="GlassCardHover" Color="#28FFFFFF" />
+    <SolidColorBrush x:Key="GlassCardHoverBrush" Color="#28FFFFFF" />
+
+    <Color x:Key="GlassBorderColor">#22FFFFFF</Color>
+    <SolidColorBrush x:Key="GlassBorder" Color="#22FFFFFF" />
+    <SolidColorBrush x:Key="GlassBorderBrush" Color="#22FFFFFF" />
+
+    <Color x:Key="GlassBorderHoverColor">#35FFFFFF</Color>
+    <SolidColorBrush x:Key="GlassBorderHover" Color="#35FFFFFF" />
+    <SolidColorBrush x:Key="GlassBorderHoverBrush" Color="#35FFFFFF" />
+
+    <Color x:Key="GlassBorderSecondaryColor">#15FFFFFF</Color>
+    <SolidColorBrush x:Key="GlassBorderSecondary" Color="#15FFFFFF" />
+    <SolidColorBrush x:Key="GlassBorderSecondaryBrush" Color="#15FFFFFF" />
+
+    <!-- Interactive Sheens -->
+    <Color x:Key="HoverSheenColor">#12FFFFFF</Color>
+    <SolidColorBrush x:Key="HoverSheen" Color="#12FFFFFF" />
+    <SolidColorBrush x:Key="HoverSheenBrush" Color="#12FFFFFF" />
+
+    <Color x:Key="PressedSheenColor">#1EFFFFFF</Color>
+    <SolidColorBrush x:Key="PressedSheen" Color="#1EFFFFFF" />
+    <SolidColorBrush x:Key="PressedSheenBrush" Color="#1EFFFFFF" />
+
+    <!-- Scrollbar Tokens -->
+    <Color x:Key="ScrollThumbColor">#45FFFFFF</Color>
+    <SolidColorBrush x:Key="ScrollThumb" Color="#45FFFFFF" />
+    <SolidColorBrush x:Key="ScrollThumbBrush" Color="#45FFFFFF" />
+
+    <Color x:Key="ScrollThumbHoverColor">#95FFFFFF</Color>
+    <SolidColorBrush x:Key="ScrollThumbHover" Color="#95FFFFFF" />
+    <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="#95FFFFFF" />
+
+    <Color x:Key="ScrollThumbDragColor">#D0FFFFFF</Color>
+    <SolidColorBrush x:Key="ScrollThumbDrag" Color="#D0FFFFFF" />
+    <SolidColorBrush x:Key="ScrollThumbDragBrush" Color="#D0FFFFFF" />
+
+    <!-- Lines, Dividers & Indicators -->
+    <Color x:Key="SeparatorLineColor">#22FFFFFF</Color>
+    <SolidColorBrush x:Key="SeparatorLine" Color="#22FFFFFF" />
+    <SolidColorBrush x:Key="SeparatorLineBrush" Color="#22FFFFFF" />
+
+    <Color x:Key="ActiveIndicatorColor">#E0FFFFFF</Color>
+    <SolidColorBrush x:Key="ActiveIndicator" Color="#E0FFFFFF" />
+    <SolidColorBrush x:Key="ActiveIndicatorBrush" Color="#E0FFFFFF" />
+
+    <!-- Wallpaper & Acrylic Scrim -->
+    <Color x:Key="WallpaperScrimColor">#80000000</Color>
+    <SolidColorBrush x:Key="WallpaperScrim" Color="#80000000" />
+    <SolidColorBrush x:Key="WallpaperScrimBrush" Color="#80000000" />
+
+    <Color x:Key="AcrylicTintColor">#990D0D11</Color>
+    <SolidColorBrush x:Key="AcrylicTint" Color="#990D0D11" />
+    <SolidColorBrush x:Key="AcrylicTintBrush" Color="#990D0D11" />
+
+    <!-- Modals & ContentDialog -->
+    <Color x:Key="DialogBackgroundColor">#F214161A</Color>
+    <SolidColorBrush x:Key="DialogBackground" Color="#F214161A" />
+    <SolidColorBrush x:Key="DialogBackgroundBrush" Color="#F214161A" />
+    <SolidColorBrush x:Key="ContentDialogBackground" Color="#F214161A" />
+
+    <Color x:Key="DialogSmokeColor">#8A08080C</Color>
+    <SolidColorBrush x:Key="DialogSmoke" Color="#8A08080C" />
+    <SolidColorBrush x:Key="DialogSmokeBrush" Color="#8A08080C" />
+    <SolidColorBrush x:Key="ContentDialogSmokeFill" Color="#8A08080C" />
+    <SolidColorBrush x:Key="SmokeFillColorDefaultBrush" Color="#8A08080C" />
+
+    <Color x:Key="DialogBorderColor">#35FFFFFF</Color>
+    <SolidColorBrush x:Key="DialogBorder" Color="#35FFFFFF" />
+    <SolidColorBrush x:Key="DialogBorderBrush" Color="#35FFFFFF" />
+    <SolidColorBrush x:Key="ContentDialogBorderBrush" Color="#35FFFFFF" />
+
+    <Color x:Key="DialogTopOverlayColor">#08FFFFFF</Color>
+    <SolidColorBrush x:Key="DialogTopOverlay" Color="#08FFFFFF" />
+    <SolidColorBrush x:Key="DialogTopOverlayBrush" Color="#08FFFFFF" />
+    <SolidColorBrush x:Key="ContentDialogTopOverlay" Color="#08FFFFFF" />
+
+    <Color x:Key="DialogSeparatorColor">#18FFFFFF</Color>
+    <SolidColorBrush x:Key="DialogSeparator" Color="#18FFFFFF" />
+    <SolidColorBrush x:Key="ContentDialogSeparatorBorderBrush" Color="#18FFFFFF" />
+
+    <!-- Semantic Alerts & Actions -->
+    <Color x:Key="DangerTextColor">#FF6B6B</Color>
+    <SolidColorBrush x:Key="DangerText" Color="#FF6B6B" />
+    <SolidColorBrush x:Key="DangerTextBrush" Color="#FF6B6B" />
+
+    <Color x:Key="DangerHoverBackgroundColor">#25FF6B6B</Color>
+    <SolidColorBrush x:Key="DangerHoverBackground" Color="#25FF6B6B" />
+    <SolidColorBrush x:Key="DangerHoverBackgroundBrush" Color="#25FF6B6B" />
+
+    <!-- Shadows & Depth -->
+    <Color x:Key="CardShadowColor">#40000000</Color>
+
+</ResourceDictionary>

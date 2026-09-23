@@ -93,6 +93,9 @@ public partial class App : Application
 
         try
         {
+            var settings = StorageService.LoadSettings();
+            ThemeService.Initialize(settings);
+
             _mainWindow = new MainWindow();
             _mainWindow.ShowScreen();
         }

@@ -19,6 +19,7 @@ public partial class SidebarRailControl : UserControl
     public event EventHandler? PinToggled;
     public event EventHandler? ShortcutsChanged;
     public event EventHandler<string?>? AddWebLinkRequested;
+    public event EventHandler? ThemeToggleRequested;
 
     public bool IsPinned { get; private set; } = false;
 
@@ -35,6 +36,8 @@ public partial class SidebarRailControl : UserControl
     {
         InitializeComponent();
         ShortcutsItemsControl.ItemsSource = Shortcuts;
+        Loaded += (s, e) => UpdateThemeVisuals();
+        ThemeService.ThemeChanged += (s, theme) => Dispatcher.InvokeAsync(UpdateThemeVisuals);
     }
 
     public void InitializeSettings(AppSettings settings)
@@ -42,6 +45,7 @@ public partial class SidebarRailControl : UserControl
         _settings = settings;
         IsPinned = settings.SidebarPinned;
         UpdatePinVisuals();
+        UpdateThemeVisuals();
 
         Shortcuts.Clear();
         if (settings.SidebarShortcuts != null)
@@ -94,6 +98,29 @@ public partial class SidebarRailControl : UserControl
     private void OnAppsToggleClick(object sender, RoutedEventArgs e)
     {
         AppsToggleRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void UpdateThemeVisuals()
+    {
+        if (ThemeToggleIcon != null)
+        {
+            ThemeToggleIcon.Symbol = ThemeService.IsDarkTheme
+                ? Wpf.Ui.Controls.SymbolRegular.WeatherMoon24
+                : Wpf.Ui.Controls.SymbolRegular.WeatherSunny24;
+        }
+        if (ThemeToggleButton != null)
+        {
+            ThemeToggleButton.ToolTip = ThemeService.IsDarkTheme
+                ? "Switch to Light mode"
+                : "Switch to Dark mode";
+        }
+    }
+
+    private void OnThemeToggleClick(object sender, RoutedEventArgs e)
+    {
+        ThemeService.Toggle();
+        UpdateThemeVisuals();
+        ThemeToggleRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnItemPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
