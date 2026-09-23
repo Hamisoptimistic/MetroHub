@@ -30,8 +30,8 @@
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#60CDFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource AccentColorBrush}" />
             <Setter Property="FontSize" Value="13" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Padding" Value="0" />
@@ -64,8 +64,8 @@
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#18FFFFFF" />
-                    <Setter Property="BorderBrush" Value="#2AFFFFFF" />
+                    <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource GlassBorder}" />
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -98,7 +98,7 @@
                                            VerticalAlignment="Center"
                                            RadiusX="1.5"
                                            RadiusY="1.5"
-                                           Fill="#60CDFF"
+                                           Fill="{DynamicResource AccentColorBrush}"
                                            Visibility="Collapsed"
                                            Margin="-5,0,0,0" />
                                 <ContentPresenter />
@@ -106,17 +106,17 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#18FFFFFF" />
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#2AFFFFFF" />
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverSheen}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource GlassBorder}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#45FFFFFF" />
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PressedSheen}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
                                 <Setter TargetName="AccentPill" Property="Visibility" Value="Visible" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#45FFFFFF" />
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PressedSheen}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
                                 <Setter TargetName="AccentPill" Property="Visibility" Value="Visible" />
                             </Trigger>
                             <MultiTrigger>
@@ -124,8 +124,8 @@
                                     <Condition Property="IsSelected" Value="True" />
                                     <Condition Property="IsMouseOver" Value="True" />
                                 </MultiTrigger.Conditions>
-                                <Setter TargetName="Bd" Property="Background" Value="#30FFFFFF" />
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="#55FFFFFF" />
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PressedSheen}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -152,10 +152,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bdr" Property="Background" Value="#25FFFFFF" />
+                                <Setter TargetName="Bdr" Property="Background" Value="{DynamicResource HoverSheen}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bdr" Property="Background" Value="#35FFFFFF" />
+                                <Setter TargetName="Bdr" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -174,7 +174,7 @@
             </MenuItem>
             <MenuItem Header="Run as administrator" Click="OnContextMenuRunAsAdminClick">
                 <MenuItem.Icon>
-                    <ui:SymbolIcon Symbol="Shield32" FontSize="18" Foreground="#D0FFFFFF" />
+                    <ui:SymbolIcon Symbol="Shield32" FontSize="18" Foreground="{DynamicResource TextSecondary}" />
                 </MenuItem.Icon>
             </MenuItem>
             <MenuItem x:Name="PinMenuItem" Header="Pin to Start" Click="OnContextMenuPinToggleClick">
@@ -183,9 +183,9 @@
                 </MenuItem.Icon>
             </MenuItem>
             <Separator />
-            <MenuItem Header="Uninstall" Click="OnContextMenuUninstallClick" Foreground="#FF6B6B">
+            <MenuItem Header="Uninstall" Click="OnContextMenuUninstallClick" Foreground="{DynamicResource DangerText}">
                 <MenuItem.Icon>
-                    <ui:SymbolIcon Symbol="Delete24" FontSize="18" Foreground="#FF6B6B" />
+                    <ui:SymbolIcon Symbol="Delete24" FontSize="18" Foreground="{DynamicResource DangerText}" />
                 </MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
@@ -226,11 +226,11 @@
 
             <Grid x:Name="DrawerHeaderGrid" Grid.Row="0" Margin="16,14,16,6">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <ui:SymbolIcon Symbol="AppsListDetail24" FontSize="18" Foreground="#EAEAEA" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <ui:SymbolIcon Symbol="AppsListDetail24" FontSize="18" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0" VerticalAlignment="Center" />
                     <TextBlock Text="All apps"
                                FontSize="14"
                                FontWeight="SemiBold"
-                               Foreground="#EAEAEA"
+                               Foreground="{DynamicResource TextPrimary}"
                                VerticalAlignment="Center" />
                 </StackPanel>
                 
@@ -243,7 +243,7 @@
                         <ui:SymbolIcon x:Name="RefreshIcon"
                                        Symbol="ArrowClockwise24"
                                        FontSize="14"
-                                       Foreground="#A0FFFFFF"
+                                       Foreground="{DynamicResource TextSecondary}"
                                        RenderTransformOrigin="0.5,0.5">
                             <ui:SymbolIcon.RenderTransform>
                                 <RotateTransform x:Name="RefreshIconRotation" Angle="0" />
@@ -254,7 +254,7 @@
                             Style="{StaticResource MiniPinButtonStyle}"
                             ToolTip="Close"
                             Click="OnCloseClick">
-                        <ui:SymbolIcon Symbol="Dismiss20" FontSize="14" Foreground="#A0FFFFFF" />
+                        <ui:SymbolIcon Symbol="Dismiss20" FontSize="14" Foreground="{DynamicResource TextSecondary}" />
                     </Button>
                 </StackPanel>
             </Grid>
@@ -264,13 +264,13 @@
                     Margin="14,4,14,12"
                     Height="34"
                     CornerRadius="2"
-                    Background="#14FFFFFF"
+                    Background="{DynamicResource GlassCard}"
                     BorderThickness="0"
                     SnapsToDevicePixels="True">
                 <Grid>
                     <ui:SymbolIcon Symbol="Search24"
                                    FontSize="15"
-                                   Foreground="#75FFFFFF"
+                                   Foreground="{DynamicResource TextTertiary}"
                                    HorizontalAlignment="Left"
                                    VerticalAlignment="Center"
                                    Margin="10,0,0,0"
@@ -279,7 +279,7 @@
                     <TextBlock x:Name="SearchPlaceholder"
                                Text="Type here to search..."
                                FontSize="13"
-                               Foreground="#60FFFFFF"
+                               Foreground="{DynamicResource TextTertiary}"
                                VerticalAlignment="Center"
                                Margin="34,0,28,0"
                                IsHitTestVisible="False" />
@@ -302,7 +302,7 @@
                             Height="24"
                             Visibility="Collapsed"
                             Click="OnClearSearchClick">
-                        <ui:SymbolIcon Symbol="Dismiss20" FontSize="12" Foreground="#90FFFFFF" />
+                        <ui:SymbolIcon Symbol="Dismiss20" FontSize="12" Foreground="{DynamicResource TextSecondary}" />
                     </Button>
                 </Grid>
             </Border>
@@ -328,7 +328,7 @@
                                                FontSize="18"
                                                FontWeight="Bold"
                                                FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                               Foreground="#70FFFFFF"
+                                               Foreground="{DynamicResource TextTertiary}"
                                                Margin="16,12,0,2" />
 
                                     <!-- Apps in this letter group -->
@@ -359,7 +359,7 @@
                                                         <TextBlock Grid.Column="1"
                                                                    Text="{Binding Name}"
                                                                    FontSize="13"
-                                                                   Foreground="#E6FFFFFF"
+                                                                   Foreground="{DynamicResource TextPrimary}"
                                                                    VerticalAlignment="Center"
                                                                    Margin="8,0,8,0"
                                                                    TextTrimming="CharacterEllipsis" />
@@ -388,7 +388,7 @@
                         <TextBlock x:Name="NoResultsTextBlock"
                                    Text="No apps found"
                                    FontSize="13"
-                                   Foreground="#70FFFFFF"
+                                   Foreground="{DynamicResource TextTertiary}"
                                    HorizontalAlignment="Center"
                                    Margin="0,32,0,0"
                                    Visibility="Collapsed" />
@@ -430,7 +430,7 @@
                                         <TextBlock Grid.Column="1"
                                                    Text="{Binding Name}"
                                                    FontSize="13"
-                                                   Foreground="#E6FFFFFF"
+                                                   Foreground="{DynamicResource TextPrimary}"
                                                    VerticalAlignment="Center"
                                                    Margin="8,0,8,0"
                                                    TextTrimming="CharacterEllipsis" />

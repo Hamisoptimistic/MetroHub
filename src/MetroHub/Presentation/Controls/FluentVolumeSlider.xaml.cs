@@ -162,10 +162,16 @@ public partial class FluentVolumeSlider : UserControl
     /// </summary>
     private void ApplyProgressBrush()
     {
-        var brush = ProgressBrush ?? DefaultProgressBrush;
-
-        if (ProgressFill != null) ProgressFill.Background = brush;
-        if (ThumbDot != null) ThumbDot.Fill = brush;
+        if (ProgressBrush != null)
+        {
+            if (ProgressFill != null) ProgressFill.Background = ProgressBrush;
+            if (ThumbDot != null) ThumbDot.Fill = ProgressBrush;
+        }
+        else
+        {
+            ProgressFill?.SetResourceReference(Border.BackgroundProperty, "AccentColorBrush");
+            ThumbDot?.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "AccentColorBrush");
+        }
     }
 
     private void UpdateMutedVisuals()

@@ -30,7 +30,7 @@
             <Setter Property="Padding" Value="0" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Foreground" Value="#95FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
             <Setter Property="ToolTipService.Placement" Value="Right" />
             <Setter Property="ToolTipService.HorizontalOffset" Value="8" />
             <Setter Property="ToolTipService.InitialShowDelay" Value="350" />
@@ -57,25 +57,25 @@
                                     HorizontalAlignment="Left"
                                     VerticalAlignment="Center"
                                     Margin="1,0,0,0"
-                                    Background="#E0FFFFFF"
+                                    Background="{DynamicResource ActiveIndicator}"
                                     Visibility="Collapsed" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <!-- Hover state: soft brighten, subtle glass sheen, zero borders (matching widgets) -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="PillBorder" Property="Background" Value="#12FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource HoverSheen}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <!-- Pressed state -->
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="PillBorder" Property="Background" Value="#1EFFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource PressedSheen}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <!-- Active state (Pinned / Drawer Open) -->
                             <Trigger Property="Tag" Value="Active">
                                 <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
-                                <Setter TargetName="PillBorder" Property="Background" Value="#0EFFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource HoverSheen}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <!-- Active + Hover -->
                             <MultiTrigger>
@@ -83,8 +83,8 @@
                                     <Condition Property="Tag" Value="Active" />
                                     <Condition Property="IsMouseOver" Value="True" />
                                 </MultiTrigger.Conditions>
-                                <Setter TargetName="PillBorder" Property="Background" Value="#18FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource PressedSheen}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -457,7 +457,7 @@
                                 </Border.ContextMenu>
                                 <Rectangle Height="1"
                                            Margin="10,0"
-                                           Fill="#45FFFFFF"
+                                           Fill="{DynamicResource SeparatorLine}"
                                            SnapsToDevicePixels="True"
                                            UseLayoutRounding="True"
                                            VerticalAlignment="Center" />

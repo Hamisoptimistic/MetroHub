@@ -1,8 +1,10 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Presentation.Controls;
 
@@ -23,10 +25,13 @@ public partial class GroupHeaderControl : UserControl
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        ThemeService.ThemeChanged += OnThemeChanged;
+
         if (DataContext is TileGroupModel group)
         {
             // Restore icon states from persisted model
             UpdateLockIcon(group.IsLocked);
+            UpdateHeaderForeground();
             AnimateActionButtons(group.IsLocked ? 0.85 : 0.0);
 
             if (group.IsEditing)
@@ -38,10 +43,20 @@ public partial class GroupHeaderControl : UserControl
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
+        ThemeService.ThemeChanged -= OnThemeChanged;
         if (_boundGroup != null)
         {
             _boundGroup.PropertyChanged -= OnGroupPropertyChanged;
             _boundGroup = null;
+        }
+    }
+
+    private void OnThemeChanged(object? sender, AppTheme e)
+    {
+        if (DataContext is TileGroupModel group)
+        {
+            UpdateLockIcon(group.IsLocked);
+            UpdateHeaderForeground();
         }
     }
 
@@ -58,19 +73,27 @@ public partial class GroupHeaderControl : UserControl
             _boundGroup = group;
             _boundGroup.PropertyChanged += OnGroupPropertyChanged;
             UpdateLockIcon(group.IsLocked);
+            UpdateHeaderForeground();
             AnimateActionButtons(group.IsLocked ? 0.85 : 0.0);
         }
     }
 
     private void OnGroupPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (sender is TileGroupModel group && e.PropertyName == nameof(TileGroupModel.IsLocked))
+        if (sender is TileGroupModel group)
         {
-            UpdateLockIcon(group.IsLocked);
-            AnimateActionButtons(group.IsLocked ? 0.85 : 0.0);
-            if (group.IsLocked)
+            if (e.PropertyName == nameof(TileGroupModel.IsLocked))
             {
-                AnimateDragHint(0.0);
+                UpdateLockIcon(group.IsLocked);
+                AnimateActionButtons(group.IsLocked ? 0.85 : 0.0);
+                if (group.IsLocked)
+                {
+                    AnimateDragHint(0.0);
+                }
+            }
+            else if (e.PropertyName == nameof(TileGroupModel.HeaderColor))
+            {
+                UpdateHeaderForeground();
             }
         }
     }
@@ -291,11 +314,14 @@ public partial class GroupHeaderControl : UserControl
         LockIcon.Symbol = isLocked
             ? Wpf.Ui.Controls.SymbolRegular.LockClosed24
             : Wpf.Ui.Controls.SymbolRegular.LockOpen24;
-        LockIcon.Foreground = isLocked
-            ? new System.Windows.Media.SolidColorBrush(
-                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#60CDFF"))
-            : new System.Windows.Media.SolidColorBrush(
-                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#A0FFFFFF"));
+        if (isLocked)
+        {
+            LockIcon.SetResourceReference(Wpf.Ui.Controls.SymbolIcon.ForegroundProperty, "AccentColorBrush");
+        }
+        else
+        {
+            LockIcon.SetResourceReference(Wpf.Ui.Controls.SymbolIcon.ForegroundProperty, "TextSecondary");
+        }
 
         if (DragHintIcon != null)
         {
@@ -304,6 +330,34 @@ public partial class GroupHeaderControl : UserControl
         }
 
         LockButton.ToolTip = isLocked ? "Unlock group" : "Lock group";
+    }
+
+    private void UpdateHeaderForeground()
+    {
+        if (DataContext is TileGroupModel group && !string.IsNullOrEmpty(group.HeaderColor))
+        {
+            bool isDefaultWhite = string.Equals(group.HeaderColor, "#F0FFFFFF", StringComparison.OrdinalIgnoreCase) ||
+                                  string.Equals(group.HeaderColor, "#FFFFFF", StringComparison.OrdinalIgnoreCase) ||
+                                  string.Equals(group.HeaderColor, "#FFFFFFFF", StringComparison.OrdinalIgnoreCase) ||
+                                  string.Equals(group.HeaderColor, "Default", StringComparison.OrdinalIgnoreCase);
+
+            if (!isDefaultWhite || ThemeService.IsDarkTheme)
+            {
+                try
+                {
+                    var brush = (Brush)new BrushConverter().ConvertFromString(group.HeaderColor)!;
+                    TitleTextBlock.Foreground = brush;
+                    EditTextBox.Foreground = brush;
+                    EditTextBox.CaretBrush = brush;
+                    return;
+                }
+                catch { }
+            }
+        }
+
+        TitleTextBlock.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
+        EditTextBox.SetResourceReference(TextBox.ForegroundProperty, "TextPrimary");
+        EditTextBox.SetResourceReference(TextBox.CaretBrushProperty, "AccentColorBrush");
     }
 
     // ─────────────────────────────────────────────────────────
@@ -319,7 +373,9 @@ public partial class GroupHeaderControl : UserControl
     {
         if (sender is MenuItem item && item.Tag is string hex && DataContext is TileGroupModel group)
         {
-            MainWindow.Current?.SetGroupColor(group, hex);
+            string? targetColor = string.Equals(hex, "Default", StringComparison.OrdinalIgnoreCase) ? null : hex;
+            MainWindow.Current?.SetGroupColor(group, targetColor!);
+            UpdateHeaderForeground();
             if (HeaderColorMenuItem != null)
             {
                 foreach (var mi in HeaderColorMenuItem.Items.OfType<MenuItem>())

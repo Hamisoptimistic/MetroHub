@@ -29,7 +29,7 @@
                 <Setter Property="Background" Value="Transparent"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#15FFFFFF"/>
+                        <Setter Property="Background" Value="{DynamicResource HoverSheen}"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -47,8 +47,8 @@
                     <MenuItem.Icon>
                         <ui:SymbolIcon Symbol="Color24" FontSize="18" />
                     </MenuItem.Icon>
-                    <MenuItem Header="Default White" Tag="#F0FFFFFF" Click="OnColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#F0FFFFFF"/></MenuItem.Icon>
+                    <MenuItem Header="Default Theme" Tag="Default" Click="OnColorSelectClick">
+                        <MenuItem.Icon><Border Width="12" Height="12" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderHover}" Background="Transparent" CornerRadius="2"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Fluent Sky Blue" Tag="#60CDFF" Click="OnColorSelectClick">
                         <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#60CDFF"/></MenuItem.Icon>
@@ -80,10 +80,10 @@
                 </MenuItem>
                 <MenuItem x:Name="TintColorMenuItem" Header="Group Tint Color">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="PaintBucket24" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="PaintBucket24" FontSize="18" Foreground="{DynamicResource TextSecondary}" />
                     </MenuItem.Icon>
                     <MenuItem Header="None (Transparent)" Tag="None" Click="OnTintColorSelectClick">
-                        <MenuItem.Icon><Border Width="12" Height="12" BorderThickness="1" BorderBrush="#80FFFFFF" Background="Transparent" CornerRadius="2"/></MenuItem.Icon>
+                        <MenuItem.Icon><Border Width="12" Height="12" BorderThickness="1" BorderBrush="{DynamicResource GlassBorderHover}" Background="Transparent" CornerRadius="2"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Fluent Sky Blue" Tag="#60CDFF" Click="OnTintColorSelectClick">
                         <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#60CDFF"/></MenuItem.Icon>
@@ -122,9 +122,9 @@
                     </MenuItem.Icon>
                 </MenuItem>
 
-                <MenuItem x:Name="DeleteGroupMenuItem" Header="Delete Group and Tiles" Click="OnDeleteGroupClick" Foreground="#FF6B6B">
+                <MenuItem x:Name="DeleteGroupMenuItem" Header="Delete Group and Tiles" Click="OnDeleteGroupClick" Foreground="{DynamicResource DangerText}">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="Delete24" FontSize="18" Foreground="#FF6B6B" />
+                        <ui:SymbolIcon Symbol="Delete24" FontSize="18" Foreground="{DynamicResource DangerText}" />
                     </MenuItem.Icon>
                 </MenuItem>
             </ContextMenu>
@@ -145,7 +145,7 @@
                                Text="{Binding Title}"
                                FontSize="18"
                                FontWeight="Bold"
-                               Foreground="{Binding HeaderColor, TargetNullValue='#E8FFFFFF', FallbackValue='#E8FFFFFF'}"
+                               Foreground="{DynamicResource TextPrimary}"
                                VerticalAlignment="Center"
                                TextOptions.TextFormattingMode="Ideal"
                                TextOptions.TextRenderingMode="ClearType"
@@ -157,7 +157,7 @@
                     <ui:SymbolIcon x:Name="DragHintIcon"
                                    Symbol="ReOrder24"
                                    FontSize="17"
-                                   Foreground="#70FFFFFF"
+                                   Foreground="{DynamicResource TextTertiary}"
                                    Margin="6,0,4,0"
                                    VerticalAlignment="Center"
                                    Opacity="0" />
@@ -168,8 +168,8 @@
                          Visibility="Collapsed"
                          FontSize="18"
                          FontWeight="Bold"
-                         Foreground="{Binding HeaderColor, TargetNullValue='#FFFFFF', FallbackValue='#FFFFFF'}"
-                         CaretBrush="{Binding HeaderColor, TargetNullValue='#60CDFF', FallbackValue='#60CDFF'}"
+                         Foreground="{DynamicResource TextPrimary}"
+                         CaretBrush="{DynamicResource AccentColorBrush}"
                          Background="Transparent"
                          BorderThickness="0"
                          BorderBrush="Transparent"
@@ -234,10 +234,10 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="Background" Value="#25FFFFFF"/>
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HoverSheen}"/>
                                             </Trigger>
                                             <Trigger Property="IsPressed" Value="True">
-                                                <Setter TargetName="Bd" Property="Background" Value="#40FFFFFF"/>
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PressedSheen}"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
                                     </ControlTemplate>
@@ -246,7 +246,7 @@
                         </Style>
                     </Button.Style>
                     <ui:SymbolIcon x:Name="LockIcon" Symbol="LockOpen24" FontSize="17"
-                                   Foreground="#A0FFFFFF" />
+                                   Foreground="{DynamicResource TextSecondary}" />
                 </Button>
             </StackPanel>
         </Grid>

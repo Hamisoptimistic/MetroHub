@@ -18,7 +18,7 @@
                      Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
                      FontSize="18"
                      FontWeight="SemiBold"
-                     Foreground="#F0FFFFFF"
+                     Foreground="{DynamicResource TextPrimary}"
                      Background="Transparent"
                      BorderThickness="0"
                      VerticalAlignment="Center"
@@ -31,8 +31,8 @@
                     Width="28" Height="28"
                     FontSize="16"
                     FontWeight="Bold"
-                    Foreground="#A0FFFFFF"
-                    Background="#1AFFFFFF"
+                    Foreground="{DynamicResource TextSecondary}"
+                    Background="{DynamicResource GlassCard}"
                     BorderThickness="0"
                     Cursor="Hand"
                     ToolTip="Add shortcut to this category"
@@ -69,16 +69,16 @@
                 HorizontalAlignment="Left"
                 CornerRadius="8"
                 BorderThickness="1"
-                BorderBrush="#33FFFFFF"
-                Background="#0DFFFFFF"
+                BorderBrush="{DynamicResource GlassBorder}"
+                Background="{DynamicResource HoverSheen}"
                 Cursor="Hand"
                 ToolTip="Click or Drop .exe/.lnk here to pin"
                 MouseDown="OnGhostTileMouseDown"
                 MouseEnter="OnGhostTileMouseEnter"
                 MouseLeave="OnGhostTileMouseLeave">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="+" FontSize="18" FontWeight="Bold" Foreground="#80FFFFFF" Margin="0,0,6,0"/>
-                <TextBlock Text="Add Tile" FontSize="12" Foreground="#80FFFFFF" VerticalAlignment="Center"/>
+                <TextBlock Text="+" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextTertiary}" Margin="0,0,6,0"/>
+                <TextBlock Text="Add Tile" FontSize="12" Foreground="{DynamicResource TextTertiary}" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
     </StackPanel>

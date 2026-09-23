@@ -18,22 +18,16 @@
             <FontFamily x:Key="AppIconFontFamily">Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif</FontFamily>
             <FontFamily x:Key="AppMonoFontFamily">Consolas, Cascadia Code, Segoe UI Mono, monospace</FontFamily>
 
-            <!-- Obsidian Acrylic ContentDialog Theme Tokens (WPF-UI 3.0.4) -->
-            <SolidColorBrush x:Key="ContentDialogBackground" Color="#F214161A" />
-            <SolidColorBrush x:Key="ContentDialogBorderBrush" Color="#35FFFFFF" />
-            <SolidColorBrush x:Key="ContentDialogSmokeFill" Color="#8A08080C" />
-            <SolidColorBrush x:Key="SmokeFillColorDefaultBrush" Color="#8A08080C" />
-            <SolidColorBrush x:Key="ContentDialogSeparatorBorderBrush" Color="#18FFFFFF" />
-            <SolidColorBrush x:Key="ContentDialogTopOverlay" Color="#08FFFFFF" />
+            <!-- Dialog Corner Radius Tokens -->
             <CornerRadius x:Key="DialogOverlayCornerRadius">10,10,0,0</CornerRadius>
             <CornerRadius x:Key="DialogFooterCornerRadius">0,0,10,10</CornerRadius>
 
             <!-- Cohesive Fluent Action Button Styles (Matching Sleek Wi-Fi Connect & Modal Submit) -->
             <Style x:Key="FluentCohesiveActionButtonStyle" TargetType="Button">
-                <Setter Property="Background" Value="#1CFFFFFF" />
-                <Setter Property="BorderBrush" Value="#2AFFFFFF" />
+                <Setter Property="Background" Value="{DynamicResource GlassCard}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource GlassBorder}" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="Foreground" Value="#F5FFFFFF" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                 <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
                 <Setter Property="FontSize" Value="12" />
                 <Setter Property="FontWeight" Value="SemiBold" />
@@ -59,13 +53,13 @@
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="ButtonBorder" Property="Background" Value="#30FFFFFF" />
-                                    <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#48FFFFFF" />
-                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                    <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource GlassCardHover}" />
+                                    <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                                 </Trigger>
                                 <Trigger Property="IsPressed" Value="True">
-                                    <Setter TargetName="ButtonBorder" Property="Background" Value="#14FFFFFF" />
-                                    <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#20FFFFFF" />
+                                    <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource PressedSheen}" />
+                                    <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource GlassBorder}" />
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.35" />
@@ -77,18 +71,18 @@
             </Style>
 
             <Style x:Key="FluentCohesiveSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentCohesiveActionButtonStyle}">
-                <Setter Property="Background" Value="#10FFFFFF" />
-                <Setter Property="BorderBrush" Value="#1CFFFFFF" />
-                <Setter Property="Foreground" Value="#B5FFFFFF" />
+                <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderSecondary}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#22FFFFFF" />
-                        <Setter Property="BorderBrush" Value="#38FFFFFF" />
-                        <Setter Property="Foreground" Value="#FFFFFF" />
+                        <Setter Property="Background" Value="{DynamicResource PressedSheen}" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorder}" />
+                        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                     </Trigger>
                     <Trigger Property="IsPressed" Value="True">
-                        <Setter Property="Background" Value="#0AFFFFFF" />
-                        <Setter Property="BorderBrush" Value="#14FFFFFF" />
+                        <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource GlassBorderSecondary}" />
                     </Trigger>
                     <Trigger Property="IsEnabled" Value="False">
                         <Setter Property="Opacity" Value="0.35" />
@@ -123,7 +117,7 @@
                                         Width="4"
                                         HorizontalAlignment="Right"
                                         Margin="0,2,2,2"
-                                        Background="#45FFFFFF"
+                                        Background="{DynamicResource ScrollThumb}"
                                         CornerRadius="2"
                                         SnapsToDevicePixels="True" />
                             </Grid>
@@ -157,18 +151,18 @@
                                             </Storyboard>
                                         </BeginStoryboard>
                                     </Trigger.ExitActions>
-                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#95FFFFFF" />
+                                    <Setter TargetName="ThumbBorder" Property="Background" Value="{DynamicResource ScrollThumbHover}" />
                                     <Setter TargetName="ThumbBorder" Property="CornerRadius" Value="4" />
                                 </Trigger>
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter TargetName="ThumbBorder" Property="Width" Value="8" />
                                     <Setter TargetName="ThumbBorder" Property="CornerRadius" Value="4" />
-                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#95FFFFFF" />
+                                    <Setter TargetName="ThumbBorder" Property="Background" Value="{DynamicResource ScrollThumbHover}" />
                                 </Trigger>
                                 <Trigger Property="IsDragging" Value="True">
                                     <Setter TargetName="ThumbBorder" Property="Width" Value="8" />
                                     <Setter TargetName="ThumbBorder" Property="CornerRadius" Value="4" />
-                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#D0FFFFFF" />
+                                    <Setter TargetName="ThumbBorder" Property="Background" Value="{DynamicResource ScrollThumbDrag}" />
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -187,7 +181,7 @@
                                         Height="4"
                                         VerticalAlignment="Bottom"
                                         Margin="2,0,2,2"
-                                        Background="#45FFFFFF"
+                                        Background="{DynamicResource ScrollThumb}"
                                         CornerRadius="2"
                                         SnapsToDevicePixels="True" />
                             </Grid>
@@ -221,18 +215,18 @@
                                             </Storyboard>
                                         </BeginStoryboard>
                                     </Trigger.ExitActions>
-                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#95FFFFFF" />
+                                    <Setter TargetName="ThumbBorder" Property="Background" Value="{DynamicResource ScrollThumbHover}" />
                                     <Setter TargetName="ThumbBorder" Property="CornerRadius" Value="4" />
                                 </Trigger>
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter TargetName="ThumbBorder" Property="Height" Value="8" />
                                     <Setter TargetName="ThumbBorder" Property="CornerRadius" Value="4" />
-                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#95FFFFFF" />
+                                    <Setter TargetName="ThumbBorder" Property="Background" Value="{DynamicResource ScrollThumbHover}" />
                                 </Trigger>
                                 <Trigger Property="IsDragging" Value="True">
                                     <Setter TargetName="ThumbBorder" Property="Height" Value="8" />
                                     <Setter TargetName="ThumbBorder" Property="CornerRadius" Value="4" />
-                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#D0FFFFFF" />
+                                    <Setter TargetName="ThumbBorder" Property="Background" Value="{DynamicResource ScrollThumbDrag}" />
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -426,7 +420,7 @@
                             <Grid Height="12" Background="Transparent" SnapsToDevicePixels="True">
                                 <Rectangle Height="1"
                                            Margin="10,0,10,0"
-                                           Fill="#45FFFFFF"
+                                           Fill="{DynamicResource SeparatorLine}"
                                            SnapsToDevicePixels="True"
                                            UseLayoutRounding="True"
                                            VerticalAlignment="Center" />

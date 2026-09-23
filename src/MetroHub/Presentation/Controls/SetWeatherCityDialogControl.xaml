@@ -16,8 +16,8 @@
 
     <StackPanel Margin="0,4,0,0">
         <!-- 1. Current Location Status Pill -->
-        <Border Background="#12FFFFFF"
-                BorderBrush="#20FFFFFF"
+        <Border Background="{DynamicResource HoverSheen}"
+                BorderBrush="{DynamicResource GlassBorder}"
                 BorderThickness="1"
                 CornerRadius="6"
                 Padding="12,8"
@@ -29,20 +29,20 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <ui:SymbolIcon Grid.Column="0" Symbol="Location24" FontSize="16" Foreground="#60CDFF" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <ui:SymbolIcon Grid.Column="0" Symbol="Location24" FontSize="16" Foreground="{DynamicResource AccentColorBrush}" VerticalAlignment="Center" Margin="0,0,8,0" />
 
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <TextBlock Text="Currently Displaying" FontSize="11" Foreground="#80FFFFFF" />
-                    <TextBlock x:Name="CurrentLocationText" Text="Loading..." FontSize="13" FontWeight="SemiBold" Foreground="#FFFFFF" Margin="0,1,0,0" />
+                    <TextBlock Text="Currently Displaying" FontSize="11" Foreground="{DynamicResource TextTertiary}" />
+                    <TextBlock x:Name="CurrentLocationText" Text="Loading..." FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,1,0,0" />
                 </StackPanel>
 
                 <Border x:Name="CurrentLocationBadge"
                         Grid.Column="2"
-                        Background="#2560CDFF"
+                        Background="{DynamicResource HoverSheen}"
                         CornerRadius="4"
                         Padding="6,2"
                         VerticalAlignment="Center">
-                    <TextBlock x:Name="CurrentLocationBadgeText" Text="AUTO" FontSize="10" FontWeight="Bold" Foreground="#60CDFF" />
+                    <TextBlock x:Name="CurrentLocationBadgeText" Text="AUTO" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentColorBrush}" />
                 </Border>
             </Grid>
         </Border>
@@ -51,11 +51,11 @@
         <TextBlock Text="City Name"
                    FontSize="12"
                    FontWeight="SemiBold"
-                   Foreground="#C0FFFFFF"
+                   Foreground="{DynamicResource TextSecondary}"
                    Margin="0,0,0,6" />
 
-        <Border Background="#1CFFFFFF"
-                BorderBrush="#35FFFFFF"
+        <Border Background="{DynamicResource GlassCard}"
+                BorderBrush="{DynamicResource GlassBorderHover}"
                 BorderThickness="1"
                 CornerRadius="6"
                 Height="38"
@@ -69,7 +69,7 @@
                 <ui:SymbolIcon Grid.Column="0"
                                Symbol="Search24"
                                FontSize="16"
-                               Foreground="#80FFFFFF"
+                               Foreground="{DynamicResource TextTertiary}"
                                VerticalAlignment="Center"
                                Margin="0,0,8,0" />
 
@@ -78,8 +78,8 @@
                          VerticalAlignment="Center"
                          Background="Transparent"
                          BorderThickness="0"
-                         Foreground="#FFFFFF"
-                         CaretBrush="#60CDFF"
+                         Foreground="{DynamicResource TextPrimary}"
+                         CaretBrush="{DynamicResource AccentColorBrush}"
                          FontSize="13"
                          TextChanged="OnCityTextChanged"
                          KeyDown="OnCityKeyDown" />
@@ -95,8 +95,8 @@
                 Cursor="Hand"
                 Click="OnAutoLocationClick">
             <StackPanel Orientation="Horizontal">
-                <ui:SymbolIcon Symbol="MyLocation24" FontSize="14" Foreground="#60CDFF" VerticalAlignment="Center" Margin="0,0,6,0" />
-                <TextBlock Text="Reset to automatic location (GPS / IP)" FontSize="11.5" Foreground="#60CDFF" VerticalAlignment="Center" />
+                <ui:SymbolIcon Symbol="MyLocation24" FontSize="14" Foreground="{DynamicResource AccentColorBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                <TextBlock Text="Reset to automatic location (GPS / IP)" FontSize="11.5" Foreground="{DynamicResource AccentColorBrush}" VerticalAlignment="Center" />
             </StackPanel>
         </Button>
 
@@ -105,7 +105,7 @@
             <ProgressBar x:Name="SearchProgressBar"
                          Height="2"
                          IsIndeterminate="True"
-                         Foreground="#60CDFF"
+                         Foreground="{DynamicResource AccentColorBrush}"
                          Background="Transparent"
                          BorderThickness="0"
                          Visibility="Collapsed"
@@ -114,7 +114,7 @@
             <TextBlock x:Name="StatusMessageText"
                        Text=""
                        FontSize="11.5"
-                       Foreground="#FF6B6B"
+                       Foreground="{DynamicResource DangerText}"
                        Visibility="Collapsed"
                        TextWrapping="Wrap" />
         </StackPanel>

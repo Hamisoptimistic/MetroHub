@@ -153,7 +153,7 @@ public partial class AcrylicModalWindow : FluentWindow
     {
         try
         {
-            int darkVal = 1;
+            int darkVal = ThemeService.IsDarkTheme ? 1 : 0;
             NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkVal, sizeof(int));
 
             // Windows 11 rounded corners suppressed for cohesive 2px radius

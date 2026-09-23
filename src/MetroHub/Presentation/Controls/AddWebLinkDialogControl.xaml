@@ -17,9 +17,9 @@
     <UserControl.Resources>
         <!-- Mini Paste Button Style -->
         <Style x:Key="MiniPasteButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#15FFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource HoverSheen}" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#B0FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}" />
             <Setter Property="FontSize" Value="11" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Padding" Value="8,2" />
@@ -34,11 +34,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource GlassCardHover}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#35FFFFFF" />
+                                <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -49,8 +49,8 @@
 
     <StackPanel Margin="0,4,0,0">
         <!-- 1. Live Icon & Title Preview Card -->
-        <Border Background="#12FFFFFF"
-                BorderBrush="#20FFFFFF"
+        <Border Background="{DynamicResource HoverSheen}"
+                BorderBrush="{DynamicResource GlassBorder}"
                 BorderThickness="1"
                 CornerRadius="8"
                 Padding="14,10"
@@ -66,8 +66,8 @@
                         Width="42"
                         Height="42"
                         CornerRadius="8"
-                        Background="#1AFFFFFF"
-                        BorderBrush="#20FFFFFF"
+                        Background="{DynamicResource GlassCard}"
+                        BorderBrush="{DynamicResource GlassBorder}"
                         BorderThickness="1"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Center"
@@ -86,7 +86,7 @@
                         <ui:SymbolIcon x:Name="LivePreviewFallbackIcon"
                                        Symbol="Globe24"
                                        FontSize="22"
-                                       Foreground="#60CDFF"
+                                       Foreground="{DynamicResource AccentColorBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center" />
 
@@ -107,12 +107,12 @@
                                Text="Website Preview"
                                FontSize="14"
                                FontWeight="SemiBold"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimary}"
                                TextTrimming="CharacterEllipsis" />
                     <TextBlock x:Name="LivePreviewDomainText"
                                Text="Enter a URL below..."
                                FontSize="12"
-                               Foreground="#80FFFFFF"
+                               Foreground="{DynamicResource TextTertiary}"
                                TextTrimming="CharacterEllipsis"
                                Margin="0,2,0,0" />
                 </StackPanel>
@@ -123,10 +123,10 @@
         <TextBlock Text="Website URL"
                    FontSize="12"
                    FontWeight="SemiBold"
-                   Foreground="#C0FFFFFF"
+                   Foreground="{DynamicResource TextSecondary}"
                    Margin="0,0,0,6" />
-        <Border Background="#1CFFFFFF"
-                BorderBrush="#35FFFFFF"
+        <Border Background="{DynamicResource GlassCard}"
+                BorderBrush="{DynamicResource GlassBorderHover}"
                 BorderThickness="1"
                 CornerRadius="6"
                 Height="36"
@@ -141,7 +141,7 @@
                 <ui:SymbolIcon Grid.Column="0"
                                Symbol="Globe24"
                                FontSize="16"
-                               Foreground="#80FFFFFF"
+                               Foreground="{DynamicResource TextTertiary}"
                                VerticalAlignment="Center"
                                Margin="0,0,8,0" />
 
@@ -150,8 +150,8 @@
                          VerticalAlignment="Center"
                          Background="Transparent"
                          BorderThickness="0"
-                         Foreground="#FFFFFF"
-                         CaretBrush="#60CDFF"
+                         Foreground="{DynamicResource TextPrimary}"
+                         CaretBrush="{DynamicResource AccentColorBrush}"
                          FontSize="13"
                          TextChanged="OnUrlTextChanged"
                          KeyDown="OnInputKeyDown" />
@@ -169,10 +169,10 @@
         <TextBlock Text="Shortcut Name"
                    FontSize="12"
                    FontWeight="SemiBold"
-                   Foreground="#C0FFFFFF"
+                   Foreground="{DynamicResource TextSecondary}"
                    Margin="0,14,0,6" />
-        <Border Background="#1CFFFFFF"
-                BorderBrush="#35FFFFFF"
+        <Border Background="{DynamicResource GlassCard}"
+                BorderBrush="{DynamicResource GlassBorderHover}"
                 BorderThickness="1"
                 CornerRadius="6"
                 Height="36"
@@ -186,7 +186,7 @@
                 <ui:SymbolIcon Grid.Column="0"
                                Symbol="Rename24"
                                FontSize="16"
-                               Foreground="#80FFFFFF"
+                               Foreground="{DynamicResource TextTertiary}"
                                VerticalAlignment="Center"
                                Margin="0,0,8,0" />
 
@@ -195,8 +195,8 @@
                          VerticalAlignment="Center"
                          Background="Transparent"
                          BorderThickness="0"
-                         Foreground="#FFFFFF"
-                         CaretBrush="#60CDFF"
+                         Foreground="{DynamicResource TextPrimary}"
+                         CaretBrush="{DynamicResource AccentColorBrush}"
                          FontSize="13"
                          TextChanged="OnTitleTextChanged"
                          KeyDown="OnInputKeyDown" />
@@ -208,13 +208,13 @@
             <CheckBox x:Name="AddToCanvasCheck"
                       Content="Add to Canvas"
                       IsChecked="True"
-                      Foreground="#E5FFFFFF"
+                      Foreground="{DynamicResource TextPrimary}"
                       FontSize="13"
                       Margin="0,0,24,0" />
             <CheckBox x:Name="AddToSidebarCheck"
                       Content="Pin to Sidebar"
                       IsChecked="True"
-                      Foreground="#E5FFFFFF"
+                      Foreground="{DynamicResource TextPrimary}"
                       FontSize="13" />
         </StackPanel>
     </StackPanel>

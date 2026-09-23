@@ -13,7 +13,7 @@
                   Width="620"
                   Height="360"
                   Background="Transparent"
-                  Foreground="#FFFFFF"
+                  Foreground="{DynamicResource TextPrimary}"
                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
                   RenderOptions.ClearTypeHint="Enabled"
                   TextOptions.TextFormattingMode="Ideal"
@@ -56,7 +56,7 @@
                             <Path x:Name="Icon"
                                   Width="10" Height="10"
                                   Data="M 0.5,0.5 L 9.5,9.5 M 0.5,9.5 L 9.5,0.5"
-                                  Stroke="#85FFFFFF"
+                                  Stroke="{DynamicResource TextTertiary}"
                                   StrokeThickness="1.2"
                                   StrokeStartLineCap="Round"
                                   StrokeEndLineCap="Round"
@@ -68,11 +68,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="Icon" Property="Stroke" Value="#FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource HoverSheen}" />
+                                <Setter TargetName="Icon" Property="Stroke" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -111,8 +111,8 @@
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Height" Value="36" />
             <Setter Property="FontSize" Value="12.5" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource AccentColorBrush}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="UseLayoutRounding" Value="True" />
@@ -120,8 +120,8 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border x:Name="BoxBorder"
-                                Background="#14FFFFFF"
-                                BorderBrush="#28FFFFFF"
+                                Background="{DynamicResource GlassCard}"
+                                BorderBrush="{DynamicResource GlassBorder}"
                                 BorderThickness="1"
                                 CornerRadius="2"
                                 SnapsToDevicePixels="True">
@@ -135,12 +135,12 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#1CFFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#45FFFFFF" />
+                                <Setter TargetName="BoxBorder" Property="Background" Value="{DynamicResource GlassCardHover}" />
+                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#65FFFFFF" />
+                                <Setter TargetName="BoxBorder" Property="Background" Value="{DynamicResource GlassCardHover}" />
+                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -153,8 +153,8 @@
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Height" Value="36" />
             <Setter Property="FontSize" Value="12.5" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource AccentColorBrush}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="UseLayoutRounding" Value="True" />
@@ -162,8 +162,8 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border x:Name="BoxBorder"
-                                Background="#14FFFFFF"
-                                BorderBrush="#28FFFFFF"
+                                Background="{DynamicResource GlassCard}"
+                                BorderBrush="{DynamicResource GlassBorder}"
                                 BorderThickness="1"
                                 CornerRadius="2"
                                 SnapsToDevicePixels="True">
@@ -175,7 +175,7 @@
                                 <ui:SymbolIcon x:Name="PrefixIcon"
                                                Symbol="Link24"
                                                FontSize="14"
-                                               Foreground="#85FFFFFF"
+                                               Foreground="{DynamicResource TextTertiary}"
                                                VerticalAlignment="Center"
                                                Margin="0,0,8,0" />
                                 <ScrollViewer x:Name="PART_ContentHost"
@@ -188,14 +188,14 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#1CFFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#45FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#B0FFFFFF" />
+                                <Setter TargetName="BoxBorder" Property="Background" Value="{DynamicResource GlassCardHover}" />
+                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
+                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextSecondary}" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#65FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="BoxBorder" Property="Background" Value="{DynamicResource GlassCardHover}" />
+                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
+                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -208,9 +208,9 @@
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Height" Value="36" />
             <Setter Property="FontSize" Value="12.5" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
-            <Setter Property="SelectionBrush" Value="#40FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource AccentColorBrush}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource HoverSheen}" />
             <Setter Property="SelectionOpacity" Value="0.6" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -219,8 +219,8 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border x:Name="BoxBorder"
-                                Background="#14FFFFFF"
-                                BorderBrush="#28FFFFFF"
+                                Background="{DynamicResource GlassCard}"
+                                BorderBrush="{DynamicResource GlassBorder}"
                                 BorderThickness="1"
                                 CornerRadius="2"
                                 SnapsToDevicePixels="True">
@@ -232,7 +232,7 @@
                                 <ui:SymbolIcon x:Name="PrefixIcon"
                                                Symbol="Search24"
                                                FontSize="14"
-                                               Foreground="#85FFFFFF"
+                                               Foreground="{DynamicResource TextTertiary}"
                                                VerticalAlignment="Center"
                                                Margin="0,0,8,0" />
                                 <ScrollViewer x:Name="PART_ContentHost"
@@ -245,14 +245,14 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#1CFFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#45FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#B0FFFFFF" />
+                                <Setter TargetName="BoxBorder" Property="Background" Value="{DynamicResource GlassCardHover}" />
+                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
+                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextSecondary}" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#65FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="BoxBorder" Property="Background" Value="{DynamicResource GlassCardHover}" />
+                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="{DynamicResource GlassBorderHover}" />
+                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimary}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -279,10 +279,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="#1CFFFFFF" />
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource HoverSheen}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="ItemBorder" Property="Background" Value="#2AFFFFFF" />
+                                <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource PressedSheen}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -300,13 +300,13 @@
                 <TextBlock Text="{Binding Name}"
                            FontSize="12.5"
                            FontWeight="Medium"
-                           Foreground="#FFFFFF"
+                           Foreground="{DynamicResource TextPrimary}"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" />
                 <TextBlock Grid.Column="1"
                            Text="{Binding DisplaySubtitle}"
                            FontSize="11"
-                           Foreground="#75FFFFFF"
+                           Foreground="{DynamicResource TextTertiary}"
                            VerticalAlignment="Center"
                            Margin="8,0,0,0"
                            TextTrimming="CharacterEllipsis" />
@@ -327,16 +327,16 @@
                                 <!-- Outer Ring: Explicitly SnapsToDevicePixels=False for smooth curves -->
                                 <Ellipse x:Name="OuterRing"
                                          Width="16" Height="16"
-                                         Stroke="#45FFFFFF"
+                                         Stroke="{DynamicResource GlassBorder}"
                                          StrokeThickness="1.2"
-                                         Fill="#10FFFFFF"
+                                         Fill="{DynamicResource HoverSheen}"
                                          SnapsToDevicePixels="False"
                                          UseLayoutRounding="False"
                                          RenderOptions.EdgeMode="Unspecified" />
                                 <!-- Inner Dot: Smooth Anti-Aliased Bullet -->
                                 <Ellipse x:Name="InnerDot"
                                          Width="8" Height="8"
-                                         Fill="#0078D4"
+                                         Fill="{DynamicResource AccentColorBrush}"
                                          Opacity="0"
                                          SnapsToDevicePixels="False"
                                          UseLayoutRounding="False"
@@ -348,12 +348,12 @@
                         </StackPanel>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="OuterRing" Property="Stroke" Value="#80FFFFFF" />
-                                <Setter TargetName="OuterRing" Property="Fill" Value="#1CFFFFFF" />
+                                <Setter TargetName="OuterRing" Property="Stroke" Value="{DynamicResource GlassBorderHover}" />
+                                <Setter TargetName="OuterRing" Property="Fill" Value="{DynamicResource HoverSheen}" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="OuterRing" Property="Stroke" Value="#0078D4" />
-                                <Setter TargetName="OuterRing" Property="Fill" Value="#250078D4" />
+                                <Setter TargetName="OuterRing" Property="Stroke" Value="{DynamicResource AccentColorBrush}" />
+                                <Setter TargetName="OuterRing" Property="Fill" Value="{DynamicResource HoverSheen}" />
                                 <Setter TargetName="InnerDot" Property="Opacity" Value="1.0" />
                             </Trigger>
                             <MultiTrigger>
@@ -361,8 +361,8 @@
                                     <Condition Property="IsChecked" Value="True" />
                                     <Condition Property="IsMouseOver" Value="True" />
                                 </MultiTrigger.Conditions>
-                                <Setter TargetName="OuterRing" Property="Stroke" Value="#1A88E0" />
-                                <Setter TargetName="InnerDot" Property="Fill" Value="#1A88E0" />
+                                <Setter TargetName="OuterRing" Property="Stroke" Value="{DynamicResource AccentColorBrush}" />
+                                <Setter TargetName="InnerDot" Property="Fill" Value="{DynamicResource AccentColorBrush}" />
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -447,7 +447,7 @@
             <!-- COLUMN 1: OBSIDIAN DARK CONTENT PANEL                    -->
             <!-- ========================================================= -->
             <Border Grid.Column="1"
-                    Background="#232323"
+                    Background="{DynamicResource DialogBackground}"
                     CornerRadius="0,2,2,0"
                     RenderOptions.ClearTypeHint="Enabled">
                 <Grid Margin="24,20,24,20">
@@ -466,7 +466,7 @@
                                    Text="Change Location"
                                    FontSize="14.5"
                                    FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center" />
 
                         <Button HorizontalAlignment="Right"
@@ -479,7 +479,7 @@
                         <StackPanel>
                             <TextBlock Text="City Name"
                                        FontSize="12"
-                                       Foreground="#95FFFFFF"
+                                       Foreground="{DynamicResource TextSecondary}"
                                        Margin="0,0,0,6" />
 
                             <!-- Clean Fluent TextBox with 2px radius, no black fill, no accent line -->
@@ -499,8 +499,8 @@
                                        AllowsTransparency="True"
                                        PopupAnimation="Fade">
                                     <Border Width="{Binding ActualWidth, ElementName=WeatherCityInput}"
-                                            Background="#232323"
-                                            BorderBrush="#40FFFFFF"
+                                            Background="{DynamicResource DialogBackground}"
+                                            BorderBrush="{DynamicResource DialogBorder}"
                                             BorderThickness="1"
                                             CornerRadius="0,0,2,2"
                                             SnapsToDevicePixels="True">
@@ -529,8 +529,8 @@
                                     Style="{StaticResource SubtleActionButtonStyle}"
                                     Click="OnWeatherAutoLocationClick">
                                 <StackPanel Orientation="Horizontal">
-                                    <ui:SymbolIcon Symbol="MyLocation24" FontSize="13" Foreground="#95FFFFFF" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                    <TextBlock Text="Reset to automatic location (GPS / IP)" FontSize="12" Foreground="#95FFFFFF" VerticalAlignment="Center" />
+                                    <ui:SymbolIcon Symbol="MyLocation24" FontSize="13" Foreground="{DynamicResource TextSecondary}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <TextBlock Text="Reset to automatic location (GPS / IP)" FontSize="12" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
 
@@ -543,7 +543,7 @@
                                                  Margin="0,0,6,0" />
                                 <TextBlock x:Name="WeatherStatusMessage"
                                            FontSize="11.5"
-                                           Foreground="#FF8080"
+                                           Foreground="{DynamicResource DangerText}"
                                            TextWrapping="Wrap"
                                            Visibility="Collapsed" />
                             </StackPanel>
@@ -556,7 +556,7 @@
                             <!-- Website URL Label -->
                             <TextBlock Text="Website URL"
                                        FontSize="12"
-                                       Foreground="#95FFFFFF"
+                                       Foreground="{DynamicResource TextSecondary}"
                                        Margin="0,0,0,6" />
 
                             <!-- URL Input Box with Embedded WPF-UI Paste Button -->
@@ -584,7 +584,7 @@
                             <!-- Title Input (14px vertical gap) -->
                             <TextBlock Text="Shortcut Label (Optional)"
                                        FontSize="12"
-                                       Foreground="#95FFFFFF"
+                                       Foreground="{DynamicResource TextSecondary}"
                                        Margin="0,14,0,6" />
                             <TextBox x:Name="WebLinkTitleInput"
                                      Style="{StaticResource FluentGlassInputStyle}"
@@ -601,7 +601,7 @@
                                              Margin="0,0,18,0">
                                     <TextBlock Text="Both canvas &amp; sidebar"
                                                FontSize="12"
-                                               Foreground="#95FFFFFF"
+                                               Foreground="{DynamicResource TextSecondary}"
                                                VerticalAlignment="Center" />
                                 </RadioButton>
                                 <RadioButton x:Name="WebLinkDestCanvasRadio"
@@ -611,7 +611,7 @@
                                              Margin="0,0,18,0">
                                     <TextBlock Text="Canvas only"
                                                FontSize="12"
-                                               Foreground="#95FFFFFF"
+                                               Foreground="{DynamicResource TextSecondary}"
                                                VerticalAlignment="Center" />
                                 </RadioButton>
                                 <RadioButton x:Name="WebLinkDestSidebarRadio"
@@ -620,7 +620,7 @@
                                              Cursor="Hand">
                                     <TextBlock Text="Sidebar only"
                                                FontSize="12"
-                                               Foreground="#95FFFFFF"
+                                               Foreground="{DynamicResource TextSecondary}"
                                                VerticalAlignment="Center" />
                                 </RadioButton>
                             </StackPanel>
@@ -628,7 +628,7 @@
                             <!-- Inline Validation Message -->
                             <TextBlock x:Name="WebLinkStatusMessage"
                                        FontSize="11.5"
-                                       Foreground="#FF8080"
+                                       Foreground="{DynamicResource DangerText}"
                                        Margin="0,8,0,0"
                                        TextWrapping="Wrap"
                                        Visibility="Collapsed" />
@@ -644,13 +644,13 @@
                                     Visibility="Collapsed">
                             <ui:SymbolIcon Symbol="Location24"
                                            FontSize="13"
-                                           Foreground="#85FFFFFF"
+                                           Foreground="{DynamicResource TextTertiary}"
                                            Margin="0,0,6,0"
                                            VerticalAlignment="Center" />
                             <TextBlock x:Name="CurrentLocationText"
                                        Text="Current Location: ..."
                                        FontSize="12"
-                                       Foreground="#85FFFFFF"
+                                       Foreground="{DynamicResource TextTertiary}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
 

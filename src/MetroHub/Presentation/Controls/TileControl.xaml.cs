@@ -63,9 +63,11 @@ public partial class TileControl : UserControl
             ActiveTiles.RemoveAll(tc => !tc.IsLoaded && !ReferenceEquals(tc, this));
             if (!ActiveTiles.Contains(this)) ActiveTiles.Add(this);
             ApplyTileStyle(animate: false);
+            ThemeService.ThemeChanged += OnThemeChanged;
         };
         Unloaded += (s, e) =>
         {
+            ThemeService.ThemeChanged -= OnThemeChanged;
             ActiveTiles.Remove(this);
             ActiveTiles.RemoveAll(tc => !tc.IsLoaded);
         };
@@ -74,6 +76,11 @@ public partial class TileControl : UserControl
         MouseEnter += OnMouseEnter;
         MouseLeave += OnMouseLeave;
         MouseMove += OnMouseMove;
+    }
+
+    private void OnThemeChanged(object? sender, AppTheme theme)
+    {
+        Dispatcher.InvokeAsync(() => ApplyTileStyle(animate: false));
     }
 
     private void OnMouseMove(object sender, MouseEventArgs e)

@@ -76,7 +76,7 @@
                                Margin="8,0,8,6"
                                FontSize="12"
                                FontWeight="SemiBold"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimary}"
                                SnapsToDevicePixels="True"
                                UseLayoutRounding="True"
                                TextOptions.TextFormattingMode="Ideal"
@@ -103,7 +103,7 @@
                                Margin="8,0,8,6"
                                FontSize="12"
                                FontWeight="SemiBold"
-                               Foreground="#F5FFFFFF"
+                               Foreground="{DynamicResource TextPrimary}"
                                SnapsToDevicePixels="True"
                                UseLayoutRounding="True"
                                TextOptions.TextFormattingMode="Ideal"
@@ -129,19 +129,19 @@
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                             <TextBlock Text="{Binding Label}"
                                        HorizontalAlignment="Center"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimary}"
                                        FontSize="13"
                                        FontWeight="Bold"
                                        SnapsToDevicePixels="True" />
                             <TextBlock Text="{Binding SettingsSummary}"
                                        HorizontalAlignment="Center"
-                                       Foreground="#E0FFFFFF"
+                                       Foreground="{DynamicResource TextSecondary}"
                                        FontSize="10"
                                        Margin="0,3,0,0"
                                        SnapsToDevicePixels="True" />
                             <TextBlock Text="Click to cycle color"
                                        HorizontalAlignment="Center"
-                                       Foreground="#80FFFFFF"
+                                       Foreground="{DynamicResource TextTertiary}"
                                        FontSize="9"
                                        Margin="0,4,0,0"
                                        SnapsToDevicePixels="True" />
@@ -249,7 +249,7 @@
             <Style TargetType="Border">
                 <Setter Property="Opacity" Value="1.0"/>
                 <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="BorderBrush" Value="#22FFFFFF"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource GlassBorder}"/>
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding IsSelected}" Value="True">
                         <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
@@ -270,46 +270,46 @@
             <ContextMenu x:Name="TileContextMenu">
                 <MenuItem x:Name="ResizeMenuItem" Header="Resize">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="ResizeLarge16" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="ResizeLarge16" FontSize="18" Foreground="{DynamicResource TextSecondary}" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem x:Name="StyleMenuItem" Header="Style">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="PaintBrush16" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="PaintBrush16" FontSize="18" Foreground="{DynamicResource TextSecondary}" />
                     </MenuItem.Icon>
                     <MenuItem x:Name="StyleDefaultMenuItem" Header="Default" IsCheckable="True" Click="OnStyleDefaultClick" />
                     <MenuItem x:Name="StyleColourfulMenuItem" Header="Colourful" IsCheckable="True" Click="OnStyleColourfulClick" />
                 </MenuItem>
                 <MenuItem x:Name="GroupMenuItem" Header="Create Group from Tiles" Click="OnGroupTilesClick">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="FolderAdd24" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="FolderAdd24" FontSize="18" Foreground="{DynamicResource TextSecondary}" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem x:Name="AddToGroupMenuItem" Header="Add to Group">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="FolderArrowRight24" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="FolderArrowRight24" FontSize="18" Foreground="{DynamicResource TextSecondary}" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator x:Name="SingleAppSeparator" />
                 <MenuItem x:Name="RunAdminMenuItem" Header="Run as Administrator" Click="OnRunAsAdminClick">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="Shield32" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="Shield32" FontSize="18" Foreground="{DynamicResource TextSecondary}" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem x:Name="OpenLocationMenuItem" Header="Open File Location" Click="OnOpenFileLocationClick">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="FolderOpenVertical20" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="FolderOpenVertical20" FontSize="18" Foreground="{DynamicResource TextSecondary}" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem x:Name="CopyUrlMenuItem" Header="Copy Web Link" Visibility="Collapsed" Click="OnCopyUrlClick">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="Copy24" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="Copy24" FontSize="18" Foreground="{DynamicResource TextSecondary}" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator x:Name="UnpinSeparator" />
-                <MenuItem x:Name="UnpinMenuItem" Header="Unpin from MetroHub" Click="OnUnpinClick" Foreground="#FF6B6B">
+                <MenuItem x:Name="UnpinMenuItem" Header="Unpin from MetroHub" Click="OnUnpinClick" Foreground="{DynamicResource DangerText}">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="PinOff24" FontSize="18" Foreground="#FF6B6B" />
+                        <ui:SymbolIcon Symbol="PinOff24" FontSize="18" Foreground="{DynamicResource DangerText}" />
                     </MenuItem.Icon>
                 </MenuItem>
             </ContextMenu>

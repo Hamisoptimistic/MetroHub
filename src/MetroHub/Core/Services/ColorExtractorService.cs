@@ -168,11 +168,13 @@ public static class ColorExtractorService
     }
 
     /// <summary>
-    /// Parses a hex color string into a Color with ~22% alpha for soft tinted glass.
-    /// Default alpha: 0x38 (~22%).
+    /// Parses a hex color string into a Color with appropriate alpha for soft tinted glass.
+    /// In Dark theme: ~22% alpha (0x38).
+    /// In Light theme: ~28% alpha (0x48) for clear contrast against off-white mica.
     /// </summary>
-    public static Color GetTintedColor(string? hexColor, byte alpha = 0x38)
+    public static Color GetTintedColor(string? hexColor, byte? alphaOverride = null)
     {
+        byte alpha = alphaOverride ?? (ThemeService.IsDarkTheme ? (byte)0x38 : (byte)0x48);
         if (!string.IsNullOrWhiteSpace(hexColor))
         {
             try
@@ -197,11 +199,15 @@ public static class ColorExtractorService
         }
 
         // Default neutral glass fallback if invalid
-        return Color.FromArgb(0x1C, 0xFF, 0xFF, 0xFF);
+        return GetDefaultGlassColor();
     }
 
     /// <summary>
-    /// Default transparent acrylic glass background: #1CFFFFFF (11% white).
+    /// Default acrylic glass background:
+    /// In Dark theme: #1CFFFFFF (11% white).
+    /// In Light theme: #C8FFFFFF (78% white).
     /// </summary>
-    public static Color GetDefaultGlassColor() => Color.FromArgb(0x1C, 0xFF, 0xFF, 0xFF);
+    public static Color GetDefaultGlassColor() => ThemeService.IsDarkTheme 
+        ? Color.FromArgb(0x1C, 0xFF, 0xFF, 0xFF) 
+        : Color.FromArgb(0xC8, 0xFF, 0xFF, 0xFF);
 }
