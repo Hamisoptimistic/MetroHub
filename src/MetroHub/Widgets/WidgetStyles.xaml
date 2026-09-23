@@ -10,11 +10,47 @@
     <SolidColorBrush x:Key="FluentPressedBrush" Color="#1EFFFFFF" />
 
     <!-- ========================================================================= -->
-    <!-- UNIVERSAL FLUENT GREEN TOGGLESWITCH                                       -->
-    <!-- Windows 11 Fluent style: transparent track when OFF, #00E676 green track  -->
-    <!-- with solid black #000000 knob when ON                                     -->
+    <!-- UNIVERSAL FLUENT GREEN TOGGLESWITCH — Brush Overrides                     -->
+    <!-- These MUST live at the ResourceDictionary top-level (not in Style.Resources)
+         because WPF-UI's ControlTemplate resolves them via DynamicResource through
+         the visual-tree resource chain.  Style.Resources only reliably reach
+         Setters/Triggers, not template internals in merged dictionaries.           -->
     <!-- ========================================================================= -->
-    <Style x:Key="FluentGreenToggleSwitchStyle" TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource {x:Type ui:ToggleSwitch}}">
+
+    <!-- ON state: Active Green #00E676 track with Solid Black #000000 knob -->
+    <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#00E676" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#00FF85" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#00CC6A" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="#8000E676" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#00E676" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#00FF85" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="#00CC6A" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#000000" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#1A1A1A" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#000000" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#000000" />
+
+    <!-- OFF state: Transparent track, subtle fluent outline (#70FFFFFF), silver knob (#CECECE) -->
+    <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="Transparent" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#0DFFFFFF" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#18FFFFFF" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled" Color="Transparent" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="#70FFFFFF" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="#90FFFFFF" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="#55FFFFFF" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled" Color="#35FFFFFF" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#CECECE" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#B0B0B0" />
+    <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="#60FFFFFF" />
+
+    <!-- Accent overrides for ToggleSwitch -->
+    <SolidColorBrush x:Key="SystemAccentColorBrush" Color="#00E676" />
+    <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#00E676" />
+    <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="#00CC6A" />
+
+    <!-- Named style: inherits full ControlTemplate from WPF-UI's DefaultUiToggleSwitchStyle -->
+    <Style x:Key="FluentGreenToggleSwitchStyle" TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource DefaultUiToggleSwitchStyle}">
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -46,14 +82,14 @@
             <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#B0B0B0" />
             <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="#60FFFFFF" />
 
-            <!-- Accent overrides -->
+            <!-- Accent overrides for ToggleSwitch -->
             <SolidColorBrush x:Key="SystemAccentColorBrush" Color="#00E676" />
             <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#00E676" />
             <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="#00CC6A" />
         </Style.Resources>
     </Style>
 
-    <!-- Implicit default: Any ui:ToggleSwitch automatically receives the signature Fluent Green styling -->
+    <!-- Implicit default: every ui:ToggleSwitch automatically receives the Fluent Green styling -->
     <Style TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource FluentGreenToggleSwitchStyle}" />
 
     <!-- 

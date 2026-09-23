@@ -18,42 +18,12 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
-        <!-- Media Transport Button Style: Fluent Acrylic Button with 2px Corner Radius -->
-        <Style x:Key="MediaTransportButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#E5E9F0" />
+        <!-- Media Transport Button Style: Inherits FluentGhostButtonStyle (2px Corner Radius, unified sidebar hover) -->
+        <Style x:Key="MediaTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}">
             <Setter Property="Width" Value="32" />
             <Setter Property="Height" Value="28" />
-            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="0" />
             <Setter Property="Focusable" Value="False" />
-            <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
-            <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="2"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.3" />
-                                <Setter Property="Cursor" Value="Arrow" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
         <!-- Zune Pad Flanking Buttons (Previous / Next) -->

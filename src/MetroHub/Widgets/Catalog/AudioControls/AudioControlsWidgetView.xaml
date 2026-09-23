@@ -19,39 +19,12 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
-        <!-- Media & Pomodoro-Consistent Transport Button Style: Borderless, Transparent, 2px Corner Radius -->
-        <Style x:Key="VolumeTransportButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+        <!-- Media & Pomodoro-Consistent Transport Button Style: Inherits FluentGhostButtonStyle (2px Corner Radius, unified sidebar hover) -->
+        <Style x:Key="VolumeTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}">
             <Setter Property="Width" Value="28" />
             <Setter Property="Height" Value="28" />
-            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Padding" Value="0" />
             <Setter Property="Focusable" Value="False" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="2"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.3" />
-                                <Setter Property="Cursor" Value="Arrow" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
         <!-- Windows 11 Sound Output Device List Item Button Style -->
