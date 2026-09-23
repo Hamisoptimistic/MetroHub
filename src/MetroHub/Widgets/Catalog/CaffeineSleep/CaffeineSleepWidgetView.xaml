@@ -82,43 +82,6 @@
             </Setter>
         </Style>
 
-        <!-- Fluent Green ToggleSwitch Style (Active Green #00E676 track when ON) -->
-        <Style x:Key="FluentGreenToggleSwitchStyle" TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource {x:Type ui:ToggleSwitch}}">
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Style.Resources>
-                <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#00E676" />
-                <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#00FF85" />
-                <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#00CC6A" />
-                <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="#8000E676" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#00E676" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#00FF85" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="#00CC6A" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#000000" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#1A1A1A" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#000000" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#000000" />
-
-                <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="Transparent" />
-                <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#0DFFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#18FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled" Color="Transparent" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="#70FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="#90FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="#55FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled" Color="#35FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#CECECE" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="#FFFFFF" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#B0B0B0" />
-                <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="#60FFFFFF" />
-
-                <SolidColorBrush x:Key="SystemAccentColorBrush" Color="#00E676" />
-                <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#00E676" />
-                <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="#00CC6A" />
-            </Style.Resources>
-        </Style>
-
         <!-- Fluent Amber ToggleSwitch Style (Warm Amber #FFB900 track when ON) -->
         <Style x:Key="FluentAmberToggleSwitchStyle" TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource {x:Type ui:ToggleSwitch}}">
             <Setter Property="VerticalAlignment" Value="Center" />

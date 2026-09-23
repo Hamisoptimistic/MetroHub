@@ -158,6 +158,42 @@
             <!-- Implicit Default Button Style: All standard Buttons inherit sidebar hover by default -->
             <Style TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}" />
 
+            <!-- Universal Windows 11 Fluent Dark-Glass ToolTip Style (2px Corners, Deep Obsidian Acrylic, Zero Square Artifacts) -->
+            <Style TargetType="{x:Type ToolTip}">
+                <Setter Property="OverridesDefaultStyle" Value="True" />
+                <Setter Property="Background" Value="#F214161A" />
+                <Setter Property="BorderBrush" Value="#25FFFFFF" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Foreground" Value="#F0FFFFFF" />
+                <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontWeight" Value="Normal" />
+                <Setter Property="Padding" Value="8,4,8,4" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+                <Setter Property="UseLayoutRounding" Value="True" />
+                <Setter Property="HasDropShadow" Value="False" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ToolTip}">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="{DynamicResource ControlCornerRadius}"
+                                    Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True"
+                                    UseLayoutRounding="True">
+                                <Border.Effect>
+                                    <DropShadowEffect ShadowDepth="2" Direction="270" Opacity="0.45" BlurRadius="10" Color="#000000" />
+                                </Border.Effect>
+                                <ContentPresenter HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center"
+                                                  SnapsToDevicePixels="True" />
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <!-- Universal Fluent ScrollBar: 100% Transparent Track (No grey background gutter ever), Translucent White Thumb -->
             <Style x:Key="ScrollBarPageButtonStyle" TargetType="{x:Type RepeatButton}">
                 <Setter Property="OverridesDefaultStyle" Value="True" />
