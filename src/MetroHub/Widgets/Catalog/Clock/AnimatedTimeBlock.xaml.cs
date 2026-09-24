@@ -178,6 +178,15 @@ public partial class AnimatedTimeBlock : UserControl
 
         PartPreviousText.TextAlignment = TextAlignment;
         PartCurrentText.TextAlignment = TextAlignment;
+
+        var hAlign = TextAlignment switch
+        {
+            TextAlignment.Center => HorizontalAlignment.Center,
+            TextAlignment.Right => HorizontalAlignment.Right,
+            _ => HorizontalAlignment.Left
+        };
+        PartPreviousText.HorizontalAlignment = hAlign;
+        PartCurrentText.HorizontalAlignment = hAlign;
     }
 
     private static void OnTextChangedStatic(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -214,10 +223,29 @@ public partial class AnimatedTimeBlock : UserControl
         PartPreviousTransform.BeginAnimation(TranslateTransform.YProperty, null);
         PartCurrentText.BeginAnimation(UIElement.OpacityProperty, null);
         PartCurrentTransform.BeginAnimation(TranslateTransform.YProperty, null);
+        BeginAnimation(WidthProperty, null);
 
         double slide = SlideDistance;
         var duration = TimeSpan.FromMilliseconds(DurationMs);
         var easeOut = new QuadraticEase { EasingMode = EasingMode.EaseOut };
+
+        // Smoothly animate width if old and new text widths differ (e.g. 12h format shifting 9->10 or date changing)
+        double currentWidth = ActualWidth;
+        if (currentWidth > 0)
+        {
+            PartCurrentText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            double targetWidth = PartCurrentText.DesiredSize.Width;
+
+            if (Math.Abs(currentWidth - targetWidth) > 0.5)
+            {
+                var widthAnim = new DoubleAnimation(currentWidth, targetWidth, duration) { EasingFunction = easeOut };
+                widthAnim.Completed += (s, e) =>
+                {
+                    ClearValue(WidthProperty);
+                };
+                BeginAnimation(WidthProperty, widthAnim);
+            }
+        }
 
         // Animate Previous: slides up and dissolves out
         var prevFade = new DoubleAnimation(1.0, 0.0, duration) { EasingFunction = easeOut };

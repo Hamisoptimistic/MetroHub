@@ -7,9 +7,11 @@
              Focusable="False"
              SnapsToDevicePixels="True"
              UseLayoutRounding="True"
+             Typography.NumeralAlignment="Tabular"
+             Typography.NumeralStyle="Normal"
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
+             TextOptions.TextHintingMode="Animated"
              ClipToBounds="False">
     <Grid x:Name="LayoutRoot" SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="False">
         <!-- Previous Text Layer (slides up & fades out) -->
@@ -18,9 +20,11 @@
                    IsHitTestVisible="False"
                    SnapsToDevicePixels="True"
                    UseLayoutRounding="True"
+                   Typography.NumeralAlignment="Tabular"
+                   Typography.NumeralStyle="Normal"
                    TextOptions.TextFormattingMode="Ideal"
                    TextOptions.TextRenderingMode="ClearType"
-                   TextOptions.TextHintingMode="Fixed">
+                   TextOptions.TextHintingMode="Animated">
             <TextBlock.RenderTransform>
                 <TranslateTransform x:Name="PartPreviousTransform" Y="0" />
             </TextBlock.RenderTransform>
@@ -32,9 +36,11 @@
                    IsHitTestVisible="False"
                    SnapsToDevicePixels="True"
                    UseLayoutRounding="True"
+                   Typography.NumeralAlignment="Tabular"
+                   Typography.NumeralStyle="Normal"
                    TextOptions.TextFormattingMode="Ideal"
                    TextOptions.TextRenderingMode="ClearType"
-                   TextOptions.TextHintingMode="Fixed">
+                   TextOptions.TextHintingMode="Animated">
             <TextBlock.RenderTransform>
                 <TranslateTransform x:Name="PartCurrentTransform" Y="0" />
             </TextBlock.RenderTransform>

@@ -10,9 +10,11 @@
              Focusable="False"
              SnapsToDevicePixels="True"
              UseLayoutRounding="True"
+             Typography.NumeralAlignment="Tabular"
+             Typography.NumeralStyle="Normal"
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
+             TextOptions.TextHintingMode="Animated"
              RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
@@ -24,14 +26,43 @@
             <!-- 1. Wide 4x2 Layout: Time Centered (No AM/PM, No Date) with Micro-Motion -->
             <Grid Visibility="{Binding IsWideOnly, Converter={StaticResource BoolToVis}}"
                   VerticalAlignment="Center" HorizontalAlignment="Center">
-                <clock:AnimatedTimeBlock Text="{Binding TimeString}"
-                                         EnableTextDepth="True"
-                                         FontSize="68"
-                                         FontWeight="{Binding ClockFontWeight}"
-                                         FontFamily="{Binding ClockFontFamily}"
-                                         Foreground="#FFFFFF"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center" />
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <clock:AnimatedTimeBlock Text="{Binding HoursString}"
+                                             EnableTextDepth="True"
+                                             FontSize="68"
+                                             FontWeight="{Binding ClockFontWeight}"
+                                             FontFamily="{Binding ClockFontFamily}"
+                                             Foreground="#FFFFFF"
+                                             VerticalAlignment="Center"
+                                             TextAlignment="Center" />
+                    <TextBlock Text=":"
+                               FontSize="68"
+                               FontWeight="{Binding ClockFontWeight}"
+                               FontFamily="{Binding ClockFontFamily}"
+                               Foreground="#FFFFFF"
+                               VerticalAlignment="Center"
+                               Typography.NumeralAlignment="Tabular"
+                               Typography.NumeralStyle="Normal"
+                               TextOptions.TextFormattingMode="Ideal"
+                               TextOptions.TextRenderingMode="ClearType"
+                               TextOptions.TextHintingMode="Animated">
+                        <TextBlock.Effect>
+                            <DropShadowEffect BlurRadius="26"
+                                              Direction="270"
+                                              ShadowDepth="4"
+                                              Opacity="0.22"
+                                              Color="#080E1A" />
+                        </TextBlock.Effect>
+                    </TextBlock>
+                    <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
+                                             EnableTextDepth="True"
+                                             FontSize="68"
+                                             FontWeight="{Binding ClockFontWeight}"
+                                             FontFamily="{Binding ClockFontFamily}"
+                                             Foreground="#FFFFFF"
+                                             VerticalAlignment="Center"
+                                             TextAlignment="Center" />
+                </StackPanel>
             </Grid>
 
             <!-- 2. Banner 8x2 Layout: Time on Left, Full Date on Right with Micro-Motion -->
@@ -43,14 +74,43 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Time -->
-                <clock:AnimatedTimeBlock Grid.Column="0"
-                                         Text="{Binding TimeString}"
-                                         EnableTextDepth="True"
-                                         FontSize="68"
-                                         FontWeight="{Binding ClockFontWeight}"
-                                         FontFamily="{Binding ClockFontFamily}"
-                                         Foreground="#FFFFFF"
-                                         VerticalAlignment="Center" />
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <clock:AnimatedTimeBlock Text="{Binding HoursString}"
+                                             EnableTextDepth="True"
+                                             FontSize="68"
+                                             FontWeight="{Binding ClockFontWeight}"
+                                             FontFamily="{Binding ClockFontFamily}"
+                                             Foreground="#FFFFFF"
+                                             VerticalAlignment="Center"
+                                             TextAlignment="Center" />
+                    <TextBlock Text=":"
+                               FontSize="68"
+                               FontWeight="{Binding ClockFontWeight}"
+                               FontFamily="{Binding ClockFontFamily}"
+                               Foreground="#FFFFFF"
+                               VerticalAlignment="Center"
+                               Typography.NumeralAlignment="Tabular"
+                               Typography.NumeralStyle="Normal"
+                               TextOptions.TextFormattingMode="Ideal"
+                               TextOptions.TextRenderingMode="ClearType"
+                               TextOptions.TextHintingMode="Animated">
+                        <TextBlock.Effect>
+                            <DropShadowEffect BlurRadius="26"
+                                              Direction="270"
+                                              ShadowDepth="4"
+                                              Opacity="0.22"
+                                              Color="#080E1A" />
+                        </TextBlock.Effect>
+                    </TextBlock>
+                    <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
+                                             EnableTextDepth="True"
+                                             FontSize="68"
+                                             FontWeight="{Binding ClockFontWeight}"
+                                             FontFamily="{Binding ClockFontFamily}"
+                                             Foreground="#FFFFFF"
+                                             VerticalAlignment="Center"
+                                             TextAlignment="Center" />
+                </StackPanel>
 
                 <!-- Full Date (e.g. Friday, 11 September) - Razor-sharp, clean typography -->
                 <clock:AnimatedTimeBlock Grid.Column="1"
@@ -67,14 +127,43 @@
             <Grid Visibility="{Binding IsHero, Converter={StaticResource BoolToVis}}"
                   VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <clock:AnimatedTimeBlock Text="{Binding TimeString}"
-                                             EnableTextDepth="True"
-                                             FontSize="84"
-                                             FontWeight="{Binding ClockFontWeight}"
-                                             FontFamily="{Binding ClockFontFamily}"
-                                             Foreground="#FFFFFF"
-                                             HorizontalAlignment="Center"
-                                             VerticalAlignment="Center" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <clock:AnimatedTimeBlock Text="{Binding HoursString}"
+                                                 EnableTextDepth="True"
+                                                 FontSize="84"
+                                                 FontWeight="{Binding ClockFontWeight}"
+                                                 FontFamily="{Binding ClockFontFamily}"
+                                                 Foreground="#FFFFFF"
+                                                 VerticalAlignment="Center"
+                                                 TextAlignment="Center" />
+                        <TextBlock Text=":"
+                                   FontSize="84"
+                                   FontWeight="{Binding ClockFontWeight}"
+                                   FontFamily="{Binding ClockFontFamily}"
+                                   Foreground="#FFFFFF"
+                                   VerticalAlignment="Center"
+                                   Typography.NumeralAlignment="Tabular"
+                                   Typography.NumeralStyle="Normal"
+                                   TextOptions.TextFormattingMode="Ideal"
+                                   TextOptions.TextRenderingMode="ClearType"
+                                   TextOptions.TextHintingMode="Animated">
+                            <TextBlock.Effect>
+                                <DropShadowEffect BlurRadius="26"
+                                                  Direction="270"
+                                                  ShadowDepth="4"
+                                                  Opacity="0.22"
+                                                  Color="#080E1A" />
+                            </TextBlock.Effect>
+                        </TextBlock>
+                        <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
+                                                 EnableTextDepth="True"
+                                                 FontSize="84"
+                                                 FontWeight="{Binding ClockFontWeight}"
+                                                 FontFamily="{Binding ClockFontFamily}"
+                                                 Foreground="#FFFFFF"
+                                                 VerticalAlignment="Center"
+                                                 TextAlignment="Center" />
+                    </StackPanel>
 
                     <!-- Full Date - Crisp, zero shadow -->
                     <clock:AnimatedTimeBlock Text="{Binding FullDateString}"
@@ -82,6 +171,7 @@
                                              FontWeight="SemiBold"
                                              Foreground="#E0FFFFFF"
                                              HorizontalAlignment="Center"
+                                             TextAlignment="Center"
                                              Margin="0,10,0,0" />
                 </StackPanel>
             </Grid>
