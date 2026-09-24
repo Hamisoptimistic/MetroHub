@@ -117,13 +117,6 @@ public static class GridPlacementService
                 {
                     return false;
                 }
-
-                // 2. Must not occupy 1x1 perimeter gap buffer around this group
-                // Bottom gap (row == gMaxR, within group horizontal span)
-                if (row == gMaxR && col < gMaxC && (col + spanX) > gMinC) return false;
-
-                // Top gap (row + spanY == gMinR, within group horizontal span)
-                if (gMinR > 0 && (row + spanY) == gMinR && col < gMaxC && (col + spanX) > gMinC) return false;
             }
         }
 
@@ -258,7 +251,8 @@ public static class GridPlacementService
             var group = groups?.FirstOrDefault(g => g.Id == resizingTile.Group);
             int groupCol = group != null ? group.Col : GetColumnStartCol(GetColumnIndexFromCol(col));
             effectiveMinCol = groupCol;
-            effectiveMaxCol = groupCol + GroupColWidth;
+            var gBox = group != null ? GetGroupBoundingBox(group, allTiles) : (MinCol: groupCol, MaxCol: groupCol + GroupColWidth, MinRow: 0, MaxRow: 0);
+            effectiveMaxCol = Math.Max(groupCol + GroupColWidth, gBox.MaxCol);
             scopeTiles = allTiles.Where(t => t.Group == resizingTile.Group).ToList();
         }
         else
@@ -614,7 +608,8 @@ public static class GridPlacementService
         int originalCol, 
         int originalRow, 
         int maxCols, 
-        IList<TileModel> allTiles)
+        IList<TileModel> allTiles,
+        IList<TileGroupModel>? groups = null)
     {
         var modifiedTiles = new List<TileModel>();
         int maxAllowedCol = Math.Max(0, maxCols - draggedTile.SpanX);
@@ -649,6 +644,16 @@ public static class GridPlacementService
             draggedTile.X = PixelXFromCol(targetCol);
             draggedTile.Y = PixelYFromRow(targetRow);
             modifiedTiles.Add(draggedTile);
+            
+            if (groups != null && groups.Count > 0 && isLoosePlacement)
+            {
+                var looseTiles = allTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+                var pushedGroupTiles = PushGroupsDownFromLooseTiles(looseTiles, groups, allTiles);
+                foreach (var pt in pushedGroupTiles)
+                {
+                    if (!modifiedTiles.Contains(pt)) modifiedTiles.Add(pt);
+                }
+            }
             return modifiedTiles;
         }
 
@@ -675,6 +680,15 @@ public static class GridPlacementService
             targetTile.Y = PixelYFromRow(originalRow);
             modifiedTiles.Add(targetTile);
 
+            if (groups != null && groups.Count > 0 && isLoosePlacement)
+            {
+                var looseTiles = allTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+                var pushedGroupTiles = PushGroupsDownFromLooseTiles(looseTiles, groups, allTiles);
+                foreach (var pt in pushedGroupTiles)
+                {
+                    if (!modifiedTiles.Contains(pt)) modifiedTiles.Add(pt);
+                }
+            }
             return modifiedTiles;
         }
 
@@ -695,6 +709,16 @@ public static class GridPlacementService
                 t.X = PixelXFromCol(kvp.Value);
                 modifiedTiles.Add(t);
             }
+            
+            if (groups != null && groups.Count > 0 && isLoosePlacement)
+            {
+                var looseTiles = allTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+                var pushedGroupTiles = PushGroupsDownFromLooseTiles(looseTiles, groups, allTiles);
+                foreach (var pt in pushedGroupTiles)
+                {
+                    if (!modifiedTiles.Contains(pt)) modifiedTiles.Add(pt);
+                }
+            }
             return modifiedTiles;
         }
 
@@ -712,6 +736,16 @@ public static class GridPlacementService
             modifiedTiles.Add(t);
         }
 
+        if (groups != null && groups.Count > 0 && isLoosePlacement)
+        {
+            var looseTiles = allTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+            var pushedGroupTiles = PushGroupsDownFromLooseTiles(looseTiles, groups, allTiles);
+            foreach (var pt in pushedGroupTiles)
+            {
+                if (!modifiedTiles.Contains(pt)) modifiedTiles.Add(pt);
+            }
+        }
+
         return modifiedTiles;
     }
 
@@ -725,14 +759,15 @@ public static class GridPlacementService
         int maxCols,
         IList<TileModel> allTiles,
         Dictionary<TileModel, (int Col, int Row)>? origPositions = null,
-        bool isGroupCluster = false)
+        bool isGroupCluster = false,
+        IList<TileGroupModel>? groups = null)
     {
         var modifiedTiles = new List<TileModel>();
         if (clusterTiles == null || clusterTiles.Count == 0) return modifiedTiles;
 
         if (clusterTiles.Count == 1 && !isGroupCluster)
         {
-            return PlaceAndResolveCollisions(clusterTiles[0], anchorTargetCol, anchorTargetRow, anchorOrigCol, anchorOrigRow, maxCols, allTiles);
+            return PlaceAndResolveCollisions(clusterTiles[0], anchorTargetCol, anchorTargetRow, anchorOrigCol, anchorOrigRow, maxCols, allTiles, groups);
         }
 
         // Calculate cluster relative boundaries
@@ -911,6 +946,16 @@ public static class GridPlacementService
             modifiedTiles.Add(t);
         }
 
+        if (groups != null && groups.Count > 0 && !isGroupCluster)
+        {
+            var looseTiles = allTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+            var pushedGroupTiles = PushGroupsDownFromLooseTiles(looseTiles, groups, allTiles);
+            foreach (var pt in pushedGroupTiles)
+            {
+                if (!modifiedTiles.Contains(pt)) modifiedTiles.Add(pt);
+            }
+        }
+
         return modifiedTiles;
     }
 
@@ -970,163 +1015,8 @@ public static class GridPlacementService
     }
 
     /// <summary>
-    /// Checks if a tile at (col, row) with span (spanX, spanY) is positioned in or straddling a 1x1 gap buffer.
-    /// This includes group perimeter top and bottom gap buffers.
-    /// </summary>
-    public static bool IsIn1x1Gap(
-        int col,
-        int row,
-        int spanX,
-        int spanY,
-        IEnumerable<TileGroupModel> groups,
-        IEnumerable<TileModel> allTiles,
-        out int gapCol,
-        out int gapRow,
-        string? ignoreGroupId = null)
-    {
-        gapCol = -1;
-        gapRow = -1;
-
-        // Group perimeter gaps (bottom and top)
-        if (groups != null)
-        {
-            foreach (var g in groups)
-            {
-                if (ignoreGroupId != null && g.Id == ignoreGroupId) continue;
-
-                var members = allTiles?.Where(t => t.Group == g.Id).ToList();
-                if ((members == null || members.Count == 0) && string.IsNullOrWhiteSpace(g.Title)) continue;
-
-                int gMinC = (members != null && members.Count > 0) ? Math.Min(g.Col, members.Min(t => t.Col)) : g.Col;
-                int gMaxC = (members != null && members.Count > 0) ? members.Max(t => t.Col + t.SpanX) : g.Col + 2;
-                int gMinR = g.Row;
-                int gMaxR = (members != null && members.Count > 0) ? members.Max(t => t.Row + t.SpanY) : g.Row + 1;
-
-                // Bottom 1x1 gap buffer (row gMaxR, immediately below member tiles)
-                if (row == gMaxR && col < gMaxC && col + spanX > gMinC)
-                {
-                    gapCol = Math.Clamp(col, gMinC, gMaxC - 1);
-                    gapRow = gMaxR;
-                    return true;
-                }
-
-                // Top 1x1 gap buffer (row gMinR - 1, immediately above group header)
-                if (gMinR > 0 && row == gMinR - 1 && col < gMaxC && col + spanX > gMinC)
-                {
-                    gapCol = Math.Clamp(col, gMinC, gMaxC - 1);
-                    gapRow = gMinR - 1;
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Packs the member tiles of a group gaplessly from left-to-right, top-to-bottom within the 8-unit width.
-    /// Returns the bottom-most row used by the member tiles.
-    /// </summary>
-    public static int PackGroupTiles(
-        TileGroupModel group,
-        IList<TileModel> memberTiles,
-        int startRow,
-        IList<TileModel>? modifiedList = null)
-    {
-        startRow = Math.Max(1, startRow);
-        if (memberTiles == null || memberTiles.Count == 0)
-        {
-            return startRow;
-        }
-
-        int groupStartCol = group.Col;
-        int maxRowReached = startRow;
-
-        // Stable sort so tiles are evaluated in row-major order
-        var orderedTiles = memberTiles
-            .OrderBy(t => t.Row)
-            .ThenBy(t => t.Col)
-            .ToList();
-
-        // Track occupied grid cells relative to (groupStartCol, startRow)
-        var occupied = new HashSet<(int RelCol, int RelRow)>();
-
-        foreach (var tile in orderedTiles)
-        {
-            int spanX = Math.Clamp(tile.SpanX, 1, GroupColWidth);
-            int spanY = Math.Max(1, tile.SpanY);
-
-            int targetRelCol = -1;
-            int targetRelRow = -1;
-
-            for (int r = 0; r < 200; r++)
-            {
-                for (int c = 0; c <= GroupColWidth - spanX; c++)
-                {
-                    bool fits = true;
-                    for (int dy = 0; dy < spanY; dy++)
-                    {
-                        for (int dx = 0; dx < spanX; dx++)
-                        {
-                            if (occupied.Contains((c + dx, r + dy)))
-                            {
-                                fits = false;
-                                break;
-                            }
-                        }
-                        if (!fits) break;
-                    }
-
-                    if (fits)
-                    {
-                        targetRelCol = c;
-                        targetRelRow = r;
-                        break;
-                    }
-                }
-                if (targetRelCol != -1) break;
-            }
-
-            if (targetRelCol == -1)
-            {
-                targetRelCol = 0;
-                targetRelRow = 0;
-            }
-
-            for (int dy = 0; dy < spanY; dy++)
-            {
-                for (int dx = 0; dx < spanX; dx++)
-                {
-                    occupied.Add((targetRelCol + dx, targetRelRow + dy));
-                }
-            }
-
-            int finalCol = Math.Max(0, groupStartCol + targetRelCol);
-            int finalRow = Math.Max(1, startRow + targetRelRow);
-            double finalX = PixelXFromCol(finalCol);
-            double finalY = PixelYFromRow(finalRow);
-
-            if (tile.Col != finalCol || tile.Row != finalRow || Math.Abs(tile.X - finalX) > 0.5 || Math.Abs(tile.Y - finalY) > 0.5)
-            {
-                tile.Col = finalCol;
-                tile.Row = finalRow;
-                tile.X = finalX;
-                tile.Y = finalY;
-                if (modifiedList != null && !modifiedList.Contains(tile))
-                {
-                    modifiedList.Add(tile);
-                }
-            }
-
-            maxRowReached = Math.Max(maxRowReached, finalRow + spanY);
-        }
-
-        return maxRowReached;
-    }
-
-    /// <summary>
     /// Finds the nearest free grid slot within the group's bounds, starting from the target position.
-    /// Falls back to scanning row-by-row if no slot nearby. Never goes outside the group column width.
+    /// Falls back to scanning row-by-row if no slot nearby. Respects natural group width.
     /// </summary>
     public static (int Col, int Row) FindFreeSlotInGroup(
         TileGroupModel group,
@@ -1138,7 +1028,9 @@ public static class GridPlacementService
         TileModel? ignoreTile = null)
     {
         int groupCol = group.Col;
-        int maxRelCol = GroupColWidth - spanX;
+        int maxMemberCol = groupTiles.Count > 0 ? groupTiles.Max(t => t.Col + t.SpanX) : groupCol + GroupColWidth;
+        int effectiveWidth = Math.Max(GroupColWidth, maxMemberCol - groupCol);
+        int maxRelCol = effectiveWidth - spanX;
         int minRow = group.Row + 1; // tiles start below header
 
         targetRelCol = Math.Clamp(targetRelCol, 0, maxRelCol);
@@ -1501,28 +1393,25 @@ public static class GridPlacementService
         int maxCol = tilesToGroup.Max(t => ColFromPixel(t.X) + t.SpanX);
         int totalSpanX = maxCol - minCol;
 
-        // Check if tiles already fit within 8 columns without any mutual overlaps
-        bool canPreserveLayout = (totalSpanX <= GroupColWidth);
-        if (canPreserveLayout)
+        // Check if tiles have no mutual overlaps so layout can be preserved
+        bool canPreserveLayout = true;
+        for (int i = 0; i < tilesToGroup.Count; i++)
         {
-            for (int i = 0; i < tilesToGroup.Count; i++)
+            var a = tilesToGroup[i];
+            int aRelC = ColFromPixel(a.X) - minCol;
+            int aRelR = RowFromPixel(a.Y) - minRow;
+            for (int j = i + 1; j < tilesToGroup.Count; j++)
             {
-                var a = tilesToGroup[i];
-                int aRelC = ColFromPixel(a.X) - minCol;
-                int aRelR = RowFromPixel(a.Y) - minRow;
-                for (int j = i + 1; j < tilesToGroup.Count; j++)
+                var b = tilesToGroup[j];
+                int bRelC = ColFromPixel(b.X) - minCol;
+                int bRelR = RowFromPixel(b.Y) - minRow;
+                if (DoTilesOverlap(aRelC, aRelR, a.SpanX, a.SpanY, bRelC, bRelR, b.SpanX, b.SpanY))
                 {
-                    var b = tilesToGroup[j];
-                    int bRelC = ColFromPixel(b.X) - minCol;
-                    int bRelR = RowFromPixel(b.Y) - minRow;
-                    if (DoTilesOverlap(aRelC, aRelR, a.SpanX, a.SpanY, bRelC, bRelR, b.SpanX, b.SpanY))
-                    {
-                        canPreserveLayout = false;
-                        break;
-                    }
+                    canPreserveLayout = false;
+                    break;
                 }
-                if (!canPreserveLayout) break;
             }
+            if (!canPreserveLayout) break;
         }
 
         if (canPreserveLayout)
@@ -1545,13 +1434,14 @@ public static class GridPlacementService
         }
         else
         {
-            // Path B: 2D First-Fit Bin Packing within 8-column container
+            // Path B: 2D First-Fit Bin Packing
             var ordered = tilesToGroup
                 .OrderBy(t => RowFromPixel(t.Y))
                 .ThenBy(t => ColFromPixel(t.X))
                 .ToList();
 
             var placed = new List<TileModel>();
+            int packWidth = Math.Max(GroupColWidth, totalSpanX);
 
             foreach (var t in ordered)
             {
@@ -1559,7 +1449,7 @@ public static class GridPlacementService
                 int bestRelRow = 0;
                 bool slotFound = false;
 
-                int maxRelCol = GroupColWidth - Math.Clamp(t.SpanX, 1, GroupColWidth);
+                int maxRelCol = Math.Max(0, packWidth - Math.Clamp(t.SpanX, 1, packWidth));
 
                 for (int r = 0; r < 200 && !slotFound; r++)
                 {
@@ -1620,8 +1510,9 @@ public static class GridPlacementService
 
         foreach (var g in orderedGroups)
         {
-            int gColStart = g.Col >= 0 ? g.Col : GetColumnStartCol(g.ColumnIndex);
-            int gColEnd = gColStart + GroupColWidth;
+            var gBox = GetGroupBoundingBox(g, allTiles);
+            int gColStart = gBox.MinCol;
+            int gColEnd = Math.Max(gColStart + 2, gBox.MaxCol);
 
             var collidingLooseTiles = looseTiles
                 .Where(t => t.Col < gColEnd && (t.Col + t.SpanX) > gColStart && t.Row <= g.Row)
@@ -1670,9 +1561,9 @@ public static class GridPlacementService
         if (targetGroup == null || allTiles == null) return modified;
 
         var targetBox = GetGroupBoundingBox(targetGroup, allTiles);
-        int groupBottom = targetBox.MaxRow; // Already incorporates +1 row for 1x1 grid separation
-        int groupStartCol = targetGroup.Col;
-        int groupWidth = Math.Max(1, targetBox.MaxCol - targetBox.MinCol);
+        int groupBottom = targetBox.MaxRow;
+        int groupStartCol = targetBox.MinCol;
+        int groupWidth = Math.Max(2, targetBox.MaxCol - targetBox.MinCol);
         int groupHeight = Math.Max(1, groupBottom - targetGroup.Row);
 
         var groupList = groups ?? new List<TileGroupModel>();
@@ -1685,7 +1576,7 @@ public static class GridPlacementService
         var inGroupQueue = new HashSet<TileGroupModel>();
         var inTileQueue = new HashSet<TileModel>();
 
-        // 1. Initial collisions with the expanded targetGroup bounding box (including the 1x1 gap)
+        // 1. Initial collisions with the targetGroup bounding box
         foreach (var otherG in groupList)
         {
             if (ReferenceEquals(otherG, targetGroup)) continue;
@@ -1706,7 +1597,7 @@ public static class GridPlacementService
             {
                 if (DoTilesOverlap(groupStartCol, targetGroup.Row, groupWidth, groupHeight, ut.Col, ut.Row, ut.SpanX, ut.SpanY))
                 {
-                    proposedTilePositions[ut] = (ut.Col, groupBottom + 1);
+                    proposedTilePositions[ut] = (ut.Col, groupBottom);
                     inTileQueue.Add(ut);
                     tileQueue.Enqueue(ut);
                 }
@@ -1757,7 +1648,7 @@ public static class GridPlacementService
                         var oPos = proposedTilePositions.TryGetValue(ut, out var op) ? op : (ut.Col, ut.Row);
                         if (DoTilesOverlap(pos.Col, pos.Row, curGWidth, curGHeight, oPos.Col, oPos.Row, ut.SpanX, ut.SpanY))
                         {
-                            int neededRow = pos.Row + curGHeight + 1;
+                            int neededRow = pos.Row + curGHeight;
                             if (neededRow > oPos.Row)
                             {
                                 proposedTilePositions[ut] = (oPos.Col, neededRow);
@@ -1869,15 +1760,18 @@ public static class GridPlacementService
         TileGroupModel targetGroup,
         IList<TileGroupModel>? groups,
         IList<TileModel> allTiles,
-        int? maxPullUpRows = null)
+        int? maxPullUpRows = null,
+        IEnumerable<TileModel>? excludeTiles = null)
     {
         var modified = new List<TileModel>();
         if (targetGroup == null || allTiles == null) return modified;
 
         var groupList = groups ?? new List<TileGroupModel>();
-        int targetColStart = targetGroup.Col >= 0 ? targetGroup.Col : GetColumnStartCol(targetGroup.ColumnIndex);
         var targetBox = GetGroupBoundingBox(targetGroup, allTiles);
+        int targetColStart = targetBox.MinCol;
         int targetColEnd = Math.Max(targetColStart + 2, targetBox.MaxCol);
+
+        var excludeSet = excludeTiles != null ? new HashSet<TileModel>(excludeTiles) : null;
 
         // 1. Identify all groups and loose canvas tiles below targetGroup with horizontal overlap
         var lowerGroups = groupList
@@ -1890,7 +1784,7 @@ public static class GridPlacementService
             .ToList();
 
         var lowerLooseTiles = allTiles
-            .Where(t => t.Group == null && t.Col < targetColEnd && (t.Col + t.SpanX) > targetColStart && t.Row > targetGroup.Row)
+            .Where(t => t.Group == null && (excludeSet == null || !excludeSet.Contains(t)) && t.Col < targetColEnd && (t.Col + t.SpanX) > targetColStart && t.Row > targetGroup.Row)
             .ToList();
 
         if (lowerGroups.Count == 0 && lowerLooseTiles.Count == 0) return modified;
@@ -1906,18 +1800,9 @@ public static class GridPlacementService
             if (t.Row < highestLowerRow) highestLowerRow = t.Row;
         }
 
-        // 3. Calculate the earliest allowed row where lower items can sit (including 1x1 gap buffer)
+        // 3. Calculate the earliest allowed row where lower items can sit
         bool isGroupDeleted = !groupList.Contains(targetGroup);
-        int minAllowedRow;
-        if (isGroupDeleted)
-        {
-            minAllowedRow = targetGroup.Row;
-        }
-        else
-        {
-            bool highestIsLoose = lowerLooseTiles.Any(t => t.Row == highestLowerRow);
-            minAllowedRow = highestIsLoose ? targetBox.MaxRow + 1 : targetBox.MaxRow;
-        }
+        int minAllowedRow = isGroupDeleted ? targetGroup.Row : targetBox.MaxRow;
 
         if (highestLowerRow == int.MaxValue || highestLowerRow <= minAllowedRow) return modified;
 
@@ -1955,116 +1840,6 @@ public static class GridPlacementService
         return modified;
     }
 
-    /// <summary>
-    /// Stacks all groups in a column deterministically by OrderIndex.
-    /// If collapsed, lower groups slide up directly beneath the header.
-    /// Returns any tiles whose coordinates were modified.
-    /// </summary>
-    public static List<TileModel> ReflowColumnGroups(
-        int columnIndex,
-        IList<TileGroupModel> groups,
-        IList<TileModel> allTiles,
-        int compactVerticalSpacing = 0)
-    {
-        var modifiedTiles = new List<TileModel>();
-        int colStart = GetColumnStartCol(columnIndex);
-
-        var colGroups = groups
-            .Where(g => g.ColumnIndex == columnIndex)
-            .OrderBy(g => g.OrderIndex)
-            .ToList();
-
-        for (int i = 0; i < colGroups.Count; i++)
-        {
-            colGroups[i].OrderIndex = i;
-        }
-
-        int currentRow = 0;
-
-        foreach (var group in colGroups)
-        {
-            group.Col = colStart;
-            group.Row = currentRow;
-            group.X = PixelXFromCol(colStart);
-            group.Y = PixelYFromRow(currentRow) + 8;
-
-            var memberTiles = allTiles.Where(t => t.Group == group.Id).ToList();
-
-            int bottomRow = PackGroupTiles(group, memberTiles, startRow: currentRow + 1, modifiedList: modifiedTiles);
-
-            currentRow = bottomRow + compactVerticalSpacing;
-        }
-
-        return modifiedTiles;
-    }
-
-    public static List<TileModel> ReflowAllGroups(
-        IList<TileGroupModel> groups,
-        IList<TileModel> allTiles)
-    {
-        var modified = new List<TileModel>();
-        if (groups == null || groups.Count == 0) return modified;
-
-        var columnIndices = groups.Select(g => g.ColumnIndex).Distinct().ToList();
-        if (columnIndices.Count == 0) columnIndices.Add(0);
-
-        foreach (var colIdx in columnIndices)
-        {
-            var list = ReflowColumnGroups(colIdx, groups, allTiles);
-            foreach (var t in list)
-            {
-                if (!modified.Contains(t)) modified.Add(t);
-            }
-        }
-
-        return modified;
-    }
-
-    public static List<TileModel> ResolveGroupReorder(
-        TileGroupModel draggedGroup,
-        int targetColumnIndex,
-        int targetOrderIndex,
-        IList<TileGroupModel> groups,
-        IList<TileModel> allTiles)
-    {
-        int oldColIndex = draggedGroup.ColumnIndex;
-
-        // Remove from old column list
-        var oldColGroups = groups.Where(g => g.ColumnIndex == oldColIndex && !ReferenceEquals(g, draggedGroup)).OrderBy(g => g.OrderIndex).ToList();
-        for (int i = 0; i < oldColGroups.Count; i++)
-        {
-            oldColGroups[i].OrderIndex = i;
-        }
-
-        draggedGroup.ColumnIndex = targetColumnIndex;
-
-        // Insert into target column list
-        var targetColGroups = groups.Where(g => g.ColumnIndex == targetColumnIndex && !ReferenceEquals(g, draggedGroup)).OrderBy(g => g.OrderIndex).ToList();
-        int insertIdx = Math.Clamp(targetOrderIndex, 0, targetColGroups.Count);
-        targetColGroups.Insert(insertIdx, draggedGroup);
-
-        for (int i = 0; i < targetColGroups.Count; i++)
-        {
-            targetColGroups[i].OrderIndex = i;
-        }
-
-        var modified = new List<TileModel>();
-
-        if (oldColIndex != targetColumnIndex)
-        {
-            var m1 = ReflowColumnGroups(oldColIndex, groups, allTiles);
-            modified.AddRange(m1);
-        }
-
-        var m2 = ReflowColumnGroups(targetColumnIndex, groups, allTiles);
-        foreach (var t in m2)
-        {
-            if (!modified.Contains(t)) modified.Add(t);
-        }
-
-        return modified;
-    }
-
     public static bool CleanEmptyGroups(IList<TileGroupModel> groups, IList<TileModel> allTiles)
     {
         // Groups can be created empty directly on canvas and populated later.
@@ -2082,115 +1857,6 @@ public static class GridPlacementService
         if (members.Count == 0) return 1;
         int maxBottom = members.Max(t => t.Row + t.SpanY);
         return Math.Max(1, maxBottom - group.Row);
-    }
-
-    /// <summary>
-    /// Finds the exact target row for inserting a group in a column based on cursor Y.
-    /// Dynamically snaps above, between, or below both ungrouped tiles and other groups.
-    /// </summary>
-    public static int FindInsertionRow(
-        int columnIndex,
-        double mouseY,
-        IEnumerable<TileGroupModel> groups,
-        IEnumerable<TileModel> allTiles,
-        TileGroupModel? excludeGroup)
-    {
-        int colStart = GetColumnStartCol(columnIndex);
-        int colEnd = colStart + GroupColWidth;
-
-        var otherGroups = groups
-            .Where(g => g.ColumnIndex == columnIndex && !ReferenceEquals(g, excludeGroup))
-            .ToList();
-
-        var ungroupedTiles = allTiles
-            .Where(t => t.Group == null && t.Col < colEnd && (t.Col + t.SpanX) > colStart)
-            .ToList();
-
-        if (otherGroups.Count == 0 && ungroupedTiles.Count == 0)
-        {
-            return 0;
-        }
-
-        var items = new List<(int MinRow, int MaxRow)>();
-
-        foreach (var g in otherGroups)
-        {
-            var (_, _, minR, maxR) = GetGroupBoundingBox(g, allTiles);
-            items.Add((Math.Max(0, minR), Math.Max(1, maxR)));
-        }
-
-        foreach (var t in ungroupedTiles)
-        {
-            items.Add((Math.Max(0, t.Row), Math.Max(1, t.Row + t.SpanY)));
-        }
-
-        items = items.OrderBy(x => x.MinRow).ThenBy(x => x.MaxRow).ToList();
-
-        int minExistingRow = Math.Max(0, items.Min(x => x.MinRow));
-        int maxExistingRow = Math.Max(1, items.Max(x => x.MaxRow));
-
-        int candidateRow = maxExistingRow;
-
-        double firstItemTopY = PixelYFromRow(minExistingRow);
-        if (mouseY < firstItemTopY + 20)
-        {
-            candidateRow = 0;
-        }
-        else
-        {
-            double lastItemBottomY = PixelYFromRow(maxExistingRow);
-            if (mouseY >= lastItemBottomY)
-            {
-                candidateRow = Math.Max(0, maxExistingRow);
-            }
-            else
-            {
-                for (int i = 0; i < items.Count; i++)
-                {
-                    var item = items[i];
-                    double topY = PixelYFromRow(item.MinRow);
-                    double bottomY = PixelYFromRow(item.MaxRow);
-                    double midY = (topY + bottomY) / 2.0;
-
-                    if (mouseY < midY)
-                    {
-                        candidateRow = Math.Max(0, item.MinRow);
-                        break;
-                    }
-
-                    if (i + 1 < items.Count)
-                    {
-                        var nextItem = items[i + 1];
-                        double nextTopY = PixelYFromRow(nextItem.MinRow);
-                        if (mouseY >= bottomY && mouseY < nextTopY)
-                        {
-                            candidateRow = Math.Max(0, item.MaxRow);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        // Guard: If candidateRow would displace any locked group, snap candidateRow below the locked group
-        int draggedHeight = excludeGroup != null ? CalculateGroupHeightRows(excludeGroup, allTiles) : 2;
-        var groupsList = groups.ToList();
-        var allTilesList = allTiles.ToList();
-        int guardLoop = 0;
-        while (guardLoop++ < 30 && WouldDisplaceLockedGroup(colStart, candidateRow, draggedHeight, groupsList, allTilesList, excludeGroup, out var conflict))
-        {
-            if (conflict != null)
-            {
-                var box = GetGroupBoundingBox(conflict, allTilesList);
-                candidateRow = Math.Max(candidateRow, box.MaxRow);
-            }
-            else
-            {
-                candidateRow++;
-            }
-        }
-
-        return Math.Max(0, candidateRow);
     }
 
     /// <summary>
@@ -2366,9 +2032,11 @@ public static class GridPlacementService
                 {
                     if (ReferenceEquals(otherG, draggedGroup)) continue;
                     var oPos = proposedGroupPositions.TryGetValue(otherG, out var op) ? op : (otherG.Col, otherG.Row);
+                    var otherGBox = GetGroupBoundingBox(otherG, allTilesList);
+                    int otherGWidth = Math.Max(2, otherGBox.MaxCol - otherGBox.MinCol);
                     int oHeight = CalculateGroupHeightRows(otherG, allTilesList);
 
-                    if (DoTilesOverlap(pos.Col, pos.Row, curT.SpanX, curT.SpanY, oPos.Col, oPos.Row, GroupColWidth, oHeight))
+                    if (DoTilesOverlap(pos.Col, pos.Row, curT.SpanX, curT.SpanY, oPos.Col, oPos.Row, otherGWidth, oHeight))
                     {
                         if (otherG.IsLocked)
                         {
@@ -2450,10 +2118,8 @@ public static class GridPlacementService
             int newCol = t.Col + colDelta;
             int newRow = t.Row + rowDelta;
 
-            // Ensure tile stays within the group's 8-unit width and below header
-            int minCol = targetColStart;
-            int maxCol = targetColStart + GroupColWidth - Math.Clamp(t.SpanX, 1, GroupColWidth);
-            t.Col = Math.Clamp(newCol, minCol, maxCol);
+            // Move member tiles rigidly with group header
+            t.Col = Math.Max(0, newCol);
             t.Row = Math.Max(targetRow + 1, newRow);
             t.X = PixelXFromCol(t.Col);
             t.Y = PixelYFromRow(t.Row);

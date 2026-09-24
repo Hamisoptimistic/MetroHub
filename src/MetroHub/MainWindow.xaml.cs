@@ -2086,9 +2086,9 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
                 if (clusterMinCol < gMaxC && clusterMaxCol > gMinC)
                 {
-                    if (clusterStartRow <= gMaxR && clusterEndRow > gMinR)
+                    if (clusterStartRow < gMaxR && clusterEndRow > gMinR)
                     {
-                        anchorRow = (gMaxR + 1) - _clusterRelGridBounds.MinRelRow;
+                        anchorRow = gMaxR - _clusterRelGridBounds.MinRelRow;
                     }
                 }
             }
@@ -2321,8 +2321,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                             cTile.SectionHeader = targetGroup.Title;
                         }
 
-                        CleanEmptyGroupsAndReflow();
-
                         List<TileModel> mod;
                         if (_draggedCluster.Count == 1)
                         {
@@ -2383,37 +2381,27 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                         int gMinR = g.Row;
                         int gMaxR = membersCount(gMembers, g);
 
-                        bool isBottomGap = (targetRow == gMaxR) && (targetCol < gMaxC && (targetCol + _draggedTile.SpanX) > gMinC);
                         bool isInsideGroup = (targetCol < gMaxC && (targetCol + _draggedTile.SpanX) > gMinC &&
                                               targetRow < gMaxR && (targetRow + _draggedTile.SpanY) > gMinR);
-                        bool isTopGap = (gMinR > 0 && (targetRow + _draggedTile.SpanY) == gMinR) &&
-                                        (targetCol < gMaxC && (targetCol + _draggedTile.SpanX) > gMinC);
-
-                        if (isBottomGap || isInsideGroup)
+                        if (isInsideGroup)
                         {
-                            targetRow = gMaxR + 1;
-                        }
-                        else if (isTopGap)
-                        {
-                            targetRow = Math.Max(1, gMinR - 1 - _draggedTile.SpanY);
+                            targetRow = gMaxR;
                         }
                     }
 
 
-
-                    CleanEmptyGroupsAndReflow();
 
                     List<TileModel> modifiedTiles;
                     if (_draggedCluster.Count > 1)
                     {
                         modifiedTiles = GridPlacementService.PlaceClusterAndResolveCollisions(
                             _draggedCluster, _draggedTile, targetCol, targetRow, _dragOriginalCol, _dragOriginalRow,
-                            maxCols, Tiles, origDict);
+                            maxCols, Tiles, origDict, isGroupCluster: false, groups: Groups);
                     }
                     else
                     {
                         modifiedTiles = GridPlacementService.PlaceAndResolveCollisions(
-                            _draggedTile, targetCol, targetRow, _dragOriginalCol, _dragOriginalRow, maxCols, Tiles);
+                            _draggedTile, targetCol, targetRow, _dragOriginalCol, _dragOriginalRow, maxCols, Tiles, groups: Groups);
                     }
 
                     if (Groups != null && Groups.Count > 0)
@@ -2428,7 +2416,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
                     AnimateModifiedTiles(modifiedTiles);
                     UpdateGroupHeaderPositions(animate: true);
-                    UpdateCanvasHeight();
                 }
 
                 foreach (var cTile in _draggedCluster)
@@ -2444,7 +2431,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                     int shrink = oldBottom - newBottom;
                     if (shrink > 0)
                     {
-                        var pulled = GridPlacementService.PullLowerGroupsUp(og!, Groups, Tiles, shrink);
+                        var pulled = GridPlacementService.PullLowerGroupsUp(og!, Groups, Tiles, shrink, _draggedCluster);
                         AnimateModifiedTiles(pulled);
                         anyPulled = true;
                     }
@@ -3599,7 +3586,11 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     private (int Col, int Row) FindGroupWrapPosition(TileGroupModel group, TileModel tile, int rawCol, int rawRow)
     {
         int groupMinCol = group.Col;
-        int groupMaxCol = group.Col + GroupColWidth;
+        var members = Tiles.Where(t => t.Group == group.Id && !ReferenceEquals(t, tile)).ToList();
+        int maxMemberCol = members.Count > 0 ? members.Max(t => t.Col + t.SpanX) : (group.Col + GroupColWidth);
+        int naturalWidth = Math.Max(GroupColWidth, maxMemberCol - group.Col);
+        int groupMaxCol = Math.Min(GridPlacementService.MaxCols, group.Col + naturalWidth);
+
         int minRow = group.Row + 1;
         int baseRow = Math.Max(minRow, rawRow);
 
@@ -3703,14 +3694,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         GroupDropPerimeterBorder.BeginAnimation(UIElement.OpacityProperty, fadeAnimation);
     }
 
-    private void FlashGapDropPerimeter(double pixelX, double pixelY, double width = 56, double height = 56)
-    {
-    }
-
-    private void ShowGapDropHighlight(int gapCol, int gapRow, Point mousePos)
-    {
-    }
-
     private void HideGapDropHighlight()
     {
         if (GapDropWarningBorder != null && GapDropWarningBorder.Visibility == Visibility.Visible)
@@ -3725,31 +3708,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
             GroupDropFloatingBadge.Visibility = Visibility.Collapsed;
         }
-    }
-
-    private bool Check1x1GapHover(
-        Point mousePos,
-        int rawAnchorCol,
-        int rawAnchorRow,
-        int tileSpanX,
-        int tileSpanY,
-        out int gapCol,
-        out int gapRow)
-    {
-        gapCol = -1;
-        gapRow = -1;
-
-        if (_isGroupDrag || Groups.Count == 0) return false;
-
-        string? originGroupId = _draggedTile?.Group;
-
-        // Check if the current snap target (rawAnchorCol, rawAnchorRow) is actually in or straddling a 1x1 gap buffer
-        if (GridPlacementService.IsIn1x1Gap(rawAnchorCol, rawAnchorRow, tileSpanX, tileSpanY, Groups, Tiles, out gapCol, out gapRow, originGroupId))
-        {
-            return true;
-        }
-
-        return false;
     }
 
     public void EnsureGroupsHaveHeaderSpace()
@@ -5118,15 +5076,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
         int spanX = item.SpanX > 0 ? item.SpanX : 2;
         int spanY = item.SpanY > 0 ? item.SpanY : 2;
-
-        if (GridPlacementService.IsRegionFree(col, row, 1, 1, Tiles, groups: Groups))
-        {
-            if (!GridPlacementService.IsRegionFree(col, row, spanX, spanY, Tiles, groups: Groups))
-            {
-                spanX = 1;
-                spanY = 1;
-            }
-        }
 
         int clampedCol = Math.Max(0, Math.Min(col, maxCols - spanX));
         int clampedRow = Math.Max(1, row);
