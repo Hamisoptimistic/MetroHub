@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="100%" height="100%">
+  <defs>
+    <!-- Microsoft Cobalt Blue -->
+    <linearGradient id="gradCobalt" x1="0%" y1="0%" x2="10%" y2="100%">
+      <stop offset="0%" stop-color="#0078D7"/>
+      <stop offset="100%" stop-color="#0055AF"/>
+    </linearGradient>
+
+    <!-- Coral Red -->
+    <linearGradient id="gradCoral" x1="0%" y1="0%" x2="10%" y2="100%">
+      <stop offset="0%" stop-color="#F25022"/>
+      <stop offset="100%" stop-color="#DA3722"/>
+    </linearGradient>
+
+    <!-- Golden Amber -->
+    <linearGradient id="gradAmber" x1="0%" y1="0%" x2="10%" y2="100%">
+      <stop offset="0%" stop-color="#FFAF14"/>
+      <stop offset="100%" stop-color="#F56E19"/>
+    </linearGradient>
+
+    <!-- Emerald Teal -->
+    <linearGradient id="gradTeal" x1="0%" y1="0%" x2="10%" y2="100%">
+      <stop offset="0%" stop-color="#14AF91"/>
+      <stop offset="100%" stop-color="#0A7D69"/>
+    </linearGradient>
+
+    <!-- Electric Cerulean Blue -->
+    <linearGradient id="gradBlue" x1="0%" y1="0%" x2="10%" y2="100%">
+      <stop offset="0%" stop-color="#3782F5"/>
+      <stop offset="100%" stop-color="#195FD7"/>
+    </linearGradient>
+
+    <!-- Microsoft Azure Cyan -->
+    <linearGradient id="gradAzure" x1="0%" y1="0%" x2="10%" y2="100%">
+      <stop offset="0%" stop-color="#00A4EF"/>
+      <stop offset="100%" stop-color="#0078D4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Top-Left Medium Square -->
+  <rect x="212" y="238" width="292" height="292" rx="2" ry="2" fill="url(#gradCobalt)"/>
+
+  <!-- Top-Right 2x2 Small Squares -->
+  <rect x="520" y="238" width="138" height="138" rx="2" ry="2" fill="url(#gradCoral)"/>
+  <rect x="674" y="238" width="138" height="138" rx="2" ry="2" fill="url(#gradAmber)"/>
+  <rect x="520" y="392" width="138" height="138" rx="2" ry="2" fill="url(#gradTeal)"/>
+  <rect x="674" y="392" width="138" height="138" rx="2" ry="2" fill="url(#gradBlue)"/>
+
+  <!-- Bottom Wide Rectangle -->
+  <rect x="212" y="546" width="600" height="240" rx="2" ry="2" fill="url(#gradAzure)"/>
+</svg>

@@ -2000,17 +2000,24 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             DropSlotIndicator.Visibility = Visibility.Collapsed;
 
             var draggedMembers = Tiles.Where(t => t.Group == _draggedGroupModel.Id).ToList();
-            int draggedSpan = draggedMembers.Count > 0 ? (draggedMembers.Max(t => t.Col + t.SpanX) - _draggedGroupModel.Col) : GridPlacementService.GroupColWidth;
-            int groupSpanX = Math.Max(2, draggedSpan);
-            double colWidth = (groupSpanX * GridPlacementService.GridStep) - GridPlacementService.Gap;
+            var gBox = GridPlacementService.GetGroupBoundingBox(_draggedGroupModel, Tiles);
+            int groupSpanX = draggedMembers.Count > 0 ? Math.Max(2, gBox.MaxCol - gBox.MinCol) : 4;
+            int minMemberColOffset = draggedMembers.Count > 0 ? (draggedMembers.Min(t => t.Col) - _draggedGroupModel.Col) : 0;
+            int maxMemberColOffset = draggedMembers.Count > 0 ? (draggedMembers.Max(t => t.Col + t.SpanX) - _draggedGroupModel.Col) : groupSpanX;
+            int minLeftDelta = Math.Min(0, minMemberColOffset);
+            int maxRightDelta = Math.Max(groupSpanX, maxMemberColOffset);
+            int totalGroupCols = Math.Max(2, maxRightDelta - minLeftDelta);
+            double colWidth = (totalGroupCols * GridPlacementService.GridStep) - GridPlacementService.Gap;
 
             int rawGroupCol = GridPlacementService.ColFromPixel(clampedAnchorX + _draggedGroupOffsetX);
-            int targetCol = Math.Clamp(rawGroupCol, 0, Math.Max(0, maxCols - groupSpanX));
+            int minAllowedTargetCol = Math.Max(0, -minLeftDelta);
+            int maxAllowedTargetCol = Math.Max(minAllowedTargetCol, maxCols - maxRightDelta);
+            int targetCol = Math.Clamp(rawGroupCol, minAllowedTargetCol, maxAllowedTargetCol);
 
             int rawGroupRow = GridPlacementService.RowFromPixel(clampedAnchorY + _draggedGroupOffsetY);
             int targetRow = Math.Max(0, rawGroupRow);
 
-            double colLeft = GridPlacementService.PixelXFromCol(targetCol);
+            double colLeft = GridPlacementService.PixelXFromCol(targetCol + minLeftDelta);
             double insertionY = GridPlacementService.PixelYFromRow(targetRow) - 2;
 
             _groupDragTargetCol = targetCol;
@@ -4140,9 +4147,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             DropSlotIndicator.Visibility = Visibility.Collapsed;
             if (GroupInsertionLine != null)
             {
-                var groupMembers = Tiles.Where(t => t.Group == group.Id).ToList();
-                int gSpan = groupMembers.Count > 0 ? (groupMembers.Max(t => t.Col + t.SpanX) - group.Col) : GridPlacementService.GroupColWidth;
-                GroupInsertionLine.Width = (Math.Max(2, gSpan) * GridPlacementService.GridStep) - GridPlacementService.Gap;
+                GroupInsertionLine.Width = (4 * GridPlacementService.GridStep) - GridPlacementService.Gap;
                 Canvas.SetLeft(GroupInsertionLine, GridPlacementService.PixelXFromCol(gCol));
                 Canvas.SetTop(GroupInsertionLine, group.Y);
                 GroupInsertionLine.Visibility = Visibility.Visible;
@@ -4225,8 +4230,10 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         DropSlotIndicator.Visibility = Visibility.Collapsed;
         if (GroupInsertionLine != null)
         {
-            GroupInsertionLine.Width = GridPlacementService.GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
-            Canvas.SetLeft(GroupInsertionLine, GridPlacementService.PixelXFromCol(group.Col));
+            var gBox = GridPlacementService.GetGroupBoundingBox(group, Tiles);
+            int gSpan = members.Count > 0 ? Math.Max(2, gBox.MaxCol - gBox.MinCol) : 4;
+            GroupInsertionLine.Width = (gSpan * GridPlacementService.GridStep) - GridPlacementService.Gap;
+            Canvas.SetLeft(GroupInsertionLine, GridPlacementService.PixelXFromCol(gBox.MinCol));
             Canvas.SetTop(GroupInsertionLine, group.Y);
             GroupInsertionLine.Visibility = Visibility.Visible;
         }
