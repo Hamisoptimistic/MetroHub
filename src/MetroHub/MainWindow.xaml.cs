@@ -2001,7 +2001,9 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             int targetColIndex = Math.Max(0, GridPlacementService.GetColumnIndexFromCol(GridPlacementService.ColFromPixel(clampedAnchorX)));
             int colStartCol = GridPlacementService.GetColumnStartCol(targetColIndex);
             double colLeft = GridPlacementService.PixelXFromCol(colStartCol);
-            double colWidth = GridPlacementService.GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
+            var draggedMembers = Tiles.Where(t => t.Group == _draggedGroupModel.Id).ToList();
+            int draggedSpan = draggedMembers.Count > 0 ? (draggedMembers.Max(t => t.Col + t.SpanX) - _draggedGroupModel.Col) : GridPlacementService.GroupColWidth;
+            double colWidth = (Math.Max(2, draggedSpan) * GridPlacementService.GridStep) - GridPlacementService.Gap;
 
             int targetRow = Math.Max(0, GridPlacementService.FindInsertionRow(targetColIndex, canvasMouse.Y, Groups, Tiles, _draggedGroupModel));
             double insertionY = GridPlacementService.PixelYFromRow(targetRow) - 2;
@@ -4195,7 +4197,9 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             DropSlotIndicator.Visibility = Visibility.Collapsed;
             if (GroupInsertionLine != null)
             {
-                GroupInsertionLine.Width = GridPlacementService.GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
+                var groupMembers = Tiles.Where(t => t.Group == group.Id).ToList();
+                int gSpan = groupMembers.Count > 0 ? (groupMembers.Max(t => t.Col + t.SpanX) - group.Col) : GridPlacementService.GroupColWidth;
+                GroupInsertionLine.Width = (Math.Max(2, gSpan) * GridPlacementService.GridStep) - GridPlacementService.Gap;
                 Canvas.SetLeft(GroupInsertionLine, GridPlacementService.PixelXFromCol(gCol));
                 Canvas.SetTop(GroupInsertionLine, group.Y);
                 GroupInsertionLine.Visibility = Visibility.Visible;
