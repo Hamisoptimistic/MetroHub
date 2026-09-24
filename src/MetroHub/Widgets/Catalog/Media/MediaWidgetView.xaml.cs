@@ -260,7 +260,7 @@ public partial class MediaWidgetView : UserControl
     private void UpdateProgressVisuals(double ratio)
     {
         ratio = Math.Clamp(ratio, 0.0, 1.0);
-        const double thumbWidth = 12.0;
+        const double thumbWidth = 14.0;
 
         // Standard Seekbar
         if (SeekbarContainer != null && SeekbarContainer.ActualWidth > 0)
@@ -322,7 +322,7 @@ public partial class MediaWidgetView : UserControl
         double totalWidth = container.ActualWidth;
         if (totalWidth <= 0) return 0.0;
 
-        const double thumbWidth = 12.0;
+        const double thumbWidth = 14.0;
         double maxThumbLeft = totalWidth - thumbWidth;
         if (maxThumbLeft > 0)
         {

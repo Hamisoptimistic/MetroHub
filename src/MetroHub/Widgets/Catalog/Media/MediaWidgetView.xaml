@@ -442,11 +442,13 @@
                         </TransformGroup>
                     </Grid.RenderTransform>
 
-                    <!-- Clean minimal circular dot thumb using dynamic album art brush -->
+                    <!-- Hollow ring thumb: white outer ring with transparent center (track shows through) -->
                     <Ellipse x:Name="SeekThumbDot"
-                             Width="12"
-                             Height="12"
-                             Fill="{Binding SeekbarBrush}"
+                             Width="14"
+                             Height="14"
+                             Fill="Transparent"
+                             Stroke="#FFFFFF"
+                             StrokeThickness="3"
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center" />
                 </Grid>
@@ -612,9 +614,11 @@
                                 </TransformGroup>
                             </Grid.RenderTransform>
                             <Ellipse x:Name="SlimSeekThumbDot"
-                                     Width="12"
-                                     Height="12"
-                                     Fill="{Binding SeekbarBrush}"
+                                     Width="14"
+                                     Height="14"
+                                     Fill="Transparent"
+                                     Stroke="#FFFFFF"
+                                     StrokeThickness="3"
                                      HorizontalAlignment="Center"
                                      VerticalAlignment="Center" />
                         </Grid>
@@ -978,7 +982,7 @@
                     <Grid x:Name="ZuneSeekThumb"
                           HorizontalAlignment="Left"
                           VerticalAlignment="Top"
-                          Margin="0,-4,0,0"
+                          Margin="0,-6,0,0"
                           IsHitTestVisible="False"
                           Opacity="0"
                           RenderTransformOrigin="0.5,0.5">
@@ -989,9 +993,11 @@
                             </TransformGroup>
                         </Grid.RenderTransform>
                         <Ellipse x:Name="ZuneSeekThumbDot"
-                                 Width="10"
-                                 Height="10"
-                                 Fill="{Binding SeekbarBrush}"
+                                 Width="14"
+                                 Height="14"
+                                 Fill="Transparent"
+                                 Stroke="#FFFFFF"
+                                 StrokeThickness="3"
                                  HorizontalAlignment="Center"
                                  VerticalAlignment="Center" />
                     </Grid>

@@ -52,7 +52,7 @@
             </Border.Clip>
         </Border>
 
-        <!-- 4. Fluent Thumb Container (Circular thumb with accent pip, hidden at rest) -->
+        <!-- 4. Fluent Thumb Container (Circular ring thumb, hidden at rest) -->
         <Grid x:Name="SliderThumb"
               HorizontalAlignment="Left"
               VerticalAlignment="Center"
@@ -62,11 +62,13 @@
                 <TranslateTransform x:Name="ThumbTranslate" X="0" />
             </Grid.RenderTransform>
 
-            <!-- Clean minimal accent dot thumb -->
+            <!-- Hollow ring thumb: white outer ring with transparent center (track shows through) -->
             <Ellipse x:Name="ThumbDot"
-                     Width="12"
-                     Height="12"
-                     Fill="#00B4D8"
+                     Width="14"
+                     Height="14"
+                     Fill="Transparent"
+                     Stroke="#FFFFFF"
+                     StrokeThickness="3"
                      HorizontalAlignment="Center"
                      VerticalAlignment="Center" />
         </Grid>

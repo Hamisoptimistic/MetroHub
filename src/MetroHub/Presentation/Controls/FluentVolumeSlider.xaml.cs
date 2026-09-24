@@ -9,12 +9,10 @@ namespace MetroHub.Presentation.Controls;
 public partial class FluentVolumeSlider : UserControl
 {
     private static readonly SolidColorBrush DefaultProgressBrush = new((Color)ColorConverter.ConvertFromString("#00B4D8"));
-    private static readonly SolidColorBrush DefaultPointerOverBrush = new((Color)ColorConverter.ConvertFromString("#33C9E8"));
 
     static FluentVolumeSlider()
     {
         DefaultProgressBrush.Freeze();
-        DefaultPointerOverBrush.Freeze();
     }
 
     public static readonly DependencyProperty ValueProperty =
@@ -158,14 +156,14 @@ public partial class FluentVolumeSlider : UserControl
     }
 
     /// <summary>
-    /// Applies the ProgressBrush (or system accent fallback) to the fill track and thumb pip.
+    /// Applies the ProgressBrush (or system accent fallback) to the fill track.
+    /// The thumb is a fixed white ring and is not tinted by the accent brush.
     /// </summary>
     private void ApplyProgressBrush()
     {
         var brush = ProgressBrush ?? DefaultProgressBrush;
 
         if (ProgressFill != null) ProgressFill.Background = brush;
-        if (ThumbDot != null) ThumbDot.Fill = brush;
     }
 
     private void UpdateMutedVisuals()
@@ -196,7 +194,7 @@ public partial class FluentVolumeSlider : UserControl
 
         ProgressClip.Rect = new Rect(0, -10, ratio * width, 40);
 
-        const double thumbWidth = 12.0;
+        const double thumbWidth = 14.0;
         double maxThumbLeft = Math.Max(0, width - thumbWidth);
         double thumbLeft = ratio * maxThumbLeft;
 
@@ -208,7 +206,7 @@ public partial class FluentVolumeSlider : UserControl
         double width = RootContainer.ActualWidth;
         if (width <= 0) return;
 
-        const double thumbWidth = 12.0;
+        const double thumbWidth = 14.0;
         double maxThumbLeft = width - thumbWidth;
         double ratio;
         if (maxThumbLeft > 0)
@@ -317,26 +315,5 @@ public partial class FluentVolumeSlider : UserControl
         {
             SliderThumb.Opacity = (isHovered || isDragging) ? (IsMuted ? 0.45 : 1.0) : 0.0;
         }
-
-        if (ThumbDot != null)
-        {
-            ThumbDot.Fill = (isHovered || isDragging)
-                ? (ProgressPointerOverBrush ?? GetEffectivePointerOverBrush())
-                : (ProgressBrush ?? DefaultProgressBrush);
-        }
-    }
-
-    private Brush GetEffectivePointerOverBrush()
-    {
-        if (ProgressPointerOverBrush != null) return ProgressPointerOverBrush;
-        if (ProgressBrush is SolidColorBrush scb)
-        {
-            Color c = scb.Color;
-            byte r = (byte)Math.Min(255, c.R + 40);
-            byte g = (byte)Math.Min(255, c.G + 40);
-            byte b = (byte)Math.Min(255, c.B + 40);
-            return new SolidColorBrush(Color.FromArgb(c.A, r, g, b));
-        }
-        return DefaultPointerOverBrush;
     }
 }
