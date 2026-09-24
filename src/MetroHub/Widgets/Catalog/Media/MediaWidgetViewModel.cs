@@ -192,6 +192,29 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     private TimeSpan _lastWidgetSeekPosition = TimeSpan.Zero;
     private long _lastWidgetSeekTimestamp = 0;
 
+    /// <summary>
+    /// Ceiling on how far the interpolated seekbar may run past the position the player actually
+    /// reported. A healthy player hands us fresh samples far more often than this, so the budget is
+    /// only ever fully spent when playback stops advancing — buffering, or the connection dropping —
+    /// while the session goes on claiming it is Playing. Once spent, the bar freezes
+    /// (<see cref="IsPlaybackStalled"/>) instead of creeping forward forever, and the next real
+    /// sample or seek hands the budget straight back.
+    /// </summary>
+    private const double MaxInterpolationRunAheadSeconds = 5.0;
+
+    // Part of that budget already used by the current anchor, because the OS timestamp the sample
+    // carried was already older than "now" when it reached us. Kept separately from
+    // _lastTimelinePosition so the anchor itself stays the raw reported position and the two can
+    // never double-count.
+    private double _anchorRunAheadSpentSeconds = 0;
+
+    /// <summary>
+    /// True while playback has stalled: the session still reports Playing, but the seekbar has spent
+    /// its whole run-ahead budget and is holding still until the player reports real progress again.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isPlaybackStalled;
+
     public MediaWidgetViewModel(TileModel model) : base(model)
     {
         bool isValidSize = (model.SpanX == 8 && (model.SpanY == 4 || model.SpanY == 3)) ||
@@ -439,6 +462,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             _lastObservedDuration = TimeSpan.Zero;
             _trackDuration = TimeSpan.Zero;
             _lastTimelinePosition = TimeSpan.Zero;
+            _anchorRunAheadSpentSeconds = 0;
             _lastLocalTimestamp = Stopwatch.GetTimestamp();
             _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
             _lastWidgetSeekPosition = TimeSpan.Zero;
@@ -540,6 +564,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 _isLiveLocked = isLiveTitle;
                 _lastObservedDuration = TimeSpan.Zero;
                 _lastTimelinePosition = TimeSpan.Zero;
+                _anchorRunAheadSpentSeconds = 0;
                 _lastLocalTimestamp = Stopwatch.GetTimestamp();
                 _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
                 _lastWidgetSeekPosition = TimeSpan.Zero;
@@ -681,10 +706,12 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                         double newPos = _lastTimelinePosition.TotalSeconds + (elapsed * _playbackRate);
                         if (DurationSeconds > 0 && newPos > DurationSeconds) newPos = DurationSeconds;
                         _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
+                        _anchorRunAheadSpentSeconds = 0;
                         PositionSeconds = newPos;
                         ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
                         UpdateTimeDisplay(PositionSeconds, DurationSeconds);
                     }
+
                     _lastLocalTimestamp = now;
                 }
             }
@@ -706,6 +733,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                         double newPos = _lastTimelinePosition.TotalSeconds + (elapsed * _playbackRate);
                         if (DurationSeconds > 0 && newPos > DurationSeconds) newPos = DurationSeconds;
                         _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
+                        _anchorRunAheadSpentSeconds = 0;
                         PositionSeconds = newPos;
                         ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
                         UpdateTimeDisplay(PositionSeconds, DurationSeconds);
@@ -714,6 +742,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 }
             }
             _playbackTimer?.Stop();
+            IsPlaybackStalled = false;
         }
     }
 
@@ -825,6 +854,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                         TimeDisplayString = string.Empty;
                     }
                     _playbackTimer?.Stop();
+                    IsPlaybackStalled = false;
                     return;
                 }
 
@@ -853,12 +883,18 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 TimeSpan calculatedPos = incomingPos;
                 bool hasValidTimestamp = incomingUpdateTime > DateTimeOffset.MinValue && incomingUpdateTime.Year > 2000;
 
+                // How far past the reported position we are allowed to run the moment we read it,
+                // because the player stamped it slightly before "now". Charged against the same
+                // budget the interpolating timer draws on, so a frozen timestamp (a stalled player)
+                // can neither inflate the bar here nor be counted twice by the timer afterwards.
+                double runAheadAtReceipt = 0;
                 if (IsPlaying && hasValidTimestamp)
                 {
                     var diff = (DateTimeOffset.UtcNow - incomingUpdateTime).TotalSeconds;
                     if (diff >= 0 && diff < 86400)
                     {
-                        calculatedPos += TimeSpan.FromSeconds(diff * _playbackRate);
+                        runAheadAtReceipt = Math.Min(diff, MaxInterpolationRunAheadSeconds);
+                        calculatedPos += TimeSpan.FromSeconds(runAheadAtReceipt * _playbackRate);
                     }
                 }
                 else if (IsPlaying && !hasValidTimestamp)
@@ -914,7 +950,11 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                     _lastAcceptedOsUpdateTime = incomingUpdateTime;
                 }
 
-                _lastTimelinePosition = calculatedPos;
+                // Anchor on the raw reported position, never the extrapolated one, so the budget in
+                // _anchorRunAheadSpentSeconds is counted exactly once.
+                _lastTimelinePosition = incomingPos;
+                _anchorRunAheadSpentSeconds = runAheadAtReceipt;
+                IsPlaybackStalled = false;
                 _lastLocalTimestamp = Stopwatch.GetTimestamp();
 
                 double durSec = _trackDuration.TotalSeconds;
@@ -943,6 +983,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         if (!_isHubVisible || !HasMedia || _isScrubbing || !IsPlaying || IsLive)
         {
             _playbackTimer?.Stop();
+            IsPlaybackStalled = false;
             return;
         }
 
@@ -951,8 +992,21 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             double elapsedSeconds = (double)(Stopwatch.GetTimestamp() - _lastLocalTimestamp) / Stopwatch.Frequency;
             if (elapsedSeconds < 0) elapsedSeconds = 0;
 
+            // The whole run-ahead budget available right now: whatever the current anchor already
+            // spent when it arrived, plus the time since. Added to _lastTimelinePosition this is the
+            // furthest the bar may sit ahead of the position the player actually reported.
+            double budgetUsed = _anchorRunAheadSpentSeconds + elapsedSeconds;
+            double runAheadSeconds = Math.Min(budgetUsed, MaxInterpolationRunAheadSeconds);
+
+            double currentPos = _lastTimelinePosition.TotalSeconds + (runAheadSeconds * _playbackRate);
             double maxPos = DurationSeconds > 0 ? DurationSeconds : double.MaxValue;
-            double currentPos = Math.Clamp(_lastTimelinePosition.TotalSeconds + (elapsedSeconds * _playbackRate), 0, maxPos);
+            if (currentPos > maxPos) currentPos = maxPos;
+            if (currentPos < 0) currentPos = 0;
+
+            // Budget exhausted: the player has stopped advancing while still reporting Playing, so
+            // hold the bar here (buffering, or the connection dropping) and wait for real progress.
+            IsPlaybackStalled = budgetUsed >= MaxInterpolationRunAheadSeconds;
+
             PositionSeconds = currentPos;
             ProgressRatio = DurationSeconds > 0 ? Math.Clamp(currentPos / DurationSeconds, 0.0, 1.0) : 0.0;
             UpdateTimeDisplay(PositionSeconds, DurationSeconds);
@@ -1038,6 +1092,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             PositionSeconds = targetSeconds;
             ProgressRatio = ratio;
             _lastTimelinePosition = TimeSpan.FromSeconds(targetSeconds);
+            _anchorRunAheadSpentSeconds = 0;
+            IsPlaybackStalled = false;
             _lastLocalTimestamp = Stopwatch.GetTimestamp();
             _lastWidgetSeekPosition = TimeSpan.FromSeconds(targetSeconds);
             _lastWidgetSeekTimestamp = Stopwatch.GetTimestamp();
@@ -1080,6 +1136,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                         double newPos = _lastTimelinePosition.TotalSeconds + (elapsed * _playbackRate);
                         if (DurationSeconds > 0 && newPos > DurationSeconds) newPos = DurationSeconds;
                         _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
+                        _anchorRunAheadSpentSeconds = 0;
                         PositionSeconds = newPos;
                         ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
                         UpdateTimeDisplay(PositionSeconds, DurationSeconds);
@@ -1087,10 +1144,13 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                     _lastLocalTimestamp = now;
                 }
                 _playbackTimer?.Stop();
+                IsPlaybackStalled = false;
             }
             else if (_isHubVisible && HasMedia && !IsLive)
             {
                 _lastLocalTimestamp = Stopwatch.GetTimestamp();
+                _anchorRunAheadSpentSeconds = 0;
+                IsPlaybackStalled = false;
                 _playbackTimer?.Start();
             }
 
@@ -1168,16 +1228,19 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         IsLive = false;
         CanSeek = true;
         _lastTimelinePosition = TimeSpan.Zero;
+        _anchorRunAheadSpentSeconds = 0;
         _lastLocalTimestamp = Stopwatch.GetTimestamp();
         _lastWidgetSeekPosition = TimeSpan.Zero;
         _lastWidgetSeekTimestamp = 0;
         _playbackTimer?.Stop();
+        IsPlaybackStalled = false;
     }
 
     public override void Pause()
     {
         _isHubVisible = false;
         _playbackTimer?.Stop();
+        IsPlaybackStalled = false;
 
         lock (_stateLock)
         {
@@ -1193,6 +1256,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                         newPos = DurationSeconds;
                     }
                     _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
+                    _anchorRunAheadSpentSeconds = 0;
                     PositionSeconds = newPos;
                     ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
                 }
@@ -1219,6 +1283,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                         newPos = DurationSeconds;
                     }
                     _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
+                    _anchorRunAheadSpentSeconds = 0;
                     PositionSeconds = newPos;
                     ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
                     UpdateTimeDisplay(PositionSeconds, DurationSeconds);

@@ -89,7 +89,8 @@ public partial class MediaWidgetView : UserControl
                            or nameof(MediaWidgetViewModel.PositionSeconds)
                            or nameof(MediaWidgetViewModel.IsPlaying)
                            or nameof(MediaWidgetViewModel.IsSlimMode)
-                           or nameof(MediaWidgetViewModel.IsZuneMode))
+                           or nameof(MediaWidgetViewModel.IsZuneMode)
+                           or nameof(MediaWidgetViewModel.IsPlaybackStalled))
         {
             if (_vm != null)
             {
@@ -128,7 +129,7 @@ public partial class MediaWidgetView : UserControl
             return;
         }
 
-        bool shouldAnimate = _vm.IsPlaying && _vm.HasMedia && !_vm.IsLive && !_isDragging && _vm.ProgressRatio > 0.005 && IsLoaded && IsVisible;
+        bool shouldAnimate = _vm.IsPlaying && !_vm.IsPlaybackStalled && _vm.HasMedia && !_vm.IsLive && !_isDragging && _vm.ProgressRatio > 0.005 && IsLoaded && IsVisible;
         if (shouldAnimate)
         {
             StartShimmerCycle();
@@ -150,7 +151,7 @@ public partial class MediaWidgetView : UserControl
         _shimmerDelayTimer?.Stop();
         _shimmerDelayTimer = null;
 
-        if (_vm == null || !_vm.IsPlaying || !_vm.HasMedia || _vm.IsLive || _isDragging || !IsLoaded || !IsVisible)
+        if (_vm == null || !_vm.IsPlaying || _vm.IsPlaybackStalled || !_vm.HasMedia || _vm.IsLive || _isDragging || !IsLoaded || !IsVisible)
         {
             StopShimmerAnimation();
             return;
@@ -196,7 +197,7 @@ public partial class MediaWidgetView : UserControl
             _isShimmerSweeping = false;
             if (shimmer != null) shimmer.Opacity = 0.0;
 
-            if (_vm != null && _vm.IsPlaying && IsLoaded && IsVisible)
+            if (_vm != null && _vm.IsPlaying && !_vm.IsPlaybackStalled && IsLoaded && IsVisible)
             {
                 _shimmerDelayTimer?.Stop();
                 _shimmerDelayTimer = new System.Windows.Threading.DispatcherTimer

@@ -81,7 +81,8 @@ public partial class QuickControlsWidgetView : UserControl
         if (e.PropertyName is nameof(MediaWidgetViewModel.ProgressRatio)
                            or nameof(MediaWidgetViewModel.PositionSeconds)
                            or nameof(MediaWidgetViewModel.DurationSeconds)
-                           or nameof(MediaWidgetViewModel.IsPlaying))
+                           or nameof(MediaWidgetViewModel.IsPlaying)
+                           or nameof(MediaWidgetViewModel.IsPlaybackStalled))
         {
             if (_vm?.Media != null)
             {
@@ -273,7 +274,7 @@ public partial class QuickControlsWidgetView : UserControl
             return;
         }
 
-        bool shouldAnimate = _vm.Media.IsPlaying && _vm.Media.HasMedia && !_vm.Media.IsLive && !_isDragging && _vm.Media.ProgressRatio > 0.005 && IsLoaded && IsVisible;
+        bool shouldAnimate = _vm.Media.IsPlaying && !_vm.Media.IsPlaybackStalled && _vm.Media.HasMedia && !_vm.Media.IsLive && !_isDragging && _vm.Media.ProgressRatio > 0.005 && IsLoaded && IsVisible;
         if (shouldAnimate)
         {
             StartShimmerCycle();
@@ -295,7 +296,7 @@ public partial class QuickControlsWidgetView : UserControl
         _shimmerDelayTimer?.Stop();
         _shimmerDelayTimer = null;
 
-        if (_vm?.Media == null || !_vm.Media.IsPlaying || !_vm.Media.HasMedia || _vm.Media.IsLive || _isDragging || !IsLoaded || !IsVisible)
+        if (_vm?.Media == null || !_vm.Media.IsPlaying || _vm.Media.IsPlaybackStalled || !_vm.Media.HasMedia || _vm.Media.IsLive || _isDragging || !IsLoaded || !IsVisible)
         {
             StopShimmerAnimation();
             return;
@@ -327,7 +328,7 @@ public partial class QuickControlsWidgetView : UserControl
             _isShimmerSweeping = false;
             if (MediaSeekShimmer != null) MediaSeekShimmer.Opacity = 0.0;
 
-            if (_vm?.Media != null && _vm.Media.IsPlaying && IsLoaded && IsVisible)
+            if (_vm?.Media != null && _vm.Media.IsPlaying && !_vm.Media.IsPlaybackStalled && IsLoaded && IsVisible)
             {
                 _shimmerDelayTimer?.Stop();
                 _shimmerDelayTimer = new System.Windows.Threading.DispatcherTimer
