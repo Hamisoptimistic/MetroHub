@@ -1,4 +1,4 @@
-﻿<controls:BorderlessFluentWindow x:Class="MetroHub.MainWindow"
+<controls:BorderlessFluentWindow x:Class="MetroHub.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -132,19 +132,12 @@
                 AllowDrop="True"
                 DragEnter="OnLeftEdgeHoverStripDragEnter" />
 
-        <!-- Main Application Content Area (Header + Canvas + Footer) in Column 1 -->
+        <!-- Main Application Content Area (Tile Canvas) in Column 1 -->
         <Grid x:Name="MainContentAreaGrid"
               Grid.Column="1">
-            <Grid.RowDefinitions>
-                <!-- Main Unified Draggable Tile Canvas (Full-height top canvas) -->
-                <RowDefinition Height="*" />
-                <!-- Bottom Status Bar -->
-                <RowDefinition Height="40" />
-            </Grid.RowDefinitions>
 
             <!-- Main Open Tile Canvas: Free placement drag and drop anywhere -->
-            <ScrollViewer Grid.Row="0"
-                          x:Name="ContentScrollViewer"
+            <ScrollViewer x:Name="ContentScrollViewer"
                       controls:AutoHideScrollBehavior.IsEnabled="True"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
@@ -611,25 +604,8 @@
             </Grid>
         </ScrollViewer>
 
-        <!-- Bottom Status Bar -->
-        <Grid x:Name="FooterGrid" Grid.Row="1" Margin="16,0,16,0">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Press " FontSize="11" Foreground="#80FFFFFF" />
-                <Border Background="#30FFFFFF" CornerRadius="4" Padding="5,1" Margin="2,0">
-                    <TextBlock Text="Esc" FontSize="10" FontWeight="SemiBold" Foreground="#FFFFFF" />
-                </Border>
-                <TextBlock Text=" to close   •   Press " FontSize="11" Foreground="#80FFFFFF" />
-                <Border Background="#30FFFFFF" CornerRadius="4" Padding="5,1" Margin="2,0">
-                    <TextBlock Text="{Binding HotkeyDisplayString, FallbackValue='Ctrl + `'}" FontSize="10" FontWeight="SemiBold" Foreground="#60CDFF" />
-                </Border>
-                <TextBlock Text=" to toggle   •   Drag any app from desktop to pin" FontSize="11" Foreground="#80FFFFFF" />
-            </StackPanel>
-        </Grid>
-
         <!-- Notification Toast Overlay -->
         <Border x:Name="NotificationToast"
-                Grid.Row="0"
-                Grid.RowSpan="2"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Bottom"
                 Margin="0,0,0,50"

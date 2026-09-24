@@ -491,6 +491,36 @@ public partial class SidebarRailControl : UserControl
         }
     }
 
+    public void AddShortcutItem(SidebarShortcutItem item, int? insertIndex = null)
+    {
+        int targetIndex = insertIndex.HasValue
+            ? Math.Clamp(insertIndex.Value, 0, Shortcuts.Count)
+            : Shortcuts.Count;
+
+        Shortcuts.Insert(targetIndex, item);
+        ReindexSortOrders();
+        PersistShortcuts();
+        ShortcutsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public bool RemoveShortcutItem(SidebarShortcutItem item)
+    {
+        if (Shortcuts.Remove(item))
+        {
+            ReindexSortOrders();
+            PersistShortcuts();
+            ShortcutsChanged?.Invoke(this, EventArgs.Empty);
+            return true;
+        }
+        return false;
+    }
+
+    public void SaveShortcutsState()
+    {
+        PersistShortcuts();
+        ShortcutsChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     private void OnOpenInTerminalClick(object sender, RoutedEventArgs e)
     {
         if (sender is MenuItem menuItem && GetShortcutFromMenuItem(menuItem) is SidebarShortcutItem item)

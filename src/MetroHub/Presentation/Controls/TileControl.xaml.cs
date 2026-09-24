@@ -1289,6 +1289,7 @@ public partial class TileControl : UserControl
 
         PopulateResizeSubmenu(tile);
         PopulateAddToGroupSubmenu(mainWindow);
+        SidebarPinningService.ConfigureTileContextMenu(PinToSidebarMenuItem, PinToSidebarIcon, tile, mainWindow);
     }
 
     private void PopulateResizeSubmenu(TileModel tile)
@@ -1571,6 +1572,14 @@ public partial class TileControl : UserControl
                 Clipboard.SetText(tile.TargetPath);
             }
             catch { }
+        }
+    }
+
+    private void OnPinToSidebarClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is TileModel tile)
+        {
+            SidebarPinningService.HandleContextMenuClick(tile, MetroHub.MainWindow.Current);
         }
     }
 

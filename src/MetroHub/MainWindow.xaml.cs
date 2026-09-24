@@ -541,12 +541,6 @@ public partial class MainWindow : BorderlessFluentWindow
         UpdateScaleFactor(viewportWidth);
 
         GridPlacementService.UpdateMetrics(viewportWidth, Groups);
-        double margin = GridPlacementService.OriginX;
-
-        if (FooterGrid != null)
-        {
-            FooterGrid.Margin = new Thickness(margin, 0, margin, 0);
-        }
     }
 
     private void UpdateCanvasHeight()
@@ -1297,11 +1291,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 MainContentAreaGrid.Opacity = 1.0;
             }
             if (ContentScrollViewer != null) ContentScrollViewer.Clip = null;
-            if (FooterGrid != null)
-            {
-                FooterGrid.BeginAnimation(UIElement.OpacityProperty, null);
-                FooterGrid.Opacity = 1.0;
-            }
         }
         Keyboard.ClearFocus();
         FocusManager.SetFocusedElement(this, this);
@@ -1633,8 +1622,6 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         if (SidebarRail != null && SidebarRail.IsMouseOver) return;
         if (AllAppsDrawer != null && AllAppsDrawer.IsMouseOver) return;
 
-        if (FooterGrid != null && FooterGrid.IsMouseOver) return;
-
         Point canvasMouse = TilesListBox != null ? e.GetPosition(TilesListBox) : e.GetPosition(this);
         bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
 
@@ -1886,6 +1873,11 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 return;
             }
 
+            if (_draggedTile != null && e.GetPosition(this).X <= 54)
+            {
+                ShowSidebarRail();
+            }
+
             if (_draggedTile != null || (_isGroupDrag && _draggedGroupModel != null))
             {
                 UpdateAutoScrollVelocity();
@@ -2133,6 +2125,17 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
         if (_isDragging)
         {
+            if (_draggedTile != null && (e.GetPosition(this).X <= 54 || (SidebarRail != null && SidebarRail.IsMouseOver)))
+            {
+                var tilesToPin = _draggedCluster.Count > 0 ? _draggedCluster.ToList() : new List<TileModel> { _draggedTile };
+                if (SidebarPinningService.TryHandleTileDropOnSidebar(SidebarRail, tilesToPin))
+                {
+                    CancelActiveDrag();
+                    e.Handled = true;
+                    return;
+                }
+            }
+
             StopAutoScroll();
             _isDragging = false;
             _isPotentialDrag = false;
