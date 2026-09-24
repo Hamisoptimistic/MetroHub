@@ -114,6 +114,9 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
     private Brush _ambientGlowBrush = WeatherPalettes.CloudyGlow;
 
     [ObservableProperty]
+    private Brush _horizonAuraBrush = WeatherPalettes.CloudyHorizonAura;
+
+    [ObservableProperty]
     private bool _isLoading;
 
     [ObservableProperty]
@@ -125,7 +128,9 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
     public bool IsFahrenheit => _settings.IsFahrenheit;
     public bool IsAutoLocation => _settings.IsAutoLocation;
     public string? CustomCity => _settings.CustomCity;
-    public bool IsAmbientGlowEnabled => _settings.IsAmbientGlowEnabled;
+    public WeatherBackgroundStyle BackgroundStyle => _settings.BackgroundStyle;
+    public bool IsAmbientGlowEnabled => _settings.BackgroundStyle == WeatherBackgroundStyle.AmbientGlow;
+    public bool IsHorizonAuraEnabled => _settings.BackgroundStyle == WeatherBackgroundStyle.HorizonAura;
 
     // Responsive sizing flags
     public bool IsCompact => false;
@@ -180,23 +185,46 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
             if (parsed != null)
             {
                 _settings = parsed;
+                if (_settings.IsHorizonAuraEnabled == true)
+                {
+                    _settings.BackgroundStyle = WeatherBackgroundStyle.HorizonAura;
+                }
+                else if (_settings.IsAmbientGlowEnabled == true)
+                {
+                    _settings.BackgroundStyle = WeatherBackgroundStyle.AmbientGlow;
+                }
+                else if (_settings.IsAmbientGlowEnabled == false && _settings.IsHorizonAuraEnabled == false)
+                {
+                    _settings.BackgroundStyle = WeatherBackgroundStyle.None;
+                }
+
                 OnPropertyChanged(nameof(IsFahrenheit));
+                OnPropertyChanged(nameof(BackgroundStyle));
                 OnPropertyChanged(nameof(IsAmbientGlowEnabled));
-                if (!_settings.IsAmbientGlowEnabled)
+                OnPropertyChanged(nameof(IsHorizonAuraEnabled));
+                if (!IsAmbientGlowEnabled)
                 {
                     AmbientGlowBrush = System.Windows.Media.Brushes.Transparent;
+                }
+                if (!IsHorizonAuraEnabled)
+                {
+                    HorizonAuraBrush = System.Windows.Media.Brushes.Transparent;
                 }
             }
         }
         catch { }
     }
 
-    public void SetAmbientGlow(bool enabled)
+    public void SetStyle(WeatherBackgroundStyle style)
     {
-        if (_settings.IsAmbientGlowEnabled == enabled) return;
-        _settings.IsAmbientGlowEnabled = enabled;
+        if (_settings.BackgroundStyle == style) return;
+        _settings.BackgroundStyle = style;
+        _settings.IsAmbientGlowEnabled = (style == WeatherBackgroundStyle.AmbientGlow);
+        _settings.IsHorizonAuraEnabled = (style == WeatherBackgroundStyle.HorizonAura);
         SaveSettings();
+        OnPropertyChanged(nameof(BackgroundStyle));
         OnPropertyChanged(nameof(IsAmbientGlowEnabled));
+        OnPropertyChanged(nameof(IsHorizonAuraEnabled));
 
         if (_latestData != null)
         {
@@ -204,9 +232,13 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
         }
         else
         {
-            AmbientGlowBrush = enabled ? WeatherPalettes.CloudyGlow : System.Windows.Media.Brushes.Transparent;
+            AmbientGlowBrush = IsAmbientGlowEnabled ? WeatherPalettes.CloudyGlow : System.Windows.Media.Brushes.Transparent;
+            HorizonAuraBrush = IsHorizonAuraEnabled ? WeatherPalettes.CloudyHorizonAura : System.Windows.Media.Brushes.Transparent;
         }
     }
+
+    public void SetAmbientGlow(bool enabled) => SetStyle(enabled ? WeatherBackgroundStyle.AmbientGlow : WeatherBackgroundStyle.None);
+    public void SetHorizonAura(bool enabled) => SetStyle(enabled ? WeatherBackgroundStyle.HorizonAura : WeatherBackgroundStyle.None);
 
     public override void SaveSettings()
     {
@@ -437,12 +469,13 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
 
         if (current != null)
         {
-            // Condition info & Ambient glow
-            var info = WeatherPalettes.GetConditionInfo(current.WeatherCode, current.IsDay == 1);
+            // Condition info, Ambient glow & Horizon aura
+            var info = WeatherPalettes.GetConditionInfo(current.WeatherCode, current.IsDay == 1, current.Temperature);
             WeatherIconName = info.IconName;
             WeatherGlyph = info.FallbackGlyph;
             ConditionText = info.Description;
-            AmbientGlowBrush = _settings.IsAmbientGlowEnabled ? info.Glow : System.Windows.Media.Brushes.Transparent;
+            AmbientGlowBrush = IsAmbientGlowEnabled ? info.Glow : System.Windows.Media.Brushes.Transparent;
+            HorizonAuraBrush = IsHorizonAuraEnabled ? info.HorizonAura : System.Windows.Media.Brushes.Transparent;
 
             // Temperature & Feels-Like
             TemperatureText = FormatTemp(current.Temperature);

@@ -907,19 +907,28 @@ public partial class TileControl : UserControl
                 {
                     Header = "Ambient Glow",
                     IsCheckable = true,
-                    IsChecked = weatherVm.IsAmbientGlowEnabled
+                    IsChecked = weatherVm.BackgroundStyle == Widgets.Catalog.Weather.WeatherBackgroundStyle.AmbientGlow
                 };
-                ambientGlowItem.Click += (s, ev) => weatherVm.SetAmbientGlow(true);
+                ambientGlowItem.Click += (s, ev) => weatherVm.SetStyle(Widgets.Catalog.Weather.WeatherBackgroundStyle.AmbientGlow);
+
+                var horizonAuraItem = new MenuItem
+                {
+                    Header = "Horizon Aura",
+                    IsCheckable = true,
+                    IsChecked = weatherVm.BackgroundStyle == Widgets.Catalog.Weather.WeatherBackgroundStyle.HorizonAura
+                };
+                horizonAuraItem.Click += (s, ev) => weatherVm.SetStyle(Widgets.Catalog.Weather.WeatherBackgroundStyle.HorizonAura);
 
                 var noneStyleItem = new MenuItem
                 {
                     Header = "None",
                     IsCheckable = true,
-                    IsChecked = !weatherVm.IsAmbientGlowEnabled
+                    IsChecked = weatherVm.BackgroundStyle == Widgets.Catalog.Weather.WeatherBackgroundStyle.None
                 };
-                noneStyleItem.Click += (s, ev) => weatherVm.SetAmbientGlow(false);
+                noneStyleItem.Click += (s, ev) => weatherVm.SetStyle(Widgets.Catalog.Weather.WeatherBackgroundStyle.None);
 
                 styleItem.Items.Add(ambientGlowItem);
+                styleItem.Items.Add(horizonAuraItem);
                 styleItem.Items.Add(noneStyleItem);
 
                 var weatherDivider = new Separator { Tag = "WidgetCustomMenu" };

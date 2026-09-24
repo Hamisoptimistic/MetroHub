@@ -1,5 +1,12 @@
 namespace MetroHub.Widgets.Catalog.Weather;
 
+public enum WeatherBackgroundStyle
+{
+    AmbientGlow,
+    HorizonAura,
+    None
+}
+
 public class WeatherWidgetSettings
 {
     public bool IsFahrenheit { get; set; } = false;
@@ -7,5 +14,9 @@ public class WeatherWidgetSettings
     public string? CustomCity { get; set; }
     public double? CustomLatitude { get; set; }
     public double? CustomLongitude { get; set; }
-    public bool IsAmbientGlowEnabled { get; set; } = true;
+    public WeatherBackgroundStyle BackgroundStyle { get; set; } = WeatherBackgroundStyle.HorizonAura;
+
+    // Backward compatibility for existing serialized JSON
+    public bool? IsAmbientGlowEnabled { get; set; }
+    public bool? IsHorizonAuraEnabled { get; set; }
 }

@@ -33,6 +33,7 @@ public static class WeatherIcons
                     UriKind.Absolute);
                 bmp.CacheOption = BitmapCacheOption.OnLoad; // load eagerly, not on first render
                 bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+                bmp.DecodePixelWidth = 200; // Optimal 200x200 downsampling (saves ~85% bitmap memory vs raw 512x512)
                 bmp.EndInit();
                 bmp.Freeze(); // shareable across threads, skips change-notification overhead
 

@@ -30,12 +30,13 @@ public sealed record AqiInfo(SolidColorBrush Brush, string Label);
 public sealed record UvInfo(SolidColorBrush Brush, string Label);
 
 /// <summary>
-/// Condition metadata carrying the Meteocons icon slug, text description, frozen ambient glow, and fallback glyph.
+/// Condition metadata carrying the Meteocons icon slug, text description, frozen ambient glow, frozen horizon aura, and fallback glyph.
 /// </summary>
 public sealed record WeatherConditionInfo(
     string IconName,
     string Description,
     RadialGradientBrush Glow,
+    LinearGradientBrush HorizonAura,
     string FallbackGlyph);
 
 public static class WeatherPalettes
@@ -49,6 +50,17 @@ public static class WeatherPalettes
     public static readonly RadialGradientBrush StormGlow;
     public static readonly RadialGradientBrush FogGlow;
     public static readonly RadialGradientBrush DefaultGlow;
+
+    // Pre-created frozen LinearGradientBrush instances for the atmospheric horizon aura (bottom bleed)
+    public static readonly LinearGradientBrush SunnyHorizonAura;
+    public static readonly LinearGradientBrush ClearNightHorizonAura;
+    public static readonly LinearGradientBrush CloudyHorizonAura;
+    public static readonly LinearGradientBrush RainHorizonAura;
+    public static readonly LinearGradientBrush SnowHorizonAura;
+    public static readonly LinearGradientBrush StormHorizonAura;
+    public static readonly LinearGradientBrush FogHorizonAura;
+    public static readonly LinearGradientBrush HeatwaveHorizonAura;
+    public static readonly LinearGradientBrush DefaultHorizonAura;
 
     // Pre-created static FrozenDictionary for AQI and UV lookups
     public static readonly FrozenDictionary<AqiCategory, AqiInfo> AqiPalette;
@@ -112,6 +124,52 @@ public static class WeatherPalettes
             Color.FromArgb(0x10, 0x0F, 0x17, 0x2A)
         );
 
+        // Pre-frozen Horizon Aura linear gradients (horizontal color bloom, 100% GPU Direct3D)
+        SunnyHorizonAura = CreateHorizonAura(
+            Color.FromArgb(0xEE, 0xF5, 0x9E, 0x0B), // Radiant amber gold
+            Color.FromArgb(0xEE, 0xFB, 0x71, 0x85)  // Warm coral rose
+        );
+
+        ClearNightHorizonAura = CreateHorizonAura(
+            Color.FromArgb(0xE0, 0x8B, 0x5C, 0xF6), // Celestial violet
+            Color.FromArgb(0xE0, 0x38, 0xBD, 0xF8)  // Midnight sapphire
+        );
+
+        CloudyHorizonAura = CreateHorizonAura(
+            Color.FromArgb(0xD0, 0x64, 0x74, 0x8B), // Soft slate
+            Color.FromArgb(0xD0, 0x94, 0xA3, 0xB8)  // Steel mist
+        );
+
+        RainHorizonAura = CreateHorizonAura(
+            Color.FromArgb(0xEE, 0x06, 0xB6, 0xD4), // Electric cyan
+            Color.FromArgb(0xEE, 0x25, 0x63, 0xEB)  // Ocean azure
+        );
+
+        SnowHorizonAura = CreateHorizonAura(
+            Color.FromArgb(0xE5, 0x2D, 0xD4, 0xBF), // Glacial mint
+            Color.FromArgb(0xE5, 0x38, 0xBD, 0xF8)  // Arctic ice blue
+        );
+
+        StormHorizonAura = CreateHorizonAura(
+            Color.FromArgb(0xF0, 0x93, 0x33, 0xEA), // Neon storm violet
+            Color.FromArgb(0xF0, 0x4F, 0x46, 0xE5)  // Deep indigo thunder
+        );
+
+        FogHorizonAura = CreateHorizonAura(
+            Color.FromArgb(0xD8, 0xA1, 0xA1, 0xAA), // Ethereal silver
+            Color.FromArgb(0xD8, 0x71, 0x71, 0x7A)  // Charcoal smoke
+        );
+
+        HeatwaveHorizonAura = CreateHorizonAura(
+            Color.FromArgb(0xF5, 0xFF, 0xD6, 0x00), // Golden mango
+            Color.FromArgb(0xF5, 0xFF, 0x1E, 0x50)  // Crimson heatwave
+        );
+
+        DefaultHorizonAura = CreateHorizonAura(
+            Color.FromArgb(0xC0, 0x47, 0x55, 0x69),
+            Color.FromArgb(0xC0, 0x33, 0x41, 0x55)
+        );
+
         var aqiDict = new Dictionary<AqiCategory, AqiInfo>
         {
             [AqiCategory.Good] = new(CreateFrozenBrush(Color.FromRgb(0x00, 0xE6, 0x76)), "Good"),
@@ -137,6 +195,22 @@ public static class WeatherPalettes
     private static SolidColorBrush CreateFrozenBrush(Color color)
     {
         var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        return brush;
+    }
+
+    private static LinearGradientBrush CreateHorizonAura(Color leftColor, Color rightColor)
+    {
+        var brush = new LinearGradientBrush
+        {
+            StartPoint = new Point(0, 0),
+            EndPoint = new Point(1, 0),
+            GradientStops = new GradientStopCollection
+            {
+                new GradientStop(leftColor, 0.0),
+                new GradientStop(rightColor, 1.0)
+            }
+        };
         brush.Freeze();
         return brush;
     }
@@ -169,66 +243,68 @@ public static class WeatherPalettes
     /// Resolves condition metadata for an Open-Meteo WMO weather code. Returns shared frozen instances.
     /// Never returns null or throws.
     /// </summary>
-    public static WeatherConditionInfo GetConditionInfo(int weatherCode, bool isDay)
+    public static WeatherConditionInfo GetConditionInfo(int weatherCode, bool isDay, double? tempC = null)
     {
+        var sunnyHorizon = (tempC.HasValue && tempC.Value >= 33.0) ? HeatwaveHorizonAura : SunnyHorizonAura;
+
         return weatherCode switch
         {
             // Clear sky
             0 => isDay
-                ? new WeatherConditionInfo("clear-day", "Clear Sky", SunnyGlow, "\uE9C4")
-                : new WeatherConditionInfo("clear-night", "Clear Night", ClearNightGlow, "\uE708"),
+                ? new WeatherConditionInfo("clear-day", "Clear Sky", SunnyGlow, sunnyHorizon, "\uE9C4")
+                : new WeatherConditionInfo("clear-night", "Clear Night", ClearNightGlow, ClearNightHorizonAura, "\uE708"),
 
             // Mainly clear
             1 => isDay
-                ? new WeatherConditionInfo("mostly-clear-day", "Mainly Clear", SunnyGlow, "\uE9C5")
-                : new WeatherConditionInfo("mostly-clear-night", "Mainly Clear", ClearNightGlow, "\uE708"),
+                ? new WeatherConditionInfo("mostly-clear-day", "Mainly Clear", SunnyGlow, sunnyHorizon, "\uE9C5")
+                : new WeatherConditionInfo("mostly-clear-night", "Mainly Clear", ClearNightGlow, ClearNightHorizonAura, "\uE708"),
 
             // Partly cloudy
             2 => isDay
-                ? new WeatherConditionInfo("partly-cloudy-day", "Partly Cloudy", CloudyGlow, "\uE9C5")
-                : new WeatherConditionInfo("partly-cloudy-night", "Partly Cloudy", ClearNightGlow, "\uE708"),
+                ? new WeatherConditionInfo("partly-cloudy-day", "Partly Cloudy", CloudyGlow, CloudyHorizonAura, "\uE9C5")
+                : new WeatherConditionInfo("partly-cloudy-night", "Partly Cloudy", ClearNightGlow, ClearNightHorizonAura, "\uE708"),
 
             // Overcast
-            3 => new WeatherConditionInfo("overcast", "Overcast", CloudyGlow, "\uE9C6"),
+            3 => new WeatherConditionInfo("overcast", "Overcast", CloudyGlow, CloudyHorizonAura, "\uE9C6"),
 
             // Fog and depositing rime fog
-            45 or 48 => new WeatherConditionInfo("fog", "Foggy", FogGlow, "\uE9C6"),
+            45 or 48 => new WeatherConditionInfo("fog", "Foggy", FogGlow, FogHorizonAura, "\uE9C6"),
 
             // Drizzle
-            51 or 53 or 55 => new WeatherConditionInfo("drizzle", "Light Drizzle", RainGlow, "\uE9C7"),
+            51 or 53 or 55 => new WeatherConditionInfo("drizzle", "Light Drizzle", RainGlow, RainHorizonAura, "\uE9C7"),
 
             // Freezing drizzle
-            56 or 57 => new WeatherConditionInfo("sleet", "Freezing Drizzle", SnowGlow, "\uE9C8"),
+            56 or 57 => new WeatherConditionInfo("sleet", "Freezing Drizzle", SnowGlow, SnowHorizonAura, "\uE9C8"),
 
             // Rain: Slight, moderate, heavy
             61 or 63 => isDay
-                ? new WeatherConditionInfo("rain", "Rain", RainGlow, "\uE9C7")
-                : new WeatherConditionInfo("night-rain", "Rain", RainGlow, "\uE708"),
-            65 => new WeatherConditionInfo("heavy-rain", "Heavy Rain", RainGlow, "\uE9C7"),
+                ? new WeatherConditionInfo("rain", "Rain", RainGlow, RainHorizonAura, "\uE9C7")
+                : new WeatherConditionInfo("night-rain", "Rain", RainGlow, RainHorizonAura, "\uE708"),
+            65 => new WeatherConditionInfo("heavy-rain", "Heavy Rain", RainGlow, RainHorizonAura, "\uE9C7"),
 
             // Freezing rain
-            66 or 67 => new WeatherConditionInfo("sleet", "Freezing Rain", SnowGlow, "\uE9C8"),
+            66 or 67 => new WeatherConditionInfo("sleet", "Freezing Rain", SnowGlow, SnowHorizonAura, "\uE9C8"),
 
             // Snow fall
-            71 or 73 => new WeatherConditionInfo("snow", "Snow Fall", SnowGlow, "\uE9C8"),
-            75 or 77 => new WeatherConditionInfo("snow", "Heavy Snow", SnowGlow, "\uE9C8"),
+            71 or 73 => new WeatherConditionInfo("snow", "Snow Fall", SnowGlow, SnowHorizonAura, "\uE9C8"),
+            75 or 77 => new WeatherConditionInfo("snow", "Heavy Snow", SnowGlow, SnowHorizonAura, "\uE9C8"),
 
             // Rain showers
             80 or 81 => isDay
-                ? new WeatherConditionInfo("rain", "Rain Showers", RainGlow, "\uE9C7")
-                : new WeatherConditionInfo("night-rain", "Rain Showers", RainGlow, "\uE708"),
-            82 => new WeatherConditionInfo("heavy-rain", "Violent Rain Showers", RainGlow, "\uE9C7"),
+                ? new WeatherConditionInfo("rain", "Rain Showers", RainGlow, RainHorizonAura, "\uE9C7")
+                : new WeatherConditionInfo("night-rain", "Rain Showers", RainGlow, RainHorizonAura, "\uE708"),
+            82 => new WeatherConditionInfo("heavy-rain", "Violent Rain Showers", RainGlow, RainHorizonAura, "\uE9C7"),
 
             // Snow showers
-            85 or 86 => new WeatherConditionInfo("snow", "Snow Showers", SnowGlow, "\uE9C8"),
+            85 or 86 => new WeatherConditionInfo("snow", "Snow Showers", SnowGlow, SnowHorizonAura, "\uE9C8"),
 
             // Thunderstorm
             95 => isDay
-                ? new WeatherConditionInfo("thunderstorms", "Thunderstorm", StormGlow, "\uE9C9")
-                : new WeatherConditionInfo("thunderstorms-night", "Thunderstorm", StormGlow, "\uE9C9"),
+                ? new WeatherConditionInfo("thunderstorms", "Thunderstorm", StormGlow, StormHorizonAura, "\uE9C9")
+                : new WeatherConditionInfo("thunderstorms-night", "Thunderstorm", StormGlow, StormHorizonAura, "\uE9C9"),
 
             // Thunderstorm with hail / heavy rain
-            96 or 99 => new WeatherConditionInfo("thunderstorms-rain", "Severe Thunderstorm", StormGlow, "\uE9C9"),
+            96 or 99 => new WeatherConditionInfo("thunderstorms-rain", "Severe Thunderstorm", StormGlow, StormHorizonAura, "\uE9C9"),
 
             // Unmapped / Fallback
             _ => HandleUnknownWeatherCode(weatherCode)
@@ -238,7 +314,7 @@ public static class WeatherPalettes
     private static WeatherConditionInfo HandleUnknownWeatherCode(int weatherCode)
     {
         Debug.WriteLine($"[WeatherPalettes] Warning: Received unmapped WMO weather code: {weatherCode}. Falling back to 'not-available'.");
-        return new WeatherConditionInfo("not-available", "Unknown", DefaultGlow, "\uE9C5");
+        return new WeatherConditionInfo("not-available", "Unknown", DefaultGlow, DefaultHorizonAura, "\uE9C5");
     }
 
     public static AqiCategory GetAqiCategory(int usAqi) => usAqi switch
