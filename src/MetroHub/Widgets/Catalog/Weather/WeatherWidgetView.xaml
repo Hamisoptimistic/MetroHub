@@ -3,9 +3,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
              xmlns:widgets="clr-namespace:MetroHub.Widgets"
              xmlns:weather="clr-namespace:MetroHub.Widgets.Catalog.Weather"
-             mc:Ignorable="d" 
+             mc:Ignorable="d po" 
              d:DataContext="{d:DesignInstance Type=weather:WeatherWidgetViewModel}"
              Focusable="False"
              SnapsToDevicePixels="True"
@@ -48,6 +49,27 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- 100% GPU-drawn frozen OpacityMask for Horizon Aura spread (0 CPU / 0 allocations) -->
+        <LinearGradientBrush x:Key="HorizonAuraMaskBrush" StartPoint="0,1" EndPoint="0,0" po:Freeze="True">
+            <GradientStop Color="#D0000000" Offset="0.0" />
+            <GradientStop Color="#68000000" Offset="0.18" />
+            <GradientStop Color="#15000000" Offset="0.36" />
+            <GradientStop Color="#00000000" Offset="0.55" />
+        </LinearGradientBrush>
+
+        <!-- 100% GPU-drawn frozen Glass Top Sheen -->
+        <LinearGradientBrush x:Key="WeatherGlassSheenBrush" StartPoint="0,0" EndPoint="0,1" po:Freeze="True">
+            <GradientStop Color="#15FFFFFF" Offset="0.0" />
+            <GradientStop Color="#04FFFFFF" Offset="0.30" />
+            <GradientStop Color="#00000000" Offset="0.65" />
+        </LinearGradientBrush>
+
+        <!-- 100% GPU-drawn frozen Glass Rim Light -->
+        <LinearGradientBrush x:Key="WeatherGlassRimBrush" StartPoint="0,0" EndPoint="1,0" po:Freeze="True">
+            <GradientStop Color="#00FFFFFF" Offset="0.0" />
+            <GradientStop Color="#30FFFFFF" Offset="0.5" />
+            <GradientStop Color="#00FFFFFF" Offset="1.0" />
+        </LinearGradientBrush>
     </UserControl.Resources>
 
     <widgets:WidgetCard Padding="0">
@@ -57,44 +79,22 @@
                     CornerRadius="2"
                     IsHitTestVisible="False" />
 
-            <!-- 2. Atmospheric Horizon Aura (Localized Bottom Bleed, 100% Direct3D GPU-drawn, 0 CPU/RAM) -->
+            <!-- 2. Atmospheric Horizon Aura (Expansive Horizon Aura, 100% Direct3D GPU-drawn, 0 CPU/RAM) -->
             <Border Background="{Binding HorizonAuraBrush}"
+                    OpacityMask="{StaticResource HorizonAuraMaskBrush}"
                     CornerRadius="2"
-                    IsHitTestVisible="False">
-                <Border.OpacityMask>
-                    <LinearGradientBrush StartPoint="0,1" EndPoint="0,0">
-                        <GradientStop Color="#D0000000" Offset="0.0" />
-                        <GradientStop Color="#68000000" Offset="0.16" />
-                        <GradientStop Color="#12000000" Offset="0.32" />
-                        <GradientStop Color="#00000000" Offset="0.45" />
-                    </LinearGradientBrush>
-                </Border.OpacityMask>
-            </Border>
+                    IsHitTestVisible="False" />
 
-            <!-- 2. Glass Top Specular Sheen (Subtle light catch across upper half) -->
-            <Border CornerRadius="2"
-                    IsHitTestVisible="False">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#15FFFFFF" Offset="0.0" />
-                        <GradientStop Color="#04FFFFFF" Offset="0.30" />
-                        <GradientStop Color="#00000000" Offset="0.65" />
-                    </LinearGradientBrush>
-                </Border.Background>
-            </Border>
+            <!-- 3. Glass Top Specular Sheen (Subtle light catch across upper half) -->
+            <Border Background="{StaticResource WeatherGlassSheenBrush}"
+                    CornerRadius="2"
+                    IsHitTestVisible="False" />
 
-            <!-- 3. Glass Top Rim Light (1px specular edge along top border) -->
-            <Border CornerRadius="2"
+            <!-- 4. Glass Top Rim Light (1px specular edge along top border) -->
+            <Border BorderBrush="{StaticResource WeatherGlassRimBrush}"
+                    CornerRadius="2"
                     BorderThickness="0,1,0,0"
-                    IsHitTestVisible="False">
-                <Border.BorderBrush>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                        <GradientStop Color="#00FFFFFF" Offset="0.0" />
-                        <GradientStop Color="#30FFFFFF" Offset="0.5" />
-                        <GradientStop Color="#00FFFFFF" Offset="1.0" />
-                    </LinearGradientBrush>
-                </Border.BorderBrush>
-            </Border>
+                    IsHitTestVisible="False" />
 
             <!-- ======================================================= -->
             <!-- 1. WIDE 4x2 LAYOUT (Ultra-Clean Icon + Temperature)      -->

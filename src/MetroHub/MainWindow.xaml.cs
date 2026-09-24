@@ -1060,8 +1060,9 @@ public partial class MainWindow : BorderlessFluentWindow
             sb.Completed += (s, e) =>
             {
                 if (RootGrid != null) RootGrid.Opacity = 1.0;
+                try { sb.Remove(this); } catch { }
             };
-            sb.Begin(this);
+            sb.Begin(this, isControllable: true);
         }
         else
         {
@@ -1113,17 +1114,16 @@ public partial class MainWindow : BorderlessFluentWindow
                     RootTranslate.Y = 0.0;
                 }
 
-                // Defer GC cleanup to idle priority after window is hidden
+                try { sb.Remove(this); } catch { }
+
+                // Log diagnostic snapshot at idle priority after window is hidden (without forced GC or WorkingSet flush)
                 Dispatcher.InvokeAsync(() =>
                 {
-                    var beforeMB = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
-                    GC.Collect();
-                    MetroHub.Core.Services.HiddenDiagnosticsLogger.LogMemorySnapshot("HUB HIDE (Post-GC Cleanup)", beforeMB);
+                    var currentMB = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
+                    MetroHub.Core.Services.HiddenDiagnosticsLogger.LogMemorySnapshot("HUB HIDE", currentMB);
                 }, DispatcherPriority.ApplicationIdle);
             };
-            sb.Begin(this);
+            sb.Begin(this, isControllable: true);
         }
         else
         {
@@ -1135,11 +1135,8 @@ public partial class MainWindow : BorderlessFluentWindow
 
             Dispatcher.InvokeAsync(() =>
             {
-                var beforeMB = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
-                MetroHub.Core.Services.HiddenDiagnosticsLogger.LogMemorySnapshot("HUB HIDE (Post-GC Cleanup)", beforeMB);
+                var currentMB = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
+                MetroHub.Core.Services.HiddenDiagnosticsLogger.LogMemorySnapshot("HUB HIDE", currentMB);
             }, DispatcherPriority.ApplicationIdle);
         }
     }

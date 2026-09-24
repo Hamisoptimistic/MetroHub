@@ -1451,22 +1451,47 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    private static RadialGradientBrush CreateAlbumAuraGlow(Color color)
+    private static LinearGradientBrush CreateAlbumAuraGlow(Color primaryColor)
     {
-        // 4-stop radial gradient radiating from behind the album artwork,
-        // softly dispersing across the obsidian card and fading to transparent.
-        var brush = new RadialGradientBrush
+        var (h, s, v) = RgbToHsv(primaryColor.R, primaryColor.G, primaryColor.B);
+
+        Color leftColor;
+        Color rightColor;
+
+        if (s < 0.15)
         {
-            GradientOrigin = new Point(0.82, 0.45),
-            Center = new Point(0.82, 0.45),
-            RadiusX = 1.30,
-            RadiusY = 1.45,
+            // Monochrome / desaturated: sophisticated steel to slate mist
+            leftColor = Color.FromArgb(0xEE, 0x47, 0x55, 0x69);
+            rightColor = Color.FromArgb(0xEE, 0x64, 0x74, 0x8B);
+        }
+        else
+        {
+            // Harmonic analogous color shift (+32 degrees on color wheel)
+            // e.g. Amber -> Coral, Cyan -> Ocean Azure, Purple -> Electric Indigo
+            double harmonicH = (h + 32.0) % 360.0;
+            double harmonicS = Math.Clamp(s * 0.95, 0.60, 0.95);
+            double harmonicV = Math.Clamp(v * 1.15, 0.85, 1.00);
+            Color harmColor = ColorFromHsv(harmonicH, harmonicS, harmonicV);
+
+            // Punchy primary under album artwork on right side
+            Color punchyPrimary = ColorFromHsv(h, Math.Clamp(s * 1.15, 0.70, 0.98), Math.Clamp(v * 1.15, 0.85, 1.00));
+
+            // Set alpha to 0xEE (matching Weather Horizon Aura exact vibrancy)
+            leftColor = Color.FromArgb(0xEE, harmColor.R, harmColor.G, harmColor.B);
+            rightColor = Color.FromArgb(0xEE, punchyPrimary.R, punchyPrimary.G, punchyPrimary.B);
+        }
+
+        // Exact horizontal horizon gradient (StartPoint="0,0", EndPoint="1,0")
+        // Combined with the vertical OpacityMask on Border in XAML, this creates the
+        // identical grounded, crisp, radiant bottom horizon as the Weather widget!
+        var brush = new LinearGradientBrush
+        {
+            StartPoint = new Point(0, 0),
+            EndPoint = new Point(1, 0),
             GradientStops = new GradientStopCollection
             {
-                new GradientStop(Color.FromArgb(0x44, color.R, color.G, color.B), 0.0),  // Vivid core aura directly behind album
-                new GradientStop(Color.FromArgb(0x28, color.R, color.G, color.B), 0.35), // Smooth luminous dispersion
-                new GradientStop(Color.FromArgb(0x12, color.R, color.G, color.B), 0.70), // Subtle ambient bleed
-                new GradientStop(Color.FromArgb(0x00, 0, 0, 0), 1.0)                    // Fades seamlessly into deep glass
+                new GradientStop(leftColor, 0.0),
+                new GradientStop(rightColor, 1.0)
             }
         };
         brush.Freeze();

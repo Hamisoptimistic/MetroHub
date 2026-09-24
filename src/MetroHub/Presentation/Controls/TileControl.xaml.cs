@@ -976,13 +976,13 @@ public partial class TileControl : UserControl
                     }
                 };
 
-                var ambientGlowItem = new MenuItem
+                var horizonAuraItem = new MenuItem
                 {
-                    Header = "Ambient Glow",
+                    Header = "Horizon Aura",
                     IsCheckable = true,
                     IsChecked = mediaVm.IsAmbientGlowEnabled
                 };
-                ambientGlowItem.Click += (s, ev) => mediaVm.SetAmbientGlow(true);
+                horizonAuraItem.Click += (s, ev) => mediaVm.SetAmbientGlow(true);
 
                 var noneStyleItem = new MenuItem
                 {
@@ -992,7 +992,7 @@ public partial class TileControl : UserControl
                 };
                 noneStyleItem.Click += (s, ev) => mediaVm.SetAmbientGlow(false);
 
-                styleItem.Items.Add(ambientGlowItem);
+                styleItem.Items.Add(horizonAuraItem);
                 styleItem.Items.Add(noneStyleItem);
 
                 var mediaDivider = new Separator { Tag = "WidgetCustomMenu" };

@@ -59,8 +59,8 @@ public partial class HabitDayViewModel : ObservableObject
             if (IsFuture) return $"{dateStr} (Upcoming)";
             return State switch
             {
-                HabitDayState.Done => $"{dateStr} · Completed ✓",
-                HabitDayState.Failed => $"{dateStr} · Failed ✕",
+                HabitDayState.Done => $"{dateStr} · Completed",
+                HabitDayState.Failed => $"{dateStr} · Failed",
                 _ => IsToday ? $"{dateStr} · Today (Click to complete)" : $"{dateStr} · Missed"
             };
         }
