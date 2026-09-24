@@ -60,15 +60,16 @@ public static class WidgetRegistry
             Category: "Productivity"
         ));
 
-        // Register Calendar widget
+        // Register Calendar widget (month grid at 8x6, today's date card at 4x4)
         Register(new WidgetDefinition(
             Id: "calendar",
             DisplayName: "Calendar",
-            Description: "Windows 10 style monthly calendar",
+            Description: "Windows 10 style monthly calendar, with a compact today's date card at 4x4",
             Icon: SymbolRegular.CalendarLtr24,
             AllowedSizes: new[]
             {
-                WidgetSize.Huge // 8x6
+                WidgetSize.Large, // 4x4 (248x248px) today's date card
+                WidgetSize.Huge   // 8x6 (504x376px) month grid (default)
             },
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Calendar.CalendarWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Calendar.CalendarWidgetView),

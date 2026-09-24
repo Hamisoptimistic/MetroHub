@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calendar 4×4 — Date Card Mockup</title>
+<style>
+  /* ---------------------------------------------------------------------
+     Palette tokens copied 1:1 from CalendarWidgetView.xaml / TileControl.
+     Alpha is expressed as rgba() because CSS has no #AARRGGBB.
+
+       TileControl tile glass  #1CFFFFFF  -> rgba(255,255,255,0.1098)
+       Weekday text            #A0FFFFFF  -> rgba(255,255,255,0.6275)
+       Day numeral             #FFFFFF    -> #FFFFFF
+       Month text              #B0FFFFFF  -> rgba(255,255,255,0.6902)
+       Year text               #70FFFFFF  -> rgba(255,255,255,0.4392)
+     ------------------------------------------------------------------- */
+  :root {
+    --tile-glass: rgba(255, 255, 255, 0.1098);
+    --weekday:    rgba(255, 255, 255, 0.6275);
+    --numeral:    #ffffff;
+    --month:      rgba(255, 255, 255, 0.6902);
+    --year:       rgba(255, 255, 255, 0.4392);
+
+    /* Geometry — a 4x4 tile is 4*64-8 = 248 DIP, WidgetCard padding 12,10 */
+    --tile:        248px;
+    --pad-x:        12px;
+    --pad-y:        10px;
+    --row-weekday:  26px;   /* Auto row — natural line box of 22px text */
+    --row-month:    26px;   /* Auto row — natural line box of 17px text */
+    --band-numeral:176px;   /* Star row — 228 content - 26 - 26         */
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 24px;
+    background: #0c0c10;
+    color: #e9e9ee;
+    font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1 { font-size: 17px; font-weight: 600; margin: 0 0 6px; line-height: 1.35; }
+  h2 { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+       color: rgba(255,255,255,.45); margin: 0 0 12px; }
+  p.lede { margin: 0 0 28px; color: rgba(255,255,255,.5); max-width: 640px; line-height: 1.65; }
+
+  .row { display: flex; gap: 36px; align-items: flex-start; flex-wrap: wrap; }
+  .col { max-width: 100%; }
+
+  /* Backdrops stand in for the hub behind the translucent tile: a dark
+     wallpaper and a much lighter one, so the glass reads honestly. */
+  .backdrop { padding: 18px; border-radius: 3px; display: inline-block; max-width: 100%; }
+  .backdrop.dark  { background: linear-gradient(140deg, #1b2330 0%, #0a0d13 60%, #151017 100%); }
+  .backdrop.light { background: linear-gradient(140deg, #6d7480 0%, #9aa1ad 55%, #5c6470 100%); }
+
+  /* ---------------------------------------------------------------- tile */
+  .tile {
+    width: var(--tile);
+    height: var(--tile);
+    border-radius: 2px;
+    background: var(--tile-glass);
+    padding: var(--pad-y) var(--pad-x);
+    display: flex;
+    flex-direction: column;
+    font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  }
+
+  .weekday {
+    height: var(--row-weekday);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--weekday);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .band {
+    height: var(--band-numeral);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .numeral {
+    font-size: 112px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--numeral);
+    letter-spacing: -.015em;
+    /* Optical centring. The digits' ink sits ~7px below the centre of the 112px line box
+       (measured: font ascent 121 / descent 28, digit ink ascent 80), so a 14px bottom margin
+       within the flex band lifts them 7px and centres the numerals themselves.
+       The WPF branch applies the same correction as a 13px bottom margin (6.5px lift). */
+    margin-bottom: 14px;
+  }
+
+  .month {
+    height: var(--row-month);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .month .name { color: var(--month); }
+  .month .year { color: var(--year); margin-left: .32em; }
+
+  /* ------------------------------------------------------- annotations */
+  .measured { display: flex; align-items: stretch; }
+  .ruler {
+    display: flex; flex-direction: column;
+    width: 52px; margin-left: 8px;
+    font-size: 10px; color: rgba(255,255,255,.4);
+  }
+  .ruler div {
+    border-top: 1px solid rgba(255,255,255,.16);
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 6px;
+  }
+  .ruler div:first-child { border-top-color: rgba(255,255,255,.3); }
+
+  .label { margin-top: 10px; font-size: 11.5px; color: rgba(255,255,255,.45); }
+  .label b { color: rgba(255,255,255,.72); font-weight: 600; }
+
+  /* 2x type inspection: a fixed-size spacer reserves the scaled footprint and
+     the region scrolls on its own, so the page itself never overflows. */
+  .zoom2wrap { margin-top: 44px; }
+  .zoomscroll { max-width: 100%; overflow-x: auto; padding-bottom: 6px; }
+  .zoompacer { width: 568px; height: 568px; }
+  .zoominner { width: 284px; transform: scale(2); transform-origin: top left; }
+
+  table { border-collapse: collapse; margin-top: 40px; font-size: 12px; max-width: 100%; }
+  th, td { text-align: left; padding: 7px 18px 7px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+  th { color: rgba(255,255,255,.45); font-weight: 600; text-transform: uppercase; font-size: 10.5px; letter-spacing: .07em; }
+  td:first-child { color: rgba(255,255,255,.85); white-space: nowrap; }
+  code { font-family: "Cascadia Mono", Consolas, monospace; font-size: 11.5px; color: #9ad9ff; }
+</style>
+</head>
+<body>
+
+<h1>Calendar widget — 4×4 compact date card</h1>
+<p class="lede">
+  Rendered at exact pixel size: a 248 × 248 DIP tile with the shared <code>WidgetCard</code> padding of
+  12 / 10, leaving 224 × 228 of content. The weekday is pinned to the top edge, the month to the bottom
+  edge, and the day numeral owns the 176 px middle band. Nothing else is drawn — no grid, no chevrons,
+  no accent colour.
+</p>
+
+<div class="row">
+
+  <div class="col">
+    <h2>1 : 1 &nbsp;·&nbsp; dark backdrop</h2>
+    <div class="measured">
+      <div class="backdrop dark">
+        <div class="tile">
+          <div class="weekday">Wednesday</div>
+          <div class="band"><div class="numeral">24</div></div>
+          <div class="month"><span class="name">September</span><span class="year">2026</span></div>
+        </div>
+      </div>
+      <div class="ruler">
+        <div style="height:26px">26</div>
+        <div style="height:176px">176</div>
+        <div style="height:26px">26</div>
+      </div>
+    </div>
+    <div class="label"><b>248 × 248 DIP</b> &nbsp;·&nbsp; content 224 × 228</div>
+  </div>
+
+  <div class="col">
+    <h2>1 : 1 &nbsp;·&nbsp; light backdrop</h2>
+    <div class="backdrop light">
+      <div class="tile">
+        <div class="weekday">Wednesday</div>
+        <div class="band"><div class="numeral">24</div></div>
+        <div class="month"><span class="name">September</span><span class="year">2026</span></div>
+      </div>
+    </div>
+    <div class="label">same glass, lighter hub behind it</div>
+  </div>
+
+</div>
+
+<div class="zoom2wrap">
+  <h2>2 : 1 &nbsp;·&nbsp; type inspection</h2>
+  <div class="zoomscroll">
+    <div class="zoompacer">
+      <div class="zoominner">
+        <div class="backdrop dark" style="display:block">
+          <div class="tile">
+            <div class="weekday">Wednesday</div>
+            <div class="band"><div class="numeral">24</div></div>
+            <div class="month"><span class="name">September</span><span class="year">2026</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<table>
+  <tr><th>Element</th><th>Size</th><th>Weight</th><th>Colour</th><th>Anchor</th></tr>
+  <tr><td>Weekday</td><td>22</td><td>Medium 500</td><td><code>#A0FFFFFF</code></td><td>top edge, centred</td></tr>
+  <tr><td>Day numeral</td><td>112</td><td>SemiBold 600</td><td><code>#FFFFFF</code></td><td>middle band, centred</td></tr>
+  <tr><td>Month</td><td>17</td><td>Medium 500</td><td><code>#B0FFFFFF</code></td><td>bottom edge, centred</td></tr>
+  <tr><td>Year</td><td>17</td><td>Medium 500</td><td><code>#70FFFFFF</code></td><td>trails the month</td></tr>
+</table>
+
+</body>
+</html>

@@ -269,7 +269,16 @@ public partial class TileControl : UserControl
             Opacity = 0.45,
             Color = Colors.Black
         };
-        RootBorder.CacheMode = new BitmapCache();
+        // Rasterise the in-flight tile at the monitor's true DPI scale with ClearType enabled.
+        // A plain BitmapCache renders at 1x with ClearType off, so on a scaled display the
+        // cached text and icons get upscaled and read as pixelated for the whole drag.
+        double dpiScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
+        RootBorder.CacheMode = new BitmapCache
+        {
+            RenderAtScale = dpiScale > 0 ? dpiScale : 1.0,
+            EnableClearType = true,
+            SnapsToDevicePixels = true
+        };
         RootBorder.Effect = shadow;
     }
 
@@ -520,8 +529,10 @@ public partial class TileControl : UserControl
                 TileContextMenu.Items.Insert(2, fontItem);
                 TileContextMenu.Items.Insert(3, clockDivider);
             }
-            else if (tile.TileContent is Widgets.Catalog.Calendar.CalendarWidgetViewModel calVm)
+            else if (tile.TileContent is Widgets.Catalog.Calendar.CalendarWidgetViewModel calVm && calVm.IsFullSize)
             {
+                // Only the 8x6 month grid has a month to jump back to; the 4x4 date card
+                // is always showing today, so this action is omitted there.
                 var todayItem = new MenuItem
                 {
                     Header = "Go to Today",

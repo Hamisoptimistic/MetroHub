@@ -308,6 +308,19 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private void OnRootGridLostMouseCapture(object sender, MouseEventArgs e)
     {
+        // LostMouseCapture bubbles, so losing capture on a control INSIDE a tile also lands
+        // here. That happens normally on every widget that opts into Tag="AllowTileDrag":
+        // ButtonBase captures the mouse on press, then the hub takes capture away from it when
+        // the press is promoted to a drag. Reacting to that would cancel the drag the hub just
+        // started, so only the hub's own capture holders may trigger cleanup.
+        if (e.OriginalSource is DependencyObject source
+            && !ReferenceEquals(source, RootGrid)
+            && !ReferenceEquals(source, this)
+            && FindParent<Presentation.Controls.TileControl>(source) != null)
+        {
+            return;
+        }
+
         if (_isDragging || _isPotentialDrag || _isRubberBanding)
         {
             CancelActiveDrag();
@@ -2773,6 +2786,17 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
     private static bool IsInteractiveElement(DependencyObject? dep)
     {
+        // Opt-in escape hatch: a widget whose interactive children would otherwise make the
+        // whole tile undraggable can mark itself Tag="AllowTileDrag" (see PowerWidgetView).
+        // The hub then still starts a potential drag on press, and the click/drag conflict
+        // resolves itself: ButtonBase only raises Click while it still holds mouse capture,
+        // and promoting the press to a drag steals that capture — so a clean click still
+        // activates the control while a press-and-move drags the tile instead.
+        if (HasAncestorTag(dep, "AllowTileDrag"))
+        {
+            return false;
+        }
+
         DependencyObject? current = dep;
         while (current != null)
         {
@@ -2805,6 +2829,25 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 {
                     return true;
                 }
+            }
+
+            current = GetVisualOrLogicalParent(current);
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// True when the element or any ancestor carries the supplied Tag string.
+    /// </summary>
+    private static bool HasAncestorTag(DependencyObject? dep, string tag)
+    {
+        DependencyObject? current = dep;
+        while (current != null)
+        {
+            if (current is FrameworkElement fe && fe.Tag as string == tag)
+            {
+                return true;
             }
 
             current = GetVisualOrLogicalParent(current);

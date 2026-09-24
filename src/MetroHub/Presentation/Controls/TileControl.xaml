@@ -155,7 +155,7 @@
             <clock:ClockWidgetView />
         </DataTemplate>
 
-        <!-- 4. Calendar Widget DataTemplate (Windows 10 Style Standalone Widget) -->
+        <!-- 4. Calendar Widget DataTemplate (8x6 month grid / 4x4 today's date card) -->
         <DataTemplate DataType="{x:Type calendar:CalendarWidgetViewModel}">
             <calendar:CalendarWidgetView />
         </DataTemplate>

@@ -1,5 +1,10 @@
-﻿<UserControl x:Class="MetroHub.Widgets.Catalog.Power.PowerWidgetView"
+﻿<!-- Tag="AllowTileDrag" opts this widget into draggable-anywhere behaviour. The four action
+     buttons stay fully clickable, but the hub is now allowed to start a tile drag on them, so
+     a press-and-move drags the widget while a clean click still fires the action.
+     See MainWindow.IsInteractiveElement for the mechanism. -->
+<UserControl x:Class="MetroHub.Widgets.Catalog.Power.PowerWidgetView"
              x:Name="Root"
+             Tag="AllowTileDrag"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -88,12 +93,19 @@
                           HorizontalAlignment="Center"
                           VerticalAlignment="Center"
                           SnapsToDevicePixels="True">
+                        <!-- Icon rendering deliberately overrides the app-wide "crisp" SymbolIcon style
+                             (SnapsToDevicePixels + UseLayoutRounding + fixed hinting). At 24px — the
+                             largest icon size in the hub — grid-snapping hardens the glyph curves and
+                             reads as pixelated, so these render unhinted with neutral grayscale AA. -->
                         <ui:SymbolIcon Symbol="{Binding LockSymbol}"
                                        Foreground="{Binding LockForeground}"
                                        FontSize="24"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
-                                       SnapsToDevicePixels="True" />
+                                       SnapsToDevicePixels="False"
+                                       TextOptions.TextFormattingMode="Ideal"
+                                       TextOptions.TextRenderingMode="Grayscale"
+                                       TextOptions.TextHintingMode="Animated" />
                     </Grid>
                     <TextBlock Grid.Row="2"
                                Text="{Binding LockHeader}"
@@ -135,7 +147,10 @@
                                        FontSize="24"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
-                                       SnapsToDevicePixels="True" />
+                                       SnapsToDevicePixels="False"
+                                       TextOptions.TextFormattingMode="Ideal"
+                                       TextOptions.TextRenderingMode="Grayscale"
+                                       TextOptions.TextHintingMode="Animated" />
                     </Grid>
                     <TextBlock Grid.Row="2"
                                Text="{Binding SleepHeader}"
@@ -177,7 +192,10 @@
                                        FontSize="24"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
-                                       SnapsToDevicePixels="True" />
+                                       SnapsToDevicePixels="False"
+                                       TextOptions.TextFormattingMode="Ideal"
+                                       TextOptions.TextRenderingMode="Grayscale"
+                                       TextOptions.TextHintingMode="Animated" />
                     </Grid>
                     <TextBlock Grid.Row="2"
                                Text="{Binding RestartHeader}"
@@ -219,7 +237,10 @@
                                        FontSize="24"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
-                                       SnapsToDevicePixels="True" />
+                                       SnapsToDevicePixels="False"
+                                       TextOptions.TextFormattingMode="Ideal"
+                                       TextOptions.TextRenderingMode="Grayscale"
+                                       TextOptions.TextHintingMode="Animated" />
                     </Grid>
                     <TextBlock Grid.Row="2"
                                Text="{Binding ShutdownHeader}"
