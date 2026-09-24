@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calendar — "Today" indicator candidates (8×6 month grid)</title>
+<style>
+  /* ---------------------------------------------------------------------
+     Tokens copied 1:1 from CalendarWidgetView.xaml / HabitWidgetView.xaml,
+     CalendarMonthBackplate.cs and WidgetCard.cs.
+     Alpha is rgba() because CSS has no #AARRGGBB.
+
+       Tile glass (WidgetCard)   #1CFFFFFF -> rgba(255,255,255,0.1098)
+       Month block (Backplate)   #18FFFFFF -> rgba(255,255,255,0.0941)
+       Weekday header            #80FFFFFF -> rgba(255,255,255,0.5020)
+       Out-of-month numeral      #40FFFFFF -> rgba(255,255,255,0.2510)
+       In-month numeral          #FFFFFF   -> #FFFFFF, SemiBold 600
+       Hover overlay (cell)      #18FFFFFF -> rgba(255,255,255,0.0941)
+       Today accent              #60CDFF   -> #60CDFF  (Fluent Sky Blue)
+
+     Geometry — 8x6 tile = 504 x 376 DIP, WidgetCard padding 18/16,
+     header 28 + 8, weekday strip ~14.4 + 6, then a 7-col x 6-row grid
+     -> cell = 66.857 x 47.833 DIP.
+     ------------------------------------------------------------------- */
+  :root{
+    --glass:       rgba(255,255,255,.1098);
+    --month:       rgba(255,255,255,.0941);
+    --weekday:     rgba(255,255,255,.5020);
+    --out:         rgba(255,255,255,.2510);
+    --accent:      #60CDFF;
+    --accent-soft: rgba(96,205,255,.50);
+    --cell-w:      66.857px;
+    --cell-h:      47.833px;
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0; padding:24px 24px 64px;
+    background:#0c0c10; color:#e9e9ee;
+    font-family:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+    font-size:13px; -webkit-font-smoothing:antialiased;
+  }
+
+  h1{ font-size:17px; font-weight:600; margin:0 0 6px; line-height:1.35; }
+  h2{ font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+      color:rgba(255,255,255,.45); margin:0 0 12px; }
+  p.lede{ margin:0 0 4px; color:rgba(255,255,255,.5); max-width:760px; line-height:1.65; }
+  code{ font-family:"Cascadia Mono",Consolas,monospace; font-size:11.5px; color:#9ad9ff; }
+  section{ margin-top:46px; }
+  .row{ display:flex; gap:26px; align-items:flex-start; flex-wrap:wrap; }
+  .col{ max-width:100%; }
+  .label{ margin-top:10px; font-size:11.5px; color:rgba(255,255,255,.5);
+          line-height:1.55; max-width:504px; }
+  .label b{ color:rgba(255,255,255,.85); font-weight:600; }
+
+  /* Backdrops stand in for the hub behind the translucent tile: a dark
+     wallpaper and a much lighter one, so the glass reads honestly. */
+  .backdrop{ padding:18px; border-radius:3px; display:inline-block; max-width:100%; }
+  .backdrop.dark { background:linear-gradient(140deg,#1b2330 0%,#0a0d13 60%,#151017 100%); }
+  .backdrop.light{ background:linear-gradient(140deg,#6d7480 0%,#9aa1ad 55%,#5c6470 100%); }
+
+  /* ----------------------------------------------------------- the tile */
+  .tile{
+    width:504px; height:376px;
+    border-radius:2px; background:var(--glass);
+    padding:16px 18px;
+    display:flex; flex-direction:column;
+    font-family:"Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+    position:relative;
+  }
+
+  /* Header row — 28px nav buttons + centred bold title, 8px below */
+  .cal-head{ height:28px; margin:0 2px 8px; position:relative; flex:0 0 auto; }
+  .navbtn{ position:absolute; top:0; width:28px; height:28px; border-radius:4px;
+           display:flex; align-items:center; justify-content:center;
+           color:rgba(255,255,255,.75); font-size:19px; line-height:1; }
+  .navbtn.l{ left:0; } .navbtn.r{ right:0; }
+  .cal-title{ position:absolute; inset:0; display:flex; align-items:center;
+              justify-content:center; font-size:15px; font-weight:700; color:#fff; }
+
+  /* Weekday strip — Su Mo Tu We Th Fr Sa */
+  .weekdays{ display:grid; grid-template-columns:repeat(7,1fr); margin:0 0 6px;
+             font-family:"Segoe UI Variable Text","Segoe UI",sans-serif;
+             font-size:11.5px; font-weight:600; line-height:1.25;
+             color:var(--weekday); text-align:center; flex:0 0 auto; }
+
+  /* The 42-day matrix */
+  .grid-area{ position:relative; flex:1 1 auto; min-height:0; }
+
+  /* Single-polygon month block — mirrors CalendarMonthBackplate.OnRender.
+     September 2026: Sep 1 = Tuesday -> FirstDayOffset = 2; 30 days -> the
+     block ends on grid row 4 (0-based) at column 3. One clipped div = zero
+     internal seams, exactly like the WPF StreamGeometry backplate. */
+  .month-block{
+    position:absolute; inset:0; background:var(--month);
+    clip-path:polygon(28.571% 0%,100% 0%,100% 66.667%,57.143% 66.667%,
+                      57.143% 83.333%,0% 83.333%,0% 16.667%,28.571% 16.667%);
+  }
+
+  .days{ position:absolute; inset:0; display:grid;
+         grid-template-columns:repeat(7,1fr); grid-template-rows:repeat(6,1fr); }
+
+  .cell{ position:relative; display:flex; align-items:center; justify-content:center;
+         font-family:"Segoe UI Variable Text","Segoe UI",sans-serif;
+         font-size:13.5px; line-height:1; }
+  .cell.out{ color:var(--out); font-weight:400; }
+  .cell.in { color:#fff; font-weight:600; }
+
+  /* Every decoration layer is opt-in, per variant */
+  .cell .halo,.cell .ring,.cell .fill,.cell .cap,.cell .anchor{ display:none; }
+  .cell .num{ position:relative; z-index:5; }
+
+  /* ==================================================================== */
+  /*  THE FIVE CANDIDATES                                                 */
+  /*  Every selector is `[data-v="N"] .today …`, so the exact same rules  */
+  /*  drive both the full 504x376 tiles and the isolated-cell strip.      */
+  /* ==================================================================== */
+
+  /* -- v1 · Refined Glow Capsule --------------------------------------- */
+  /*    16 x 4 capsule, CornerRadius 2, accent -> light gradient, then a
+        two-layer bloom (tight 3px + wide 6px) instead of one flat shadow. */
+  [data-v="1"] .today .cap{
+    display:block; position:absolute; left:50%; bottom:3px; transform:translateX(-50%);
+    width:16px; height:4px; border-radius:2px;
+    background:linear-gradient(90deg,#60CDFF,#A8E4FF);
+    filter:drop-shadow(0 0 3px rgba(96,205,255,.55))
+           drop-shadow(0 0 6px rgba(96,205,255,.25));
+  }
+  [data-v="1"] .today .num{ font-weight:700; }
+
+  /* -- v2  · Accent Squircle Chip + anchor ----------------------------- */
+  /* -- v2b · Accent Squircle Chip (anchor retired) --------------------- */
+  /* -- v5  · Chip + compositor-only breath (shares the v2 chrome) ------ */
+  /*    Inset 2px so it never touches a neighbouring cell, which keeps the
+        backplate's seam-free contract intact. Fill is the accent at two
+        alphas (#3A60CDFF -> #1860CDFF) with a #8060CDFF hairline. */
+  [data-v="2"]  .today .fill,
+  [data-v="2b"] .today .fill,
+  [data-v="5"]  .today .fill{
+    display:block; position:absolute; inset:2px; border-radius:4px;
+    background:linear-gradient(180deg,rgba(96,205,255,.23),rgba(96,205,255,.09));
+    border:1px solid var(--accent-soft);
+  }
+  [data-v="2"]  .today .num,
+  [data-v="2b"] .today .num,
+  [data-v="5"]  .today .num{
+    color:#fff; font-weight:600; text-shadow:0 0 6px rgba(96,205,255,.75);
+  }
+  /* The 12 x 2.5 accent bar inside the chip keeps the shipped capsule's
+     "today, not yet marked" affordance that the Habit widget relies on. */
+  [data-v="2"] .today .anchor,
+  [data-v="5"] .today .anchor{
+    display:block; position:absolute; left:50%; bottom:5px; transform:translateX(-50%);
+    width:12px; height:2.5px; border-radius:1.25px; background:#60CDFF;
+  }
+
+  /* -- v3 · Halo + Ring "spotlight" ------------------------------------ */
+  /*    Cell-local radial halo only — never a card-wide layer, so the
+        WPF_PERFORMANCE.md no-overlay rule still holds. Translucent, so the
+        wallpaper keeps reading through the glass. */
+  [data-v="3"] .today .halo{
+    display:block; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:36px; height:36px; border-radius:50%;
+    background:radial-gradient(circle,
+                 rgba(96,205,255,.38) 0%,
+                 rgba(96,205,255,.14) 45%,
+                 rgba(96,205,255,0)   62%);
+  }
+  [data-v="3"] .today .ring{
+    display:block; position:absolute; inset:2px; border-radius:6px;
+    border:1px solid rgba(96,205,255,.56);
+  }
+  [data-v="3"] .today .num{ color:#EAF7FF; font-weight:600;
+                            text-shadow:0 0 6px rgba(96,205,255,.60); }
+
+  /* -- v4 · Solid accent + inverted numeral ---------------------------- */
+  /*    24 x 24 solid squircle, CornerRadius 6, numeral flips to #0B0B0F. */
+  [data-v="4"] .today .fill{
+    display:block; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:24px; height:24px; border-radius:6px; background:var(--accent);
+    filter:drop-shadow(0 0 4px rgba(96,205,255,.50)); z-index:1;
+  }
+  [data-v="4"] .today .num{ color:#0B0B0F; font-weight:700; }
+
+  /* -- v5 · the "breath" ----------------------------------------------- */
+  /*    transform + opacity ONLY, so this maps 1:1 onto a WPF
+        RenderTransform + Opacity DoubleAnimation on the compositor thread.
+        Never animate Width/Height/Effect — those re-run layout/raster. */
+  [data-v="5"] .today .fill{ animation:breath 1.6s ease-in-out infinite; }
+  @keyframes breath{
+    0%,100%{ opacity:.75; transform:scale(1);    }
+    50%    { opacity:1;   transform:scale(1.04); }
+  }
+
+  /* -- v0 · SHIPPED TODAY (reference, do not change) ------------------- */
+  /*    14 x 3.5 capsule, r=2, #60CDFF, one DropShadowEffect
+        BlurRadius="4" ShadowDepth="0" Opacity="0.8". A WPF BlurRadius of 4
+        is approximated here as `drop-shadow(0 0 2px …)`. */
+  [data-v="0"] .today .cap{
+    display:block; position:absolute; left:50%; bottom:3px; transform:translateX(-50%);
+    width:14px; height:3.5px; border-radius:2px; background:#60CDFF;
+    filter:drop-shadow(0 0 2px rgba(96,205,255,.80));
+  }
+  [data-v="0"] .today .num{ font-weight:700; }
+
+  /* ==================================================================== */
+  /*  COMPARISON + ZOOM HELPERS                                           */
+  /* ==================================================================== */
+
+  /* Isolated today-cell at exact cell metrics, scaled 3x for diffing. */
+  .iso-strip{ display:flex; gap:30px; flex-wrap:wrap; align-items:flex-start; }
+  .iso-zoom{ width:200.571px; height:143.499px; }   /* cell * 3 */
+  .iso{ width:var(--cell-w); height:var(--cell-h); position:relative;
+        background:var(--month); transform:scale(3); transform-origin:top left; }
+  .iso .cell{ position:absolute; inset:0; }
+  .iso-cap{ margin-top:10px; font-size:11px; color:rgba(255,255,255,.6); line-height:1.5; }
+  .iso-cap b{ color:var(--accent); font-weight:600; }
+
+  /* 2:1 type inspection, scrolls on its own like the date-card mockup. */
+  .zoom2wrap{ margin-top:24px; }
+  .zoomscroll{ max-width:100%; overflow-x:auto; padding-bottom:8px; }
+  .zoompacer{ width:1008px; height:752px; }
+  .zoominner{ width:504px; transform:scale(2); transform-origin:top left; }
+
+  /* Spec matrix */
+  table{ border-collapse:collapse; margin-top:16px; font-size:12px; max-width:100%; }
+  th,td{ text-align:left; padding:8px 20px 8px 0;
+         border-bottom:1px solid rgba(255,255,255,.08); vertical-align:top; }
+  th{ color:rgba(255,255,255,.45); font-weight:600; text-transform:uppercase;
+      font-size:10.5px; letter-spacing:.07em; }
+  td:first-child{ color:rgba(255,255,255,.9); white-space:nowrap; }
+  .pass{ color:#7BE3A6; } .warn{ color:#FFC96B; } .fail{ color:#FF8A8A; }
+</style>
+</head>
+<body>
+
+<noscript>
+  <p style="padding:14px;border:1px solid #FF8A8A;color:#FF8A8A">
+    This mockup builds its tiles with a small inline script (one shared 42-day matrix, seven
+    sheets that differ only by <code>data-v</code>). Scripts appear to be blocked here — open the
+    file directly in a browser instead.
+  </p>
+</noscript>
+
+<h1>Calendar — "Today" indicator candidates</h1>
+<p class="lede">
+  Every tile below is the real thing at the real size: a <b>504 × 376 DIP</b> 8×6 tile with the
+  shared <code>WidgetCard</code> padding of 18 / 16, the <code>CalendarMonthBackplate</code>'s
+  single-polygon month block, and the true <b>September 2026</b> Sunday-first matrix
+  (Sep&nbsp;1 falls on a Tuesday, so the grid opens on Aug&nbsp;30). Today is
+  <b>Friday 25 September</b> — grid row 4, column 6 — which reproduces the 18/19 → 25/26
+  relationship from the current build exactly. Nothing changes except the marker itself.
+</p>
+<p class="lede">
+  <b>v0</b> is what ships today: a <code>14 × 3.5</code> capsule, <code>CornerRadius="2"</code>,
+  <code>#60CDFF</code>, with a single <code>DropShadowEffect BlurRadius="4"</code>. It is rendered
+  first, untouched, as the reference point.
+</p>
+
+<section>
+  <h2>Isolated today-cell &nbsp;·&nbsp; 3 : 1 &nbsp;·&nbsp; exact cell metrics</h2>
+  <p class="lede">The "25" cell on its own, at 3×, sitting on the month block's
+  <code>#18FFFFFF</code> fill so the marker's transparency is judged honestly.</p>
+  <div class="iso-strip" id="isoStrip"></div>
+</section>
+
+<section>
+  <h2>Full 504 × 376 tiles &nbsp;·&nbsp; 1 : 1 &nbsp;·&nbsp; dark backdrop</h2>
+  <div class="row" id="darkTiles"></div>
+</section>
+
+<section>
+  <h2>Full 504 × 376 tiles &nbsp;·&nbsp; 1 : 1 &nbsp;·&nbsp; light backdrop</h2>
+  <p class="lede">Same glass, much lighter hub behind it — this is where a marker with too little
+  contrast gives itself away.</p>
+  <div class="row" id="lightTiles"></div>
+</section>
+
+<section>
+  <h2>2 : 1 &nbsp;·&nbsp; the two leads</h2>
+  <div class="row" id="zoomTiles"></div>
+</section>
+
+<section>
+  <h2>Specification matrix</h2>
+  <table>
+    <tr>
+      <th>Sheet</th><th>Marker geometry &amp; colour</th><th>Day numeral</th>
+      <th>Hit-test</th><th>Guardrail check</th>
+    </tr>
+    <tr>
+      <td>v0 shipped</td>
+      <td>14 × 3.5 capsule, <code>r=2</code>, <code>#60CDFF</code>, one
+          <code>DropShadowEffect</code> (blur 4, opacity .8)</td>
+      <td><code>#FFFFFF</code> Bold</td>
+      <td><code>IsHitTestVisible=False</code></td>
+      <td class="pass">✓ single cell-local Border + Effect</td>
+    </tr>
+    <tr>
+      <td>v1 Refined Glow Capsule</td>
+      <td>16 × 4 capsule, <code>r=2</code>, gradient <code>#60CDFF → #A8E4FF</code>,
+          two-layer bloom (3px .55 + 6px .25)</td>
+      <td><code>#FFFFFF</code> Bold</td>
+      <td>unchanged</td>
+      <td class="pass">✓ one Border, two shadow passes — negligible</td>
+    </tr>
+    <tr>
+      <td>v2 Accent Squircle Chip</td>
+      <td>inset 2px chip <code>r=4</code>; fill <code>#3A60CDFF → #1860CDFF</code>;
+          hairline <code>#8060CDFF</code>; plus a 12 × 2.5 <code>#60CDFF</code> anchor
+          at <code>bottom:5</code></td>
+      <td><code>#FFFFFF</code> SemiBold + 6px accent text glow</td>
+      <td>unchanged (the chip is not hit-testable either)</td>
+      <td class="pass">✓ additive Border + BorderBrush on 1 of 42 cells</td>
+    </tr>
+    <tr>
+      <td>v2b Chip, anchor retired</td>
+      <td>exactly v2 minus the anchor bar</td>
+      <td>as v2</td>
+      <td>unchanged</td>
+      <td class="pass">✓ least chrome of the chip family</td>
+    </tr>
+    <tr>
+      <td>v3 Halo + Ring</td>
+      <td>36px <code>RadialGradientBrush</code> halo (<code>#6060CDFF → transparent</code>)
+          + inset 2px ring <code>r=6</code>, 1px <code>#9060CDFF</code></td>
+      <td><code>#EAF7FF</code> SemiBold + accent glow</td>
+      <td>unchanged</td>
+      <td class="pass">✓ radial brush on one cell only — still no card-wide overlay</td>
+    </tr>
+    <tr>
+      <td>v4 Solid + inverted</td>
+      <td>24 × 24 solid <code>#60CDFF</code> squircle, <code>r=6</code>, 4px bloom</td>
+      <td><code>#0B0B0F</code> Bold (inverted)</td>
+      <td>unchanged</td>
+      <td class="warn">⚠ highest contrast, but departs from the neutral Windows-10 look</td>
+    </tr>
+    <tr>
+      <td>v5 Chip + breath</td>
+      <td>v2 chrome + a 1.6s infinite pulse</td>
+      <td>as v2</td>
+      <td>unchanged</td>
+      <td class="warn">⚠ transform + opacity only, so no layout/raster re-run — keep opt-in</td>
+    </tr>
+  </table>
+</section>
+
+<script>
+/* ==================================================================== *
+ *  One data source, seven sheets.
+ *  The ONLY thing that differs between them is `data-v`, so the comparison
+ *  is honest: identical glass, identical backplate, identical matrix —
+ *  only the "today" treatment changes.
+ * ==================================================================== */
+
+var TODAY = 25;            /* Friday 25 September 2026 */
+var DAYS_IN_MONTH = 30;    /* September 2026 */
+
+/* Sunday-first 42-cell matrix. Sep 1 2026 = Tuesday -> FirstDayOffset = 2,
+   so the grid opens on Aug 30 and closes on Oct 10. This is exactly what
+   CalendarWidgetViewModel.RebuildCalendar produces for this month. */
+function buildMatrix(){
+  var cells = [{ n:30, out:true }, { n:31, out:true }];
+  for (var d = 1; d <= DAYS_IN_MONTH; d++) cells.push({ n:d, out:false });
+  for (var e = 1; e <= 10; e++)           cells.push({ n:e, out:true });
+  return cells;
+}
+
+var WEEKDAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+/* Every layer the variants can switch on. Rendered for all cells so the
+   markup is identical and only CSS decides what is actually visible. */
+function layers(){
+  return '<span class="halo"></span><span class="ring"></span>'
+       + '<span class="fill"></span><span class="cap"></span>'
+       + '<span class="anchor"></span>';
+}
+
+function cellHtml(c){
+  var cls = 'cell ' + (c.out ? 'out' : 'in');
+  if (!c.out && c.n === TODAY){
+    return '<div class="' + cls + ' today">' + layers()
+         + '<span class="num">' + c.n + '</span></div>';
+  }
+  return '<div class="' + cls + '"><span class="num">' + c.n + '</span></div>';
+}
+
+function tileHtml(v){
+  return '<div class="tile" data-v="' + v + '">'
+       +   '<div class="cal-head">'
+       +     '<div class="navbtn l">\u2039</div>'
+       +     '<div class="cal-title">September 2026</div>'
+       +     '<div class="navbtn r">\u203A</div>'
+       +   '</div>'
+       +   '<div class="weekdays">'
+       +     WEEKDAYS.map(function(d){ return '<span>' + d + '</span>'; }).join('')
+       +   '</div>'
+       +   '<div class="grid-area">'
+       +     '<div class="month-block"></div>'
+       +     '<div class="days" data-calendar></div>'
+       +   '</div>'
+       + '</div>';
+}
+
+var CANDIDATES = [
+  { v:'0',  tag:'v0',  name:'Shipped reference',
+    note:'14 × 3.5 capsule, r=2, #60CDFF, one DropShadowEffect (blur 4, opacity .8), Bold numeral. This is the marker living in CalendarWidgetView.xaml lines 169-200 and HabitWidgetView.xaml lines 372-403 today.' },
+  { v:'1',  tag:'v1',  name:'Refined Glow Capsule',
+    note:'16 × 4 capsule on a #60CDFF → #A8E4FF gradient, with a two-layer bloom (3px @ .55 + 6px @ .25) instead of a single flat shadow. Lowest-risk drop-in.' },
+  { v:'2',  tag:'v2',  name:'Accent Squircle Chip + anchor',
+    note:'Inset 2px chip, CornerRadius 4, fill #3A60CDFF → #1860CDFF, hairline #8060CDFF, white SemiBold numeral with a 6px accent glow — plus a 12 × 2.5 accent bar that preserves the shipped capsule cue for a today that is not yet marked.' },
+  { v:'2b', tag:'v2b', name:'Accent Squircle Chip, anchor retired',
+    note:'The identical chip with the anchor bar removed. Cleanest read of the chip family; the Habit widget would then lean on the chip alone for its unmarked-today cue.' },
+  { v:'3',  tag:'v3',  name:'Halo + Ring spotlight',
+    note:'36px cell-local radial halo (#6060CDFF → transparent) plus an inset 2px ring, CornerRadius 6, 1px #9060CDFF. Translucent, so the wallpaper keeps reading through the glass.' },
+  { v:'4',  tag:'v4',  name:'Solid accent + inverted numeral',
+    note:'24 × 24 solid #60CDFF squircle, CornerRadius 6, with the numeral flipping to #0B0B0F. Maximum contrast, but a deliberate departure from the neutral Windows-10 look.' },
+  { v:'5',  tag:'v5',  name:'Chip + compositor-only breath',
+    note:'v2 chrome with a 1.6s pulse animating transform + opacity only — the 1:1 analogue of a WPF RenderTransform / Opacity DoubleAnimation, so it never re-runs layout or rasterisation.' }
+];
+
+function colHtml(c, backdrop){
+  return '<div class="col">'
+       +   '<h2>' + c.tag + ' · ' + c.name + '</h2>'
+       +   '<div class="backdrop ' + backdrop + '">'
+       +     '<div data-tile="' + c.v + '"></div>'
+       +   '</div>'
+       +   '<div class="label">' + c.note + '</div>'
+       + '</div>';
+}
+
+function buildSections(){
+  /* Isolated today-cell strip, 3x */
+  document.getElementById('isoStrip').innerHTML = CANDIDATES.map(function(c){
+    return '<div class="iso-wrap">'
+         +   '<div class="iso-zoom">'
+         +     '<div class="iso" data-v="' + c.v + '" data-iso></div>'
+         +   '</div>'
+         +   '<div class="iso-cap"><b>' + c.tag + '</b> · ' + c.name + '</div>'
+         + '</div>';
+  }).join('');
+
+  document.getElementById('darkTiles').innerHTML =
+    CANDIDATES.map(function(c){ return colHtml(c, 'dark'); }).join('');
+
+  document.getElementById('lightTiles').innerHTML =
+    CANDIDATES.map(function(c){ return colHtml(c, 'light'); }).join('');
+
+  /* 2:1 zoom for the two leads (v2 chip, v3 halo) */
+  document.getElementById('zoomTiles').innerHTML = ['2','3'].map(function(v){
+    var c = CANDIDATES.filter(function(x){ return x.v === v; })[0];
+    return '<div class="col zoom2wrap">'
+         +   '<h2>' + c.tag + ' · ' + c.name + ' &nbsp;(2 : 1)</h2>'
+         +   '<div class="zoomscroll"><div class="zoompacer">'
+         +     '<div class="zoominner"><div data-tile="' + v + '"></div></div>'
+         +   '</div></div>'
+         +   '<div class="label">' + c.note + '</div>'
+         + '</div>';
+  }).join('');
+}
+
+function init(){
+  buildSections();
+
+  /* 1. drop every tile in */
+  var tiles = document.querySelectorAll('[data-tile]');
+  for (var i = 0; i < tiles.length; i++){
+    tiles[i].innerHTML = tileHtml(tiles[i].getAttribute('data-tile'));
+  }
+
+  /* 2. fill every 42-cell matrix from the one shared source */
+  var matrix = buildMatrix().map(cellHtml).join('');
+  var grids = document.querySelectorAll('[data-calendar]');
+  for (var g = 0; g < grids.length; g++) grids[g].innerHTML = matrix;
+
+  /* 3. and the isolated today-cell strip */
+  var one = cellHtml({ n:TODAY, out:false });
+  var isos = document.querySelectorAll('[data-iso]');
+  for (var k = 0; k < isos.length; k++) isos[k].innerHTML = one;
+}
+
+init();
+</script>
+</body>
+</html>

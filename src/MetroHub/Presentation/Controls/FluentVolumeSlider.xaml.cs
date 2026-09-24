@@ -116,6 +116,7 @@ public partial class FluentVolumeSlider : UserControl
         {
             ApplyProgressBrush();
             UpdateVisuals();
+            UpdateHoverState(false, isDragging: false);
         };
         IsEnabledChanged += (s, e) =>
         {
@@ -168,10 +169,10 @@ public partial class FluentVolumeSlider : UserControl
 
     private void UpdateMutedVisuals()
     {
-        if (ProgressFill != null) ProgressFill.Opacity = IsMuted ? 0.35 : 1.0;
+        if (ProgressFillContainer != null) ProgressFillContainer.Opacity = IsMuted ? 0.35 : 1.0;
         if (SliderThumb != null)
         {
-            SliderThumb.Opacity = (_isDragging || IsMouseOver) ? (IsMuted ? 0.45 : 1.0) : 0.0;
+            SliderThumb.Opacity = IsMuted ? 0.45 : 1.0;
         }
     }
 
@@ -182,7 +183,7 @@ public partial class FluentVolumeSlider : UserControl
 
     private void UpdateVisuals()
     {
-        if (RootContainer == null || ProgressClip == null || ThumbTranslate == null) return;
+        if (RootContainer == null || ThumbTranslate == null || ProgressFillContainer == null || TrackUnfilledContainer == null) return;
 
         double width = RootContainer.ActualWidth;
         if (width <= 0) return;
@@ -192,13 +193,24 @@ public partial class FluentVolumeSlider : UserControl
 
         double ratio = Math.Clamp((Value - Minimum) / range, 0.0, 1.0);
 
-        ProgressClip.Rect = new Rect(0, -10, ratio * width, 40);
-
         const double thumbWidth = 14.0;
+        const double gap = 5.0;
+
         double maxThumbLeft = Math.Max(0, width - thumbWidth);
         double thumbLeft = ratio * maxThumbLeft;
 
         ThumbTranslate.X = thumbLeft;
+
+        // 1. Left Progress Fill: from 0 up to (thumbLeft - gap)
+        double fillWidth = Math.Max(0, thumbLeft - gap);
+        ProgressFillContainer.Width = fillWidth;
+
+        // 2. Right Unfilled Track: starts after the ring + gap, runs to end of track
+        double unfilledStart = thumbLeft + thumbWidth + gap;
+        double unfilledWidth = Math.Max(0, width - unfilledStart);
+
+        TrackUnfilledContainer.Margin = new Thickness(unfilledStart, 0, 0, 0);
+        TrackUnfilledContainer.Width = unfilledWidth;
     }
 
     private void UpdateValueFromPosition(Point pos)
@@ -313,7 +325,18 @@ public partial class FluentVolumeSlider : UserControl
     {
         if (SliderThumb != null)
         {
-            SliderThumb.Opacity = (isHovered || isDragging) ? (IsMuted ? 0.45 : 1.0) : 0.0;
+            SliderThumb.Opacity = IsMuted ? 0.45 : 1.0;
+        }
+
+        if (ThumbScale != null)
+        {
+            double targetScale = (isHovered || isDragging) ? 1.15 : 1.0;
+            var anim = new System.Windows.Media.Animation.DoubleAnimation(targetScale, TimeSpan.FromMilliseconds(120))
+            {
+                EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut }
+            };
+            ThumbScale.BeginAnimation(ScaleTransform.ScaleXProperty, anim);
+            ThumbScale.BeginAnimation(ScaleTransform.ScaleYProperty, anim);
         }
     }
 }
