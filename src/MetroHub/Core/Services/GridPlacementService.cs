@@ -1689,7 +1689,7 @@ public static class GridPlacementService
         foreach (var otherG in groupList)
         {
             if (ReferenceEquals(otherG, targetGroup)) continue;
-            if (otherG.ColumnIndex != targetGroup.ColumnIndex || otherG.Row < targetGroup.Row) continue;
+            if (otherG.Row < targetGroup.Row) continue;
 
             var (minC, maxC, minR, maxR) = GetGroupBoundingBox(otherG, allTiles);
             if (DoTilesOverlap(groupStartCol, targetGroup.Row, groupWidth, groupHeight, minC, minR, maxC - minC, maxR - minR))
@@ -1721,19 +1721,21 @@ public static class GridPlacementService
                 var curG = groupQueue.Dequeue();
                 inGroupQueue.Remove(curG);
                 var pos = proposedGroupPositions[curG];
-                var (_, _, _, curGMaxR) = GetGroupBoundingBox(curG, allTiles);
+                var (curGMinC, curGMaxC, _, curGMaxR) = GetGroupBoundingBox(curG, allTiles);
+                int curGWidth = Math.Max(1, curGMaxC - curGMinC);
                 int curGHeight = Math.Max(1, curGMaxR - curG.Row);
 
                 foreach (var otherG in groupList)
                 {
                     if (ReferenceEquals(otherG, targetGroup) || ReferenceEquals(otherG, curG)) continue;
-                    if (otherG.ColumnIndex != targetGroup.ColumnIndex || otherG.Row < curG.Row) continue;
+                    if (otherG.Row < curG.Row) continue;
 
                     var oPos = proposedGroupPositions.TryGetValue(otherG, out var op) ? op : (otherG.Col, otherG.Row);
-                    var (_, _, _, otherGMaxR) = GetGroupBoundingBox(otherG, allTiles);
+                    var (oMinC, oMaxC, _, otherGMaxR) = GetGroupBoundingBox(otherG, allTiles);
+                    int oWidth = Math.Max(1, oMaxC - oMinC);
                     int oHeight = Math.Max(1, otherGMaxR - otherG.Row);
 
-                    if (DoTilesOverlap(pos.Col, pos.Row, GroupColWidth, curGHeight, oPos.Col, oPos.Row, GroupColWidth, oHeight))
+                    if (DoTilesOverlap(pos.Col, pos.Row, curGWidth, curGHeight, oPos.Col, oPos.Row, oWidth, oHeight))
                     {
                         int neededRow = pos.Row + curGHeight;
                         if (neededRow > oPos.Row)
@@ -1750,10 +1752,10 @@ public static class GridPlacementService
 
                 foreach (var ut in allTiles.Where(t => t.Group == null))
                 {
-                    if (ut.Col < groupStartCol + groupWidth && (ut.Col + ut.SpanX) > groupStartCol)
+                    if (ut.Col < pos.Col + curGWidth && (ut.Col + ut.SpanX) > pos.Col)
                     {
                         var oPos = proposedTilePositions.TryGetValue(ut, out var op) ? op : (ut.Col, ut.Row);
-                        if (DoTilesOverlap(pos.Col, pos.Row, groupWidth, curGHeight, oPos.Col, oPos.Row, ut.SpanX, ut.SpanY))
+                        if (DoTilesOverlap(pos.Col, pos.Row, curGWidth, curGHeight, oPos.Col, oPos.Row, ut.SpanX, ut.SpanY))
                         {
                             int neededRow = pos.Row + curGHeight + 1;
                             if (neededRow > oPos.Row)
@@ -1778,7 +1780,7 @@ public static class GridPlacementService
                 foreach (var otherT in allTiles.Where(t => t.Group == null))
                 {
                     if (ReferenceEquals(otherT, curT)) continue;
-                    if (otherT.Col < groupStartCol + groupWidth && (otherT.Col + otherT.SpanX) > groupStartCol)
+                    if (otherT.Col < pos.Col + curT.SpanX && (otherT.Col + otherT.SpanX) > pos.Col)
                     {
                         var oPos = proposedTilePositions.TryGetValue(otherT, out var op) ? op : (otherT.Col, otherT.Row);
                         if (DoTilesOverlap(pos.Col, pos.Row, curT.SpanX, curT.SpanY, oPos.Col, oPos.Row, otherT.SpanX, otherT.SpanY))
@@ -1800,13 +1802,14 @@ public static class GridPlacementService
                 foreach (var otherG in groupList)
                 {
                     if (ReferenceEquals(otherG, targetGroup)) continue;
-                    if (otherG.ColumnIndex != targetGroup.ColumnIndex || otherG.Row < curT.Row) continue;
+                    if (otherG.Row < curT.Row) continue;
 
                     var oPos = proposedGroupPositions.TryGetValue(otherG, out var op) ? op : (otherG.Col, otherG.Row);
-                    var (_, _, _, otherGMaxR) = GetGroupBoundingBox(otherG, allTiles);
+                    var (oMinC, oMaxC, _, otherGMaxR) = GetGroupBoundingBox(otherG, allTiles);
+                    int oWidth = Math.Max(1, oMaxC - oMinC);
                     int oHeight = Math.Max(1, otherGMaxR - otherG.Row);
 
-                    if (DoTilesOverlap(pos.Col, pos.Row, curT.SpanX, curT.SpanY, oPos.Col, oPos.Row, GroupColWidth, oHeight))
+                    if (DoTilesOverlap(pos.Col, pos.Row, curT.SpanX, curT.SpanY, oPos.Col, oPos.Row, oWidth, oHeight))
                     {
                         int neededRow = pos.Row + curT.SpanY;
                         if (neededRow > oPos.Row)
@@ -1873,11 +1876,17 @@ public static class GridPlacementService
 
         var groupList = groups ?? new List<TileGroupModel>();
         int targetColStart = targetGroup.Col >= 0 ? targetGroup.Col : GetColumnStartCol(targetGroup.ColumnIndex);
-        int targetColEnd = targetColStart + GroupColWidth;
+        var targetBox = GetGroupBoundingBox(targetGroup, allTiles);
+        int targetColEnd = Math.Max(targetColStart + 2, targetBox.MaxCol);
 
-        // 1. Identify all groups and loose canvas tiles below targetGroup in the same column track
+        // 1. Identify all groups and loose canvas tiles below targetGroup with horizontal overlap
         var lowerGroups = groupList
-            .Where(g => !ReferenceEquals(g, targetGroup) && g.ColumnIndex == targetGroup.ColumnIndex && g.Row > targetGroup.Row)
+            .Where(g => !ReferenceEquals(g, targetGroup) && g.Row > targetGroup.Row)
+            .Where(g =>
+            {
+                var gBox = GetGroupBoundingBox(g, allTiles);
+                return gBox.MinCol < targetColEnd && gBox.MaxCol > targetColStart;
+            })
             .ToList();
 
         var lowerLooseTiles = allTiles
@@ -1906,7 +1915,6 @@ public static class GridPlacementService
         }
         else
         {
-            var targetBox = GetGroupBoundingBox(targetGroup, allTiles);
             bool highestIsLoose = lowerLooseTiles.Any(t => t.Row == highestLowerRow);
             minAllowedRow = highestIsLoose ? targetBox.MaxRow + 1 : targetBox.MaxRow;
         }
@@ -2169,7 +2177,7 @@ public static class GridPlacementService
         var groupsList = groups.ToList();
         var allTilesList = allTiles.ToList();
         int guardLoop = 0;
-        while (guardLoop++ < 30 && WouldDisplaceLockedGroup(columnIndex, candidateRow, draggedHeight, groupsList, allTilesList, excludeGroup, out var conflict))
+        while (guardLoop++ < 30 && WouldDisplaceLockedGroup(colStart, candidateRow, draggedHeight, groupsList, allTilesList, excludeGroup, out var conflict))
         {
             if (conflict != null)
             {
@@ -2190,7 +2198,7 @@ public static class GridPlacementService
     /// would displace any locked group (or locked ungrouped tile) either directly or through cascading collisions.
     /// </summary>
     public static bool WouldDisplaceLockedGroup(
-        int targetColIndex,
+        int targetCol,
         int targetRow,
         int groupHeight,
         IEnumerable<TileGroupModel> groups,
@@ -2199,13 +2207,21 @@ public static class GridPlacementService
         out TileGroupModel? conflictingLockedGroup)
     {
         conflictingLockedGroup = null;
-        targetColIndex = Math.Max(0, targetColIndex);
+        targetCol = Math.Max(0, targetCol);
         targetRow = Math.Max(0, targetRow);
-        int targetColStart = GetColumnStartCol(targetColIndex);
-        int groupSpanX = GroupColWidth;
+        int targetColStart = targetCol;
+        int groupSpanX = 2;
+        if (draggedGroup != null)
+        {
+            var members = allTiles?.Where(t => t.Group == draggedGroup.Id).ToList();
+            if (members != null && members.Count > 0)
+            {
+                groupSpanX = Math.Max(2, members.Max(t => t.Col + t.SpanX) - draggedGroup.Col);
+            }
+        }
 
-        var allTilesList = allTiles.ToList();
-        var groupsList = groups.ToList();
+        var allTilesList = (allTiles ?? Enumerable.Empty<TileModel>()).ToList();
+        var groupsList = (groups ?? Enumerable.Empty<TileGroupModel>()).ToList();
 
         var proposedGroupPositions = new Dictionary<TileGroupModel, (int Col, int Row)>();
         var proposedTilePositions = new Dictionary<TileModel, (int Col, int Row)>();
@@ -2383,7 +2399,7 @@ public static class GridPlacementService
     /// </summary>
     public static List<TileModel> InsertGroupAndResolveCollisions(
         TileGroupModel draggedGroup,
-        int targetColIndex,
+        int targetCol,
         int targetRow,
         IList<TileGroupModel> groups,
         IList<TileModel> allTiles,
@@ -2391,14 +2407,14 @@ public static class GridPlacementService
     {
         var modifiedTiles = new List<TileModel>();
 
-        targetColIndex = Math.Max(0, targetColIndex);
+        targetCol = Math.Max(0, targetCol);
         targetRow = Math.Max(0, targetRow);
 
         int groupHeight = CalculateGroupHeightRows(draggedGroup, allTiles);
 
         // Guard: Prevent placing or shoving that would displace any locked group
         int guardLoop = 0;
-        while (guardLoop++ < 30 && WouldDisplaceLockedGroup(targetColIndex, targetRow, groupHeight, groups, allTiles, draggedGroup, out var conflict))
+        while (guardLoop++ < 30 && WouldDisplaceLockedGroup(targetCol, targetRow, groupHeight, groups, allTiles, draggedGroup, out var conflict))
         {
             if (conflict != null)
             {
@@ -2411,15 +2427,15 @@ public static class GridPlacementService
             }
         }
 
-        int targetColStart = GetColumnStartCol(targetColIndex);
+        int targetColStart = targetCol;
 
-        int oldGroupCol = draggedGroup.Col >= 0 ? draggedGroup.Col : GetColumnStartCol(draggedGroup.ColumnIndex);
+        int oldGroupCol = draggedGroup.Col >= 0 ? draggedGroup.Col : targetCol;
         int oldGroupRow = Math.Max(0, draggedGroup.Row);
         int colDelta = targetColStart - oldGroupCol;
         int rowDelta = targetRow - oldGroupRow;
 
         // 1. Position the group header
-        draggedGroup.ColumnIndex = targetColIndex;
+        draggedGroup.ColumnIndex = GetColumnIndexFromCol(targetColStart);
         draggedGroup.Col = targetColStart;
         draggedGroup.Row = targetRow;
         draggedGroup.X = PixelXFromCol(targetColStart);

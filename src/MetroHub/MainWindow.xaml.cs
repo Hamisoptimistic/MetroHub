@@ -1407,6 +1407,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     private double _draggedGroupOffsetY;
     private double _draggedPlateOffsetX;
     private double _draggedPlateOffsetY;
+    private int _groupDragTargetCol;
     private int _groupDragTargetColIndex;
     private int _groupDragTargetRow;
 
@@ -1998,17 +1999,22 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
             DropSlotIndicator.Visibility = Visibility.Collapsed;
 
-            int targetColIndex = Math.Max(0, GridPlacementService.GetColumnIndexFromCol(GridPlacementService.ColFromPixel(clampedAnchorX)));
-            int colStartCol = GridPlacementService.GetColumnStartCol(targetColIndex);
-            double colLeft = GridPlacementService.PixelXFromCol(colStartCol);
             var draggedMembers = Tiles.Where(t => t.Group == _draggedGroupModel.Id).ToList();
             int draggedSpan = draggedMembers.Count > 0 ? (draggedMembers.Max(t => t.Col + t.SpanX) - _draggedGroupModel.Col) : GridPlacementService.GroupColWidth;
-            double colWidth = (Math.Max(2, draggedSpan) * GridPlacementService.GridStep) - GridPlacementService.Gap;
+            int groupSpanX = Math.Max(2, draggedSpan);
+            double colWidth = (groupSpanX * GridPlacementService.GridStep) - GridPlacementService.Gap;
 
-            int targetRow = Math.Max(0, GridPlacementService.FindInsertionRow(targetColIndex, canvasMouse.Y, Groups, Tiles, _draggedGroupModel));
+            int rawGroupCol = GridPlacementService.ColFromPixel(clampedAnchorX + _draggedGroupOffsetX);
+            int targetCol = Math.Clamp(rawGroupCol, 0, Math.Max(0, maxCols - groupSpanX));
+
+            int rawGroupRow = GridPlacementService.RowFromPixel(clampedAnchorY + _draggedGroupOffsetY);
+            int targetRow = Math.Max(0, rawGroupRow);
+
+            double colLeft = GridPlacementService.PixelXFromCol(targetCol);
             double insertionY = GridPlacementService.PixelYFromRow(targetRow) - 2;
 
-            _groupDragTargetColIndex = targetColIndex;
+            _groupDragTargetCol = targetCol;
+            _groupDragTargetColIndex = targetCol;
             _groupDragTargetRow = targetRow;
 
             if (GroupInsertionLine != null)
@@ -2155,7 +2161,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 var movedGroup = _draggedGroupModel;
                 _draggedGroupModel = null;
 
-                int requestedCol = _groupDragTargetColIndex;
+                int requestedCol = _groupDragTargetCol;
                 int requestedRow = _groupDragTargetRow;
                 int groupH = GridPlacementService.CalculateGroupHeightRows(movedGroup, Tiles);
                 GridPlacementService.WouldDisplaceLockedGroup(requestedCol, requestedRow, groupH, Groups, Tiles,
@@ -3189,38 +3195,25 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         bool changed = false;
         foreach (var group in Groups)
         {
-            int expectedCol = GridPlacementService.GetColumnStartCol(group.ColumnIndex);
-            if (group.Col != expectedCol)
+            if (group.Col < 0)
             {
-                int delta = expectedCol - group.Col;
-                group.Col = expectedCol;
-                group.X = GridPlacementService.PixelXFromCol(expectedCol);
-                changed = true;
-
-                var members = Tiles.Where(t => t.Group == group.Id).ToList();
-                foreach (var t in members)
-                {
-                    t.Col += delta;
-                    t.X = GridPlacementService.PixelXFromCol(t.Col);
-                }
+                group.Col = GridPlacementService.GetColumnStartCol(group.ColumnIndex);
             }
-            else
+            group.ColumnIndex = GridPlacementService.GetColumnIndexFromCol(group.Col);
+            double expectedX = GridPlacementService.PixelXFromCol(group.Col);
+            if (Math.Abs(group.X - expectedX) > 0.5)
             {
-                double expectedX = GridPlacementService.PixelXFromCol(group.Col);
-                if (Math.Abs(group.X - expectedX) > 0.5)
+                group.X = expectedX;
+                changed = true;
+            }
+            var members = Tiles.Where(t => t.Group == group.Id).ToList();
+            foreach (var t in members)
+            {
+                double expX = GridPlacementService.PixelXFromCol(t.Col);
+                if (Math.Abs(t.X - expX) > 0.5)
                 {
-                    group.X = expectedX;
+                    t.X = expX;
                     changed = true;
-                }
-                var members = Tiles.Where(t => t.Group == group.Id).ToList();
-                foreach (var t in members)
-                {
-                    double expX = GridPlacementService.PixelXFromCol(t.Col);
-                    if (Math.Abs(t.X - expX) > 0.5)
-                    {
-                        t.X = expX;
-                        changed = true;
-                    }
                 }
             }
 
@@ -3324,15 +3317,11 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     {
         if (Groups.Count == 0) return;
         bool changed = false;
-        var colGroups = Groups.GroupBy(g => g.ColumnIndex).ToList();
-        foreach (var col in colGroups)
+        var ordered = Groups.OrderBy(g => g.Row).ToList();
+        foreach (var g in ordered)
         {
-            var ordered = col.OrderBy(g => g.Row).ToList();
-            foreach (var g in ordered)
-            {
-                var pulled = GridPlacementService.PullLowerGroupsUp(g, Groups, Tiles);
-                if (pulled.Count > 0) changed = true;
-            }
+            var pulled = GridPlacementService.PullLowerGroupsUp(g, Groups, Tiles);
+            if (pulled.Count > 0) changed = true;
         }
 
         if (changed)
@@ -3920,17 +3909,13 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         string newGroupId = Guid.NewGuid().ToString("N");
         string defaultTitle = "New Section";
 
-        int minCol = targets.Min(t => GridPlacementService.ColFromPixel(t.X));
-        int targetColIndex = GridPlacementService.GetColumnIndexFromCol(minCol);
-        int targetColStart = GridPlacementService.GetColumnStartCol(targetColIndex);
+        int targetCol = Math.Max(0, targets.Min(t => GridPlacementService.ColFromPixel(t.X)));
+        int targetColIndex = GridPlacementService.GetColumnIndexFromCol(targetCol);
 
         int minRow = targets.Min(t => GridPlacementService.RowFromPixel(t.Y));
         int targetRow = Math.Max(0, minRow - 1);
 
-        int nextOrder = Groups.Where(g => g.ColumnIndex == targetColIndex)
-            .Select(g => g.OrderIndex)
-            .DefaultIfEmpty(-1)
-            .Max() + 1;
+        int nextOrder = Groups.Count;
 
         var group = new TileGroupModel
         {
@@ -3938,7 +3923,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             Title = defaultTitle,
             ColumnIndex = targetColIndex,
             OrderIndex = nextOrder,
-            Col = targetColStart,
+            Col = targetCol,
             Row = targetRow,
             IsEditing = true
         };
@@ -3954,11 +3939,11 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             g => g!,
             g => GridPlacementService.GetGroupBoundingBox(g!, Tiles).MaxRow);
 
-        var arranged = GridPlacementService.ArrangeTilesInNewGroup(group, targets, targetColStart, targetRow, defaultTitle);
+        var arranged = GridPlacementService.ArrangeTilesInNewGroup(group, targets, targetCol, targetRow, defaultTitle);
 
         Groups.Add(group);
 
-        var modified = GridPlacementService.InsertGroupAndResolveCollisions(group, targetColIndex, targetRow, Groups, Tiles);
+        var modified = GridPlacementService.InsertGroupAndResolveCollisions(group, targetCol, targetRow, Groups, Tiles);
         foreach (var at in arranged)
         {
             if (!modified.Contains(at)) modified.Add(at);
@@ -4300,15 +4285,11 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     {
         string pre = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
 
-        int col = GridPlacementService.ColFromPixel(canvasPoint.X);
-        int targetColIndex = GridPlacementService.GetColumnIndexFromCol(col);
-        int targetColStart = GridPlacementService.GetColumnStartCol(targetColIndex);
+        int targetCol = Math.Max(0, GridPlacementService.ColFromPixel(canvasPoint.X));
+        int targetColIndex = GridPlacementService.GetColumnIndexFromCol(targetCol);
         int targetRow = GridPlacementService.RowFromPixel(canvasPoint.Y);
 
-        int nextOrder = Groups.Where(g => g.ColumnIndex == targetColIndex)
-            .Select(g => g.OrderIndex)
-            .DefaultIfEmpty(-1)
-            .Max() + 1;
+        int nextOrder = Groups.Count;
 
         var group = new TileGroupModel
         {
@@ -4316,14 +4297,14 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             Title = "New Section",
             ColumnIndex = targetColIndex,
             OrderIndex = nextOrder,
-            Col = targetColStart,
+            Col = targetCol,
             Row = targetRow,
             IsEditing = true
         };
 
         Groups.Add(group);
 
-        var modified = GridPlacementService.InsertGroupAndResolveCollisions(group, targetColIndex, targetRow, Groups, Tiles);
+        var modified = GridPlacementService.InsertGroupAndResolveCollisions(group, targetCol, targetRow, Groups, Tiles);
         AnimateModifiedTiles(modified);
         UpdateGroupHeaderPositions();
         SaveGroupsAndLayout();
