@@ -100,12 +100,6 @@ public static class GridPlacementService
         if (col < 0 || row < 1) return false;
         if (col + spanX > maxCols) return false;
 
-        // A tile cannot straddle across an active 32px group gutter boundary
-        if (GetGutterCount(col + spanX - 1) != GetGutterCount(col))
-        {
-            return false;
-        }
-
         // When groups are present and this check is for a loose canvas tile,
         // enforce that it does not overlap any group and does not occupy the 1x1 perimeter gap around any group.
         if (groups != null && groups.Any() && (ignoreTile == null || string.IsNullOrEmpty(ignoreTile.Group)))
@@ -961,26 +955,15 @@ public static class GridPlacementService
 
         var members = allTiles?.Where(t => t.Group == group.Id).ToList();
         int maxCol;
-        if (group.IsLocked)
+        if (members != null && members.Count > 0)
         {
-            if (members != null && members.Count > 0)
-            {
-                minCol = Math.Min(group.Col, members.Min(t => t.Col));
-                maxCol = members.Max(t => t.Col + t.SpanX);
-                maxRow = Math.Max(maxRow, members.Max(t => t.Row + t.SpanY));
-            }
-            else
-            {
-                maxCol = group.Col + 2;
-            }
+            minCol = Math.Min(group.Col, members.Min(t => t.Col));
+            maxCol = members.Max(t => t.Col + t.SpanX);
+            maxRow = Math.Max(maxRow, members.Max(t => t.Row + t.SpanY));
         }
         else
         {
-            maxCol = group.Col + GroupColWidth;
-            if (members != null && members.Count > 0)
-            {
-                maxRow = Math.Max(maxRow, members.Max(t => t.Row + t.SpanY));
-            }
+            maxCol = group.Col + 2;
         }
 
         return (minCol, maxCol, minRow, maxRow);
@@ -1014,8 +997,8 @@ public static class GridPlacementService
                 var members = allTiles?.Where(t => t.Group == g.Id).ToList();
                 if ((members == null || members.Count == 0) && string.IsNullOrWhiteSpace(g.Title)) continue;
 
-                int gMinC = (g.IsLocked && members != null && members.Count > 0) ? Math.Min(g.Col, members.Min(t => t.Col)) : g.Col;
-                int gMaxC = (g.IsLocked && members != null && members.Count > 0) ? members.Max(t => t.Col + t.SpanX) : g.Col + GroupColWidth;
+                int gMinC = (members != null && members.Count > 0) ? Math.Min(g.Col, members.Min(t => t.Col)) : g.Col;
+                int gMaxC = (members != null && members.Count > 0) ? members.Max(t => t.Col + t.SpanX) : g.Col + 2;
                 int gMinR = g.Row;
                 int gMaxR = (members != null && members.Count > 0) ? members.Max(t => t.Row + t.SpanY) : g.Row + 1;
 

@@ -2071,8 +2071,8 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                 var members = Tiles.Where(t => t.Group == g.Id).ToList();
                 if (members.Count == 0 && string.IsNullOrWhiteSpace(g.Title)) continue;
 
-                int gMinC = (g.IsLocked && members.Count > 0) ? Math.Min(g.Col, members.Min(t => t.Col)) : g.Col;
-                int gMaxC = (g.IsLocked && members.Count > 0) ? members.Max(t => t.Col + t.SpanX) : g.Col + GridPlacementService.GroupColWidth;
+                int gMinC = (members.Count > 0) ? Math.Min(g.Col, members.Min(t => t.Col)) : g.Col;
+                int gMaxC = (members.Count > 0) ? members.Max(t => t.Col + t.SpanX) : g.Col + 2;
                 int gMinR = g.Row;
                 int gMaxR = members.Count > 0 ? members.Max(t => t.Row + t.SpanY) : g.Row + 1;
 
@@ -2370,8 +2370,8 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
                         var gMembers = Tiles.Where(t => t.Group == g.Id && !_draggedCluster.Contains(t)).ToList();
                         if (gMembers.Count == 0 && string.IsNullOrWhiteSpace(g.Title)) continue;
 
-                        int gMinC = (g.IsLocked && gMembers.Count > 0) ? Math.Min(g.Col, gMembers.Min(t => t.Col)) : g.Col;
-                        int gMaxC = (g.IsLocked && gMembers.Count > 0) ? gMembers.Max(t => t.Col + t.SpanX) : g.Col + GridPlacementService.GroupColWidth;
+                        int gMinC = (gMembers.Count > 0) ? Math.Min(g.Col, gMembers.Min(t => t.Col)) : g.Col;
+                        int gMaxC = (gMembers.Count > 0) ? gMembers.Max(t => t.Col + t.SpanX) : g.Col + 2;
                         int gMinR = g.Row;
                         int gMaxR = membersCount(gMembers, g);
 
@@ -3253,7 +3253,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             {
                 var gMembers = Tiles.Where(t => t.Group == g.Id).ToList();
                 if (gMembers.Count == 0 && string.IsNullOrWhiteSpace(g.Title)) continue;
-                int gMaxC = (g.IsLocked && gMembers.Count > 0) ? gMembers.Max(t => t.Col + t.SpanX) : g.Col + GridPlacementService.GroupColWidth;
+                int gMaxC = (gMembers.Count > 0) ? gMembers.Max(t => t.Col + t.SpanX) : g.Col + 2;
                 for (int offset = 2; offset >= 1; offset--)
                 {
                     if (lt.Col == gMaxC + offset)
@@ -3372,27 +3372,12 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
             var allMembers = Tiles.Where(t => t.Group == group.Id).ToList();
             if (allMembers.Count == 0 && string.IsNullOrWhiteSpace(group.Title)) continue;
 
-            int gMinC, gMaxC;
-            double blockWidth, minX;
-
-            if (group.IsLocked)
-            {
-                // Locked group: strictly bounded to actual member tiles so adjacent canvas is free for loose tiles
-                gMinC = allMembers.Count > 0 ? Math.Min(group.Col, allMembers.Min(t => t.Col)) : group.Col;
-                gMaxC = allMembers.Count > 0 ? allMembers.Max(t => t.Col + t.SpanX) : group.Col + 2;
-                int groupSpan = Math.Max(1, gMaxC - gMinC);
-                blockWidth = (groupSpan * GridPlacementService.GridStep) - GridPlacementService.Gap;
-                minX = GridPlacementService.PixelXFromCol(gMinC);
-            }
-            else
-            {
-                // Unlocked group: exact sensitivity rules from commit f49106d73f713e7bc1e8b86252ce40159e7dce23
-                // Full 8-column boundary allows hover detection across the track so tint expands to accommodate new tiles
-                gMinC = group.Col;
-                gMaxC = group.Col + GridPlacementService.GroupColWidth;
-                blockWidth = GridPlacementService.GroupColWidth * GridPlacementService.GridStep - GridPlacementService.Gap;
-                minX = GridPlacementService.PixelXFromCol(group.Col);
-            }
+            // Bounded to actual member tiles so adjacent canvas is free for loose tiles
+            int gMinC = allMembers.Count > 0 ? Math.Min(group.Col, allMembers.Min(t => t.Col)) : group.Col;
+            int gMaxC = allMembers.Count > 0 ? allMembers.Max(t => t.Col + t.SpanX) : group.Col + 2;
+            int groupSpan = Math.Max(1, gMaxC - gMinC);
+            double blockWidth = (groupSpan * GridPlacementService.GridStep) - GridPlacementService.Gap;
+            double minX = GridPlacementService.PixelXFromCol(gMinC);
 
             int gMinR = group.Row;
             int gMaxR = allMembers.Count > 0 ? allMembers.Max(t => t.Row + t.SpanY) : group.Row + 1;
@@ -4774,7 +4759,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
             // 3. Check group header area [g.X, g.Y, headerWidth, 36]
             var gMembers = Tiles.Where(t => t.Group == g.Id).ToList();
-            int gSpan = (g.IsLocked && gMembers.Count > 0) ? (gMembers.Max(t => t.Col + t.SpanX) - g.Col) : GridPlacementService.GroupColWidth;
+            int gSpan = (gMembers.Count > 0) ? (gMembers.Max(t => t.Col + t.SpanX) - g.Col) : 2;
             double headerWidth = (Math.Max(2, gSpan) * GridPlacementService.GridStep) - GridPlacementService.Gap;
             Rect headerRect = new Rect(g.X, g.Y, headerWidth, 36);
             if (headerRect.Contains(pt))
