@@ -438,15 +438,15 @@ public partial class MediaWidgetView : UserControl
         var duration = TimeSpan.FromMilliseconds(160);
         var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
 
-        // 1. Circular Thumb Opacity: 0 when resting, 1 when hovered or scrubbing
-        double targetOpacity = (isHovered || isDragging) ? 1.0 : 0.0;
+        // 1. Circular Thumb Opacity: always visible (fill —gap— ring —gap— unfilled)
+        double targetOpacity = 1.0;
         var thumbOpacityAnim = new DoubleAnimation(targetOpacity, duration) { EasingFunction = easing };
         SeekThumb?.BeginAnimation(OpacityProperty, thumbOpacityAnim);
         SlimSeekThumb?.BeginAnimation(OpacityProperty, thumbOpacityAnim);
         ZuneSeekThumb?.BeginAnimation(OpacityProperty, thumbOpacityAnim);
 
-        // 2. Circular Thumb Scale: 0.85 resting -> 1.0 hover -> 1.08 dragging
-        double targetScale = isDragging ? 1.08 : (isHovered ? 1.0 : 0.85);
+        // 2. Circular Thumb Scale: 0.9 resting -> 1.05 hover -> 1.15 dragging
+        double targetScale = isDragging ? 1.15 : (isHovered ? 1.05 : 0.9);
         var scaleXAnim = new DoubleAnimation(targetScale, duration) { EasingFunction = easing };
         var scaleYAnim = new DoubleAnimation(targetScale, duration) { EasingFunction = easing };
         SeekThumbScale?.BeginAnimation(ScaleTransform.ScaleXProperty, scaleXAnim);

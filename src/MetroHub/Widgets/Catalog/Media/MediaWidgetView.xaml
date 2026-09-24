@@ -393,6 +393,7 @@
                     <!-- Background Hairline Track (2px tall #14FFFFFF) -->
                     <Border x:Name="SeekTrackBg"
                             Height="2"
+                            HorizontalAlignment="Stretch"
                             Background="#14FFFFFF"
                             CornerRadius="1"
                             SnapsToDevicePixels="True" />
@@ -409,6 +410,7 @@
                         <!-- Base Played Accent Color Bar -->
                         <Border x:Name="SeekProgressFill"
                                 Height="2"
+                                HorizontalAlignment="Stretch"
                                 Background="{Binding SeekbarBrush}"
                                 CornerRadius="1"
                                 SnapsToDevicePixels="True" />
@@ -438,12 +440,12 @@
                     </Grid>
                 </Grid>
 
-                <!-- 3. Fluent Circular Thumb Container (Identical to Volume/Brightness slider) -->
+                <!-- 3. Fluent Circular Thumb Container (Ring thumb with gap spacing, always visible) -->
                 <Grid x:Name="SeekThumb"
                       HorizontalAlignment="Left"
                       VerticalAlignment="Center"
                       IsHitTestVisible="False"
-                      Opacity="0"
+                      Opacity="1"
                       RenderTransformOrigin="0.5,0.5">
                     <Grid.RenderTransform>
                         <TransformGroup>
@@ -452,13 +454,13 @@
                         </TransformGroup>
                     </Grid.RenderTransform>
 
-                    <!-- Hollow ring thumb: white outer ring with transparent center (track shows through) -->
+                    <!-- Hollow ring thumb: crisp white outer ring with transparent center -->
                     <Ellipse x:Name="SeekThumbDot"
                              Width="14"
                              Height="14"
                              Fill="Transparent"
                              Stroke="#FFFFFF"
-                             StrokeThickness="3"
+                             StrokeThickness="2.5"
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center" />
                 </Grid>
@@ -567,6 +569,7 @@
                             <!-- Background Hairline Track -->
                             <Border x:Name="SlimSeekTrackBg"
                                     Height="2"
+                                    HorizontalAlignment="Stretch"
                                     Background="#14FFFFFF"
                                     CornerRadius="1"
                                     SnapsToDevicePixels="True" />
@@ -581,6 +584,7 @@
                                 </Grid.Clip>
                                 <Border x:Name="SlimSeekProgressFill"
                                         Height="2"
+                                        HorizontalAlignment="Stretch"
                                         Background="{Binding SeekbarBrush}"
                                         CornerRadius="1"
                                         SnapsToDevicePixels="True" />
@@ -615,7 +619,7 @@
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"
                               IsHitTestVisible="False"
-                              Opacity="0"
+                              Opacity="1"
                               RenderTransformOrigin="0.5,0.5">
                             <Grid.RenderTransform>
                                 <TransformGroup>
@@ -628,7 +632,7 @@
                                      Height="14"
                                      Fill="Transparent"
                                      Stroke="#FFFFFF"
-                                     StrokeThickness="3"
+                                     StrokeThickness="2.5"
                                      HorizontalAlignment="Center"
                                      VerticalAlignment="Center" />
                         </Grid>
@@ -948,6 +952,7 @@
                         <!-- Base Hairline Background Track (Divider line) -->
                         <Border x:Name="ZuneSeekTrackBg"
                                 Height="2"
+                                HorizontalAlignment="Stretch"
                                 Background="#50FFFFFF"
                                 CornerRadius="0"
                                 SnapsToDevicePixels="True" />
@@ -962,6 +967,7 @@
                             </Grid.Clip>
                             <Border x:Name="ZuneSeekProgressFill"
                                     Height="2"
+                                    HorizontalAlignment="Stretch"
                                     CornerRadius="0"
                                     Background="{Binding SeekbarBrush}"
                                     SnapsToDevicePixels="True" />
@@ -994,7 +1000,7 @@
                           VerticalAlignment="Top"
                           Margin="0,-6,0,0"
                           IsHitTestVisible="False"
-                          Opacity="0"
+                          Opacity="1"
                           RenderTransformOrigin="0.5,0.5">
                         <Grid.RenderTransform>
                             <TransformGroup>
@@ -1007,7 +1013,7 @@
                                  Height="14"
                                  Fill="Transparent"
                                  Stroke="#FFFFFF"
-                                 StrokeThickness="3"
+                                 StrokeThickness="2.5"
                                  HorizontalAlignment="Center"
                                  VerticalAlignment="Center" />
                     </Grid>
