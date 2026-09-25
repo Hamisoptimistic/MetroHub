@@ -95,12 +95,34 @@
                    Stretch="UniformToFill"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Top"
+                   Margin="0,0,0,-90"
                    RenderOptions.BitmapScalingMode="HighQuality">
                 <Image.RenderTransform>
                     <TranslateTransform x:Name="WallpaperTranslateTransform" />
                 </Image.RenderTransform>
             </Image>
-            <!-- Fluent Dark Scrim Overlay (ensures 4.5:1 text readability across all images) -->
+            <!-- Hardware-accelerated video wallpaper player (Media Foundation EVR + DXVA2 hardware decode) -->
+            <MediaElement x:Name="WallpaperVideo"
+                          Stretch="UniformToFill"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Top"
+                          Margin="0,0,0,-90"
+                          LoadedBehavior="Manual"
+                          UnloadedBehavior="Manual"
+                          Volume="0"
+                          IsMuted="True"
+                          ScrubbingEnabled="False"
+                          RenderOptions.BitmapScalingMode="LowQuality"
+                          RenderOptions.EdgeMode="Aliased"
+                          Visibility="Collapsed"
+                          MediaOpened="OnWallpaperVideoMediaOpened"
+                          MediaEnded="OnWallpaperVideoMediaEnded"
+                          MediaFailed="OnWallpaperVideoMediaFailed">
+                <MediaElement.RenderTransform>
+                    <TranslateTransform x:Name="WallpaperVideoTranslateTransform" />
+                </MediaElement.RenderTransform>
+            </MediaElement>
+            <!-- Fluent Dark Scrim Overlay (ensures 4.5:1 text readability across all images and live video) -->
             <Border x:Name="WallpaperScrim"
                     Background="#80000000" />
         </Grid>
@@ -383,7 +405,7 @@
                             <MenuItem x:Name="BackdropDesktopWallpaperItem" Header="Current Desktop Wallpaper" IsCheckable="True" Click="OnBackdropDesktopWallpaperClick" />
                             <MenuItem x:Name="BackdropBingDailyItem" Header="Bing Wallpaper of the Day" IsCheckable="True" Click="OnBackdropBingDailyClick" />
                             <MenuItem x:Name="BackdropSpotlightDailyItem" Header="Windows Spotlight Image" IsCheckable="True" Click="OnBackdropSpotlightDailyClick" />
-                            <MenuItem x:Name="BackdropCustomImageItem" Header="Custom Picture..." IsCheckable="True" Click="OnBackdropCustomImageClick" />
+                            <MenuItem x:Name="BackdropCustomImageItem" Header="Custom Picture or Video..." IsCheckable="True" Click="OnBackdropCustomImageClick" />
                             <Separator />
                             <MenuItem Header="Wallpaper Parallax">
                                 <MenuItem x:Name="ParallaxEnabledItem" Header="Enabled" IsCheckable="True" Click="OnParallaxEnabledClick" />

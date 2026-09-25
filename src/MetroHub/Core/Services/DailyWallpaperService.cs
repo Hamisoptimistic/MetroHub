@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Frozen;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -329,14 +331,57 @@ public sealed class DailyWallpaperService
     /// </summary>
     public static bool IsWebpSupported => _isWebpSupported.Value;
 
+    private static readonly FrozenSet<string> _videoExtensions = new[]
+    {
+        ".mp4", ".m4v", ".mp4v",
+        ".webm",
+        ".mkv",
+        ".mov", ".qt",
+        ".avi", ".divx", ".xvid",
+        ".wmv", ".asf",
+        ".flv", ".f4v",
+        ".ogv", ".ogg", ".ogm",
+        ".ts", ".mts", ".m2ts",
+        ".vob",
+        ".mpg", ".mpeg", ".m1v", ".m2v", ".mpv",
+        ".3gp", ".3g2",
+        ".rm", ".rmvb"
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+
+    private static readonly FrozenSet<string>.AlternateLookup<ReadOnlySpan<char>> _videoExtensionsLookup =
+        _videoExtensions.GetAlternateLookup<ReadOnlySpan<char>>();
+
+    public const string VideoExtensionsFilter =
+        "*.mp4;*.m4v;*.mp4v;*.webm;*.mkv;*.mov;*.qt;*.avi;*.divx;*.xvid;*.wmv;*.asf;*.flv;*.f4v;*.ogv;*.ogg;*.ogm;*.ts;*.mts;*.m2ts;*.vob;*.mpg;*.mpeg;*.m1v;*.m2v;*.mpv;*.3gp;*.3g2;*.rm;*.rmvb";
+
     /// <summary>
     /// Builds the OpenFileDialog filter string, dynamically enabling .webp if supported by the OS.
     /// </summary>
     public static string GetWallpaperFileDialogFilter()
     {
-        return IsWebpSupported
-            ? "Image Files (*.png;*.jpg;*.jpeg;*.bmp;*.webp)|*.png;*.jpg;*.jpeg;*.bmp;*.webp|All Files (*.*)|*.*"
-            : "Image Files (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|All Files (*.*)|*.*";
+        string imgExts = IsWebpSupported
+            ? "*.png;*.jpg;*.jpeg;*.bmp;*.webp"
+            : "*.png;*.jpg;*.jpeg;*.bmp";
+
+        return $"All Supported Media ({imgExts};{VideoExtensionsFilter})|{imgExts};{VideoExtensionsFilter}|" +
+               $"Video Files ({VideoExtensionsFilter})|{VideoExtensionsFilter}|" +
+               $"Image Files ({imgExts})|{imgExts}|" +
+               "All Files (*.*)|*.*";
+    }
+
+    /// <summary>
+    /// Checks if a file path is any known video wallpaper format.
+    /// Zero-allocation extension check using FrozenSet AlternateLookup on ReadOnlySpan.
+    /// </summary>
+    public static bool IsVideoWallpaper(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+
+        ReadOnlySpan<char> span = path.AsSpan();
+        int dotIndex = span.LastIndexOf('.');
+        if (dotIndex < 0) return false;
+
+        return _videoExtensionsLookup.Contains(span[dotIndex..]);
     }
 
     /// <summary>
