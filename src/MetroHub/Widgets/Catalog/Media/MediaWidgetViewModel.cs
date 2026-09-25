@@ -493,6 +493,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         lock (_stateLock)
         {
             _currentTrackId = string.Empty;
+            _currentArtTrackId = string.Empty;
+            _currentArtSourceWidth = 0;
             _pendingArtworkRetryTrackId = null;
         }
 
@@ -577,13 +579,26 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         bool hasAlbum = !string.IsNullOrWhiteSpace(cleanAlbum);
 
         string newTrackId = $"{cleanArtist}|{cleanTitle}|{cleanAlbum}";
+        string artTrackId = (!string.IsNullOrWhiteSpace(cleanArtist) || !string.IsNullOrWhiteSpace(cleanTitle))
+            ? $"{cleanArtist}|{cleanTitle}"
+            : newTrackId;
+
         lock (_stateLock)
         {
             if (!string.Equals(_currentTrackId, newTrackId, StringComparison.Ordinal))
             {
                 _currentTrackId = newTrackId;
+            }
+
+            // Only reset artwork state if the song itself (artist + title) changed.
+            // When album metadata arrives late for the same song, preserve existing art state
+            // so the downgrade guard and settling poll remain valid and are not reset.
+            if (!string.Equals(_currentArtTrackId, artTrackId, StringComparison.Ordinal))
+            {
+                _currentArtTrackId = artTrackId;
                 _currentArtConfirmed = false;
                 _hasArtworkForCurrentTrack = false;
+                _currentArtSourceWidth = 0;
                 _pendingArtworkRetryTrackId = null;
             }
         }
@@ -614,7 +629,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 // stream was swapped mid-track-change. Keep the previous art on
                 // screen instead of flashing the placeholder — the settling
                 // poll below heals it.
-                LogArt($"art missing track=\"{newTrackId}\" (no thumbnail in SMTC snapshot)");
+                LogArt($"art missing track=\"{artTrackId}\" (no thumbnail in SMTC snapshot)");
             }
             else
             {
@@ -642,29 +657,29 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
                         if (settlingAttempt >= 2 &&
                             !_currentArtIsStandIn &&
-                            string.Equals(_currentArtTrackId, newTrackId, StringComparison.Ordinal))
+                            string.Equals(_currentArtTrackId, artTrackId, StringComparison.Ordinal))
                         {
                             _currentArtConfirmed = true;
                         }
 
-                        LogArt($"art unchanged track=\"{newTrackId}\" bytes={thumbnailBytes.Length}");
+                        LogArt($"art unchanged track=\"{artTrackId}\" bytes={thumbnailBytes.Length}");
                     }
                     else if (_standInHashes.Contains(artHash) && _currentArtHash != 0 && !_currentArtIsStandIn)
                     {
                         // Known stand-in (browser icon / page favicon) arriving
                         // after real artwork. Never let it cover the cover.
-                        LogArt($"stand-in re-published track=\"{newTrackId}\" — ignored");
+                        LogArt($"stand-in re-published track=\"{artTrackId}\" — ignored");
                     }
                     else if (sourceWidth > 0 &&
                              !_currentArtIsStandIn &&
                              _currentArtHash != 0 &&
-                             string.Equals(_currentArtTrackId, newTrackId, StringComparison.Ordinal) &&
+                             string.Equals(_currentArtTrackId, artTrackId, StringComparison.Ordinal) &&
                              sourceWidth <= _currentArtSourceWidth)
                     {
                         // A smaller (or equal) variant of the cover that is
                         // already on screen for this track: keep the sharper
                         // one instead of downgrading the picture.
-                        LogArt($"cover variant {sourceWidth}px ignored (showing {_currentArtSourceWidth}px) track=\"{newTrackId}\"");
+                        LogArt($"cover variant {sourceWidth}px ignored (showing {_currentArtSourceWidth}px) track=\"{artTrackId}\"");
                     }
                     else
                     {
@@ -696,7 +711,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                                 // a cover is not.
                                 if (artHash == _firstArtHash &&
                                     _firstArtTrackId.Length > 0 &&
-                                    !string.Equals(_firstArtTrackId, newTrackId, StringComparison.Ordinal))
+                                    !string.Equals(_firstArtTrackId, artTrackId, StringComparison.Ordinal))
                                 {
                                     if (_standInHashes.Count >= MaxStandInHashes)
                                     {
@@ -708,11 +723,11 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                                 }
 
                                 _firstArtHash = artHash;
-                                _firstArtTrackId = newTrackId;
+                                _firstArtTrackId = artTrackId;
                             }
 
                             _currentArtHash = artHash;
-                            _currentArtTrackId = newTrackId;
+                            _currentArtTrackId = artTrackId;
                             _currentArtIsStandIn = isStandIn;
                             _currentArtSourceWidth = originalWidth;
                             _currentArtConfirmed = false;
@@ -731,14 +746,14 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                             backdrop = DecodeBackdrop(thumbnailBytes);
                         }
 
-                        LogArt($"decoded track=\"{newTrackId}\" origW={originalWidth} origH={originalHeight} bytes={thumbnailBytes.Length} standIn={isStandIn} backdrop={(backdrop != null ? "yes" : "no")}");
+                        LogArt($"decoded track=\"{artTrackId}\" origW={originalWidth} origH={originalHeight} bytes={thumbnailBytes.Length} standIn={isStandIn} backdrop={(backdrop != null ? "yes" : "no")}");
                     }
                     else
                     {
                         // Decode failed — the thumbnail stream reference is often
                         // swapped by the player mid-track-change. DO NOT clear the
                         // visible artwork; the settling poll below heals it.
-                        LogArt($"decode FAILED track=\"{newTrackId}\" (thumb present, stream open/decode error)");
+                        LogArt($"decode FAILED track=\"{artTrackId}\" (thumb present, stream open/decode error)");
                     }
                 }
             }
@@ -753,9 +768,9 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         {
             lock (_stateLock)
             {
-                if (!_currentArtConfirmed && _pendingArtworkRetryTrackId != newTrackId)
+                if (!_currentArtConfirmed && _pendingArtworkRetryTrackId != artTrackId)
                 {
-                    _pendingArtworkRetryTrackId = newTrackId;
+                    _pendingArtworkRetryTrackId = artTrackId;
                     scheduleRetry = true;
                 }
             }
@@ -786,7 +801,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
         if (scheduleRetry)
         {
-            _ = RetryMissingArtworkAsync(session, newTrackId);
+            _ = RetryMissingArtworkAsync(session, artTrackId);
         }
     }
 
@@ -828,7 +843,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     /// re-read returns the same non-stand-in image. Aborts silently if the
     /// track or the focused session changed in the meantime.
     /// </summary>
-    private async Task RetryMissingArtworkAsync(MediaManager.MediaSession session, string trackId)
+    private async Task RetryMissingArtworkAsync(MediaManager.MediaSession session, string artTrackId)
     {
         try
         {
@@ -841,7 +856,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
                 lock (_stateLock)
                 {
-                    if (_currentTrackId != trackId) return;
+                    if (!string.Equals(_currentArtTrackId, artTrackId, StringComparison.Ordinal)) return;
                     if (_currentArtConfirmed) return;
                 }
 
@@ -853,20 +868,20 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 var props = await control.TryGetMediaPropertiesAsync();
                 if (props?.Thumbnail == null)
                 {
-                    LogArt($"poll attempt={attempt} track=\"{trackId}\" still no thumbnail");
+                    LogArt($"poll attempt={attempt} track=\"{artTrackId}\" still no thumbnail");
                     continue;
                 }
 
-                LogArt($"poll attempt={attempt} track=\"{trackId}\" re-reading thumbnail...");
+                LogArt($"poll attempt={attempt} track=\"{artTrackId}\" re-reading thumbnail...");
                 await ApplyMediaPropertiesAsync(session, props, settlingAttempt: attempt);
 
                 lock (_stateLock)
                 {
-                    if (_currentTrackId != trackId) return;
+                    if (!string.Equals(_currentArtTrackId, artTrackId, StringComparison.Ordinal)) return;
 
                     if (_currentArtConfirmed)
                     {
-                        LogArt($"artwork settled track=\"{trackId}\" on attempt={attempt}");
+                        LogArt($"artwork settled track=\"{artTrackId}\" on attempt={attempt}");
                         return; // publisher stopped changing the image
                     }
                 }
@@ -878,7 +893,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             bool noArtworkForTrack;
             lock (_stateLock)
             {
-                noArtworkForTrack = !_hasArtworkForCurrentTrack && _currentTrackId == trackId;
+                noArtworkForTrack = !_hasArtworkForCurrentTrack && string.Equals(_currentArtTrackId, artTrackId, StringComparison.Ordinal);
             }
 
             if (noArtworkForTrack && _activeSession?.Id == session.Id)
@@ -887,9 +902,9 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 {
                     lock (_stateLock)
                     {
-                        if (_currentTrackId != trackId || _hasArtworkForCurrentTrack) return;
+                        if (!string.Equals(_currentArtTrackId, artTrackId, StringComparison.Ordinal) || _hasArtworkForCurrentTrack) return;
 
-                        LogArt($"GIVE UP track=\"{trackId}\" — showing placeholder");
+                        LogArt($"GIVE UP track=\"{artTrackId}\" — showing placeholder");
                         Thumbnail = null;
                         HasThumbnail = false;
                         ArtworkBackdrop = null;
@@ -903,7 +918,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             }
             else
             {
-                LogArt($"polls exhausted track=\"{trackId}\" — keeping currently displayed art");
+                LogArt($"polls exhausted track=\"{artTrackId}\" — keeping currently displayed art");
             }
         }
         catch (Exception ex)
@@ -914,7 +929,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         {
             lock (_stateLock)
             {
-                if (_pendingArtworkRetryTrackId == trackId)
+                if (_pendingArtworkRetryTrackId == artTrackId)
                 {
                     _pendingArtworkRetryTrackId = null;
                 }
