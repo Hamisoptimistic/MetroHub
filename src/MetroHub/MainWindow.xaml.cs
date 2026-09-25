@@ -680,15 +680,17 @@ public partial class MainWindow : BorderlessFluentWindow
 
         if (isWallpaper)
         {
+            var ct = BeginNewWallpaperGeneration();
             NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_NONE);
             if (RootGrid != null)
             {
                 RootGrid.Background = System.Windows.Media.Brushes.Transparent;
             }
-            _ = UpdateWallpaperDisplayAsync();
+            _ = UpdateWallpaperDisplayAsync(ct);
         }
         else
         {
+            CancelPendingWallpaperLoad();
             TeardownWallpaperVideo();
 
             if (CustomWallpaperHost != null)
@@ -791,6 +793,40 @@ public partial class MainWindow : BorderlessFluentWindow
     private int _wallpaperLoadGeneration = 0;
     private string? _currentLoadedWallpaperPath = null;
     private CancellationTokenSource? _toastCts;
+    private CancellationTokenSource? _wallpaperCts;
+
+    private CancellationToken BeginNewWallpaperGeneration()
+    {
+        _wallpaperLoadGeneration++;
+        if (_wallpaperCts != null)
+        {
+            try
+            {
+                _wallpaperCts.Cancel();
+                _wallpaperCts.Dispose();
+            }
+            catch { }
+            _wallpaperCts = null;
+        }
+
+        _wallpaperCts = new CancellationTokenSource();
+        return _wallpaperCts.Token;
+    }
+
+    private void CancelPendingWallpaperLoad()
+    {
+        _wallpaperLoadGeneration++;
+        if (_wallpaperCts != null)
+        {
+            try
+            {
+                _wallpaperCts.Cancel();
+                _wallpaperCts.Dispose();
+            }
+            catch { }
+            _wallpaperCts = null;
+        }
+    }
 
     private void OnWallpaperVideoMediaOpened(object? sender, RoutedEventArgs e)
     {
@@ -849,11 +885,11 @@ public partial class MainWindow : BorderlessFluentWindow
         }, token);
     }
 
-    private async Task UpdateWallpaperDisplayAsync()
+    private async Task UpdateWallpaperDisplayAsync(CancellationToken ct)
     {
         if (CustomWallpaperHost == null || WallpaperImage == null || WallpaperScrim == null) return;
 
-        int currentGen = ++_wallpaperLoadGeneration;
+        int currentGen = _wallpaperLoadGeneration;
         string backdropType = Settings.BackdropType;
 
         // Apply scrim dim opacity immediately with frozen Freezable brush
@@ -867,6 +903,8 @@ public partial class MainWindow : BorderlessFluentWindow
 
         try
         {
+            if (ct.IsCancellationRequested || currentGen != _wallpaperLoadGeneration) return;
+
             string? imagePath = null;
 
             if (string.Equals(backdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase))
@@ -879,15 +917,15 @@ public partial class MainWindow : BorderlessFluentWindow
             }
             else if (string.Equals(backdropType, "BingDaily", StringComparison.OrdinalIgnoreCase))
             {
-                imagePath = await DailyWallpaperService.Instance.GetBingDailyWallpaperAsync().ConfigureAwait(true);
+                imagePath = await DailyWallpaperService.Instance.GetBingDailyWallpaperAsync(ct).ConfigureAwait(true);
             }
             else if (string.Equals(backdropType, "SpotlightDaily", StringComparison.OrdinalIgnoreCase))
             {
-                imagePath = await DailyWallpaperService.Instance.GetSpotlightDailyWallpaperAsync().ConfigureAwait(true);
+                imagePath = await DailyWallpaperService.Instance.GetSpotlightDailyWallpaperAsync(ct).ConfigureAwait(true);
             }
 
             // If user switched backdrop while awaiting, discard this stale result
-            if (currentGen != _wallpaperLoadGeneration) return;
+            if (ct.IsCancellationRequested || currentGen != _wallpaperLoadGeneration) return;
 
             if (!string.IsNullOrEmpty(imagePath) && File.Exists(imagePath))
             {
@@ -945,13 +983,13 @@ public partial class MainWindow : BorderlessFluentWindow
                     return;
                 }
 
-                // Decode at exact 1:1 screen pixel width (capped at 2560 max per DeepSeek standards)
+                // Decode at exact 1:1 screen pixel width (up to 3840 max on 4K, downscale only)
                 double screenW = ActualWidth > 0 ? ActualWidth : SystemParameters.PrimaryScreenWidth;
 
-                var (bmp, error) = await DailyWallpaperService.TryLoadWallpaperAsync(imagePath, screenW).ConfigureAwait(true);
+                var (bmp, error) = await DailyWallpaperService.TryLoadWallpaperAsync(imagePath, screenW, ct).ConfigureAwait(true);
                 lastError = error;
 
-                if (currentGen != _wallpaperLoadGeneration) return;
+                if (ct.IsCancellationRequested || currentGen != _wallpaperLoadGeneration) return;
 
                 if (bmp != null)
                 {
@@ -968,13 +1006,18 @@ public partial class MainWindow : BorderlessFluentWindow
                 }
             }
         }
+        catch (OperationCanceledException)
+        {
+            // Expected when user switches backdrop before download/decode completes
+            return;
+        }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[MainWindow] UpdateWallpaperDisplayAsync error: {ex.Message}");
             lastError ??= ex.Message;
         }
 
-        if (currentGen != _wallpaperLoadGeneration) return;
+        if (ct.IsCancellationRequested || currentGen != _wallpaperLoadGeneration) return;
 
         // Fallback to dark background if no image or video could be loaded
         _currentLoadedWallpaperPath = null;
@@ -1320,6 +1363,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
     protected override void OnClosed(EventArgs e)
     {
+        CancelPendingWallpaperLoad();
         TeardownWallpaperVideo();
         base.OnClosed(e);
     }

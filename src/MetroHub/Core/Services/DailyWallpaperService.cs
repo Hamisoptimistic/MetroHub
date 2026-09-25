@@ -386,6 +386,7 @@ public sealed class DailyWallpaperService
 
     /// <summary>
     /// Decodes a wallpaper off-thread with capped display resolution and granular error classification.
+    /// Only downscales if original image width exceeds screen target budget; never upscales smaller images.
     /// </summary>
     public static BitmapImage? TryLoadWallpaper(string path, double screenWidth, out string? error)
     {
@@ -397,17 +398,37 @@ public sealed class DailyWallpaperService
             return null;
         }
 
-        // Cap decode width: decode at screen width (e.g. 1920 or 2560), never 4K native if displaying smaller.
-        int decodeWidth = (int)Math.Clamp(screenWidth, 1280, 2560);
+        // Cap decode width: decode at screen width (e.g. 1920, 2560, or 3840), never upscale if smaller.
+        int targetBudget = (int)Math.Clamp(screenWidth, 1280, 3840);
 
         try
         {
+            // 1. Read header dimensions first (fast, negligible memory, no full pixel decode).
+            int originalWidth = 0;
+            try
+            {
+                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                var frame = BitmapFrame.Create(fs, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
+                originalWidth = frame.PixelWidth;
+            }
+            catch
+            {
+                // If header probing fails, fall back to standard decode
+            }
+
             var bmp = new BitmapImage();
             bmp.BeginInit();
             bmp.UriSource = new Uri(path, UriKind.Absolute);
             bmp.CacheOption = BitmapCacheOption.OnLoad; // Release file handle immediately
             bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache; // Don't hold hidden ref in WPF cache
-            bmp.DecodePixelWidth = decodeWidth;
+
+            // Only downscale if original is wider than screen target budget.
+            // Never upscale smaller images (e.g. 720p or 1080p), preventing memory bloat.
+            if (originalWidth > targetBudget)
+            {
+                bmp.DecodePixelWidth = targetBudget;
+            }
+
             bmp.EndInit();
             bmp.Freeze(); // Immutable, thread-safe Freezable per Rule 3
             return bmp;
@@ -442,24 +463,32 @@ public sealed class DailyWallpaperService
     }
 
     /// <summary>
-    /// Asynchronously decodes wallpaper off-thread with specific error messaging.
+    /// Asynchronously decodes wallpaper off-thread with specific error messaging and cancellation support.
     /// </summary>
-    public static async Task<(BitmapImage? Image, string? Error)> TryLoadWallpaperAsync(string filePath, double screenWidth = 1920)
+    public static async Task<(BitmapImage? Image, string? Error)> TryLoadWallpaperAsync(
+        string filePath,
+        double screenWidth = 1920,
+        CancellationToken ct = default)
     {
         return await Task.Run(() =>
         {
+            ct.ThrowIfCancellationRequested();
             var bmp = TryLoadWallpaper(filePath, screenWidth, out var err);
+            ct.ThrowIfCancellationRequested();
             return (bmp, err);
-        }).ConfigureAwait(false);
+        }, ct).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Asynchronously decodes an image off the UI thread into a frozen, thread-safe BitmapSource.
     /// This prevents any frame drops or hitching on the main UI thread during image parsing.
     /// </summary>
-    public static async Task<BitmapSource?> LoadFrozenBitmapAsync(string filePath, int decodeWidth = 1920)
+    public static async Task<BitmapSource?> LoadFrozenBitmapAsync(
+        string filePath,
+        int decodeWidth = 1920,
+        CancellationToken ct = default)
     {
-        var (bmp, _) = await TryLoadWallpaperAsync(filePath, decodeWidth).ConfigureAwait(false);
+        var (bmp, _) = await TryLoadWallpaperAsync(filePath, decodeWidth, ct).ConfigureAwait(false);
         return bmp;
     }
 
