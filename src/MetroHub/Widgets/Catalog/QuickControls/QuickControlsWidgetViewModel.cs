@@ -50,7 +50,11 @@ public sealed partial class QuickControlsWidgetViewModel : WidgetViewModelBase
             TargetPath = "brightness_controls"
         };
 
-        Media = new MediaWidgetViewModel(_mediaSubModel);
+        // The QuickControls view renders only track info + transport buttons —
+        // never artwork — so build the media sub-VM in artwork-less mode. This
+        // skips the SMTC thumbnail fetch, decode, and byte cache entirely
+        // (no duplicated artwork work or resident memory next to a Media widget).
+        Media = new MediaWidgetViewModel(_mediaSubModel, loadArtwork: false);
         Volume = new AudioControlsWidgetViewModel(_volumeSubModel);
         Brightness = new BrightnessControlsWidgetViewModel(_brightnessSubModel);
 

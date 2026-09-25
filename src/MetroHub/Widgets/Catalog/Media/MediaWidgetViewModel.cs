@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -56,6 +57,16 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     [ObservableProperty]
     private ImageSource? _thumbnail;
 
+    /// <summary>
+    /// Tiny (~64px) copy of the current artwork, used as the soft backdrop
+    /// behind wide, letterboxed art on the Zune screen. Decoded from the same
+    /// bytes as Thumbnail, so a square cover fills its own slot and leaves this
+    /// null. Costs ~16 KB instead of the megabytes a second full-size surface
+    /// would.
+    /// </summary>
+    [ObservableProperty]
+    private ImageSource? _artworkBackdrop;
+
     [ObservableProperty]
     private bool _hasThumbnail;
 
@@ -74,12 +85,78 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     }
 
     /// <summary>
-    /// Retains compressed raw image bytes in managed memory (~20 KB).
-    /// Allows the heavy decoded WPF BitmapSource surface to be released
-    /// when MetroHub is hidden, and instantly re-decoded with 0ms latency when restored.
+    /// Cap for the resident artwork byte cache: originals larger than this
+    /// (e.g. 3000px Apple Music art) are re-encoded once at display size so
+    /// the cache stays compact.
+    /// </summary>
+    private const int MaxCacheBytes = 512 * 1024;
+
+    /// <summary>
+    /// Artwork retry schedule for tracks whose SMTC metadata arrives before
+    /// the player supplies artwork (typical browser behavior).
+    /// </summary>
+    private const int MaxArtworkRetries = 3;
+    private static readonly int[] ArtworkRetryDelaysMs = { 1500, 4000, 8000 };
+
+    /// <summary>
+    /// Upper bound on remembered source-app stand-in fingerprints (browser and
+    /// app icons). Browsers only ever expose a couple of these.
+    /// </summary>
+    private const int MaxStandInHashes = 16;
+
+    /// <summary>
+    /// Grace period before showing "No media playing" after a session close.
+    /// Chromium tears down and recreates its SMTC session around every track
+    /// change (and every widget-initiated skip), so an immediate reset wipes
+    /// artwork and metadata for songs that are still playing.
+    /// </summary>
+    private const int NoMediaGraceMs = 2500;
+
+    /// <summary>
+    /// Retains compressed artwork bytes in managed memory (typically 20–80 KB,
+    /// capped at MaxCacheBytes). Allows the heavy decoded WPF BitmapSource
+    /// surface to be released when MetroHub is hidden, and instantly re-decoded
+    /// with 0ms latency when restored.
     /// </summary>
     private byte[]? _cachedThumbnailBytes;
-    private int _currentThumbnailWidth;
+
+    /// <summary>
+    /// Fingerprint and owning track of the artwork currently on screen.
+    ///
+    /// SMTC hands out a *sequence* of images per track: browsers publish a
+    /// stand-in (their own icon / the page favicon) the moment a session opens,
+    /// then swap in the real cover a second or two later. Ranking images by
+    /// pixel width (the previous approach) loses that race whenever the
+    /// stand-in happens to be the larger image — Brave's icon is 256px while
+    /// YouTube's cover arrives at 150px, so the cover was decoded and then
+    /// thrown away. Comparing fingerprints instead lets any *different* image
+    /// through, which is exactly what the OS shell does.
+    /// </summary>
+    private ulong _currentArtHash;
+    private string _currentArtTrackId = string.Empty;
+
+    /// <summary>Displayed image is a known source-app stand-in.</summary>
+    private bool _currentArtIsStandIn;
+
+    /// <summary>Source pixel width of the displayed artwork.</summary>
+    private int _currentArtSourceWidth;
+
+    /// <summary>A delayed re-read returned this exact, non-stand-in image.</summary>
+    private bool _currentArtConfirmed;
+
+    /// <summary>True once any artwork was accepted for the current track.</summary>
+    private bool _hasArtworkForCurrentTrack;
+
+    /// <summary>
+    /// First artwork seen for the last track that had artwork, plus that track's
+    /// id. A fingerprint that opens two *different* tracks is by definition the
+    /// source app's stand-in and never album art.
+    /// </summary>
+    private ulong _firstArtHash;
+    private string _firstArtTrackId = string.Empty;
+
+    /// <summary>Fingerprints proven to be stand-ins (browser and app icons).</summary>
+    private readonly HashSet<ulong> _standInHashes = new();
 
     private MediaWidgetSettings _settings = new();
 
@@ -93,6 +170,33 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         3 => 104.0,
         _ => 64.0
     };
+
+    /// <summary>
+    /// Zune mode paints its artwork full-bleed in a 248pt square. 620px covers
+    /// that 1:1 even on a 200% DPI display (496 device pixels) with headroom to
+    /// spare; decoding wider than the slot only burns RAM.
+    /// </summary>
+    private const int ZuneArtDecodeWidth = 620;
+
+    /// <summary>
+    /// The largest artwork in the other layouts is 132pt; 384px covers it at
+    /// 200% DPI (264 device pixels) and leaves room for UniformToFill.
+    /// </summary>
+    private const int StandardArtDecodeWidth = 384;
+
+    /// <summary>
+    /// Target decode width for the current layout, sized to what the layout can
+    /// actually paint rather than to the source. A decoded WPF bitmap is a
+    /// Pbgra32 surface costing width × height × 4 bytes (plus a GPU texture
+    /// copy), so an oversized budget is pure waste: Zune used to ask for 1024px
+    /// — 4.2 MB for a 248pt slot whose source is usually 150px — and now asks
+    /// for 620px (1.5 MB, and ~2.8 MB even for a wide 16:9 source that decodes
+    /// wider than the crop needs). Sources smaller than the budget decode at
+    /// native size and are upscaled once by the renderer.
+    ///
+    /// Artwork-less instances never decode, so the budget is irrelevant to them.
+    /// </summary>
+    private int DecodeTargetWidth => IsZuneMode ? ZuneArtDecodeWidth : StandardArtDecodeWidth;
 
     public bool ShowAlbumRow => Model.SpanY >= 3 && HasAlbum;
     public Thickness TrackInfoMargin => Model.SpanY <= 2 ? new Thickness(16, 0, 96, 0) : new Thickness(20, 0, 175, 0);
@@ -129,8 +233,26 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     private readonly object _stateLock = new();
     private string _currentTrackId = string.Empty;
 
-    public MediaWidgetViewModel(TileModel model) : base(model)
+    /// <summary>
+    /// Track ID whose artwork retry is currently scheduled (null when none).
+    /// Prevents stacked retry loops for the same track.
+    /// </summary>
+    private string? _pendingArtworkRetryTrackId;
+
+    /// <summary>
+    /// When false, this instance skips the entire SMTC artwork pipeline
+    /// (thumbnail stream fetch, decode, crop, byte cache). Used by hosts
+    /// that render no artwork, e.g. the QuickControls media strip.
+    /// </summary>
+    private readonly bool _loadArtwork;
+
+    /// <summary>True when this instance fetches and caches album art.</summary>
+    public bool LoadsArtwork => _loadArtwork;
+
+    public MediaWidgetViewModel(TileModel model, bool loadArtwork = true) : base(model)
     {
+        _loadArtwork = loadArtwork;
+
         bool isValidSize = (model.SpanX == 8 && (model.SpanY == 4 || model.SpanY == 3)) ||
                            (model.SpanX == 6 && model.SpanY == 2) ||
                            (model.SpanX == 4 && (model.SpanY == 1 || model.SpanY == 6));
@@ -235,6 +357,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     {
         try
         {
+            LogArt($"focus changed → {(mediaSession?.Id ?? "null")} | active={_activeSession?.Id ?? "null"}");
+
             if (mediaSession != null)
             {
                 SetActiveSession(mediaSession);
@@ -248,7 +372,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 }
                 else
                 {
-                    RunOnUi(ResetToNoMedia);
+                    LogArt($"focus lost, no fallback — grace period {NoMediaGraceMs}ms before reset");
+                    _ = ScheduleNoMediaGraceCheckAsync(_activeSession?.Id ?? string.Empty);
                 }
             }
         }
@@ -262,6 +387,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     {
         try
         {
+            LogArt($"session opened: {mediaSession.Id} | active={_activeSession?.Id ?? "null"}");
+
             if (_activeSession == null)
             {
                 SetActiveSession(mediaSession);
@@ -279,6 +406,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         {
             if (mediaSession == null) return;
 
+            LogArt($"session closed: {mediaSession.Id} | active={_activeSession?.Id ?? "null"}");
+
             if (_activeSession == null || _activeSession.Id == mediaSession.Id)
             {
                 var next = SafeGetFallbackSession(excludeSessionId: mediaSession.Id);
@@ -288,7 +417,11 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 }
                 else
                 {
-                    RunOnUi(ResetToNoMedia);
+                    // The session may be recreated milliseconds later (Chromium
+                    // churns its SMTC session on every track change / skip).
+                    // Grace-period instead of wiping artwork immediately.
+                    LogArt($"active session closed — grace period {NoMediaGraceMs}ms before reset");
+                    _ = ScheduleNoMediaGraceCheckAsync(mediaSession.Id);
                 }
             }
         }
@@ -341,6 +474,10 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             {
                 _ = ApplyMediaPropertiesAsync(mediaSession, mediaProperties);
             }
+            else
+            {
+                LogArt($"props event IGNORED (different session): event={mediaSession.Id} active={_activeSession.Id} title=\"{mediaProperties.Title}\" thumb={(mediaProperties.Thumbnail != null ? "yes" : "no")}");
+            }
         }
         catch (Exception ex)
         {
@@ -350,11 +487,13 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     private void SetActiveSession(MediaManager.MediaSession session)
     {
+        LogArt($"ACTIVE SESSION → \"{session.Id}\"");
         _activeSession = session;
 
         lock (_stateLock)
         {
             _currentTrackId = string.Empty;
+            _pendingArtworkRetryTrackId = null;
         }
 
         try
@@ -389,7 +528,10 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    private async Task ApplyMediaPropertiesAsync(MediaManager.MediaSession session, GlobalSystemMediaTransportControlsSessionMediaProperties? props)
+    private async Task ApplyMediaPropertiesAsync(
+        MediaManager.MediaSession session,
+        GlobalSystemMediaTransportControlsSessionMediaProperties? props,
+        int settlingAttempt = 0)
     {
         if (props == null) return;
 
@@ -435,47 +577,188 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         bool hasAlbum = !string.IsNullOrWhiteSpace(cleanAlbum);
 
         string newTrackId = $"{cleanArtist}|{cleanTitle}|{cleanAlbum}";
-        bool isSameTrack = false;
         lock (_stateLock)
         {
             if (!string.Equals(_currentTrackId, newTrackId, StringComparison.Ordinal))
             {
                 _currentTrackId = newTrackId;
-                _currentThumbnailWidth = 0;
-            }
-            else
-            {
-                isSameTrack = true;
+                _currentArtConfirmed = false;
+                _hasArtworkForCurrentTrack = false;
+                _pendingArtworkRetryTrackId = null;
             }
         }
 
         ImageSource? bmp = null;
+        ImageSource? backdrop = null;
         byte[]? rawBytes = null;
         bool updateArtwork = false;
+        int decodeTarget = DecodeTargetWidth;
 
-        if (props.Thumbnail != null)
+        if (!_loadArtwork)
         {
-            (bmp, rawBytes) = await LoadThumbnailAsync(props.Thumbnail);
-            if (bmp is BitmapSource bs)
+            // Artwork-less mode (e.g. QuickControls embed): the host view only
+            // renders track info and transport controls, so skip the SMTC
+            // thumbnail fetch/decode/cache entirely. rawBytes stays null, which
+            // also guarantees no stale byte cache can accumulate below.
+        }
+        else
+        {
+            byte[]? thumbnailBytes = props.Thumbnail != null
+                ? await ReadThumbnailBytesAsync(props.Thumbnail)
+                : null;
+
+            if (thumbnailBytes == null)
             {
-                int incomingWidth = bs.PixelWidth;
+                // Track metadata arrived before artwork (browsers publish the
+                // title first; the page supplies art asynchronously), or the
+                // stream was swapped mid-track-change. Keep the previous art on
+                // screen instead of flashing the placeholder — the settling
+                // poll below heals it.
+                LogArt($"art missing track=\"{newTrackId}\" (no thumbnail in SMTC snapshot)");
+            }
+            else
+            {
+                ulong artHash = Fingerprint(thumbnailBytes);
+
+                // Header-only dimensions, no pixel decode. Publishers cycle
+                // several size variants of the same cover (the diagnostic log
+                // shows 150×150 followed by 120×120 for one track), so a
+                // same-track replacement is only worth a repaint when it is
+                // actually bigger.
+                (int sourceWidth, _) = ReadSourceDimensions(thumbnailBytes);
+                bool acceptArtwork = false;
+
                 lock (_stateLock)
                 {
-                    if (!isSameTrack || _currentThumbnailWidth == 0 || incomingWidth >= _currentThumbnailWidth)
+                    if (_currentArtHash == artHash)
                     {
-                        _currentThumbnailWidth = incomingWidth;
-                        updateArtwork = true;
+                        // The publisher re-sent the image that is already on
+                        // screen: skip the decode and the repaint. A repeat seen
+                        // by a *delayed* re-read means the publisher settled on
+                        // this image, which lets the settling poll stop early —
+                        // but only from the second attempt on, so a slow browser
+                        // cannot confirm its stand-in before the cover lands.
+                        _hasArtworkForCurrentTrack = true;
+
+                        if (settlingAttempt >= 2 &&
+                            !_currentArtIsStandIn &&
+                            string.Equals(_currentArtTrackId, newTrackId, StringComparison.Ordinal))
+                        {
+                            _currentArtConfirmed = true;
+                        }
+
+                        LogArt($"art unchanged track=\"{newTrackId}\" bytes={thumbnailBytes.Length}");
+                    }
+                    else if (_standInHashes.Contains(artHash) && _currentArtHash != 0 && !_currentArtIsStandIn)
+                    {
+                        // Known stand-in (browser icon / page favicon) arriving
+                        // after real artwork. Never let it cover the cover.
+                        LogArt($"stand-in re-published track=\"{newTrackId}\" — ignored");
+                    }
+                    else if (sourceWidth > 0 &&
+                             !_currentArtIsStandIn &&
+                             _currentArtHash != 0 &&
+                             string.Equals(_currentArtTrackId, newTrackId, StringComparison.Ordinal) &&
+                             sourceWidth <= _currentArtSourceWidth)
+                    {
+                        // A smaller (or equal) variant of the cover that is
+                        // already on screen for this track: keep the sharper
+                        // one instead of downgrading the picture.
+                        LogArt($"cover variant {sourceWidth}px ignored (showing {_currentArtSourceWidth}px) track=\"{newTrackId}\"");
+                    }
+                    else
+                    {
+                        acceptArtwork = true;
+                    }
+                }
+
+                if (acceptArtwork)
+                {
+                    BitmapSource? decoded = DecodeArtwork(
+                        thumbnailBytes,
+                        decodeTarget,
+                        out int originalWidth,
+                        out int originalHeight);
+
+                    if (decoded != null && originalWidth > 0)
+                    {
+                        bool isStandIn;
+
+                        lock (_stateLock)
+                        {
+                            isStandIn = _standInHashes.Contains(artHash);
+
+                            if (!_hasArtworkForCurrentTrack)
+                            {
+                                // A fingerprint that opens two different tracks is
+                                // the source app's stand-in, not album art: a
+                                // browser icon is byte-identical for every song,
+                                // a cover is not.
+                                if (artHash == _firstArtHash &&
+                                    _firstArtTrackId.Length > 0 &&
+                                    !string.Equals(_firstArtTrackId, newTrackId, StringComparison.Ordinal))
+                                {
+                                    if (_standInHashes.Count >= MaxStandInHashes)
+                                    {
+                                        _standInHashes.Clear();
+                                    }
+
+                                    _standInHashes.Add(artHash);
+                                    isStandIn = true;
+                                }
+
+                                _firstArtHash = artHash;
+                                _firstArtTrackId = newTrackId;
+                            }
+
+                            _currentArtHash = artHash;
+                            _currentArtTrackId = newTrackId;
+                            _currentArtIsStandIn = isStandIn;
+                            _currentArtSourceWidth = originalWidth;
+                            _currentArtConfirmed = false;
+                            _hasArtworkForCurrentTrack = true;
+                            updateArtwork = true;
+                        }
+
+                        bmp = decoded;
+                        rawBytes = CacheArtworkBytes(thumbnailBytes, decoded);
+
+                        // Non-square art (video frames, 4:3 scans) is letterboxed by
+                        // the Zune screen, so it needs a soft fill for the square it
+                        // does not cover. Square covers fill the screen on their own.
+                        if (NeedsBackdrop(originalWidth, originalHeight))
+                        {
+                            backdrop = DecodeBackdrop(thumbnailBytes);
+                        }
+
+                        LogArt($"decoded track=\"{newTrackId}\" origW={originalWidth} origH={originalHeight} bytes={thumbnailBytes.Length} standIn={isStandIn} backdrop={(backdrop != null ? "yes" : "no")}");
+                    }
+                    else
+                    {
+                        // Decode failed — the thumbnail stream reference is often
+                        // swapped by the player mid-track-change. DO NOT clear the
+                        // visible artwork; the settling poll below heals it.
+                        LogArt($"decode FAILED track=\"{newTrackId}\" (thumb present, stream open/decode error)");
                     }
                 }
             }
-            else if (!isSameTrack)
-            {
-                updateArtwork = true;
-            }
         }
-        else if (!isSameTrack)
+
+        // Keep a settling poll running for as long as the artwork on screen is
+        // not proven stable. Every new image (the browser's stand-in, then the
+        // real cover) is painted as it arrives, and the poll stops on its own
+        // once a delayed re-read returns the same real image.
+        bool scheduleRetry = false;
+        if (_loadArtwork)
         {
-            updateArtwork = true;
+            lock (_stateLock)
+            {
+                if (!_currentArtConfirmed && _pendingArtworkRetryTrackId != newTrackId)
+                {
+                    _pendingArtworkRetryTrackId = newTrackId;
+                    scheduleRetry = true;
+                }
+            }
         }
 
         RunOnUi(() =>
@@ -489,12 +772,182 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             SourceName = cleanSource;
             if (updateArtwork)
             {
+                // Only reached after a successful decode of this track's art:
+                // the swap is atomic and the byte cache is refreshed. Failed
+                // decodes never reach this path, so the previous artwork
+                // (and cache) survive instead of flashing the placeholder.
                 _cachedThumbnailBytes = rawBytes;
                 Thumbnail = bmp;
                 HasThumbnail = bmp != null;
+                ArtworkBackdrop = backdrop;
             }
             HasMedia = true;
         });
+
+        if (scheduleRetry)
+        {
+            _ = RetryMissingArtworkAsync(session, newTrackId);
+        }
+    }
+
+    /// <summary>
+    /// Appends a line to %LOCALAPPDATA%\MetroHub\media_art.log. Diagnostic
+    /// only: artwork events are rare (a handful per track change), and the
+    /// log self-caps at 256 KB. Never throws.
+    /// </summary>
+    private static void LogArt(string message)
+    {
+        try
+        {
+            string dir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "MetroHub");
+
+            string path = Path.Combine(dir, "media_art.log");
+
+            if (File.Exists(path) && new FileInfo(path).Length > 256 * 1024)
+            {
+                File.Delete(path);
+            }
+
+            File.AppendAllText(path, $"{DateTime.Now:HH:mm:ss.fff} {message}{Environment.NewLine}");
+        }
+        catch
+        {
+            // Diagnostics must never break playback.
+        }
+    }
+
+    /// <summary>
+    /// Re-reads a session whose artwork has not settled yet: either nothing has
+    /// arrived, or the image on screen is still the publisher's stand-in
+    /// (browsers hand SMTC their icon / the page favicon the moment a session
+    /// opens and swap in the real cover a second or two later). Each attempt
+    /// applies whatever SMTC currently holds, so the cover replaces the
+    /// stand-in as soon as it is published, and the loop stops once a delayed
+    /// re-read returns the same non-stand-in image. Aborts silently if the
+    /// track or the focused session changed in the meantime.
+    /// </summary>
+    private async Task RetryMissingArtworkAsync(MediaManager.MediaSession session, string trackId)
+    {
+        try
+        {
+            int attemptCounter = 0;
+
+            foreach (int delayMs in ArtworkRetryDelaysMs)
+            {
+                int attempt = ++attemptCounter;
+                await Task.Delay(delayMs).ConfigureAwait(false);
+
+                lock (_stateLock)
+                {
+                    if (_currentTrackId != trackId) return;
+                    if (_currentArtConfirmed) return;
+                }
+
+                if (_activeSession?.Id != session.Id) return;
+
+                var control = session.ControlSession;
+                if (control == null) return;
+
+                var props = await control.TryGetMediaPropertiesAsync();
+                if (props?.Thumbnail == null)
+                {
+                    LogArt($"poll attempt={attempt} track=\"{trackId}\" still no thumbnail");
+                    continue;
+                }
+
+                LogArt($"poll attempt={attempt} track=\"{trackId}\" re-reading thumbnail...");
+                await ApplyMediaPropertiesAsync(session, props, settlingAttempt: attempt);
+
+                lock (_stateLock)
+                {
+                    if (_currentTrackId != trackId) return;
+
+                    if (_currentArtConfirmed)
+                    {
+                        LogArt($"artwork settled track=\"{trackId}\" on attempt={attempt}");
+                        return; // publisher stopped changing the image
+                    }
+                }
+            }
+
+            // Polls exhausted. Only fall back to the placeholder when this track
+            // never produced any artwork at all; a stand-in stays visible
+            // (better than an empty box, and exactly what the OS shell shows).
+            bool noArtworkForTrack;
+            lock (_stateLock)
+            {
+                noArtworkForTrack = !_hasArtworkForCurrentTrack && _currentTrackId == trackId;
+            }
+
+            if (noArtworkForTrack && _activeSession?.Id == session.Id)
+            {
+                RunOnUi(() =>
+                {
+                    lock (_stateLock)
+                    {
+                        if (_currentTrackId != trackId || _hasArtworkForCurrentTrack) return;
+
+                        LogArt($"GIVE UP track=\"{trackId}\" — showing placeholder");
+                        Thumbnail = null;
+                        HasThumbnail = false;
+                        ArtworkBackdrop = null;
+                        _cachedThumbnailBytes = null;
+                        _currentArtHash = 0;
+                        _currentArtTrackId = string.Empty;
+                        _currentArtIsStandIn = false;
+                        _currentArtSourceWidth = 0;
+                    }
+                });
+            }
+            else
+            {
+                LogArt($"polls exhausted track=\"{trackId}\" — keeping currently displayed art");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MediaWidget] Artwork retry failed: {ex.Message}");
+        }
+        finally
+        {
+            lock (_stateLock)
+            {
+                if (_pendingArtworkRetryTrackId == trackId)
+                {
+                    _pendingArtworkRetryTrackId = null;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// After the active session closes (or focus is lost), wait NoMediaGraceMs
+    /// and reset to "No media playing" only if no session was re-activated in
+    /// the meantime. Chromium recreates its SMTC session around every track
+    /// change / skip, so the old instant-reset behavior wiped artwork and
+    /// metadata for music that was still playing. Costs nothing while idle.
+    /// </summary>
+    private async Task ScheduleNoMediaGraceCheckAsync(string closedSessionId)
+    {
+        try
+        {
+            await Task.Delay(NoMediaGraceMs).ConfigureAwait(false);
+
+            if (_activeSession != null)
+            {
+                LogArt($"grace period elapsed — session \"{_activeSession.Id}\" re-activated, no reset");
+                return;
+            }
+
+            LogArt("grace period elapsed — no session returned, resetting to No media");
+            RunOnUi(ResetToNoMedia);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MediaWidget] Grace check failed: {ex.Message}");
+        }
     }
 
     private void ApplyPlaybackInfo(GlobalSystemMediaTransportControlsSessionPlaybackInfo? playback)
@@ -571,11 +1024,21 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         SourceName = "Media Player";
         Thumbnail = null;
         HasThumbnail = false;
+        ArtworkBackdrop = null;
         _cachedThumbnailBytes = null;
         lock (_stateLock)
         {
-            _currentThumbnailWidth = 0;
+            _currentArtHash = 0;
+            _currentArtTrackId = string.Empty;
+            _currentArtIsStandIn = false;
+            _currentArtSourceWidth = 0;
+            _currentArtConfirmed = false;
+            _hasArtworkForCurrentTrack = false;
+            _firstArtHash = 0;
+            _firstArtTrackId = string.Empty;
+            _standInHashes.Clear();
             _currentTrackId = string.Empty;
+            _pendingArtworkRetryTrackId = null;
         }
         IsPlaying = false;
         CanPlayPause = true;
@@ -585,7 +1048,15 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public override void Pause()
     {
-        // When MetroHub is hidden, retain cached raw bytes but free heavy decoded WPF BitmapSource
+        // MetroHub hidden: drop the heavy decoded WIC surface (DirectX texture +
+        // managed copy) but keep _cachedThumbnailBytes so Resume() restores the
+        // artwork instantly without touching the original SMTC stream again.
+        RunOnUi(() =>
+        {
+            Thumbnail = null;
+            HasThumbnail = false;
+            ArtworkBackdrop = null;
+        });
     }
 
     public override void Resume()
@@ -594,11 +1065,17 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         {
             if (_cachedThumbnailBytes != null && Thumbnail == null && HasMedia)
             {
-                var restored = CreateThumbnailFromBytes(_cachedThumbnailBytes);
+                var restored = CreateThumbnailFromBytes(_cachedThumbnailBytes, DecodeTargetWidth);
                 if (restored != null)
                 {
                     Thumbnail = restored;
                     HasThumbnail = true;
+
+                    if (restored is BitmapSource bs &&
+                        NeedsBackdrop(bs.PixelWidth, bs.PixelHeight))
+                    {
+                        ArtworkBackdrop = DecodeBackdrop(_cachedThumbnailBytes);
+                    }
                 }
             }
         });
@@ -656,68 +1133,268 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    private static async Task<(ImageSource? Image, byte[]? RawBytes)> LoadThumbnailAsync(IRandomAccessStreamReference streamRef)
+    /// <summary>
+    /// Reads an SMTC thumbnail into memory. Returns null when the stream cannot
+    /// be opened — players swap the stream reference mid-track-change, which
+    /// surfaces here and is healed by the settling poll.
+    /// </summary>
+    private static async Task<byte[]?> ReadThumbnailBytesAsync(IRandomAccessStreamReference streamRef)
     {
         try
         {
             using var stream = await streamRef.OpenReadAsync();
             using var netStream = stream.AsStreamForRead();
+
             using var memory = new MemoryStream();
             await netStream.CopyToAsync(memory);
-            byte[] bytes = memory.ToArray();
-            memory.Position = 0;
 
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.StreamSource = memory;
-            bitmap.EndInit();
-            bitmap.Freeze();
-
-            if (bitmap.PixelWidth > bitmap.PixelHeight * 1.25)
-            {
-                int size = bitmap.PixelHeight;
-                int xOffset = (bitmap.PixelWidth - size) / 2;
-                var cropped = new CroppedBitmap(bitmap, new Int32Rect(xOffset, 0, size, size));
-                cropped.Freeze();
-                return (cropped, bytes);
-            }
-
-            return (bitmap, bytes);
+            return memory.Length > 0 ? memory.ToArray() : null;
         }
-        catch
+        catch (Exception ex)
         {
-            return (null, null);
+            Debug.WriteLine(
+                $"[MediaWidget] ReadThumbnailBytesAsync failed: {ex.Message}");
+
+            return null;
         }
     }
 
-    private static ImageSource? CreateThumbnailFromBytes(byte[] bytes)
+    /// <summary>
+    /// Reads the pixel dimensions out of an encoded thumbnail without decoding
+    /// any pixels. Returns (0, 0) when the header cannot be parsed, which
+    /// callers treat as "unknown" and let the decoder decide.
+    /// </summary>
+    private static (int Width, int Height) ReadSourceDimensions(byte[] bytes)
     {
         try
         {
             using var memory = new MemoryStream(bytes);
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.StreamSource = memory;
-            bitmap.EndInit();
-            bitmap.Freeze();
 
-            if (bitmap.PixelWidth > bitmap.PixelHeight * 1.25)
-            {
-                int size = bitmap.PixelHeight;
-                int xOffset = (bitmap.PixelWidth - size) / 2;
-                var cropped = new CroppedBitmap(bitmap, new Int32Rect(xOffset, 0, size, size));
-                cropped.Freeze();
-                return cropped;
-            }
+            var frame = BitmapFrame.Create(
+                memory,
+                BitmapCreateOptions.DelayCreation,
+                BitmapCacheOption.None);
 
-            return bitmap;
+            return (frame.PixelWidth, frame.PixelHeight);
         }
         catch
         {
+            return (0, 0);
+        }
+    }
+
+    /// <summary>
+    /// Stable identity for a set of thumbnail bytes. Tells the publisher's
+    /// stand-in apart from the real cover, and lets an image that is already on
+    /// screen skip the decode and the repaint.
+    /// </summary>
+    private static ulong Fingerprint(byte[] bytes)
+    {
+        try
+        {
+            return BitConverter.ToUInt64(SHA256.HashData(bytes), 0);
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    /// <summary>
+    /// Tiny copy of an artwork used as the soft fill behind letterboxed wide art.
+    /// Stretched to the full square and blurred by the renderer, so a 64px decode
+    /// (~16 KB) is indistinguishable from a full-resolution backdrop.
+    /// </summary>
+    private static BitmapSource? DecodeBackdrop(byte[] bytes)
+    {
+        try
+        {
+            using var memory = new MemoryStream(bytes);
+
+            var bitmap = new BitmapImage();
+
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.StreamSource = memory;
+            bitmap.DecodePixelWidth = BackdropDecodeWidth;
+            bitmap.EndInit();
+            bitmap.Freeze();
+
+            return bitmap;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(
+                $"[MediaWidget] DecodeBackdrop failed: {ex.Message}");
+
             return null;
         }
+    }
+
+    /// <summary>
+    /// Compressed byte cache for Pause/Resume: the original SMTC bytes when they
+    /// are small enough, otherwise one high-quality re-encode of the decoded
+    /// art. The original full-resolution pixels are never retained.
+    /// </summary>
+    private static byte[]? CacheArtworkBytes(byte[] thumbnailBytes, BitmapSource decoded)
+    {
+        return thumbnailBytes.Length <= MaxCacheBytes
+            ? thumbnailBytes
+            : EncodeThumbnailCache(decoded);
+    }
+
+    /// <summary>
+    /// Small stand-in copy of an artwork, decoded from the same bytes at
+    /// BackdropDecodeWidth. The renderer stretches and blurs it across the full
+    /// square, which is what fills the space non-square art does not cover.
+    /// </summary>
+    private const int BackdropDecodeWidth = 64;
+
+    /// <summary>
+    /// True when artwork cannot fill a square slot on its own, i.e. the Zune
+    /// screen will letterbox it and wants a backdrop behind it. A couple of
+    /// pixels of tolerance keeps a near-square cover from asking for one.
+    /// </summary>
+    private static bool NeedsBackdrop(int width, int height)
+        => width > 0 && height > 0 && Math.Abs(width - height) > 2;
+
+    /// <summary>
+    /// Shared artwork decode pipeline: reads header dimensions (cheap, no full
+    /// decode), decodes once at the layout's pixel budget, and hands back the
+    /// image with its original aspect ratio intact, frozen and thread-safe.
+    ///
+    /// The aspect is deliberately preserved rather than centre-cropped here. A
+    /// square crop throws the frame's composition away and leaves only the
+    /// source's short side (an 83px sliver of a 150×83 video thumbnail) to be
+    /// blown up ~3× on the Zune screen. Instead the Zune view letterboxes wide
+    /// art over a blurred backdrop, and the square layouts crop it at render
+    /// time through UniformToFill / ImageBrush — one resample either way.
+    /// </summary>
+    private static BitmapSource? DecodeArtwork(
+        byte[] bytes,
+        int decodeWidth,
+        out int originalWidth,
+        out int originalHeight)
+    {
+        originalWidth = 0;
+        originalHeight = 0;
+
+        try
+        {
+            using var memory = new MemoryStream(bytes);
+
+            // 1. Header-only dimension read (no full pixel decode).
+            try
+            {
+                var frame = BitmapFrame.Create(
+                    memory,
+                    BitmapCreateOptions.DelayCreation,
+                    BitmapCacheOption.None);
+
+                originalWidth = frame.PixelWidth;
+                originalHeight = frame.PixelHeight;
+            }
+            catch
+            {
+                // Header unreadable: fall through and decode at native size.
+                memory.Position = 0;
+            }
+
+            // 2. Decode at the layout's pixel budget. WPF scales during the
+            //    decode (so no full-size intermediate exists) and preserves the
+            //    aspect ratio, which lands square art at budget × budget and
+            //    wide art at budget × budget/aspect — enough for the square
+            //    layouts' centre crop and for Zune's full-width letterbox with
+            //    headroom up to ~250% DPI.
+            memory.Position = 0;
+
+            var bitmap = new BitmapImage();
+
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.StreamSource = memory;
+
+            if (originalWidth > decodeWidth)
+            {
+                bitmap.DecodePixelWidth = decodeWidth;
+            }
+
+            bitmap.EndInit();
+
+            // 3. Safety net: every mainstream codec honours DecodePixelWidth,
+            //    but never hand back more pixels than the budget asked for if
+            //    one ignores it.
+            BitmapSource displaySource = bitmap;
+
+            if (displaySource.PixelWidth > decodeWidth)
+            {
+                double ratio = (double)decodeWidth / displaySource.PixelWidth;
+
+                displaySource = new TransformedBitmap(
+                    displaySource,
+                    new ScaleTransform(ratio, ratio));
+            }
+
+            bitmap.Freeze();
+            displaySource.Freeze();
+
+            return displaySource;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(
+                $"[MediaWidget] DecodeArtwork failed: {ex.Message}");
+
+            return null;
+        }
+    }
+
+
+    /// <summary>
+    /// High-quality JPEG fallback for the Pause/Resume byte cache. Only used
+    /// when the original SMTC bytes exceed MaxCacheBytes, so the single
+    /// re-encode happens from full-resolution art and quality 95 keeps it
+    /// visually lossless at display size.
+    /// </summary>
+    private static byte[]? EncodeThumbnailCache(BitmapSource bitmap)
+    {
+        try
+        {
+            using var output = new MemoryStream();
+
+            var encoder = new JpegBitmapEncoder
+            {
+                QualityLevel = 95
+            };
+
+            encoder.Frames.Add(
+                BitmapFrame.Create(bitmap));
+
+            encoder.Save(output);
+
+            return output.ToArray();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(
+                $"[MediaWidget] EncodeThumbnailCache failed: {ex.Message}");
+
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Recreates a display-ready bitmap from the cached artwork bytes at the
+    /// target decode size. Used when restoring after MetroHub was hidden
+    /// (Pause/Resume cycle). Runs the exact same pipeline as the initial
+    /// load, so a cache holding original full-resolution bytes decodes
+    /// identically to the first decode.
+    /// </summary>
+    private static ImageSource? CreateThumbnailFromBytes(
+        byte[] bytes,
+        int decodeWidth)
+    {
+        return DecodeArtwork(bytes, decodeWidth, out _, out _);
     }
 
     public static string ResolveSourceName(string? appId, string? title, string? artist)

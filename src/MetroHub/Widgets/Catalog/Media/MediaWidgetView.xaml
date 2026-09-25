@@ -405,17 +405,47 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- B. Active Media Screen: Full-Bleed High-Res Artwork (Clean, No Overlay) -->
+                    <!-- B. Active Media Screen: Full-Bleed High-Res Artwork -->
                     <Grid Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}">
-                        <!-- High-Res Album Art filling the screen window edge-to-edge -->
                         <Border Background="#0A0D12" SnapsToDevicePixels="True">
-                            <Image Source="{Binding Thumbnail}"
-                                   Stretch="UniformToFill"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   RenderOptions.BitmapScalingMode="HighQuality"
-                                   SnapsToDevicePixels="True"
-                                   Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}" />
+                            <Grid ClipToBounds="True">
+                                <!-- Soft fill for wide artwork (video frames): the same
+                                     cover decoded at ~64px, stretched across the square
+                                     and blurred, so the letterbox never shows a bare
+                                     bar. Square covers fill the screen themselves and
+                                     leave this empty. Cached: the blur rasterises once,
+                                     not per frame. -->
+                                <Image Source="{Binding ArtworkBackdrop}"
+                                       Stretch="UniformToFill"
+                                       RenderOptions.BitmapScalingMode="LowQuality"
+                                       SnapsToDevicePixels="True">
+                                    <Image.CacheMode>
+                                        <BitmapCache EnableClearType="False" />
+                                    </Image.CacheMode>
+                                    <Image.Effect>
+                                        <BlurEffect Radius="32"
+                                                    KernelType="Gaussian"
+                                                    RenderingBias="Performance" />
+                                    </Image.Effect>
+                                </Image>
+
+                                <!-- Scrim: keeps the letterboxed frame the subject even
+                                     when the frame behind it is bright. Invisible for
+                                     square art, which covers the square anyway. -->
+                                <Rectangle Fill="#59000000" IsHitTestVisible="False" />
+
+                                <!-- The artwork itself. Uniform (not UniformToFill) so a
+                                     150×83 video thumbnail is shown whole instead of
+                                     being centre-cropped to 83px and blown up ~3×;
+                                     square covers still fill the screen exactly. -->
+                                <Image Source="{Binding Thumbnail}"
+                                       Stretch="Uniform"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                       SnapsToDevicePixels="True"
+                                       Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}" />
+                            </Grid>
                         </Border>
 
                         <!-- Fallback Artwork Placeholder when HasThumbnail is false -->
