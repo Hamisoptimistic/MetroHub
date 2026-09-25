@@ -964,41 +964,9 @@ public partial class TileControl : UserControl
                     }
                 };
 
-                var styleItem = new MenuItem
-                {
-                    Header = "Style",
-                    Tag = "WidgetCustomMenu",
-                    Icon = new Wpf.Ui.Controls.SymbolIcon
-                    {
-                        Symbol = Wpf.Ui.Controls.SymbolRegular.Color24,
-                        FontSize = 20,
-                        Foreground = MenuIconForegroundBrush
-                    }
-                };
-
-                var horizonAuraItem = new MenuItem
-                {
-                    Header = "Horizon Aura",
-                    IsCheckable = true,
-                    IsChecked = mediaVm.IsAmbientGlowEnabled
-                };
-                horizonAuraItem.Click += (s, ev) => mediaVm.SetAmbientGlow(true);
-
-                var noneStyleItem = new MenuItem
-                {
-                    Header = "None",
-                    IsCheckable = true,
-                    IsChecked = !mediaVm.IsAmbientGlowEnabled
-                };
-                noneStyleItem.Click += (s, ev) => mediaVm.SetAmbientGlow(false);
-
-                styleItem.Items.Add(horizonAuraItem);
-                styleItem.Items.Add(noneStyleItem);
-
                 var mediaDivider = new Separator { Tag = "WidgetCustomMenu" };
                 TileContextMenu.Items.Insert(1, zuneActionItem);
-                TileContextMenu.Items.Insert(2, styleItem);
-                TileContextMenu.Items.Insert(3, mediaDivider);
+                TileContextMenu.Items.Insert(2, mediaDivider);
             }
             else if (tile.TileContent is Widgets.Catalog.Quotes.QuotesWidgetViewModel quotesVm)
             {

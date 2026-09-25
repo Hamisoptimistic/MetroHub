@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
 using MetroHub.Widgets.Serialization;
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -82,13 +81,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     private byte[]? _cachedThumbnailBytes;
     private int _currentThumbnailWidth;
 
-    [ObservableProperty]
-    private Brush _ambientGlowBrush = Brushes.Transparent;
-
     private MediaWidgetSettings _settings = new();
-    private Color? _currentAuraColor;
-
-    public bool IsAmbientGlowEnabled => _settings.IsAmbientGlowEnabled;
 
     public bool IsSlimMode => Model.SpanY == 1;
     public bool IsZuneMode => Model.SpanX == 4 && Model.SpanY == 6;
@@ -458,7 +451,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
         ImageSource? bmp = null;
         byte[]? rawBytes = null;
-        Brush ambientGlowBrush = Brushes.Transparent;
         bool updateArtwork = false;
 
         if (props.Thumbnail != null)
@@ -473,16 +465,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                     {
                         _currentThumbnailWidth = incomingWidth;
                         updateArtwork = true;
-                    }
-                }
-
-                if (updateArtwork)
-                {
-                    Color dominantColor = ExtractArtworkColor(bs);
-                    _currentAuraColor = dominantColor;
-                    if (_settings.IsAmbientGlowEnabled)
-                    {
-                        ambientGlowBrush = CreateAlbumAuraGlow(dominantColor);
                     }
                 }
             }
@@ -510,7 +492,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 _cachedThumbnailBytes = rawBytes;
                 Thumbnail = bmp;
                 HasThumbnail = bmp != null;
-                AmbientGlowBrush = (_settings.IsAmbientGlowEnabled && bmp != null) ? ambientGlowBrush : Brushes.Transparent;
             }
             HasMedia = true;
         });
@@ -596,8 +577,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             _currentThumbnailWidth = 0;
             _currentTrackId = string.Empty;
         }
-        _currentAuraColor = null;
-        AmbientGlowBrush = Brushes.Transparent;
         IsPlaying = false;
         CanPlayPause = true;
         CanSkipNext = true;
@@ -651,11 +630,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             if (parsed != null)
             {
                 _settings = parsed;
-                OnPropertyChanged(nameof(IsAmbientGlowEnabled));
-                if (!_settings.IsAmbientGlowEnabled)
-                {
-                    AmbientGlowBrush = Brushes.Transparent;
-                }
             }
         }
         catch { }
@@ -666,23 +640,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         Model.TargetPath = "media";
         Model.SettingsJson = WidgetSerializer.Serialize(_settings);
         MainWindow.Current?.SaveGroupsAndLayout();
-    }
-
-    public void SetAmbientGlow(bool enabled)
-    {
-        if (_settings.IsAmbientGlowEnabled == enabled) return;
-        _settings.IsAmbientGlowEnabled = enabled;
-        SaveSettings();
-        OnPropertyChanged(nameof(IsAmbientGlowEnabled));
-
-        if (enabled && HasThumbnail && _currentAuraColor.HasValue)
-        {
-            AmbientGlowBrush = CreateAlbumAuraGlow(_currentAuraColor.Value);
-        }
-        else
-        {
-            AmbientGlowBrush = Brushes.Transparent;
-        }
     }
 
     private void RunOnUi(Action action)
@@ -761,163 +718,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         {
             return null;
         }
-    }
-
-    private static LinearGradientBrush CreateAlbumAuraGlow(Color primaryColor)
-    {
-        var (h, s, v) = RgbToHsv(primaryColor.R, primaryColor.G, primaryColor.B);
-
-        Color leftColor;
-        Color rightColor;
-
-        if (s < 0.15)
-        {
-            leftColor = Color.FromArgb(0xEE, 0x47, 0x55, 0x69);
-            rightColor = Color.FromArgb(0xEE, 0x64, 0x74, 0x8B);
-        }
-        else
-        {
-            double harmonicH = (h + 32.0) % 360.0;
-            double harmonicS = Math.Clamp(s * 0.95, 0.60, 0.95);
-            double harmonicV = Math.Clamp(v * 1.15, 0.85, 1.00);
-            Color harmColor = ColorFromHsv(harmonicH, harmonicS, harmonicV);
-
-            Color punchyPrimary = ColorFromHsv(h, Math.Clamp(s * 1.15, 0.70, 0.98), Math.Clamp(v * 1.15, 0.85, 1.00));
-
-            leftColor = Color.FromArgb(0xEE, harmColor.R, harmColor.G, harmColor.B);
-            rightColor = Color.FromArgb(0xEE, punchyPrimary.R, punchyPrimary.G, punchyPrimary.B);
-        }
-
-        var brush = new LinearGradientBrush
-        {
-            StartPoint = new Point(0, 0),
-            EndPoint = new Point(1, 0),
-            GradientStops = new GradientStopCollection
-            {
-                new GradientStop(leftColor, 0.0),
-                new GradientStop(rightColor, 1.0)
-            }
-        };
-        brush.Freeze();
-        return brush;
-    }
-
-    private static Color ExtractArtworkColor(BitmapSource bitmap)
-    {
-        try
-        {
-            var thumb = new TransformedBitmap(bitmap, new ScaleTransform(16.0 / bitmap.PixelWidth, 16.0 / bitmap.PixelHeight));
-            var converted = new FormatConvertedBitmap(thumb, PixelFormats.Bgra32, null, 0);
-            int width = converted.PixelWidth;
-            int height = converted.PixelHeight;
-            int stride = width * 4;
-            int totalBytes = height * stride;
-            byte[] pixels = ArrayPool<byte>.Shared.Rent(totalBytes);
-
-            try
-            {
-                converted.CopyPixels(pixels, stride, 0);
-
-                double totalColorWeight = 0;
-                double accR = 0, accG = 0, accB = 0;
-                int validPixelCount = 0;
-                double totalLum = 0;
-
-                for (int i = 0; i <= totalBytes - 4; i += 4)
-                {
-                    byte b = pixels[i];
-                    byte g = pixels[i + 1];
-                    byte r = pixels[i + 2];
-                    byte a = pixels[i + 3];
-                    if (a < 128) continue;
-
-                    int max = Math.Max(r, Math.Max(g, b));
-                    int min = Math.Min(r, Math.Min(g, b));
-                    int delta = max - min;
-
-                    var (h, s, v) = RgbToHsv(r, g, b);
-                    validPixelCount++;
-                    totalLum += v;
-
-                    if (delta >= 24 && s >= 0.20 && v >= 0.18 && v <= 0.95)
-                    {
-                        double weight = s * s * (1.0 - Math.Abs(v - 0.65));
-                        accR += r * weight;
-                        accG += g * weight;
-                        accB += b * weight;
-                        totalColorWeight += weight;
-                    }
-                }
-
-                if (totalColorWeight >= 0.05)
-                {
-                    byte avgR = (byte)Math.Clamp(accR / totalColorWeight, 0, 255);
-                    byte avgG = (byte)Math.Clamp(accG / totalColorWeight, 0, 255);
-                    byte avgB = (byte)Math.Clamp(accB / totalColorWeight, 0, 255);
-
-                    var (h, s, v) = RgbToHsv(avgR, avgG, avgB);
-                    double outH = h;
-                    double outS = Math.Clamp(s * 0.95, 0.55, 0.90);
-                    double outV = Math.Clamp(v * 1.35, 0.82, 0.98);
-                    return ColorFromHsv(outH, outS, outV);
-                }
-
-                double avgLum = validPixelCount > 0 ? totalLum / validPixelCount : 0.8;
-                return avgLum > 0.4 ? Color.FromRgb(240, 244, 255) : Color.FromRgb(180, 215, 255);
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(pixels);
-            }
-        }
-        catch
-        {
-            return Color.FromRgb(0x4C, 0x9E, 0xFF);
-        }
-    }
-
-    private static (double h, double s, double v) RgbToHsv(byte r, byte g, byte b)
-    {
-        double rd = r / 255.0, gd = g / 255.0, bd = b / 255.0;
-        double max = Math.Max(rd, Math.Max(gd, bd));
-        double min = Math.Min(rd, Math.Min(gd, bd));
-        double delta = max - min;
-
-        double h = 0;
-        if (delta > 0)
-        {
-            if (max == rd) h = ((gd - bd) / delta) % 6.0;
-            else if (max == gd) h = ((bd - rd) / delta) + 2.0;
-            else h = ((rd - gd) / delta) + 4.0;
-            h *= 60.0;
-            if (h < 0) h += 360.0;
-        }
-
-        double s = max == 0 ? 0 : delta / max;
-        double v = max;
-        return (h, s, v);
-    }
-
-    private static Color ColorFromHsv(double hue, double saturation, double value)
-    {
-        int hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
-        double f = hue / 60 - Math.Floor(hue / 60);
-
-        value = value * 255;
-        byte v = (byte)Math.Clamp(value, 0, 255);
-        byte p = (byte)Math.Clamp(value * (1 - saturation), 0, 255);
-        byte q = (byte)Math.Clamp(value * (1 - f * saturation), 0, 255);
-        byte t = (byte)Math.Clamp(value * (1 - (1 - f) * saturation), 0, 255);
-
-        return hi switch
-        {
-            0 => Color.FromRgb(v, t, p),
-            1 => Color.FromRgb(q, v, p),
-            2 => Color.FromRgb(p, v, t),
-            3 => Color.FromRgb(p, q, v),
-            4 => Color.FromRgb(t, p, v),
-            _ => Color.FromRgb(v, p, q),
-        };
     }
 
     public static string ResolveSourceName(string? appId, string? title, string? artist)

@@ -160,9 +160,10 @@ public static class WeatherPalettes
             Color.FromArgb(0xD8, 0x71, 0x71, 0x7A)  // Charcoal smoke
         );
 
-        HeatwaveHorizonAura = CreateHorizonAura(
-            Color.FromArgb(0xF5, 0xFF, 0xD6, 0x00), // Golden mango
-            Color.FromArgb(0xF5, 0xFF, 0x1E, 0x50)  // Crimson heatwave
+        HeatwaveHorizonAura = CreateHorizonBloom(
+            Color.FromArgb(0xF5, 0xFF, 0xC4, 0x00), // Solar amber (left)
+            Color.FromArgb(0xF5, 0xFF, 0x2D, 0x78), // Neon magenta core (center)
+            Color.FromArgb(0xF5, 0xFF, 0x45, 0x3A)  // Ember red coral (right)
         );
 
         DefaultHorizonAura = CreateHorizonAura(
@@ -208,6 +209,27 @@ public static class WeatherPalettes
             GradientStops = new GradientStopCollection
             {
                 new GradientStop(leftColor, 0.0),
+                new GradientStop(rightColor, 1.0)
+            }
+        };
+        brush.Freeze();
+        return brush;
+    }
+
+    /// <summary>
+    /// Tri-color heat-bloom aura (amber → magenta → ember): the neon heat-map bleed.
+    /// Same cost class as <see cref="CreateHorizonAura"/> — one frozen brush, GPU-shaded.
+    /// </summary>
+    private static LinearGradientBrush CreateHorizonBloom(Color leftColor, Color midColor, Color rightColor)
+    {
+        var brush = new LinearGradientBrush
+        {
+            StartPoint = new Point(0, 0),
+            EndPoint = new Point(1, 0),
+            GradientStops = new GradientStopCollection
+            {
+                new GradientStop(leftColor, 0.0),
+                new GradientStop(midColor, 0.5),
                 new GradientStop(rightColor, 1.0)
             }
         };

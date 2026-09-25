@@ -49,12 +49,13 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <!-- 100% GPU-drawn frozen OpacityMask for Horizon Aura spread (0 CPU / 0 allocations) -->
+        <!-- 100% GPU-drawn frozen OpacityMask for Horizon Aura spread (0 CPU / 0 allocations).
+             Bright opaque baseline hugging the edge, fast falloff: the neon heat-map bleed. -->
         <LinearGradientBrush x:Key="HorizonAuraMaskBrush" StartPoint="0,1" EndPoint="0,0" po:Freeze="True">
-            <GradientStop Color="#D0000000" Offset="0.0" />
-            <GradientStop Color="#68000000" Offset="0.18" />
-            <GradientStop Color="#15000000" Offset="0.36" />
-            <GradientStop Color="#00000000" Offset="0.55" />
+            <GradientStop Color="#FF000000" Offset="0.0" />
+            <GradientStop Color="#90000000" Offset="0.15" />
+            <GradientStop Color="#28000000" Offset="0.32" />
+            <GradientStop Color="#00000000" Offset="0.48" />
         </LinearGradientBrush>
 
         <!-- 100% GPU-drawn frozen Glass Top Sheen -->
@@ -83,6 +84,13 @@
             <Border Background="{Binding HorizonAuraBrush}"
                     OpacityMask="{StaticResource HorizonAuraMaskBrush}"
                     CornerRadius="2"
+                    IsHitTestVisible="False" />
+
+            <!-- 2b. Hot edge core: 3px neon baseline feeding the bloom (same frozen brush, unmasked) -->
+            <Border Background="{Binding HorizonAuraBrush}"
+                    Height="3"
+                    VerticalAlignment="Bottom"
+                    CornerRadius="0,0,2,2"
                     IsHitTestVisible="False" />
 
             <!-- 3. Glass Top Specular Sheen (Subtle light catch across upper half) -->

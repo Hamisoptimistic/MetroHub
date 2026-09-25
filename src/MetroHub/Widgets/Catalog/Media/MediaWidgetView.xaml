@@ -27,103 +27,12 @@
             <Setter Property="Focusable" Value="False" />
         </Style>
 
-        <!-- Zune Pad Flanking Buttons (Previous / Next) -->
-        <Style x:Key="ZuneSideButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#14FFFFFF" />
-            <Setter Property="Foreground" Value="#B0FFFFFF" />
-            <Setter Property="BorderBrush" Value="#25FFFFFF" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="32" />
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="SideBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="16"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="SideBorder" Property="Background" Value="#2AFFFFFF" />
-                                <Setter TargetName="SideBorder" Property="BorderBrush" Value="#40FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="SideBorder" Property="Background" Value="#45FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.25" />
-                                <Setter Property="Cursor" Value="Arrow" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
 
-        <!-- Zune Play/Pause Sleek Button: Circular glass button matching chevron style -->
-        <Style x:Key="ZunePadButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#1CFFFFFF" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="BorderBrush" Value="#30FFFFFF" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Width" Value="38" />
-            <Setter Property="Height" Value="38" />
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="PlayBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="19"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="PlayBorder" Property="Background" Value="#32FFFFFF" />
-                                <Setter TargetName="PlayBorder" Property="BorderBrush" Value="#48FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="PlayBorder" Property="Background" Value="#45FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.25" />
-                                <Setter Property="Cursor" Value="Arrow" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- 100% GPU-drawn frozen OpacityMask for Horizon Aura spread (0 CPU / 0 allocations) -->
-        <LinearGradientBrush x:Key="HorizonAuraMaskBrush" StartPoint="0,1" EndPoint="0,0" po:Freeze="True">
-            <GradientStop Color="#E6000000" Offset="0.0" />
-            <GradientStop Color="#90000000" Offset="0.22" />
-            <GradientStop Color="#42000000" Offset="0.48" />
-            <GradientStop Color="#14000000" Offset="0.75" />
-            <GradientStop Color="#00000000" Offset="0.95" />
-        </LinearGradientBrush>
     </UserControl.Resources>
 
     <!-- Transparent WidgetCard to inherit the exact glass/acrylic tile background of other tiles -->
     <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True">
-            <!-- 0. Dynamic Album Horizon Aura (Expansive Horizon Aura, 100% GPU Direct3D) -->
-            <Border Background="{Binding AmbientGlowBrush}"
-                    OpacityMask="{StaticResource HorizonAuraMaskBrush}"
-                    CornerRadius="2"
-                    IsHitTestVisible="False" />
-
             <!-- ============================================================= -->
             <!-- 1. STANDARD LAYOUT (6x2, 8x3, 8x4)                            -->
             <!-- ============================================================= -->
@@ -311,12 +220,12 @@
                             </Button>
                         </StackPanel>
 
-                        <!-- Source Badge on Right (e.g. Spotify / YouTube) -->
+                        <!-- Source Badge on Right (e.g. Spotify / YouTube / Brave) -->
                         <TextBlock Text="{Binding SourceName}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Right"
                                    FontSize="12"
-                                   Foreground="#70FFFFFF"
+                                   Foreground="#FFFFFF"
                                    SnapsToDevicePixels="True"
                                    Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}" />
                     </Grid>
@@ -564,10 +473,7 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <!-- Hairline divider separating artwork from chin -->
-                        <Border Height="1" VerticalAlignment="Top" HorizontalAlignment="Stretch" Background="#20FFFFFF" Margin="0,-4,0,0" SnapsToDevicePixels="True" />
-
-                        <!-- Track Details placed cleanly below the divider -->
+                        <!-- Track Details placed cleanly below the artwork -->
                         <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,4,0,8">
                             <!-- Song Title -->
                             <TextBlock Text="{Binding Title}"
@@ -613,34 +519,38 @@
                             </TextBlock>
                         </StackPanel>
 
-                        <!-- Sleek Transport Controls (Prev, Sleek Circular Play/Pause, Next) -->
+                        <!-- Clean Transport Controls (Prev, Play/Pause, Next) -->
                         <StackPanel Grid.Row="1"
                                     Orientation="Horizontal"
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center">
                             <!-- Left Button: Backward / Previous Track -->
-                            <Button Style="{StaticResource ZuneSideButtonStyle}"
+                            <Button Style="{StaticResource MediaTransportButtonStyle}"
                                     Command="{Binding SkipPreviousCommand}"
                                     IsEnabled="{Binding CanSkipPrevious}"
                                     ToolTip="Previous Track"
+                                    Width="36"
+                                    Height="32"
                                     VerticalAlignment="Center"
-                                    Margin="0,0,16,0">
+                                    Margin="0,0,12,0">
                                 <TextBlock Text="&#xE76B;"
                                            FontFamily="{DynamicResource AppIconFontFamily}"
-                                           FontSize="13"
-                                           Foreground="#B5FFFFFF"
+                                           FontSize="15"
+                                           Foreground="#CAD7EA"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Center" />
                             </Button>
 
-                            <!-- Center: Sleek Circular Play / Pause Button matching chevrons -->
-                            <Button Style="{StaticResource ZunePadButtonStyle}"
+                            <!-- Center: Play / Pause Button -->
+                            <Button Style="{StaticResource MediaTransportButtonStyle}"
                                     Command="{Binding TogglePlayPauseCommand}"
                                     IsEnabled="{Binding CanPlayPause}"
                                     ToolTip="Play / Pause"
+                                    Width="40"
+                                    Height="34"
                                     VerticalAlignment="Center">
                                 <TextBlock FontFamily="{DynamicResource AppIconFontFamily}"
-                                           FontSize="16"
+                                           FontSize="18"
                                            Foreground="#FFFFFF"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Center">
@@ -660,16 +570,18 @@
                             </Button>
 
                             <!-- Right Button: Forward / Next Track -->
-                            <Button Style="{StaticResource ZuneSideButtonStyle}"
+                            <Button Style="{StaticResource MediaTransportButtonStyle}"
                                     Command="{Binding SkipNextCommand}"
                                     IsEnabled="{Binding CanSkipNext}"
                                     ToolTip="Next Track"
+                                    Width="36"
+                                    Height="32"
                                     VerticalAlignment="Center"
-                                    Margin="16,0,0,0">
+                                    Margin="12,0,0,0">
                                 <TextBlock Text="&#xE76C;"
                                            FontFamily="{DynamicResource AppIconFontFamily}"
-                                           FontSize="13"
-                                           Foreground="#B5FFFFFF"
+                                           FontSize="15"
+                                           Foreground="#CAD7EA"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Center" />
                             </Button>
