@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Must match the app TFM: the clock is exercised through the MetroHub assembly, which references WPF. -->
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -18,11 +17,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\MetroHub\MetroHub.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Captured media-sync traces, replayed through the clock by MediaSyncTraceReplayTests. -->
-    <None Include="Traces\**\*.jsonl" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

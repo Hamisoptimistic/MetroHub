@@ -2818,11 +2818,7 @@ protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
 
             if (current is FrameworkElement fe)
             {
-                if (fe.Tag as string == "InteractiveControl" ||
-                    fe.Name == "SeekbarContainer" ||
-                    fe.Name == "SeekThumb" ||
-                    fe.Name == "SeekTrackBg" ||
-                    fe.Name == "SeekProgressFill")
+                if (fe.Tag as string == "InteractiveControl")
                 {
                     return true;
                 }

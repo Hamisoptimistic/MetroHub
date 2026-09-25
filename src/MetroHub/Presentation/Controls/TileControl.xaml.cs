@@ -995,41 +995,10 @@ public partial class TileControl : UserControl
                 styleItem.Items.Add(horizonAuraItem);
                 styleItem.Items.Add(noneStyleItem);
 
-                var webNowPlayingItem = new MenuItem
-                {
-                    Header = string.IsNullOrWhiteSpace(mediaVm.WnpStatusText)
-                        ? "WebNowPlaying (Browser)"
-                        : $"WebNowPlaying — {mediaVm.WnpStatusText}",
-                    Tag = "WidgetCustomMenu",
-                    IsCheckable = true,
-                    IsChecked = mediaVm.IsWebNowPlayingEnabled,
-                    ToolTip = string.IsNullOrWhiteSpace(mediaVm.WnpStatusText)
-                        ? "Hosts the WebSocket the browser extension dials into."
-                        : $"{mediaVm.WnpStatusText}. Add a custom adapter in the extension with this host/port.",
-                    Icon = new Wpf.Ui.Controls.SymbolIcon
-                    {
-                        Symbol = Wpf.Ui.Controls.SymbolRegular.Globe24,
-                        FontSize = 20,
-                        Foreground = MenuIconForegroundBrush
-                    }
-                };
-                webNowPlayingItem.Click += (s, ev) => mediaVm.SetWebNowPlaying(!mediaVm.IsWebNowPlayingEnabled);
-
                 var mediaDivider = new Separator { Tag = "WidgetCustomMenu" };
                 TileContextMenu.Items.Insert(1, zuneActionItem);
                 TileContextMenu.Items.Insert(2, styleItem);
-                TileContextMenu.Items.Insert(3, webNowPlayingItem);
-                var wnpDebugItem = new MenuItem
-                {
-                    Header = string.IsNullOrWhiteSpace(mediaVm.WnpDebugText)
-                        ? "No browser frames yet"
-                        : mediaVm.WnpDebugText,
-                    Tag = "WidgetCustomMenu",
-                    IsEnabled = false,
-                    ToolTip = "Live browser feed: last snapshot + last seek answer. Screenshot this when seek misbehaves."
-                };
-                TileContextMenu.Items.Insert(4, wnpDebugItem);
-                TileContextMenu.Items.Insert(5, mediaDivider);
+                TileContextMenu.Items.Insert(3, mediaDivider);
             }
             else if (tile.TileContent is Widgets.Catalog.Quotes.QuotesWidgetViewModel quotesVm)
             {

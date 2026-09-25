@@ -198,21 +198,11 @@ MetroHub rests quietly in the Windows system tray when closed.
 - If an orphaned background process is alive (e.g. from a previous build or crash), any newly launched instance will immediately exit after ~0.5 seconds upon detecting the existing mutex owner.
 - Always ensure previous processes are cleanly terminated (`Stop-Process -Name MetroHub -Force`) before deploying or starting new builds.
 
----
-
-## 12. Windows Media Session (GSMTC) Synchronization & Concurrency Hygiene
-- **Single Authority (`MediaPlaybackClock`):** All seekbar position logic lives in `src/MetroHub/Core/Media/MediaPlaybackClock.cs`, and `MediaWidgetViewModel.PushSample` is the ONLY writer of the bound position, duration, progress, live, stall and time-text properties. Never reintroduce a second writer: no 250ms playback timer, no suppression windows, no seek-recovery flags, no stale-timestamp gates in the ViewModel. The previous per-guard machinery was deleted because its interacting heuristics kept re-breaking each other — every rule below now lives in one tested class.
-- **Deterministic by construction:** The clock mutates only through `Observe(MediaObservation)` (a source snapshot stamped with a caller-captured `Stopwatch` instant) and reads only through `Sample(nowTicks)`. It never reads a clock of its own, so identical observations always replay to identical output — which is why every real-world glitch can be captured as a JSONL trace (`MediaSyncTraceLogger`) and pinned forever by `tests/MetroHub.Tests/MediaSyncTraceReplayTests`.
-- **What the clock enforces — do not re-implement any of this in callers:**
-  - Chromium's transient 0:00 snapshots never move a bar that was deep into a long track; only a *confirmed* backward jump (>2 s, re-confirmed within the tolerance window) moves the bar back.
-  - While playing, the displayed position is monotonic (monotonic floor) and capped by the run-ahead budget (5 s). A player that keeps claiming Playing while staying silent reports `IsStalled` and holds — it never freezes silently and never creeps past its budget.
-  - Demand-driven refresh: `Sample().NeedsRefresh` requests exactly one authoritative source read. Never a polling loop, never a timer.
-  - Optimistic transport: `NotifyTransportRequested` honors user play/pause intent through a 1.5 s grace window; `NotifySeekRequested` rebases the floor and accepts the source's echo of the request without confirmation.
-  - Track identity (`Artist|Title|Album`) changes reset the clock atomically, so a new track starts clean at 0:00 while mid-track updates stay protected.
-  - Live-broadcast classification and latch clearing live in the clock (`IsKnownNonLiveSource`, `HasLiveTitleKeyword`, expanding-duration detection); a broadcast renders an inert bar, never a fake position.
-- **Event-driven delivery:** GSMTC events (`PlaybackInfoChanged`, `TimelinePropertiesChanged`) arrive on arbitrary thread-pool threads and may be delayed, dropped, or out of order — marshal to the UI dispatcher (`RunOnUi`) and mutate under `_stateLock`. Transport events carry no timeline: `ApplyPlaybackInfo` feeds `ObserveTransport` only and must never push a position; position flows exclusively through `ApplyTimelineProperties` → `ObserveAndPush`.
-- **WebNowPlaying adapter (opt-in):** `src/MetroHub/Core/Media/WebNowPlaying` hosts the WebSocket the WebNowPlaying browser extension connects to (protocol revision 3, loopback port 8642, off by default via the widget's context menu). While `_wnpOwnsDisplay` is set, every SMTC path is muted so two sources can never fight over the clock; when browser media stops reporting, the widget resyncs from SMTC. Snapshots from either source go through the same `ObserveAndPush` path, so tracing and replay cover both.
-- **Trace workflow for bug reports:** see `BUG_FIXING_PROTOCOL.md` § 7.2b — capture with `MediaSyncTraceLogger`, commit an input-only fixture under `tests/MetroHub.Tests/Traces/`, and assert invariants in the replay harness instead of hardcoded positions.
+---## 12. Windows Media Session (GSMTC) Synchronization & Event-Driven Hygiene
+- **Event-Driven via SMTC (`Dubya.WindowsMediaController`):** MetroHub connects directly to Windows System Media Transport Controls (SMTC) via event callbacks (`OnAnyPlaybackStateChanged`, `OnAnyMediaPropertyChanged`, `OnAnySessionOpened`, `OnAnySessionClosed`). There are no background web servers, no open ports, and no polling timers. Idle CPU is 0.0%.
+- **Lightweight State Management:** Track metadata (Title, Artist, Album, Thumbnail) and transport commands (Prev, Play/Pause, Next) are handled cleanly. Raw thumbnail bytes are cached in managed memory to allow instant 0ms restoration when resuming from a hidden state without keeping uncompressed DirectX bitmap surfaces resident in memory.
+- **Thread Marshaling:** SMTC events arrive on background thread-pool threads — marshal to the UI dispatcher (`RunOnUi`) and update UI properties cleanly.
+- **De-Bloated Design:** WebNowPlaying web sockets, browser DOM scraping heuristics, and complex run-ahead clocks have been permanently removed in favor of native OS-level integration.
 
 ---
 

@@ -134,342 +134,198 @@
                     <RowDefinition Height="38" />   <!-- Row 1: Fluent Acrylic Strip: Sound Source (Left) + Controls (Far Right) -->
                 </Grid.RowDefinitions>
 
-            <!-- Row 0: Top Section (Track Info + Elevated Album Art) -->
-            <Grid Grid.Row="0">
-                <!-- Album Art Container on Right Side -->
-                <Grid HorizontalAlignment="Right"
-                      VerticalAlignment="Center"
-                      Margin="{Binding AlbumArtMargin}">
+                <!-- Row 0: Top Section (Track Info + Elevated Album Art) -->
+                <Grid Grid.Row="0">
+                    <!-- Album Art Container on Right Side -->
+                    <Grid HorizontalAlignment="Right"
+                          VerticalAlignment="Center"
+                          Margin="{Binding AlbumArtMargin}">
 
-                    <!-- 1. Album Cover with Guaranteed 2px Rounded Corners matching Tiles -->
-                    <Border Width="{Binding AlbumArtSize}"
-                            Height="{Binding AlbumArtSize}"
-                            CornerRadius="2"
-                            BorderBrush="#38FFFFFF"
-                            BorderThickness="1"
-                            SnapsToDevicePixels="True"
-                            UseLayoutRounding="True"
-                            RenderOptions.BitmapScalingMode="HighQuality"
-                            Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}">
-                        <Border.Background>
-                            <ImageBrush ImageSource="{Binding Thumbnail, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
-                                        Stretch="UniformToFill"
-                                        RenderOptions.BitmapScalingMode="HighQuality" />
-                        </Border.Background>
-                    </Border>
+                        <!-- 1. Album Cover with Guaranteed 2px Rounded Corners matching Tiles -->
+                        <Border Width="{Binding AlbumArtSize}"
+                                Height="{Binding AlbumArtSize}"
+                                CornerRadius="2"
+                                BorderBrush="#38FFFFFF"
+                                BorderThickness="1"
+                                SnapsToDevicePixels="True"
+                                UseLayoutRounding="True"
+                                RenderOptions.BitmapScalingMode="HighQuality"
+                                Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}">
+                            <Border.Background>
+                                <ImageBrush ImageSource="{Binding Thumbnail, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                                            Stretch="UniformToFill"
+                                            RenderOptions.BitmapScalingMode="HighQuality" />
+                            </Border.Background>
+                        </Border>
 
-                    <!-- 2. Fallback Watermark Box when no album art is available -->
-                    <Border Width="{Binding AlbumArtSize}"
-                            Height="{Binding AlbumArtSize}"
-                            CornerRadius="2"
-                            Background="#14FFFFFF"
-                            BorderBrush="#20FFFFFF"
-                            BorderThickness="1"
-                            SnapsToDevicePixels="True"
-                            UseLayoutRounding="True">
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasThumbnail}" Value="False">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <TextBlock Text="&#xE8D6;"
-                                   FontFamily="{DynamicResource AppIconFontFamily}"
-                                   FontSize="{Binding FallbackWatermarkFontSize}"
-                                   Foreground="#25FFFFFF"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center" />
-                    </Border>
-                </Grid>
-
-                <!-- Left Content: Track Title, Artist, Album/Feature -->
-                <Grid HorizontalAlignment="Left"
-                      VerticalAlignment="Center"
-                      Margin="{Binding TrackInfoMargin}">
-                    <StackPanel>
-                        <!-- Track Title -->
-                        <TextBlock Text="{Binding Title}"
-                                   FontSize="{Binding TrackTitleFontSize}"
-                                   FontWeight="SemiBold"
-                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                   Foreground="#FFFFFF"
-                                   TextTrimming="CharacterEllipsis"
-                                   TextWrapping="NoWrap"
-                                   Margin="0,0,0,3" />
-
-                        <!-- Artist Name -->
-                        <TextBlock Text="{Binding Artist}"
-                                   FontSize="{Binding ArtistFontSize}"
-                                   FontWeight="Normal"
-                                   Foreground="#D2D7E2"
-                                   TextTrimming="CharacterEllipsis"
-                                   TextWrapping="NoWrap"
-                                   Margin="0,0,0,4">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Visible" />
+                        <!-- 2. Fallback Watermark Box when no album art is available -->
+                        <Border Width="{Binding AlbumArtSize}"
+                                Height="{Binding AlbumArtSize}"
+                                CornerRadius="2"
+                                Background="#14FFFFFF"
+                                BorderBrush="#20FFFFFF"
+                                BorderThickness="1"
+                                SnapsToDevicePixels="True"
+                                UseLayoutRounding="True">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed" />
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding Artist}" Value="">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding Artist}" Value="{x:Null}">
-                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        <DataTrigger Binding="{Binding HasThumbnail}" Value="False">
+                                            <Setter Property="Visibility" Value="Visible" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-
-                        <!-- Album / Feature Detail with Note Glyph (♫) -->
-                        <StackPanel Orientation="Horizontal"
-                                    Visibility="{Binding ShowAlbumRow, Converter={StaticResource BoolToVis}}"
-                                    Margin="0,1,0,0">
+                            </Border.Style>
                             <TextBlock Text="&#xE8D6;"
                                        FontFamily="{DynamicResource AppIconFontFamily}"
-                                       FontSize="11"
-                                       Foreground="#9DA5B4"
-                                       VerticalAlignment="Center"
-                                       Margin="0,1,6,0" />
-                            <TextBlock Text="{Binding Album}"
-                                       FontSize="13"
-                                       FontWeight="Normal"
-                                       Foreground="#9DA5B4"
+                                       FontSize="{Binding FallbackWatermarkFontSize}"
+                                       Foreground="#25FFFFFF"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                        </Border>
+                    </Grid>
+
+                    <!-- Left Content: Track Title, Artist, Album/Feature -->
+                    <Grid HorizontalAlignment="Left"
+                          VerticalAlignment="Center"
+                          Margin="{Binding TrackInfoMargin}">
+                        <StackPanel>
+                            <!-- Track Title -->
+                            <TextBlock Text="{Binding Title}"
+                                       FontSize="{Binding TrackTitleFontSize}"
+                                       FontWeight="SemiBold"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       Foreground="#FFFFFF"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-                    </StackPanel>
-                </Grid>
-            </Grid>
+                                       Margin="0,0,0,3" />
 
-            <!-- Row 1: Bottom Docked Bar: Transport Controls + Live Playback Time (Matches Focus Timer) -->
-            <Border Grid.Row="1"
-                    Background="#14000000"
-                    BorderThickness="0"
-                    CornerRadius="0,0,2,2"
-                    SnapsToDevicePixels="True"
-                    Padding="{Binding PlaybackBarPadding}">
-                <Grid>
-                    <!-- Transport Controls (< ▷ >) Aligned with Title Name on Left -->
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Center"
-                                Margin="{Binding TransportControlsMargin}">
-                        <!-- Previous Track (<) -->
-                        <Button Style="{StaticResource MediaTransportButtonStyle}"
-                                Command="{Binding SkipPreviousCommand}"
-                                IsEnabled="{Binding CanSkipPrevious}"
-                                ToolTip="Previous">
-                            <TextBlock Text="&#xE76B;"
-                                       FontFamily="{DynamicResource AppIconFontFamily}"
-                                       FontSize="15"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center" />
-                        </Button>
-
-                        <!-- Play / Pause (▷ or ||) -->
-                        <Button Style="{StaticResource MediaTransportButtonStyle}"
-                                Command="{Binding TogglePlayPauseCommand}"
-                                IsEnabled="{Binding CanPlayPause}"
-                                Margin="4,0"
-                                ToolTip="Play / Pause">
-                            <TextBlock x:Name="PlayPauseIcon"
-                                       FontFamily="{DynamicResource AppIconFontFamily}"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="&#xE768;" />
-                                        <Setter Property="FontSize" Value="15" />
-                                        <Setter Property="Margin" Value="0" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                                <Setter Property="Text" Value="&#xE769;" />
-                                                <Setter Property="FontSize" Value="16" />
-                                                <Setter Property="Margin" Value="0" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Button>
-
-                        <!-- Next Track (>) -->
-                        <Button Style="{StaticResource MediaTransportButtonStyle}"
-                                Command="{Binding SkipNextCommand}"
-                                IsEnabled="{Binding CanSkipNext}"
-                                ToolTip="Next">
-                            <TextBlock Text="&#xE76C;"
-                                       FontFamily="{DynamicResource AppIconFontFamily}"
-                                       FontSize="15"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center" />
-                        </Button>
-                    </StackPanel>
-
-                    <!-- Live Track Playback Time Readout / Live Stream Badge on Right -->
-                    <Border HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Height="28"
-                            SnapsToDevicePixels="True">
-                        <Grid VerticalAlignment="Center">
-                            <!-- Standard Track Playback Time Readout (e.g. 1:24 / 3:45) -->
-                            <TextBlock Text="{Binding TimeDisplayString}"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Right"
-                                       FontSize="13"
+                            <!-- Artist Name -->
+                            <TextBlock Text="{Binding Artist}"
+                                       FontSize="{Binding ArtistFontSize}"
                                        FontWeight="Normal"
-                                       Foreground="#D0FFFFFF"
-                                       SnapsToDevicePixels="True">
+                                       Foreground="#D2D7E2"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextWrapping="NoWrap"
+                                       Margin="0,0,0,4">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Visibility" Value="Visible" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasMedia}" Value="False">
+                                            <DataTrigger Binding="{Binding Artist}" Value="">
                                                 <Setter Property="Visibility" Value="Collapsed" />
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding TimeDisplayString}" Value="">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsLive}" Value="True">
+                                            <DataTrigger Binding="{Binding Artist}" Value="{x:Null}">
                                                 <Setter Property="Visibility" Value="Collapsed" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </Border>
 
-            <!-- Edge-to-Edge Hairline Fluent Seekbar running along the top boundary of Row 1 (Matches Focus Timer) -->
-            <Grid x:Name="SeekbarContainer"
-                  Grid.Row="1"
-                  VerticalAlignment="Top"
-                  Height="14"
-                  Margin="0,-7,0,0"
-                  Background="Transparent"
-                  Focusable="False"
-                  Tag="InteractiveControl"
-                  PreviewMouseLeftButtonDown="Seekbar_PreviewMouseLeftButtonDown"
-                  MouseEnter="Seekbar_MouseEnter"
-                  MouseLeave="Seekbar_MouseLeave"
-                  MouseLeftButtonDown="Seekbar_MouseLeftButtonDown"
-                  MouseMove="Seekbar_MouseMove"
-                  MouseLeftButtonUp="Seekbar_MouseLeftButtonUp"
-                  LostMouseCapture="Seekbar_LostMouseCapture"
-                  SizeChanged="Seekbar_SizeChanged"
-                  SnapsToDevicePixels="True">
-                <Grid.Style>
-                    <Style TargetType="Grid">
-                        <Setter Property="Visibility" Value="Visible" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding HasMedia}" Value="False">
-                                <Setter Property="Cursor" Value="Arrow" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding IsLive}" Value="True">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding CanSeek}" Value="False">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Grid.Style>
-
-                <!-- 1. Hairline Fluent Seekbar Track Group (Smooth GPU ScaleY transform on hover/drag - zero layout invalidation) -->
-                <Grid x:Name="SeekTrackGroup"
-                      VerticalAlignment="Center"
-                      RenderTransformOrigin="0.5,0.5">
-                    <Grid.RenderTransform>
-                        <ScaleTransform x:Name="SeekTrackScale" ScaleY="1.0" />
-                    </Grid.RenderTransform>
-
-                    <!-- Background Hairline Track (2px tall #14FFFFFF) -->
-                    <Border x:Name="SeekTrackBg"
-                            Height="2"
-                            HorizontalAlignment="Stretch"
-                            Background="#14FFFFFF"
-                            CornerRadius="1"
-                            SnapsToDevicePixels="True" />
-
-                    <!-- Elapsed Progress Fill Track: Accent Color Bar + Luminous Specular Shimmer -->
-                    <Grid x:Name="SeekProgressContainer"
-                          Height="2"
-                          HorizontalAlignment="Stretch"
-                          SnapsToDevicePixels="True">
-                        <Grid.Clip>
-                            <RectangleGeometry x:Name="SeekProgressClip" Rect="0,-5,0,24" />
-                        </Grid.Clip>
-
-                        <!-- Base Played Accent Color Bar -->
-                        <Border x:Name="SeekProgressFill"
-                                Height="2"
-                                HorizontalAlignment="Stretch"
-                                Background="{Binding SeekbarBrush}"
-                                CornerRadius="1"
-                                SnapsToDevicePixels="True" />
-
-                        <!-- Luminous Light Reflection Sweeping Across Played Track -->
-                        <Rectangle x:Name="SeekShimmer"
-                                   Width="70"
-                                   Height="6"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Left"
-                                   IsHitTestVisible="False"
-                                   Opacity="0.0"
-                                   SnapsToDevicePixels="True">
-                            <Rectangle.Fill>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="#00FFFFFF" Offset="0.0" />
-                                    <GradientStop Color="#60FFFFFF" Offset="0.25" />
-                                    <GradientStop Color="#E8FFFFFF" Offset="0.5" />
-                                    <GradientStop Color="#60FFFFFF" Offset="0.75" />
-                                    <GradientStop Color="#00FFFFFF" Offset="1.0" />
-                                </LinearGradientBrush>
-                            </Rectangle.Fill>
-                            <Rectangle.RenderTransform>
-                                <TranslateTransform x:Name="SeekShimmerTranslate" X="-80" />
-                            </Rectangle.RenderTransform>
-                        </Rectangle>
+                            <!-- Album / Feature Detail with Note Glyph (♫) -->
+                            <StackPanel Orientation="Horizontal"
+                                        Visibility="{Binding ShowAlbumRow, Converter={StaticResource BoolToVis}}"
+                                        Margin="0,1,0,0">
+                                <TextBlock Text="&#xE8D6;"
+                                           FontFamily="{DynamicResource AppIconFontFamily}"
+                                           FontSize="11"
+                                           Foreground="#9DA5B4"
+                                           VerticalAlignment="Center"
+                                           Margin="0,1,6,0" />
+                                <TextBlock Text="{Binding Album}"
+                                           FontSize="13"
+                                           FontWeight="Normal"
+                                           Foreground="#9DA5B4"
+                                           TextTrimming="CharacterEllipsis"
+                                           TextWrapping="NoWrap"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </StackPanel>
                     </Grid>
                 </Grid>
 
-                <!-- 3. Fluent Circular Thumb Container (Ring thumb with gap spacing, always visible) -->
-                <Grid x:Name="SeekThumb"
-                      HorizontalAlignment="Left"
-                      VerticalAlignment="Center"
-                      IsHitTestVisible="False"
-                      Opacity="1"
-                      RenderTransformOrigin="0.5,0.5">
-                    <Grid.RenderTransform>
-                        <TransformGroup>
-                            <ScaleTransform x:Name="SeekThumbScale" ScaleX="0.85" ScaleY="0.85" />
-                            <TranslateTransform x:Name="SeekThumbTranslate" X="0" />
-                        </TransformGroup>
-                    </Grid.RenderTransform>
+                <!-- Row 1: Bottom Docked Bar: Transport Controls + Source Readout -->
+                <Border Grid.Row="1"
+                        Background="#14000000"
+                        BorderThickness="0"
+                        CornerRadius="0,0,2,2"
+                        SnapsToDevicePixels="True"
+                        Padding="{Binding PlaybackBarPadding}">
+                    <Grid>
+                        <!-- Transport Controls (< ▷ >) Aligned with Title Name on Left -->
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Margin="{Binding TransportControlsMargin}">
+                            <!-- Previous Track (<) -->
+                            <Button Style="{StaticResource MediaTransportButtonStyle}"
+                                    Command="{Binding SkipPreviousCommand}"
+                                    IsEnabled="{Binding CanSkipPrevious}"
+                                    ToolTip="Previous">
+                                <TextBlock Text="&#xE76B;"
+                                           FontFamily="{DynamicResource AppIconFontFamily}"
+                                           FontSize="15"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center" />
+                            </Button>
 
-                    <!-- Hollow ring thumb: crisp white outer ring with transparent center -->
-                    <Ellipse x:Name="SeekThumbDot"
-                             Width="14"
-                             Height="14"
-                             Fill="Transparent"
-                             Stroke="#FFFFFF"
-                             StrokeThickness="2.5"
-                             HorizontalAlignment="Center"
-                             VerticalAlignment="Center" />
-                </Grid>
-            </Grid>
+                            <!-- Play / Pause (▷ or ||) -->
+                            <Button Style="{StaticResource MediaTransportButtonStyle}"
+                                    Command="{Binding TogglePlayPauseCommand}"
+                                    IsEnabled="{Binding CanPlayPause}"
+                                    Margin="4,0"
+                                    ToolTip="Play / Pause">
+                                <TextBlock x:Name="PlayPauseIcon"
+                                           FontFamily="{DynamicResource AppIconFontFamily}"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="&#xE768;" />
+                                            <Setter Property="FontSize" Value="15" />
+                                            <Setter Property="Margin" Value="0" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                    <Setter Property="Text" Value="&#xE769;" />
+                                                    <Setter Property="FontSize" Value="16" />
+                                                    <Setter Property="Margin" Value="0" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Button>
+
+                            <!-- Next Track (>) -->
+                            <Button Style="{StaticResource MediaTransportButtonStyle}"
+                                    Command="{Binding SkipNextCommand}"
+                                    IsEnabled="{Binding CanSkipNext}"
+                                    ToolTip="Next">
+                                <TextBlock Text="&#xE76C;"
+                                           FontFamily="{DynamicResource AppIconFontFamily}"
+                                           FontSize="15"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center" />
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Source Badge on Right (e.g. Spotify / YouTube) -->
+                        <TextBlock Text="{Binding SourceName}"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Right"
+                                   FontSize="12"
+                                   Foreground="#70FFFFFF"
+                                   SnapsToDevicePixels="True"
+                                   Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}" />
+                    </Grid>
+                </Border>
             </Grid>
 
             <!-- ============================================================= -->
             <!-- 2. SLIM CONTROLLER LAYOUT (4x1: 248x56px)                     -->
-            <!-- [ ▷ Play ] ========== Seekbar / No media ========== [ 1:24 ]  -->
+            <!-- [ ▷ Play ] ========== Track Title / Artist ========== [ < > ] -->
             <!-- ============================================================= -->
             <Grid Visibility="{Binding IsSlimMode, Converter={StaticResource BoolToVis}}"
                   Margin="14,0,14,0"
@@ -479,9 +335,9 @@
                 <Grid.ColumnDefinitions>
                     <!-- Col 0: Single Play/Pause Button -->
                     <ColumnDefinition Width="Auto" />
-                    <!-- Col 1: Center Area (Seekbar or 'No media playing' label) -->
+                    <!-- Col 1: Center Area (Track info or 'No media playing' label) -->
                     <ColumnDefinition Width="*" />
-                    <!-- Col 2: Track Timing Readout -->
+                    <!-- Col 2: Previous & Next Buttons -->
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
@@ -524,132 +380,70 @@
                                TextTrimming="CharacterEllipsis"
                                Visibility="{Binding HasNoMedia, Converter={StaticResource BoolToVis}}" />
 
-                    <!-- Active State: Interactive Hairline Seekbar -->
-                    <Grid x:Name="SlimSeekbarContainer"
-                          Height="18"
-                          VerticalAlignment="Center"
-                          Background="Transparent"
-                          Focusable="False"
-                          Tag="InteractiveControl"
-                          Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}"
-                          PreviewMouseLeftButtonDown="Seekbar_PreviewMouseLeftButtonDown"
-                          MouseEnter="Seekbar_MouseEnter"
-                          MouseLeave="Seekbar_MouseLeave"
-                          MouseLeftButtonDown="Seekbar_MouseLeftButtonDown"
-                          MouseMove="Seekbar_MouseMove"
-                          MouseLeftButtonUp="Seekbar_MouseLeftButtonUp"
-                          LostMouseCapture="Seekbar_LostMouseCapture"
-                          SizeChanged="Seekbar_SizeChanged"
-                          SnapsToDevicePixels="True">
-                        <Grid.Style>
-                            <Style TargetType="Grid">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasMedia}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsLive}" Value="True">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding CanSeek}" Value="False">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Grid.Style>
-
-                        <!-- Track Group -->
-                        <Grid x:Name="SlimSeekTrackGroup"
-                              VerticalAlignment="Center"
-                              RenderTransformOrigin="0.5,0.5">
-                            <Grid.RenderTransform>
-                                <ScaleTransform x:Name="SlimSeekTrackScale" ScaleY="1.0" />
-                            </Grid.RenderTransform>
-
-                            <!-- Background Hairline Track -->
-                            <Border x:Name="SlimSeekTrackBg"
-                                    Height="2"
-                                    HorizontalAlignment="Stretch"
-                                    Background="#14FFFFFF"
-                                    CornerRadius="1"
-                                    SnapsToDevicePixels="True" />
-
-                            <!-- Elapsed Progress Track -->
-                            <Grid x:Name="SlimSeekProgressContainer"
-                                  Height="2"
-                                  HorizontalAlignment="Stretch"
-                                  SnapsToDevicePixels="True">
-                                <Grid.Clip>
-                                    <RectangleGeometry x:Name="SlimSeekProgressClip" Rect="0,-5,0,24" />
-                                </Grid.Clip>
-                                <Border x:Name="SlimSeekProgressFill"
-                                        Height="2"
-                                        HorizontalAlignment="Stretch"
-                                        Background="{Binding SeekbarBrush}"
-                                        CornerRadius="1"
-                                        SnapsToDevicePixels="True" />
-
-                                <!-- Shimmer Light Reflection -->
-                                <Rectangle x:Name="SlimSeekShimmer"
-                                           Width="50"
-                                           Height="6"
-                                           VerticalAlignment="Center"
-                                           HorizontalAlignment="Left"
-                                           IsHitTestVisible="False"
-                                           Opacity="0.0"
-                                           SnapsToDevicePixels="True">
-                                    <Rectangle.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#00FFFFFF" Offset="0.0" />
-                                            <GradientStop Color="#60FFFFFF" Offset="0.25" />
-                                            <GradientStop Color="#E8FFFFFF" Offset="0.5" />
-                                            <GradientStop Color="#60FFFFFF" Offset="0.75" />
-                                            <GradientStop Color="#00FFFFFF" Offset="1.0" />
-                                        </LinearGradientBrush>
-                                    </Rectangle.Fill>
-                                    <Rectangle.RenderTransform>
-                                        <TranslateTransform x:Name="SlimSeekShimmerTranslate" X="-60" />
-                                    </Rectangle.RenderTransform>
-                                </Rectangle>
-                            </Grid>
-                        </Grid>
-
-                        <!-- Circular Thumb -->
-                        <Grid x:Name="SlimSeekThumb"
-                              HorizontalAlignment="Left"
-                              VerticalAlignment="Center"
-                              IsHitTestVisible="False"
-                              Opacity="1"
-                              RenderTransformOrigin="0.5,0.5">
-                            <Grid.RenderTransform>
-                                <TransformGroup>
-                                    <ScaleTransform x:Name="SlimSeekThumbScale" ScaleX="0.85" ScaleY="0.85" />
-                                    <TranslateTransform x:Name="SlimSeekThumbTranslate" X="0" />
-                                </TransformGroup>
-                            </Grid.RenderTransform>
-                            <Ellipse x:Name="SlimSeekThumbDot"
-                                     Width="14"
-                                     Height="14"
-                                     Fill="Transparent"
-                                     Stroke="#FFFFFF"
-                                     StrokeThickness="2.5"
-                                     HorizontalAlignment="Center"
-                                     VerticalAlignment="Center" />
-                        </Grid>
-                    </Grid>
+                    <!-- Active State: Track Title & Artist -->
+                    <StackPanel VerticalAlignment="Center"
+                                Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="{Binding Title}"
+                                   FontSize="12.5"
+                                   FontWeight="SemiBold"
+                                   Foreground="#FFFFFF"
+                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                   TextTrimming="CharacterEllipsis"
+                                   TextWrapping="NoWrap" />
+                        <TextBlock Text="{Binding Artist}"
+                                   FontSize="11"
+                                   Foreground="#CAD7EA"
+                                   TextTrimming="CharacterEllipsis"
+                                   TextWrapping="NoWrap"
+                                   Margin="0,1,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Artist}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Artist}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
                 </Grid>
 
-                <!-- Col 2: Track Timing Readout -->
-                <TextBlock Grid.Column="2"
-                           Text="{Binding TimeDisplayString}"
-                           FontSize="11.5"
-                           FontWeight="Normal"
-                           Foreground="#C8FFFFFF"
-                           Typography.NumeralAlignment="Tabular"
-                           VerticalAlignment="Center"
-                           HorizontalAlignment="Right"
-                           SnapsToDevicePixels="True"
-                           Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}" />
+                <!-- Col 2: Previous & Next Buttons -->
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}">
+                    <Button Style="{StaticResource MediaTransportButtonStyle}"
+                            Command="{Binding SkipPreviousCommand}"
+                            IsEnabled="{Binding CanSkipPrevious}"
+                            Width="26"
+                            Height="26"
+                            ToolTip="Previous">
+                        <TextBlock Text="&#xE76B;"
+                                   FontFamily="{DynamicResource AppIconFontFamily}"
+                                   FontSize="13"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center" />
+                    </Button>
+                    <Button Style="{StaticResource MediaTransportButtonStyle}"
+                            Command="{Binding SkipNextCommand}"
+                            IsEnabled="{Binding CanSkipNext}"
+                            Width="26"
+                            Height="26"
+                            Margin="2,0,0,0"
+                            ToolTip="Next">
+                        <TextBlock Text="&#xE76C;"
+                                   FontFamily="{DynamicResource AppIconFontFamily}"
+                                   FontSize="13"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center" />
+                    </Button>
+                </StackPanel>
             </Grid>
 
             <!-- ============================================================= -->
@@ -673,7 +467,7 @@
                     <Grid Visibility="{Binding HasNoMedia, Converter={StaticResource BoolToVis}}"
                           Background="#05070A">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <!-- Official Zune Geometric Vector Logo (100% Vector, Pure Transparency, Perfect Optical Alignment) -->
+                            <!-- Official Zune Geometric Vector Logo -->
                             <Path Width="60" Height="68"
                                   Stretch="Uniform"
                                   HorizontalAlignment="Center"
@@ -764,14 +558,17 @@
 
                     <Grid VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="16,4,16,6">
                         <Grid.RowDefinitions>
-                            <!-- Row 0: Track Information (Title, Artist, Time) -->
+                            <!-- Row 0: Track Information (Title, Artist) -->
                             <RowDefinition Height="Auto" />
                             <!-- Row 1: Transport Controls (Prev, Play/Pause, Next) -->
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
+                        <!-- Hairline divider separating artwork from chin -->
+                        <Border Height="1" VerticalAlignment="Top" HorizontalAlignment="Stretch" Background="#20FFFFFF" Margin="0,-4,0,0" SnapsToDevicePixels="True" />
+
                         <!-- Track Details placed cleanly below the divider -->
-                        <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,8">
+                        <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,4,0,8">
                             <!-- Song Title -->
                             <TextBlock Text="{Binding Title}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
@@ -808,34 +605,6 @@
                                                 <Setter Property="Visibility" Value="Collapsed" />
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Artist}" Value="{x:Null}">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-
-                            <!-- Live Playback Time Readout -->
-                            <TextBlock Text="{Binding TimeDisplayString}"
-                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       FontSize="12"
-                                       FontWeight="Normal"
-                                       Foreground="#90FFFFFF"
-                                       HorizontalAlignment="Center"
-                                       TextAlignment="Center"
-                                       Margin="0,2,0,0"
-                                       SnapsToDevicePixels="True">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding HasMedia}" Value="False">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding TimeDisplayString}" Value="">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsLive}" Value="True">
                                                 <Setter Property="Visibility" Value="Collapsed" />
                                             </DataTrigger>
                                         </Style.Triggers>
@@ -907,117 +676,6 @@
                         </StackPanel>
                     </Grid>
                 </Border>
-
-                <!-- Edge-to-Edge Hairline Seekbar on Top Edge of Acrylic Chin (Zero Overlap with Artwork) -->
-                <Grid x:Name="ZuneSeekbarContainer"
-                      Grid.Row="1"
-                      VerticalAlignment="Top"
-                      Height="12"
-                      Margin="0,0,0,0"
-                      Panel.ZIndex="10"
-                      Background="Transparent"
-                      Focusable="False"
-                      Tag="InteractiveControl"
-                      PreviewMouseLeftButtonDown="Seekbar_PreviewMouseLeftButtonDown"
-                      MouseEnter="Seekbar_MouseEnter"
-                      MouseLeave="Seekbar_MouseLeave"
-                      MouseLeftButtonDown="Seekbar_MouseLeftButtonDown"
-                      MouseMove="Seekbar_MouseMove"
-                      MouseLeftButtonUp="Seekbar_MouseLeftButtonUp"
-                      LostMouseCapture="Seekbar_LostMouseCapture"
-                      SizeChanged="Seekbar_SizeChanged"
-                      SnapsToDevicePixels="True">
-                    <Grid.Style>
-                        <Style TargetType="Grid">
-                            <Setter Property="Visibility" Value="Visible" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding HasMedia}" Value="False">
-                                    <Setter Property="Cursor" Value="Arrow" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding CanSeek}" Value="False">
-                                    <Setter Property="Cursor" Value="Arrow" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Grid.Style>
-
-                    <!-- Seekbar Hairline Track (Seamlessly Flush against Album Art) -->
-                    <Grid x:Name="ZuneSeekTrackGroup"
-                          VerticalAlignment="Top"
-                          RenderTransformOrigin="0.5,0">
-                        <Grid.RenderTransform>
-                            <ScaleTransform x:Name="ZuneSeekTrackScale" ScaleY="1.0" />
-                        </Grid.RenderTransform>
-
-                        <!-- Base Hairline Background Track (Divider line) -->
-                        <Border x:Name="ZuneSeekTrackBg"
-                                Height="2"
-                                HorizontalAlignment="Stretch"
-                                Background="#50FFFFFF"
-                                CornerRadius="0"
-                                SnapsToDevicePixels="True" />
-
-                        <!-- Progress Fill -->
-                        <Grid x:Name="ZuneSeekProgressContainer"
-                              Height="2"
-                              HorizontalAlignment="Stretch"
-                              SnapsToDevicePixels="True">
-                            <Grid.Clip>
-                                <RectangleGeometry x:Name="ZuneSeekProgressClip" Rect="0,-5,0,24" />
-                            </Grid.Clip>
-                            <Border x:Name="ZuneSeekProgressFill"
-                                    Height="2"
-                                    HorizontalAlignment="Stretch"
-                                    CornerRadius="0"
-                                    Background="{Binding SeekbarBrush}"
-                                    SnapsToDevicePixels="True" />
-
-                            <Rectangle x:Name="ZuneSeekShimmer"
-                                       Width="50"
-                                       Height="6"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Left"
-                                       IsHitTestVisible="False"
-                                       Opacity="0.0"
-                                       SnapsToDevicePixels="True">
-                                <Rectangle.Fill>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Color="#00FFFFFF" Offset="0.0" />
-                                        <GradientStop Color="#70FFFFFF" Offset="0.5" />
-                                        <GradientStop Color="#00FFFFFF" Offset="1.0" />
-                                    </LinearGradientBrush>
-                                </Rectangle.Fill>
-                                <Rectangle.RenderTransform>
-                                    <TranslateTransform x:Name="ZuneSeekShimmerTranslate" X="-60" />
-                                </Rectangle.RenderTransform>
-                            </Rectangle>
-                        </Grid>
-                    </Grid>
-
-                    <!-- Circular Thumb Dot -->
-                    <Grid x:Name="ZuneSeekThumb"
-                          HorizontalAlignment="Left"
-                          VerticalAlignment="Top"
-                          Margin="0,-6,0,0"
-                          IsHitTestVisible="False"
-                          Opacity="1"
-                          RenderTransformOrigin="0.5,0.5">
-                        <Grid.RenderTransform>
-                            <TransformGroup>
-                                <ScaleTransform x:Name="ZuneSeekThumbScale" ScaleX="0.85" ScaleY="0.85" />
-                                <TranslateTransform x:Name="ZuneSeekThumbTranslate" X="0" />
-                            </TransformGroup>
-                        </Grid.RenderTransform>
-                        <Ellipse x:Name="ZuneSeekThumbDot"
-                                 Width="14"
-                                 Height="14"
-                                 Fill="Transparent"
-                                 Stroke="#FFFFFF"
-                                 StrokeThickness="2.5"
-                                 HorizontalAlignment="Center"
-                                 VerticalAlignment="Center" />
-                    </Grid>
-                </Grid>
             </Grid>
         </Grid>
     </widgets:WidgetCard>
