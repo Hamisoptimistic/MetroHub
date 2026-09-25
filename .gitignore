@@ -20,6 +20,8 @@ publish/
 scratch_*
 
 # Diagnostic traces, profiling artifacts, counters, dumps & logs
+logs/
+diagnostics/
 *.nettrace
 *.speedscope.json
 *.speedscope
@@ -33,3 +35,4 @@ desktop_*.json
 *.log
 
 videoplayback.webm
+

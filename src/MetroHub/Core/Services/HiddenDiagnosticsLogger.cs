@@ -14,7 +14,7 @@ public static class HiddenDiagnosticsLogger
 {
     public static bool IsEnabled { get; set; } = true;
 
-    private static string _logFilePath = @"d:\MetroHub\hidden_diagnostics.log";
+    private static string _logFilePath = @"d:\MetroHub\logs\hidden_diagnostics.log";
     private static readonly object _lock = new();
     private static volatile bool _isHubHidden = false;
 
@@ -27,12 +27,17 @@ public static class HiddenDiagnosticsLogger
             string dir = Path.GetDirectoryName(_logFilePath) ?? string.Empty;
             if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir))
             {
-                _logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "hidden_diagnostics.log");
+                _logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "hidden_diagnostics.log");
+            }
+            string? targetDir = Path.GetDirectoryName(_logFilePath);
+            if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir))
+            {
+                Directory.CreateDirectory(targetDir);
             }
         }
         catch
         {
-            _logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "hidden_diagnostics.log");
+            _logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "hidden_diagnostics.log");
         }
     }
 
