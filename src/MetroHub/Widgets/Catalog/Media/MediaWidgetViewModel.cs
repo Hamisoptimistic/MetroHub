@@ -1,6 +1,9 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MetroHub.Core.Media;
+using MetroHub.Core.Media.WebNowPlaying;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Serialization;
 using System.Buffers;
 using System.Diagnostics;
@@ -102,6 +105,35 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public bool IsAmbientGlowEnabled => _settings.IsAmbientGlowEnabled;
 
+    /// <summary>Whether the opt-in WebNowPlaying (browser) adapter is enabled for this widget.</summary>
+    public bool IsWebNowPlayingEnabled => _settings.WebNowPlayingEnabled;
+
+    /// <summary>Loopback port the adapter is actually bound to (0 when stopped).</summary>
+    [ObservableProperty]
+    private int _wnpBoundPort;
+
+    /// <summary>True while the browser extension has an open WebSocket to this widget's adapter.</summary>
+    [ObservableProperty]
+    private bool _wnpConnected;
+
+    /// <summary>One-line connection status for menus and tooltips (port + connected state).</summary>
+    [ObservableProperty]
+    private string _wnpStatusText = "WebNowPlaying: off";
+
+    /// <summary>Live feed readout for diagnosis (last snapshot + last seek answer). Shown in the tile menu.</summary>
+    [ObservableProperty]
+    private string _wnpDebugText = "no browser frames yet";
+
+    /// <summary>
+    /// Consecutive browser snapshots reporting non-seekable. A single bad frame during
+    /// seek/buffer must not flip the clock into the live latch (which zeroes the bar).
+    /// </summary>
+    private int _wnpNonSeekableFrames;
+
+    /// <summary>Last seek command event id + extension answer (-1/0 = no seek / no answer yet).</summary>
+    private int _wnpLastSeekEventId = -1;
+    private int _wnpLastSeekResult = -1;
+
     public bool IsSlimMode => Model.SpanY == 1;
     public bool IsZuneMode => Model.SpanX == 4 && Model.SpanY == 6;
     public bool IsStandardMode => Model.SpanY > 1 && !IsZuneMode;
@@ -165,48 +197,63 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     private readonly object _stateLock = new();
     private string _currentTrackId = string.Empty;
-    private long _suppressExternalPositionUpdatesUntil = 0;
-    private bool _optimisticPlaybackTarget = false;
-    private long _optimisticUntilTimestamp = 0;
 
-    // Bulletproof sync: Track the freshest OS-reported LastUpdatedTime we've seen.
-    private DateTimeOffset _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
-    private long _transientZeroDetectedAt = 0;
-
-    // Bulletproof live stream detection & debounce state
-    private bool _isLiveLocked = false;
-    private TimeSpan _lastObservedDuration = TimeSpan.Zero;
-    private long _zeroDurationDetectedAt = 0;
-    private long _trackChangedAt = Stopwatch.GetTimestamp();
-
-    // Lightweight 250ms timer used SOLELY to interpolate seekbar motion while playing non-live tracks
-    private DispatcherTimer? _playbackTimer;
-    private long _lastLocalTimestamp = Stopwatch.GetTimestamp();
-    private TimeSpan _lastTimelinePosition = TimeSpan.Zero;
-    private TimeSpan _trackDuration = TimeSpan.Zero;
-    private double _playbackRate = 1.0;
+    /// <summary>
+    /// Content key (title|artist|album) without the player id. Two browser tabs playing the
+    /// same video flap the active-player id back and forth; resetting the clock on an
+    /// id-only flap pins the bar at 0:00, so the reset fires on content change only.
+    /// </summary>
+    private string _currentContentKey = string.Empty;
     private bool _isScrubbing = false;
     private int _lastDisplayedPosSeconds = -1;
     private int _lastDisplayedDurSeconds = -1;
     private bool _isHubVisible = true;
-    private TimeSpan _lastWidgetSeekPosition = TimeSpan.Zero;
-    private long _lastWidgetSeekTimestamp = 0;
 
     /// <summary>
-    /// Ceiling on how far the interpolated seekbar may run past the position the player actually
-    /// reported. A healthy player hands us fresh samples far more often than this, so the budget is
-    /// only ever fully spent when playback stops advancing — buffering, or the connection dropping —
-    /// while the session goes on claiming it is Playing. Once spent, the bar freezes
-    /// (<see cref="IsPlaybackStalled"/>) instead of creeping forward forever, and the next real
-    /// sample or seek hands the budget straight back.
+    /// The single authority for playback position. Every source snapshot goes in through
+    /// <see cref="MediaPlaybackClock.Observe"/> and every displayed position comes out of
+    /// <see cref="MediaPlaybackClock.Sample"/> — nothing else in this class may write the seekbar.
     /// </summary>
-    private const double MaxInterpolationRunAheadSeconds = 5.0;
+    private readonly MediaPlaybackClock _clock = new();
 
-    // Part of that budget already used by the current anchor, because the OS timestamp the sample
-    // carried was already older than "now" when it reached us. Kept separately from
-    // _lastTimelinePosition so the anchor itself stays the raw reported position and the two can
-    // never double-count.
-    private double _anchorRunAheadSpentSeconds = 0;
+    // ---- Opt-in WebNowPlaying (browser) adapter -----------------------------------------------
+
+    /// <summary>Null while the adapter is disabled; otherwise hosts the extension's WebSocket.</summary>
+    private WebNowPlayingServer? _wnpServer;
+
+    /// <summary>
+    /// BUG FIX: one process-wide adapter, not one per widget. Every MediaWidgetViewModel —
+    /// including the hidden one inside each QuickControls tile — used to bind its own
+    /// TcpListener, so the 2nd+ widget landed on :8642 or failed while the extension fed
+    /// only one port. All instances now share a single ref-counted server on one port.
+    /// </summary>
+    private static readonly object _wnpShareLock = new();
+    private static WebNowPlayingServer? _wnpSharedServer;
+    private static int _wnpSharedRefs;
+
+    /// <summary>
+    /// True while browser media owns the display. While set, every SMTC path is muted so two sources
+    /// can never fight over the clock or the bound properties; releasing it resyncs from SMTC.
+    /// </summary>
+    private volatile bool _wnpOwnsDisplay;
+
+    /// <summary>Latest browser player snapshot (UI thread only).</summary>
+    private WnpPlayerSnapshot? _wnpPlayer;
+
+    /// <summary>Stops authoritative refreshes piling up when the source is slow to answer.</summary>
+    private bool _refreshInFlight;
+
+    /// <summary>True while the per-frame render hook is subscribed.</summary>
+    private bool _isRenderHookAttached;
+
+    /// <summary>
+    /// The last transport state the source reported. Timeline events carry no transport information of
+    /// their own, so they borrow these rather than reading back the bound properties, which would be a
+    /// feedback loop between the clock and the UI.
+    /// </summary>
+    private bool _lastReportedIsPlaying;
+    private double _lastReportedRate = 1.0;
+    private bool _lastReportedCanSeek = true;
 
     /// <summary>
     /// True while playback has stalled: the session still reports Playing, but the seekbar has spent
@@ -247,11 +294,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
         LoadSettings(model.SettingsJson);
 
-        _playbackTimer = new DispatcherTimer(DispatcherPriority.Background)
-        {
-            Interval = TimeSpan.FromMilliseconds(250)
-        };
-        _playbackTimer.Tick += OnPlaybackTimerTick;
+        ApplyWebNowPlayingSetting();
 
         InitializeMediaControllerAsync();
     }
@@ -454,23 +497,18 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     private void SetActiveSession(MediaManager.MediaSession session)
     {
+        // While WebNowPlaying owns the display, no SMTC session may take it over.
+        if (_wnpOwnsDisplay) return;
+
         _activeSession = session;
+
+        // A different session is a different context: no position state may survive the switch.
         lock (_stateLock)
         {
             _currentTrackId = string.Empty;
-            _isLiveLocked = false;
-            _lastObservedDuration = TimeSpan.Zero;
-            _trackDuration = TimeSpan.Zero;
-            _lastTimelinePosition = TimeSpan.Zero;
-            _anchorRunAheadSpentSeconds = 0;
-            _lastLocalTimestamp = Stopwatch.GetTimestamp();
-            _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
-            _lastWidgetSeekPosition = TimeSpan.Zero;
-            _lastWidgetSeekTimestamp = 0;
-            _zeroDurationDetectedAt = 0;
-            _trackChangedAt = Stopwatch.GetTimestamp();
-            _transientZeroDetectedAt = 0;
+            _currentContentKey = string.Empty;
         }
+        _clock.Reset(string.Empty);
 
         try
         {
@@ -508,7 +546,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     private async Task ApplyMediaPropertiesAsync(MediaManager.MediaSession session, GlobalSystemMediaTransportControlsSessionMediaProperties? props)
     {
-        if (props == null) return;
+        if (props == null || _wnpOwnsDisplay) return;
 
         string cleanTitle = props.Title?.Trim() ?? string.Empty;
         string cleanArtist = props.Artist?.Trim() ?? string.Empty;
@@ -550,39 +588,31 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         string rawSource = session.Id ?? string.Empty;
         string cleanSource = ResolveSourceName(rawSource, cleanTitle, rawArtist);
         bool hasAlbum = !string.IsNullOrWhiteSpace(cleanAlbum);
-        bool isMusicApp = IsKnownNonLiveSource(rawSource, cleanTitle, rawArtist);
-        bool isLiveTitle = !isMusicApp && HasLiveTitleKeyword(cleanTitle);
 
         string newTrackId = $"{cleanArtist}|{cleanTitle}|{cleanAlbum}";
         bool isSameTrack = false;
+        bool trackChanged = false;
+        string oldTrackId = string.Empty;
         lock (_stateLock)
         {
             if (!string.Equals(_currentTrackId, newTrackId, StringComparison.Ordinal))
             {
+                oldTrackId = _currentTrackId;
                 _currentTrackId = newTrackId;
                 _currentThumbnailWidth = 0;
-                _isLiveLocked = isLiveTitle;
-                _lastObservedDuration = TimeSpan.Zero;
-                _lastTimelinePosition = TimeSpan.Zero;
-                _anchorRunAheadSpentSeconds = 0;
-                _lastLocalTimestamp = Stopwatch.GetTimestamp();
-                _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
-                _lastWidgetSeekPosition = TimeSpan.Zero;
-                _lastWidgetSeekTimestamp = 0;
-                _suppressExternalPositionUpdatesUntil = 0;
-                _transientZeroDetectedAt = 0;
-                _trackDuration = TimeSpan.Zero;
-                _zeroDurationDetectedAt = 0;
-                _trackChangedAt = Stopwatch.GetTimestamp();
+                trackChanged = true;
             }
             else
             {
                 isSameTrack = true;
-                if (isLiveTitle)
-                {
-                    _isLiveLocked = true;
-                }
             }
+        }
+
+        if (trackChanged && !string.IsNullOrEmpty(oldTrackId))
+        {
+            // A new track starts cleanly at 0:00. The clock owns that reset, so no position, floor or
+            // live latch from the previous item can leak into this one.
+            _clock.Reset(newTrackId);
         }
 
         ImageSource? bmp = null;
@@ -650,22 +680,14 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             }
             HasMedia = true;
 
-            if (_isLiveLocked)
-            {
-                IsLive = true;
-                CanSeek = false;
-                TimeDisplayString = string.Empty;
-                DurationSeconds = 0;
-                PositionSeconds = 0;
-                ProgressRatio = 0.0;
-                _playbackTimer?.Stop();
-            }
+            // The clock decides whether this item is a broadcast; the display simply follows it.
+            PushSample(Stopwatch.GetTimestamp());
         });
     }
 
     private void ApplyPlaybackInfo(GlobalSystemMediaTransportControlsSessionPlaybackInfo? playback)
     {
-        if (playback == null) return;
+        if (playback == null || _wnpOwnsDisplay) return;
 
         var controls = playback.Controls;
         if (controls != null)
@@ -677,300 +699,47 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         }
 
         bool isPlaying = playback.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+        bool canSeek = controls?.IsPlaybackPositionEnabled ?? CanSeek;
+        long now = Stopwatch.GetTimestamp();
 
-        if (Stopwatch.GetTimestamp() < _optimisticUntilTimestamp)
-        {
-            if (isPlaying == _optimisticPlaybackTarget)
-            {
-                _optimisticUntilTimestamp = 0;
-            }
-            else
-            {
-                isPlaying = _optimisticPlaybackTarget;
-            }
-        }
+        _lastReportedIsPlaying = isPlaying;
+        _lastReportedRate = playback.PlaybackRate ?? 1.0;
+        _lastReportedCanSeek = canSeek;
 
-        bool wasPlaying = IsPlaying;
-        IsPlaying = isPlaying;
-
-        if (_isHubVisible && isPlaying && HasMedia && !IsLive)
-        {
-            lock (_stateLock)
-            {
-                long now = Stopwatch.GetTimestamp();
-                if (!wasPlaying || _playbackTimer?.IsEnabled != true)
-                {
-                    double elapsed = (double)(now - _lastLocalTimestamp) / Stopwatch.Frequency;
-                    if (elapsed > 0 && wasPlaying)
-                    {
-                        double newPos = _lastTimelinePosition.TotalSeconds + (elapsed * _playbackRate);
-                        if (DurationSeconds > 0 && newPos > DurationSeconds) newPos = DurationSeconds;
-                        _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
-                        _anchorRunAheadSpentSeconds = 0;
-                        PositionSeconds = newPos;
-                        ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
-                        UpdateTimeDisplay(PositionSeconds, DurationSeconds);
-                    }
-
-                    _lastLocalTimestamp = now;
-                }
-            }
-            if (_playbackTimer?.IsEnabled != true)
-            {
-                _playbackTimer?.Start();
-            }
-        }
-        else
-        {
-            if (wasPlaying && !isPlaying)
-            {
-                lock (_stateLock)
-                {
-                    long now = Stopwatch.GetTimestamp();
-                    double elapsed = (double)(now - _lastLocalTimestamp) / Stopwatch.Frequency;
-                    if (elapsed > 0)
-                    {
-                        double newPos = _lastTimelinePosition.TotalSeconds + (elapsed * _playbackRate);
-                        if (DurationSeconds > 0 && newPos > DurationSeconds) newPos = DurationSeconds;
-                        _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
-                        _anchorRunAheadSpentSeconds = 0;
-                        PositionSeconds = newPos;
-                        ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
-                        UpdateTimeDisplay(PositionSeconds, DurationSeconds);
-                    }
-                    _lastLocalTimestamp = now;
-                }
-            }
-            _playbackTimer?.Stop();
-            IsPlaybackStalled = false;
-        }
+        // This event carries no timeline, so it must never move the anchor — feeding a position here is
+        // exactly the cross-talk that used to produce 0:00 flashes. Transport state only.
+        _clock.ObserveTransport(isPlaying, _lastReportedRate, canSeek, now);
+        PushSample(now);
     }
 
     private void ApplyTimelineProperties(GlobalSystemMediaTransportControlsSessionTimelineProperties? timeline)
     {
-        if (timeline == null) return;
+        if (timeline == null || _wnpOwnsDisplay) return;
 
         try
         {
-            TimeSpan newDuration = timeline.EndTime - timeline.StartTime;
-            if (newDuration <= TimeSpan.Zero && timeline.MaxSeekTime > timeline.MinSeekTime)
+            TimeSpan duration = timeline.EndTime - timeline.StartTime;
+            if (duration <= TimeSpan.Zero && timeline.MaxSeekTime > timeline.MinSeekTime)
             {
-                newDuration = timeline.MaxSeekTime - timeline.MinSeekTime;
+                duration = timeline.MaxSeekTime - timeline.MinSeekTime;
             }
 
-            bool isMusicApp = IsKnownNonLiveSource(_activeSession?.Id, Title, Artist);
-            bool canSeek = CanSeek;
-
-            lock (_stateLock)
+            // Every decision this method used to make — freshness gating, transient-zero rejection,
+            // live classification, run-ahead bookkeeping — now lives in the clock, in one place, and is
+            // covered by unit tests. All that is left here is translation.
+            ObserveAndPush(new MediaObservation
             {
-                long now = Stopwatch.GetTimestamp();
-                bool isLiveStream = _isLiveLocked;
-
-                // 1. Title keyword signal (for non-music sources)
-                if (!isLiveStream && !isMusicApp && HasLiveTitleKeyword(Title))
-                {
-                    isLiveStream = true;
-                }
-
-                // 2. Ultra-long broadcast threshold (YouTube limits uploads to 12h; >= 12h is always live/24-7)
-                if (!isLiveStream && newDuration >= TimeSpan.FromHours(12))
-                {
-                    isLiveStream = true;
-                }
-
-                // 3. User's 5th signal: Twitch streams with a static DVR window (duration > 0 but seek is disabled)
-                if (!isLiveStream && !canSeek && newDuration > TimeSpan.Zero && !isMusicApp)
-                {
-                    isLiveStream = true;
-                }
-
-                // 4. Expanding Duration: In a live stream with DVR (e.g. YouTube), the duration continuously expands with real time
-                if (!isLiveStream && !isMusicApp && IsPlaying && _lastObservedDuration > TimeSpan.Zero && newDuration > TimeSpan.Zero)
-                {
-                    if (newDuration > _lastObservedDuration + TimeSpan.FromSeconds(1.5))
-                    {
-                        isLiveStream = true;
-                    }
-                }
-
-                if (newDuration > TimeSpan.Zero)
-                {
-                    _lastObservedDuration = newDuration;
-                }
-
-                if (!isLiveStream)
-                {
-                    if (newDuration > TimeSpan.Zero)
-                    {
-                        IsLive = false;
-                        CanSeek = canSeek;
-                        _trackDuration = newDuration;
-                        _zeroDurationDetectedAt = 0;
-                    }
-                    else if (newDuration <= TimeSpan.Zero)
-                    {
-                        if (_trackDuration > TimeSpan.Zero && !IsLive)
-                        {
-                            return; // Ignore transient zero duration if already established
-                        }
-
-                        double timeSinceTrackChange = (double)(now - _trackChangedAt) / Stopwatch.Frequency;
-                        if (timeSinceTrackChange < 2.0 || canSeek || isMusicApp)
-                        {
-                            return; // Grace period or seekable or dedicated music app
-                        }
-
-                        if (_zeroDurationDetectedAt == 0)
-                        {
-                            _zeroDurationDetectedAt = now;
-                            return;
-                        }
-
-                        double zeroDurationElapsed = (double)(now - _zeroDurationDetectedAt) / Stopwatch.Frequency;
-                        if (zeroDurationElapsed >= 2.5 && !canSeek)
-                        {
-                            isLiveStream = true;
-                        }
-                        else
-                        {
-                            return;
-                        }
-                    }
-                }
-
-                if (isLiveStream)
-                {
-                    _isLiveLocked = true;
-                    IsLive = true;
-                    CanSeek = false;
-                    _trackDuration = TimeSpan.Zero;
-                    _transientZeroDetectedAt = 0;
-
-                    if (!_isScrubbing)
-                    {
-                        DurationSeconds = 0;
-                        PositionSeconds = 0;
-                        ProgressRatio = 0.0;
-                        TimeDisplayString = string.Empty;
-                    }
-                    _playbackTimer?.Stop();
-                    IsPlaybackStalled = false;
-                    return;
-                }
-
-                // ── REGULAR RECORDED TRACK ──
-                IsLive = false;
-                CanSeek = canSeek;
-                _trackDuration = newDuration > TimeSpan.Zero ? newDuration : _trackDuration;
-                _zeroDurationDetectedAt = 0;
-
-                if (Stopwatch.GetTimestamp() < _suppressExternalPositionUpdatesUntil)
-                {
-                    return;
-                }
-
-                TimeSpan incomingPos = timeline.Position;
-                DateTimeOffset incomingUpdateTime = timeline.LastUpdatedTime;
-
-                // Freshness gate: Reject updates older than our freshest accepted update
-                if (incomingUpdateTime > DateTimeOffset.MinValue &&
-                    _lastAcceptedOsUpdateTime > DateTimeOffset.MinValue &&
-                    incomingUpdateTime < _lastAcceptedOsUpdateTime)
-                {
-                    return;
-                }
-
-                TimeSpan calculatedPos = incomingPos;
-                bool hasValidTimestamp = incomingUpdateTime > DateTimeOffset.MinValue && incomingUpdateTime.Year > 2000;
-
-                // How far past the reported position we are allowed to run the moment we read it,
-                // because the player stamped it slightly before "now". Charged against the same
-                // budget the interpolating timer draws on, so a frozen timestamp (a stalled player)
-                // can neither inflate the bar here nor be counted twice by the timer afterwards.
-                double runAheadAtReceipt = 0;
-                if (IsPlaying && hasValidTimestamp)
-                {
-                    var diff = (DateTimeOffset.UtcNow - incomingUpdateTime).TotalSeconds;
-                    if (diff >= 0 && diff < 86400)
-                    {
-                        runAheadAtReceipt = Math.Min(diff, MaxInterpolationRunAheadSeconds);
-                        calculatedPos += TimeSpan.FromSeconds(runAheadAtReceipt * _playbackRate);
-                    }
-                }
-                else if (IsPlaying && !hasValidTimestamp)
-                {
-                    // Media player (Spotify, browser, etc.) does not supply LastUpdatedTime.
-                    // If incomingPos is an echo of our own widget seek and we've already progressed past it,
-                    // do not rewind back to the static seek anchor.
-                    if (_lastWidgetSeekTimestamp > 0 && Math.Abs((incomingPos - _lastWidgetSeekPosition).TotalSeconds) <= 2.5)
-                    {
-                        if (_lastTimelinePosition >= _lastWidgetSeekPosition)
-                        {
-                            return;
-                        }
-                    }
-
-                    // Also reject if incomingPos is behind our smoothly extrapolated position
-                    if (_lastTimelinePosition > TimeSpan.Zero && calculatedPos <= _lastTimelinePosition)
-                    {
-                        double lag = (_lastTimelinePosition - calculatedPos).TotalSeconds;
-                        if (lag < 90.0)
-                        {
-                            return; // Ignore stale un-timestamped rewind
-                        }
-                    }
-                }
-
-                // Anti-glitch: Detect transient zero/near-zero during buffering/seeks
-                bool isTransientZero = calculatedPos <= TimeSpan.FromSeconds(1.5) &&
-                                       _lastTimelinePosition >= TimeSpan.FromSeconds(2.5) &&
-                                       _trackDuration > TimeSpan.FromSeconds(5.0);
-
-                if (isTransientZero)
-                {
-                    if (_transientZeroDetectedAt == 0)
-                    {
-                        _transientZeroDetectedAt = Stopwatch.GetTimestamp();
-                        return;
-                    }
-                    else if ((Stopwatch.GetTimestamp() - _transientZeroDetectedAt) / (double)Stopwatch.Frequency > 0.5)
-                    {
-                        isTransientZero = false;
-                        _transientZeroDetectedAt = 0;
-                    }
-                    else
-                    {
-                        return;
-                    }
-                }
-                _transientZeroDetectedAt = 0;
-
-                if (hasValidTimestamp)
-                {
-                    _lastAcceptedOsUpdateTime = incomingUpdateTime;
-                }
-
-                // Anchor on the raw reported position, never the extrapolated one, so the budget in
-                // _anchorRunAheadSpentSeconds is counted exactly once.
-                _lastTimelinePosition = incomingPos;
-                _anchorRunAheadSpentSeconds = runAheadAtReceipt;
-                IsPlaybackStalled = false;
-                _lastLocalTimestamp = Stopwatch.GetTimestamp();
-
-                double durSec = _trackDuration.TotalSeconds;
-                double posSec = Math.Clamp(calculatedPos.TotalSeconds, 0, durSec > 0 ? durSec : calculatedPos.TotalSeconds);
-
-                if (!_isScrubbing)
-                {
-                    if (durSec > 0)
-                    {
-                        DurationSeconds = durSec;
-                    }
-                    PositionSeconds = posSec;
-                    ProgressRatio = durSec > 0 ? Math.Clamp(posSec / durSec, 0.0, 1.0) : 0.0;
-                    UpdateTimeDisplay(posSec, durSec);
-                }
-            }
+                Position = timeline.Position,
+                Duration = duration,
+                Rate = _lastReportedRate,
+                IsPlaying = _lastReportedIsPlaying,
+                CanSeek = _lastReportedCanSeek,
+                OsTimestamp = timeline.LastUpdatedTime,
+                IsKnownNonLiveSource = IsKnownNonLiveSource(_activeSession?.Id, Title, Artist),
+                HasLiveTitleKeyword = HasLiveTitleKeyword(Title),
+                TrackId = _currentTrackId,
+                ObservedAtTicks = Stopwatch.GetTimestamp()
+            });
         }
         catch (Exception ex)
         {
@@ -978,39 +747,145 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    private void OnPlaybackTimerTick(object? sender, EventArgs e)
+    /// <summary>Feeds a source snapshot to the clock, then refreshes the display from it.</summary>
+    private void ObserveAndPush(in MediaObservation observation)
     {
-        if (!_isHubVisible || !HasMedia || _isScrubbing || !IsPlaying || IsLive)
+        _clock.Observe(in observation);
+        MediaPlaybackSample sample = PushSample(observation.ObservedAtTicks);
+
+        if (MediaSyncTraceLogger.IsEnabled)
         {
-            _playbackTimer?.Stop();
-            IsPlaybackStalled = false;
+            MediaSyncTraceLogger.Record(in observation, in sample);
+        }
+    }
+
+    /// <summary>
+    /// Pushes the clock's current reading into the bound properties. THE ONLY writer of the seekbar:
+    /// position, duration, progress, live state, stall state and time text all leave through here, so
+    /// no two code paths can ever disagree about where the bar is.
+    /// </summary>
+    private MediaPlaybackSample PushSample(long nowTicks)
+    {
+        MediaPlaybackSample sample = _clock.Sample(nowTicks);
+
+        IsPlaying = sample.IsPlaying;
+        IsLive = sample.IsLive;
+        IsPlaybackStalled = sample.IsStalled;
+
+        if (sample.IsLive)
+        {
+            // A broadcast has no meaningful position or duration: show the bar as inert.
+            CanSeek = false;
+            DurationSeconds = 0;
+            PositionSeconds = 0;
+            ProgressRatio = 0.0;
+            if (TimeDisplayString.Length != 0)
+            {
+                TimeDisplayString = string.Empty;
+            }
+            _lastDisplayedPosSeconds = -1;
+            _lastDisplayedDurSeconds = -1;
+            SyncRenderHook();
+            return sample;
+        }
+
+        double durationSeconds = sample.Duration.TotalSeconds;
+        if (!_isScrubbing)
+        {
+            DurationSeconds = durationSeconds;
+            PositionSeconds = sample.Position.TotalSeconds;
+            ProgressRatio = durationSeconds > 0
+                ? Math.Clamp(sample.Position.TotalSeconds / durationSeconds, 0.0, 1.0)
+                : 0.0;
+            UpdateTimeDisplay(PositionSeconds, durationSeconds);
+        }
+
+        SyncRenderHook();
+
+        if (sample.NeedsRefresh)
+        {
+            RequestAuthoritativeRefresh();
+        }
+
+        return sample;
+    }
+
+    /// <summary>
+    /// Keeps the per-frame render hook in step with what the widget is actually doing. Attached only
+    /// while something is moving, so a paused, hidden, broadcast or idle session costs zero frames.
+    /// </summary>
+    private void SyncRenderHook()
+    {
+        bool shouldRender = _isHubVisible && HasMedia && IsPlaying && !IsLive && !_isScrubbing;
+        if (shouldRender == _isRenderHookAttached)
+        {
             return;
         }
 
-        lock (_stateLock)
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher == null || !dispatcher.CheckAccess())
         {
-            double elapsedSeconds = (double)(Stopwatch.GetTimestamp() - _lastLocalTimestamp) / Stopwatch.Frequency;
-            if (elapsedSeconds < 0) elapsedSeconds = 0;
-
-            // The whole run-ahead budget available right now: whatever the current anchor already
-            // spent when it arrived, plus the time since. Added to _lastTimelinePosition this is the
-            // furthest the bar may sit ahead of the position the player actually reported.
-            double budgetUsed = _anchorRunAheadSpentSeconds + elapsedSeconds;
-            double runAheadSeconds = Math.Min(budgetUsed, MaxInterpolationRunAheadSeconds);
-
-            double currentPos = _lastTimelinePosition.TotalSeconds + (runAheadSeconds * _playbackRate);
-            double maxPos = DurationSeconds > 0 ? DurationSeconds : double.MaxValue;
-            if (currentPos > maxPos) currentPos = maxPos;
-            if (currentPos < 0) currentPos = 0;
-
-            // Budget exhausted: the player has stopped advancing while still reporting Playing, so
-            // hold the bar here (buffering, or the connection dropping) and wait for real progress.
-            IsPlaybackStalled = budgetUsed >= MaxInterpolationRunAheadSeconds;
-
-            PositionSeconds = currentPos;
-            ProgressRatio = DurationSeconds > 0 ? Math.Clamp(currentPos / DurationSeconds, 0.0, 1.0) : 0.0;
-            UpdateTimeDisplay(PositionSeconds, DurationSeconds);
+            return;   // Not on the UI thread: the next UI-thread push reconciles it.
         }
+
+        if (shouldRender)
+        {
+            CompositionTarget.Rendering += OnRenderingFrame;
+            _isRenderHookAttached = true;
+        }
+        else
+        {
+            CompositionTarget.Rendering -= OnRenderingFrame;
+            _isRenderHookAttached = false;
+        }
+    }
+
+    /// <summary>
+    /// Samples the clock once per composited frame (~60 Hz) instead of stepping a 250 ms timer. This is
+    /// smoother and cheaper at the same time: no timer wake-ups at all, and the bar advances with the
+    /// screen refresh rather than in visible quarter-second steps.
+    /// </summary>
+    private void OnRenderingFrame(object? sender, EventArgs e) => PushSample(Stopwatch.GetTimestamp());
+
+    /// <summary>
+    /// Asks the session for one authoritative read. Demand-driven and rate-limited, never a polling
+    /// loop: the clock only asks when its anchor has gone stale or a seek needs confirming, and only
+    /// one request is ever in flight.
+    /// </summary>
+    private void RequestAuthoritativeRefresh()
+    {
+        if (_refreshInFlight) return;
+
+        // WebNowPlaying is a live push stream (250ms cadence): never re-apply an older cached snapshot.
+        if (_wnpOwnsDisplay) return;
+
+        var control = _activeSession?.ControlSession;
+        if (control == null) return;
+
+        _refreshInFlight = true;
+        _ = Task.Run(() =>
+        {
+            GlobalSystemMediaTransportControlsSessionPlaybackInfo? playback = null;
+            GlobalSystemMediaTransportControlsSessionTimelineProperties? timeline = null;
+
+            try
+            {
+                playback = control.GetPlaybackInfo();
+                timeline = control.GetTimelineProperties();
+            }
+            catch
+            {
+                // A session that vanished mid-query is not an error worth surfacing.
+            }
+
+            RunOnUi(() =>
+            {
+                _refreshInFlight = false;
+                if (_activeSession?.ControlSession != control) return;
+                if (playback != null) ApplyPlaybackInfo(playback);
+                if (timeline != null) ApplyTimelineProperties(timeline);
+            });
+        });
     }
 
     private void UpdateTimeDisplay(double pos, double dur)
@@ -1079,7 +954,76 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
 
     public async Task SeekToRatioAsync(double ratio)
     {
-        if (IsLive || !CanSeek) return;
+        if (IsLive || !CanSeek)
+        {
+            if (_wnpOwnsDisplay)
+            {
+                MainWindow.Current?.ShowToast("Seek not available on this video (live / ad / no permission).", isError: true);
+            }
+            return;
+        }
+
+        if (_wnpOwnsDisplay)
+        {
+            WnpPlayerSnapshot? player = _wnpPlayer;
+            if (player == null || DurationSeconds <= 0) return;
+
+            ratio = Math.Clamp(ratio, 0.0, 1.0);
+            double wnpTargetSeconds = ratio * DurationSeconds;
+            int wnpTargetWhole = (int)Math.Round(wnpTargetSeconds);
+
+            lock (_stateLock)
+            {
+                PositionSeconds = wnpTargetSeconds;
+                ProgressRatio = ratio;
+                IsPlaybackStalled = false;
+            }
+
+            _clock.NotifySeekRequested(TimeSpan.FromSeconds(wnpTargetSeconds));
+            UpdateTimeDisplay(PositionSeconds, DurationSeconds);
+
+            try
+            {
+                var server = _wnpServer;
+                if (server == null)
+                {
+                    MainWindow.Current?.ShowToast("WebNowPlaying: not listening — seek not sent.", isError: true);
+                    return;
+                }
+
+                int eventId = await server.SetPositionAsync(player.Id, wnpTargetWhole);
+                if (eventId <= 0)
+                {
+                    MainWindow.Current?.ShowToast("WebNowPlaying: extension not connected — seek not sent.", isError: true);
+                    return;
+                }
+
+                Debug.WriteLine($"[MediaWidget] WebNowPlaying seek → player {player.Id} :{server.BoundPort} to {wnpTargetWhole}s (event {eventId})");
+                HiddenDiagnosticsLogger.Log($"[WNP] seek → player {player.Id} :{server.BoundPort} to {wnpTargetWhole}s (event {eventId})");
+
+                // 0 = no answer in 1s (unknown), 1 = applied, 2 = rejected by the site.
+                int result = await server.WaitForEventResultAsync(eventId, TimeSpan.FromSeconds(1));
+                _wnpLastSeekEventId = eventId;
+                _wnpLastSeekResult = result;
+                Debug.WriteLine($"[MediaWidget] WebNowPlaying seek event {eventId} result={result} (0=timeout 1=ok 2=rejected)");
+                HiddenDiagnosticsLogger.Log($"[WNP] seek event {eventId} result={result} (0=timeout 1=ok 2=rejected)");
+                WnpDebugText = $"'{player.Name}' seek→{wnpTargetWhole}s ev={eventId} res={result} (0=timeout 1=ok 2=refused)";
+                if (result == 2)
+                {
+                    MainWindow.Current?.ShowToast("Browser refused the seek (live / ad / no permission).", isError: true);
+                }
+                else if (result == 0)
+                {
+                    MainWindow.Current?.ShowToast("Browser didn't answer the seek — check the extension tab.", isError: true);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MediaWidget] WebNowPlaying seek failed: {ex.Message}");
+            }
+            return;
+        }
+
         var control = _activeSession?.ControlSession;
         if (control == null || DurationSeconds <= 0) return;
 
@@ -1091,15 +1035,12 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         {
             PositionSeconds = targetSeconds;
             ProgressRatio = ratio;
-            _lastTimelinePosition = TimeSpan.FromSeconds(targetSeconds);
-            _anchorRunAheadSpentSeconds = 0;
             IsPlaybackStalled = false;
-            _lastLocalTimestamp = Stopwatch.GetTimestamp();
-            _lastWidgetSeekPosition = TimeSpan.FromSeconds(targetSeconds);
-            _lastWidgetSeekTimestamp = Stopwatch.GetTimestamp();
-            _suppressExternalPositionUpdatesUntil = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 2.5);
-            _lastAcceptedOsUpdateTime = DateTimeOffset.MinValue;
         }
+
+        // The clock owns both the optimistic jump and the echo handling: the source's echo of this exact
+        // request is trusted on sight, so the old suppression window and widget-echo rejection are gone.
+        _clock.NotifySeekRequested(TimeSpan.FromSeconds(targetSeconds));
         UpdateTimeDisplay(PositionSeconds, DurationSeconds);
 
         try
@@ -1115,44 +1056,44 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     [RelayCommand]
     public async Task TogglePlayPauseAsync()
     {
+        if (_wnpOwnsDisplay)
+        {
+            WnpPlayerSnapshot? player = _wnpPlayer;
+            if (player == null || _wnpServer == null) return;
+
+            try
+            {
+                bool targetState = player.State != WnpState.Playing;
+                long now = Stopwatch.GetTimestamp();
+
+                _clock.NotifyTransportRequested(targetState, now);
+                _lastReportedIsPlaying = targetState;
+                IsPlaybackStalled = false;
+                PushSample(now);
+
+                await _wnpServer.SetStateAsync(player.Id, targetState);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MediaWidget] WebNowPlaying toggle failed: {ex.Message}");
+            }
+            return;
+        }
+
         var control = _activeSession?.ControlSession;
         if (control == null) return;
 
         try
         {
             bool targetState = !IsPlaying;
-            _optimisticPlaybackTarget = targetState;
-            _optimisticUntilTimestamp = Stopwatch.GetTimestamp() + (long)(Stopwatch.Frequency * 1.5);
-            IsPlaying = targetState;
+            long now = Stopwatch.GetTimestamp();
 
-            if (!targetState)
-            {
-                lock (_stateLock)
-                {
-                    long now = Stopwatch.GetTimestamp();
-                    double elapsed = (double)(now - _lastLocalTimestamp) / Stopwatch.Frequency;
-                    if (elapsed > 0)
-                    {
-                        double newPos = _lastTimelinePosition.TotalSeconds + (elapsed * _playbackRate);
-                        if (DurationSeconds > 0 && newPos > DurationSeconds) newPos = DurationSeconds;
-                        _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
-                        _anchorRunAheadSpentSeconds = 0;
-                        PositionSeconds = newPos;
-                        ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
-                        UpdateTimeDisplay(PositionSeconds, DurationSeconds);
-                    }
-                    _lastLocalTimestamp = now;
-                }
-                _playbackTimer?.Stop();
-                IsPlaybackStalled = false;
-            }
-            else if (_isHubVisible && HasMedia && !IsLive)
-            {
-                _lastLocalTimestamp = Stopwatch.GetTimestamp();
-                _anchorRunAheadSpentSeconds = 0;
-                IsPlaybackStalled = false;
-                _playbackTimer?.Start();
-            }
+            // The clock carries the intent through a short grace window, so the transport never flickers
+            // while the OS processes the command asynchronously.
+            _clock.NotifyTransportRequested(targetState, now);
+            _lastReportedIsPlaying = targetState;
+            IsPlaybackStalled = false;
+            PushSample(now);
 
             await control.TryTogglePlayPauseAsync();
         }
@@ -1165,6 +1106,14 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     [RelayCommand]
     public async Task SkipNextAsync()
     {
+        if (_wnpOwnsDisplay)
+        {
+            if (_wnpPlayer is not { } player || _wnpServer == null) return;
+            try { await _wnpServer.SkipNextAsync(player.Id); }
+            catch (Exception ex) { Debug.WriteLine($"[MediaWidget] WebNowPlaying next failed: {ex.Message}"); }
+            return;
+        }
+
         var control = _activeSession?.ControlSession;
         if (control == null) return;
 
@@ -1181,6 +1130,14 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     [RelayCommand]
     public async Task SkipPreviousAsync()
     {
+        if (_wnpOwnsDisplay)
+        {
+            if (_wnpPlayer is not { } player || _wnpServer == null) return;
+            try { await _wnpServer.SkipPreviousAsync(player.Id); }
+            catch (Exception ex) { Debug.WriteLine($"[MediaWidget] WebNowPlaying previous failed: {ex.Message}"); }
+            return;
+        }
+
         var control = _activeSession?.ControlSession;
         if (control == null) return;
 
@@ -1197,10 +1154,10 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     private void ResetToNoMedia()
     {
         _activeSession = null;
-        _isLiveLocked = false;
-        _lastObservedDuration = TimeSpan.Zero;
-        _zeroDurationDetectedAt = 0;
-        _trackChangedAt = Stopwatch.GetTimestamp();
+        _clock.Reset(string.Empty);
+        _lastReportedIsPlaying = false;
+        _lastReportedRate = 1.0;
+        _lastReportedCanSeek = true;
         HasMedia = false;
         Title = "No media playing";
         Artist = "Open Spotify, YouTube, or VLC";
@@ -1227,70 +1184,23 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         _lastDisplayedDurSeconds = -1;
         IsLive = false;
         CanSeek = true;
-        _lastTimelinePosition = TimeSpan.Zero;
-        _anchorRunAheadSpentSeconds = 0;
-        _lastLocalTimestamp = Stopwatch.GetTimestamp();
-        _lastWidgetSeekPosition = TimeSpan.Zero;
-        _lastWidgetSeekTimestamp = 0;
-        _playbackTimer?.Stop();
         IsPlaybackStalled = false;
+        SyncRenderHook();
     }
 
     public override void Pause()
     {
         _isHubVisible = false;
-        _playbackTimer?.Stop();
         IsPlaybackStalled = false;
 
-        lock (_stateLock)
-        {
-            if (IsPlaying && !IsLive && HasMedia)
-            {
-                long now = Stopwatch.GetTimestamp();
-                double elapsed = (double)(now - _lastLocalTimestamp) / Stopwatch.Frequency;
-                if (elapsed > 0)
-                {
-                    double newPos = _lastTimelinePosition.TotalSeconds + (elapsed * _playbackRate);
-                    if (DurationSeconds > 0 && newPos > DurationSeconds)
-                    {
-                        newPos = DurationSeconds;
-                    }
-                    _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
-                    _anchorRunAheadSpentSeconds = 0;
-                    PositionSeconds = newPos;
-                    ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
-                }
-                _lastLocalTimestamp = now;
-            }
-        }
+        // Detach the frame hook and freeze the display where it is. The clock keeps its anchor; the price
+        // of a stale anchor while hidden is a single authoritative read when the hub comes back.
+        SyncRenderHook();
     }
 
     public override void Resume()
     {
         _isHubVisible = true;
-
-        lock (_stateLock)
-        {
-            if (IsPlaying && !IsLive && HasMedia)
-            {
-                long now = Stopwatch.GetTimestamp();
-                double elapsedWhileHidden = (double)(now - _lastLocalTimestamp) / Stopwatch.Frequency;
-                if (elapsedWhileHidden > 0)
-                {
-                    double newPos = _lastTimelinePosition.TotalSeconds + (elapsedWhileHidden * _playbackRate);
-                    if (DurationSeconds > 0 && newPos > DurationSeconds)
-                    {
-                        newPos = DurationSeconds;
-                    }
-                    _lastTimelinePosition = TimeSpan.FromSeconds(newPos);
-                    _anchorRunAheadSpentSeconds = 0;
-                    PositionSeconds = newPos;
-                    ProgressRatio = DurationSeconds > 0 ? Math.Clamp(newPos / DurationSeconds, 0.0, 1.0) : 0.0;
-                    UpdateTimeDisplay(PositionSeconds, DurationSeconds);
-                }
-                _lastLocalTimestamp = now;
-            }
-        }
 
         RunOnUi(() =>
         {
@@ -1304,13 +1214,12 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                 }
             }
 
-            if (IsPlaying && HasMedia && !IsLive)
-            {
-                _playbackTimer?.Start();
-            }
+            // While hidden the clock deliberately stopped tracking, so its anchor may be stale. Pushing
+            // now repaints immediately and asks the session for the truth when the gap was long enough.
+            PushSample(Stopwatch.GetTimestamp());
         });
 
-        if (_activeSession != null)
+        if (!_wnpOwnsDisplay && _activeSession != null)
         {
             try
             {
@@ -1370,6 +1279,348 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         else
         {
             AmbientGlowBrush = Brushes.Transparent;
+        }
+    }
+
+    // ---- WebNowPlaying (browser) source -------------------------------------------------------
+
+    /// <summary>Toggles the opt-in WebNowPlaying adapter and persists the choice.</summary>
+    public void SetWebNowPlaying(bool enabled)
+    {
+        if (_settings.WebNowPlayingEnabled == enabled) return;
+        _settings.WebNowPlayingEnabled = enabled;
+        SaveSettings();
+        OnPropertyChanged(nameof(IsWebNowPlayingEnabled));
+        ApplyWebNowPlayingSetting();
+    }
+
+    private void ApplyWebNowPlayingSetting()
+    {
+        if (_settings.WebNowPlayingEnabled)
+        {
+            StartWebNowPlaying();
+        }
+        else
+        {
+            StopWebNowPlaying();
+        }
+    }
+
+    private void StartWebNowPlaying()
+    {
+        if (_wnpServer != null) return;
+
+        WebNowPlayingServer? server;
+        bool failed;
+        lock (_wnpShareLock)
+        {
+            server = _wnpSharedServer;
+            if (server == null)
+            {
+                var fresh = new WebNowPlayingServer();
+                if (!fresh.Start())
+                {
+                    fresh.Dispose();
+                    server = null;
+                    failed = true;
+                }
+                else
+                {
+                    _wnpSharedServer = server = fresh;
+                    failed = false;
+                }
+            }
+            else
+            {
+                failed = false;
+            }
+
+            if (!failed) _wnpSharedRefs++;
+        }
+
+        if (failed || server == null)
+        {
+            // Port unavailable (another app already owns both): stay on SMTC, log, no crash.
+            RunOnUi(() =>
+            {
+                WnpBoundPort = 0;
+                WnpConnected = false;
+                WnpStatusText = "WebNowPlaying: port busy (8974/8642)";
+            });
+            MainWindow.Current?.ShowToast("WebNowPlaying: port busy — browser adapter not listening.", isError: true);
+            return;
+        }
+
+        server.ActivePlayerChanged += Wnp_OnActivePlayerChanged;
+        server.CoverReceived += Wnp_OnCoverReceived;
+        server.ConnectionChanged += Wnp_OnConnectionChanged;
+        _wnpServer = server;
+        RunOnUi(UpdateWnpStatus);
+    }
+
+    private void StopWebNowPlaying()
+    {
+        WebNowPlayingServer? server = _wnpServer;
+        if (server == null) return;
+        _wnpServer = null;
+
+        server.ActivePlayerChanged -= Wnp_OnActivePlayerChanged;
+        server.CoverReceived -= Wnp_OnCoverReceived;
+        server.ConnectionChanged -= Wnp_OnConnectionChanged;
+
+        // Hand THIS widget back to SMTC; the shared adapter stays up for other widgets.
+        _wnpOwnsDisplay = false;
+        _wnpPlayer = null;
+        _wnpNonSeekableFrames = 0;
+        RunOnUi(ResyncAfterWebNowPlaying);
+
+        bool last;
+        lock (_wnpShareLock)
+        {
+            _wnpSharedRefs--;
+            last = _wnpSharedRefs <= 0;
+            if (last)
+            {
+                _wnpSharedServer = null;
+                _wnpSharedRefs = 0;
+            }
+        }
+        if (last) server.Dispose();
+
+        RunOnUi(() =>
+        {
+            WnpBoundPort = 0;
+            WnpConnected = false;
+            WnpStatusText = "WebNowPlaying: off";
+        });
+    }
+
+    private void Wnp_OnConnectionChanged() => RunOnUi(UpdateWnpStatus);
+
+    private void UpdateWnpStatus()
+    {
+        var server = _wnpServer;
+        if (server == null || !server.IsRunning)
+        {
+            WnpBoundPort = 0;
+            WnpConnected = false;
+            WnpStatusText = _settings.WebNowPlayingEnabled
+                ? "WebNowPlaying: not listening"
+                : "WebNowPlaying: off";
+            return;
+        }
+
+        WnpBoundPort = server.BoundPort;
+        WnpConnected = server.IsConnected;
+        WnpStatusText = WnpConnected
+            ? $"WebNowPlaying: connected (:{WnpBoundPort})"
+            : $"WebNowPlaying: listening :{WnpBoundPort} — point the extension here";
+    }
+
+    private void Wnp_OnActivePlayerChanged(WnpPlayerSnapshot? snapshot) =>
+        RunOnUi(() =>
+        {
+            UpdateWnpStatus();
+            ApplyWebNowPlayingSnapshot(snapshot);
+        });
+
+    /// <summary>
+    /// Folds one browser-player snapshot into the display: metadata straight to the bound properties,
+    /// position through the clock — the same single-writer rule SMTC snapshots follow.
+    /// </summary>
+    private void ApplyWebNowPlayingSnapshot(WnpPlayerSnapshot? snapshot)
+    {
+        if (snapshot == null)
+        {
+            if (!_wnpOwnsDisplay) return;
+
+            _wnpOwnsDisplay = false;
+            _wnpPlayer = null;
+            ResyncAfterWebNowPlaying();
+            return;
+        }
+
+        _wnpOwnsDisplay = true;
+        _wnpPlayer = snapshot;
+
+        string cleanTitle = snapshot.Title.Trim();
+        string cleanArtist = snapshot.Artist.Trim();
+        string cleanAlbum = snapshot.Album.Trim();
+
+        string newTrackId = $"wnp|{snapshot.Id}|{cleanArtist}|{cleanTitle}|{cleanAlbum}";
+        string newContentKey = $"{cleanArtist}|{cleanTitle}|{cleanAlbum}";
+        bool trackChanged;
+        bool contentChanged;
+        string oldTrackId = string.Empty;
+        lock (_stateLock)
+        {
+            trackChanged = !string.Equals(_currentTrackId, newTrackId, StringComparison.Ordinal);
+            contentChanged = !string.Equals(_currentContentKey, newContentKey, StringComparison.Ordinal);
+            if (trackChanged)
+            {
+                oldTrackId = _currentTrackId;
+                _currentTrackId = newTrackId;
+                _currentContentKey = newContentKey;
+                _currentThumbnailWidth = 0;
+            }
+        }
+
+        if (trackChanged && !string.IsNullOrEmpty(oldTrackId))
+        {
+            if (contentChanged)
+            {
+                // A different track starts clean: no position, floor or live latch may leak into it.
+                _clock.Reset(newTrackId);
+                _wnpNonSeekableFrames = 0;
+            }
+            else
+            {
+                // Id-only flap (two tabs, same video): keep the clock, or the bar pins at 0:00.
+                Debug.WriteLine($"[MediaWidget] WNP id flap {oldTrackId} -> {newTrackId} (same content): clock kept.");
+                HiddenDiagnosticsLogger.Log($"[WNP] id flap kept clock: {oldTrackId} -> {newTrackId}");
+            }
+        }
+
+        Title = cleanTitle.Length == 0 ? "Unknown Track" : cleanTitle;
+        Artist = cleanArtist;
+        Album = cleanAlbum;
+        HasAlbum = cleanAlbum.Length > 0;
+        SourceName = string.IsNullOrWhiteSpace(snapshot.Name) ? "WebNowPlaying" : snapshot.Name;
+        CanPlayPause = snapshot.CanSetState;
+        CanSkipNext = snapshot.CanSkipNext;
+        CanSkipPrevious = snapshot.CanSkipPrevious;
+        HasMedia = true;
+
+        bool isPlaying = snapshot.State == WnpState.Playing;
+
+        // Hysteresis: the extension flickers CanSetPosition=0 / duration=0 for a frame
+        // during seek and buffering. Feeding that straight to the clock latches IsLive
+        // (non-seekable + known duration = broadcast) and zeroes the bar — the exact
+        // "seek resets to zero" symptom. Require consecutive bad frames, keep the last
+        // known duration, and never disqualify while our own seek is still pending.
+        int effectiveDuration = snapshot.DurationSeconds > 0
+            ? snapshot.DurationSeconds
+            : (int)Math.Round(DurationSeconds);
+        bool reportedCanSeek = snapshot.CanSetPosition && effectiveDuration > 0;
+
+        bool canSeek;
+        if (reportedCanSeek)
+        {
+            _wnpNonSeekableFrames = 0;
+            canSeek = true;
+        }
+        else if (_clock.HasPendingSeek)
+        {
+            canSeek = true;   // Our seek is in flight: the echo hasn't arrived yet.
+        }
+        else if (_wnpNonSeekableFrames < 2)
+        {
+            _wnpNonSeekableFrames++;
+            canSeek = CanSeek;   // Hold the previous state for up to 2 bad frames.
+            if (!canSeek && DurationSeconds > 0)
+            {
+                // Stay seekable while we still have a known duration; the clock's
+                // sticky duration survives the transient either way.
+                canSeek = true;
+            }
+        }
+        else
+        {
+            canSeek = false;
+        }
+
+        _lastReportedIsPlaying = isPlaying;
+        _lastReportedRate = 1.0;
+        _lastReportedCanSeek = canSeek;
+        bool canSeekFlipped = CanSeek != canSeek;
+        CanSeek = canSeek;
+
+        // Anomaly trail for the "seek resets to zero" hunt: one line only when the
+        // feed looks suspicious (capability flicker, zero position/duration mid-track).
+        // Debug.WriteLine is invisible in Release, so suspicious frames also go to
+        // hidden_diagnostics.log, which can be pasted without a debugger attached.
+        if (canSeekFlipped || snapshot.DurationSeconds <= 0 || snapshot.PositionSeconds <= 0)
+        {
+            string anomaly = $"[WNP] snap id={snapshot.Id} pos={snapshot.PositionSeconds} dur={snapshot.DurationSeconds} " +
+                $"canPos={snapshot.CanSetPosition} effSeek={canSeek} state={snapshot.State} pending={_clock.HasPendingSeek} shown={PositionSeconds:F1}/{DurationSeconds:F0}";
+            Debug.WriteLine("[MediaWidget] " + anomaly);
+            // Zero-position frames mid-track are the snap-to-zero suspect: always file them.
+            // Capability flips are one line per flip. Healthy 1Hz traffic stays silent.
+            if (snapshot.PositionSeconds <= 0 || canSeekFlipped)
+            {
+                HiddenDiagnosticsLogger.Log(anomaly);
+            }
+        }
+
+        WnpDebugText = $"'{snapshot.Name}' pos={snapshot.PositionSeconds}/{snapshot.DurationSeconds}s " +
+            $"canSeek={snapshot.CanSetPosition} state={snapshot.State} seekEv={_wnpLastSeekEventId} res={_wnpLastSeekResult}";
+
+        ObserveAndPush(new MediaObservation
+        {
+            Position = TimeSpan.FromSeconds(snapshot.PositionSeconds),
+            Duration = TimeSpan.FromSeconds(snapshot.DurationSeconds),
+            Rate = 1.0,
+            IsPlaying = isPlaying,
+            CanSeek = canSeek,
+            OsTimestamp = DateTimeOffset.MinValue,
+            IsKnownNonLiveSource = false,
+            HasLiveTitleKeyword = HasLiveTitleKeyword(Title),
+            TrackId = newTrackId,
+            ObservedAtTicks = Stopwatch.GetTimestamp()
+        });
+    }
+
+    private void Wnp_OnCoverReceived(int playerId, byte[] png)
+    {
+        if (!_wnpOwnsDisplay) return;
+
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                if (CreateThumbnailFromBytes(png) is not BitmapSource bitmap) return;
+
+                var (seekbarBrush, seekbarColor) = ExtractSeekbarBrush(bitmap);
+                Brush glowBrush = _settings.IsAmbientGlowEnabled
+                    ? CreateAlbumAuraGlow(seekbarColor)
+                    : Brushes.Transparent;
+
+                RunOnUi(() =>
+                {
+                    if (!_wnpOwnsDisplay || _wnpPlayer?.Id != playerId) return;
+
+                    _cachedThumbnailBytes = png;
+                    Thumbnail = bitmap;
+                    HasThumbnail = true;
+                    SeekbarBrush = seekbarBrush;
+                    SeekbarGlowColor = seekbarColor;
+                    _currentAuraColor = seekbarColor;
+                    AmbientGlowBrush = glowBrush;
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MediaWidget] WebNowPlaying cover failed: {ex.Message}");
+            }
+        });
+    }
+
+    /// <summary>Hands the display back to SMTC after browser media stops reporting.</summary>
+    private void ResyncAfterWebNowPlaying()
+    {
+        _lastReportedIsPlaying = false;
+        _lastReportedRate = 1.0;
+        _lastReportedCanSeek = true;
+        _wnpNonSeekableFrames = 0;
+
+        var session = SafeGetFallbackSession();
+        if (session != null)
+        {
+            SetActiveSession(session);
+        }
+        else
+        {
+            ResetToNoMedia();
         }
     }
 
@@ -1797,11 +2048,39 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
         if (disposing)
         {
             _isMediaManagerStarted = false;
-            if (_playbackTimer != null)
+
+            // WebNowPlaying first: mute the ownership flag so the release callback cannot resurrect
+            // SMTC state on a widget that is going away.
+            _wnpOwnsDisplay = false;
+            _wnpPlayer = null;
+            WebNowPlayingServer? wnpServer = _wnpServer;
+            _wnpServer = null;
+            if (wnpServer != null)
             {
-                _playbackTimer.Stop();
-                _playbackTimer.Tick -= OnPlaybackTimerTick;
-                _playbackTimer = null;
+                wnpServer.ActivePlayerChanged -= Wnp_OnActivePlayerChanged;
+                wnpServer.CoverReceived -= Wnp_OnCoverReceived;
+                wnpServer.ConnectionChanged -= Wnp_OnConnectionChanged;
+
+                bool last;
+                lock (_wnpShareLock)
+                {
+                    _wnpSharedRefs--;
+                    last = _wnpSharedRefs <= 0;
+                    if (last)
+                    {
+                        _wnpSharedServer = null;
+                        _wnpSharedRefs = 0;
+                    }
+                }
+                if (last) wnpServer.Dispose();
+            }
+
+            // Detach the frame hook first: a rendering callback firing into a half-disposed widget is
+            // exactly the kind of leak this teardown exists to prevent.
+            if (_isRenderHookAttached)
+            {
+                CompositionTarget.Rendering -= OnRenderingFrame;
+                _isRenderHookAttached = false;
             }
 
             if (_mediaManager != null)

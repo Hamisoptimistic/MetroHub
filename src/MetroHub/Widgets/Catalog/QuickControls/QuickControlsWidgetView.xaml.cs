@@ -14,6 +14,7 @@ public partial class QuickControlsWidgetView : UserControl
 {
     private bool _isDragging = false;
     private QuickControlsWidgetViewModel? _vm;
+    private double _lastDragRatio;
     private System.Windows.Threading.DispatcherTimer? _shimmerDelayTimer;
     private bool _isShimmerSweeping;
 
@@ -196,6 +197,7 @@ public partial class QuickControlsWidgetView : UserControl
         _vm.Media.StartScrubbing();
 
         double ratio = CalculateRatioFromPosition(e.GetPosition(container), container);
+        _lastDragRatio = ratio;
         UpdateProgressVisuals(ratio);
     }
 
@@ -206,6 +208,7 @@ public partial class QuickControlsWidgetView : UserControl
             e.Handled = true;
             var container = sender as FrameworkElement ?? MediaSeekbarContainer;
             double ratio = CalculateRatioFromPosition(e.GetPosition(container), container);
+            _lastDragRatio = ratio;
             UpdateProgressVisuals(ratio);
         }
     }
@@ -225,6 +228,7 @@ public partial class QuickControlsWidgetView : UserControl
             if (_vm?.Media != null)
             {
                 double ratio = CalculateRatioFromPosition(e.GetPosition(container), container);
+                _lastDragRatio = ratio;
                 _vm.Media.StopScrubbing(ratio);
                 UpdateShimmerAnimation();
             }
@@ -240,7 +244,23 @@ public partial class QuickControlsWidgetView : UserControl
             AnimateHoverState(container.IsMouseOver, isDragging: false);
             if (_vm?.Media != null)
             {
-                _vm.Media.StopScrubbing(_vm.Media.ProgressRatio);
+                // Commit the last known drag position: ProgressRatio is frozen during
+                // scrubbing and would seek backwards (often to 0) here.
+                double ratio = _lastDragRatio;
+                try
+                {
+                    if (container.ActualWidth > 0)
+                    {
+                        Point p = e.GetPosition(container);
+                        if (p.X >= 0 && p.X <= container.ActualWidth)
+                        {
+                            ratio = CalculateRatioFromPosition(p, container);
+                            _lastDragRatio = ratio;
+                        }
+                    }
+                }
+                catch { }
+                _vm.Media.StopScrubbing(ratio);
                 UpdateShimmerAnimation();
             }
         }

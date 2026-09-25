@@ -1,0 +1,8 @@
+{"ObservedMs":0,"TrackId":"B|Song|Artist","SourcePositionSeconds":50,"SourceDurationSeconds":200,"Rate":1,"IsPlaying":true,"CanSeek":true}
+{"ObservedMs":1000,"TrackId":"B|Song|Artist","SourcePositionSeconds":51,"SourceDurationSeconds":200,"Rate":1,"IsPlaying":true,"CanSeek":true}
+{"ObservedMs":2000,"TrackId":"B|Song|Artist","SourcePositionSeconds":52,"SourceDurationSeconds":200,"Rate":1,"IsPlaying":true,"CanSeek":true}
+{"ObservedMs":2100,"TrackId":"B|Song|Artist","SourcePositionSeconds":52,"SourceDurationSeconds":200,"Rate":1,"IsPlaying":false,"CanSeek":true}
+{"ObservedMs":4100,"TrackId":"B|Song|Artist","SourcePositionSeconds":52,"SourceDurationSeconds":200,"Rate":1,"IsPlaying":false,"CanSeek":true}
+{"ObservedMs":5100,"TrackId":"B|Song|Artist","SourcePositionSeconds":52,"SourceDurationSeconds":200,"Rate":1,"IsPlaying":false,"CanSeek":true}
+{"ObservedMs":5200,"TrackId":"B|Song|Artist","SourcePositionSeconds":52.05,"SourceDurationSeconds":200,"Rate":1,"IsPlaying":true,"CanSeek":true}
+{"ObservedMs":6200,"TrackId":"B|Song|Artist","SourcePositionSeconds":53.05,"SourceDurationSeconds":200,"Rate":1,"IsPlaying":true,"CanSeek":true}

@@ -14,6 +14,7 @@ public partial class MediaWidgetView : UserControl
     private bool _isDragging = false;
     private FrameworkElement? _activeDragContainer;
     private MediaWidgetViewModel? _vm;
+    private double _lastDragRatio;
 
     public MediaWidgetView()
     {
@@ -86,7 +87,6 @@ public partial class MediaWidgetView : UserControl
 
         if (e.PropertyName is nameof(MediaWidgetViewModel.ProgressRatio)
                            or nameof(MediaWidgetViewModel.DurationSeconds)
-                           or nameof(MediaWidgetViewModel.PositionSeconds)
                            or nameof(MediaWidgetViewModel.IsPlaying)
                            or nameof(MediaWidgetViewModel.IsSlimMode)
                            or nameof(MediaWidgetViewModel.IsZuneMode)
@@ -381,6 +381,7 @@ public partial class MediaWidgetView : UserControl
         _vm.StartScrubbing();
 
         double ratio = CalculateRatioFromPosition(e.GetPosition(container), container);
+        _lastDragRatio = ratio;
         UpdateProgressVisuals(ratio);
     }
 
@@ -391,6 +392,7 @@ public partial class MediaWidgetView : UserControl
             e.Handled = true;
             var container = _activeDragContainer ?? sender as FrameworkElement ?? SeekbarContainer;
             double ratio = CalculateRatioFromPosition(e.GetPosition(container), container);
+            _lastDragRatio = ratio;
             UpdateProgressVisuals(ratio);
         }
     }
@@ -411,6 +413,7 @@ public partial class MediaWidgetView : UserControl
             if (_vm != null)
             {
                 double ratio = CalculateRatioFromPosition(e.GetPosition(container), container);
+                _lastDragRatio = ratio;
                 _vm.StopScrubbing(ratio);
                 UpdateShimmerAnimation();
             }
@@ -427,7 +430,24 @@ public partial class MediaWidgetView : UserControl
             AnimateHoverState(container.IsMouseOver, isDragging: false);
             if (_vm != null)
             {
-                _vm.StopScrubbing(_vm.ProgressRatio);
+                // Mouse position is unreliable here (capture already lost, often outside the bar),
+                // so commit the last known drag position instead of the stale ProgressRatio,
+                // which was frozen when scrubbing started and would seek backwards (often to 0).
+                double ratio = _lastDragRatio;
+                try
+                {
+                    if (container.ActualWidth > 0)
+                    {
+                        Point p = e.GetPosition(container);
+                        if (p.X >= 0 && p.X <= container.ActualWidth)
+                        {
+                            ratio = CalculateRatioFromPosition(p, container);
+                            _lastDragRatio = ratio;
+                        }
+                    }
+                }
+                catch { }
+                _vm.StopScrubbing(ratio);
                 UpdateShimmerAnimation();
             }
         }

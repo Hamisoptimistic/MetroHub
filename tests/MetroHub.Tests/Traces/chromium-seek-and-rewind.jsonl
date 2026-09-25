@@ -1,0 +1,10 @@
+{"ObservedMs":0,"TrackId":"A|Track|Album","SourcePositionSeconds":120,"SourceDurationSeconds":600,"Rate":1,"IsPlaying":true,"CanSeek":true}
+{"ObservedMs":1000,"TrackId":"A|Track|Album","SourcePositionSeconds":121,"SourceDurationSeconds":600,"Rate":1,"IsPlaying":true,"CanSeek":true}
+{"ObservedMs":2000,"TrackId":"A|Track|Album","SourcePositionSeconds":122,"SourceDurationSeconds":600,"Rate":1,"IsPlaying":true,"CanSeek":true}
+{"ObservedMs":2050,"TrackId":"A|Track|Album","SourcePositionSeconds":0,"SourceDurationSeconds":600,"Rate":1,"IsPlaying":true,"CanSeek":true}
+{"ObservedMs":2100,"TrackId":"A|Track|Album","SourcePositionSeconds":122.1,"SourceDurationSeconds":600,"Rate":1,"IsPlaying":true,"CanSeek":true}
+{"ObservedMs":3000,"TrackId":"A|Track|Album","SourcePositionSeconds":123,"SourceDurationSeconds":600,"Rate":1,"IsPlaying":true,"CanSeek":true}
+{"ObservedMs":3100,"TrackId":"A|Track|Album","SourcePositionSeconds":60,"SourceDurationSeconds":600,"Rate":1,"IsPlaying":true,"CanSeek":true}
+{"ObservedMs":3200,"TrackId":"A|Track|Album","SourcePositionSeconds":60.1,"SourceDurationSeconds":600,"Rate":1,"IsPlaying":true,"CanSeek":true}
+{"ObservedMs":4200,"TrackId":"A|Track|Album","SourcePositionSeconds":61.1,"SourceDurationSeconds":600,"Rate":1,"IsPlaying":true,"CanSeek":true}
+{"ObservedMs":5200,"TrackId":"A|Track|Album","SourcePositionSeconds":62.1,"SourceDurationSeconds":600,"Rate":1,"IsPlaying":true,"CanSeek":true}
