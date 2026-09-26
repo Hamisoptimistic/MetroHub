@@ -151,4 +151,56 @@ public class RadioAudioServiceTests
         service.Pause();
         Assert.False(service.IsPlaying);
     }
+
+    [Fact]
+    public async Task Crossfade_BetweenStations_MaintainsContinuousAudio()
+    {
+        var service = RadioAudioService.Instance;
+
+        var station1 = new RadioStation
+        {
+            Id = "somafm_dronezone",
+            Name = "SomaFM Drone Zone",
+            StreamUrl = "http://ice1.somafm.com/dronezone-128-mp3",
+            BitrateKbps = 128,
+            Category = "ambient"
+        };
+
+        var station2 = new RadioStation
+        {
+            Id = "somafm_groovesalad",
+            Name = "SomaFM Groove Salad",
+            StreamUrl = "http://ice1.somafm.com/groovesalad-128-mp3",
+            BitrateKbps = 128,
+            Category = "lofi"
+        };
+
+        // 1. Start Station 1
+        await service.PlayStationAsync(station1);
+        Assert.Equal("somafm_dronezone", service.CurrentStation?.Id);
+
+        int waited = 0;
+        while (!service.IsPlaying && waited < 3000)
+        {
+            await Task.Delay(200);
+            waited += 200;
+        }
+        Assert.True(service.IsPlaying);
+
+        // 2. Switch to Station 2 (initiates DJ crossfade)
+        var crossfadeTask = service.PlayStationAsync(station2);
+
+        // Verify audio does not cut out to dead silence
+        Assert.True(service.IsPlaying, "Audio must continue playing seamlessly during crossfade initiation");
+
+        await crossfadeTask;
+
+        // Verify station switched cleanly and playback continues
+        Assert.Equal("somafm_groovesalad", service.CurrentStation?.Id);
+        Assert.True(service.IsPlaying, "Station 2 should now be playing seamlessly");
+
+        // Clean pause
+        service.Pause();
+        Assert.False(service.IsPlaying);
+    }
 }

@@ -20,6 +20,7 @@ public sealed class RadioAudioService : IRadioAudioService
 
     private readonly object _gate = new();
     private int _currentStream;
+    private readonly System.Collections.Generic.HashSet<int> _retiringStreams = new();
     private CancellationTokenSource? _switchCts;
 
     // Hard delegate references to prevent native Garbage Collection
@@ -171,6 +172,7 @@ public sealed class RadioAudioService : IRadioAudioService
             // Debounce rapid clicking by 180ms
             await Task.Delay(180, linkedCts.Token).ConfigureAwait(false);
 
+            int oldStream;
             lock (_gate)
             {
                 if (linkedCts.Token.IsCancellationRequested || _isDisposed) return;
@@ -179,21 +181,11 @@ public sealed class RadioAudioService : IRadioAudioService
                 IsBuffering = true;
                 LastErrorMessage = null;
 
-                // Stop and free previous stream
-                if (_currentStream != 0)
-                {
-                    int oldStream = _currentStream;
-                    _currentStream = 0;
-                    try
-                    {
-                        Bass.ChannelStop(oldStream);
-                        Bass.StreamFree(oldStream);
-                    }
-                    catch { }
-                }
+                // DJ Crossfade: Keep previous stream playing while the new station connects!
+                oldStream = _currentStream;
             }
 
-            // Connect to URL on background thread to prevent blocking UI during network handshake
+            // Connect to URL on background thread while previous station continues playing seamlessly
             int newStream = await Task.Run(() =>
             {
                 return Bass.CreateStream(
@@ -224,19 +216,30 @@ public sealed class RadioAudioService : IRadioAudioService
 
                 _currentStream = newStream;
 
-                // Set stream volume (0.0 to 1.0)
-                float targetVol = _isMuted ? 0f : (float)_volume;
-                Bass.ChannelSetAttribute(_currentStream, ChannelAttribute.Volume, targetVol);
+                // 1. Initialize new stream at 0 volume for seamless crossfade
+                Bass.ChannelSetAttribute(newStream, ChannelAttribute.Volume, 0f);
 
-                // Register native synchronization callbacks
-                Bass.ChannelSetSync(_currentStream, SyncFlags.Stalled, 0, _stallSyncProc, IntPtr.Zero);
-                Bass.ChannelSetSync(_currentStream, SyncFlags.End, 0, _endSyncProc, IntPtr.Zero);
-                Bass.ChannelSetSync(_currentStream, SyncFlags.MetadataReceived, 0, _metaSyncProc, IntPtr.Zero);
+                // 2. Register native synchronization callbacks
+                Bass.ChannelSetSync(newStream, SyncFlags.Stalled, 0, _stallSyncProc, IntPtr.Zero);
+                Bass.ChannelSetSync(newStream, SyncFlags.End, 0, _endSyncProc, IntPtr.Zero);
+                Bass.ChannelSetSync(newStream, SyncFlags.MetadataReceived, 0, _metaSyncProc, IntPtr.Zero);
 
-                // Start audio playback
-                bool started = Bass.ChannelPlay(_currentStream);
+                // 3. Start playback on new stream
+                bool started = Bass.ChannelPlay(newStream);
                 if (started)
                 {
+                    const int CrossfadeMs = 1500;
+                    float targetVol = _isMuted ? 0f : (float)_volume;
+
+                    // 4. Smoothly slide new stream volume UP to target volume (1.5s crossfade)
+                    Bass.ChannelSlideAttribute(newStream, ChannelAttribute.Volume, targetVol, CrossfadeMs);
+
+                    // 5. Concurrently slide old stream volume DOWN to 0 and disconnect socket cleanly
+                    if (oldStream != 0 && oldStream != newStream)
+                    {
+                        FadeAndFreeStream(oldStream, CrossfadeMs);
+                    }
+
                     IsPlaying = true;
                     IsBuffering = false;
                 }
@@ -270,30 +273,54 @@ public sealed class RadioAudioService : IRadioAudioService
 
             if (streamToStop != 0)
             {
+                FadeAndFreeStream(streamToStop, 200);
+            }
+
+            // Immediately tear down any remaining retiring streams
+            foreach (int handle in _retiringStreams)
+            {
                 try
                 {
-                    // 120ms hardware volume fade-out to prevent speaker pops/clicks
-                    Bass.ChannelSlideAttribute(streamToStop, ChannelAttribute.Volume, 0f, 120);
-
-                    // Tear down socket cleanly after fade completes to release network bandwidth
-                    Task.Run(async () =>
-                    {
-                        await Task.Delay(130).ConfigureAwait(false);
-                        try
-                        {
-                            Bass.ChannelStop(streamToStop);
-                            Bass.StreamFree(streamToStop);
-                        }
-                        catch { }
-                    });
+                    Bass.ChannelStop(handle);
+                    Bass.StreamFree(handle);
                 }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[RadioAudioService] Pause exception: {ex.Message}");
-                    Bass.StreamFree(streamToStop);
-                }
+                catch { }
             }
+            _retiringStreams.Clear();
         }
+    }
+
+    private void FadeAndFreeStream(int streamHandle, int durationMs)
+    {
+        if (streamHandle == 0) return;
+
+        lock (_gate)
+        {
+            _retiringStreams.Add(streamHandle);
+        }
+
+        Task.Run(async () =>
+        {
+            try
+            {
+                Bass.ChannelSlideAttribute(streamHandle, ChannelAttribute.Volume, 0f, durationMs);
+                await Task.Delay(durationMs + 100).ConfigureAwait(false);
+            }
+            catch { }
+            finally
+            {
+                lock (_gate)
+                {
+                    _retiringStreams.Remove(streamHandle);
+                }
+                try
+                {
+                    Bass.ChannelStop(streamHandle);
+                    Bass.StreamFree(streamHandle);
+                }
+                catch { }
+            }
+        });
     }
 
     public void Resume()
@@ -435,6 +462,17 @@ public sealed class RadioAudioService : IRadioAudioService
                 catch { }
                 _currentStream = 0;
             }
+
+            foreach (int handle in _retiringStreams)
+            {
+                try
+                {
+                    Bass.ChannelStop(handle);
+                    Bass.StreamFree(handle);
+                }
+                catch { }
+            }
+            _retiringStreams.Clear();
 
             try
             {

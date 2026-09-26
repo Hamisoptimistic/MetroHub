@@ -339,17 +339,31 @@ _metaSyncProc = (handle, channel, data, user) =>
 Bass.ChannelSetSync(stream, SyncFlags.Metadata, 0, _metaSyncProc, IntPtr.Zero);
 ```
 
-#### Hardware Volume Fade & Pop/Click Elimination:
-To prevent harsh digital clicks when stopping or switching stations:
+#### DJ-Style Crossfading (Zero Silent Pauses Between Stations):
+When a user switches from Station A to Station B:
+1. Station A **continues playing at full volume** while Station B connects in the background.
+2. When Station B is buffered and ready, it starts playback at volume `0f`.
+3. BASS smoothly slides Station B volume **UP** to full volume over 1,500ms via `Bass.ChannelSlideAttribute`.
+4. Concurrently, BASS smoothly slides Station A volume **DOWN** to `0f` over 1,500ms.
+5. After the crossfade completes, Station A's socket is cleanly disconnected and freed:
 ```csharp
-// Smooth 120ms logarithmic hardware volume fade-out
-Bass.ChannelSlideAttribute(_currentStream, ChannelAttribute.Volume, 0f, 120);
-await Task.Delay(120, CancellationToken.None);
-Bass.ChannelStop(_currentStream);
+// Crossfade: slide new stream UP while sliding retiring stream DOWN concurrently
+Bass.ChannelSlideAttribute(newStream, ChannelAttribute.Volume, targetVol, 1500);
+if (oldStream != 0 && oldStream != newStream)
+{
+    FadeAndFreeStream(oldStream, 1500);
+}
+```
+
+#### Hardware Volume Fade on Pause / Stop:
+To prevent harsh digital clicks when stopping playback:
+```csharp
+// Smooth 200ms hardware volume fade-out before socket teardown
+FadeAndFreeStream(streamToStop, 200);
 ```
 
 #### Clean Socket Teardown:
-On `Pause()` or `Stop()`, `Bass.ChannelStop(_currentStream)` immediately tears down the underlying TCP socket. No background bandwidth or server connections linger.
+On `Pause()` or `Stop()`, retiring streams have their sockets immediately torn down once faded, releasing all network bandwidth and OS socket handles.
 
 ---
 
