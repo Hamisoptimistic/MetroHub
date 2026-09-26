@@ -157,6 +157,23 @@ public static class WidgetRegistry
             Category: "Sound"
         ));
 
+        // Register Focus Radio & Ambient Sounds widget
+        Register(new WidgetDefinition(
+            Id: "radio",
+            DisplayName: "Focus Radio",
+            Description: "Curated ambient, nature, lo-fi, and coding radio stations for deep focus",
+            Icon: SymbolRegular.HeadphonesSoundWave24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Huge // 8x6 (504x376px)
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Radio.RadioWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Radio.RadioWidgetView),
+            DefaultSize: WidgetSize.Huge,
+            Factory: model => new MetroHub.Widgets.Catalog.Radio.RadioWidgetViewModel(model),
+            Category: "Sound"
+        ));
+
         // Register Notes & Tasks (Notepad / Todo) widget
         Register(new WidgetDefinition(
             Id: "notepad",
@@ -348,10 +365,7 @@ public static class WidgetRegistry
             Icon: SymbolRegular.AnimalDog24,
             AllowedSizes: new[]
             {
-                WidgetSize.Medium,  // 2x2: Pocket Companion
-                WidgetSize.Wide,    // 4x2: Rover + Speech/Status
-                WidgetSize.Large,   // 4x4: Playpen + Actions
-                WidgetSize.Banner3  // 8x3: Companion Deck + Quick Search
+                WidgetSize.Wide     // 4x2: Centered Desktop Companion
             },
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Rover.RoverWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Rover.RoverWidgetView),

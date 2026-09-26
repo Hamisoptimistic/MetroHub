@@ -1,0 +1,433 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "ambient",
+      "displayName": "Ambient",
+      "iconSymbol": "WeatherMoon24",
+      "stations": [
+        {
+          "id": "dronezone",
+          "name": "SomaFM Drone Zone",
+          "streamUrl": "http://ice1.somafm.com/dronezone-128-mp3",
+          "bitrateKbps": 128,
+          "category": "ambient",
+          "icon": "WeatherMoon24",
+          "description": "The undisputed #1 ambient drone stream in internet history. Commercial-free from San Francisco.",
+          "homepageUrl": "https://somafm.com/dronezone/"
+        },
+        {
+          "id": "groovesalad",
+          "name": "SomaFM Groove Salad",
+          "streamUrl": "http://ice1.somafm.com/groovesalad-128-mp3",
+          "bitrateKbps": 128,
+          "category": "ambient",
+          "icon": "LeafTwo24",
+          "description": "The world's most famous ambient downtempo and chill channel for coders and creators.",
+          "homepageUrl": "https://somafm.com/groovesalad/"
+        },
+        {
+          "id": "nightwave",
+          "name": "Nightwave Plaza",
+          "streamUrl": "https://radio.plaza.one/mp3",
+          "bitrateKbps": 128,
+          "category": "ambient",
+          "icon": "City24",
+          "description": "Iconic 24/7 aesthetic station featuring vaporwave, ambient drift, and late-night city soundscapes.",
+          "homepageUrl": "https://plaza.one/"
+        },
+        {
+          "id": "isekoi",
+          "name": "ISEKOI Radio",
+          "streamUrl": "https://public.isekoi-radio.com/listen/isekoi/radio.mp3",
+          "bitrateKbps": 320,
+          "category": "ambient",
+          "icon": "VehicleSpaceShip24",
+          "description": "Independent cosmic ambient and electronic soundscapes. Ad-free, high-fidelity 320k broadcast.",
+          "homepageUrl": "https://isekoi.com/"
+        },
+        {
+          "id": "ambientmodern",
+          "name": "Ambient Modern",
+          "streamUrl": "http://radio.stereoscenic.com/mod-h",
+          "bitrateKbps": 256,
+          "category": "ambient",
+          "icon": "Headphones24",
+          "description": "Expansive contemporary ambient, modern classical, and atmospheric drones from Stereoscenic.",
+          "homepageUrl": "https://stereoscenic.com/"
+        },
+        {
+          "id": "synphaera",
+          "name": "Synphaera Radio",
+          "streamUrl": "https://ice1.somafm.com/synphaera-128-mp3",
+          "bitrateKbps": 128,
+          "category": "ambient",
+          "icon": "Sparkle24",
+          "description": "Official ambient station of Synphaera Records. Deep space ambient, synthscapes, and sound design.",
+          "homepageUrl": "https://somafm.com/synphaera/"
+        },
+        {
+          "id": "spacestation",
+          "name": "Space Station Soma",
+          "streamUrl": "http://ice1.somafm.com/spacestation-128-mp3",
+          "bitrateKbps": 128,
+          "category": "ambient",
+          "icon": "VehicleSpaceShip24",
+          "description": "Turn on, tune in, space out. Spaced-out ambient and mid-tempo electronic space chill.",
+          "homepageUrl": "https://somafm.com/spacestation/"
+        },
+        {
+          "id": "9128",
+          "name": "9128 Live",
+          "streamUrl": "https://streams.radio.co/s0aa1e6f4a/listen",
+          "bitrateKbps": 320,
+          "category": "ambient",
+          "icon": "CloudMoon24",
+          "description": "Curated ambient and deep modern soundscapes from the acclaimed A Strangely Isolated Place label.",
+          "homepageUrl": "https://9128.live"
+        },
+        {
+          "id": "amambient",
+          "name": "a.M. Ambient",
+          "streamUrl": "http://radio.stereoscenic.com/ama-h",
+          "bitrateKbps": 256,
+          "category": "ambient",
+          "icon": "WeatherSunny24",
+          "description": "Bright, warm daytime ambient designed for morning clarity, calm breathing, and focus.",
+          "homepageUrl": "https://amambient.com/"
+        },
+        {
+          "id": "asp",
+          "name": "Ambient Sleeping Pill",
+          "streamUrl": "http://radio.stereoscenic.com/asp-h",
+          "bitrateKbps": 256,
+          "category": "ambient",
+          "icon": "Bed24",
+          "description": "100% beat-free gentle ambient stream tailored for quiet relaxation, study, or sleep.",
+          "homepageUrl": "https://stereoscenic.com/"
+        },
+        {
+          "id": "ambientfm",
+          "name": "Ambient.FM",
+          "streamUrl": "https://phoebe.streamerr.co:4140/ambient.mp3",
+          "bitrateKbps": 128,
+          "category": "ambient",
+          "icon": "SoundSource24",
+          "description": "Stretched electronica soundscapes. Fully human-curated and crafted with strictly no AI.",
+          "homepageUrl": "https://ambient.fm/"
+        },
+        {
+          "id": "darkambient",
+          "name": "Dark Ambient Radio",
+          "streamUrl": "http://s3.viastreaming.net:8835/,",
+          "bitrateKbps": 192,
+          "category": "ambient",
+          "icon": "WeatherBlowingSnow24",
+          "description": "Deep, cinematic, atmospheric dark ambient drones running continuously since 2006.",
+          "homepageUrl": "https://www.darkambientradio.de/"
+        },
+        {
+          "id": "dinamosleep",
+          "name": "Dinamo.FM - Sleep",
+          "streamUrl": "http://channels.dinamo.fm/sleep-mp3",
+          "bitrateKbps": 320,
+          "category": "ambient",
+          "icon": "Star24",
+          "description": "Ultra-clean ambient, downtempo, lullaby, and Zen soundscapes from Istanbul.",
+          "homepageUrl": "https://dinamo.fm"
+        },
+        {
+          "id": "moonphase",
+          "name": "Moon Phase Ambient",
+          "streamUrl": "https://cp12.serverse.com/proxy/moonphase/stream",
+          "bitrateKbps": 192,
+          "category": "ambient",
+          "icon": "Night24",
+          "description": "Atmospheric ambient and downtempo themed around the stillness of the moon.",
+          "homepageUrl": "https://moonphaseradio.com/"
+        },
+        {
+          "id": "sleepbot",
+          "name": "Sleepbot Environmental",
+          "streamUrl": "http://primarystream.sleepbot.com:8218/seb",
+          "bitrateKbps": 56,
+          "category": "ambient",
+          "icon": "Radio24",
+          "description": "One of the earliest internet ambient streams, on air since 1999 (Ambience for the Masses).",
+          "homepageUrl": "https://sleepbot.com/ambience/broadcast/"
+        }
+      ]
+    },
+    {
+      "id": "nature",
+      "displayName": "Nature",
+      "iconSymbol": "TreeDeciduous24",
+      "stations": [
+        {
+          "id": "birdsong",
+          "name": "Birdsong FM",
+          "streamUrl": "https://a1.radio.co/s5c5da6a36/listen",
+          "bitrateKbps": 128,
+          "category": "nature",
+          "icon": "AnimalRabbit24",
+          "description": "24/7 authentic English woodland dawn chorus and gentle birdsong recorded in nature.",
+          "homepageUrl": "https://birdsong.fm/"
+        },
+        {
+          "id": "rainuk",
+          "name": "Rain & Thunder UK",
+          "streamUrl": "https://boxradio-edge-01.streamafrica.net/rain",
+          "bitrateKbps": 128,
+          "category": "nature",
+          "icon": "WeatherRain24",
+          "description": "Continuous gentle rainfall and distant rolling thunder for deep relaxation.",
+          "homepageUrl": "https://boxradio.uk/"
+        },
+        {
+          "id": "ambinature",
+          "name": "Ambi Nature Radio (HD)",
+          "streamUrl": "https://nature-rex.radioca.st/stream",
+          "bitrateKbps": 320,
+          "category": "nature",
+          "icon": "TreeDeciduous24",
+          "description": "Pristine 320 kbps HD nature soundscapes: babbling brooks, breezes, and wildlife.",
+          "homepageUrl": "https://ambinatureradio.com/"
+        },
+        {
+          "id": "mynoise-ocean",
+          "name": "myNoise Ocean Waves",
+          "streamUrl": "http://oceanwaves.radio.mynoise.net/",
+          "bitrateKbps": 160,
+          "category": "nature",
+          "icon": "Waves24",
+          "description": "Dr. Stephane Pigeon's celebrated acoustic lab. Rhythmic Atlantic ocean swells and surf.",
+          "homepageUrl": "https://mynoise.net/"
+        },
+        {
+          "id": "mynoise-rain",
+          "name": "myNoise Rainy Day",
+          "streamUrl": "http://rainyday.radio.mynoise.net/",
+          "bitrateKbps": 160,
+          "category": "nature",
+          "icon": "WeatherRainShowers24",
+          "description": "Organic raindrops striking wet foliage, soil, and glass with zero loop artifacts.",
+          "homepageUrl": "https://mynoise.net/"
+        },
+        {
+          "id": "mynoise-nature",
+          "name": "myNoise Pure Nature",
+          "streamUrl": "https://purenature-mynoise.radioca.st/stream",
+          "bitrateKbps": 160,
+          "category": "nature",
+          "icon": "Mountain24",
+          "description": "Deep wilderness soundscapes: alpine winds, forest canopies, and living biodiversity.",
+          "homepageUrl": "https://mynoise.net/"
+        },
+        {
+          "id": "mynoise-zen",
+          "name": "myNoise Zen Garden",
+          "streamUrl": "http://zengarden.radio.mynoise.net/",
+          "bitrateKbps": 160,
+          "category": "nature",
+          "icon": "LeafTwo24",
+          "description": "Traditional Japanese garden: soothing water trickles, bamboo fountain strikes, and wind chimes.",
+          "homepageUrl": "https://mynoise.net/"
+        },
+        {
+          "id": "sleepscapes-waves",
+          "name": "Sleepscapes Waves",
+          "streamUrl": "https://stream.willstare.com:8860/,",
+          "bitrateKbps": 64,
+          "category": "nature",
+          "icon": "WaterDrop24",
+          "description": "Dedicated low-bandwidth sleep stream capturing slow rhythmic swells and beach surf.",
+          "homepageUrl": "https://willstare.com/"
+        },
+        {
+          "id": "nature-rain",
+          "name": "Nature Radio Rain",
+          "streamUrl": "https://maggie.torontocast.com:2020/stream/natureradiorain",
+          "bitrateKbps": 128,
+          "category": "nature",
+          "icon": "CloudRain24",
+          "description": "24/7 dedicated rainfall and thunderstorm stream hosted on TorontoCast.",
+          "homepageUrl": "https://torontocast.com/"
+        },
+        {
+          "id": "nts-field",
+          "name": "NTS Field Recordings",
+          "streamUrl": "https://stream-mixtape-geo.ntslive.net/mixtape23",
+          "bitrateKbps": 256,
+          "category": "nature",
+          "icon": "MicSparkle24",
+          "description": "Curated global bioacoustics and environmental field recordings from London's NTS Live.",
+          "homepageUrl": "https://www.ntslive.net/"
+        }
+      ]
+    },
+    {
+      "id": "lofi",
+      "displayName": "Lo-Fi / Chill",
+      "iconSymbol": "Headphones24",
+      "stations": [
+        {
+          "id": "chilltrax",
+          "name": "Chilltrax",
+          "streamUrl": "https://streamssl.chilltrax.com/",
+          "bitrateKbps": 128,
+          "category": "lofi",
+          "icon": "Headphones24",
+          "description": "The World's Chillout Channel. Ambient electronica, downtempo, lounge, and chill.",
+          "homepageUrl": "https://chilltrax.com"
+        },
+        {
+          "id": "0nlineradio-lofi",
+          "name": "0nlineradio LO-FI",
+          "streamUrl": "https://stream.0nlineradio.com/lo-fi",
+          "bitrateKbps": 192,
+          "category": "lofi",
+          "icon": "MusicNote24",
+          "description": "Smooth 24/7 instrumental lo-fi beats, coffee shop background vibes, and calm study grooves.",
+          "homepageUrl": "https://0nlineradio.com"
+        },
+        {
+          "id": "moonphase-chill",
+          "name": "Moon Phase Chill",
+          "streamUrl": "https://dc1.serverse.com/proxy/dnutqhxl/stream",
+          "bitrateKbps": 192,
+          "category": "lofi",
+          "icon": "WeatherMoon24",
+          "description": "Atmospheric downtempo beats, mellow rhythms, and nocturnal chillout.",
+          "homepageUrl": "https://moonphaseradio.com"
+        },
+        {
+          "id": "reyfm-lofi",
+          "name": "REYFM #LOFI (HD)",
+          "streamUrl": "https://listen.reyfm.de/lofi_320kbps.mp3",
+          "bitrateKbps": 320,
+          "category": "lofi",
+          "icon": "Sparkle24",
+          "description": "Germany's premier 320k Lo-Fi hip hop station. Warm vinyl textures and relaxed jazz chords.",
+          "homepageUrl": "https://reyfm.de"
+        },
+        {
+          "id": "fluxfm-chillhop",
+          "name": "FluxFM Chillhop (HD)",
+          "streamUrl": "http://streams.fluxfm.de/Chillhop/mp3-320",
+          "bitrateKbps": 320,
+          "category": "lofi",
+          "icon": "Radio24",
+          "description": "Berlin's acclaimed indie broadcaster. 320k chillhop, mellow beats, and jazzy hip-hop loops.",
+          "homepageUrl": "https://fluxfm.de"
+        },
+        {
+          "id": "bigfm-lofifocus",
+          "name": "bigFM LoFi Focus",
+          "streamUrl": "https://stream.bigfm.de/lofifocus/mp3-128/radiobrowser",
+          "bitrateKbps": 128,
+          "category": "lofi",
+          "icon": "BookOpen24",
+          "description": "Calm rhythmic study channel designed to maximize concentration, deep work, and reading.",
+          "homepageUrl": "https://bigfm.de"
+        },
+        {
+          "id": "lofi247",
+          "name": "Lofi 24/7",
+          "streamUrl": "http://usa9.fastcast4u.com/proxy/jamz?mp=/1",
+          "bitrateKbps": 128,
+          "category": "lofi",
+          "icon": "Heart24",
+          "description": "Community favorite 24/7 Lo-Fi station streaming melodic beats, anime aesthetics, and chill vibes.",
+          "homepageUrl": "https://lofi247.com"
+        },
+        {
+          "id": "lautfm-lofi",
+          "name": "Laut.fm LoFi",
+          "streamUrl": "https://stream.laut.fm/lofi",
+          "bitrateKbps": 128,
+          "category": "lofi",
+          "icon": "SoundSource24",
+          "description": "Pure uninterrupted instrumental chillout and lo-fi hip-hop from Germany's user-powered network.",
+          "homepageUrl": "https://laut.fm/lofi"
+        },
+        {
+          "id": "somafm-lush",
+          "name": "SomaFM Lush",
+          "streamUrl": "http://ice1.somafm.com/lush-128-mp3",
+          "bitrateKbps": 128,
+          "category": "lofi",
+          "icon": "Flower24",
+          "description": "Sensuous, mellow female vocals blended with electronic chillout, dream pop, and trip-hop.",
+          "homepageUrl": "https://somafm.com/lush"
+        },
+        {
+          "id": "boxradio-lofi",
+          "name": "Box Radio Lofi",
+          "streamUrl": "https://play.streamafrica.net/lofiradio",
+          "bitrateKbps": 128,
+          "category": "lofi",
+          "icon": "Speaker224",
+          "description": "24/7 chilled bedroom beats, tape saturation, and mellow late-night rhythms from Box Radio.",
+          "homepageUrl": "https://boxradio.net"
+        }
+      ]
+    },
+    {
+      "id": "coding",
+      "displayName": "Coding",
+      "iconSymbol": "Code24",
+      "stations": [
+        {
+          "id": "coderadio",
+          "name": "CodeRadio (freeCodeCamp)",
+          "streamUrl": "https://coderadio-admin-v2.freecodecamp.org/listen/coderadio/radio.mp3",
+          "bitrateKbps": 128,
+          "category": "coding",
+          "icon": "Code24",
+          "description": "The world's #1 developer radio. 24/7 instrumental, commercial-free coding music engineered for flow state.",
+          "homepageUrl": "https://coderadio.freecodecamp.org"
+        },
+        {
+          "id": "defcon",
+          "name": "SomaFM DEF CON Radio",
+          "streamUrl": "http://ice1.somafm.com/defcon-128-mp3",
+          "bitrateKbps": 128,
+          "category": "coding",
+          "icon": "ShieldKeyhole24",
+          "description": "The official year-round music of DEF CON. Dark electronics, glitch, and cyberpunk tracks for hackers.",
+          "homepageUrl": "https://somafm.com/defcon"
+        },
+        {
+          "id": "chillsynth",
+          "name": "Nightride FM Chillsynth (HD)",
+          "streamUrl": "https://stream.nightride.fm/chillsynth.mp3",
+          "bitrateKbps": 320,
+          "category": "coding",
+          "icon": "Laptop24",
+          "description": "Flagship chillsynth and retrowave network for programmers, devs, and night owls with lush analog synths.",
+          "homepageUrl": "https://nightride.fm"
+        },
+        {
+          "id": "cliqhop",
+          "name": "SomaFM Cliqhop IDM",
+          "streamUrl": "http://ice1.somafm.com/cliqhop-128-mp3",
+          "bitrateKbps": 128,
+          "category": "coding",
+          "icon": "Bot24",
+          "description": "Blip-hop, minimal techno, and Intelligent Dance Music (IDM) with intricate clicky micro-rhythms.",
+          "homepageUrl": "https://somafm.com/cliqhop"
+        },
+        {
+          "id": "modfm",
+          "name": "ModFM (Tracker & Chiptune)",
+          "streamUrl": "http://radio.modules.pl:8500/;",
+          "bitrateKbps": 128,
+          "category": "coding",
+          "icon": "Games24",
+          "description": "Dedicated 24/7 tracker mods (.MOD, .XM, .IT, .S3M), Amiga soundtracker, and demoscene classics.",
+          "homepageUrl": "http://modules.pl"
+        }
+      ]
+    }
+  ]
+}

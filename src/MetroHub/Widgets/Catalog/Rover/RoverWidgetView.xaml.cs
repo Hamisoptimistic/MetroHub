@@ -76,10 +76,7 @@ public partial class RoverWidgetView : UserControl
         // Stack-allocated Rect: Exactly 0 bytes allocated on the managed heap!
         var rect = RoverSpriteAtlas.GetFrameRect(x, y);
 
-        if (SpriteBrushMedium != null) SpriteBrushMedium.Viewbox = rect;
         if (SpriteBrushWide != null) SpriteBrushWide.Viewbox = rect;
-        if (SpriteBrushLarge != null) SpriteBrushLarge.Viewbox = rect;
-        if (SpriteBrushBanner != null) SpriteBrushBanner.Viewbox = rect;
     }
 
     private static (int X, int Y) GetInitialFrameCoords(RoverAnimationEngine engine)

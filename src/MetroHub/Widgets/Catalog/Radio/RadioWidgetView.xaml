@@ -1,0 +1,524 @@
+<UserControl x:Class="MetroHub.Widgets.Catalog.Radio.RadioWidgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:widgets="clr-namespace:MetroHub.Widgets"
+             xmlns:radio="clr-namespace:MetroHub.Widgets.Catalog.Radio"
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=radio:RadioWidgetViewModel}"
+             Focusable="False"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="ClearType"
+             TextOptions.TextHintingMode="Fixed"
+             RenderOptions.ClearTypeHint="Enabled"
+             Width="504"
+             Height="376">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- 4px Fluent Floating ScrollBar: Invisible by default, reveals on scroll/hover -->
+        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
+
+        <!-- Transport Button Style: Based on FluentGhostButtonStyle -->
+        <Style x:Key="VolumeTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}">
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Focusable" Value="False" />
+        </Style>
+
+        <!-- Circular Play/Pause Accent Button Style -->
+        <Style x:Key="PlayPauseAccentButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="38" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Background" Value="#00E676" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="CircleBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="19"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CircleBorder" Property="Background" Value="#00FF85" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="CircleBorder" Property="Background" Value="#00CC6A" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Seamless Radio Station Grid Tile Button Style -->
+        <Style x:Key="RadioStationTileButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="126" />
+            <Setter Property="Height" Value="78" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <!-- Seamless border-to-border card container -->
+                        <Border x:Name="TileBorder"
+                                Background="Transparent"
+                                BorderBrush="#14FFFFFF"
+                                BorderThickness="0,0,1,1"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <!-- Standard Station Card Content -->
+                                <Grid x:Name="StationContent" Margin="9,8,9,8">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Top Meta: Category Icon (Left) + Playing Indicator / Bitrate (Right) -->
+                                    <Grid Grid.Row="0">
+                                        <ui:SymbolIcon x:Name="StationTypeIcon"
+                                                       Symbol="SoundWaveCircle24"
+                                                       FontSize="13"
+                                                       Foreground="#70FFFFFF"
+                                                       HorizontalAlignment="Left"
+                                                       VerticalAlignment="Center" />
+
+                                        <!-- Playing Status: Animated Equalizer/Sound Indicator -->
+                                        <StackPanel x:Name="PlayingBadge"
+                                                    Orientation="Horizontal"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Center"
+                                                    Visibility="Collapsed">
+                                            <Ellipse Width="6" Height="6" Fill="#00E676" Margin="0,0,4,0" />
+                                            <TextBlock Text="PLAYING"
+                                                       FontSize="8.5"
+                                                       FontWeight="Bold"
+                                                       Foreground="#00E676"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+
+                                        <!-- Buffering Status -->
+                                        <StackPanel x:Name="BufferingBadge"
+                                                    Orientation="Horizontal"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Center"
+                                                    Visibility="Collapsed">
+                                            <ui:SymbolIcon Symbol="ArrowSync24" FontSize="10" Foreground="#FFB703" Margin="0,0,3,0" />
+                                            <TextBlock Text="CONNECTING"
+                                                       FontSize="8.5"
+                                                       FontWeight="Bold"
+                                                       Foreground="#FFB703"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+
+                                        <!-- Default Bitrate Badge -->
+                                        <TextBlock x:Name="BitrateBadge"
+                                                   Text="{Binding BitrateBadge}"
+                                                   FontSize="9.5"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#55FFFFFF"
+                                                   HorizontalAlignment="Right"
+                                                   VerticalAlignment="Center" />
+                                    </Grid>
+
+                                    <!-- Bottom Info: Station Name + Category Description -->
+                                    <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="0,4,0,0">
+                                        <TextBlock x:Name="StationNameText"
+                                                   Text="{Binding Name}"
+                                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                                   FontSize="11.5"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#FFFFFF"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="NoWrap" />
+                                        <TextBlock x:Name="StationDescText"
+                                                   Text="{Binding Description}"
+                                                   FontFamily="{DynamicResource AppFontFamily}"
+                                                   FontSize="9.5"
+                                                   Foreground="#70FFFFFF"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   TextWrapping="NoWrap"
+                                                   Margin="0,2,0,0" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Trailing '+' Add Custom Station Placeholder Card Content -->
+                                <Grid x:Name="PlaceholderContent" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <ui:SymbolIcon Symbol="Add24"
+                                                       FontSize="20"
+                                                       Foreground="#60FFFFFF"
+                                                       HorizontalAlignment="Center" />
+                                        <TextBlock Text="Custom Station"
+                                                   FontFamily="{DynamicResource AppFontFamily}"
+                                                   FontSize="10"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#60FFFFFF"
+                                                   Margin="0,4,0,0"
+                                                   HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <!-- Hover Reveal Trigger: Reveals distinct border and subtle hover background -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TileBorder" Property="Background" Value="#15FFFFFF" />
+                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#45FFFFFF" />
+                                <Setter TargetName="TileBorder" Property="BorderThickness" Value="1" />
+                            </Trigger>
+
+                            <!-- Pressed State Trigger -->
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="TileBorder" Property="Background" Value="#22FFFFFF" />
+                            </Trigger>
+
+                            <!-- Active Station Trigger (Vibrant Accent Border & Sheen) -->
+                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                <Setter TargetName="TileBorder" Property="Background" Value="#1200E676" />
+                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#00E676" />
+                                <Setter TargetName="TileBorder" Property="BorderThickness" Value="1.5" />
+                                <Setter TargetName="StationNameText" Property="Foreground" Value="#00E676" />
+                            </DataTrigger>
+
+                            <!-- Playing State Trigger -->
+                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                <Setter TargetName="PlayingBadge" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="BitrateBadge" Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+
+                            <!-- Buffering State Trigger -->
+                            <DataTrigger Binding="{Binding IsBuffering}" Value="True">
+                                <Setter TargetName="BufferingBadge" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="BitrateBadge" Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+
+                            <!-- Add Placeholder Tile Trigger -->
+                            <DataTrigger Binding="{Binding IsAddPlaceholder}" Value="True">
+                                <Setter TargetName="StationContent" Property="Visibility" Value="Collapsed" />
+                                <Setter TargetName="PlaceholderContent" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="TileBorder" Property="BorderThickness" Value="1" />
+                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#20FFFFFF" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Transparent WidgetCard Shell (Padding="0" for seamless border-to-border alignment) -->
+    <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
+        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True">
+            <Grid.RowDefinitions>
+                <!-- Row 0: Top Category Tabs (76px) -->
+                <RowDefinition Height="76" />
+                <!-- Row 1: Main Seamless 4-Column Station Grid (236px) -->
+                <RowDefinition Height="236" />
+                <!-- Row 2: Bottom Fluent Player Bar (64px) -->
+                <RowDefinition Height="64" />
+            </Grid.RowDefinitions>
+
+            <!-- ========================================================================= -->
+            <!-- ROW 0: TOP CATEGORY TABS (76px)                                           -->
+            <!-- [ Ambient ] | [ Nature ] | [ Lo-Fi / Chill ] | [ Coding ]                 -->
+            <!-- ========================================================================= -->
+            <widgets:WidgetTiles Grid.Row="0"
+                                 SelectedValue="{Binding SelectedCategoryId, Mode=TwoWay}"
+                                 Height="76"
+                                 HorizontalAlignment="Stretch">
+                <widgets:WidgetTile Value="ambient"
+                                    Symbol="WeatherMoon24"
+                                    Header="Ambient"
+                                    IndicatorBrush="#00E676"
+                                    ToolTip="Deep Ambient, Space &amp; Drone Soundscapes" />
+                <widgets:WidgetTile Value="nature"
+                                    Symbol="LeafTwo24"
+                                    Header="Nature"
+                                    IndicatorBrush="#00E676"
+                                    ToolTip="Rain, Forests, Oceans &amp; Environmental Sounds" />
+                <widgets:WidgetTile Value="lofi"
+                                    Symbol="Headphones24"
+                                    Header="Lo-Fi / Chill"
+                                    IndicatorBrush="#00E676"
+                                    ToolTip="Lo-Fi Hip Hop, Chillout &amp; Study Beats" />
+                <widgets:WidgetTile Value="coding"
+                                    Symbol="Code24"
+                                    Header="Coding"
+                                    IndicatorBrush="#00E676"
+                                    ToolTip="Synthwave, Darksynth &amp; Deep Focus Electronic" />
+            </widgets:WidgetTiles>
+
+            <!-- ========================================================================= -->
+            <!-- ROW 1: SEAMLESS 4-COLUMN STATION GRID (236px)                             -->
+            <!-- Border-to-border, 0 outer margin/padding, 126px per column                -->
+            <!-- ========================================================================= -->
+            <Grid Grid.Row="1" Background="Transparent" SnapsToDevicePixels="True">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Padding="0"
+                              Margin="0"
+                              SnapsToDevicePixels="True">
+                    <ItemsControl ItemsSource="{Binding VisibleStations}"
+                                  SnapsToDevicePixels="True">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Width="504" Margin="0" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type radio:RadioStationItemViewModel}">
+                                <Button Style="{StaticResource RadioStationTileButtonStyle}"
+                                        Command="{Binding DataContext.SelectStationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        ToolTip="{Binding Description}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- ========================================================================= -->
+            <!-- ROW 2: BOTTOM FLUENT PLAYER BAR (64px)                                    -->
+            <!-- Prev, Circular Play/Pause, Next | Station Name & LIVE Badge | Mute, Slider-->
+            <!-- ========================================================================= -->
+            <Grid Grid.Row="2" Background="#16000000" SnapsToDevicePixels="True">
+                <!-- Hairline Top Border Divider -->
+                <Border VerticalAlignment="Top" Height="1" Background="#18FFFFFF" />
+
+                <Grid Margin="12,0,12,0" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <!-- Col 0: Playback Transport Buttons (Width="Auto") -->
+                        <ColumnDefinition Width="Auto" />
+                        <!-- Col 1: Live Station Info & Badges (Width="*") -->
+                        <ColumnDefinition Width="*" />
+                        <!-- Col 2: Mute & Volume Slider (Width="Auto") -->
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Transport Controls (Prev, Circular Play/Pause, Next) -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Previous Station -->
+                        <Button Style="{StaticResource VolumeTransportButtonStyle}"
+                                Command="{Binding PreviousStationCommand}"
+                                ToolTip="Previous Station">
+                            <ui:SymbolIcon Symbol="Previous24" FontSize="15" Foreground="#FFFFFF" />
+                        </Button>
+
+                        <!-- Circular Play/Pause Accent Button -->
+                        <Button Style="{StaticResource PlayPauseAccentButtonStyle}"
+                                Command="{Binding TogglePlayPauseCommand}"
+                                Margin="6,0"
+                                ToolTip="Play / Pause">
+                            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <!-- Play Icon -->
+                                <ui:SymbolIcon Symbol="Play24" FontSize="18" Foreground="#000000" Margin="2,0,0,0">
+                                    <ui:SymbolIcon.Style>
+                                        <Style TargetType="ui:SymbolIcon">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsBuffering}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:SymbolIcon.Style>
+                                </ui:SymbolIcon>
+
+                                <!-- Pause Icon -->
+                                <ui:SymbolIcon Symbol="Pause24" FontSize="18" Foreground="#000000">
+                                    <ui:SymbolIcon.Style>
+                                        <Style TargetType="ui:SymbolIcon">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:SymbolIcon.Style>
+                                </ui:SymbolIcon>
+
+                                <!-- Buffering Sync Icon -->
+                                <ui:SymbolIcon Symbol="ArrowSync24" FontSize="18" Foreground="#000000">
+                                    <ui:SymbolIcon.Style>
+                                        <Style TargetType="ui:SymbolIcon">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsBuffering}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:SymbolIcon.Style>
+                                </ui:SymbolIcon>
+                            </Grid>
+                        </Button>
+
+                        <!-- Next Station -->
+                        <Button Style="{StaticResource VolumeTransportButtonStyle}"
+                                Command="{Binding NextStationCommand}"
+                                ToolTip="Next Station">
+                            <ui:SymbolIcon Symbol="Next24" FontSize="15" Foreground="#FFFFFF" />
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Center: Station Name, Badges & Live Status Indicator -->
+                    <Grid Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Top Status Line: [LIVE] Dot + Status Pill + Bitrate Badge -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Live Indicator Dot -->
+                            <Ellipse Width="7" Height="7" Margin="0,0,5,0" VerticalAlignment="Center">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="#40FFFFFF" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                <Setter Property="Fill" Value="#00E676" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsBuffering}" Value="True">
+                                                <Setter Property="Fill" Value="#FFB703" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+
+                            <!-- Status Text -->
+                            <TextBlock Text="{Binding PlaybackStatusText}"
+                                       FontFamily="{DynamicResource AppFontFamily}"
+                                       FontSize="9.5"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#70FFFFFF" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                <Setter Property="Foreground" Value="#00E676" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsBuffering}" Value="True">
+                                                <Setter Property="Foreground" Value="#FFB703" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <!-- Bitrate Badge (e.g. 128k, 320k) -->
+                            <Border CornerRadius="2"
+                                    Background="#1CFFFFFF"
+                                    Padding="4,1"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentStationBadge}" Value="">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding CurrentStationBadge}"
+                                           FontFamily="{DynamicResource AppFontFamily}"
+                                           FontSize="9.5"
+                                           FontWeight="SemiBold"
+                                           Foreground="#D0FFFFFF" />
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Station Title Line -->
+                        <TextBlock Grid.Row="1"
+                                   Text="{Binding CurrentStationTitle}"
+                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   Foreground="#FFFFFF"
+                                   TextTrimming="CharacterEllipsis"
+                                   TextWrapping="NoWrap"
+                                   ToolTip="{Binding CurrentStationTitle}"
+                                   Margin="0,3,0,0" />
+                    </Grid>
+
+                    <!-- Right: Mute Button & Fluent Volume Slider -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Mute Toggle Button -->
+                        <Button Style="{StaticResource VolumeTransportButtonStyle}"
+                                Command="{Binding ToggleMuteCommand}"
+                                ToolTip="Mute / Unmute"
+                                Width="30" Height="30">
+                            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <ui:SymbolIcon Symbol="Speaker224" FontSize="16" Foreground="#FFFFFF">
+                                    <ui:SymbolIcon.Style>
+                                        <Style TargetType="ui:SymbolIcon">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsMuted}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:SymbolIcon.Style>
+                                </ui:SymbolIcon>
+                                <ui:SymbolIcon Symbol="SpeakerOff24" FontSize="16" Foreground="#FF5252">
+                                    <ui:SymbolIcon.Style>
+                                        <Style TargetType="ui:SymbolIcon">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsMuted}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ui:SymbolIcon.Style>
+                                </ui:SymbolIcon>
+                            </Grid>
+                        </Button>
+
+                        <!-- Fluent Volume Slider -->
+                        <controls:FluentVolumeSlider Width="105"
+                                                    Margin="6,0,0,0"
+                                                    VerticalAlignment="Center"
+                                                    Value="{Binding Volume, Mode=TwoWay}"
+                                                    IsMuted="{Binding IsMuted, Mode=TwoWay}"
+                                                    Minimum="0"
+                                                    Maximum="100"
+                                                    ProgressBrush="#00E676"
+                                                    ProgressPointerOverBrush="#00FF85"
+                                                    Tag="InteractiveControl"
+                                                    SnapsToDevicePixels="True" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Grid>
+    </widgets:WidgetCard>
+</UserControl>

@@ -25,6 +25,7 @@
              xmlns:caffeinesleep="clr-namespace:MetroHub.Widgets.Catalog.CaffeineSleep"
              xmlns:quickcontrols="clr-namespace:MetroHub.Widgets.Catalog.QuickControls"
              xmlns:rover="clr-namespace:MetroHub.Widgets.Catalog.Rover"
+             xmlns:radio="clr-namespace:MetroHub.Widgets.Catalog.Radio"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -234,6 +235,11 @@
         <!-- 19. Rover (Windows XP Dog Companion) Widget DataTemplate -->
         <DataTemplate DataType="{x:Type rover:RoverWidgetViewModel}">
             <rover:RoverWidgetView />
+        </DataTemplate>
+
+        <!-- 20. Focus Radio & Ambient Sounds Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type radio:RadioWidgetViewModel}">
+            <radio:RadioWidgetView />
         </DataTemplate>
     </UserControl.Resources>
 

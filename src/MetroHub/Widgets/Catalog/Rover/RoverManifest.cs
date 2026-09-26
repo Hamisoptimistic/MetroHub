@@ -77,29 +77,40 @@ public static class RoverManifest
         var dict = JsonSerializer.Deserialize(stream, RoverManifestJsonContext.Default.DictionaryStringRoverAnimation)
             ?? new Dictionary<string, RoverAnimation>(StringComparer.OrdinalIgnoreCase);
 
-        // Inject canonical resting and sleep animations
+        // Inject canonical resting and authentic sleep animations from Idle sequence
         dict["RestPose"] = new RoverAnimation(new[] { CreateFrame(0, 0) });
-        dict["Sleeping"] = new RoverAnimation(new[] { CreateFrame(240, 1040) });
+        dict["Sleeping"] = new RoverAnimation(new[] { CreateFrame(2080, 1120) });
         dict["LieDown"] = new RoverAnimation(new[]
         {
-            CreateFrame(1520, 960, 90),
-            CreateFrame(1680, 960, 90),
-            CreateFrame(1840, 960, 90),
-            CreateFrame(2000, 960, 90),
-            CreateFrame(0, 1040, 90),
-            CreateFrame(80, 1040, 90),
-            CreateFrame(160, 1040, 90),
-            CreateFrame(240, 1040, 100)
+            CreateFrame(1280, 1120, 80),
+            CreateFrame(1360, 1120, 80),
+            CreateFrame(1440, 1120, 80),
+            CreateFrame(1520, 1120, 80),
+            CreateFrame(1600, 1120, 80),
+            CreateFrame(1680, 1120, 80),
+            CreateFrame(1760, 1120, 80),
+            CreateFrame(1840, 1120, 80),
+            CreateFrame(1920, 1120, 80),
+            CreateFrame(2000, 1120, 80),
+            CreateFrame(2080, 1120, 100)
         });
         dict["WakeUp"] = new RoverAnimation(new[]
         {
-            CreateFrame(160, 1040, 90),
-            CreateFrame(80, 1040, 90),
-            CreateFrame(0, 1040, 90),
-            CreateFrame(1840, 960, 90),
-            CreateFrame(1520, 960, 90),
+            CreateFrame(1840, 1120, 80),
+            CreateFrame(1520, 1120, 80),
+            CreateFrame(1440, 1120, 80),
+            CreateFrame(1280, 1120, 80),
+            CreateFrame(1280, 960, 80),
+            CreateFrame(720, 960, 80),
+            CreateFrame(640, 960, 80),
+            CreateFrame(480, 960, 80),
+            CreateFrame(320, 960, 80),
+            CreateFrame(240, 960, 80),
+            CreateFrame(160, 960, 80),
             CreateFrame(0, 0, 100)
         });
+
+
 
         return dict.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
     }

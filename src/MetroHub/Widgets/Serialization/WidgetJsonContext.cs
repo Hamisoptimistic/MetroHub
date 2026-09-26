@@ -31,6 +31,7 @@ namespace MetroHub.Widgets.Serialization;
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.QuickControls.QuickControlsWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.CaffeineSleep.CaffeineSleepWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Rover.RoverWidgetSettings))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.Radio.RadioWidgetSettings))]
 public partial class WidgetJsonContext : JsonSerializerContext
 {
 }

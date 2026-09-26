@@ -1,19 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
 using MetroHub.Widgets.Serialization;
+using Windows.Media.Control;
+using WindowsMediaController;
 
 namespace MetroHub.Widgets.Catalog.Rover;
 
 /// <summary>
 /// High-performance ViewModel for the Rover (Windows XP Dog) desktop companion widget.
-/// Coordinates the discrete-step animation engine, instant audio playback, Win32 idle sleep detection,
-/// authentic speech balloons, and zero-overhead CPU quiescence.
+/// Features zero-polling Windows SMTC media playback awareness, single-click trick cycling
+/// across all authentic poses, and realistic sleep/wake mechanics.
 /// </summary>
 public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
 {
@@ -33,25 +38,24 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
 
     private readonly DispatcherTimer _idleCheckTimer;
     private readonly DispatcherTimer _ambientTimer;
-    private readonly DispatcherTimer _speechDismissTimer;
+
+    // Windows Media SMTC integration (Zero-polling event driven)
+    private MediaManager? _mediaManager;
+    private volatile bool _isMediaManagerStarted;
+    private bool _isPlayingMedia;
 
     private RoverState _state = RoverState.Idle;
-    private string _speechText = "Woof! Click me to play! 🐾";
-    private bool _isSpeechVisible = true;
     private string _backgroundStyle = "FluentGlass";
     private int _sleepTimeoutMinutes = 2;
-    private bool _showSpeechBubbles = true;
     private bool _wasUserIdle;
+
 
     public RoverAnimationEngine Engine => _engine;
     public RoverAudioService AudioService => _audioService;
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
-        WidgetSize.Medium,  // 2x2: Pocket Companion
-        WidgetSize.Wide,    // 4x2: Rover + Speech Balloon
-        WidgetSize.Large,   // 4x4: Playpen Companion
-        WidgetSize.Banner3  // 8x3: Wide Companion Banner
+        WidgetSize.Wide  // 4x2: Centered Desktop Companion
     };
 
     public RoverState State
@@ -75,20 +79,9 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
         RoverState.Petted => "Petted & Happy! ❤️",
         RoverState.Trick => "Doing a trick! 🌟",
         RoverState.Alert => "Alert & Ready",
+        RoverState.ListeningToMusic => "Jamming to Music! 🎵",
         _ => "Watching your desktop"
     };
-
-    public string SpeechText
-    {
-        get => _speechText;
-        set => SetProperty(ref _speechText, value);
-    }
-
-    public bool IsSpeechVisible
-    {
-        get => _isSpeechVisible && _showSpeechBubbles;
-        set => SetProperty(ref _isSpeechVisible, value);
-    }
 
     public bool IsMuted
     {
@@ -110,12 +103,18 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
     public bool IsBanner => Model.SpanX >= 6;
     public bool IsXPBliss => string.Equals(_backgroundStyle, "XPBliss", StringComparison.OrdinalIgnoreCase);
 
+    public void ShowSpeech(string text)
+    {
+        // Speech box removed as per design: clean desktop companion pet
+    }
+
     public void RefreshLayoutSize()
     {
         OnPropertyChanged(nameof(IsMedium));
         OnPropertyChanged(nameof(IsWide));
         OnPropertyChanged(nameof(IsLarge));
         OnPropertyChanged(nameof(IsBanner));
+        OnPropertyChanged(nameof(IsXPBliss));
     }
 
     public override void Initialize(TileModel model)
@@ -137,37 +136,64 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
         }
     }
 
+    #region Authentic Trick Catalog
+
+    private readonly struct RoverTrick
+    {
+        public readonly string Animation;
+        public readonly string? SoundId;
+
+        public RoverTrick(string animation, string? soundId = null)
+        {
+            Animation = animation;
+            SoundId = soundId;
+        }
+    }
+
+    private static readonly RoverTrick[] TrickCatalog = new[]
+    {
+        new RoverTrick("Cooking", "3"),           // Chef hat & stirring pot
+        new RoverTrick("Sports", "4"),            // Tennis ball toss & catch
+        new RoverTrick("Books", "9"),             // Spectacles & reading study
+        new RoverTrick("Congratulate", "6"),      // Trophy victory cheer
+        new RoverTrick("Celebrity", "8"),         // Hollywood sunglasses with guitar riff
+        new RoverTrick("CharacterSucceeds", "4"), // Victory celebratory dance
+        new RoverTrick("Pleased", "3"),           // Happy tail wagging & panting
+        new RoverTrick("Searching", "10"),        // Digging dirt with flying dust
+        new RoverTrick("Embarrassed", "7"),       // Sheepish blushing
+        new RoverTrick("Shopping", "2"),          // Shopping cart adventure
+        new RoverTrick("Writing", "10"),          // Scribbling notes with pencil
+        new RoverTrick("ImageSearching", "3"),    // Magnifying glass scan
+        new RoverTrick("Travel", "4"),            // Travel driving pose
+        new RoverTrick("Money", "6"),             // Golden coin discovery
+        new RoverTrick("Show", "1"),              // Presentation flourish
+        new RoverTrick("GetAttention", "4"),      // Two-paw wave
+        new RoverTrick("Greet", "2"),             // Friendly bow & greeting
+        new RoverTrick("Surprised", "7"),         // Surprise leap
+        new RoverTrick("ClickedOn", "9")          // Quick attentive look
+    };
+
+    private int _trickCycleIndex;
+
+    #endregion
+
     public RoverWidgetViewModel(TileModel model) : base(model)
     {
         _engine.SoundTriggered += OnSoundTriggered;
 
-        // 1. Idle detection timer (checks user inactivity every 5 seconds)
+        // 1. Inactivity detection timer (checks user idle time every 5 seconds)
         _idleCheckTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
             Interval = TimeSpan.FromSeconds(5)
         };
         _idleCheckTimer.Tick += OnIdleCheckTick;
 
-        // 2. Ambient behavior timer (Rover stretches, looks around every 18-30s)
+        // 2. Ambient behavior timer (Rover stretches, looks around occasionally when idle)
         _ambientTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
             Interval = TimeSpan.FromSeconds(20)
         };
         _ambientTimer.Tick += OnAmbientTimerTick;
-
-        // 3. Speech dismiss timer
-        _speechDismissTimer = new DispatcherTimer(DispatcherPriority.Normal)
-        {
-            Interval = TimeSpan.FromSeconds(6)
-        };
-        _speechDismissTimer.Tick += (s, e) =>
-        {
-            _speechDismissTimer.Stop();
-            if (_state != RoverState.Sleeping)
-            {
-                SpeechText = "Woof! Click me to play! 🐾";
-            }
-        };
 
         LoadSettings(model.SettingsJson);
 
@@ -175,6 +201,9 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
         _engine.SetStaticPose("RestPose");
         _idleCheckTimer.Start();
         _ambientTimer.Start();
+
+        // Initialize zero-polling Windows Media SMTC monitor
+        _ = InitMediaControllerAsync();
     }
 
     private void OnSoundTriggered(string soundId)
@@ -182,28 +211,206 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
         _audioService.PlaySound(soundId);
     }
 
+    #region Media Playback Awareness (Windows SMTC)
+
+    private async Task InitMediaControllerAsync()
+    {
+        try
+        {
+            _mediaManager = new MediaManager();
+            _mediaManager.OnAnyPlaybackStateChanged += MediaManager_OnAnyPlaybackStateChanged;
+            _mediaManager.OnAnySessionOpened += MediaManager_OnAnySessionOpened;
+            _mediaManager.OnAnySessionClosed += MediaManager_OnAnySessionClosed;
+            await _mediaManager.StartAsync();
+            _isMediaManagerStarted = true;
+            CheckCurrentMediaPlayback();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[RoverWidget] MediaManager init failed: {ex.Message}");
+        }
+    }
+
+    private void MediaManager_OnAnySessionOpened(MediaManager.MediaSession mediaSession)
+    {
+        CheckCurrentMediaPlayback();
+    }
+
+    private void MediaManager_OnAnySessionClosed(MediaManager.MediaSession mediaSession)
+    {
+        CheckCurrentMediaPlayback();
+    }
+
+    private void MediaManager_OnAnyPlaybackStateChanged(MediaManager.MediaSession mediaSession, GlobalSystemMediaTransportControlsSessionPlaybackInfo playbackInfo)
+    {
+        if (playbackInfo == null) return;
+        bool isPlaying = playbackInfo.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing;
+        App.Current?.Dispatcher?.InvokeAsync(() =>
+        {
+            if (isPlaying)
+            {
+                SetMediaPlaying(true);
+            }
+            else
+            {
+                CheckCurrentMediaPlayback();
+            }
+        });
+    }
+
+    private void CheckCurrentMediaPlayback()
+    {
+        if (!_isMediaManagerStarted || _mediaManager == null) return;
+        try
+        {
+            bool anyPlaying = false;
+            var focused = _mediaManager.GetFocusedSession();
+            if (focused != null)
+            {
+                var info = focused.ControlSession?.GetPlaybackInfo();
+                if (info != null && info.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing)
+                {
+                    anyPlaying = true;
+                }
+            }
+
+            if (!anyPlaying)
+            {
+                var sessions = _mediaManager.CurrentMediaSessions;
+                if (sessions != null)
+                {
+                    foreach (var kvp in sessions)
+                    {
+                        var info = kvp.Value.ControlSession?.GetPlaybackInfo();
+                        if (info != null && info.PlaybackStatus == GlobalSystemMediaTransportControlsSessionPlaybackStatus.Playing)
+                        {
+                            anyPlaying = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            App.Current?.Dispatcher?.InvokeAsync(() => SetMediaPlaying(anyPlaying));
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[RoverWidget] CheckCurrentMediaPlayback error: {ex.Message}");
+        }
+    }
+
+    private void SetMediaPlaying(bool isPlaying)
+    {
+        if (_isPlayingMedia == isPlaying) return;
+        _isPlayingMedia = isPlaying;
+
+        if (_isPlayingMedia)
+        {
+            // Music started playing!
+            if (_state == RoverState.Sleeping)
+            {
+                // Wake up from sleep to listen to music
+                State = RoverState.ListeningToMusic;
+                _audioService.PlayBark();
+                _engine.Play("WakeUp", loop: false, onComplete: () =>
+                {
+                    if (_isPlayingMedia && _state == RoverState.ListeningToMusic)
+                    {
+                        StartMusicGroove();
+                    }
+                    else
+                    {
+                        State = RoverState.Idle;
+                        _engine.SetStaticPose("RestPose");
+                    }
+                });
+            }
+            else
+            {
+                State = RoverState.ListeningToMusic;
+                StartMusicGroove();
+            }
+        }
+        else
+        {
+            // Music paused or stopped
+            if (_state == RoverState.ListeningToMusic)
+            {
+                State = RoverState.Idle;
+                _engine.Stop();
+                _engine.SetStaticPose("RestPose");
+            }
+        }
+    }
+
+    private void StartMusicGroove()
+    {
+        // Rover puts on his Hollywood shades with sound 8!
+        _audioService.PlaySound("8");
+        _engine.Play("Celebrity", loop: false, onComplete: () =>
+        {
+            if (_isPlayingMedia && _state == RoverState.ListeningToMusic)
+            {
+                // Continue happy jamming while music plays
+                _engine.Play("Pleased", loop: true);
+            }
+        });
+    }
+
+    #endregion
+
+
+
+    #region Single-Click Trick Cycling & Interactions
+
     /// <summary>
     /// Master tile click interaction handler.
-    /// Clicking the tile wakes Rover if sleeping, or triggers petting / trick.
+    /// Wakes Rover if asleep, jams if music is playing, or cycles through his authentic trick repertoire.
     /// </summary>
     public void Interact()
     {
         if (_state == RoverState.Sleeping)
         {
             WakeUp();
+            return;
+        }
+
+        if (_state == RoverState.ListeningToMusic)
+        {
+            // If music is playing, clicking triggers an energetic celebratory dance
+            _audioService.PlayTrickSound();
+            _engine.Play("CharacterSucceeds", loop: false, onComplete: () =>
+            {
+                if (_isPlayingMedia && _state == RoverState.ListeningToMusic)
+                {
+                    _engine.Play("Pleased", loop: true);
+                }
+            });
+            return;
+        }
+
+        // Awake: Cycle to next trick in catalog
+        State = RoverState.Trick;
+        var trick = TrickCatalog[_trickCycleIndex % TrickCatalog.Length];
+        _trickCycleIndex++;
+
+        if (!string.IsNullOrEmpty(trick.SoundId))
+        {
+            _audioService.PlaySound(trick.SoundId);
         }
         else
         {
-            // Alternate between Pet and Trick on click
-            if (RandomNumberGenerator.GetInt32(0, 3) == 0)
-            {
-                DoTrick();
-            }
-            else
-            {
-                Pet();
-            }
+            _audioService.PlayBark();
         }
+
+        _engine.Play(trick.Animation, loop: false, onComplete: () =>
+        {
+            if (_state == RoverState.Trick)
+            {
+                State = RoverState.Idle;
+                _engine.SetStaticPose("RestPose");
+            }
+        });
     }
 
     [RelayCommand]
@@ -216,10 +423,8 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
         }
 
         State = RoverState.Petted;
-        ShowSpeech(GetRandomPetSpeech());
         _audioService.PlayBark();
 
-        // Play authentic ClickedOn or Pleased animation
         string anim = RandomNumberGenerator.GetInt32(0, 2) == 0 ? "ClickedOn" : "Pleased";
         _engine.Play(anim, loop: false, onComplete: () =>
         {
@@ -231,48 +436,19 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
     [RelayCommand]
     public void DoTrick()
     {
-        if (_state == RoverState.Sleeping)
-        {
-            WakeUp();
-            return;
-        }
-
-        State = RoverState.Trick;
-        string[] tricks = { "Congratulate", "Sports", "Celebrity", "Cooking", "CharacterSucceeds" };
-        string chosenTrick = tricks[RandomNumberGenerator.GetInt32(0, tricks.Length)];
-
-        ShowSpeech(chosenTrick switch
-        {
-            "Sports" => "Catch the ball, master! 🎾",
-            "Cooking" => "Bon appétit! Chef Rover on duty! 👨‍🍳",
-            "Celebrity" => "I'm a star! How do the shades look? 😎",
-            "Congratulate" => "Good job today! Keep going! 🏆",
-            _ => "Ta-da! Good doggy! 🐕"
-        });
-
-        if (chosenTrick == "Celebrity")
-        {
-            _audioService.PlaySound("8");
-        }
-        else
-        {
-            _audioService.PlayTrickSound();
-        }
-
-        _engine.Play(chosenTrick, loop: false, onComplete: () =>
-        {
-            State = RoverState.Idle;
-            _engine.SetStaticPose("RestPose");
-        });
+        Interact();
     }
+
+    #endregion
+
+    #region Sleep and Wake Mechanics
 
     [RelayCommand]
     public void TakeNap()
     {
+        _wasUserIdle = true;
         State = RoverState.Sleeping;
-        SpeechText = "Zzz... Snoozing peacefully 😴";
-        IsSpeechVisible = true;
-        _speechDismissTimer.Stop();
+        _ambientTimer.Stop();
 
         _engine.Play("LieDown", loop: false, onComplete: () =>
         {
@@ -283,11 +459,9 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
     [RelayCommand]
     public void WakeUp()
     {
+        _wasUserIdle = false;
         State = RoverState.Alert;
-        SpeechText = "Huh? I'm awake! Ready to play! 🐾";
-        IsSpeechVisible = true;
-        _speechDismissTimer.Stop();
-        _speechDismissTimer.Start();
+        _ambientTimer.Start();
         _audioService.PlayBark();
 
         _engine.Play("WakeUp", loop: false, onComplete: () =>
@@ -301,17 +475,6 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
     public void ToggleMute()
     {
         IsMuted = !IsMuted;
-        ShowSpeech(IsMuted ? "Quiet mode on! 🤫" : "Barks enabled! Woof! 🔊");
-    }
-
-    public void ShowSpeech(string text)
-    {
-        if (!_showSpeechBubbles) return;
-
-        SpeechText = text;
-        IsSpeechVisible = true;
-        _speechDismissTimer.Stop();
-        _speechDismissTimer.Start();
     }
 
     private void OnIdleCheckTick(object? sender, EventArgs e)
@@ -321,27 +484,24 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
 
         if (isIdle && !_wasUserIdle)
         {
-            // User went idle -> Rover goes to sleep!
-            _wasUserIdle = true;
+            // User went idle -> Rover curls up on his paws to sleep!
             TakeNap();
         }
-        else if (!isIdle && _wasUserIdle)
+        else if (!isIdle && _wasUserIdle && _state == RoverState.Sleeping)
         {
-            // User returned -> Rover wakes up!
-            _wasUserIdle = false;
+            // User resumed input -> Rover wakes up!
             WakeUp();
         }
     }
 
     private void OnAmbientTimerTick(object? sender, EventArgs e)
     {
-        // Only trigger ambient behavior when MetroHub is active and Rover is idle (not sleeping or doing trick)
-        if (_state != RoverState.Idle || _engine.IsRunning) return;
+        // Only trigger ambient behavior when MetroHub is active and Rover is idle (not sleeping, doing trick, or jamming to music)
+        if (_state != RoverState.Idle || _engine.IsRunning || _isPlayingMedia) return;
 
         int roll = RandomNumberGenerator.GetInt32(0, 100);
         if (roll < 45)
         {
-            // Play natural ambient animation (sniff, look around, wag tail)
             string[] ambientAnims = { "Idle", "LookUp", "LookUpLeft", "Thinking" };
             string anim = ambientAnims[RandomNumberGenerator.GetInt32(0, ambientAnims.Length)];
 
@@ -351,7 +511,6 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
             });
         }
 
-        // Randomize next interval between 15 and 30 seconds
         _ambientTimer.Interval = TimeSpan.FromSeconds(RandomNumberGenerator.GetInt32(15, 31));
     }
 
@@ -366,41 +525,37 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
         return TimeSpan.Zero;
     }
 
-    private static string GetRandomPetSpeech()
-    {
-        string[] petReplies =
-        {
-            "*Happy panting* Woof! ❤️",
-            "That's the sweet spot right behind the ears!",
-            "Woof! You're doing great today!",
-            "*Wags tail excitedly* 🐾",
-            "Bark! Let's conquer the day!",
-            "I love being your desktop companion! 😊"
-        };
-        return petReplies[RandomNumberGenerator.GetInt32(0, petReplies.Length)];
-    }
+    #endregion
+
+    #region Lifecycle and Settings
 
     public override void Pause()
     {
-        // MetroHub window is hidden: Halt all timers to ensure ZERO CPU usage
+        // MetroHub window is hidden: Halt timers to guarantee 0.000% CPU usage
         _idleCheckTimer.Stop();
         _ambientTimer.Stop();
-        _speechDismissTimer.Stop();
         _engine.Stop();
     }
 
     public override void Resume()
     {
-        // MetroHub window is visible again: Restore idle monitoring and set rest pose
+        // MetroHub window is visible again: Restore timers
         _idleCheckTimer.Start();
-        _ambientTimer.Start();
-        if (_state == RoverState.Sleeping)
+        if (_state != RoverState.Sleeping)
         {
-            _engine.SetStaticPose("Sleeping");
+            _ambientTimer.Start();
+            if (_isPlayingMedia)
+            {
+                StartMusicGroove();
+            }
+            else
+            {
+                _engine.SetStaticPose("RestPose");
+            }
         }
         else
         {
-            _engine.SetStaticPose("RestPose");
+            _engine.SetStaticPose("Sleeping");
         }
     }
 
@@ -412,7 +567,6 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
             _audioService.IsMuted = settings.IsMuted;
             _audioService.Volume = settings.Volume;
             _sleepTimeoutMinutes = Math.Clamp(settings.SleepTimeoutMinutes, 1, 30);
-            _showSpeechBubbles = settings.ShowSpeechBubbles;
             _backgroundStyle = !string.IsNullOrWhiteSpace(settings.BackgroundStyle) ? settings.BackgroundStyle : "FluentGlass";
 
             OnPropertyChanged(nameof(IsMuted));
@@ -427,7 +581,7 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
             IsMuted = _audioService.IsMuted,
             Volume = _audioService.Volume,
             SleepTimeoutMinutes = _sleepTimeoutMinutes,
-            ShowSpeechBubbles = _showSpeechBubbles,
+            ShowSpeechBubbles = false,
             BackgroundStyle = _backgroundStyle
         };
         Model.SettingsJson = WidgetSerializer.Serialize(settings);
@@ -439,11 +593,27 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
         {
             _idleCheckTimer.Stop();
             _ambientTimer.Stop();
-            _speechDismissTimer.Stop();
             _engine.Stop();
             _engine.SoundTriggered -= OnSoundTriggered;
+
+            _isMediaManagerStarted = false;
+            if (_mediaManager != null)
+            {
+                try
+                {
+                    _mediaManager.OnAnyPlaybackStateChanged -= MediaManager_OnAnyPlaybackStateChanged;
+                    _mediaManager.OnAnySessionOpened -= MediaManager_OnAnySessionOpened;
+                    _mediaManager.OnAnySessionClosed -= MediaManager_OnAnySessionClosed;
+                    _mediaManager.Dispose();
+                }
+                catch { }
+                _mediaManager = null;
+            }
+
             _audioService.Dispose();
         }
         base.Dispose(disposing);
     }
+
+    #endregion
 }

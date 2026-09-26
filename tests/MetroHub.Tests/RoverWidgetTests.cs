@@ -132,10 +132,7 @@ public class RoverWidgetTests
 
             var sizes = new[]
             {
-                (SpanX: 2, SpanY: 2), // Medium
-                (SpanX: 4, SpanY: 2), // Wide
-                (SpanX: 4, SpanY: 4), // Large
-                (SpanX: 8, SpanY: 3)  // Banner
+                (SpanX: 4, SpanY: 2) // Wide (Only supported size)
             };
 
             foreach (var size in sizes)
@@ -203,11 +200,8 @@ public class RoverWidgetTests
 
             var scenarios = new[]
             {
-                (Name: "rover_2x2_pocket", SpanX: 2, SpanY: 2, W: 116, H: 116, Speech: false, Style: "FluentGlass"),
-                (Name: "rover_4x2_speech", SpanX: 4, SpanY: 2, W: 248, H: 116, Speech: true, Style: "FluentGlass"),
-                (Name: "rover_4x4_playpen", SpanX: 4, SpanY: 4, W: 248, H: 248, Speech: true, Style: "FluentGlass"),
-                (Name: "rover_8x3_search", SpanX: 8, SpanY: 3, W: 504, H: 184, Speech: true, Style: "FluentGlass"),
-                (Name: "rover_4x2_xpbliss", SpanX: 4, SpanY: 2, W: 248, H: 116, Speech: true, Style: "XPBliss")
+                (Name: "rover_4x2_centered", SpanX: 4, SpanY: 2, W: 248, H: 116, Speech: false, Style: "FluentGlass"),
+                (Name: "rover_4x2_xpbliss", SpanX: 4, SpanY: 2, W: 248, H: 116, Speech: false, Style: "XPBliss")
             };
 
             foreach (var s in scenarios)

@@ -35,6 +35,11 @@
     <Resource Include="Assets\Weather\Glassmorphic\*.png" />
     <None Remove="Assets\quotes.json" />
     <Resource Include="Assets\quotes.json" />
+    <None Remove="Assets\Radio\*.json" />
+    <Resource Include="Assets\Radio\*.json" />
+    <Content Include="Assets\Radio\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Remove="Assets\Rover\*.png" />
     <Resource Include="Assets\Rover\*.png" />
     <None Remove="Assets\Rover\*.json" />
