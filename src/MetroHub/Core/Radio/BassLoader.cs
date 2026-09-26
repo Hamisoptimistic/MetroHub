@@ -33,7 +33,9 @@ public static class BassLoader
             NativeLibrary.SetDllImportResolver(bassAssembly, (libraryName, assembly, searchPath) =>
             {
                 if (libraryName.Equals("bass", StringComparison.OrdinalIgnoreCase) ||
-                    libraryName.Equals("bass_aac", StringComparison.OrdinalIgnoreCase))
+                    libraryName.Equals("bass_aac", StringComparison.OrdinalIgnoreCase) ||
+                    libraryName.Equals("bassopus", StringComparison.OrdinalIgnoreCase) ||
+                    libraryName.Equals("basswebm", StringComparison.OrdinalIgnoreCase))
                 {
                     string fileName = libraryName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
                         ? libraryName

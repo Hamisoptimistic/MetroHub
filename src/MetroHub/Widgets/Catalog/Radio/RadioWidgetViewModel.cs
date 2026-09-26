@@ -209,7 +209,7 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task SelectStationAsync(RadioStationItemViewModel? item)
     {
         if (item == null) return;
@@ -234,7 +234,7 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task TogglePlayPauseAsync()
     {
         if (_audioService.CurrentStation != null)
@@ -252,7 +252,7 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task NextStationAsync()
     {
         var realStations = VisibleStations.Where(s => !s.IsAddPlaceholder && s.Station != null).ToList();
@@ -266,7 +266,7 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
         SaveSettings();
     }
 
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task PreviousStationAsync()
     {
         var realStations = VisibleStations.Where(s => !s.IsAddPlaceholder && s.Station != null).ToList();
@@ -345,16 +345,12 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
     private static void DispatchToUi(Action action)
     {
         var dispatcher = Application.Current?.Dispatcher;
-        if (dispatcher != null && !dispatcher.CheckAccess() && dispatcher.Thread.IsAlive)
+        if (dispatcher != null && !dispatcher.CheckAccess() && dispatcher.Thread.IsAlive && !dispatcher.HasShutdownStarted)
         {
-            try
+            if (MetroHub.MainWindow.Current != null)
             {
-                dispatcher.Invoke(action);
+                _ = dispatcher.BeginInvoke(action);
                 return;
-            }
-            catch
-            {
-                // Fall back to direct invocation if dispatcher is inactive or shutting down
             }
         }
 

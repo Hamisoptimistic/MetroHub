@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,7 +20,9 @@ public sealed class RadioAudioService : IRadioAudioService
     public static RadioAudioService Instance => _lazyInstance.Value;
 
     private readonly object _gate = new();
+    private readonly AudioSpectrumProcessor _spectrumProcessor = new();
     private int _currentStream;
+    private long _switchVersion;
     private readonly System.Collections.Generic.HashSet<int> _retiringStreams = new();
     private CancellationTokenSource? _switchCts;
 
@@ -41,36 +44,58 @@ public sealed class RadioAudioService : IRadioAudioService
         get { lock (_gate) return _currentStation; }
         private set
         {
-            lock (_gate) _currentStation = value;
-            CurrentStationChanged?.Invoke(this, value);
+            bool changed;
+            lock (_gate)
+            {
+                changed = !ReferenceEquals(_currentStation, value) && _currentStation?.Id != value?.Id;
+                _currentStation = value;
+            }
+            if (changed)
+            {
+                CurrentStationChanged?.Invoke(this, value);
+            }
         }
     }
 
     public bool IsPlaying
     {
-        get { lock (_gate) return _isPlaying; }
+        get => Volatile.Read(ref _isPlaying);
         private set
         {
+            bool changed = false;
             lock (_gate)
             {
-                if (_isPlaying == value) return;
-                _isPlaying = value;
+                if (_isPlaying != value)
+                {
+                    _isPlaying = value;
+                    changed = true;
+                }
             }
-            PlaybackStateChanged?.Invoke(this, value);
+            if (changed)
+            {
+                PlaybackStateChanged?.Invoke(this, value);
+            }
         }
     }
 
     public bool IsBuffering
     {
-        get { lock (_gate) return _isBuffering; }
+        get => Volatile.Read(ref _isBuffering);
         private set
         {
+            bool changed = false;
             lock (_gate)
             {
-                if (_isBuffering == value) return;
-                _isBuffering = value;
+                if (_isBuffering != value)
+                {
+                    _isBuffering = value;
+                    changed = true;
+                }
             }
-            BufferingStateChanged?.Invoke(this, value);
+            if (changed)
+            {
+                BufferingStateChanged?.Invoke(this, value);
+            }
         }
     }
 
@@ -82,7 +107,7 @@ public sealed class RadioAudioService : IRadioAudioService
 
     public bool IsMuted
     {
-        get { lock (_gate) return _isMuted; }
+        get => Volatile.Read(ref _isMuted);
         set => SetMuted(value);
     }
 
@@ -98,6 +123,7 @@ public sealed class RadioAudioService : IRadioAudioService
     public event EventHandler<double>? VolumeChanged;
     public event EventHandler<bool>? MuteStateChanged;
     public event EventHandler<string>? ErrorOccurred;
+    public event EventHandler? EndOfStreamReached;
 
     public RadioAudioService()
     {
@@ -132,18 +158,15 @@ public sealed class RadioAudioService : IRadioAudioService
             Bass.Configure(Configuration.NetBufferLength, 5000);         // 5-second ring buffer in RAM
             Bass.Configure(Configuration.PlaybackBufferLength, 2000);   // 2-second playback mixing buffer
             Bass.Configure(Configuration.NetPreBuffer, 75);             // Start playback when 75% pre-buffered
-            Bass.Configure(Configuration.NetTimeOut, 10000);            // 10s connection timeout
+            Bass.Configure(Configuration.NetTimeOut, 6000);             // 6s connection timeout
             Bass.Configure(Configuration.IncludeDefaultDevice, true);   // Dynamically follow default endpoint changes
 
-            // 5. Load AAC decoder plugin for streams like Birdsong / SomaFM AAC / DEF CON
-            try
-            {
-                Bass.PluginLoad("bass_aac.dll");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[RadioAudioService] Notice: AAC plugin load: {ex.Message}");
-            }
+            // 5. Load decoder plugins using full absolute paths.
+            // Bass.PluginLoad uses native LoadLibrary which searches the process CWD,
+            // NOT AppContext.BaseDirectory. Desktop shortcuts set CWD to System32.
+            string baseDir = AppContext.BaseDirectory;
+            LoadBassPlugin(baseDir, "bass_aac.dll");
+            LoadBassPlugin(baseDir, "bassopus.dll");
         }
         else
         {
@@ -151,20 +174,60 @@ public sealed class RadioAudioService : IRadioAudioService
         }
     }
 
+    /// <summary>
+    /// Resolves the full absolute path for a BASS plugin DLL and loads it.
+    /// Tries AppContext.BaseDirectory, runtimes/win-x64/native/, and solution lib fallback.
+    /// </summary>
+    private static int LoadBassPlugin(string baseDir, string fileName)
+    {
+        string[] candidates =
+        [
+            Path.Combine(baseDir, fileName),
+            Path.Combine(baseDir, "runtimes", "win-x64", "native", fileName),
+            Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "lib", "native", "win-x64", fileName))
+        ];
+
+        foreach (string path in candidates)
+        {
+            if (File.Exists(path))
+            {
+                try
+                {
+                    int handle = Bass.PluginLoad(path);
+                    if (handle != 0)
+                    {
+                        Debug.WriteLine($"[RadioAudioService] Loaded {fileName} from: {path} (handle={handle}).");
+                        return handle;
+                    }
+                    Debug.WriteLine($"[RadioAudioService] {fileName} found at {path} but PluginLoad returned 0 (error={Bass.LastError}).");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[RadioAudioService] {fileName} load failed from {path}: {ex.Message}");
+                }
+            }
+        }
+
+        Debug.WriteLine($"[RadioAudioService] {fileName} not found in any candidate path.");
+        return 0;
+    }
+
     public async Task PlayStationAsync(RadioStation station, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(station);
 
         CancellationTokenSource linkedCts;
+        long myVersion;
         lock (_gate)
         {
             if (_isDisposed) return;
 
-            // Cancel any pending switch
+            // Cancel any pending switch immediately
             _switchCts?.Cancel();
             _switchCts?.Dispose();
             _switchCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             linkedCts = _switchCts;
+            myVersion = ++_switchVersion;
         }
 
         try
@@ -175,119 +238,206 @@ public sealed class RadioAudioService : IRadioAudioService
             int oldStream;
             lock (_gate)
             {
-                if (linkedCts.Token.IsCancellationRequested || _isDisposed) return;
+                if (linkedCts.Token.IsCancellationRequested || _isDisposed || _switchVersion != myVersion) return;
 
-                CurrentStation = station;
-                IsBuffering = true;
-                LastErrorMessage = null;
-
-                // DJ Crossfade: Keep previous stream playing while the new station connects!
+                _currentStation = station;
+                _isBuffering = true;
+                _lastErrorMessage = null;
                 oldStream = _currentStream;
             }
 
-            // Connect to URL on background thread while previous station continues playing seamlessly
-            int newStream = await Task.Run(() =>
+            // Fire state events OUTSIDE _gate to prevent AB-BA deadlocks with Dispatcher
+            CurrentStationChanged?.Invoke(this, station);
+            BufferingStateChanged?.Invoke(this, true);
+
+            // Connect to URL on background thread. If cancelled or timed out while Bass.CreateStream
+            // is blocked in native socket code, WaitAsync returns immediately and the background task
+            // frees the orphaned stream handle as soon as Bass.CreateStream completes.
+            var createStreamTask = Task.Run(() =>
             {
-                return Bass.CreateStream(
+                if (linkedCts.Token.IsCancellationRequested) return (Stream: 0, Error: Errors.OK);
+
+                int stream = Bass.CreateStream(
                     station.StreamUrl,
                     0,
-                    BassFlags.StreamDownloadBlocks | BassFlags.AutoFree,
+                    BassFlags.StreamDownloadBlocks,
                     null,
                     IntPtr.Zero);
-            }, linkedCts.Token).ConfigureAwait(false);
 
+                Errors err = stream == 0 ? Bass.LastError : Errors.OK;
+
+                bool shouldDiscard;
+                lock (_gate)
+                {
+                    shouldDiscard = linkedCts.Token.IsCancellationRequested || _isDisposed || _switchVersion != myVersion;
+                }
+
+                if (shouldDiscard && stream != 0)
+                {
+                    try { Bass.StreamFree(stream); } catch { }
+                    return (Stream: 0, Error: Errors.OK);
+                }
+
+                return (Stream: stream, Error: err);
+            });
+
+            var (newStream, createError) = await createStreamTask
+                .WaitAsync(TimeSpan.FromSeconds(7), linkedCts.Token)
+                .ConfigureAwait(false);
+
+            bool isCancelled;
+            double volumeSnapshot;
+            bool mutedSnapshot;
             lock (_gate)
             {
-                if (linkedCts.Token.IsCancellationRequested || _isDisposed)
-                {
-                    if (newStream != 0)
-                    {
-                        Bass.StreamFree(newStream);
-                    }
-                    return;
-                }
-
-                if (newStream == 0)
-                {
-                    var error = Bass.LastError;
-                    HandlePlaybackError($"Failed to stream {station.Name} ({error})");
-                    return;
-                }
-
-                _currentStream = newStream;
-
-                // 1. Initialize new stream at 0 volume for seamless crossfade
-                Bass.ChannelSetAttribute(newStream, ChannelAttribute.Volume, 0f);
-
-                // 2. Register native synchronization callbacks
-                Bass.ChannelSetSync(newStream, SyncFlags.Stalled, 0, _stallSyncProc, IntPtr.Zero);
-                Bass.ChannelSetSync(newStream, SyncFlags.End, 0, _endSyncProc, IntPtr.Zero);
-                Bass.ChannelSetSync(newStream, SyncFlags.MetadataReceived, 0, _metaSyncProc, IntPtr.Zero);
-
-                // 3. Start playback on new stream
-                bool started = Bass.ChannelPlay(newStream);
-                if (started)
-                {
-                    const int CrossfadeMs = 1500;
-                    float targetVol = _isMuted ? 0f : (float)_volume;
-
-                    // 4. Smoothly slide new stream volume UP to target volume (1.5s crossfade)
-                    Bass.ChannelSlideAttribute(newStream, ChannelAttribute.Volume, targetVol, CrossfadeMs);
-
-                    // 5. Concurrently slide old stream volume DOWN to 0 and disconnect socket cleanly
-                    if (oldStream != 0 && oldStream != newStream)
-                    {
-                        FadeAndFreeStream(oldStream, CrossfadeMs);
-                    }
-
-                    IsPlaying = true;
-                    IsBuffering = false;
-                }
-                else
-                {
-                    var error = Bass.LastError;
-                    HandlePlaybackError($"Failed to play audio for {station.Name} ({error})");
-                }
+                isCancelled = linkedCts.Token.IsCancellationRequested || _isDisposed || _switchVersion != myVersion;
+                volumeSnapshot = _volume;
+                mutedSnapshot = _isMuted;
             }
+
+            if (isCancelled)
+            {
+                if (newStream != 0)
+                {
+                    FreeStreamInBackground(newStream);
+                }
+                return;
+            }
+
+            if (newStream == 0)
+            {
+                HandlePlaybackError($"Failed to stream {station.Name} ({createError})", myVersion);
+                return;
+            }
+
+            // Configure and start BASS channel OUTSIDE _gate so native audio mutexes never nest with _gate
+            Bass.ChannelSetAttribute(newStream, ChannelAttribute.Volume, 0f);
+            Bass.ChannelSetSync(newStream, SyncFlags.Stalled, 0, _stallSyncProc, IntPtr.Zero);
+            Bass.ChannelSetSync(newStream, SyncFlags.End, 0, _endSyncProc, IntPtr.Zero);
+            Bass.ChannelSetSync(newStream, SyncFlags.MetadataReceived, 0, _metaSyncProc, IntPtr.Zero);
+
+            bool started = Bass.ChannelPlay(newStream);
+            if (!started)
+            {
+                var error = Bass.LastError;
+                FreeStreamInBackground(newStream);
+                HandlePlaybackError($"Failed to play audio for {station.Name} ({error})", myVersion);
+                return;
+            }
+
+            int streamToFade = 0;
+            float targetVol;
+            lock (_gate)
+            {
+                if (linkedCts.Token.IsCancellationRequested || _isDisposed || _switchVersion != myVersion)
+                {
+                    // Another station switch or Pause() occurred while ChannelPlay was starting
+                    FreeStreamInBackground(newStream);
+                    return;
+                }
+
+                streamToFade = _currentStream;
+                _currentStream = newStream;
+                _isPlaying = true;
+                _isBuffering = false;
+                targetVol = _isMuted ? 0f : (float)_volume;
+            }
+
+            const int CrossfadeMs = 1500;
+            Bass.ChannelSlideAttribute(newStream, ChannelAttribute.Volume, targetVol, CrossfadeMs);
+
+            if (streamToFade != 0 && streamToFade != newStream)
+            {
+                FadeAndFreeStream(streamToFade, CrossfadeMs);
+            }
+
+            // Fire UI state notifications OUTSIDE _gate
+            PlaybackStateChanged?.Invoke(this, true);
+            BufferingStateChanged?.Invoke(this, false);
         }
         catch (OperationCanceledException)
         {
-            // Debounced by a newer station click; expected
+            // Debounced or superseded by a newer station click or Pause()
+        }
+        catch (TimeoutException)
+        {
+            HandlePlaybackError($"Connection timed out for {station.Name}", myVersion);
         }
         catch (Exception ex)
         {
-            HandlePlaybackError($"Playback exception on {station.Name}: {ex.Message}");
+            HandlePlaybackError($"Playback exception on {station.Name}: {ex.Message}", myVersion);
         }
     }
 
     public void Pause()
     {
+        int streamToStop;
+        int[] retiringSnapshot;
+        bool wasPlaying;
+        bool wasBuffering;
+
         lock (_gate)
         {
-            if (_isDisposed || !IsPlaying) return;
+            if (_isDisposed) return;
 
-            int streamToStop = _currentStream;
+            _switchVersion++;
+            _switchCts?.Cancel();
+
+            streamToStop = _currentStream;
             _currentStream = 0;
-            IsPlaying = false;
-            IsBuffering = false;
+            wasPlaying = _isPlaying;
+            wasBuffering = _isBuffering;
+            _isPlaying = false;
+            _isBuffering = false;
 
-            if (streamToStop != 0)
-            {
-                FadeAndFreeStream(streamToStop, 200);
-            }
-
-            // Immediately tear down any remaining retiring streams
-            foreach (int handle in _retiringStreams)
-            {
-                try
-                {
-                    Bass.ChannelStop(handle);
-                    Bass.StreamFree(handle);
-                }
-                catch { }
-            }
+            retiringSnapshot = new int[_retiringStreams.Count];
+            _retiringStreams.CopyTo(retiringSnapshot);
             _retiringStreams.Clear();
         }
+
+        _spectrumProcessor.Reset();
+
+        // Fire state change events OUTSIDE _gate
+        if (wasPlaying) PlaybackStateChanged?.Invoke(this, false);
+        if (wasBuffering) BufferingStateChanged?.Invoke(this, false);
+
+        if (streamToStop != 0)
+        {
+            FadeAndFreeStream(streamToStop, 200);
+        }
+
+        if (retiringSnapshot.Length > 0)
+        {
+            _ = Task.Run(() =>
+            {
+                foreach (int handle in retiringSnapshot)
+                {
+                    if (handle != 0 && handle != streamToStop)
+                    {
+                        try
+                        {
+                            Bass.ChannelStop(handle);
+                            Bass.StreamFree(handle);
+                        }
+                        catch { }
+                    }
+                }
+            });
+        }
+    }
+
+    private static void FreeStreamInBackground(int streamHandle)
+    {
+        if (streamHandle == 0) return;
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                Bass.ChannelStop(streamHandle);
+                Bass.StreamFree(streamHandle);
+            }
+            catch { }
+        });
     }
 
     private void FadeAndFreeStream(int streamHandle, int durationMs)
@@ -299,7 +449,7 @@ public sealed class RadioAudioService : IRadioAudioService
             _retiringStreams.Add(streamHandle);
         }
 
-        Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             try
             {
@@ -325,42 +475,45 @@ public sealed class RadioAudioService : IRadioAudioService
 
     public void Resume()
     {
+        RadioStation? station;
         lock (_gate)
         {
-            if (_isDisposed || IsPlaying || _currentStation == null) return;
-
-            var station = _currentStation;
-            _ = PlayStationAsync(station);
+            if (_isDisposed || _isPlaying || _currentStation == null) return;
+            station = _currentStation;
         }
+
+        _ = PlayStationAsync(station);
     }
 
     public void TogglePlayPause()
     {
+        bool currentlyPlaying;
         lock (_gate)
         {
-            if (IsPlaying)
-            {
-                Pause();
-            }
-            else
-            {
-                Resume();
-            }
+            currentlyPlaying = _isPlaying || _isBuffering;
+        }
+
+        if (currentlyPlaying)
+        {
+            Pause();
+        }
+        else
+        {
+            Resume();
         }
     }
 
     public void Stop()
     {
         Pause();
-        lock (_gate)
-        {
-            CurrentStation = null;
-        }
+        CurrentStation = null;
+        _spectrumProcessor.Reset();
     }
 
     public void SetVolume(double volume)
     {
         double clamped = Math.Clamp(volume, 0.0, 1.0);
+        int streamToUpdate = 0;
         lock (_gate)
         {
             if (Math.Abs(_volume - clamped) < 0.001) return;
@@ -368,8 +521,13 @@ public sealed class RadioAudioService : IRadioAudioService
 
             if (_currentStream != 0 && !_isMuted)
             {
-                Bass.ChannelSetAttribute(_currentStream, ChannelAttribute.Volume, (float)_volume);
+                streamToUpdate = _currentStream;
             }
+        }
+
+        if (streamToUpdate != 0)
+        {
+            try { Bass.ChannelSetAttribute(streamToUpdate, ChannelAttribute.Volume, (float)clamped); } catch { }
         }
 
         VolumeChanged?.Invoke(this, clamped);
@@ -377,6 +535,8 @@ public sealed class RadioAudioService : IRadioAudioService
 
     public void SetMuted(bool isMuted)
     {
+        int streamToUpdate = 0;
+        float targetVol = 0f;
         lock (_gate)
         {
             if (_isMuted == isMuted) return;
@@ -384,34 +544,76 @@ public sealed class RadioAudioService : IRadioAudioService
 
             if (_currentStream != 0)
             {
-                float targetVol = _isMuted ? 0f : (float)_volume;
-                Bass.ChannelSetAttribute(_currentStream, ChannelAttribute.Volume, targetVol);
+                streamToUpdate = _currentStream;
+                targetVol = _isMuted ? 0f : (float)_volume;
             }
+        }
+
+        if (streamToUpdate != 0)
+        {
+            try { Bass.ChannelSetAttribute(streamToUpdate, ChannelAttribute.Volume, targetVol); } catch { }
         }
 
         MuteStateChanged?.Invoke(this, isMuted);
     }
 
+    public bool GetSpectrumLevels(out float bass, out float mid, out float treble)
+    {
+        int stream = Volatile.Read(ref _currentStream);
+        bool isPlaying = Volatile.Read(ref _isPlaying);
+        bool isMuted = Volatile.Read(ref _isMuted);
+
+        if (!isPlaying || isMuted || stream == 0)
+        {
+            _spectrumProcessor.DecayToZero(out bass, out mid, out treble);
+            return false;
+        }
+
+        return _spectrumProcessor.ProcessChannel(stream, out bass, out mid, out treble);
+    }
+
     private void OnStallSync(int handle, int channel, int data, IntPtr user)
     {
+        if (channel != Volatile.Read(ref _currentStream)) return;
+
         // data == 0: playback stalled (network buffer underrun)
         // data == 1: playback resumed
         bool isBuffering = (data == 0);
-        IsBuffering = isBuffering;
-        Debug.WriteLine($"[RadioAudioService] Stall sync: isBuffering={isBuffering}");
+        ThreadPool.QueueUserWorkItem(_ =>
+        {
+            if (channel == Volatile.Read(ref _currentStream))
+            {
+                IsBuffering = isBuffering;
+            }
+        });
     }
 
     private void OnEndSync(int handle, int channel, int data, IntPtr user)
     {
-        lock (_gate)
+        if (channel != Volatile.Read(ref _currentStream)) return;
+
+        ThreadPool.QueueUserWorkItem(_ =>
         {
-            if (channel == _currentStream)
+            bool changed = false;
+            lock (_gate)
             {
-                _currentStream = 0;
-                IsPlaying = false;
-                IsBuffering = false;
+                if (channel == _currentStream)
+                {
+                    _currentStream = 0;
+                    _isPlaying = false;
+                    _isBuffering = false;
+                    changed = true;
+                }
             }
-        }
+            if (changed)
+            {
+                PlaybackStateChanged?.Invoke(this, false);
+                BufferingStateChanged?.Invoke(this, false);
+                // Natural end (Pause/Stop zero _currentStream first, so a match here
+                // means the stream finished). Jukebox autoplay-next listens to this.
+                EndOfStreamReached?.Invoke(this, EventArgs.Empty);
+            }
+        });
     }
 
     private void OnMetaSync(int handle, int channel, int data, IntPtr user)
@@ -428,51 +630,75 @@ public sealed class RadioAudioService : IRadioAudioService
         catch { }
     }
 
-    private void HandlePlaybackError(string message)
+    private void HandlePlaybackError(string message, long expectedVersion)
     {
+        bool shouldNotify = false;
         lock (_gate)
         {
-            LastErrorMessage = message;
-            IsPlaying = false;
-            IsBuffering = false;
+            if (_switchVersion == expectedVersion)
+            {
+                _lastErrorMessage = message;
+                _isPlaying = false;
+                _isBuffering = false;
+                shouldNotify = true;
+            }
         }
 
-        Debug.WriteLine($"[RadioAudioService] Error: {message}");
-        ErrorOccurred?.Invoke(this, message);
+        if (shouldNotify)
+        {
+            Debug.WriteLine($"[RadioAudioService] Error: {message}");
+            PlaybackStateChanged?.Invoke(this, false);
+            BufferingStateChanged?.Invoke(this, false);
+            ErrorOccurred?.Invoke(this, message);
+        }
     }
 
     public void Dispose()
     {
+        int streamToFree;
+        int[] retiringSnapshot;
         lock (_gate)
         {
             if (_isDisposed) return;
             _isDisposed = true;
+            _switchVersion++;
 
             _switchCts?.Cancel();
             _switchCts?.Dispose();
             _switchCts = null;
 
-            if (_currentStream != 0)
+            streamToFree = _currentStream;
+            _currentStream = 0;
+
+            retiringSnapshot = new int[_retiringStreams.Count];
+            _retiringStreams.CopyTo(retiringSnapshot);
+            _retiringStreams.Clear();
+        }
+
+        _ = Task.Run(() =>
+        {
+            if (streamToFree != 0)
             {
                 try
                 {
-                    Bass.ChannelStop(_currentStream);
-                    Bass.StreamFree(_currentStream);
+                    Bass.ChannelStop(streamToFree);
+                    Bass.StreamFree(streamToFree);
                 }
                 catch { }
-                _currentStream = 0;
             }
 
-            foreach (int handle in _retiringStreams)
+            foreach (int handle in retiringSnapshot)
             {
-                try
+                if (handle != 0)
                 {
-                    Bass.ChannelStop(handle);
-                    Bass.StreamFree(handle);
+                    try
+                    {
+                        Bass.ChannelStop(handle);
+                        Bass.StreamFree(handle);
+                    }
+                    catch { }
                 }
-                catch { }
             }
-            _retiringStreams.Clear();
 
             try
             {
@@ -482,6 +708,6 @@ public sealed class RadioAudioService : IRadioAudioService
             {
                 Debug.WriteLine($"[RadioAudioService] BASS disposal error: {ex.Message}");
             }
-        }
+        });
     }
 }

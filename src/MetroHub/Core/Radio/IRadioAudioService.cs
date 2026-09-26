@@ -48,6 +48,12 @@ public interface IRadioAudioService : IDisposable
     /// <summary>Toggles or sets the audio mute state.</summary>
     void SetMuted(bool isMuted);
 
+    /// <summary>
+    /// Samples real-time audio spectrum levels (Bass, Mid, Treble) normalized from 0.0 to 1.0.
+    /// Returns true if audio data was actively read; false if idle, muted, or stopped.
+    /// </summary>
+    bool GetSpectrumLevels(out float bass, out float mid, out float treble);
+
     /// <summary>Fired when the current station changes.</summary>
     event EventHandler<RadioStation?>? CurrentStationChanged;
 
@@ -65,4 +71,10 @@ public interface IRadioAudioService : IDisposable
 
     /// <summary>Fired when an error occurs during stream playback.</summary>
     event EventHandler<string>? ErrorOccurred;
+
+    /// <summary>
+    /// Fired when a stream reaches its natural end (not user pause/stop).
+    /// Used by jukebox-style autoplay-next flows.
+    /// </summary>
+    event EventHandler? EndOfStreamReached;
 }

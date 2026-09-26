@@ -19,6 +19,7 @@ public sealed partial class RadioStationItemViewModel : ObservableObject
     public string BitrateBadge => BitrateKbps > 0 ? $"{BitrateKbps}k" : string.Empty;
     public string Description => Station?.Description ?? "Add your own custom streaming link";
     public string Icon => Station?.Icon ?? "Add24";
+    public string Category => Station?.Category ?? string.Empty;
 
     [ObservableProperty]
     private bool _isActive;

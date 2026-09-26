@@ -64,7 +64,14 @@
                                 BorderThickness="1"
                                 Margin="0,0,-1,-1"
                                 SnapsToDevicePixels="True">
-                            <Grid>
+                            <Grid ClipToBounds="True">
+                                <!-- Chromatic Multi-Orb Fluid Mesh Visualizer (Active Station Tile) -->
+                                <radio:AtmosphericAuraControl IsActive="{Binding IsPlaying}"
+                                                              IsBuffering="{Binding IsBuffering}"
+                                                              Category="{Binding Category}"
+                                                              HorizontalAlignment="Stretch"
+                                                              VerticalAlignment="Stretch" />
+
                                 <!-- Standard Station Card Content: Clean, Centered Station Title -->
                                 <Grid x:Name="StationContent" Margin="10,6">
                                     <TextBlock x:Name="StationNameText"
@@ -101,6 +108,16 @@
                         </Border>
 
                         <ControlTemplate.Triggers>
+                            <!-- Active Playing Station Trigger: Elevates ZIndex without harsh colored border box -->
+                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                <Setter Property="Panel.ZIndex" Value="5" />
+                            </DataTrigger>
+
+                            <!-- Buffering Station Trigger: Elevates ZIndex without harsh colored border box -->
+                            <DataTrigger Binding="{Binding IsBuffering}" Value="True">
+                                <Setter Property="Panel.ZIndex" Value="5" />
+                            </DataTrigger>
+
                             <!-- Hover Reveal Trigger: Illuminates border without shifting layout or adding background -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="TileBorder" Property="BorderBrush" Value="#55FFFFFF" />
