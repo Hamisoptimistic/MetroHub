@@ -57,6 +57,82 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
     public bool IsBanner => Model.SpanX >= 8 && Model.SpanY <= 2;
     public bool IsHero => Model.SpanY >= 4;
 
+    /// <summary>
+    /// Time font size fitted per font-face + tile size.
+    /// Measured with WPF FormattedText over worst-case valid times (12h "10:00", 24h "00:00")
+    /// against content budgets: Wide/Large W232, LargeWide W360, Banner time W~166 (456-date-gap),
+    /// Mega W488; heights Wide/Banner H112, Hero H203; safety 0.92. Fixes bleed (e.g. FFF @84 = 262px
+    /// in 232px Large) and cramped Mega @84.
+    /// </summary>
+    public double ClockTimeFontSize => ResolveTimeFontSize();
+
+    private double ResolveTimeFontSize()
+    {
+        // Short layouts (H112)
+        if (Model.SpanY <= 2)
+        {
+            if (Model.SpanX >= 8)
+            {
+                // Banner 8x2
+                return FontFace switch
+                {
+                    ClockFontFace.Monoton => 40,
+                    ClockFontFace.Digital7 => 72,
+                    ClockFontFace.FffForward => 44,
+                    ClockFontFace.KarnivoreDigit => 52,
+                    _ => 60,
+                };
+            }
+
+            // Wide 4x2 (and any narrow short fallback)
+            return FontFace switch
+            {
+                ClockFontFace.Monoton => 56,
+                ClockFontFace.Digital7 => 100,
+                ClockFontFace.FffForward => 56,
+                ClockFontFace.KarnivoreDigit => 72,
+                _ => 72,
+            };
+        }
+
+        // Hero layouts (H203)
+        if (Model.SpanX >= 8)
+        {
+            // Mega 8x4
+            return FontFace switch
+            {
+                ClockFontFace.Monoton => 116,
+                ClockFontFace.Digital7 => 180,
+                ClockFontFace.FffForward => 104,
+                ClockFontFace.KarnivoreDigit => 144,
+                _ => 136,
+            };
+        }
+
+        if (Model.SpanX > 4)
+        {
+            // LargeWide 6x4
+            return FontFace switch
+            {
+                ClockFontFace.Monoton => 88,
+                ClockFontFace.Digital7 => 156,
+                ClockFontFace.FffForward => 96,
+                ClockFontFace.KarnivoreDigit => 112,
+                _ => 132,
+            };
+        }
+
+        // Large 4x4
+        return FontFace switch
+        {
+            ClockFontFace.Monoton => 56,
+            ClockFontFace.Digital7 => 100,
+            ClockFontFace.FffForward => 60,
+            ClockFontFace.KarnivoreDigit => 72,
+            _ => 84,
+        };
+    }
+
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new List<WidgetSize>
     {
         WidgetSize.Wide,      // 4x2
@@ -90,6 +166,7 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
             OnPropertyChanged(nameof(IsWideOnly));
             OnPropertyChanged(nameof(IsBanner));
             OnPropertyChanged(nameof(IsHero));
+            OnPropertyChanged(nameof(ClockTimeFontSize));
         }
     }
 
@@ -204,17 +281,19 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
         ClockFontFamily = FontFace switch
         {
             ClockFontFace.Monoton => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Monoton, Segoe UI",
-            ClockFontFace.PixelifySans => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Pixelify Sans, Segoe UI",
-            ClockFontFace.Doto => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Doto, Segoe UI",
+            ClockFontFace.Digital7 => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Digital-7, Segoe UI",
+            ClockFontFace.FffForward => "pack://application:,,,/MetroHub;component/Assets/Fonts/#FFF Forward, Segoe UI",
+            ClockFontFace.KarnivoreDigit => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Karnivore Digit, Segoe UI",
             _ => "Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
         };
 
         ClockFontWeight = FontFace switch
         {
-            ClockFontFace.Monoton => "Normal",
-            ClockFontFace.Doto => "Bold",
+            ClockFontFace.Monoton or ClockFontFace.Digital7 or ClockFontFace.FffForward or ClockFontFace.KarnivoreDigit => "Normal",
             _ => "SemiBold"
         };
+
+        OnPropertyChanged(nameof(ClockTimeFontSize));
     }
 
     [RelayCommand]

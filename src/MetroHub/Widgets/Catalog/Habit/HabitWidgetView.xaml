@@ -89,7 +89,7 @@
             </Setter>
         </Style>
 
-        <!-- Fluent Dark Input Box Style (CornerRadius: 2px, Embedded Edit20 Icon) -->
+        <!-- Fluent Acrylic Glass Input Box Style (Matches Wifi password box: translucent acrylic, 1px border, 4px CornerRadius) -->
         <Style x:Key="FluentDarkInputWithIconStyle" TargetType="TextBox">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Height" Value="34" />
@@ -103,10 +103,10 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border x:Name="BoxBorder"
-                                Background="#2A2A2A"
-                                BorderBrush="#35FFFFFF"
+                                Background="#10FFFFFF"
+                                BorderBrush="#25FFFFFF"
                                 BorderThickness="1"
-                                CornerRadius="2"
+                                CornerRadius="4"
                                 SnapsToDevicePixels="True">
                             <Grid Margin="10,0,10,0">
                                 <Grid.ColumnDefinitions>
@@ -129,13 +129,13 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#303030" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#50FFFFFF" />
+                                <Setter TargetName="BoxBorder" Property="Background" Value="#18FFFFFF" />
+                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#40FFFFFF" />
                                 <Setter TargetName="PrefixIcon" Property="Foreground" Value="#B0FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#353535" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#80FFFFFF" />
+                                <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
+                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#0B9E76" />
                                 <Setter TargetName="PrefixIcon" Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -212,9 +212,9 @@
     <widgets:WidgetCard Padding="16,14">
         <Grid>
             <!-- ============================================================ -->
-            <!-- 1. MAIN HABIT MATRIX INTERFACE                              -->
+            <!-- 1. MAIN HABIT MATRIX INTERFACE (CALENDAR + STREAK)          -->
             <!-- ============================================================ -->
-            <Grid>
+            <Grid Visibility="{Binding IsCalendarVisible, Converter={StaticResource BoolToVis}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" /> <!-- 0: Month Stepper Header -->
                     <RowDefinition Height="Auto" /> <!-- 1: Weekday Names Header -->
@@ -433,24 +433,56 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Habit Name & Icon -->
-                    <StackPanel Grid.Column="0"
-                                Orientation="Horizontal"
-                                VerticalAlignment="Center"
-                                Margin="0,0,8,0">
-                        <ui:SymbolIcon Symbol="{Binding IconSymbol}"
-                                       FontSize="20"
-                                       Foreground="#0B9E76"
-                                       VerticalAlignment="Center"
-                                       Margin="0,0,7,0" />
-                        <TextBlock Text="{Binding HabitName}"
-                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
-                                   FontSize="16"
-                                   FontWeight="Bold"
-                                   Foreground="#FFFFFF"
-                                   VerticalAlignment="Center"
-                                   TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
+                    <!-- Habit Name & Icon (Click to configure in-widget) -->
+                    <Button Grid.Column="0"
+                            Command="{Binding EditHabitCommand}"
+                            ToolTip="Configure habit"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="4,2"
+                            Margin="-4,-2,8,-2"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Focusable="False"
+                            Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Pill"
+                                        Background="Transparent"
+                                        CornerRadius="4"
+                                        Padding="{TemplateBinding Padding}">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:SymbolIcon Symbol="{Binding IconSymbol}"
+                                                       FontSize="20"
+                                                       Foreground="#0B9E76"
+                                                       VerticalAlignment="Center"
+                                                       Margin="0,0,7,0" />
+                                        <TextBlock Text="{Binding HabitName}"
+                                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                                   FontSize="16"
+                                                   FontWeight="Bold"
+                                                   Foreground="#FFFFFF"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <ui:SymbolIcon x:Name="EditPencil"
+                                                       Symbol="Edit16"
+                                                       FontSize="12"
+                                                       Foreground="#70FFFFFF"
+                                                       VerticalAlignment="Center"
+                                                       Margin="6,0,0,0"
+                                                       Opacity="0" />
+                                    </StackPanel>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Pill" Property="Background" Value="#18FFFFFF" />
+                                        <Setter TargetName="EditPencil" Property="Opacity" Value="1" />
+                                        <Setter TargetName="EditPencil" Property="Foreground" Value="#FFFFFF" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                     <!-- Streak Indicator (Flame logo + warm streak color text) -->
                     <StackPanel Grid.Column="1"
@@ -491,195 +523,215 @@
             <!-- ============================================================ -->
             <!-- 2. IN-TILE SETUP CARD (First Drop or Right-Click 'Edit')    -->
             <!-- ============================================================ -->
-            <Border Visibility="{Binding IsSetupMode, Converter={StaticResource BoolToVis}}"
-                    Background="#232323"
-                    CornerRadius="2"
-                    BorderBrush="#35FFFFFF"
-                    BorderThickness="1"
-                    Padding="20,16"
-                    SnapsToDevicePixels="True">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" /> <!-- 0: Header (Title + Dismiss '✕') -->
-                        <RowDefinition Height="Auto" /> <!-- 1: Habit Name Input -->
-                        <RowDefinition Height="Auto" /> <!-- 2: Icon Picker -->
-                        <RowDefinition Height="*" />    <!-- 3: Actions (Apply) -->
-                    </Grid.RowDefinitions>
+            <!-- ============================================================ -->
+            <!-- 2. IN-TILE SETUP VIEW (Click Habit or Right-Click 'Edit')    -->
+            <!-- ============================================================ -->
+            <Grid Visibility="{Binding IsSetupMode, Converter={StaticResource BoolToVis}}"
+                  SnapsToDevicePixels="True">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" /> <!-- 0: Header (Title + Dismiss '✕') -->
+                    <RowDefinition Height="Auto" /> <!-- 1: Habit Name Input -->
+                    <RowDefinition Height="Auto" /> <!-- 2: Icon Picker -->
+                    <RowDefinition Height="*" />    <!-- 3: Actions (Cancel + Apply) -->
+                </Grid.RowDefinitions>
 
-                    <!-- Header -->
-                    <Grid Grid.Row="0" Margin="0,0,0,16">
-                        <TextBlock Text="Habit"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
-                                   FontSize="14.5"
-                                   FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
-                                   VerticalAlignment="Center" />
+                <!-- Header -->
+                <Grid Grid.Row="0" Margin="0,0,0,16">
+                    <TextBlock Text="Habit"
+                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                               FontSize="14.5"
+                               FontWeight="SemiBold"
+                               Foreground="#FFFFFF"
+                               VerticalAlignment="Center" />
 
-                        <Button HorizontalAlignment="Right"
-                                Style="{StaticResource HabitDismissButtonStyle}"
+                    <Button HorizontalAlignment="Right"
+                            Style="{StaticResource HabitDismissButtonStyle}"
+                            Command="{Binding CancelEditHabitCommand}"
+                            ToolTip="Close" />
+                </Grid>
+
+                <!-- Habit Name Input -->
+                <StackPanel Grid.Row="1" Margin="0,0,0,16">
+                    <TextBlock Text="Habit Name"
+                               FontSize="12"
+                               Foreground="#95FFFFFF"
+                               Margin="0,0,0,6" />
+                    <TextBox x:Name="HabitNameInput"
+                             Style="{StaticResource FluentDarkInputWithIconStyle}"
+                             Text="{Binding SetupInputName, UpdateSourceTrigger=PropertyChanged}"
+                             KeyDown="HabitNameInput_KeyDown" />
+                </StackPanel>
+
+                <!-- Icon Preset Picker -->
+                <StackPanel Grid.Row="2" Margin="0,0,0,16">
+                    <TextBlock Text="Choose Icon"
+                               FontSize="12"
+                               Foreground="#95FFFFFF"
+                               Margin="0,0,0,6" />
+                    <WrapPanel Orientation="Horizontal">
+                        <Button Command="{Binding SelectIconCommand}" CommandParameter="TargetArrow24" ToolTip="Target Arrow">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="TargetArrow24">
+                                            <Setter Property="Background" Value="#30FFFFFF" />
+                                            <Setter Property="BorderBrush" Value="#0B9E76" />
+                                            <Setter Property="BorderThickness" Value="1.5" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <ui:SymbolIcon Symbol="TargetArrow24" FontSize="16" Foreground="#FFFFFF" />
+                        </Button>
+
+                        <Button Command="{Binding SelectIconCommand}" CommandParameter="PersonRunning20" ToolTip="Running">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="PersonRunning20">
+                                            <Setter Property="Background" Value="#30FFFFFF" />
+                                            <Setter Property="BorderBrush" Value="#0B9E76" />
+                                            <Setter Property="BorderThickness" Value="1.5" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <ui:SymbolIcon Symbol="PersonRunning20" FontSize="16" Foreground="#FFFFFF" />
+                        </Button>
+
+                        <Button Command="{Binding SelectIconCommand}" CommandParameter="Book24" ToolTip="Reading">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Book24">
+                                            <Setter Property="Background" Value="#30FFFFFF" />
+                                            <Setter Property="BorderBrush" Value="#0B9E76" />
+                                            <Setter Property="BorderThickness" Value="1.5" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <ui:SymbolIcon Symbol="Book24" FontSize="16" Foreground="#FFFFFF" />
+                        </Button>
+
+                        <Button Command="{Binding SelectIconCommand}" CommandParameter="Code24" ToolTip="Coding">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Code24">
+                                            <Setter Property="Background" Value="#30FFFFFF" />
+                                            <Setter Property="BorderBrush" Value="#0B9E76" />
+                                            <Setter Property="BorderThickness" Value="1.5" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <ui:SymbolIcon Symbol="Code24" FontSize="16" Foreground="#FFFFFF" />
+                        </Button>
+
+                        <Button Command="{Binding SelectIconCommand}" CommandParameter="BrainCircuit24" ToolTip="Brain / Mind">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="BrainCircuit24">
+                                            <Setter Property="Background" Value="#30FFFFFF" />
+                                            <Setter Property="BorderBrush" Value="#0B9E76" />
+                                            <Setter Property="BorderThickness" Value="1.5" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <ui:SymbolIcon Symbol="BrainCircuit24" FontSize="16" Foreground="#FFFFFF" />
+                        </Button>
+
+                        <Button Command="{Binding SelectIconCommand}" CommandParameter="Prohibited24" ToolTip="Avoid / Prohibited">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Prohibited24">
+                                            <Setter Property="Background" Value="#30FFFFFF" />
+                                            <Setter Property="BorderBrush" Value="#0B9E76" />
+                                            <Setter Property="BorderThickness" Value="1.5" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <ui:SymbolIcon Symbol="Prohibited24" FontSize="16" Foreground="#FFFFFF" />
+                        </Button>
+
+                        <Button Command="{Binding SelectIconCommand}" CommandParameter="Dumbbell24" ToolTip="Workout">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Dumbbell24">
+                                            <Setter Property="Background" Value="#30FFFFFF" />
+                                            <Setter Property="BorderBrush" Value="#0B9E76" />
+                                            <Setter Property="BorderThickness" Value="1.5" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <ui:SymbolIcon Symbol="Dumbbell24" FontSize="16" Foreground="#FFFFFF" />
+                        </Button>
+
+                        <Button Command="{Binding SelectIconCommand}" CommandParameter="Drop24" ToolTip="Hydration">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Drop24">
+                                            <Setter Property="Background" Value="#30FFFFFF" />
+                                            <Setter Property="BorderBrush" Value="#0B9E76" />
+                                            <Setter Property="BorderThickness" Value="1.5" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <ui:SymbolIcon Symbol="Drop24" FontSize="16" Foreground="#FFFFFF" />
+                        </Button>
+                    </WrapPanel>
+                </StackPanel>
+
+                <!-- Actions: Cancel and Apply Buttons -->
+                <Grid Grid.Row="3" VerticalAlignment="Bottom">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="Cancel"
                                 Command="{Binding CancelEditHabitCommand}"
-                                ToolTip="Close" />
-                    </Grid>
-
-                    <!-- Habit Name Input -->
-                    <StackPanel Grid.Row="1" Margin="0,0,0,16">
-                        <TextBlock Text="Habit Name"
-                                   FontSize="12"
-                                   Foreground="#95FFFFFF"
-                                   Margin="0,0,0,6" />
-                        <TextBox x:Name="HabitNameInput"
-                                 Style="{StaticResource FluentDarkInputWithIconStyle}"
-                                 Text="{Binding SetupInputName, UpdateSourceTrigger=PropertyChanged}"
-                                 KeyDown="HabitNameInput_KeyDown" />
-                    </StackPanel>
-
-                    <!-- Icon Preset Picker -->
-                    <StackPanel Grid.Row="2" Margin="0,0,0,16">
-                        <WrapPanel Orientation="Horizontal">
-                            <Button Command="{Binding SelectIconCommand}" CommandParameter="TargetArrow24" ToolTip="Target Arrow">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="TargetArrow24">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
-                                                <Setter Property="BorderBrush" Value="#0B9E76" />
-                                                <Setter Property="BorderThickness" Value="1.5" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                                <ui:SymbolIcon Symbol="TargetArrow24" FontSize="16" Foreground="#FFFFFF" />
-                            </Button>
-
-                            <Button Command="{Binding SelectIconCommand}" CommandParameter="PersonRunning20" ToolTip="Running">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="PersonRunning20">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
-                                                <Setter Property="BorderBrush" Value="#0B9E76" />
-                                                <Setter Property="BorderThickness" Value="1.5" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                                <ui:SymbolIcon Symbol="PersonRunning20" FontSize="16" Foreground="#FFFFFF" />
-                            </Button>
-
-                            <Button Command="{Binding SelectIconCommand}" CommandParameter="Book24" ToolTip="Reading">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Book24">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
-                                                <Setter Property="BorderBrush" Value="#0B9E76" />
-                                                <Setter Property="BorderThickness" Value="1.5" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                                <ui:SymbolIcon Symbol="Book24" FontSize="16" Foreground="#FFFFFF" />
-                            </Button>
-
-                            <Button Command="{Binding SelectIconCommand}" CommandParameter="Code24" ToolTip="Coding">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Code24">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
-                                                <Setter Property="BorderBrush" Value="#0B9E76" />
-                                                <Setter Property="BorderThickness" Value="1.5" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                                <ui:SymbolIcon Symbol="Code24" FontSize="16" Foreground="#FFFFFF" />
-                            </Button>
-
-                            <Button Command="{Binding SelectIconCommand}" CommandParameter="BrainCircuit24" ToolTip="Brain / Mind">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="BrainCircuit24">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
-                                                <Setter Property="BorderBrush" Value="#0B9E76" />
-                                                <Setter Property="BorderThickness" Value="1.5" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                                <ui:SymbolIcon Symbol="BrainCircuit24" FontSize="16" Foreground="#FFFFFF" />
-                            </Button>
-
-                            <Button Command="{Binding SelectIconCommand}" CommandParameter="Prohibited24" ToolTip="Avoid / Prohibited">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Prohibited24">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
-                                                <Setter Property="BorderBrush" Value="#0B9E76" />
-                                                <Setter Property="BorderThickness" Value="1.5" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                                <ui:SymbolIcon Symbol="Prohibited24" FontSize="16" Foreground="#FFFFFF" />
-                            </Button>
-
-                            <Button Command="{Binding SelectIconCommand}" CommandParameter="Dumbbell24" ToolTip="Workout">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Dumbbell24">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
-                                                <Setter Property="BorderBrush" Value="#0B9E76" />
-                                                <Setter Property="BorderThickness" Value="1.5" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                                <ui:SymbolIcon Symbol="Dumbbell24" FontSize="16" Foreground="#FFFFFF" />
-                            </Button>
-
-                            <Button Command="{Binding SelectIconCommand}" CommandParameter="Drop24" ToolTip="Hydration">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource HabitIconChoiceButtonStyle}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SetupSelectedIcon}" Value="Drop24">
-                                                <Setter Property="Background" Value="#30FFFFFF" />
-                                                <Setter Property="BorderBrush" Value="#0B9E76" />
-                                                <Setter Property="BorderThickness" Value="1.5" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                                <ui:SymbolIcon Symbol="Drop24" FontSize="16" Foreground="#FFFFFF" />
-                            </Button>
-                        </WrapPanel>
-                    </StackPanel>
-
-                    <!-- Footer: Right-Aligned Apply Button -->
-                    <Grid Grid.Row="3" VerticalAlignment="Bottom">
-                        <Button Content="Apply"
-                                Command="{Binding StartHabitCommand}"
                                 Height="30"
-                                MinWidth="90"
-                                Padding="16,0"
+                                MinWidth="75"
+                                Padding="14,0"
                                 FontSize="12"
                                 FontWeight="SemiBold"
-                                Background="#0B9E76"
-                                Foreground="#FFFFFF"
-                                BorderThickness="0"
-                                HorizontalAlignment="Right">
+                                Background="#1AFFFFFF"
+                                Foreground="#D0FFFFFF"
+                                BorderThickness="1"
+                                BorderBrush="#25FFFFFF"
+                                Margin="0,0,8,0">
                             <Button.Resources>
                                 <Style TargetType="Border">
                                     <Setter Property="CornerRadius" Value="2" />
                                 </Style>
                             </Button.Resources>
                         </Button>
-                    </Grid>
+
+                        <Button Content="Apply"
+                                Command="{Binding StartHabitCommand}"
+                                Height="30"
+                                MinWidth="80"
+                                Padding="14,0"
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                Background="#0B9E76"
+                                Foreground="#FFFFFF"
+                                BorderThickness="0">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="2" />
+                                </Style>
+                            </Button.Resources>
+                        </Button>
+                    </StackPanel>
                 </Grid>
-            </Border>
+            </Grid>
         </Grid>
     </widgets:WidgetCard>
 </UserControl>

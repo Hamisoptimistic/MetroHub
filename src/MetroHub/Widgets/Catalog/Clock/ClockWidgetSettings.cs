@@ -4,8 +4,9 @@ public enum ClockFontFace
 {
     SegoeUI = 0,
     Monoton = 1,
-    PixelifySans = 2,
-    Doto = 3
+    Digital7 = 2,
+    FffForward = 3,
+    KarnivoreDigit = 4
 }
 
 /// <summary>

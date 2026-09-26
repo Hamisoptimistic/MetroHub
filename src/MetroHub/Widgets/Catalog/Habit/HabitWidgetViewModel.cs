@@ -44,7 +44,10 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
     private string _accentColorHex = "#0B9E76";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCalendarVisible))]
     private bool _isSetupMode;
+
+    public bool IsCalendarVisible => !IsSetupMode;
 
     [ObservableProperty]
     private string _setupInputName = string.Empty;

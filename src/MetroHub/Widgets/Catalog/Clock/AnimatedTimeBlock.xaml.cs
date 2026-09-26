@@ -187,6 +187,10 @@ public partial class AnimatedTimeBlock : UserControl
         };
         PartPreviousText.HorizontalAlignment = hAlign;
         PartCurrentText.HorizontalAlignment = hAlign;
+
+        // Font/size swaps must re-measure immediately; never trust a previously
+        // measured width once the typeface changes.
+        InvalidateMeasure();
     }
 
     private static void OnTextChangedStatic(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -219,33 +223,22 @@ public partial class AnimatedTimeBlock : UserControl
         PartCurrentText.Text = newText;
 
         // Cancel previous animations
+        // Cancel previous animations (opacity/offset only - Width is never animated,
+        // so a block can never keep a stale explicit width across font/size changes)
         PartPreviousText.BeginAnimation(UIElement.OpacityProperty, null);
         PartPreviousTransform.BeginAnimation(TranslateTransform.YProperty, null);
         PartCurrentText.BeginAnimation(UIElement.OpacityProperty, null);
         PartCurrentTransform.BeginAnimation(TranslateTransform.YProperty, null);
-        BeginAnimation(WidthProperty, null);
 
         double slide = SlideDistance;
         var duration = TimeSpan.FromMilliseconds(DurationMs);
         var easeOut = new QuadraticEase { EasingMode = EasingMode.EaseOut };
 
-        // Smoothly animate width if old and new text widths differ (e.g. 12h format shifting 9->10 or date changing)
-        double currentWidth = ActualWidth;
-        if (currentWidth > 0)
-        {
-            PartCurrentText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            double targetWidth = PartCurrentText.DesiredSize.Width;
-
-            if (Math.Abs(currentWidth - targetWidth) > 0.5)
-            {
-                var widthAnim = new DoubleAnimation(currentWidth, targetWidth, duration) { EasingFunction = easeOut };
-                widthAnim.Completed += (s, e) =>
-                {
-                    ClearValue(WidthProperty);
-                };
-                BeginAnimation(WidthProperty, widthAnim);
-            }
-        }
+        // NOTE: no Width animation here on purpose. Animating WidthProperty with a
+        // Completed->ClearValue handler strands an explicit Width whenever a second text
+        // change lands before the first animation finishes (the killed animation's
+        // Completed never fires). That stale width then clips gaps into the time row on
+        // the next font/size change until a later tick repairs it. Fade+slide only.
 
         // Animate Previous: slides up and dissolves out
         var prevFade = new DoubleAnimation(1.0, 0.0, duration) { EasingFunction = easeOut };

@@ -492,26 +492,35 @@ public partial class TileControl : UserControl
                 };
                 itemMonoton.Click += (s, ev) => clockVm.SetFontFace(Widgets.Catalog.Clock.ClockFontFace.Monoton);
 
-                var itemPixelify = new MenuItem
+                var itemDigital7 = new MenuItem
                 {
-                    Header = "Pixelify Sans",
+                    Header = "Digital-7",
                     IsCheckable = true,
-                    IsChecked = clockVm.FontFace == Widgets.Catalog.Clock.ClockFontFace.PixelifySans
+                    IsChecked = clockVm.FontFace == Widgets.Catalog.Clock.ClockFontFace.Digital7
                 };
-                itemPixelify.Click += (s, ev) => clockVm.SetFontFace(Widgets.Catalog.Clock.ClockFontFace.PixelifySans);
+                itemDigital7.Click += (s, ev) => clockVm.SetFontFace(Widgets.Catalog.Clock.ClockFontFace.Digital7);
 
-                var itemDoto = new MenuItem
+                var itemFffForward = new MenuItem
                 {
-                    Header = "Doto (LED Matrix)",
+                    Header = "FFF Forward",
                     IsCheckable = true,
-                    IsChecked = clockVm.FontFace == Widgets.Catalog.Clock.ClockFontFace.Doto
+                    IsChecked = clockVm.FontFace == Widgets.Catalog.Clock.ClockFontFace.FffForward
                 };
-                itemDoto.Click += (s, ev) => clockVm.SetFontFace(Widgets.Catalog.Clock.ClockFontFace.Doto);
+                itemFffForward.Click += (s, ev) => clockVm.SetFontFace(Widgets.Catalog.Clock.ClockFontFace.FffForward);
+
+                var itemKarnivore = new MenuItem
+                {
+                    Header = "Karnivore Digit",
+                    IsCheckable = true,
+                    IsChecked = clockVm.FontFace == Widgets.Catalog.Clock.ClockFontFace.KarnivoreDigit
+                };
+                itemKarnivore.Click += (s, ev) => clockVm.SetFontFace(Widgets.Catalog.Clock.ClockFontFace.KarnivoreDigit);
 
                 fontItem.Items.Add(itemSegoe);
                 fontItem.Items.Add(itemMonoton);
-                fontItem.Items.Add(itemPixelify);
-                fontItem.Items.Add(itemDoto);
+                fontItem.Items.Add(itemDigital7);
+                fontItem.Items.Add(itemFffForward);
+                fontItem.Items.Add(itemKarnivore);
 
                 // 3. Divider after widget features
                 var clockDivider = new Separator
