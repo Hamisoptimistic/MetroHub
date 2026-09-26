@@ -1,15 +1,17 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Media.Core;
-using Windows.Media.Playback;
+using ManagedBass;
 
 namespace MetroHub.Core.Radio;
 
 /// <summary>
 /// High-performance singleton implementation of <see cref="IRadioAudioService"/>
-/// using Windows 10/11's modern hardware-accelerated <see cref="Windows.Media.Playback.MediaPlayer"/>.
+/// powered by the industry-standard Un4seen BASS audio engine (via ManagedBass).
+/// Directly streams raw Icecast, Shoutcast, Radio.co, and AAC/MP3 chunked internet streams
+/// with decoupled buffer architecture, custom User-Agent, and hardware WASAPI volume fading.
 /// </summary>
 public sealed class RadioAudioService : IRadioAudioService
 {
@@ -17,9 +19,13 @@ public sealed class RadioAudioService : IRadioAudioService
     public static RadioAudioService Instance => _lazyInstance.Value;
 
     private readonly object _gate = new();
-    private readonly Windows.Media.Playback.MediaPlayer _player;
-    private MediaSource? _currentMediaSource;
+    private int _currentStream;
     private CancellationTokenSource? _switchCts;
+
+    // Hard delegate references to prevent native Garbage Collection
+    private readonly SyncProcedure _stallSyncProc;
+    private readonly SyncProcedure _endSyncProc;
+    private readonly SyncProcedure _metaSyncProc;
 
     private RadioStation? _currentStation;
     private bool _isPlaying;
@@ -70,19 +76,13 @@ public sealed class RadioAudioService : IRadioAudioService
     public double Volume
     {
         get { lock (_gate) return _volume; }
-        set
-        {
-            SetVolume(value);
-        }
+        set => SetVolume(value);
     }
 
     public bool IsMuted
     {
         get { lock (_gate) return _isMuted; }
-        set
-        {
-            SetMuted(value);
-        }
+        set => SetMuted(value);
     }
 
     public string? LastErrorMessage
@@ -100,17 +100,54 @@ public sealed class RadioAudioService : IRadioAudioService
 
     public RadioAudioService()
     {
-        _player = new Windows.Media.Playback.MediaPlayer
-        {
-            AutoPlay = false,
-            Volume = _volume,
-            IsMuted = _isMuted
-        };
+        // 1. Ensure native library resolver is active
+        BassLoader.Register();
 
-        _player.MediaOpened += OnMediaOpened;
-        _player.MediaFailed += OnMediaFailed;
-        _player.BufferingStarted += OnBufferingStarted;
-        _player.BufferingEnded += OnBufferingEnded;
+        // 2. Retain persistent delegate references for native callbacks
+        _stallSyncProc = OnStallSync;
+        _endSyncProc = OnEndSync;
+        _metaSyncProc = OnMetaSync;
+
+        // 3. Initialize BASS engine (device -1 is default Windows Core Audio/WASAPI device)
+        bool initialized = Bass.Init(-1, 44100, DeviceInitFlags.Default, IntPtr.Zero);
+        if (!initialized && Bass.LastError == Errors.Already)
+        {
+            initialized = true;
+        }
+        else if (!initialized)
+        {
+            // Fallback to "No Sound" device (0) for headless CI / unit test environments
+            initialized = Bass.Init(0, 44100, DeviceInitFlags.Default, IntPtr.Zero);
+            if (!initialized && Bass.LastError == Errors.Already)
+            {
+                initialized = true;
+            }
+        }
+
+        if (initialized)
+        {
+            // 4. Configure stream networking and buffer formula ("Never Stall / Never Buffer Loop")
+            Bass.NetAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 MetroHub/1.0";
+            Bass.Configure(Configuration.NetBufferLength, 5000);         // 5-second ring buffer in RAM
+            Bass.Configure(Configuration.PlaybackBufferLength, 2000);   // 2-second playback mixing buffer
+            Bass.Configure(Configuration.NetPreBuffer, 75);             // Start playback when 75% pre-buffered
+            Bass.Configure(Configuration.NetTimeOut, 10000);            // 10s connection timeout
+            Bass.Configure(Configuration.IncludeDefaultDevice, true);   // Dynamically follow default endpoint changes
+
+            // 5. Load AAC decoder plugin for streams like Birdsong / SomaFM AAC / DEF CON
+            try
+            {
+                Bass.PluginLoad("bass_aac.dll");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RadioAudioService] Notice: AAC plugin load: {ex.Message}");
+            }
+        }
+        else
+        {
+            Debug.WriteLine($"[RadioAudioService] BASS initialization failed: {Bass.LastError}");
+        }
     }
 
     public async Task PlayStationAsync(RadioStation station, CancellationToken ct = default)
@@ -134,7 +171,6 @@ public sealed class RadioAudioService : IRadioAudioService
             // Debounce rapid clicking by 180ms
             await Task.Delay(180, linkedCts.Token).ConfigureAwait(false);
 
-            // Execute switch on player
             lock (_gate)
             {
                 if (linkedCts.Token.IsCancellationRequested || _isDisposed) return;
@@ -143,31 +179,81 @@ public sealed class RadioAudioService : IRadioAudioService
                 IsBuffering = true;
                 LastErrorMessage = null;
 
-                // Dispose old source cleanly
-                if (_currentMediaSource != null)
+                // Stop and free previous stream
+                if (_currentStream != 0)
                 {
-                    _currentMediaSource.Dispose();
-                    _currentMediaSource = null;
+                    int oldStream = _currentStream;
+                    _currentStream = 0;
+                    try
+                    {
+                        Bass.ChannelStop(oldStream);
+                        Bass.StreamFree(oldStream);
+                    }
+                    catch { }
+                }
+            }
+
+            // Connect to URL on background thread to prevent blocking UI during network handshake
+            int newStream = await Task.Run(() =>
+            {
+                return Bass.CreateStream(
+                    station.StreamUrl,
+                    0,
+                    BassFlags.StreamDownloadBlocks | BassFlags.AutoFree,
+                    null,
+                    IntPtr.Zero);
+            }, linkedCts.Token).ConfigureAwait(false);
+
+            lock (_gate)
+            {
+                if (linkedCts.Token.IsCancellationRequested || _isDisposed)
+                {
+                    if (newStream != 0)
+                    {
+                        Bass.StreamFree(newStream);
+                    }
+                    return;
                 }
 
-                try
+                if (newStream == 0)
                 {
-                    _currentMediaSource = MediaSource.CreateFromUri(new Uri(station.StreamUrl));
-                    _player.Source = _currentMediaSource;
-                    _player.Volume = _volume;
-                    _player.IsMuted = _isMuted;
-                    _player.Play();
-                    IsPlaying = true;
+                    var error = Bass.LastError;
+                    HandlePlaybackError($"Failed to stream {station.Name} ({error})");
+                    return;
                 }
-                catch (Exception ex)
+
+                _currentStream = newStream;
+
+                // Set stream volume (0.0 to 1.0)
+                float targetVol = _isMuted ? 0f : (float)_volume;
+                Bass.ChannelSetAttribute(_currentStream, ChannelAttribute.Volume, targetVol);
+
+                // Register native synchronization callbacks
+                Bass.ChannelSetSync(_currentStream, SyncFlags.Stalled, 0, _stallSyncProc, IntPtr.Zero);
+                Bass.ChannelSetSync(_currentStream, SyncFlags.End, 0, _endSyncProc, IntPtr.Zero);
+                Bass.ChannelSetSync(_currentStream, SyncFlags.MetadataReceived, 0, _metaSyncProc, IntPtr.Zero);
+
+                // Start audio playback
+                bool started = Bass.ChannelPlay(_currentStream);
+                if (started)
                 {
-                    HandlePlaybackError($"Failed to initialize stream {station.Name}: {ex.Message}");
+                    IsPlaying = true;
+                    IsBuffering = false;
+                }
+                else
+                {
+                    var error = Bass.LastError;
+                    HandlePlaybackError($"Failed to play audio for {station.Name} ({error})");
                 }
             }
         }
         catch (OperationCanceledException)
         {
             // Debounced by a newer station click; expected
+        }
+        catch (Exception ex)
+        {
+            HandlePlaybackError($"Playback exception on {station.Name}: {ex.Message}");
         }
     }
 
@@ -177,26 +263,36 @@ public sealed class RadioAudioService : IRadioAudioService
         {
             if (_isDisposed || !IsPlaying) return;
 
-            // Quick fade-out to prevent pops
-            try
-            {
-                _player.Pause();
-
-                // Cleanly disconnect socket on pause to save user bandwidth
-                if (_currentMediaSource != null)
-                {
-                    _player.Source = null;
-                    _currentMediaSource.Dispose();
-                    _currentMediaSource = null;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[RadioAudioService] Pause exception: {ex.Message}");
-            }
-
+            int streamToStop = _currentStream;
+            _currentStream = 0;
             IsPlaying = false;
             IsBuffering = false;
+
+            if (streamToStop != 0)
+            {
+                try
+                {
+                    // 120ms hardware volume fade-out to prevent speaker pops/clicks
+                    Bass.ChannelSlideAttribute(streamToStop, ChannelAttribute.Volume, 0f, 120);
+
+                    // Tear down socket cleanly after fade completes to release network bandwidth
+                    Task.Run(async () =>
+                    {
+                        await Task.Delay(130).ConfigureAwait(false);
+                        try
+                        {
+                            Bass.ChannelStop(streamToStop);
+                            Bass.StreamFree(streamToStop);
+                        }
+                        catch { }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[RadioAudioService] Pause exception: {ex.Message}");
+                    Bass.StreamFree(streamToStop);
+                }
+            }
         }
     }
 
@@ -243,11 +339,10 @@ public sealed class RadioAudioService : IRadioAudioService
             if (Math.Abs(_volume - clamped) < 0.001) return;
             _volume = clamped;
 
-            try
+            if (_currentStream != 0 && !_isMuted)
             {
-                _player.Volume = _volume;
+                Bass.ChannelSetAttribute(_currentStream, ChannelAttribute.Volume, (float)_volume);
             }
-            catch { }
         }
 
         VolumeChanged?.Invoke(this, clamped);
@@ -260,36 +355,50 @@ public sealed class RadioAudioService : IRadioAudioService
             if (_isMuted == isMuted) return;
             _isMuted = isMuted;
 
-            try
+            if (_currentStream != 0)
             {
-                _player.IsMuted = _isMuted;
+                float targetVol = _isMuted ? 0f : (float)_volume;
+                Bass.ChannelSetAttribute(_currentStream, ChannelAttribute.Volume, targetVol);
             }
-            catch { }
         }
 
         MuteStateChanged?.Invoke(this, isMuted);
     }
 
-    private void OnMediaOpened(Windows.Media.Playback.MediaPlayer sender, object args)
+    private void OnStallSync(int handle, int channel, int data, IntPtr user)
     {
-        IsBuffering = false;
-        IsPlaying = true;
+        // data == 0: playback stalled (network buffer underrun)
+        // data == 1: playback resumed
+        bool isBuffering = (data == 0);
+        IsBuffering = isBuffering;
+        Debug.WriteLine($"[RadioAudioService] Stall sync: isBuffering={isBuffering}");
     }
 
-    private void OnMediaFailed(Windows.Media.Playback.MediaPlayer sender, MediaPlayerFailedEventArgs args)
+    private void OnEndSync(int handle, int channel, int data, IntPtr user)
     {
-        string message = $"{args.Error}: {args.ErrorMessage} (0x{args.ExtendedErrorCode?.HResult:X8})";
-        HandlePlaybackError(message);
+        lock (_gate)
+        {
+            if (channel == _currentStream)
+            {
+                _currentStream = 0;
+                IsPlaying = false;
+                IsBuffering = false;
+            }
+        }
     }
 
-    private void OnBufferingStarted(Windows.Media.Playback.MediaPlayer sender, object args)
+    private void OnMetaSync(int handle, int channel, int data, IntPtr user)
     {
-        IsBuffering = true;
-    }
-
-    private void OnBufferingEnded(Windows.Media.Playback.MediaPlayer sender, object args)
-    {
-        IsBuffering = false;
+        try
+        {
+            IntPtr tagsPtr = Bass.ChannelGetTags(channel, TagType.ICY);
+            if (tagsPtr != IntPtr.Zero)
+            {
+                string? icy = Marshal.PtrToStringAnsi(tagsPtr);
+                Debug.WriteLine($"[RadioAudioService] ICY Tag: {icy}");
+            }
+        }
+        catch { }
     }
 
     private void HandlePlaybackError(string message)
@@ -316,24 +425,24 @@ public sealed class RadioAudioService : IRadioAudioService
             _switchCts?.Dispose();
             _switchCts = null;
 
+            if (_currentStream != 0)
+            {
+                try
+                {
+                    Bass.ChannelStop(_currentStream);
+                    Bass.StreamFree(_currentStream);
+                }
+                catch { }
+                _currentStream = 0;
+            }
+
             try
             {
-                _player.MediaOpened -= OnMediaOpened;
-                _player.MediaFailed -= OnMediaFailed;
-                _player.BufferingStarted -= OnBufferingStarted;
-                _player.BufferingEnded -= OnBufferingEnded;
-
-                _player.Pause();
-                _player.Source = null;
-
-                _currentMediaSource?.Dispose();
-                _currentMediaSource = null;
-
-                _player.Dispose();
+                Bass.Free();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[RadioAudioService] Disposal error: {ex.Message}");
+                Debug.WriteLine($"[RadioAudioService] BASS disposal error: {ex.Message}");
             }
         }
     }

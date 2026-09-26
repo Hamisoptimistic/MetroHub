@@ -84,4 +84,71 @@ public class RadioAudioServiceTests
         service.Pause();
         Assert.False(service.IsPlaying);
     }
+
+    [Fact]
+    public async Task BirdsongFM_LiveChunkedStream_ConnectsAndStreamsInstantly()
+    {
+        var service = RadioAudioService.Instance;
+
+        var birdsongStation = new RadioStation
+        {
+            Id = "birdsong",
+            Name = "Birdsong",
+            StreamUrl = "https://a1.radio.co/s5c5da6a36/listen",
+            BitrateKbps = 128,
+            Category = "nature"
+        };
+
+        // Start playback on the chunked Radio.co stream that previously stalled in WinRT
+        await service.PlayStationAsync(birdsongStation);
+
+        Assert.NotNull(service.CurrentStation);
+        Assert.Equal("birdsong", service.CurrentStation.Id);
+        Assert.Null(service.LastErrorMessage);
+
+        // Allow up to 3 seconds for BASS network pre-buffering to complete
+        int waitedMs = 0;
+        while (!service.IsPlaying && waitedMs < 3000)
+        {
+            await Task.Delay(200);
+            waitedMs += 200;
+        }
+
+        Assert.True(service.IsPlaying, $"Birdsong FM should transition to Playing via BASS without stalling. Error: {service.LastErrorMessage}");
+        Assert.False(service.IsBuffering, "Birdsong FM should have completed pre-buffering");
+
+        // Clean pause
+        service.Pause();
+        Assert.False(service.IsPlaying);
+    }
+
+    [Fact]
+    public async Task RadioCo_9128_LivePlayback_ConnectsSuccessfully()
+    {
+        var service = RadioAudioService.Instance;
+
+        var station = new RadioStation
+        {
+            Id = "9128",
+            Name = "9128.live",
+            StreamUrl = "https://streams.radio.co/s0aa1e6f4a/listen",
+            BitrateKbps = 320,
+            Category = "ambient"
+        };
+
+        await service.PlayStationAsync(station);
+        Assert.Equal("9128", service.CurrentStation?.Id);
+
+        int waitedMs = 0;
+        while (!service.IsPlaying && waitedMs < 3000)
+        {
+            await Task.Delay(200);
+            waitedMs += 200;
+        }
+
+        Assert.True(service.IsPlaying, $"9128.live should be playing via BASS. Error: {service.LastErrorMessage}");
+
+        service.Pause();
+        Assert.False(service.IsPlaying);
+    }
 }

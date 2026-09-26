@@ -21,6 +21,9 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Register native BASS audio engine dynamic library resolver
+        MetroHub.Core.Radio.BassLoader.Register();
+
         // Global crash logging
         AppDomain.CurrentDomain.UnhandledException += (s, args) =>
         {

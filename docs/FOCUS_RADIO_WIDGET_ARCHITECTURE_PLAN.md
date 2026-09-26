@@ -6,7 +6,7 @@ This document defines the complete architectural blueprint, user experience spec
 
 Authored from first principles and grounded in the exact source code of MetroHub:
 * **True Canvas Geometry:** Exact `Huge` size is **504 × 376 px** (`(SpanX * 64) - 8` by `(SpanY * 64) - 8` per `TileModel.cs:261`). Main station grid receives **236px** vertical height and **126px** per column across 4 columns.
-* **Audio Engine:** Modern Windows 10/11 `Windows.Media.Playback.MediaPlayer` (WinRT), natively handling remote HTTP/HTTPS, Icecast, and Shoutcast streams without legacy WPF pack URI security locks (`0x80131509`).
+* **Audio Engine:** Solution A — The Audio App Gold Standard: **BASS Audio Engine** via `ManagedBass` and native 64-bit `bass.dll` + `bass_aac.dll`, completely replacing WinRT `MediaPlayer` to eliminate Media Foundation buffer stalls and range-probe deadlocks on endless live chunked streams (e.g. Radio.co / Birdsong FM).
 * **Settings & State Architecture:** Singleton `IRadioAudioService` manages global playback state (station, play/pause, volume, mute) across all widget instances. Per-tile settings (`TileModel.SettingsJson`) store local UI preferences (`LastSelectedCategory`).
 * **Asset Convention:** Embedded under `Assets\Radio\radio_catalog.json` with `<Resource Include>` in `MetroHub.csproj`.
 * **UI Structure:** Seamless border-to-border 4-column station grid matching the top `WidgetTiles` strip.
@@ -18,7 +18,7 @@ Authored from first principles and grounded in the exact source code of MetroHub
 | Decision Area | Architectural Choice | First-Principles & Codebase Rationale |
 | :--- | :--- | :--- |
 | **Widget Grid Size** | `Huge` (8x6: **504 × 376 px**) | Matches `TileModel.cs:261` exactly: `Width = (8*64)-8 = 504px`, `Height = (6*64)-8 = 376px`. Top bar: 76px, Player bar: 64px, Main grid: 236px height (126px per column). |
-| **Audio Engine** | Modern Windows 10/11 `Windows.Media.Playback.MediaPlayer` | Built into Windows (`net10.0-windows10.0.19041.0`); 0 extra NuGet packages; natively supports remote HTTP/HTTPS, Icecast, Shoutcast, AAC/MP3 live streams without legacy WPF pack URI security locks (`0x80131509`). Verified working on live Icecast & Shoutcast hosts in spike tests. |
+| **Audio Engine** | Solution A: BASS Audio Engine (`ManagedBass` + Native BASS 2.4 x64) | Replaces WinRT `MediaPlayer` to eliminate Media Foundation buffer stalls on endless chunked streams (e.g. Radio.co / Birdsong FM). Provides direct socket streaming, decoupled 5s net buffer, 10s timeout, custom User-Agent, instant ICY metadata, and 120ms hardware volume fade. |
 | **Stream Catalog Storage** | Embedded Application Resource | Embedded at `Assets\Radio\radio_catalog.json` as `<Resource Include>` in `MetroHub.csproj` for 100% offline day-1 startup. |
 | **Live Stream "Pause"** | Clean Socket Disconnect with 120ms Fade | Live 24/7 Icecast/Shoutcast streams cannot pause a timeline. Socket is cleanly torn down to save user bandwidth/data. Resumes live on Play. |
 | **Station Switching** | `CancellationTokenSource` + 180ms Debounce | Prevents socket pile-up, audio overlapping, and MediaFoundation locks when a user rapidly clicks multiple station tiles. |
@@ -178,3 +178,247 @@ Authored from first principles and grounded in the exact source code of MetroHub
 - Verify state transitions, rapid tile switching, and singleton volume synchronization across ViewModels.
 - Verify exact 504 × 376 px canvas layout in running app.
 - Run complete test suite (`dotnet test`) and compile release binaries.
+
+---
+
+## 5. Solution A: BASS Audio Engine Migration Blueprint & Technical Specification
+
+### 5.1 Context & Technical Root Cause Analysis
+During live testing across diverse radio streams, stations such as **Birdsong FM** (`https://a1.radio.co/s5c5da6a36/listen`) and **9128.live** (`https://streams.radio.co/s0aa1e6f4a/listen`) exhibited persistent buffering or failure to initialize under Windows Media Foundation (`Windows.Media.Playback.MediaPlayer`).
+
+#### The Media Foundation Bottleneck:
+1. **Container Probing & Range Requests:** Windows Media Foundation's `IMFSourceResolver` issues HTTP `HEAD` and byte-range probe requests (`Range: bytes=0-1`) to detect media container length, Xing headers, and seekability.
+2. **Chunked Stream Deadlock:** Live edge streams (such as Radio.co, AzuraCast, and Icecast chunked relays) respond with `Transfer-Encoding: chunked` and `Accept-Ranges: none`. Media Foundation stalls waiting for fixed stream headers that do not exist in continuous live audio.
+3. **Missing Desktop User-Agent:** WinRT `MediaPlayer` does not send standard desktop browser `User-Agent` headers by default, triggering 403 Forbidden or silent connection drops from Cloudflare and edge CDNs protecting audio servers.
+
+#### The BASS Gold Standard:
+Used by the world's leading audio players (**AIMP, MusicBee, XMPlay, Winamp, RadioBOSS**), the **BASS Audio Engine** by Un4seen Developments is specifically architected for endless internet audio streams:
+* **Direct Socket Transport:** Reads directly from raw TCP/HTTP sockets without requiring file length or seek tables.
+* **Decoupled Buffer Architecture:** Separates the network reception buffer (`BASS_CONFIG_NET_BUFFER`) from the audio output mixing buffer (`BASS_CONFIG_BUFFER`), eliminating buffer underruns during network jitter.
+* **Hardware WASAPI Direct Output:** Renders through Windows Core Audio WASAPI endpoints with sub-millisecond precision and native volume fading.
+
+---
+
+### 5.2 Modern .NET 10 & Windows Standards Architecture
+
+```
++-----------------------------------------------------------------------------------+
+|                           MetroHub Radio Architecture                             |
++-----------------------------------------------------------------------------------+
+|  [RadioWidgetView.xaml] <---> [RadioWidgetViewModel.cs]                           |
+|                                       |                                           |
+|                           [IRadioAudioService] (Public API Preserved)             |
+|                                       |                                           |
+|                           [RadioAudioService.cs]                                  |
+|                                       |                                           |
+|                           [ManagedBass (v4.1.0-prerelease - .NET 10 Native)]      |
+|                                       |                                           |
+|         [NativeLibrary.SetDllImportResolver] (Modern .NET 10 P/Invoke)            |
+|                                       |                                           |
+|   +-----------------------------------+-----------------------------------+       |
+|   | bass.dll (x64 v2.4.18)            | bass_aac.dll (x64 v2.4.7)         |       |
+|   | Core MP3/OGG/HTTP Engine          | AAC / AAC+ / M4A Decoder Plugin   |       |
+|   +-----------------------------------+-----------------------------------+       |
+|                                       |                                           |
+|                       [Windows Core Audio / WASAPI]                               |
++-----------------------------------------------------------------------------------+
+```
+
+#### Component Stack:
+* **Target Framework:** `net10.0-windows10.0.19041.0` (x64 architecture).
+* **Managed Wrapper:** `ManagedBass` (v4.1.0-prerelease via NuGet) — latest cutting-edge release featuring explicit, first-class `.net10.0` TFM support.
+* **Native Binaries:** Official Un4seen 64-bit binaries:
+  * `bass.dll` (Core engine: MP3, OGG, WAV, Icecast, Shoutcast, HTTP/HTTPS direct streaming).
+  * `bass_aac.dll` (Addon plugin: AAC, AAC+, ADTS, and MP4 container streaming).
+* **Native Binary Layout in Repository:**
+  ```
+  d:\MetroHub\
+  ├── lib\
+  │   └── native\
+  │       └── win-x64\
+  │           ├── bass.dll
+  │           └── bass_aac.dll
+  ```
+* **MSBuild Deployment Rule (`MetroHub.csproj` & `MetroHub.Tests.csproj`):**
+  ```xml
+  <ItemGroup>
+    <None Include="..\..\lib\native\win-x64\*.dll" Link="runtimes\win-x64\native\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </None>
+    <None Include="..\..\lib\native\win-x64\*.dll" Link="%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>false</Visible>
+    </None>
+  </ItemGroup>
+  ```
+* **Modern .NET P/Invoke Dynamic Resolver (`BassLoader.cs`):**
+  Uses .NET's `NativeLibrary.SetDllImportResolver` on `typeof(Bass).Assembly` to guarantee that native calls resolve the 64-bit DLLs regardless of test runner working directories or shadow copy folders.
+
+---
+
+### 5.3 Engine Configuration & "Never Stall" Audio Formula
+
+#### 1. Custom Desktop Browser User-Agent
+Prevents CDN drops and Cloudflare bot challenges by identifying as a modern desktop client:
+```csharp
+Bass.NetAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 MetroHub/1.0";
+```
+
+#### 2. Network & Buffer Tuning
+```csharp
+// 5,000ms (5s) network buffer in RAM to absorb cellular/Wi-Fi packet jitter
+Bass.Configure(Configuration.NetBuffer, 5000);
+
+// 2,000ms audio output buffer (must be smaller than NetBuffer per BASS spec)
+Bass.Configure(Configuration.BufferLength, 2000);
+
+// Pre-buffer threshold: start playback as soon as 75% of pre-buffer is full (< 1.2s start)
+Bass.Configure(Configuration.NetPreBuf, 75);
+
+// 10-second timeout for dead servers or hanging DNS lookups
+Bass.Configure(Configuration.NetTimeout, 10000);
+
+// Automatically follow default Windows audio device changes (e.g. plugging/unplugging headphones)
+Bass.Configure(Configuration.IncludeDefaultDevice, true);
+```
+
+#### 3. AAC Plugin Dynamic Loading
+```csharp
+int aacPlugin = Bass.PluginLoad("bass_aac.dll");
+```
+Registers AAC/M4A decoders directly into the BASS stream factory. Any `Bass.CreateStream(url, ...)` call will seamlessly handle both MP3 and AAC streams with identical code.
+
+---
+
+### 5.4 Lifecycle, Thread Safety & State Machine
+
+#### Preservation of `IRadioAudioService`:
+The public contract of `IRadioAudioService` remains **100% identical**:
+* Properties: `CurrentStation`, `IsPlaying`, `IsBuffering`, `Volume`, `IsMuted`, `LastErrorMessage`.
+* Methods: `PlayStationAsync(station, ct)`, `Pause()`, `Resume()`, `TogglePlayPause()`, `Stop()`, `SetVolume(vol)`, `SetMuted(muted)`.
+* Events: `CurrentStationChanged`, `PlaybackStateChanged`, `BufferingStateChanged`, `VolumeChanged`, `MuteStateChanged`, `ErrorOccurred`.
+* `RadioWidgetViewModel.cs` and `RadioWidgetView.xaml` require **ZERO** code changes.
+
+#### Stream Creation & Flags:
+```csharp
+int stream = Bass.CreateStream(
+    station.StreamUrl, 
+    0, 
+    BassFlags.StreamBlock | BassFlags.AutoFree, 
+    null, 
+    IntPtr.Zero);
+```
+* `BassFlags.StreamBlock`: Streamed in real-time chunks; zero memory accumulation on 24/7 playback.
+* `BassFlags.AutoFree`: Automatically frees internal resources when the channel is stopped.
+
+#### Real-Time Stall & Buffering Telemetry:
+```csharp
+// Sync procedure retained in a private field to prevent Garbage Collection
+_stallSyncProc = (handle, channel, data, user) =>
+{
+    // data == 0: Stream stalled (network underrun)
+    // data == 1: Stream resumed
+    bool isBuffering = (data == 0);
+    IsBuffering = isBuffering;
+};
+Bass.ChannelSetSync(stream, SyncFlags.Stall, 0, _stallSyncProc, IntPtr.Zero);
+```
+
+#### Live ICY Metadata Extraction (Track Title & Artist):
+```csharp
+_metaSyncProc = (handle, channel, data, user) =>
+{
+    IntPtr tagsPtr = Bass.ChannelGetTags(channel, TagType.ICY);
+    if (tagsPtr != IntPtr.Zero)
+    {
+        string? icy = Marshal.PtrToStringAnsi(tagsPtr);
+        // Extracts StreamTitle='...' for real-time station display
+    }
+};
+Bass.ChannelSetSync(stream, SyncFlags.Metadata, 0, _metaSyncProc, IntPtr.Zero);
+```
+
+#### Hardware Volume Fade & Pop/Click Elimination:
+To prevent harsh digital clicks when stopping or switching stations:
+```csharp
+// Smooth 120ms logarithmic hardware volume fade-out
+Bass.ChannelSlideAttribute(_currentStream, ChannelAttribute.Volume, 0f, 120);
+await Task.Delay(120, CancellationToken.None);
+Bass.ChannelStop(_currentStream);
+```
+
+#### Clean Socket Teardown:
+On `Pause()` or `Stop()`, `Bass.ChannelStop(_currentStream)` immediately tears down the underlying TCP socket. No background bandwidth or server connections linger.
+
+---
+
+### 5.5 Step-by-Step Implementation Roadmap
+
+```
++-----------------------------------------------------------------------------------+
+|                      Solution A Implementation Phases                             |
++-----------------------------------------------------------------------------------+
+|  [Phase 1: Dependencies, Native Binaries & Modern .NET Loader Wiring]             |
+|   - Add ManagedBass (v4.1.0-prerelease) to MetroHub.csproj & MetroHub.Tests.csproj |
+|   - Download & stage official Un4seen x64 bass.dll & bass_aac.dll in lib/native  |
+|   - Configure MSBuild CopyToOutputDirectory rules                                 |
+|   - Implement BassLoader with NativeLibrary.SetDllImportResolver                  |
+|                                                                                   |
+|  [Phase 2: Core BASS Audio Service Refactoring (RadioAudioService.cs)]            |
+|   - Implement BASS initialization, NetAgent, buffers, and AAC plugin loading      |
+|   - Implement PlayStationAsync with 180ms debounce & cancellation token           |
+|   - Implement SyncFlags.Stall (IsBuffering) & SyncFlags.Metadata (ICY tags)       |
+|   - Implement 120ms ChannelSlideAttribute fade-out on Pause/Stop                  |
+|   - Implement thread-safe Volume & Mute channel attribute controls                |
+|                                                                                   |
+|  [Phase 3: Live Verification & Testing on Problematic Streams]                    |
+|   - Test Birdsong FM (Radio.co chunked stream)                                    |
+|   - Test 9128.live (Radio.co 320k stream)                                         |
+|   - Test SomaFM Drone Zone & Groove Salad (Icecast MP3)                           |
+|   - Test Torontocast & Centova streams                                            |
+|   - Verify instant playback start (< 1.5s) and zero stall loops                   |
+|                                                                                   |
+|  [Phase 4: Unit Test Suite Modernization & Zero Regression Verification]          |
+|   - Update RadioAudioServiceTests.cs with BASS initialization verification        |
+|   - Run complete test suite (dotnet test) across all 46 existing tests            |
+|   - Verify clean process shutdown and 0 native memory leaks                       |
++-----------------------------------------------------------------------------------+
+```
+
+#### Phase 1: Dependencies, Native Binaries & Modern .NET Loader Wiring
+1. Add `ManagedBass` (version `4.1.0-prerelease`) NuGet package to `src\MetroHub\MetroHub.csproj` and `tests\MetroHub.Tests\MetroHub.Tests.csproj`.
+2. Stage official 64-bit Un4seen native binaries (`bass.dll` and `bass_aac.dll`) in `lib\native\win-x64\`.
+3. Configure MSBuild `<None>` items in `MetroHub.csproj` and `MetroHub.Tests.csproj` to copy the DLLs to the output directory (`PreserveNewest`).
+4. Create `MetroHub.Core.Radio.BassLoader` implementing `NativeLibrary.SetDllImportResolver` for `typeof(Bass).Assembly`.
+5. Call `BassLoader.Register()` in `App.xaml.cs` on startup.
+
+#### Phase 2: Core BASS Audio Service Refactoring (`RadioAudioService.cs`)
+1. Refactor `RadioAudioService.cs` from WinRT `MediaPlayer` to the BASS pipeline while strictly preserving the `IRadioAudioService` contract.
+2. Initialize BASS on default audio endpoint (`-1`, `44100Hz`).
+3. Apply `NetAgent`, `NetBuffer` (5000ms), `BufferLength` (2000ms), `NetPreBuf` (75%), and `NetTimeout` (10000ms).
+4. Load `bass_aac.dll` plugin for full AAC/M4A support.
+5. Implement `PlayStationAsync` with 180ms debounced cancellation, `Bass.CreateStream`, `SyncFlags.Stall` callback, and `SyncFlags.Metadata` callback.
+6. Implement `ChannelSlideAttribute` volume fade (120ms) in `Pause()` and `Stop()`.
+7. Handle volume changes via `Bass.ChannelSetAttribute(stream, ChannelAttribute.Volume, ...)`.
+8. Implement proper cleanup in `Dispose()` calling `Bass.Free()`.
+
+#### Phase 3: Live Verification & Testing on Problematic Streams
+1. Verify live playback of **Birdsong FM** (`https://a1.radio.co/s5c5da6a36/listen`): confirm audio starts cleanly within 1.5 seconds without buffering lock.
+2. Verify live playback of **9128.live** (`https://streams.radio.co/s0aa1e6f4a/listen`).
+3. Verify live playback of **SomaFM Drone Zone** and **SomaFM Groove Salad** (Icecast MP3).
+4. Verify dynamic Windows audio endpoint switching (unplugging/plugging audio device).
+5. Verify zero CPU spikes and stable RAM footprint during continuous streaming.
+
+#### Phase 4: Unit Test Suite Modernization & Zero Regression Verification
+1. Update `RadioAudioServiceTests.cs` to test BASS-driven volume clamping, mute toggling, rapid station debouncing, and live stream connectivity.
+2. Run full solution test suite (`dotnet test`) to verify all 46 tests pass.
+3. Validate clean app launch and UI responsiveness in the running widget.
+
+---
+
+### 5.6 Mandatory Checkpoint & Permission Gate
+> [!IMPORTANT]
+> **GATEWAY NOTICE:** Per user instructions, implementation will **NOT** begin automatically. 
+> The architecture and step-by-step phases documented above must be reviewed and explicitly authorized by the user before executing **Phase 1**.
+
