@@ -24,6 +24,7 @@
              xmlns:dino="clr-namespace:MetroHub.Widgets.Catalog.Dino"
              xmlns:caffeinesleep="clr-namespace:MetroHub.Widgets.Catalog.CaffeineSleep"
              xmlns:quickcontrols="clr-namespace:MetroHub.Widgets.Catalog.QuickControls"
+             xmlns:rover="clr-namespace:MetroHub.Widgets.Catalog.Rover"
              xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
@@ -228,6 +229,11 @@
         <!-- 18. Quick Controls Widget DataTemplate -->
         <DataTemplate DataType="{x:Type quickcontrols:QuickControlsWidgetViewModel}">
             <quickcontrols:QuickControlsWidgetView />
+        </DataTemplate>
+
+        <!-- 19. Rover (Windows XP Dog Companion) Widget DataTemplate -->
+        <DataTemplate DataType="{x:Type rover:RoverWidgetViewModel}">
+            <rover:RoverWidgetView />
         </DataTemplate>
     </UserControl.Resources>
 

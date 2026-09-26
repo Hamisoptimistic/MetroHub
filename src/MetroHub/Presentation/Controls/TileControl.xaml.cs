@@ -215,6 +215,11 @@ public partial class TileControl : UserControl
                 {
                     return;
                 }
+                if (tile.TileContent is Widgets.Catalog.Rover.RoverWidgetViewModel roverVm)
+                {
+                    roverVm.Interact();
+                    return;
+                }
                 return;
             }
 
@@ -1262,6 +1267,88 @@ public partial class TileControl : UserControl
                 TileContextMenu.Items.Insert(2, motionItem);
                 TileContextMenu.Items.Insert(3, resetScoreItem);
                 TileContextMenu.Items.Insert(4, dinoDivider);
+            }
+            else if (tile.TileContent is MetroHub.Widgets.Catalog.Rover.RoverWidgetViewModel roverVm)
+            {
+                var petItem = new MenuItem
+                {
+                    Header = "Pet Rover 🐾",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Heart24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                petItem.Click += (s, ev) => roverVm.Pet();
+
+                var trickItem = new MenuItem
+                {
+                    Header = "Do a Trick 🌟",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Sparkle24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                trickItem.Click += (s, ev) => roverVm.DoTrick();
+
+                var sleepItem = new MenuItem
+                {
+                    Header = roverVm.IsSleeping ? "Wake Up ⚡" : "Take a Nap 💤",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = roverVm.IsSleeping ? Wpf.Ui.Controls.SymbolRegular.WeatherSunny24 : Wpf.Ui.Controls.SymbolRegular.WeatherMoon24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                sleepItem.Click += (s, ev) =>
+                {
+                    if (roverVm.IsSleeping) roverVm.WakeUp();
+                    else roverVm.TakeNap();
+                };
+
+                var muteItem = new MenuItem
+                {
+                    Header = roverVm.IsMuted ? "Unmute Sound 🔊" : "Mute Sound 🔇",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = roverVm.IsMuted ? Wpf.Ui.Controls.SymbolRegular.Speaker224 : Wpf.Ui.Controls.SymbolRegular.SpeakerOff24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                muteItem.Click += (s, ev) => roverVm.ToggleMute();
+
+                var themeItem = new MenuItem
+                {
+                    Header = roverVm.IsXPBliss ? "Style: Fluent Glass 🪟" : "Style: XP Bliss Hill 🌄",
+                    Tag = "WidgetCustomMenu",
+                    Icon = new Wpf.Ui.Controls.SymbolIcon
+                    {
+                        Symbol = Wpf.Ui.Controls.SymbolRegular.Color24,
+                        FontSize = 20,
+                        Foreground = MenuIconForegroundBrush
+                    }
+                };
+                themeItem.Click += (s, ev) =>
+                {
+                    roverVm.BackgroundStyle = roverVm.IsXPBliss ? "FluentGlass" : "XPBliss";
+                };
+
+                var roverDivider = new Separator { Tag = "WidgetCustomMenu" };
+                TileContextMenu.Items.Insert(1, petItem);
+                TileContextMenu.Items.Insert(2, trickItem);
+                TileContextMenu.Items.Insert(3, sleepItem);
+                TileContextMenu.Items.Insert(4, muteItem);
+                TileContextMenu.Items.Insert(5, themeItem);
+                TileContextMenu.Items.Insert(6, roverDivider);
             }
         }
         else

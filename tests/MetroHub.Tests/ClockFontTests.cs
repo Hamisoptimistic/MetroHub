@@ -29,7 +29,7 @@ public class ClockFontTests
         {
             if (Application.Current == null)
             {
-                new Application();
+                try { new Application(); } catch { }
             }
 
             string outDir = @"C:\Users\HamB\.gemini\antigravity-ide\brain\a6e02d95-8bf4-47e5-864a-6d9ee3ef1384\scratch\renders";

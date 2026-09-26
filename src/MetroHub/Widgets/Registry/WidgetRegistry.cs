@@ -339,6 +339,26 @@ public static class WidgetRegistry
             Factory: model => new MetroHub.Widgets.Catalog.QuickControls.QuickControlsWidgetViewModel(model),
             Category: "Quick Actions"
         ));
+
+        // Register Rover (Windows XP Dog Companion) widget
+        Register(new WidgetDefinition(
+            Id: "rover",
+            DisplayName: "Rover (Windows XP)",
+            Description: "Iconic Windows XP animated dog companion with interactive tricks, speech bubbles, and quick search",
+            Icon: SymbolRegular.AnimalDog24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Medium,  // 2x2: Pocket Companion
+                WidgetSize.Wide,    // 4x2: Rover + Speech/Status
+                WidgetSize.Large,   // 4x4: Playpen + Actions
+                WidgetSize.Banner3  // 8x3: Companion Deck + Quick Search
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Rover.RoverWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Rover.RoverWidgetView),
+            DefaultSize: WidgetSize.Wide,
+            Factory: model => new MetroHub.Widgets.Catalog.Rover.RoverWidgetViewModel(model),
+            Category: "Lifestyle"
+        ));
     }
 
     public static void Register(WidgetDefinition definition)
