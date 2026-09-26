@@ -84,8 +84,10 @@ public partial class TileControl : UserControl
 
     private void OnMouseEnter(object sender, MouseEventArgs e)
     {
-        if (DataContext is TileModel { TileType: TileType.Widget, TargetPath: "notepad" })
+        if (DataContext is TileModel { TileType: TileType.Widget })
         {
+            RevealFillBorder.Opacity = 0.0;
+            RevealEdgeBorder.Opacity = 0.0;
             return;
         }
 
@@ -98,6 +100,13 @@ public partial class TileControl : UserControl
 
     private void OnMouseLeave(object sender, MouseEventArgs e)
     {
+        if (DataContext is TileModel { TileType: TileType.Widget })
+        {
+            RevealFillBorder.Opacity = 0.0;
+            RevealEdgeBorder.Opacity = 0.0;
+            return;
+        }
+
         AnimateRevealFill(0.0, 200);
         var anim = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(220))
         {
@@ -122,7 +131,7 @@ public partial class TileControl : UserControl
 
     private void AnimateRevealFill(double targetOpacity, int durationMs)
     {
-        if (DataContext is TileModel { TileType: TileType.Widget } tm && (tm.TargetPath == "notepad" || tm.TargetPath == "network" || tm.TargetPath == "photos" || tm.TargetPath == "power" || tm.TargetPath == "caffeine" || tm.TargetPath == "caffeine_sleep"))
+        if (DataContext is TileModel { TileType: TileType.Widget })
         {
             RevealFillBorder.Opacity = 0.0;
             return;
@@ -136,6 +145,12 @@ public partial class TileControl : UserControl
 
     public void UpdateAmbientReveal(Point mouseOnTile, double distance)
     {
+        if (DataContext is TileModel { TileType: TileType.Widget })
+        {
+            RevealEdgeBorder.Opacity = 0.0;
+            return;
+        }
+
         if (IsMouseOver)
         {
             RevealEdgeBorder.Opacity = 1.0;

@@ -25,9 +25,9 @@ public class RadioCatalogTests
         Assert.NotNull(lofi);
         Assert.NotNull(coding);
 
-        Assert.Equal(15, ambient.Stations.Count);
+        Assert.Equal(12, ambient.Stations.Count);
         Assert.Equal(10, nature.Stations.Count);
-        Assert.Equal(10, lofi.Stations.Count);
+        Assert.Equal(13, lofi.Stations.Count);
         Assert.Equal(5, coding.Stations.Count);
 
         int totalStations = catalog.Categories.Sum(c => c.Stations.Count);

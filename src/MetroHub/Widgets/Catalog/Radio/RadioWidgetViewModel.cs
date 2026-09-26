@@ -181,35 +181,21 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
 
     private void UpdateDisplayInfo()
     {
-        if (CurrentStation != null)
+        if (IsBuffering)
+        {
+            CurrentStationTitle = "Buffering...";
+        }
+        else if (CurrentStation != null)
         {
             CurrentStationTitle = CurrentStation.Name;
-            CurrentStationBadge = CurrentStation.BitrateKbps > 0 
-                ? $"{CurrentStation.BitrateKbps}k" 
-                : string.Empty;
         }
         else
         {
             CurrentStationTitle = "Select a station to focus";
-            CurrentStationBadge = string.Empty;
         }
 
-        if (IsBuffering)
-        {
-            PlaybackStatusText = "BUFFERING";
-        }
-        else if (IsPlaying)
-        {
-            PlaybackStatusText = "LIVE";
-        }
-        else if (CurrentStation != null)
-        {
-            PlaybackStatusText = "PAUSED";
-        }
-        else
-        {
-            PlaybackStatusText = "READY";
-        }
+        CurrentStationBadge = string.Empty;
+        PlaybackStatusText = string.Empty;
     }
 
     private void UpdateTileStates()

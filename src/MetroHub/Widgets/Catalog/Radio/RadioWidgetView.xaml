@@ -33,34 +33,13 @@
             <Setter Property="Focusable" Value="False" />
         </Style>
 
-        <!-- Circular Play/Pause Accent Button Style -->
-        <Style x:Key="PlayPauseAccentButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="38" />
-            <Setter Property="Height" Value="38" />
-            <Setter Property="Background" Value="#00E676" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Cursor" Value="Hand" />
+        <!-- Transport Play/Pause Button Style: Fluent Ghost Button matching Prev/Next -->
+        <Style x:Key="PlayPauseAccentButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}">
+            <Setter Property="Width" Value="32" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="0" />
             <Setter Property="Focusable" Value="False" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="CircleBorder"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="19"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CircleBorder" Property="Background" Value="#00FF85" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="CircleBorder" Property="Background" Value="#00CC6A" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Cursor" Value="Hand" />
         </Style>
 
         <!-- Seamless Radio Station Grid Tile Button Style -->
@@ -82,89 +61,31 @@
                         <Border x:Name="TileBorder"
                                 Background="Transparent"
                                 BorderBrush="#14FFFFFF"
-                                BorderThickness="0,0,1,1"
+                                BorderThickness="1"
+                                Margin="0,0,-1,-1"
                                 SnapsToDevicePixels="True">
                             <Grid>
-                                <!-- Standard Station Card Content -->
-                                <Grid x:Name="StationContent" Margin="9,8,9,8">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="*" />
-                                    </Grid.RowDefinitions>
-
-                                    <!-- Top Meta: Category Icon (Left) + Playing Indicator / Bitrate (Right) -->
-                                    <Grid Grid.Row="0">
-                                        <ui:SymbolIcon x:Name="StationTypeIcon"
-                                                       Symbol="SoundWaveCircle24"
-                                                       FontSize="13"
-                                                       Foreground="#70FFFFFF"
-                                                       HorizontalAlignment="Left"
-                                                       VerticalAlignment="Center" />
-
-                                        <!-- Playing Status: Animated Equalizer/Sound Indicator -->
-                                        <StackPanel x:Name="PlayingBadge"
-                                                    Orientation="Horizontal"
-                                                    HorizontalAlignment="Right"
-                                                    VerticalAlignment="Center"
-                                                    Visibility="Collapsed">
-                                            <Ellipse Width="6" Height="6" Fill="#00E676" Margin="0,0,4,0" />
-                                            <TextBlock Text="PLAYING"
-                                                       FontSize="8.5"
-                                                       FontWeight="Bold"
-                                                       Foreground="#00E676"
-                                                       VerticalAlignment="Center" />
-                                        </StackPanel>
-
-                                        <!-- Buffering Status -->
-                                        <StackPanel x:Name="BufferingBadge"
-                                                    Orientation="Horizontal"
-                                                    HorizontalAlignment="Right"
-                                                    VerticalAlignment="Center"
-                                                    Visibility="Collapsed">
-                                            <ui:SymbolIcon Symbol="ArrowSync24" FontSize="10" Foreground="#FFB703" Margin="0,0,3,0" />
-                                            <TextBlock Text="CONNECTING"
-                                                       FontSize="8.5"
-                                                       FontWeight="Bold"
-                                                       Foreground="#FFB703"
-                                                       VerticalAlignment="Center" />
-                                        </StackPanel>
-
-                                        <!-- Default Bitrate Badge -->
-                                        <TextBlock x:Name="BitrateBadge"
-                                                   Text="{Binding BitrateBadge}"
-                                                   FontSize="9.5"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="#55FFFFFF"
-                                                   HorizontalAlignment="Right"
-                                                   VerticalAlignment="Center" />
-                                    </Grid>
-
-                                    <!-- Bottom Info: Station Name + Category Description -->
-                                    <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="0,4,0,0">
-                                        <TextBlock x:Name="StationNameText"
-                                                   Text="{Binding Name}"
-                                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                                   FontSize="11.5"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="#FFFFFF"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   TextWrapping="NoWrap" />
-                                        <TextBlock x:Name="StationDescText"
-                                                   Text="{Binding Description}"
-                                                   FontFamily="{DynamicResource AppFontFamily}"
-                                                   FontSize="9.5"
-                                                   Foreground="#70FFFFFF"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   TextWrapping="NoWrap"
-                                                   Margin="0,2,0,0" />
-                                    </StackPanel>
+                                <!-- Standard Station Card Content: Clean, Centered Station Title -->
+                                <Grid x:Name="StationContent" Margin="10,6">
+                                    <TextBlock x:Name="StationNameText"
+                                               Text="{Binding Name}"
+                                               FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                               FontSize="11.5"
+                                               FontWeight="SemiBold"
+                                               Foreground="#FFFFFF"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxHeight="42" />
                                 </Grid>
 
                                 <!-- Trailing '+' Add Custom Station Placeholder Card Content -->
                                 <Grid x:Name="PlaceholderContent" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <ui:SymbolIcon Symbol="Add24"
-                                                       FontSize="20"
+                                                       FontSize="18"
                                                        Foreground="#60FFFFFF"
                                                        HorizontalAlignment="Center" />
                                         <TextBlock Text="Custom Station"
@@ -172,7 +93,7 @@
                                                    FontSize="10"
                                                    FontWeight="SemiBold"
                                                    Foreground="#60FFFFFF"
-                                                   Margin="0,4,0,0"
+                                                   Margin="0,3,0,0"
                                                    HorizontalAlignment="Center" />
                                     </StackPanel>
                                 </Grid>
@@ -180,44 +101,22 @@
                         </Border>
 
                         <ControlTemplate.Triggers>
-                            <!-- Hover Reveal Trigger: Reveals distinct border and subtle hover background -->
+                            <!-- Hover Reveal Trigger: Illuminates border without shifting layout or adding background -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="TileBorder" Property="Background" Value="#15FFFFFF" />
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#45FFFFFF" />
-                                <Setter TargetName="TileBorder" Property="BorderThickness" Value="1" />
+                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#55FFFFFF" />
+                                <Setter Property="Panel.ZIndex" Value="10" />
                             </Trigger>
 
                             <!-- Pressed State Trigger -->
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="TileBorder" Property="Background" Value="#22FFFFFF" />
+                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#75FFFFFF" />
+                                <Setter Property="Panel.ZIndex" Value="10" />
                             </Trigger>
-
-                            <!-- Active Station Trigger (Vibrant Accent Border & Sheen) -->
-                            <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                <Setter TargetName="TileBorder" Property="Background" Value="#1200E676" />
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#00E676" />
-                                <Setter TargetName="TileBorder" Property="BorderThickness" Value="1.5" />
-                                <Setter TargetName="StationNameText" Property="Foreground" Value="#00E676" />
-                            </DataTrigger>
-
-                            <!-- Playing State Trigger -->
-                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                <Setter TargetName="PlayingBadge" Property="Visibility" Value="Visible" />
-                                <Setter TargetName="BitrateBadge" Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-
-                            <!-- Buffering State Trigger -->
-                            <DataTrigger Binding="{Binding IsBuffering}" Value="True">
-                                <Setter TargetName="BufferingBadge" Property="Visibility" Value="Visible" />
-                                <Setter TargetName="BitrateBadge" Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
 
                             <!-- Add Placeholder Tile Trigger -->
                             <DataTrigger Binding="{Binding IsAddPlaceholder}" Value="True">
                                 <Setter TargetName="StationContent" Property="Visibility" Value="Collapsed" />
                                 <Setter TargetName="PlaceholderContent" Property="Visibility" Value="Visible" />
-                                <Setter TargetName="TileBorder" Property="BorderThickness" Value="1" />
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#20FFFFFF" />
                             </DataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -232,10 +131,10 @@
             <Grid.RowDefinitions>
                 <!-- Row 0: Top Category Tabs (76px) -->
                 <RowDefinition Height="76" />
-                <!-- Row 1: Main Seamless 4-Column Station Grid (236px) -->
-                <RowDefinition Height="236" />
-                <!-- Row 2: Bottom Fluent Player Bar (64px) -->
-                <RowDefinition Height="64" />
+                <!-- Row 1: Main Seamless 4-Column Station Grid (234px: exactly 3 rows x 78px) -->
+                <RowDefinition Height="234" />
+                <!-- Row 2: Bottom Fluent Player Bar (66px) -->
+                <RowDefinition Height="66" />
             </Grid.RowDefinitions>
 
             <!-- ========================================================================= -->
@@ -249,27 +148,27 @@
                 <widgets:WidgetTile Value="ambient"
                                     Symbol="WeatherMoon24"
                                     Header="Ambient"
-                                    IndicatorBrush="#00E676"
+                                    IndicatorBrush="#FFFFFF"
                                     ToolTip="Deep Ambient, Space &amp; Drone Soundscapes" />
                 <widgets:WidgetTile Value="nature"
                                     Symbol="LeafTwo24"
                                     Header="Nature"
-                                    IndicatorBrush="#00E676"
+                                    IndicatorBrush="#FFFFFF"
                                     ToolTip="Rain, Forests, Oceans &amp; Environmental Sounds" />
                 <widgets:WidgetTile Value="lofi"
                                     Symbol="Headphones24"
                                     Header="Lo-Fi / Chill"
-                                    IndicatorBrush="#00E676"
+                                    IndicatorBrush="#FFFFFF"
                                     ToolTip="Lo-Fi Hip Hop, Chillout &amp; Study Beats" />
                 <widgets:WidgetTile Value="coding"
                                     Symbol="Code24"
                                     Header="Coding"
-                                    IndicatorBrush="#00E676"
+                                    IndicatorBrush="#FFFFFF"
                                     ToolTip="Synthwave, Darksynth &amp; Deep Focus Electronic" />
             </widgets:WidgetTiles>
 
             <!-- ========================================================================= -->
-            <!-- ROW 1: SEAMLESS 4-COLUMN STATION GRID (236px)                             -->
+            <!-- ROW 1: SEAMLESS 4-COLUMN STATION GRID (234px)                             -->
             <!-- Border-to-border, 0 outer margin/padding, 126px per column                -->
             <!-- ========================================================================= -->
             <Grid Grid.Row="1" Background="Transparent" SnapsToDevicePixels="True">
@@ -298,8 +197,8 @@
             </Grid>
 
             <!-- ========================================================================= -->
-            <!-- ROW 2: BOTTOM FLUENT PLAYER BAR (64px)                                    -->
-            <!-- Prev, Circular Play/Pause, Next | Station Name & LIVE Badge | Mute, Slider-->
+            <!-- ROW 2: BOTTOM FLUENT PLAYER BAR (66px)                                    -->
+            <!-- Prev, Ghost Play/Pause, Next | Clean Station Title | Mute, Blue Slider    -->
             <!-- ========================================================================= -->
             <Grid Grid.Row="2" Background="#16000000" SnapsToDevicePixels="True">
                 <!-- Hairline Top Border Divider -->
@@ -309,13 +208,13 @@
                     <Grid.ColumnDefinitions>
                         <!-- Col 0: Playback Transport Buttons (Width="Auto") -->
                         <ColumnDefinition Width="Auto" />
-                        <!-- Col 1: Live Station Info & Badges (Width="*") -->
+                        <!-- Col 1: Live Station Title (Width="*") -->
                         <ColumnDefinition Width="*" />
                         <!-- Col 2: Mute & Volume Slider (Width="Auto") -->
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Left: Transport Controls (Prev, Circular Play/Pause, Next) -->
+                    <!-- Left: Transport Controls (Prev, Ghost Play/Pause, Next) -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                         <!-- Previous Station -->
                         <Button Style="{StaticResource VolumeTransportButtonStyle}"
@@ -324,22 +223,19 @@
                             <ui:SymbolIcon Symbol="Previous24" FontSize="15" Foreground="#FFFFFF" />
                         </Button>
 
-                        <!-- Circular Play/Pause Accent Button -->
+                        <!-- Ghost Play/Pause Button -->
                         <Button Style="{StaticResource PlayPauseAccentButtonStyle}"
                                 Command="{Binding TogglePlayPauseCommand}"
-                                Margin="6,0"
+                                Margin="4,0"
                                 ToolTip="Play / Pause">
                             <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <!-- Play Icon -->
-                                <ui:SymbolIcon Symbol="Play24" FontSize="18" Foreground="#000000" Margin="2,0,0,0">
+                                <ui:SymbolIcon Symbol="Play24" FontSize="18" Foreground="#FFFFFF" Margin="2,0,0,0">
                                     <ui:SymbolIcon.Style>
                                         <Style TargetType="ui:SymbolIcon">
                                             <Setter Property="Visibility" Value="Visible" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                                    <Setter Property="Visibility" Value="Collapsed" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsBuffering}" Value="True">
                                                     <Setter Property="Visibility" Value="Collapsed" />
                                                 </DataTrigger>
                                             </Style.Triggers>
@@ -348,26 +244,12 @@
                                 </ui:SymbolIcon>
 
                                 <!-- Pause Icon -->
-                                <ui:SymbolIcon Symbol="Pause24" FontSize="18" Foreground="#000000">
+                                <ui:SymbolIcon Symbol="Pause24" FontSize="18" Foreground="#FFFFFF">
                                     <ui:SymbolIcon.Style>
                                         <Style TargetType="ui:SymbolIcon">
                                             <Setter Property="Visibility" Value="Collapsed" />
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ui:SymbolIcon.Style>
-                                </ui:SymbolIcon>
-
-                                <!-- Buffering Sync Icon -->
-                                <ui:SymbolIcon Symbol="ArrowSync24" FontSize="18" Foreground="#000000">
-                                    <ui:SymbolIcon.Style>
-                                        <Style TargetType="ui:SymbolIcon">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsBuffering}" Value="True">
                                                     <Setter Property="Visibility" Value="Visible" />
                                                 </DataTrigger>
                                             </Style.Triggers>
@@ -385,80 +267,9 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- Center: Station Name, Badges & Live Status Indicator -->
-                    <Grid Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
-                        <!-- Top Status Line: [LIVE] Dot + Status Pill + Bitrate Badge -->
-                        <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
-                            <!-- Live Indicator Dot -->
-                            <Ellipse Width="7" Height="7" Margin="0,0,5,0" VerticalAlignment="Center">
-                                <Ellipse.Style>
-                                    <Style TargetType="Ellipse">
-                                        <Setter Property="Fill" Value="#40FFFFFF" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                                <Setter Property="Fill" Value="#00E676" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsBuffering}" Value="True">
-                                                <Setter Property="Fill" Value="#FFB703" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Ellipse.Style>
-                            </Ellipse>
-
-                            <!-- Status Text -->
-                            <TextBlock Text="{Binding PlaybackStatusText}"
-                                       FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="9.5"
-                                       FontWeight="Bold"
-                                       VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="#70FFFFFF" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                                <Setter Property="Foreground" Value="#00E676" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IsBuffering}" Value="True">
-                                                <Setter Property="Foreground" Value="#FFB703" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-
-                            <!-- Bitrate Badge (e.g. 128k, 320k) -->
-                            <Border CornerRadius="2"
-                                    Background="#1CFFFFFF"
-                                    Padding="4,1"
-                                    Margin="8,0,0,0"
-                                    VerticalAlignment="Center">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding CurrentStationBadge}" Value="">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
-                                <TextBlock Text="{Binding CurrentStationBadge}"
-                                           FontFamily="{DynamicResource AppFontFamily}"
-                                           FontSize="9.5"
-                                           FontWeight="SemiBold"
-                                           Foreground="#D0FFFFFF" />
-                            </Border>
-                        </StackPanel>
-
-                        <!-- Station Title Line -->
-                        <TextBlock Grid.Row="1"
-                                   Text="{Binding CurrentStationTitle}"
+                    <!-- Center: Clean Station Name / Playback Status -->
+                    <Grid Grid.Column="1" Margin="14,0,14,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding CurrentStationTitle}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    FontSize="13"
                                    FontWeight="SemiBold"
@@ -466,7 +277,7 @@
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap"
                                    ToolTip="{Binding CurrentStationTitle}"
-                                   Margin="0,3,0,0" />
+                                   VerticalAlignment="Center" />
                     </Grid>
 
                     <!-- Right: Mute Button & Fluent Volume Slider -->
@@ -504,7 +315,7 @@
                             </Grid>
                         </Button>
 
-                        <!-- Fluent Volume Slider -->
+                        <!-- Fluent Volume Slider (Standard Blue Accent #00B4D8) -->
                         <controls:FluentVolumeSlider Width="105"
                                                     Margin="6,0,0,0"
                                                     VerticalAlignment="Center"
@@ -512,8 +323,8 @@
                                                     IsMuted="{Binding IsMuted, Mode=TwoWay}"
                                                     Minimum="0"
                                                     Maximum="100"
-                                                    ProgressBrush="#00E676"
-                                                    ProgressPointerOverBrush="#00FF85"
+                                                    ProgressBrush="#00B4D8"
+                                                    ProgressPointerOverBrush="#33C9E8"
                                                     Tag="InteractiveControl"
                                                     SnapsToDevicePixels="True" />
                     </StackPanel>

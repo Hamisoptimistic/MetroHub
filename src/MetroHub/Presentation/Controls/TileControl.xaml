@@ -341,22 +341,7 @@
                     <Style TargetType="Border">
                         <Setter Property="Visibility" Value="Visible" />
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding TargetPath}" Value="notepad">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding TargetPath}" Value="network">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding TargetPath}" Value="photos">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding TargetPath}" Value="power">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding TargetPath}" Value="caffeine">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding TargetPath}" Value="caffeine_sleep">
+                            <DataTrigger Binding="{Binding TileType}" Value="{x:Static models:TileType.Widget}">
                                 <Setter Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
                         </Style.Triggers>
@@ -383,6 +368,16 @@
                     BorderThickness="1.2"
                     IsHitTestVisible="False"
                     Opacity="0">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding TileType}" Value="{x:Static models:TileType.Widget}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <Border.BorderBrush>
                     <RadialGradientBrush x:Name="RevealEdgeBrush" MappingMode="Absolute" RadiusX="160" RadiusY="160">
                         <GradientStop Color="#FFFFFFFF" Offset="0.0" />

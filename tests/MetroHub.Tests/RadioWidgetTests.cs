@@ -69,9 +69,9 @@ public class RadioWidgetTests
             var vm = new RadioWidgetViewModel(model);
             vm.Initialize(model);
 
-            // Default category is ambient (15 stations + 1 '+' placeholder = 16)
+            // Default category is ambient (12 stations + 1 '+' placeholder = 13)
             Assert.Equal("ambient", vm.SelectedCategoryId);
-            Assert.Equal(16, vm.VisibleStations.Count);
+            Assert.Equal(13, vm.VisibleStations.Count);
             Assert.True(vm.VisibleStations.Last().IsAddPlaceholder);
 
             // Switch to nature (10 stations + 1 '+' placeholder = 11)
@@ -79,9 +79,9 @@ public class RadioWidgetTests
             Assert.Equal(11, vm.VisibleStations.Count);
             Assert.True(vm.VisibleStations.Last().IsAddPlaceholder);
 
-            // Switch to lofi (10 stations + 1 '+' placeholder = 11)
+            // Switch to lofi (13 stations + 1 '+' placeholder = 14)
             vm.SelectedCategoryId = "lofi";
-            Assert.Equal(11, vm.VisibleStations.Count);
+            Assert.Equal(14, vm.VisibleStations.Count);
             Assert.True(vm.VisibleStations.Last().IsAddPlaceholder);
 
             // Switch to coding (5 stations + 1 '+' placeholder = 6)

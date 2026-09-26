@@ -8,43 +8,13 @@
       "stations": [
         {
           "id": "dronezone",
-          "name": "SomaFM Drone Zone",
+          "name": "Drone Zone",
           "streamUrl": "http://ice1.somafm.com/dronezone-128-mp3",
           "bitrateKbps": 128,
           "category": "ambient",
           "icon": "WeatherMoon24",
           "description": "The undisputed #1 ambient drone stream in internet history. Commercial-free from San Francisco.",
           "homepageUrl": "https://somafm.com/dronezone/"
-        },
-        {
-          "id": "groovesalad",
-          "name": "SomaFM Groove Salad",
-          "streamUrl": "http://ice1.somafm.com/groovesalad-128-mp3",
-          "bitrateKbps": 128,
-          "category": "ambient",
-          "icon": "LeafTwo24",
-          "description": "The world's most famous ambient downtempo and chill channel for coders and creators.",
-          "homepageUrl": "https://somafm.com/groovesalad/"
-        },
-        {
-          "id": "nightwave",
-          "name": "Nightwave Plaza",
-          "streamUrl": "https://radio.plaza.one/mp3",
-          "bitrateKbps": 128,
-          "category": "ambient",
-          "icon": "City24",
-          "description": "Iconic 24/7 aesthetic station featuring vaporwave, ambient drift, and late-night city soundscapes.",
-          "homepageUrl": "https://plaza.one/"
-        },
-        {
-          "id": "isekoi",
-          "name": "ISEKOI Radio",
-          "streamUrl": "https://public.isekoi-radio.com/listen/isekoi/radio.mp3",
-          "bitrateKbps": 320,
-          "category": "ambient",
-          "icon": "VehicleSpaceShip24",
-          "description": "Independent cosmic ambient and electronic soundscapes. Ad-free, high-fidelity 320k broadcast.",
-          "homepageUrl": "https://isekoi.com/"
         },
         {
           "id": "ambientmodern",
@@ -58,7 +28,7 @@
         },
         {
           "id": "synphaera",
-          "name": "Synphaera Radio",
+          "name": "Synphaera",
           "streamUrl": "https://ice1.somafm.com/synphaera-128-mp3",
           "bitrateKbps": 128,
           "category": "ambient",
@@ -68,7 +38,7 @@
         },
         {
           "id": "spacestation",
-          "name": "Space Station Soma",
+          "name": "Space Station",
           "streamUrl": "http://ice1.somafm.com/spacestation-128-mp3",
           "bitrateKbps": 128,
           "category": "ambient",
@@ -78,7 +48,7 @@
         },
         {
           "id": "9128",
-          "name": "9128 Live",
+          "name": "9128.live",
           "streamUrl": "https://streams.radio.co/s0aa1e6f4a/listen",
           "bitrateKbps": 320,
           "category": "ambient",
@@ -98,7 +68,7 @@
         },
         {
           "id": "asp",
-          "name": "Ambient Sleeping Pill",
+          "name": "Sleeping Pill",
           "streamUrl": "http://radio.stereoscenic.com/asp-h",
           "bitrateKbps": 256,
           "category": "ambient",
@@ -118,7 +88,7 @@
         },
         {
           "id": "darkambient",
-          "name": "Dark Ambient Radio",
+          "name": "Dark Ambient",
           "streamUrl": "http://s3.viastreaming.net:8835/,",
           "bitrateKbps": 192,
           "category": "ambient",
@@ -128,7 +98,7 @@
         },
         {
           "id": "dinamosleep",
-          "name": "Dinamo.FM - Sleep",
+          "name": "Dinamo Sleep",
           "streamUrl": "http://channels.dinamo.fm/sleep-mp3",
           "bitrateKbps": 320,
           "category": "ambient",
@@ -138,7 +108,7 @@
         },
         {
           "id": "moonphase",
-          "name": "Moon Phase Ambient",
+          "name": "Moon Phase",
           "streamUrl": "https://cp12.serverse.com/proxy/moonphase/stream",
           "bitrateKbps": 192,
           "category": "ambient",
@@ -148,7 +118,7 @@
         },
         {
           "id": "sleepbot",
-          "name": "Sleepbot Environmental",
+          "name": "Sleepbot",
           "streamUrl": "http://primarystream.sleepbot.com:8218/seb",
           "bitrateKbps": 56,
           "category": "ambient",
@@ -165,7 +135,7 @@
       "stations": [
         {
           "id": "birdsong",
-          "name": "Birdsong FM",
+          "name": "Birdsong",
           "streamUrl": "https://a1.radio.co/s5c5da6a36/listen",
           "bitrateKbps": 128,
           "category": "nature",
@@ -175,7 +145,7 @@
         },
         {
           "id": "rainuk",
-          "name": "Rain & Thunder UK",
+          "name": "Rain & Thunder",
           "streamUrl": "https://boxradio-edge-01.streamafrica.net/rain",
           "bitrateKbps": 128,
           "category": "nature",
@@ -185,7 +155,7 @@
         },
         {
           "id": "ambinature",
-          "name": "Ambi Nature Radio (HD)",
+          "name": "Ambi Nature",
           "streamUrl": "https://nature-rex.radioca.st/stream",
           "bitrateKbps": 320,
           "category": "nature",
@@ -195,7 +165,7 @@
         },
         {
           "id": "mynoise-ocean",
-          "name": "myNoise Ocean Waves",
+          "name": "Ocean Waves",
           "streamUrl": "http://oceanwaves.radio.mynoise.net/",
           "bitrateKbps": 160,
           "category": "nature",
@@ -205,7 +175,7 @@
         },
         {
           "id": "mynoise-rain",
-          "name": "myNoise Rainy Day",
+          "name": "Rainy Day",
           "streamUrl": "http://rainyday.radio.mynoise.net/",
           "bitrateKbps": 160,
           "category": "nature",
@@ -215,7 +185,7 @@
         },
         {
           "id": "mynoise-nature",
-          "name": "myNoise Pure Nature",
+          "name": "Pure Nature",
           "streamUrl": "https://purenature-mynoise.radioca.st/stream",
           "bitrateKbps": 160,
           "category": "nature",
@@ -225,7 +195,7 @@
         },
         {
           "id": "mynoise-zen",
-          "name": "myNoise Zen Garden",
+          "name": "Zen Garden",
           "streamUrl": "http://zengarden.radio.mynoise.net/",
           "bitrateKbps": 160,
           "category": "nature",
@@ -235,7 +205,7 @@
         },
         {
           "id": "sleepscapes-waves",
-          "name": "Sleepscapes Waves",
+          "name": "Sleep Waves",
           "streamUrl": "https://stream.willstare.com:8860/,",
           "bitrateKbps": 64,
           "category": "nature",
@@ -245,7 +215,7 @@
         },
         {
           "id": "nature-rain",
-          "name": "Nature Radio Rain",
+          "name": "Nature Rain",
           "streamUrl": "https://maggie.torontocast.com:2020/stream/natureradiorain",
           "bitrateKbps": 128,
           "category": "nature",
@@ -255,7 +225,7 @@
         },
         {
           "id": "nts-field",
-          "name": "NTS Field Recordings",
+          "name": "Field Recordings",
           "streamUrl": "https://stream-mixtape-geo.ntslive.net/mixtape23",
           "bitrateKbps": 256,
           "category": "nature",
@@ -271,6 +241,36 @@
       "iconSymbol": "Headphones24",
       "stations": [
         {
+          "id": "groovesalad",
+          "name": "Groove Salad",
+          "streamUrl": "http://ice1.somafm.com/groovesalad-128-mp3",
+          "bitrateKbps": 128,
+          "category": "lofi",
+          "icon": "LeafTwo24",
+          "description": "The world's most famous ambient downtempo and chill channel for coders and creators.",
+          "homepageUrl": "https://somafm.com/groovesalad/"
+        },
+        {
+          "id": "nightwave",
+          "name": "Nightwave Plaza",
+          "streamUrl": "https://radio.plaza.one/mp3",
+          "bitrateKbps": 128,
+          "category": "lofi",
+          "icon": "City24",
+          "description": "Iconic 24/7 aesthetic station featuring vaporwave, ambient drift, and late-night city soundscapes.",
+          "homepageUrl": "https://plaza.one/"
+        },
+        {
+          "id": "isekoi",
+          "name": "Isekoi",
+          "streamUrl": "https://public.isekoi-radio.com/listen/isekoi/radio.mp3",
+          "bitrateKbps": 320,
+          "category": "lofi",
+          "icon": "VehicleSpaceShip24",
+          "description": "Independent cosmic ambient and electronic soundscapes. Ad-free, high-fidelity 320k broadcast.",
+          "homepageUrl": "https://isekoi.com/"
+        },
+        {
           "id": "chilltrax",
           "name": "Chilltrax",
           "streamUrl": "https://streamssl.chilltrax.com/",
@@ -282,7 +282,7 @@
         },
         {
           "id": "0nlineradio-lofi",
-          "name": "0nlineradio LO-FI",
+          "name": "0nline Lo-Fi",
           "streamUrl": "https://stream.0nlineradio.com/lo-fi",
           "bitrateKbps": 192,
           "category": "lofi",
@@ -292,7 +292,7 @@
         },
         {
           "id": "moonphase-chill",
-          "name": "Moon Phase Chill",
+          "name": "Moon Chill",
           "streamUrl": "https://dc1.serverse.com/proxy/dnutqhxl/stream",
           "bitrateKbps": 192,
           "category": "lofi",
@@ -302,7 +302,7 @@
         },
         {
           "id": "reyfm-lofi",
-          "name": "REYFM #LOFI (HD)",
+          "name": "ReyFM Lo-Fi",
           "streamUrl": "https://listen.reyfm.de/lofi_320kbps.mp3",
           "bitrateKbps": 320,
           "category": "lofi",
@@ -312,7 +312,7 @@
         },
         {
           "id": "fluxfm-chillhop",
-          "name": "FluxFM Chillhop (HD)",
+          "name": "Flux Chillhop",
           "streamUrl": "http://streams.fluxfm.de/Chillhop/mp3-320",
           "bitrateKbps": 320,
           "category": "lofi",
@@ -322,7 +322,7 @@
         },
         {
           "id": "bigfm-lofifocus",
-          "name": "bigFM LoFi Focus",
+          "name": "Lo-Fi Focus",
           "streamUrl": "https://stream.bigfm.de/lofifocus/mp3-128/radiobrowser",
           "bitrateKbps": 128,
           "category": "lofi",
@@ -332,7 +332,7 @@
         },
         {
           "id": "lofi247",
-          "name": "Lofi 24/7",
+          "name": "Lo-Fi 24/7",
           "streamUrl": "http://usa9.fastcast4u.com/proxy/jamz?mp=/1",
           "bitrateKbps": 128,
           "category": "lofi",
@@ -342,7 +342,7 @@
         },
         {
           "id": "lautfm-lofi",
-          "name": "Laut.fm LoFi",
+          "name": "Laut Lo-Fi",
           "streamUrl": "https://stream.laut.fm/lofi",
           "bitrateKbps": 128,
           "category": "lofi",
@@ -352,7 +352,7 @@
         },
         {
           "id": "somafm-lush",
-          "name": "SomaFM Lush",
+          "name": "Lush",
           "streamUrl": "http://ice1.somafm.com/lush-128-mp3",
           "bitrateKbps": 128,
           "category": "lofi",
@@ -362,7 +362,7 @@
         },
         {
           "id": "boxradio-lofi",
-          "name": "Box Radio Lofi",
+          "name": "Box Lo-Fi",
           "streamUrl": "https://play.streamafrica.net/lofiradio",
           "bitrateKbps": 128,
           "category": "lofi",
@@ -379,7 +379,7 @@
       "stations": [
         {
           "id": "coderadio",
-          "name": "CodeRadio (freeCodeCamp)",
+          "name": "CodeRadio",
           "streamUrl": "https://coderadio-admin-v2.freecodecamp.org/listen/coderadio/radio.mp3",
           "bitrateKbps": 128,
           "category": "coding",
@@ -389,7 +389,7 @@
         },
         {
           "id": "defcon",
-          "name": "SomaFM DEF CON Radio",
+          "name": "DEF CON",
           "streamUrl": "http://ice1.somafm.com/defcon-128-mp3",
           "bitrateKbps": 128,
           "category": "coding",
@@ -399,7 +399,7 @@
         },
         {
           "id": "chillsynth",
-          "name": "Nightride FM Chillsynth (HD)",
+          "name": "Chillsynth",
           "streamUrl": "https://stream.nightride.fm/chillsynth.mp3",
           "bitrateKbps": 320,
           "category": "coding",
@@ -409,7 +409,7 @@
         },
         {
           "id": "cliqhop",
-          "name": "SomaFM Cliqhop IDM",
+          "name": "Cliqhop",
           "streamUrl": "http://ice1.somafm.com/cliqhop-128-mp3",
           "bitrateKbps": 128,
           "category": "coding",
@@ -419,7 +419,7 @@
         },
         {
           "id": "modfm",
-          "name": "ModFM (Tracker & Chiptune)",
+          "name": "ModFM",
           "streamUrl": "http://radio.modules.pl:8500/;",
           "bitrateKbps": 128,
           "category": "coding",
