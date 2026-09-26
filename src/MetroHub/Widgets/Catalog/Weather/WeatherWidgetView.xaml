@@ -110,26 +110,22 @@
             <Viewbox Visibility="{Binding IsWide, Converter={StaticResource BoolToVis}}"
                      Margin="16,12,16,12"
                      Stretch="Uniform"
-                     HorizontalAlignment="Stretch"
+                     HorizontalAlignment="Center"
                      VerticalAlignment="Center">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="12" /> <!-- Spacing -->
+                        <ColumnDefinition Width="16" /> <!-- Spacing -->
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
                     <!-- Left: Standardized Optical Weather Icon -->
                     <Image Grid.Column="0"
                            Source="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
-                           Height="100" Width="100"
+                           Height="110" Width="110"
                            RenderOptions.BitmapScalingMode="HighQuality"
                            SnapsToDevicePixels="True"
-                           VerticalAlignment="Center"
-                           RenderTransformOrigin="0.5,0.5">
-                        <Image.RenderTransform>
-                            <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
-                        </Image.RenderTransform>
+                           VerticalAlignment="Center">
                         <Image.Effect>
                             <DropShadowEffect BlurRadius="14" Direction="270" ShadowDepth="3" Opacity="0.28" Color="#000000" />
                         </Image.Effect>
@@ -138,12 +134,12 @@
                     <!-- Right: Standardized Temperature (Matched height) -->
                     <TextBlock Grid.Column="2"
                                Text="{Binding TemperatureText}"
-                               FontSize="110"
+                               FontSize="100"
                                FontWeight="Bold"
                                FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
                                Foreground="#FFFFFF"
                                VerticalAlignment="Center"
-                               Margin="0,-6,0,0">
+                               Margin="0,-4,0,0">
                         <TextBlock.Effect>
                             <DropShadowEffect BlurRadius="28" Direction="270" ShadowDepth="4" Opacity="0.22" Color="#080E1A" />
                         </TextBlock.Effect>
@@ -171,15 +167,11 @@
                     <!-- Left: Large Weather Icon -->
                     <Image Grid.Column="0"
                            Source="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
-                           Width="76" Height="76"
+                           Width="92" Height="92"
                            RenderOptions.BitmapScalingMode="HighQuality"
                            SnapsToDevicePixels="True"
                            HorizontalAlignment="Left"
-                           VerticalAlignment="Center"
-                           RenderTransformOrigin="0.5,0.5">
-                        <Image.RenderTransform>
-                            <ScaleTransform ScaleX="1.4" ScaleY="1.4" />
-                        </Image.RenderTransform>
+                           VerticalAlignment="Center">
                         <Image.Effect>
                             <DropShadowEffect BlurRadius="14" Direction="270" ShadowDepth="3" Opacity="0.28" Color="#000000" />
                         </Image.Effect>
@@ -291,15 +283,11 @@
                 <!-- Center: Standardized Optical Weather Icon -->
                 <Image Grid.Column="1"
                        Source="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
-                       Height="66" Width="66"
+                       Height="88" Width="88"
                        RenderOptions.BitmapScalingMode="HighQuality"
                        SnapsToDevicePixels="True"
                        HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       RenderTransformOrigin="0.5,0.5">
-                    <Image.RenderTransform>
-                        <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
-                    </Image.RenderTransform>
+                       VerticalAlignment="Center">
                     <Image.Effect>
                         <DropShadowEffect BlurRadius="14" Direction="270" ShadowDepth="3" Opacity="0.28" Color="#000000" />
                     </Image.Effect>
