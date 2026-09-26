@@ -6,7 +6,8 @@ public enum ClockFontFace
     Monoton = 1,
     Digital7 = 2,
     FffForward = 3,
-    KarnivoreDigit = 4
+    KarnivoreDigit = 4,
+    Now = 5
 }
 
 /// <summary>

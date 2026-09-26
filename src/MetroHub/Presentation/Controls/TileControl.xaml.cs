@@ -516,11 +516,20 @@ public partial class TileControl : UserControl
                 };
                 itemKarnivore.Click += (s, ev) => clockVm.SetFontFace(Widgets.Catalog.Clock.ClockFontFace.KarnivoreDigit);
 
+                var itemNow = new MenuItem
+                {
+                    Header = "Now",
+                    IsCheckable = true,
+                    IsChecked = clockVm.FontFace == Widgets.Catalog.Clock.ClockFontFace.Now
+                };
+                itemNow.Click += (s, ev) => clockVm.SetFontFace(Widgets.Catalog.Clock.ClockFontFace.Now);
+
                 fontItem.Items.Add(itemSegoe);
                 fontItem.Items.Add(itemMonoton);
                 fontItem.Items.Add(itemDigital7);
                 fontItem.Items.Add(itemFffForward);
                 fontItem.Items.Add(itemKarnivore);
+                fontItem.Items.Add(itemNow);
 
                 // 3. Divider after widget features
                 var clockDivider = new Separator

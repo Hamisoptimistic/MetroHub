@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
+using System.Windows.Media;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -21,6 +22,15 @@ namespace MetroHub.Widgets.Catalog.Clock;
 /// </summary>
 public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
 {
+    private static readonly Uri FontBaseUri = new("pack://application:,,,/MetroHub;component/Assets/Fonts/");
+
+    private static readonly FontFamily SegoeUIFontFamily = new("Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif");
+    private static readonly FontFamily MonotonFontFamily = new(FontBaseUri, "./#Monoton, Segoe UI");
+    private static readonly FontFamily Digital7FontFamily = new(FontBaseUri, "./#Digital-7, Segoe UI");
+    private static readonly FontFamily FffForwardFontFamily = new(FontBaseUri, "./#FFF Forward, Segoe UI");
+    private static readonly FontFamily KarnivoreDigitFontFamily = new(FontBaseUri, "./#Karnivore Digit, Segoe UI");
+    private static readonly FontFamily NowFontFamily = new(FontBaseUri, "./#Now, Segoe UI");
+
     private System.Threading.Timer? _timer;
 
     [ObservableProperty]
@@ -48,90 +58,20 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
     private ClockFontFace _fontFace = ClockFontFace.SegoeUI;
 
     [ObservableProperty]
-    private string _clockFontFamily = "Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif";
+    private FontFamily _clockFontFamily = SegoeUIFontFamily;
 
     [ObservableProperty]
     private string _clockFontWeight = "SemiBold";
 
     public bool IsWideOnly => Model.SpanX <= 4 && Model.SpanY <= 2;
-    public bool IsBanner => Model.SpanX >= 8 && Model.SpanY <= 2;
+    public bool IsBanner => Model.SpanX > 4 && Model.SpanY <= 2;
     public bool IsHero => Model.SpanY >= 4;
 
     /// <summary>
-    /// Time font size fitted per font-face + tile size.
-    /// Measured with WPF FormattedText over worst-case valid times (12h "10:00", 24h "00:00")
-    /// against content budgets: Wide/Large W232, LargeWide W360, Banner time W~166 (456-date-gap),
-    /// Mega W488; heights Wide/Banner H112, Hero H203; safety 0.92. Fixes bleed (e.g. FFF @84 = 262px
-    /// in 232px Large) and cramped Mega @84.
+    /// Canonical reference font size for Time elements inside the responsive Viewbox containers.
+    /// The Viewbox automatically scales these elements uniformly to mathematically fit the available widget card bounds.
     /// </summary>
-    public double ClockTimeFontSize => ResolveTimeFontSize();
-
-    private double ResolveTimeFontSize()
-    {
-        // Short layouts (H112)
-        if (Model.SpanY <= 2)
-        {
-            if (Model.SpanX >= 8)
-            {
-                // Banner 8x2
-                return FontFace switch
-                {
-                    ClockFontFace.Monoton => 40,
-                    ClockFontFace.Digital7 => 72,
-                    ClockFontFace.FffForward => 44,
-                    ClockFontFace.KarnivoreDigit => 52,
-                    _ => 60,
-                };
-            }
-
-            // Wide 4x2 (and any narrow short fallback)
-            return FontFace switch
-            {
-                ClockFontFace.Monoton => 56,
-                ClockFontFace.Digital7 => 100,
-                ClockFontFace.FffForward => 56,
-                ClockFontFace.KarnivoreDigit => 72,
-                _ => 72,
-            };
-        }
-
-        // Hero layouts (H203)
-        if (Model.SpanX >= 8)
-        {
-            // Mega 8x4
-            return FontFace switch
-            {
-                ClockFontFace.Monoton => 116,
-                ClockFontFace.Digital7 => 180,
-                ClockFontFace.FffForward => 104,
-                ClockFontFace.KarnivoreDigit => 144,
-                _ => 136,
-            };
-        }
-
-        if (Model.SpanX > 4)
-        {
-            // LargeWide 6x4
-            return FontFace switch
-            {
-                ClockFontFace.Monoton => 88,
-                ClockFontFace.Digital7 => 156,
-                ClockFontFace.FffForward => 96,
-                ClockFontFace.KarnivoreDigit => 112,
-                _ => 132,
-            };
-        }
-
-        // Large 4x4
-        return FontFace switch
-        {
-            ClockFontFace.Monoton => 56,
-            ClockFontFace.Digital7 => 100,
-            ClockFontFace.FffForward => 60,
-            ClockFontFace.KarnivoreDigit => 72,
-            _ => 84,
-        };
-    }
+    public double ClockTimeFontSize => 100.0;
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new List<WidgetSize>
     {
@@ -280,15 +220,17 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
     {
         ClockFontFamily = FontFace switch
         {
-            ClockFontFace.Monoton => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Monoton, Segoe UI",
-            ClockFontFace.Digital7 => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Digital-7, Segoe UI",
-            ClockFontFace.FffForward => "pack://application:,,,/MetroHub;component/Assets/Fonts/#FFF Forward, Segoe UI",
-            ClockFontFace.KarnivoreDigit => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Karnivore Digit, Segoe UI",
-            _ => "Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif"
+            ClockFontFace.Monoton => MonotonFontFamily,
+            ClockFontFace.Digital7 => Digital7FontFamily,
+            ClockFontFace.FffForward => FffForwardFontFamily,
+            ClockFontFace.KarnivoreDigit => KarnivoreDigitFontFamily,
+            ClockFontFace.Now => NowFontFamily,
+            _ => SegoeUIFontFamily
         };
 
         ClockFontWeight = FontFace switch
         {
+            ClockFontFace.Now => "Bold",
             ClockFontFace.Monoton or ClockFontFace.Digital7 or ClockFontFace.FffForward or ClockFontFace.KarnivoreDigit => "Normal",
             _ => "SemiBold"
         };
