@@ -29,8 +29,8 @@ public partial class App : Application
         {
             try
             {
-                string crashLog = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetroHub", "crash.log");
-                Directory.CreateDirectory(Path.GetDirectoryName(crashLog)!);
+                string crashLog = MetroHub.Core.Services.AppPaths.CrashLogPath;
+                MetroHub.Core.Services.AppPaths.EnsureDirectory(crashLog);
                 File.WriteAllText(crashLog, args.ExceptionObject?.ToString() ?? "Unknown unhandled exception");
             }
             catch { }
@@ -40,8 +40,8 @@ public partial class App : Application
         {
             try
             {
-                string crashLog = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetroHub", "crash.log");
-                Directory.CreateDirectory(Path.GetDirectoryName(crashLog)!);
+                string crashLog = MetroHub.Core.Services.AppPaths.CrashLogPath;
+                MetroHub.Core.Services.AppPaths.EnsureDirectory(crashLog);
                 File.WriteAllText(crashLog, args.Exception.ToString());
             }
             catch { }
@@ -101,7 +101,8 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            string crashLog = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetroHub", "crash.log");
+            string crashLog = MetroHub.Core.Services.AppPaths.CrashLogPath;
+            MetroHub.Core.Services.AppPaths.EnsureDirectory(crashLog);
             File.WriteAllText(crashLog, ex.ToString());
             MessageBox.Show($"MetroHub failed to start:\n\n{ex.Message}", "MetroHub Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown();

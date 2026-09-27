@@ -9,10 +9,7 @@ namespace MetroHub.Core.Services.Catalog.Weather;
 
 public sealed class WeatherService
 {
-    private static readonly string AppDataDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetroHub");
-
-    private static readonly string WeatherCachePath = Path.Combine(AppDataDir, "v1_weather_cache.json");
+    private static string WeatherCachePath => AppPaths.WeatherCachePath;
 
     private static readonly SocketsHttpHandler SharedHandler = new()
     {
@@ -140,10 +137,7 @@ public sealed class WeatherService
 
         try
         {
-            if (!Directory.Exists(AppDataDir))
-            {
-                Directory.CreateDirectory(AppDataDir);
-            }
+            AppPaths.EnsureDirectory(WeatherCachePath);
 
             string json = JsonSerializer.Serialize(entry, JsonOptions);
             await File.WriteAllTextAsync(WeatherCachePath, json, cancellationToken).ConfigureAwait(false);

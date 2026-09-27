@@ -50,9 +50,7 @@ public sealed class RoverAudioService : IDisposable
     private void InitializeSounds()
     {
         // 1. Locate or extract sounds to a reliable local directory
-        string localCacheDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "MetroHub", "RoverSounds");
+        string localCacheDir = MetroHub.Core.Services.AppPaths.RoverSoundsDir;
 
         try
         {

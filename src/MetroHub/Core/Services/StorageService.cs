@@ -11,18 +11,17 @@ namespace MetroHub.Core.Services;
 
 public sealed class StorageService
 {
-    private static readonly string AppDataDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetroHub");
+    private static readonly string AppDataDir = AppPaths.AppDataDir;
 
-    private static readonly string LayoutPath = Path.Combine(AppDataDir, "layout.json");
-    private static readonly string LayoutBakPath = Path.Combine(AppDataDir, "layout.json.bak");
-    private static readonly string GroupsPath = Path.Combine(AppDataDir, "groups.json");
-    private static readonly string GroupsBakPath = Path.Combine(AppDataDir, "groups.json.bak");
-    private static readonly string SettingsPath = Path.Combine(AppDataDir, "settings.json");
-    private static readonly string SettingsBakPath = Path.Combine(AppDataDir, "settings.json.bak");
-    private static readonly string AppsCachePath = Path.Combine(AppDataDir, "apps_cache.json");
-    private static readonly string AppsCacheBakPath = Path.Combine(AppDataDir, "apps_cache.json.bak");
-    private static readonly string IconCacheDir = Path.Combine(AppDataDir, "icons");
+    private static string LayoutPath => AppPaths.LayoutPath;
+    private static string LayoutBakPath => AppPaths.LayoutBakPath;
+    private static string GroupsPath => AppPaths.GroupsPath;
+    private static string GroupsBakPath => AppPaths.GroupsBakPath;
+    private static string SettingsPath => AppPaths.SettingsPath;
+    private static string SettingsBakPath => AppPaths.SettingsBakPath;
+    private static string AppsCachePath => AppPaths.AppsCachePath;
+    private static string AppsCacheBakPath => AppPaths.AppsCacheBakPath;
+    private static string IconCacheDir => AppPaths.IconCacheDir;
 
     private static readonly object WriteLock = new();
 
@@ -61,10 +60,8 @@ public sealed class StorageService
             string tmpPath = targetPath + ".tmp";
             try
             {
-                if (!Directory.Exists(AppDataDir))
-                {
-                    Directory.CreateDirectory(AppDataDir);
-                }
+                AppPaths.EnsureDirectory(targetPath);
+                AppPaths.EnsureDirectory(bakPath);
 
                 // 1. Write content to .tmp with WriteThrough and flush to physical disk
                 using (var fs = new FileStream(tmpPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
@@ -405,8 +402,14 @@ public sealed class StorageService
         if (!File.Exists(filePath)) return;
         try
         {
-            // Prune old corrupt copies to stay within the cap
-            var dir = new DirectoryInfo(AppDataDir);
+            string dirPath = Path.GetDirectoryName(filePath) ?? AppDataDir;
+            if (filePath.Contains(AppPaths.ConfigDir, StringComparison.OrdinalIgnoreCase))
+            {
+                dirPath = AppPaths.BackupsDir;
+            }
+
+            AppPaths.EnsureDirectory(Path.Combine(dirPath, "dummy.txt"));
+            var dir = new DirectoryInfo(dirPath);
             string baseName = Path.GetFileNameWithoutExtension(filePath);
             var existing = dir.GetFiles($"{baseName}_corrupt_*.json")
                               .OrderByDescending(f => f.LastWriteTimeUtc)
@@ -416,7 +419,7 @@ public sealed class StorageService
                 try { existing[i].Delete(); } catch { }
             }
 
-            string corruptCopy = Path.Combine(AppDataDir, $"{baseName}_corrupt_{DateTime.Now:yyyyMMdd_HHmmss}.json");
+            string corruptCopy = Path.Combine(dirPath, $"{baseName}_corrupt_{DateTime.Now:yyyyMMdd_HHmmss}.json");
             File.Copy(filePath, corruptCopy, overwrite: true);
         }
         catch { }

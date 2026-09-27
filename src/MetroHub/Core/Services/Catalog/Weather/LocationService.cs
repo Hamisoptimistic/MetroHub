@@ -9,10 +9,7 @@ namespace MetroHub.Core.Services.Catalog.Weather;
 
 public sealed class LocationService
 {
-    private static readonly string AppDataDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetroHub");
-
-    private static readonly string LocationCachePath = Path.Combine(AppDataDir, "v1_location_cache.json");
+    private static string LocationCachePath => AppPaths.LocationCachePath;
 
     private readonly HttpClient _httpClient;
     private static readonly TimeSpan LocationTtl = TimeSpan.FromDays(7);
@@ -219,10 +216,7 @@ public sealed class LocationService
         _memoryCachedLocation = entry;
         try
         {
-            if (!Directory.Exists(AppDataDir))
-            {
-                Directory.CreateDirectory(AppDataDir);
-            }
+            AppPaths.EnsureDirectory(LocationCachePath);
 
             string json = JsonSerializer.Serialize(entry, JsonOptions);
             File.WriteAllText(LocationCachePath, json);

@@ -97,11 +97,10 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase
     {
         _quotes.Clear();
 
-        // 1. Try loading user override from %LOCALAPPDATA%\MetroHub\quotes.json
+        // 1. Try loading user override from quotes.json (config or legacy root)
         try
         {
-            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            string userQuotesFile = Path.Combine(localAppData, "MetroHub", "quotes.json");
+            string userQuotesFile = MetroHub.Core.Services.AppPaths.QuotesPath;
 
             if (File.Exists(userQuotesFile))
             {

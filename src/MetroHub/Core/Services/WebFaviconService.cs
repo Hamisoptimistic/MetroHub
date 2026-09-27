@@ -18,9 +18,7 @@ namespace MetroHub.Core.Services;
 /// </summary>
 public static partial class WebFaviconService
 {
-    private static readonly string IconCacheDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "MetroHub", "icons");
+    private static string IconCacheDir => AppPaths.IconCacheDir;
 
     private static readonly ConcurrentDictionary<string, string> _memoryCache = new(StringComparer.OrdinalIgnoreCase);
 

@@ -55,10 +55,8 @@ public sealed class RadioCatalogService
         }
         else
         {
-            string appDataDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetroHub");
-            _catalogFilePath = Path.Combine(appDataDir, "radio_catalog.json");
-            _catalogBakPath = Path.Combine(appDataDir, "radio_catalog.json.bak");
+            _catalogFilePath = Services.AppPaths.RadioCatalogPath;
+            _catalogBakPath = Services.AppPaths.RadioCatalogBakPath;
         }
     }
 
@@ -340,6 +338,9 @@ public sealed class RadioCatalogService
 
         try
         {
+            Services.AppPaths.EnsureDirectory(_catalogFilePath);
+            Services.AppPaths.EnsureDirectory(_catalogBakPath);
+
             using (var fs = new FileStream(tmpPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
             using (var writer = new StreamWriter(fs, Utf8NoBom))
             {

@@ -32,10 +32,7 @@ public sealed class DailyWallpaperService
         Timeout = TimeSpan.FromSeconds(25)
     };
 
-    private static readonly string CacheDirectory = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "MetroHub",
-        "WallpapersCache");
+    private static string CacheDirectory => AppPaths.WallpapersCacheDir;
 
     static DailyWallpaperService()
     {

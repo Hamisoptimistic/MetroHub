@@ -19,9 +19,7 @@ namespace MetroHub.Core.Services;
 /// </summary>
 public static class IconExtractorService
 {
-    private static readonly string IconCacheDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "MetroHub", "icons");
+    private static string IconCacheDir => AppPaths.IconCacheDir;
 
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _iconPathCache = new(StringComparer.OrdinalIgnoreCase);
 
