@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -99,7 +101,7 @@ public sealed partial class JukeboxWidgetViewModel : WidgetViewModelBase
             if (epoch != Volatile.Read(ref _searchEpoch))
             {
                 JukeboxLog.Info("Search superseded, dropping stale results.");
-                return; // Superseded by a newer search; drop stale results.
+                return;
             }
 
             JukeboxLog.Info($"Search returned {hits.Count} hit(s).");
@@ -134,18 +136,9 @@ public sealed partial class JukeboxWidgetViewModel : WidgetViewModelBase
             return;
         }
 
-        StatusMessage = "Resolving audio…";
+        StatusMessage = "Connecting…";
         JukeboxLog.Info($"Tap result: '{hit.Title}' ({hit.VideoId})");
-        var urls = await ResolveBothAsync(hit.VideoId);
-        if (urls.OpusUrl == null && urls.AacUrl == null)
-        {
-            StatusMessage = "Couldn't play this video (unavailable or offline).";
-            JukeboxLog.Warn($"Resolve failed for result {hit.VideoId}.");
-            return;
-        }
-
-        StatusMessage = string.Empty;
-        await PlayResolvedTrackAsync(hit.VideoId, hit.Title, hit.Channel, null, hit.Duration, urls);
+        await PlayTrackAsync(hit.VideoId, hit.Title, hit.Channel, null, hit.Duration);
     }
 
     [RelayCommand]
@@ -156,19 +149,10 @@ public sealed partial class JukeboxWidgetViewModel : WidgetViewModelBase
             return;
         }
 
-        StatusMessage = "Resolving audio…";
+        StatusMessage = "Connecting…";
         JukeboxLog.Info($"Tap history: '{track.Title}' ({track.VideoId})");
-        var urls = await ResolveBothAsync(track.VideoId);
-        if (urls.OpusUrl == null && urls.AacUrl == null)
-        {
-            StatusMessage = "Couldn't play this video (unavailable or offline).";
-            JukeboxLog.Warn($"Resolve failed for history item {track.VideoId}.");
-            return;
-        }
-
-        StatusMessage = string.Empty;
-        await PlayResolvedTrackAsync(track.VideoId, track.Title, track.Channel, track.ThumbnailUrl,
-            track.DurationTicks > 0 ? new TimeSpan(track.DurationTicks) : null, urls);
+        await PlayTrackAsync(track.VideoId, track.Title, track.Channel, track.ThumbnailUrl,
+            track.DurationTicks > 0 ? new TimeSpan(track.DurationTicks) : null);
     }
 
     [RelayCommand]
@@ -214,24 +198,43 @@ public sealed partial class JukeboxWidgetViewModel : WidgetViewModelBase
         SaveSettings();
     }
 
-    /// <summary>Resolves Opus + AAC URLs concurrently; either may come back null.</summary>
-    private async Task<JukeboxAudioUrls> ResolveBothAsync(string videoId)
-    {
-        var opusTask = _resolver.ResolveAudioUrlAsync(videoId);
-        var aacTask = _resolver.ResolveAacFallbackAsync(videoId);
-        await Task.WhenAll(opusTask, aacTask).ConfigureAwait(false);
-        var opus = await opusTask;
-        var aac = await aacTask;
-        var urls = new JukeboxAudioUrls(opus?.Url, aac?.Url);
-        JukeboxLog.Info($"Resolved {videoId}: opus={(urls.OpusUrl != null ? "yes" : "no")} aac={(urls.AacUrl != null ? "yes" : "no")}.");
-        return urls;
-    }
-
-    private async Task PlayResolvedTrackAsync(string videoId, string title, string channel, string? thumbnailUrl, TimeSpan? duration, JukeboxAudioUrls urls)
+    private async Task PlayTrackAsync(string videoId, string title, string channel, string? thumbnailUrl, TimeSpan? duration)
     {
         _playingVideoId = videoId;
-        JukeboxLog.Info($"Play: '{title}' ({videoId})");
-        await _player.PlayUrlAsync(urls, title);
+        StatusMessage = string.Empty;
+        JukeboxLog.Info($"Play: '{title}' ({videoId}) resolving audio tiers.");
+
+        JukeboxStreamSet? streams = null;
+        try
+        {
+            streams = await _resolver.ResolveStreamsAsync(videoId);
+        }
+        catch (Exception ex)
+        {
+            JukeboxLog.Warn($"Resolve error for '{title}': {ex.Message}");
+        }
+
+        if (streams is null ||
+            (string.IsNullOrWhiteSpace(streams.LowUrl) && string.IsNullOrWhiteSpace(streams.OpusUrl) && string.IsNullOrWhiteSpace(streams.AacUrl)))
+        {
+            JukeboxLog.Warn($"Resolve failed for '{title}' ({videoId}).");
+            StatusMessage = "Could not resolve audio. YouTube may have changed — try again.";
+            SyncPlayingState(_player.IsPlaying);
+            return;
+        }
+
+        JukeboxLog.Info(
+            $"Play: '{title}' ({videoId}) low={streams.LowUrl != null} opus={streams.OpusUrl != null} aac={streams.AacUrl != null}.");
+
+        try
+        {
+            await _player.PlayUrlAsync(new JukeboxAudioUrls(streams.LowUrl, streams.OpusUrl, streams.AacUrl), title);
+        }
+        catch (Exception ex)
+        {
+            JukeboxLog.Warn($"PlayUrlAsync error for '{title}': {ex.Message}");
+        }
+
         SyncPlayingState(_player.IsPlaying);
 
         PinToHistory(videoId, title, channel, thumbnailUrl, duration);
@@ -265,13 +268,11 @@ public sealed partial class JukeboxWidgetViewModel : WidgetViewModelBase
 
     private void OnPlayerStateChanged(object? sender, bool playing)
     {
-        // Dedicated player: mirror directly.
         SyncPlayingState(playing);
     }
 
     private void OnPlayerError(object? sender, string message)
     {
-        // Surface playback failures in the tile instead of failing silently.
         StatusMessage = message;
     }
 
@@ -283,7 +284,6 @@ public sealed partial class JukeboxWidgetViewModel : WidgetViewModelBase
             return;
         }
 
-        // Autoplay next history item after the finished one (wrap around like radio).
         int index = History.ToList().FindIndex(t => t.VideoId == finishedId);
         if (History.Count == 0)
         {

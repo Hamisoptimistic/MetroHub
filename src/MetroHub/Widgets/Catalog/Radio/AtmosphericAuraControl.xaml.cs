@@ -54,6 +54,13 @@ public partial class AtmosphericAuraControl : UserControl
     private DateTime _startTime = DateTime.UtcNow;
     private long _lastRenderTicks;
     private static readonly long Throttled30FpsTicks = TimeSpan.FromMilliseconds(33).Ticks;
+
+    // Punch envelopes ride ON TOP of the slow swell — swell stays untouched.
+    private float _kickEnv;   // Kick thump: fast pop, melts back into the swell.
+    private float _snareEnv;  // Snare snap: mostly shimmer, tiny shake.
+    private float _prevBass;
+    private float _prevMid;
+    private DateTime _lastPunchTime = DateTime.UtcNow;
     private static bool _isBatterySaver;
 
     static AtmosphericAuraControl()
@@ -101,11 +108,7 @@ public partial class AtmosphericAuraControl : UserControl
 
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        if (e.NewSize.Width > 0 && e.NewSize.Height > 0)
-        {
-            BassScale.CenterX = e.NewSize.Width * 0.5;
-            BassScale.CenterY = e.NewSize.Height;
-        }
+        // Blob transforms use RenderTransformOrigin 0.5,0.5 — no per-size center math needed.
     }
 
     private static void OnStateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -183,27 +186,28 @@ public partial class AtmosphericAuraControl : UserControl
             }
         }
 
-        // 2. Render Buffering State: Organic Breathing Glow in Warm Amber
+        // 2. Render Buffering State: all blobs breathe with phase offsets (fluid, not flat).
         if (buffering)
         {
             double elapsed = (DateTime.UtcNow - _startTime).TotalSeconds;
-            float pulse = (float)(Math.Sin(elapsed * 3.5) * 0.5 + 0.5);
+            float p0 = (float)(Math.Sin(elapsed * 3.5) * 0.5 + 0.5);
+            float p1 = (float)(Math.Sin(elapsed * 3.5 + 2.1) * 0.5 + 0.5);
+            float p2 = (float)(Math.Sin(elapsed * 3.5 + 4.2) * 0.5 + 0.5);
 
-            byte amberAlpha = (byte)((0.15f + pulse * 0.25f) * 255f);
-            byte coralAlpha = (byte)(amberAlpha * 0.45f);
-            byte goldAlpha = (byte)(amberAlpha * 0.65f);
+            BlobPink.Opacity = 0.65 + p0 * 0.35;
+            BlobCyan.Opacity = 0.55 + p1 * 0.35;
+            BlobViolet.Opacity = 0.50 + p2 * 0.35;
+            BlobAmber.Opacity = 0.35 + p1 * 0.30;
 
-            BassStop0.Color = Color.FromArgb(coralAlpha, 0xEF, 0x23, 0x3C);
-            BassStop1.Color = Color.FromArgb((byte)(coralAlpha * 0.7f), 0xD9, 0x04, 0x29);
+            PinkScale.ScaleX = PinkScale.ScaleY = 1.0 + p0 * 0.06;
+            CyanScale.ScaleX = CyanScale.ScaleY = 1.0 + p1 * 0.08;
+            VioletScale.ScaleX = VioletScale.ScaleY = 1.0 + p2 * 0.08;
+            AmberScale.ScaleX = AmberScale.ScaleY = 1.0 + p1 * 0.10;
 
-            MidStop0.Color = Color.FromArgb(amberAlpha, 0xF7, 0x7F, 0x00);
-            MidStop1.Color = Color.FromArgb((byte)(amberAlpha * 0.6f), 0xFC, 0xBF, 0x49);
-
-            TrebleStop0.Color = Color.FromArgb(goldAlpha, 0xFF, 0xE6, 0xA7);
-            TrebleStop1.Color = Color.FromArgb((byte)(goldAlpha * 0.5f), 0xFF, 0xF3, 0xB0);
-
-            BassScale.ScaleX = 1.0 + pulse * 0.03;
-            BassScale.ScaleY = 1.0 + pulse * 0.04;
+            _kickEnv = 0f;
+            _snareEnv = 0f;
+            _prevBass = 0f;
+            _prevMid = 0f;
             return;
         }
 
@@ -219,29 +223,50 @@ public partial class AtmosphericAuraControl : UserControl
             treble = 0f;
         }
 
-        // Bass Layer (Deep Coral / Crimson Base #D90429 / #EF233C)
-        // Resting: 20% alpha; Peak: 70% alpha
-        byte bAlpha0 = (byte)((0.20f + bass * 0.50f) * 255f);
-        byte bAlpha1 = (byte)(bAlpha0 * 0.70f);
-        BassStop0.Color = Color.FromArgb(bAlpha0, 0xEF, 0x23, 0x3C);
-        BassStop1.Color = Color.FromArgb(bAlpha1, 0xD9, 0x04, 0x29);
+        // Punch envelopes: rising-edge transients on top of the swell.
+        // Kick ~180ms release, snare ~120ms — both melt back into the swell.
+        DateTime now = DateTime.UtcNow;
+        float dt = Math.Clamp((float)(now - _lastPunchTime).TotalSeconds, 0.001f, 0.1f);
+        _lastPunchTime = now;
+        float kickHit = Math.Max(0f, bass - _prevBass * 1.04f - 0.015f);
+        float snareHit = Math.Max(0f, mid - _prevMid * 1.04f - 0.015f);
+        _prevBass = bass;
+        _prevMid = mid;
+        float kickDecay = MathF.Exp(-dt / 0.18f);
+        float snareDecay = MathF.Exp(-dt / 0.12f);
+        _kickEnv = Math.Max(kickHit * 1.6f, _kickEnv * kickDecay);
+        _snareEnv = Math.Max(snareHit * 1.6f, _snareEnv * snareDecay);
+        _kickEnv = Math.Min(_kickEnv, 1f);
+        _snareEnv = Math.Min(_snareEnv, 1f);
 
-        // Sub-bass physical tile expansion pulse
-        BassScale.ScaleX = 1.0 + bass * 0.06;
-        BassScale.ScaleY = 1.0 + bass * 0.08;
+        // Slow fluid drift (your swell): each blob breathes at its own rate so the
+        // mesh morphs like the reference instead of flashing as one sheet.
+        double t = (now - _startTime).TotalSeconds;
+        float driftPink = (float)(Math.Sin(t * 1.7) * 0.5 + 0.5);
+        float driftCyan = (float)(Math.Sin(t * 2.3 + 2.1) * 0.5 + 0.5);
+        float driftViolet = (float)(Math.Sin(t * 1.3 + 4.2) * 0.5 + 0.5);
 
-        // Mid Layer (Warm Amber / Sunset Orange Core #F77F00 / #FCBF49)
-        // Resting: 18% alpha; Peak: 63% alpha
-        byte mAlpha0 = (byte)((0.18f + mid * 0.45f) * 255f);
-        byte mAlpha1 = (byte)(mAlpha0 * 0.60f);
-        MidStop0.Color = Color.FromArgb(mAlpha0, 0xF7, 0x7F, 0x00);
-        MidStop1.Color = Color.FromArgb(mAlpha1, 0xFC, 0xBF, 0x49);
+        // PINK (kept red/pink): swell + kick punch. Biggest blob, bottom-anchored.
+        BlobPink.Opacity = Math.Clamp(0.72f + bass * 0.28f, 0f, 1f);
+        PinkScale.ScaleX = 1.0 + bass * 0.06 + _kickEnv * 0.16 + driftPink * 0.03;
+        PinkScale.ScaleY = 1.0 + bass * 0.08 + _kickEnv * 0.18 + driftPink * 0.03;
+        PinkShift.Y = -_kickEnv * 6.0;
 
-        // Treble Layer (Golden Shimmer Radiance #FFE6A7 / #FFF3B0)
-        // Resting: 12% alpha; Peak: 50% alpha
-        byte tAlpha0 = (byte)((0.12f + treble * 0.38f) * 255f);
-        byte tAlpha1 = (byte)(tAlpha0 * 0.50f);
-        TrebleStop0.Color = Color.FromArgb(tAlpha0, 0xFF, 0xE6, 0xA7);
-        TrebleStop1.Color = Color.FromArgb(tAlpha1, 0xFF, 0xF3, 0xB0);
+        // CYAN: snare snap + subtle kick duck (the pump). Slides a little on hits.
+        BlobCyan.Opacity = Math.Clamp(0.65f + mid * 0.30f + _snareEnv * 0.15f - _kickEnv * 0.10f, 0f, 1f);
+        CyanScale.ScaleX = CyanScale.ScaleY = 1.0 + mid * 0.08 + _snareEnv * 0.10 + driftCyan * 0.04;
+        CyanShift.X = (float)(Math.Sin(t * 1.1) * 3.0 + _snareEnv * 4.0);
+        CyanShift.Y = (float)(Math.Cos(t * 0.9) * 2.0 - _snareEnv * 3.0);
+
+        // VIOLET: slow morph, rides the bass swell lightly — never flashes, just flows.
+        BlobViolet.Opacity = Math.Clamp(0.60f + driftViolet * 0.18f + bass * 0.15f, 0f, 1f);
+        VioletScale.ScaleX = VioletScale.ScaleY = 1.0 + driftViolet * 0.07 + bass * 0.05;
+        VioletShift.X = (float)Math.Sin(t * 0.7) * 5.0;
+        VioletShift.Y = (float)Math.Cos(t * 0.6) * 3.0;
+
+        // AMBER: treble shimmer fleck, flickers with hats + snare.
+        BlobAmber.Opacity = Math.Clamp(0.35f + treble * 0.40f + _snareEnv * 0.15f, 0f, 1f);
+        AmberScale.ScaleX = AmberScale.ScaleY = 1.0 + treble * 0.12 + driftCyan * 0.05;
+        AmberShift.X = (float)Math.Sin(t * 1.9 + 1.0) * 3.0;
     }
 }

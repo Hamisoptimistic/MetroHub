@@ -17,6 +17,27 @@
 - [x] Phase 6 — Offline-safe tests (history round-trip, re-resolve, autoplay, epoch) — 67/67 green
 - [ ] Phase 7 — Release publish + live verification (search → play → restart → replay)
 
+## 8b. Playback engine (2026-09-27 rewrite)
+
+Earlier builds hand-rolled a "push pump" (sniff 64 KB → `BASS_StreamPutFileData`) and started
+playback on a fixed 6/10 s timer. That was the root cause of "plays half a second then stops":
+playback began on an almost-empty buffer while YouTube throttled the single long-lived GET to
+~12 KB/s (the log shows a 27-45 KB/s burst only right after a reconnect).
+
+The player now uses:
+
+- `Core/Radio/YoutubeChunkedDownloader.cs` — short HTTP `Range` requests (512 KB-2 MB). Each
+  fresh request restarts YouTube's fast throttle window; if the live rate collapses mid-chunk it
+  re-opens the range from the last received byte. Rolling 2.5 s rate windows decide this.
+- `Core/Radio/ChunkedAudioBuffer.cs` — thread-safe growable buffer. BASS's `FILEREADPROC` pulls
+  from it and **blocks** for late data; it returns 0 only at a genuine end of stream (0 = EOF in
+  BASS, which is what makes a slow moment end the track).
+- `JukeboxAudioService` — creates the stream with **`StreamSystem.Buffer`** (BASS runs its own
+  download thread, buffers, stalls and resumes). Playback starts only after an **adaptive
+  prebuffer** (128 KB preferred, 32 KB minimum, 15 s cap), never on a bare timer.
+- End detection: `EndOfStreamReached` fires only when the download actually completed; an
+  interrupted stream never triggers autoplay-next. The native stream is freed off the sync thread.
+
 ## 8. Debug log (temporary)
 
 - `Core/Radio/JukeboxLog.cs` — one file, one-line call sites. Writes
@@ -29,10 +50,15 @@
   (covers missing-plugin installs without user action).
 - Push-download fallback: when BASS's own downloader rejects known-good bytes, our HttpClient
   (proven instant by Probe lines) pumps them into BASS via `BufferPush` + `StreamPutFileData`.
-- Attempt order (fastest reliable first): push-AAC → push-Opus → direct-Opus → direct-AAC.
-  Direct opens go last — BASS stalls 30–90 s on throttled googlevideo before failing.
+- Attempt order (fastest reliable first): push-low (~48 kbps, starts instantly off the
+  64 KB sniff duplexed as ~10 s prebuffer) → push-Opus → push-AAC → direct opens last
+  (BASS stalls 30–90 s on throttled googlevideo before failing).
+- Single manifest fetch per tap (`ResolveStreamsAsync` returns low+opus+aac URLs together).
 - `basswebm.dll` (34 KB) added: Opus-in-WebM needs the WebM demuxer, a separate plugin from
   the Opus decoder. Both `bassopus` and `basswebm` handles logged at startup alongside AAC.
+- Throttle survival: 256 KB prebuffer before first play, per-5 s download-rate logging,
+  stall counter (4+ underruns / 30 s) fires `StallStormDetected` → VM auto-drops once per
+  track to lowest-bitrate Opus (~48 kbps ≈ 6 KB/s, fits under almost any throttle).
 - To strip: delete `JukeboxLog.cs` and its `JukeboxLog.*` one-liners.
 
 ---

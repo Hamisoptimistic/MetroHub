@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,32 +23,32 @@ public sealed record YoutubeSearchHit(
 }
 
 /// <summary>
-/// Resolved direct audio stream URL. URLs expire within hours: resolve-then-play immediately,
-/// never persist.
+/// All usable audio URLs for one video, resolved from a single manifest fetch.
+/// Stream URLs expire within hours: resolve-then-play immediately, never persist.
+/// Any slot may be null when that tier is absent.
 /// </summary>
-public sealed record YoutubeAudioStream(
-    string Url,
-    string Codec,
-    int BitrateKbps);
+public sealed record JukeboxStreamSet(string? LowUrl, string? OpusUrl, string? AacUrl);
 
 /// <summary>
-/// Contract for YouTube search + audio URL resolution. Implemented by
-/// <see cref="YoutubeAudioResolver"/>; faked in unit tests.
+/// Contract for YouTube search + unthrottled audio stream resolution.
 /// </summary>
 public interface IYoutubeAudioResolver
 {
-    /// <summary>Top-N search hits for a query. Empty list when offline or on failure.</summary>
+    /// <summary>Top-N search hits for a query, single video URL, or playlist URL. Empty list when offline or on failure.</summary>
     Task<IReadOnlyList<YoutubeSearchHit>> SearchAsync(string query, int topN = 8, CancellationToken ct = default);
 
-    /// <summary>
-    /// Best direct audio URL for a video: Opus first (needs bassopus), AAC/MP4 fallback.
-    /// Null when unresolvable (deleted, blocked, cipher breakage) — never throws for those.
-    /// </summary>
-    Task<YoutubeAudioStream?> ResolveAudioUrlAsync(string videoId, CancellationToken ct = default);
+    /// <summary>Fetches all videos in a playlist (up to maxItems, default 1000).</summary>
+    Task<IReadOnlyList<YoutubeSearchHit>> GetPlaylistVideosAsync(string playlistUrlOrId, int maxItems = 1000, CancellationToken ct = default);
 
     /// <summary>
-    /// AAC/MP4-only variant, used when the Opus pick fails to open in BASS
-    /// (missing opus plugin). Null when no AAC stream exists.
+    /// Best-effort full tier set for a video in ONE manifest fetch: cheapest stream
+    /// (low-bandwidth Opus, else cheapest AAC), best Opus, best AAC/MP4.
+    /// Null when unresolvable (deleted, blocked, cipher breakage) — never throws for those.
     /// </summary>
-    Task<YoutubeAudioStream?> ResolveAacFallbackAsync(string videoId, CancellationToken ct = default);
+    Task<JukeboxStreamSet?> ResolveStreamsAsync(string videoId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Opens an unthrottled audio stream directly using YoutubeExplode's internal pipeline.
+    /// </summary>
+    Task<Stream?> OpenAudioStreamAsync(string videoId, CancellationToken ct = default);
 }

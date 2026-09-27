@@ -22,6 +22,14 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
+        <!-- Radio scope: collapse vertical dividers to the RIGHT (Margin 0,0,-1,0) so the
+             4 category columns land at x=0/126/252/378 — pixel-identical to the station
+             grid below, whose TileBorder uses Margin 0,0,-1,-1. Shared WidgetTileStyle
+             overlaps to the LEFT (-1,0,0,0), which drifts every divider 1px off here. -->
+        <Style TargetType="{x:Type widgets:WidgetTile}" BasedOn="{StaticResource WidgetTileStyle}">
+            <Setter Property="Margin" Value="0,0,-1,0" />
+        </Style>
+
         <!-- 4px Fluent Floating ScrollBar: Invisible by default, reveals on scroll/hover -->
         <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
 

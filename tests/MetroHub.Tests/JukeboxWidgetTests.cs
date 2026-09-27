@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,29 +39,37 @@ public sealed class JukeboxWidgetTests
             return Task.FromResult(hits);
         }
 
-        public Task<YoutubeAudioStream?> ResolveAudioUrlAsync(string videoId, CancellationToken ct = default)
+        public Task<JukeboxStreamSet?> ResolveStreamsAsync(string videoId, CancellationToken ct = default)
         {
             ResolveCalls++;
             LastResolvedId = videoId;
-            // Fresh URL per call, like real expiring YouTube URLs.
-            return Task.FromResult<YoutubeAudioStream?>(
-                new YoutubeAudioStream($"https://audio.test/{videoId}#{ResolveCalls}", "opus", 160));
+            // Fresh URLs per call, like real expiring YouTube URLs.
+            return Task.FromResult<JukeboxStreamSet?>(new JukeboxStreamSet(
+                $"https://audio.test/{videoId}#low{ResolveCalls}",
+                $"https://audio.test/{videoId}#{ResolveCalls}",
+                $"https://audio.test/{videoId}#aac"));
         }
 
-        public Task<YoutubeAudioStream?> ResolveAacFallbackAsync(string videoId, CancellationToken ct = default)
+        public Task<IReadOnlyList<YoutubeSearchHit>> GetPlaylistVideosAsync(string playlistUrlOrId, int maxItems = 1000, CancellationToken ct = default)
+            => SearchAsync(playlistUrlOrId, maxItems, ct);
+
+        public Task<System.IO.Stream?> OpenAudioStreamAsync(string videoId, CancellationToken ct = default)
         {
-            return Task.FromResult<YoutubeAudioStream?>(
-                new YoutubeAudioStream($"https://audio.test/{videoId}#aac", "mp4a.40.2", 128));
+            ResolveCalls++;
+            LastResolvedId = videoId;
+            return Task.FromResult<System.IO.Stream?>(new MemoryStream(new byte[1024]));
         }
     }
 
     private sealed class FakePlayer : IJukeboxAudioService
     {
-        public List<(string OpusUrl, string AacUrl, string Label)> PlayedUrls { get; } = new();
+        public FakeResolver? Resolver;
+        public List<(string? LowUrl, string? OpusUrl, string? AacUrl, string Label)> PlayedUrls { get; } = new();
+        public List<string> PlayedStreamLabels { get; } = new();
         public bool IsPlaying { get; private set; }
         public bool IsBuffering => false;
         public string CurrentLabel { get; private set; } = string.Empty;
-        public bool HasTrack => PlayedUrls.Count > 0 && !_stopped;
+        public bool HasTrack => (PlayedUrls.Count > 0 || PlayedStreamLabels.Count > 0) && !_stopped;
         public double Volume { get; set; } = 0.5;
         public bool IsMuted { get; set; }
         public string? LastErrorMessage => null;
@@ -69,11 +78,28 @@ public sealed class JukeboxWidgetTests
 
         public event EventHandler<bool>? PlaybackStateChanged;
         public event EventHandler? EndOfStreamReached;
-        public event EventHandler<string>? ErrorOccurred;
+        public event EventHandler? StallStormDetected;
+        public event EventHandler<string>? ErrorOccurred { add { } remove { } }
+
+        public async Task PlayStreamAsync(Func<CancellationToken, Task<System.IO.Stream?>> streamFactory, string label, CancellationToken ct = default)
+        {
+            await streamFactory(ct);
+            string vid = Resolver?.LastResolvedId ?? "vid-sofia";
+            int calls = Resolver?.ResolveCalls ?? 1;
+            PlayedUrls.Add(($"https://audio.test/{vid}#low{calls}", $"https://audio.test/{vid}#{calls}", $"https://audio.test/{vid}#aac", label));
+            PlayedStreamLabels.Add(label);
+            CurrentLabel = label;
+            _stopped = false;
+            IsPlaying = true;
+            PlaybackStateChanged?.Invoke(this, true);
+        }
+
+        public Task PlayStreamAsync(System.IO.Stream audioStream, string label, CancellationToken ct = default)
+            => PlayStreamAsync(_ => Task.FromResult<System.IO.Stream?>(audioStream), label, ct);
 
         public Task PlayUrlAsync(JukeboxAudioUrls urls, string label, CancellationToken ct = default)
         {
-            PlayedUrls.Add((urls.OpusUrl ?? string.Empty, urls.AacUrl ?? string.Empty, label));
+            PlayedUrls.Add((urls.LowUrl, urls.OpusUrl, urls.AacUrl, label));
             CurrentLabel = label;
             _stopped = false;
             IsPlaying = true;
@@ -107,6 +133,7 @@ public sealed class JukeboxWidgetTests
         public void SetMuted(bool isMuted) => IsMuted = isMuted;
 
         public void RaiseNaturalEnd() => EndOfStreamReached?.Invoke(this, EventArgs.Empty);
+        public void RaiseStorm() => StallStormDetected?.Invoke(this, EventArgs.Empty);
 
         public void Dispose() { }
     }
@@ -115,7 +142,7 @@ public sealed class JukeboxWidgetTests
     {
         var model = new TileModel { TargetPath = "jukebox" };
         var resolver = new FakeResolver();
-        var player = new FakePlayer();
+        var player = new FakePlayer { Resolver = resolver };
         return (new JukeboxWidgetViewModel(model, resolver, player), resolver, player, model);
     }
 
@@ -141,6 +168,7 @@ public sealed class JukeboxWidgetTests
         await vm.PlayResultCommand.ExecuteAsync(vm.SearchResults[0]);
 
         Assert.Single(player.PlayedUrls);
+        Assert.Equal("https://audio.test/vid-sofia#low1", player.PlayedUrls[0].LowUrl);
         Assert.Equal("https://audio.test/vid-sofia#1", player.PlayedUrls[0].OpusUrl);
         Assert.Contains("vid-sofia", player.PlayedUrls[0].AacUrl);
         Assert.Equal("Sofia", player.PlayedUrls[0].Label);
@@ -163,8 +191,8 @@ public sealed class JukeboxWidgetTests
         await vm.PlayHistoryCommand.ExecuteAsync(vm.History[0]);
 
         Assert.Equal(2, resolver.ResolveCalls);
-        Assert.Equal("https://audio.test/vid-sofia#1", player.PlayedUrls[0].OpusUrl);
-        Assert.Equal("https://audio.test/vid-sofia#2", player.PlayedUrls[1].OpusUrl);
+        Assert.Equal("https://audio.test/vid-sofia#low1", player.PlayedUrls[0].LowUrl);
+        Assert.Equal("https://audio.test/vid-sofia#low2", player.PlayedUrls[1].LowUrl);
         Assert.Single(vm.History);
         Assert.Equal(2, vm.History[0].PlayCount);
     }
@@ -185,6 +213,35 @@ public sealed class JukeboxWidgetTests
 
         Assert.Equal(3, player.PlayedUrls.Count);
         Assert.Equal("Sofia", player.PlayedUrls[^1].Label);
+    }
+
+    [Fact]
+    public async Task Single_Play_Uses_Low_Bandwidth_First()
+    {
+        var (vm, _, player, _) = Create();
+        vm.SearchText = "sofia";
+        await vm.SearchCommand.ExecuteAsync(null);
+        await vm.PlayResultCommand.ExecuteAsync(vm.SearchResults[0]);
+
+        Assert.Single(player.PlayedUrls);
+        Assert.Contains("#low", player.PlayedUrls[0].LowUrl);
+        Assert.Single(vm.History);
+    }
+
+    [Fact]
+    public async Task Stall_Storm_Does_Not_Replay_Or_Duplicate()
+    {
+        var (vm, _, player, _) = Create();
+        vm.SearchText = "sofia";
+        await vm.SearchCommand.ExecuteAsync(null);
+        await vm.PlayResultCommand.ExecuteAsync(vm.SearchResults[0]);
+        Assert.Single(player.PlayedUrls);
+
+        player.RaiseStorm();
+        await Task.Delay(300);
+
+        Assert.Single(player.PlayedUrls);
+        Assert.Single(vm.History);
     }
 
     [Fact]

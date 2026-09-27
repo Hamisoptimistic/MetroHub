@@ -84,30 +84,25 @@ public partial class TileControl : UserControl
 
     private void OnMouseEnter(object sender, MouseEventArgs e)
     {
-        if (DataContext is TileModel { TileType: TileType.Widget })
-        {
-            RevealFillBorder.Opacity = 0.0;
-            RevealEdgeBorder.Opacity = 0.0;
-            return;
-        }
-
         Point pos = e.GetPosition(RootBorder);
         UpdateRevealPositions(pos);
-        AnimateRevealFill(1.0, 100);
+
+        if (DataContext is not TileModel { TileType: TileType.Widget })
+        {
+            AnimateRevealFill(1.0, 100);
+        }
+
         RevealEdgeBorder.BeginAnimation(UIElement.OpacityProperty, null);
         RevealEdgeBorder.Opacity = 1.0;
     }
 
     private void OnMouseLeave(object sender, MouseEventArgs e)
     {
-        if (DataContext is TileModel { TileType: TileType.Widget })
+        if (DataContext is not TileModel { TileType: TileType.Widget })
         {
-            RevealFillBorder.Opacity = 0.0;
-            RevealEdgeBorder.Opacity = 0.0;
-            return;
+            AnimateRevealFill(0.0, 200);
         }
 
-        AnimateRevealFill(0.0, 200);
         var anim = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(220))
         {
             EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
@@ -145,12 +140,6 @@ public partial class TileControl : UserControl
 
     public void UpdateAmbientReveal(Point mouseOnTile, double distance)
     {
-        if (DataContext is TileModel { TileType: TileType.Widget })
-        {
-            RevealEdgeBorder.Opacity = 0.0;
-            return;
-        }
-
         if (IsMouseOver)
         {
             RevealEdgeBorder.Opacity = 1.0;
