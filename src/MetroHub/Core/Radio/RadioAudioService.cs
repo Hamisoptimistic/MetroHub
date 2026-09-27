@@ -610,7 +610,7 @@ public sealed class RadioAudioService : IRadioAudioService
                 PlaybackStateChanged?.Invoke(this, false);
                 BufferingStateChanged?.Invoke(this, false);
                 // Natural end (Pause/Stop zero _currentStream first, so a match here
-                // means the stream finished). Jukebox autoplay-next listens to this.
+                // means the stream finished).
                 EndOfStreamReached?.Invoke(this, EventArgs.Empty);
             }
         });

@@ -74,7 +74,6 @@ public interface IRadioAudioService : IDisposable
 
     /// <summary>
     /// Fired when a stream reaches its natural end (not user pause/stop).
-    /// Used by jukebox-style autoplay-next flows.
     /// </summary>
     event EventHandler? EndOfStreamReached;
 }

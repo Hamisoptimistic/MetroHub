@@ -174,26 +174,6 @@ public static class WidgetRegistry
             Category: "Sound"
         ));
 
-        // Register YouTube Jukebox widget
-        Register(new WidgetDefinition(
-            Id: "jukebox",
-            DisplayName: "YouTube Jukebox",
-            Description: "Search any song on YouTube, stream its audio, and keep a replayable history",
-            Icon: SymbolRegular.MusicNote224,
-            AllowedSizes: new[]
-            {
-                WidgetSize.PortraitXL, // 4x8 (default)
-                WidgetSize.Large,      // 4x4
-                WidgetSize.LargeWide,  // 6x4
-                WidgetSize.Mega        // 8x4
-            },
-            ViewModelType: typeof(MetroHub.Widgets.Catalog.Jukebox.JukeboxWidgetViewModel),
-            ViewType: typeof(MetroHub.Widgets.Catalog.Jukebox.JukeboxWidgetView),
-            DefaultSize: WidgetSize.PortraitXL,
-            Factory: model => new MetroHub.Widgets.Catalog.Jukebox.JukeboxWidgetViewModel(model),
-            Category: "Sound"
-        ));
-
         // Register Notes & Tasks (Notepad / Todo) widget
         Register(new WidgetDefinition(
             Id: "notepad",

@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using MetroHub.Widgets.Catalog.Clock;
-using MetroHub.Widgets.Catalog.Jukebox;
 using MetroHub.Widgets.Catalog.Media;
 using MetroHub.Widgets.Catalog.Photos;
 using MetroHub.Widgets.Catalog.Pomodoro;
@@ -33,7 +32,6 @@ namespace MetroHub.Widgets.Serialization;
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.CaffeineSleep.CaffeineSleepWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Rover.RoverWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Radio.RadioWidgetSettings))]
-[JsonSerializable(typeof(JukeboxWidgetSettings))]
 public partial class WidgetJsonContext : JsonSerializerContext
 {
 }

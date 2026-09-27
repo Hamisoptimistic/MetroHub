@@ -19,7 +19,6 @@
     <PackageReference Include="gong-wpf-dragdrop" Version="4.0.0" />
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
     <PackageReference Include="ManagedBass" Version="4.1.0-prerelease" />
-    <PackageReference Include="YoutubeExplode" Version="6.6.2" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.158" />
     <PackageReference Include="System.Management" Version="9.0.0" />
     <PackageReference Include="WPF-UI" Version="3.0.4" />
