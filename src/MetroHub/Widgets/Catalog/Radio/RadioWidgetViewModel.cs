@@ -51,6 +51,23 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
     [ObservableProperty]
     private string _currentStationTitle = "Select a station to focus";
 
+    private string _currentStationSubtitle = string.Empty;
+    public string CurrentStationSubtitle
+    {
+        get => _currentStationSubtitle;
+        set => SetProperty(ref _currentStationSubtitle, value);
+    }
+
+    private bool _hasStationSubtitle;
+    public bool HasStationSubtitle
+    {
+        get => _hasStationSubtitle;
+        set => SetProperty(ref _hasStationSubtitle, value);
+    }
+
+    [ObservableProperty]
+    private string _fullPlayerTooltip = "Select a station to focus";
+
     [ObservableProperty]
     private string _currentStationBadge = string.Empty;
 
@@ -185,17 +202,19 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
 
     private void UpdateDisplayInfo()
     {
-        if (IsBuffering)
-        {
-            CurrentStationTitle = "Buffering...";
-        }
-        else if (CurrentStation != null)
+        if (CurrentStation != null)
         {
             CurrentStationTitle = CurrentStation.Name;
+            CurrentStationSubtitle = RadioStationItemViewModel.FormatStationStreamInfo(CurrentStation);
+            HasStationSubtitle = true;
+            FullPlayerTooltip = $"{CurrentStation.Name} ({CurrentStationSubtitle})";
         }
         else
         {
             CurrentStationTitle = "Select a station to focus";
+            CurrentStationSubtitle = string.Empty;
+            HasStationSubtitle = false;
+            FullPlayerTooltip = "Select a station to focus";
         }
 
         CurrentStationBadge = string.Empty;

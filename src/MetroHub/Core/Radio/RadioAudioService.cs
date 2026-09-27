@@ -29,7 +29,6 @@ public sealed class RadioAudioService : IRadioAudioService
     // Hard delegate references to prevent native Garbage Collection
     private readonly SyncProcedure _stallSyncProc;
     private readonly SyncProcedure _endSyncProc;
-    private readonly SyncProcedure _metaSyncProc;
 
     private RadioStation? _currentStation;
     private bool _isPlaying;
@@ -133,7 +132,6 @@ public sealed class RadioAudioService : IRadioAudioService
         // 2. Retain persistent delegate references for native callbacks
         _stallSyncProc = OnStallSync;
         _endSyncProc = OnEndSync;
-        _metaSyncProc = OnMetaSync;
 
         // 3. Initialize BASS engine (device -1 is default Windows Core Audio/WASAPI device)
         bool initialized = Bass.Init(-1, 44100, DeviceInitFlags.Default, IntPtr.Zero);
@@ -388,7 +386,6 @@ public sealed class RadioAudioService : IRadioAudioService
             Bass.ChannelSetAttribute(newStream, ChannelAttribute.Volume, 0f);
             Bass.ChannelSetSync(newStream, SyncFlags.Stalled, 0, _stallSyncProc, IntPtr.Zero);
             Bass.ChannelSetSync(newStream, SyncFlags.End, 0, _endSyncProc, IntPtr.Zero);
-            Bass.ChannelSetSync(newStream, SyncFlags.MetadataReceived, 0, _metaSyncProc, IntPtr.Zero);
 
             bool started = Bass.ChannelPlay(newStream);
             if (!started)
@@ -688,20 +685,6 @@ public sealed class RadioAudioService : IRadioAudioService
                 EndOfStreamReached?.Invoke(this, EventArgs.Empty);
             }
         });
-    }
-
-    private void OnMetaSync(int handle, int channel, int data, IntPtr user)
-    {
-        try
-        {
-            IntPtr tagsPtr = Bass.ChannelGetTags(channel, TagType.ICY);
-            if (tagsPtr != IntPtr.Zero)
-            {
-                string? icy = Marshal.PtrToStringAnsi(tagsPtr);
-                Debug.WriteLine($"[RadioAudioService] ICY Tag: {icy}");
-            }
-        }
-        catch { }
     }
 
     private void HandlePlaybackError(string message, long expectedVersion)

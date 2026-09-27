@@ -38,6 +38,9 @@ public sealed record RadioStation
 
     [JsonPropertyName("apiStationUuid")]
     public string? ApiStationUuid { get; init; }
+
+    [JsonPropertyName("codec")]
+    public string? Codec { get; init; }
 }
 
 /// <summary>

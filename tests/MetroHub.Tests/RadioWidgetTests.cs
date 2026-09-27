@@ -265,4 +265,99 @@ public class RadioWidgetTests
             try { if (System.IO.File.Exists(tempCatalogPath + ".bak")) System.IO.File.Delete(tempCatalogPath + ".bak"); } catch { }
         }
     }
+
+    [Fact]
+    public void RadioWidgetViewModel_TwoLineLayout_DisplaysStationAndBitrateTypeCorrectly()
+    {
+        RunInSta(() =>
+        {
+            string tempCatalogPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"radio_vm_twoline_{Guid.NewGuid():N}.json");
+            try
+            {
+                var customCatalogService = new RadioCatalogService(tempCatalogPath);
+                customCatalogService.LoadCatalog();
+
+                var fakeAudio = new FakeAudioService();
+                var model = new TileModel { TileType = TileType.Widget, TargetPath = "radio", SpanX = 8, SpanY = 6 };
+                var vm = new RadioWidgetViewModel(model, fakeAudio, customCatalogService);
+                vm.Initialize(model);
+
+                // 1. Idle state (no station active - subtitle is empty)
+                Assert.Equal("Select a station to focus", vm.CurrentStationTitle);
+                Assert.Equal(string.Empty, vm.CurrentStationSubtitle);
+                Assert.False(vm.HasStationSubtitle);
+                Assert.Equal("Select a station to focus", vm.FullPlayerTooltip);
+
+                // 2. Station active - displays Radio name and Bitrate + Type below
+                var station = new RadioStation
+                {
+                    Id = "chillout",
+                    Name = "Chillout Lounge",
+                    BitrateKbps = 320,
+                    Codec = "MP3",
+                    StreamUrl = "http://example.com/stream"
+                };
+                fakeAudio.TriggerCurrentStation(station);
+
+                Assert.Equal("Chillout Lounge", vm.CurrentStationTitle);
+                Assert.Equal("320 kbps • MP3", vm.CurrentStationSubtitle);
+                Assert.True(vm.HasStationSubtitle);
+                Assert.Equal("Chillout Lounge (320 kbps • MP3)", vm.FullPlayerTooltip);
+
+                // 3. Playback / buffering transitions keep the radio name and bitrate/type clean and constant
+                fakeAudio.TriggerBuffering(true);
+                Assert.Equal("Chillout Lounge", vm.CurrentStationTitle);
+                Assert.Equal("320 kbps • MP3", vm.CurrentStationSubtitle);
+
+                fakeAudio.TriggerBuffering(false);
+                fakeAudio.TriggerPlayback(true);
+                Assert.Equal("Chillout Lounge", vm.CurrentStationTitle);
+                Assert.Equal("320 kbps • MP3", vm.CurrentStationSubtitle);
+
+                // 4. Paused state keeps the radio name and bitrate/type clean
+                fakeAudio.TriggerPlayback(false);
+                Assert.Equal("Chillout Lounge", vm.CurrentStationTitle);
+                Assert.Equal("320 kbps • MP3", vm.CurrentStationSubtitle);
+            }
+            finally
+            {
+                try { if (System.IO.File.Exists(tempCatalogPath)) System.IO.File.Delete(tempCatalogPath); } catch { }
+                try { if (System.IO.File.Exists(tempCatalogPath + ".bak")) System.IO.File.Delete(tempCatalogPath + ".bak"); } catch { }
+            }
+        });
+    }
+
+    private class FakeAudioService : IRadioAudioService
+    {
+        public RadioStation? CurrentStation { get; set; }
+        public bool IsPlaying { get; set; }
+        public bool IsBuffering { get; set; }
+        public double Volume { get; set; } = 0.5;
+        public bool IsMuted { get; set; }
+        public string? LastErrorMessage { get; set; }
+
+        public event EventHandler<RadioStation?>? CurrentStationChanged;
+        public event EventHandler<bool>? PlaybackStateChanged;
+        public event EventHandler<bool>? BufferingStateChanged;
+#pragma warning disable CS0067
+        public event EventHandler<double>? VolumeChanged;
+        public event EventHandler<bool>? MuteStateChanged;
+        public event EventHandler<string>? ErrorOccurred;
+        public event EventHandler? EndOfStreamReached;
+#pragma warning restore CS0067
+
+        public void TriggerCurrentStation(RadioStation? s) { CurrentStation = s; CurrentStationChanged?.Invoke(this, s); }
+        public void TriggerPlayback(bool p) { IsPlaying = p; PlaybackStateChanged?.Invoke(this, p); }
+        public void TriggerBuffering(bool b) { IsBuffering = b; BufferingStateChanged?.Invoke(this, b); }
+
+        public Task PlayStationAsync(RadioStation station, System.Threading.CancellationToken ct = default) => Task.CompletedTask;
+        public void Pause() => IsPlaying = false;
+        public void Resume() => IsPlaying = true;
+        public void TogglePlayPause() => IsPlaying = !IsPlaying;
+        public void Stop() { CurrentStation = null; IsPlaying = false; }
+        public void SetVolume(double volume) => Volume = volume;
+        public void SetMuted(bool isMuted) => IsMuted = isMuted;
+        public bool GetSpectrumLevels(out float bass, out float mid, out float treble) { bass = 0; mid = 0; treble = 0; return false; }
+        public void Dispose() { }
+    }
 }

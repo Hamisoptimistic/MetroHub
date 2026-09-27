@@ -323,17 +323,32 @@
                         </Button>
                     </StackPanel>
 
-                    <!-- Center: Clean Station Name / Playback Status -->
-                    <Grid Grid.Column="1" Margin="14,0,14,0" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding CurrentStationTitle}"
-                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                   FontSize="13"
-                                   FontWeight="SemiBold"
-                                   Foreground="#FFFFFF"
-                                   TextTrimming="CharacterEllipsis"
-                                   TextWrapping="NoWrap"
-                                   ToolTip="{Binding CurrentStationTitle}"
-                                   VerticalAlignment="Center" />
+                    <!-- Center: Radio Name & Stream Info (Bitrate & Type) -->
+                    <Grid Grid.Column="1" Margin="14,0,14,0" VerticalAlignment="Center"
+                          ToolTip="{Binding FullPlayerTooltip}">
+                        <StackPanel Orientation="Vertical" VerticalAlignment="Center">
+                            <!-- Line 1: Radio Name -->
+                            <TextBlock Text="{Binding CurrentStationTitle}"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       FontSize="12.5"
+                                       FontWeight="SemiBold"
+                                       Foreground="#FFFFFF"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextWrapping="NoWrap"
+                                       VerticalAlignment="Center" />
+
+                            <!-- Line 2: Bitrate & Type -->
+                            <TextBlock Text="{Binding CurrentStationSubtitle}"
+                                       FontFamily="{DynamicResource AppFontFamily}"
+                                       FontSize="11"
+                                       FontWeight="Normal"
+                                       Foreground="#A0B8D0"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextWrapping="NoWrap"
+                                       Margin="0,1.5,0,0"
+                                       Visibility="{Binding HasStationSubtitle, Converter={StaticResource BoolToVis}}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
                     </Grid>
 
                     <!-- Right: Mute Button & Fluent Volume Slider -->

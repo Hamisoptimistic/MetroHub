@@ -1561,7 +1561,8 @@ public partial class AcrylicModalWindow : FluentWindow
                             BitrateDisplay = bitrate,
                             ResolvedStreamUrl = !string.IsNullOrWhiteSpace(s.UrlResolved) ? s.UrlResolved : s.Url,
                             StationUuid = !string.IsNullOrWhiteSpace(s.StationUuid) ? s.StationUuid : null,
-                            BitrateKbps = s.Bitrate > 0 ? s.Bitrate : 128
+                            BitrateKbps = s.Bitrate > 0 ? s.Bitrate : 128,
+                            Codec = !string.IsNullOrWhiteSpace(s.Codec) ? s.Codec.ToUpperInvariant() : null
                         });
                     }
                 });
@@ -1781,7 +1782,8 @@ public partial class AcrylicModalWindow : FluentWindow
                 Category = categoryId,
                 Icon = "HeadphonesSoundWave24",
                 IsCustom = true,
-                ApiStationUuid = selected.StationUuid
+                ApiStationUuid = selected.StationUuid,
+                Codec = selected.Codec
             };
         }
         else
@@ -1820,7 +1822,8 @@ public partial class AcrylicModalWindow : FluentWindow
                 Category = categoryId,
                 Icon = "HeadphonesSoundWave24",
                 IsCustom = true,
-                ApiStationUuid = null
+                ApiStationUuid = null,
+                Codec = InferCodecFromContentType(_lastProbeResult.ContentType)
             };
         }
 
@@ -1845,6 +1848,19 @@ public partial class AcrylicModalWindow : FluentWindow
         }
     }
 
+    private static string? InferCodecFromContentType(string? contentType)
+        {
+            if (string.IsNullOrWhiteSpace(contentType)) return null;
+            string ct = contentType.ToLowerInvariant();
+            if (ct.Contains("mpegurl") || ct.Contains("m3u8")) return "HLS";
+            if (ct.Contains("aac")) return "AAC";
+            if (ct.Contains("ogg") || ct.Contains("opus")) return "OGG";
+            if (ct.Contains("flac")) return "FLAC";
+            if (ct.Contains("mpeg") || ct.Contains("mp3")) return "MP3";
+            return null;
+        }
+    }
+
     #endregion
 
     internal sealed class RadioSearchResultItem
@@ -1855,5 +1871,5 @@ public partial class AcrylicModalWindow : FluentWindow
         public required string ResolvedStreamUrl { get; init; }
         public required string? StationUuid { get; init; }
         public required int BitrateKbps { get; init; }
+        public string? Codec { get; init; }
     }
-}
