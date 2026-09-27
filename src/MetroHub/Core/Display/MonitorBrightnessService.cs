@@ -396,6 +396,17 @@ public sealed class MonitorBrightnessService : IDisposable
         var results = new List<WmiDisplayInfo>();
         if (!_isWmiBrightnessSupported) return results;
 
+        // Desktop systems with no battery do not support ACPI internal display brightness
+        try
+        {
+            if (MetroHub.Core.Services.NativeMethods.GetSystemPowerStatus(out var sps) && (sps.BatteryFlag & 128) != 0)
+            {
+                _isWmiBrightnessSupported = false;
+                return results;
+            }
+        }
+        catch { }
+
         try
         {
             var monitorNames = GetWmiMonitorNames();

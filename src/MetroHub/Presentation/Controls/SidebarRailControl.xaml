@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Presentation.Controls.SidebarRailControl"
+<UserControl x:Class="MetroHub.Presentation.Controls.SidebarRailControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -406,7 +406,7 @@
                                     </Image>
 
                                     <!-- Built-in Fluent Vector Symbol Icon (when no CustomIconPath) -->
-                                    <ui:SymbolIcon Symbol="{Binding IconSymbol}"
+                                    <ui:SymbolIcon Symbol="{Binding IconSymbol, FallbackValue=Folder24, TargetNullValue=Folder24}"
                                                    FontSize="19"
                                                    Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
                                                    HorizontalAlignment="Center"

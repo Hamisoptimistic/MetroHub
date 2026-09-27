@@ -166,6 +166,7 @@ public sealed class RadioAudioService : IRadioAudioService
             // NOT AppContext.BaseDirectory. Desktop shortcuts set CWD to System32.
             string baseDir = AppContext.BaseDirectory;
             LoadBassPlugin(baseDir, "bass_aac.dll");
+            LoadBassPlugin(baseDir, "basshls.dll");
             LoadBassPlugin(baseDir, "bassopus.dll");
         }
         else
@@ -306,8 +307,81 @@ public sealed class RadioAudioService : IRadioAudioService
 
             if (newStream == 0)
             {
-                HandlePlaybackError($"Failed to stream {station.Name} ({createError})", myVersion);
-                return;
+                // Silent Self-Healing: If stream failed to connect and station has an API UUID or Name,
+                // query Radio-Browser community CDN mirrors for a fresh working URL.
+                string? healedUrl = null;
+                if (!string.IsNullOrWhiteSpace(station.ApiStationUuid) || !string.IsNullOrWhiteSpace(station.Name))
+                {
+                    try
+                    {
+                        Debug.WriteLine($"[RadioAudioService] Stream failed ({createError}). Attempting self-healing for '{station.Name}'...");
+                        healedUrl = await RadioBrowserClient.Instance.ResolveWorkingUrlAsync(
+                            station.ApiStationUuid, station.Name, linkedCts.Token).ConfigureAwait(false);
+                    }
+                    catch (Exception healEx)
+                    {
+                        Debug.WriteLine($"[RadioAudioService] Self-healing resolution exception: {healEx.Message}");
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(healedUrl) && !string.Equals(healedUrl, station.StreamUrl, StringComparison.OrdinalIgnoreCase))
+                {
+                    Debug.WriteLine($"[RadioAudioService] Self-healing found new URL for '{station.Name}': {healedUrl}. Retrying playback...");
+
+                    // Persist healed URL into local catalog atomically so subsequent launches use the fresh link
+                    _ = RadioCatalogService.Instance.UpdateStationUrlAsync(station.Id, healedUrl);
+
+                    var healedStation = station with { StreamUrl = healedUrl };
+                    lock (_gate)
+                    {
+                        if (_switchVersion == myVersion)
+                        {
+                            _currentStation = healedStation;
+                        }
+                    }
+
+                    // Retry connecting with healed URL
+                    var retryTask = Task.Run(() =>
+                    {
+                        if (linkedCts.Token.IsCancellationRequested) return (Stream: 0, Error: Errors.OK);
+
+                        int stream = Bass.CreateStream(
+                            healedUrl,
+                            0,
+                            BassFlags.StreamDownloadBlocks,
+                            null,
+                            IntPtr.Zero);
+
+                        Errors err = stream == 0 ? Bass.LastError : Errors.OK;
+
+                        bool shouldDiscard;
+                        lock (_gate)
+                        {
+                            shouldDiscard = linkedCts.Token.IsCancellationRequested || _isDisposed || _switchVersion != myVersion;
+                        }
+
+                        if (shouldDiscard && stream != 0)
+                        {
+                            try { Bass.StreamFree(stream); } catch { }
+                            return (Stream: 0, Error: Errors.OK);
+                        }
+
+                        return (Stream: stream, Error: err);
+                    });
+
+                    var (healedStream, retryError) = await retryTask
+                        .WaitAsync(TimeSpan.FromSeconds(7), linkedCts.Token)
+                        .ConfigureAwait(false);
+
+                    newStream = healedStream;
+                    createError = retryError;
+                }
+
+                if (newStream == 0)
+                {
+                    HandlePlaybackError($"Failed to stream {station.Name} ({createError})", myVersion);
+                    return;
+                }
             }
 
             // Configure and start BASS channel OUTSIDE _gate so native audio mutexes never nest with _gate

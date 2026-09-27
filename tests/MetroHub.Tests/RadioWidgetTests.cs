@@ -65,29 +65,40 @@ public class RadioWidgetTests
     {
         RunInSta(() =>
         {
-            var model = new TileModel { TileType = TileType.Widget, TargetPath = "radio", SpanX = 8, SpanY = 6 };
-            var vm = new RadioWidgetViewModel(model);
-            vm.Initialize(model);
+            string tempCatalogPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"radio_vm_init_{Guid.NewGuid():N}.json");
+            try
+            {
+                var catalogService = new RadioCatalogService(tempCatalogPath);
+                catalogService.LoadCatalog();
+                var model = new TileModel { TileType = TileType.Widget, TargetPath = "radio", SpanX = 8, SpanY = 6 };
+                var vm = new RadioWidgetViewModel(model, RadioAudioService.Instance, catalogService);
+                vm.Initialize(model);
 
-            // Default category is ambient (12 stations + 1 '+' placeholder = 13)
-            Assert.Equal("ambient", vm.SelectedCategoryId);
-            Assert.Equal(13, vm.VisibleStations.Count);
-            Assert.True(vm.VisibleStations.Last().IsAddPlaceholder);
+                // Default category is ambient (12 stations + 1 '+' placeholder = 13)
+                Assert.Equal("ambient", vm.SelectedCategoryId);
+                Assert.Equal(13, vm.VisibleStations.Count);
+                Assert.True(vm.VisibleStations.Last().IsAddPlaceholder);
 
-            // Switch to nature (10 stations + 1 '+' placeholder = 11)
-            vm.SelectedCategoryId = "nature";
-            Assert.Equal(11, vm.VisibleStations.Count);
-            Assert.True(vm.VisibleStations.Last().IsAddPlaceholder);
+                // Switch to nature (10 stations + 1 '+' placeholder = 11)
+                vm.SelectedCategoryId = "nature";
+                Assert.Equal(11, vm.VisibleStations.Count);
+                Assert.True(vm.VisibleStations.Last().IsAddPlaceholder);
 
-            // Switch to lofi (13 stations + 1 '+' placeholder = 14)
-            vm.SelectedCategoryId = "lofi";
-            Assert.Equal(14, vm.VisibleStations.Count);
-            Assert.True(vm.VisibleStations.Last().IsAddPlaceholder);
+                // Switch to lofi (13 stations + 1 '+' placeholder = 14)
+                vm.SelectedCategoryId = "lofi";
+                Assert.Equal(14, vm.VisibleStations.Count);
+                Assert.True(vm.VisibleStations.Last().IsAddPlaceholder);
 
-            // Switch to coding (5 stations + 1 '+' placeholder = 6)
-            vm.SelectedCategoryId = "coding";
-            Assert.Equal(6, vm.VisibleStations.Count);
-            Assert.True(vm.VisibleStations.Last().IsAddPlaceholder);
+                // Switch to coding (5 stations + 1 '+' placeholder = 6)
+                vm.SelectedCategoryId = "coding";
+                Assert.Equal(6, vm.VisibleStations.Count);
+                Assert.True(vm.VisibleStations.Last().IsAddPlaceholder);
+            }
+            finally
+            {
+                try { if (System.IO.File.Exists(tempCatalogPath)) System.IO.File.Delete(tempCatalogPath); } catch { }
+                try { if (System.IO.File.Exists(tempCatalogPath + ".bak")) System.IO.File.Delete(tempCatalogPath + ".bak"); } catch { }
+            }
         });
     }
 
@@ -138,18 +149,120 @@ public class RadioWidgetTests
     [Fact]
     public async Task RadioWidgetViewModel_NextAndPrevious_LoopWithinActiveCategory()
     {
-        var model = new TileModel { TileType = TileType.Widget, TargetPath = "radio", SpanX = 8, SpanY = 6 };
-        var vm = new RadioWidgetViewModel(model);
-        vm.Initialize(model);
+        string tempCatalogPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"radio_vm_loop_{Guid.NewGuid():N}.json");
+        try
+        {
+            var catalogService = new RadioCatalogService(tempCatalogPath);
+            catalogService.LoadCatalog();
+            var model = new TileModel { TileType = TileType.Widget, TargetPath = "radio", SpanX = 8, SpanY = 6 };
+            var vm = new RadioWidgetViewModel(model, RadioAudioService.Instance, catalogService);
+            vm.Initialize(model);
 
-        vm.SelectedCategoryId = "coding"; // 5 stations
-        var realStations = vm.VisibleStations.Where(s => !s.IsAddPlaceholder).ToList();
-        Assert.Equal(5, realStations.Count);
+            vm.SelectedCategoryId = "coding"; // 5 stations
+            var realStations = vm.VisibleStations.Where(s => !s.IsAddPlaceholder).ToList();
+            Assert.Equal(5, realStations.Count);
 
-        // Next from start plays first or advances
-        await vm.NextStationCommand.ExecuteAsync(null);
-        Assert.NotNull(RadioAudioService.Instance.CurrentStation);
+            // Next from start plays first or advances
+            await vm.NextStationCommand.ExecuteAsync(null);
+            Assert.NotNull(RadioAudioService.Instance.CurrentStation);
 
-        RadioAudioService.Instance.Pause();
+            RadioAudioService.Instance.Pause();
+        }
+        finally
+        {
+            try { if (System.IO.File.Exists(tempCatalogPath)) System.IO.File.Delete(tempCatalogPath); } catch { }
+            try { if (System.IO.File.Exists(tempCatalogPath + ".bak")) System.IO.File.Delete(tempCatalogPath + ".bak"); } catch { }
+        }
+    }
+
+    [Fact]
+    public void RadioWidgetViewModel_CopyStreamUrl_UpdatesPlaybackStatusText()
+    {
+        RunInSta(() =>
+        {
+            var model = new TileModel { TileType = TileType.Widget, TargetPath = "radio", SpanX = 8, SpanY = 6 };
+            var vm = new RadioWidgetViewModel(model);
+            vm.Initialize(model);
+
+            var firstItem = vm.VisibleStations.First(s => !s.IsAddPlaceholder);
+            vm.CopyStreamUrlCommand.Execute(firstItem);
+
+            Assert.Equal($"Copied: {firstItem.Station?.Name} link", vm.PlaybackStatusText);
+        });
+    }
+
+    [Fact]
+    public async Task RadioWidgetViewModel_DeleteStation_DeletesCustomStationAndStopsPlayback()
+    {
+        string tempCatalogPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"radio_vm_del_{Guid.NewGuid():N}.json");
+        try
+        {
+            var customCatalogService = new RadioCatalogService(tempCatalogPath);
+            customCatalogService.LoadCatalog();
+
+            var customStation = new RadioStation
+            {
+                Id = "custom_deletable_station",
+                Name = "Deletable Station",
+                StreamUrl = "https://stream.example.com/del.mp3",
+                IsCustom = true
+            };
+            await customCatalogService.AddCustomStationAsync(customStation, "coding");
+
+            var model = new TileModel { TileType = TileType.Widget, TargetPath = "radio", SpanX = 8, SpanY = 6 };
+            var audioService = RadioAudioService.Instance;
+            var vm = new RadioWidgetViewModel(model, audioService, customCatalogService);
+            vm.Initialize(model);
+            vm.SelectedCategoryId = "coding";
+
+            var customItem = vm.VisibleStations.FirstOrDefault(s => s.Id == "custom_deletable_station");
+            Assert.NotNull(customItem);
+            Assert.True(customItem.IsCustom);
+
+            // Execute delete
+            await vm.DeleteStationCommand.ExecuteAsync(customItem);
+
+            // Verify removed from VM stations
+            Assert.Null(vm.VisibleStations.FirstOrDefault(s => s.Id == "custom_deletable_station"));
+            Assert.Null(customCatalogService.GetStationById("custom_deletable_station"));
+        }
+        finally
+        {
+            try { if (System.IO.File.Exists(tempCatalogPath)) System.IO.File.Delete(tempCatalogPath); } catch { }
+            try { if (System.IO.File.Exists(tempCatalogPath + ".bak")) System.IO.File.Delete(tempCatalogPath + ".bak"); } catch { }
+        }
+    }
+
+    [Fact]
+    public async Task RadioWidgetViewModel_DeleteStation_ProtectsFactoryPreset()
+    {
+        string tempCatalogPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"radio_vm_prot_{Guid.NewGuid():N}.json");
+        try
+        {
+            var customCatalogService = new RadioCatalogService(tempCatalogPath);
+            customCatalogService.LoadCatalog();
+
+            var model = new TileModel { TileType = TileType.Widget, TargetPath = "radio", SpanX = 8, SpanY = 6 };
+            var audioService = RadioAudioService.Instance;
+            var vm = new RadioWidgetViewModel(model, audioService, customCatalogService);
+            vm.Initialize(model);
+            vm.SelectedCategoryId = "ambient";
+
+            var factoryItem = vm.VisibleStations.First(s => s.Id == "dronezone");
+            Assert.NotNull(factoryItem);
+            Assert.False(factoryItem.IsCustom);
+
+            // Attempt to delete factory preset
+            await vm.DeleteStationCommand.ExecuteAsync(factoryItem);
+
+            // Verify still exists
+            Assert.NotNull(vm.VisibleStations.FirstOrDefault(s => s.Id == "dronezone"));
+            Assert.NotNull(customCatalogService.GetStationById("dronezone"));
+        }
+        finally
+        {
+            try { if (System.IO.File.Exists(tempCatalogPath)) System.IO.File.Delete(tempCatalogPath); } catch { }
+            try { if (System.IO.File.Exists(tempCatalogPath + ".bak")) System.IO.File.Delete(tempCatalogPath + ".bak"); } catch { }
+        }
     }
 }

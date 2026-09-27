@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
 using MetroHub.Core.Radio;
+using MetroHub.Presentation.Controls;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Radio;
@@ -219,7 +220,15 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
 
         if (item.IsAddPlaceholder)
         {
-            ErrorMessage = "Custom streams feature coming soon!";
+            var owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+                        ?? Application.Current?.MainWindow;
+
+            var newStation = AcrylicModalWindow.ShowAddRadioStation(owner, SelectedCategoryId);
+            if (newStation != null)
+            {
+                await _audioService.PlayStationAsync(newStation);
+                SaveSettings();
+            }
             return;
         }
 
@@ -286,6 +295,39 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
     private void ToggleMute()
     {
         _audioService.SetMuted(!_audioService.IsMuted);
+    }
+
+    [RelayCommand]
+    private void CopyStreamUrl(RadioStationItemViewModel? item)
+    {
+        if (item?.Station == null || string.IsNullOrWhiteSpace(item.Station.StreamUrl)) return;
+
+        try
+        {
+            Clipboard.SetText(item.Station.StreamUrl);
+            PlaybackStatusText = $"Copied: {item.Station.Name} link";
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[RadioWidgetViewModel] Failed to copy URL: {ex.Message}");
+        }
+    }
+
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private async Task DeleteStationAsync(RadioStationItemViewModel? item)
+    {
+        if (item?.Station == null || !item.Station.IsCustom) return;
+
+        // If currently playing or buffering, stop playback immediately
+        if (_audioService.CurrentStation?.Id == item.Station.Id)
+        {
+            _audioService.Stop();
+            CurrentStation = null;
+            UpdateDisplayInfo();
+            UpdateTileStates();
+        }
+
+        await _catalogService.DeleteStationAsync(item.Station.Id);
     }
 
     private void OnAudioCurrentStationChanged(object? sender, RadioStation? station)

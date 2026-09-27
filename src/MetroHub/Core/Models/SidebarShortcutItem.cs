@@ -66,8 +66,8 @@ public sealed class SidebarShortcutItem : INotifyPropertyChanged
 
     public string IconSymbol
     {
-        get => _iconSymbol;
-        set => SetField(ref _iconSymbol, value);
+        get => string.IsNullOrWhiteSpace(_iconSymbol) ? "Folder24" : _iconSymbol;
+        set => SetField(ref _iconSymbol, string.IsNullOrWhiteSpace(value) ? "Folder24" : value);
     }
 
     public string? CustomIconPath

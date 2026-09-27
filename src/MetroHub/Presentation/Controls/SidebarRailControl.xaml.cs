@@ -580,7 +580,7 @@ public partial class SidebarRailControl : UserControl
             Title = "Divider",
             Target = string.Empty,
             TargetType = SidebarShortcutType.Separator,
-            IconSymbol = string.Empty,
+            IconSymbol = "LineHorizontal124",
             SortOrder = Shortcuts.Count,
             IsRemovable = true
         };

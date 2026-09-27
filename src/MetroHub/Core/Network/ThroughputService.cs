@@ -287,7 +287,7 @@ public sealed class ThroughputService : IDisposable
 
     public static async Task<LatencyMetrics> MeasureLatencyAsync(CancellationToken cancellationToken = default)
     {
-        if (cancellationToken.IsCancellationRequested)
+        if (cancellationToken.IsCancellationRequested || !NetworkInterface.GetIsNetworkAvailable() || !NetworkHealthService.HasActiveGateway())
         {
             return new LatencyMetrics { PingMs = -1, TargetHost = "--" };
         }

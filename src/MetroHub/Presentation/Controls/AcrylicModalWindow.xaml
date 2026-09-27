@@ -1,4 +1,4 @@
-﻿<ui:FluentWindow x:Class="MetroHub.Presentation.Controls.AcrylicModalWindow"
+<ui:FluentWindow x:Class="MetroHub.Presentation.Controls.AcrylicModalWindow"
                   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                   xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
@@ -365,6 +365,73 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- Fluent Segmented Tab RadioButton Style (Silk-Smooth Segmented Switcher) -->
+        <Style x:Key="FluentSegmentedTabRadioButtonStyle" TargetType="RadioButton">
+            <Setter Property="OverridesDefaultStyle" Value="True" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#80FFFFFF" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="TabBorder"
+                                Background="Transparent"
+                                CornerRadius="2"
+                                Padding="14,0"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="#15FFFFFF" />
+                                <Setter Property="Foreground" Value="#B0FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="#25FFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="FontWeight" Value="SemiBold" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Radio Search Result Item DataTemplate -->
+        <DataTemplate x:Key="RadioSearchResultItemTemplate">
+            <Grid Margin="0,3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Name}"
+                               FontSize="12.5"
+                               FontWeight="SemiBold"
+                               Foreground="#FFFFFF"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{Binding Subtitle}"
+                               FontSize="11"
+                               Foreground="#75FFFFFF"
+                               Margin="0,2,0,0"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+                <Border Grid.Column="1"
+                        Background="#15FFFFFF"
+                        CornerRadius="2"
+                        Padding="6,2"
+                        VerticalAlignment="Center"
+                        Margin="8,0,0,0">
+                    <TextBlock Text="{Binding BitrateDisplay}"
+                               FontSize="10"
+                               Foreground="#85FFFFFF" />
+                </Border>
+            </Grid>
+        </DataTemplate>
     </Window.Resources>
 
     <!-- Borderless Window Wrapper (CornerRadius: 2px) -->
@@ -434,6 +501,28 @@
                                              HorizontalAlignment="Center"
                                              VerticalAlignment="Center"
                                              Visibility="Collapsed" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Mode 3: Radio Station Vector Glyph (No Cover Art/Favicons) -->
+                    <Border x:Name="RadioSidebarGlyph"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Visibility="Collapsed">
+                        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Ellipse Width="80" Height="80"
+                                     Fill="#184A90E2">
+                                <Ellipse.Effect>
+                                    <BlurEffect Radius="20" />
+                                </Ellipse.Effect>
+                            </Ellipse>
+                            <ui:SymbolIcon Symbol="HeadphonesSoundWave24"
+                                           FontSize="56"
+                                           Foreground="#D0FFFFFF"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
                         </Grid>
                     </Border>
                 </Grid>
@@ -626,6 +715,218 @@
                                        Margin="0,8,0,0"
                                        TextWrapping="Wrap"
                                        Visibility="Collapsed" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Body: Radio Station Form -->
+                    <Grid Grid.Row="1" x:Name="RadioFormGrid" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <!-- Tab Switcher -->
+                            <RowDefinition Height="Auto" />
+                            <!-- Active Tab Form Area -->
+                            <RowDefinition Height="*" />
+                            <!-- Target Category Selector -->
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Two-Tab Segmented Selector -->
+                        <Border Grid.Row="0"
+                                Background="#12FFFFFF"
+                                CornerRadius="2"
+                                Padding="2"
+                                HorizontalAlignment="Left"
+                                Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton x:Name="RadioSearchTabRadio"
+                                             Style="{StaticResource FluentSegmentedTabRadioButtonStyle}"
+                                             GroupName="RadioAddTabs"
+                                             Content="Search Stations"
+                                             IsChecked="True"
+                                             Checked="OnRadioTabChanged" />
+                                <RadioButton x:Name="RadioDirectTabRadio"
+                                             Style="{StaticResource FluentSegmentedTabRadioButtonStyle}"
+                                             GroupName="RadioAddTabs"
+                                             Content="Direct Stream URL"
+                                             Checked="OnRadioTabChanged" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- TAB 1: Search Stations Panel -->
+                        <Grid Grid.Row="1" x:Name="RadioSearchPanel" Visibility="Visible">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Search Input Box with Overlay Watermark & Spinner -->
+                            <Grid Grid.Row="0">
+                                <TextBox x:Name="RadioSearchInput"
+                                         Style="{StaticResource FluentGlassSearchInputStyle}"
+                                         TextChanged="OnRadioSearchInputTextChanged"
+                                         PreviewKeyDown="OnRadioSearchInputKeyDown" />
+                                <TextBlock x:Name="RadioSearchWatermark"
+                                           Text="Search station name, genre (e.g. lofi, jazz, ambient)..."
+                                           FontSize="12"
+                                           Foreground="#50FFFFFF"
+                                           IsHitTestVisible="False"
+                                           VerticalAlignment="Center"
+                                           Margin="34,0,10,0" />
+                                <ui:ProgressRing x:Name="RadioSearchSpinner"
+                                                 Width="14" Height="14"
+                                                 IsIndeterminate="True"
+                                                 HorizontalAlignment="Right"
+                                                 VerticalAlignment="Center"
+                                                 Margin="0,0,10,0"
+                                                 Visibility="Collapsed" />
+                            </Grid>
+
+                            <!-- Search Results List -->
+                            <Border Grid.Row="1"
+                                    Background="#14FFFFFF"
+                                    BorderBrush="#25FFFFFF"
+                                    BorderThickness="1"
+                                    CornerRadius="2"
+                                    Margin="0,8,0,0"
+                                    SnapsToDevicePixels="True">
+                                <Grid>
+                                    <ListBox x:Name="RadioSearchResultsList"
+                                             Background="Transparent"
+                                             BorderThickness="0"
+                                             Padding="2"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                             controls:AutoHideScrollBehavior.IsEnabled="True"
+                                             ItemContainerStyle="{StaticResource SuggestionListBoxItemStyle}"
+                                             ItemTemplate="{StaticResource RadioSearchResultItemTemplate}"
+                                             SelectionChanged="OnRadioSearchResultsSelectionChanged">
+                                        <ListBox.Resources>
+                                            <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
+                                        </ListBox.Resources>
+                                    </ListBox>
+
+                                    <!-- Search Initial Hint / Empty Text -->
+                                    <TextBlock x:Name="RadioSearchPlaceholderText"
+                                               Text="Type 2 or more characters to search 40,000+ online stations"
+                                               FontSize="11.5"
+                                               Foreground="#60FFFFFF"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               IsHitTestVisible="False"
+                                               Visibility="Visible" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Search Status Message -->
+                            <TextBlock Grid.Row="2"
+                                       x:Name="RadioSearchStatusMessage"
+                                       FontSize="11.5"
+                                       Foreground="#FF8080"
+                                       Margin="0,6,0,0"
+                                       TextWrapping="Wrap"
+                                       Visibility="Collapsed" />
+                        </Grid>
+
+                        <!-- TAB 2: Direct Stream URL Panel -->
+                        <Grid Grid.Row="1" x:Name="RadioDirectPanel" Visibility="Collapsed">
+                            <StackPanel>
+                                <!-- Stream URL Label -->
+                                <TextBlock Text="Audio Stream URL"
+                                           FontSize="12"
+                                           Foreground="#95FFFFFF"
+                                           Margin="0,0,0,6" />
+
+                                <!-- URL Input Box with Embedded Paste Button -->
+                                <Grid>
+                                    <TextBox x:Name="RadioDirectUrlInput"
+                                             Style="{StaticResource FluentGlassUrlWithPasteInputStyle}"
+                                             TextChanged="OnRadioDirectUrlTextChanged"
+                                             KeyDown="OnRadioDirectInputKeyDown" />
+                                    <Button HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource FluentCohesiveSecondaryButtonStyle}"
+                                            Height="26"
+                                            Margin="0,0,5,0"
+                                            Padding="8,2"
+                                            Click="OnRadioDirectPasteClick">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <ui:SymbolIcon Symbol="ClipboardPaste24" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center" />
+                                            <TextBlock Text="Paste" FontSize="11" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+
+                                <!-- Probe State Live Indicator -->
+                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0" MinHeight="18">
+                                    <ui:ProgressRing x:Name="RadioProbeSpinner"
+                                                     Width="12" Height="12"
+                                                     IsIndeterminate="True"
+                                                     Visibility="Collapsed"
+                                                     Margin="0,0,6,0" />
+                                    <ui:SymbolIcon x:Name="RadioProbeIcon"
+                                                   Symbol="Checkmark24"
+                                                   FontSize="13"
+                                                   Visibility="Collapsed"
+                                                   Margin="0,0,6,0"
+                                                   VerticalAlignment="Center" />
+                                    <TextBlock x:Name="RadioProbeStatusText"
+                                               Text="Supports MP3/AAC/OGG streams or single-station .pls/.m3u"
+                                               FontSize="11.5"
+                                               Foreground="#65FFFFFF"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+
+                                <!-- Station Name Input -->
+                                <TextBlock Text="Station Name"
+                                           FontSize="12"
+                                           Foreground="#95FFFFFF"
+                                           Margin="0,8,0,6" />
+                                <TextBox x:Name="RadioDirectNameInput"
+                                         Style="{StaticResource FluentGlassInputStyle}"
+                                         TextChanged="OnRadioDirectNameTextChanged"
+                                         KeyDown="OnRadioDirectInputKeyDown" />
+
+                                <!-- Inline Validation Message -->
+                                <TextBlock x:Name="RadioDirectStatusMessage"
+                                           FontSize="11.5"
+                                           Foreground="#FF8080"
+                                           Margin="0,6,0,0"
+                                           TextWrapping="Wrap"
+                                           Visibility="Collapsed" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Target Category Selector -->
+                        <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,8,0,0">
+                            <TextBlock Text="Category:"
+                                       FontSize="12"
+                                       Foreground="#80FFFFFF"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,12,0" />
+                            <RadioButton x:Name="RadioCatAmbient"
+                                         Style="{StaticResource FluentGlassRadioButtonStyle}"
+                                         GroupName="RadioCategoryTarget"
+                                         IsChecked="True"
+                                         Margin="0,0,14,0">
+                                <TextBlock Text="Ambient" FontSize="12" Foreground="#95FFFFFF" VerticalAlignment="Center" />
+                            </RadioButton>
+                            <RadioButton x:Name="RadioCatNature"
+                                         Style="{StaticResource FluentGlassRadioButtonStyle}"
+                                         GroupName="RadioCategoryTarget"
+                                         Margin="0,0,14,0">
+                                <TextBlock Text="Nature" FontSize="12" Foreground="#95FFFFFF" VerticalAlignment="Center" />
+                            </RadioButton>
+                            <RadioButton x:Name="RadioCatLofi"
+                                         Style="{StaticResource FluentGlassRadioButtonStyle}"
+                                         GroupName="RadioCategoryTarget"
+                                         Margin="0,0,14,0">
+                                <TextBlock Text="Lo-Fi" FontSize="12" Foreground="#95FFFFFF" VerticalAlignment="Center" />
+                            </RadioButton>
+                            <RadioButton x:Name="RadioCatCoding"
+                                         Style="{StaticResource FluentGlassRadioButtonStyle}"
+                                         GroupName="RadioCategoryTarget">
+                                <TextBlock Text="Coding" FontSize="12" Foreground="#95FFFFFF" VerticalAlignment="Center" />
+                            </RadioButton>
                         </StackPanel>
                     </Grid>
 

@@ -211,4 +211,227 @@ public class RadioBrowserAndProbeTests
         Assert.NotNull(result.ErrorMessage);
         Assert.Contains("contains 7 channels", result.ErrorMessage);
     }
+
+    [Fact]
+    public async Task RadioBrowserClient_ResolveWorkingUrl_ResolvesByUuidWhenAvailable()
+    {
+        string json = """
+        [
+          {
+            "stationuuid": "test-uuid-999",
+            "name": "Groove Salad",
+            "url_resolved": "https://ice6.somafm.com/groovesalad-256-mp3",
+            "bitrate": 256,
+            "lastcheckok": 1
+          }
+        ]
+        """;
+
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            if (req.RequestUri!.ToString().Contains("/byuuid/test-uuid-999"))
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
+                };
+            }
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        var client = new RadioBrowserClient(new HttpClient(handler));
+        string? resolved = await client.ResolveWorkingUrlAsync("test-uuid-999", "Groove Salad");
+
+        Assert.Equal("https://ice6.somafm.com/groovesalad-256-mp3", resolved);
+    }
+
+    [Fact]
+    public async Task RadioBrowserClient_ResolveWorkingUrl_FallsBackToNameWhenUuidNotFound()
+    {
+        string searchJson = """
+        [
+          {
+            "stationuuid": "discovered-uuid-888",
+            "name": "Defcon Radio",
+            "url_resolved": "https://ice4.somafm.com/defcon-128-mp3",
+            "bitrate": 128,
+            "lastcheckok": 1
+          }
+        ]
+        """;
+
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            if (req.RequestUri!.ToString().Contains("/byname/Defcon"))
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(searchJson, System.Text.Encoding.UTF8, "application/json")
+                };
+            }
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+
+        var client = new RadioBrowserClient(new HttpClient(handler));
+        string? resolved = await client.ResolveWorkingUrlAsync(null, "Defcon Radio");
+
+        Assert.Equal("https://ice4.somafm.com/defcon-128-mp3", resolved);
+    }
+
+    [Fact]
+    public async Task StreamUrlProbeService_ParsesHlsMasterPlaylistWithBandwidth()
+    {
+        string hlsContent = """
+        #EXTM3U
+        #EXT-X-VERSION:3
+        #EXT-X-STREAM-INF:BANDWIDTH=119365,CODECS="mp4a.40.2"
+        chunklist.m3u8
+        """;
+
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            var res = new HttpResponseMessage(HttpStatusCode.OK);
+            res.Content = new StringContent(hlsContent, System.Text.Encoding.UTF8, "application/vnd.apple.mpegurl");
+            return res;
+        });
+
+        var probeService = new StreamUrlProbeService(new HttpClient(handler));
+        var result = await probeService.ProbeUrlAsync("https://air.pc.cdn.bitgravity.com/air/live/pbaudio126/playlist.m3u8");
+
+        Assert.True(result.IsValid);
+        Assert.True(result.IsPlaylist);
+        Assert.Equal("https://air.pc.cdn.bitgravity.com/air/live/pbaudio126/playlist.m3u8", result.ResolvedStreamUrl);
+        Assert.Equal("application/vnd.apple.mpegurl", result.ContentType);
+        Assert.Equal(119, result.BitrateKbps);
+        Assert.Equal("Pbaudio126", result.InferredName);
+    }
+
+    [Fact]
+    public async Task StreamUrlProbeService_HeadFails_FallsBackToGetRange()
+    {
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            if (req.Method == HttpMethod.Head)
+            {
+                throw new HttpRequestException("Received an invalid status line: 'RPC-ERR'");
+            }
+
+            var res = new HttpResponseMessage(HttpStatusCode.OK);
+            res.Content = new StringContent(string.Empty, System.Text.Encoding.UTF8, "audio/aacp");
+            res.Headers.TryAddWithoutValidation("icy-name", "Arnicity FM");
+            res.Headers.TryAddWithoutValidation("icy-br", "64");
+            return res;
+        });
+
+        var probeService = new StreamUrlProbeService(new HttpClient(handler));
+        var result = await probeService.ProbeUrlAsync("https://usa9.fastcast4u.com/proxy/arnifm?mp=/1");
+
+        Assert.True(result.IsValid);
+        Assert.Equal("audio/aacp", result.ContentType);
+        Assert.Equal("Arnicity FM", result.InferredName);
+        Assert.Equal(64, result.BitrateKbps);
+    }
+
+    [Fact]
+    public async Task StreamUrlProbeService_UnwrapsAsxPlaylist()
+    {
+        string asxContent = """
+        <asx version="3.0">
+          <title>Classical Heritage</title>
+          <entry>
+            <ref href="http://live.classical.org:8000/stream"/>
+          </entry>
+        </asx>
+        """;
+
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            var res = new HttpResponseMessage(HttpStatusCode.OK);
+            res.Content = new StringContent(asxContent, System.Text.Encoding.UTF8, "video/x-ms-asf");
+            return res;
+        });
+
+        var probeService = new StreamUrlProbeService(new HttpClient(handler));
+        var result = await probeService.ProbeUrlAsync("https://example.com/stream.asx");
+
+        Assert.True(result.IsValid);
+        Assert.True(result.IsPlaylist);
+        Assert.Equal("http://live.classical.org:8000/stream", result.ResolvedStreamUrl);
+        Assert.Equal("Classical Heritage", result.InferredName);
+    }
+
+    [Fact]
+    public async Task StreamUrlProbeService_UnwrapsXspfPlaylist()
+    {
+        string xspfContent = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <playlist version="1" xmlns="http://xspf.org/ns/0/">
+          <title>Open Synthwave</title>
+          <trackList>
+            <track>
+              <location>http://synth.fm/live.ogg</location>
+            </track>
+          </trackList>
+        </playlist>
+        """;
+
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            var res = new HttpResponseMessage(HttpStatusCode.OK);
+            res.Content = new StringContent(xspfContent, System.Text.Encoding.UTF8, "application/xspf+xml");
+            return res;
+        });
+
+        var probeService = new StreamUrlProbeService(new HttpClient(handler));
+        var result = await probeService.ProbeUrlAsync("https://example.com/synth.xspf");
+
+        Assert.True(result.IsValid);
+        Assert.True(result.IsPlaylist);
+        Assert.Equal("http://synth.fm/live.ogg", result.ResolvedStreamUrl);
+        Assert.Equal("Open Synthwave", result.InferredName);
+    }
+
+    [Fact]
+    public async Task StreamUrlProbeService_ShoutcastRootHtml_ResolvesSemicolonMountpoint()
+    {
+        var handler = new MockHttpMessageHandler(req =>
+        {
+            if (req.RequestUri!.ToString().EndsWith("/;"))
+            {
+                var audioRes = new HttpResponseMessage(HttpStatusCode.OK);
+                audioRes.Content = new StringContent(string.Empty, System.Text.Encoding.UTF8, "audio/mpeg");
+                audioRes.Headers.TryAddWithoutValidation("icy-name", "Retro Beats");
+                audioRes.Headers.TryAddWithoutValidation("icy-br", "192");
+                return audioRes;
+            }
+
+            var htmlRes = new HttpResponseMessage(HttpStatusCode.OK);
+            htmlRes.Content = new StringContent("<!DOCTYPE html><html><body>SHOUTcast Server</body></html>", System.Text.Encoding.UTF8, "text/html");
+            return htmlRes;
+        });
+
+        var probeService = new StreamUrlProbeService(new HttpClient(handler));
+        var result = await probeService.ProbeUrlAsync("http://retro.shoutcast.com:8000/");
+
+        Assert.True(result.IsValid);
+        Assert.Equal("http://retro.shoutcast.com:8000/;", result.ResolvedStreamUrl);
+        Assert.Equal("Retro Beats", result.InferredName);
+        Assert.Equal(192, result.BitrateKbps);
+    }
+
+    [Fact]
+    public async Task LiveNetwork_ValidatesBitgravityHlsAndFastcast4u()
+    {
+        var probe = StreamUrlProbeService.Instance;
+
+        var res1 = await probe.ProbeUrlAsync("https://air.pc.cdn.bitgravity.com/air/live/pbaudio126/playlist.m3u8");
+        Assert.True(res1.IsValid);
+        Assert.Equal("https://air.pc.cdn.bitgravity.com/air/live/pbaudio126/playlist.m3u8", res1.ResolvedStreamUrl);
+        Assert.Equal("application/vnd.apple.mpegurl", res1.ContentType);
+
+        var res2 = await probe.ProbeUrlAsync("https://usa9.fastcast4u.com/proxy/arnifm?mp=/1");
+        Assert.True(res2.IsValid);
+        Assert.Equal("https://usa9.fastcast4u.com/proxy/arnifm?mp=/1", res2.ResolvedStreamUrl);
+        Assert.Equal("audio/aacp", res2.ContentType);
+    }
 }

@@ -134,6 +134,38 @@ public sealed class NetworkHealthService
         }
     }
 
+    public static bool HasActiveGateway()
+    {
+        try
+        {
+            foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (nic.OperationalStatus != OperationalStatus.Up || nic.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                    continue;
+
+                var ipProps = nic.GetIPProperties();
+                if (ipProps == null) continue;
+
+                foreach (var gw in ipProps.GatewayAddresses)
+                {
+                    if (gw?.Address != null &&
+                        !gw.Address.Equals(IPAddress.Any) &&
+                        !gw.Address.Equals(IPAddress.None) &&
+                        !gw.Address.Equals(IPAddress.IPv6Any) &&
+                        !gw.Address.Equals(IPAddress.IPv6None))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public static async Task<bool> CheckInternetReachabilityAsync(int timeoutMs = 800, System.Threading.CancellationToken cancellationToken = default)
     {
         if (cancellationToken.IsCancellationRequested) return false;
@@ -191,6 +223,18 @@ public sealed class NetworkHealthService
         status.Connectivity = QueryFastConnectivity();
 
         if (!IsHubVisible || cancellationToken.IsCancellationRequested) return CurrentStatus;
+
+        bool hasRoute = NetworkInterface.GetIsNetworkAvailable() && HasActiveGateway();
+        if (!hasRoute || status.Connectivity == ConnectivityLevel.None)
+        {
+            status.HasDnsResolution = false;
+            status.DnsResolutionTimeMs = -1;
+            status.PacketLossPercent = 100.0;
+            status.LatencyMs = -1;
+            CurrentStatus = status;
+            HealthChanged?.Invoke(status);
+            return status;
+        }
 
         // 2. DNS Resolution Diagnostic
         var sw = Stopwatch.StartNew();

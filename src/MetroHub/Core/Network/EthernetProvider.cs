@@ -157,11 +157,14 @@ public sealed class EthernetProvider
 
             try
             {
-                var ipv4Props = ipProps.GetIPv4Properties();
-                if (ipv4Props != null)
+                if (nic.Supports(NetworkInterfaceComponent.IPv4))
                 {
-                    info.IpAssignment = ipv4Props.IsDhcpEnabled ? "Automatic (DHCP)" : "Manual (Static)";
-                    info.Mtu = ipv4Props.Mtu;
+                    var ipv4Props = ipProps.GetIPv4Properties();
+                    if (ipv4Props != null)
+                    {
+                        info.IpAssignment = ipv4Props.IsDhcpEnabled ? "Automatic (DHCP)" : "Manual (Static)";
+                        info.Mtu = ipv4Props.Mtu;
+                    }
                 }
             }
             catch { }

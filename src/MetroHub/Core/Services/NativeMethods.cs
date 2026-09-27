@@ -534,9 +534,27 @@ public static class NativeMethods
         catch
         {
         }
-
         return 60; // Safe fallback
     }
+
+    #region Power Status
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SYSTEM_POWER_STATUS
+    {
+        public byte ACLineStatus;
+        public byte BatteryFlag;
+        public byte BatteryLifePercent;
+        public byte SystemStatusFlag;
+        public int BatteryLifeTime;
+        public int BatteryFullLifeTime;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetSystemPowerStatus(out SYSTEM_POWER_STATUS lpSystemPowerStatus);
+
+    #endregion
 
     #endregion
 }

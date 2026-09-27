@@ -122,7 +122,7 @@
           "streamUrl": "http://primarystream.sleepbot.com:8218/seb",
           "bitrateKbps": 56,
           "category": "ambient",
-          "icon": "Radio24",
+          "icon": "HeadphonesSoundWave24",
           "description": "One of the earliest internet ambient streams, on air since 1999 (Ambience for the Masses).",
           "homepageUrl": "https://sleepbot.com/ambience/broadcast/"
         }
@@ -316,7 +316,7 @@
           "streamUrl": "http://streams.fluxfm.de/Chillhop/mp3-320",
           "bitrateKbps": 320,
           "category": "lofi",
-          "icon": "Radio24",
+          "icon": "HeadphonesSoundWave24",
           "description": "Berlin's acclaimed indie broadcaster. 320k chillhop, mellow beats, and jazzy hip-hop loops.",
           "homepageUrl": "https://fluxfm.de"
         },

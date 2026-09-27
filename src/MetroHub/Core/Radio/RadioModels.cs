@@ -25,7 +25,7 @@ public sealed record RadioStation
     public string Category { get; init; } = string.Empty;
 
     [JsonPropertyName("icon")]
-    public string Icon { get; init; } = "Radio24";
+    public string Icon { get; init; } = "HeadphonesSoundWave24";
 
     [JsonPropertyName("description")]
     public string Description { get; init; } = string.Empty;
@@ -52,7 +52,7 @@ public sealed record RadioCategory
     public string DisplayName { get; init; } = string.Empty;
 
     [JsonPropertyName("iconSymbol")]
-    public string IconSymbol { get; init; } = "Radio24";
+    public string IconSymbol { get; init; } = "HeadphonesSoundWave24";
 
     [JsonPropertyName("stations")]
     public List<RadioStation> Stations { get; init; } = new();

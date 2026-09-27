@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Controls;
 
 namespace MetroHub.Widgets.Catalog.Radio;
@@ -12,5 +13,14 @@ public partial class RadioWidgetView : UserControl
     public RadioWidgetView()
     {
         InitializeComponent();
+    }
+
+    private void OnTileContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        // Suppress right-click context menu entirely on the '+' custom station placeholder tile
+        if (sender is FrameworkElement { DataContext: RadioStationItemViewModel { IsAddPlaceholder: true } })
+        {
+            e.Handled = true;
+        }
     }
 }

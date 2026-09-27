@@ -62,7 +62,7 @@
     <!-- WPF Transparent brush passes mouse hit-tests while remaining invisible so DWM Mica renders directly -->
    <Grid x:Name="RootGrid" 
           Background="Transparent"
-          Opacity="0"
+          Opacity="1"
           RenderTransformOrigin="0.5, 0.5"
           UseLayoutRounding="True"
           SnapsToDevicePixels="True"

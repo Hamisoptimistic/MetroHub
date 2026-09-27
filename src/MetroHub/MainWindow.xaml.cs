@@ -1211,8 +1211,11 @@ public partial class MainWindow : BorderlessFluentWindow
             Timeline.SetDesiredFrameRate(sb, NativeMethods.GetScreenRefreshRate());
             sb.Completed += (s, e) =>
             {
-                if (RootGrid != null) RootGrid.Opacity = 1.0;
-                try { sb.Remove(this); } catch { }
+                if (RootGrid != null)
+                {
+                    RootGrid.BeginAnimation(UIElement.OpacityProperty, null);
+                    RootGrid.Opacity = 1.0;
+                }
             };
             sb.Begin(this, isControllable: true);
         }

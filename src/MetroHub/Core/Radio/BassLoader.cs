@@ -34,6 +34,7 @@ public static class BassLoader
             {
                 if (libraryName.Equals("bass", StringComparison.OrdinalIgnoreCase) ||
                     libraryName.Equals("bass_aac", StringComparison.OrdinalIgnoreCase) ||
+                    libraryName.Equals("basshls", StringComparison.OrdinalIgnoreCase) ||
                     libraryName.Equals("bassopus", StringComparison.OrdinalIgnoreCase) ||
                     libraryName.Equals("basswebm", StringComparison.OrdinalIgnoreCase))
                 {
