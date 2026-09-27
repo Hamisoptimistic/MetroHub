@@ -21,7 +21,7 @@
     <PackageReference Include="ManagedBass" Version="4.1.0-prerelease" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.158" />
     <PackageReference Include="System.Management" Version="9.0.0" />
-    <PackageReference Include="WPF-UI" Version="3.0.4" />
+    <PackageReference Include="WPF-UI" Version="3.1.1" />
   </ItemGroup>
 
   <ItemGroup>
