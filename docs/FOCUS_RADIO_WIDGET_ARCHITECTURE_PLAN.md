@@ -611,4 +611,278 @@ WPF's layout system (`MeasureOverride`/`ArrangeOverride`) is completely bypassed
 > 3. **Phase 3 (Adaptive Quiescence & Power Architecture):** Implemented VSync hook, smooth fade-out and unhooking on stop/pause (true 0.00% CPU/GPU quiescence), occlusion culling, and automatic 30Hz throttling on Windows Battery Saver (`PowerManager.EnergySaverStatus`).
 > 4. **Phase 4 (Benchmarks & Test Suite Integrity):** Created [AudioSpectrumProcessorTests.cs](file:///d:/MetroHub/tests/MetroHub.Tests/AudioSpectrumProcessorTests.cs). Automated tests verified zero GC allocations per frame and $< 0.05\text{ ms}$ processing time. **60 / 60 automated tests passing** across the complete test suite.
 
+---
+
+## 7. Custom Stations, Radio-Browser API, Unified Storage & Self-Healing Streams — Master Architecture
+
+### 7.1 Architecture Decisions & First-Principles Rationale
+
+Authored from first principles and aligned through the `/grill-me` architectural review:
+
+| Architectural Area | Decision | First-Principles & Engineering Rationale |
+| :--- | :--- | :--- |
+| **Catalog Storage** | Single Master File in AppData (`%LocalAppData%\MetroHub\radio_catalog.json`) | **Zero fragmentation.** Clones embedded defaults on first boot if missing. All defaults, user-added custom stations, and self-healed links live in this one file. Prevents `Program Files` permission exceptions and survives app updates completely intact. |
+| **Atomic File Writes** | Win32 `ReplaceFileW` via `StorageService` | Prevents file corruption during unexpected power cuts or OS reboots by saving to `.tmp` first, flushing, and swapping via an atomic OS-level operation. |
+| **Cold Boot Latency** | Pure Local Cache First (**0 ms**) | Never blocks widget initialization or UI rendering on network calls. Embedded defaults or cached local JSON loads instantly on app launch. |
+| **Station Placement** | Direct in Active Category (`Ambient`, `Nature`, `Lo-Fi`, `Coding`) | Preserves the exact 4-column 126px grid geometry (`504px / 4 = 126px`), maintaining 1:1 pixel alignment between the top category tabs and the station grid below. Zero layout drift. |
+| **Modal UI Architecture** | Extend `AcrylicModalWindow` (`AcrylicModalMode.AddRadioStation`) | Reuses MetroHub's existing fluent acrylic modal shell: 155px frosted acrylic sidebar on the left with a radio glyph, and an obsidian dark `#232323` right panel. Zero code bloat or duplicate window overhead. |
+| **Modal Input Modes** | Segmented Two-Tab Switcher (`[ Search Stations ]` \| `[ Direct Stream URL ]`) | **Tab 1:** Live instant search querying Radio-Browser API with 300ms debouncing and results list (Name, Bitrate badge, Tags, Add button).<br>**Tab 2:** Direct URL paste with embedded Paste button, stream probe validation, format detection, Name input, and Add button. |
+| **Station Deletion** | Right-Click `<Button.ContextMenu>` on Station Tiles | **Custom Stations:** Show `Play Station`, `Copy Stream Link`, separator, and `Delete Station` (red `#FF6B6B`).<br>**Curated Factory Presets:** Show `Play Station` and `Copy Stream Link` (protected against accidental deletion).<br>**Placeholder `+` Card:** Context menu suppressed. |
+| **Active Playback Deletion** | Clean Audio Cutoff Pipeline | If a user deletes the station currently playing: immediately stops playback (`_audioService.Stop()`), clears player bar state to idle, removes tile from UI collection, and atomically persists deletion to disk. |
+| **Radio-Browser API Engine** | Lightweight Zero-Dependency `RadioBrowserClient` | Built purely on native .NET `HttpClient` with 3-second timeout, `CancellationTokenSource`, and round-robin DNS mirror failover (`de1`, `nl1`, `at1.api.radio-browser.info`). Zero external NuGet packages. |
+| **Stream Link Validator** | Quick 1-Second HTTP Probe (`StreamUrlProbeService`) | Sends a lightweight `HEAD` request to inspect `Content-Type`. Accepts `audio/*` (`audio/mpeg`, `audio/aac`, etc.). Rejects `text/html` (webpages). Unwraps single-station `.pls`/`.m3u` files. Rejects or caps bulk multi-channel (>5) playlists. |
+| **Self-Healing Streams** | Silent Background Resolution | When a stream returns 404, dead socket, or timeout, the engine queries Radio-Browser by `apiStationUuid` or station name, updates the active URL in `%LocalAppData%\MetroHub\radio_catalog.json`, and resumes playback seamlessly. |
+| **Strict No-Gos** | **No Bloat, No Covers, No Hearts** | **NO** album art / cover art / favicons (keeps tiles ultra-clean with fluid aura visualizer).<br>**NO** heart/favorite icons inside the tile.<br>**NO** third-party API wrapper packages.<br>**NO** reinventing the wheel. |
+
+---
+
+### 7.2 Component Dataflow & System Topology
+
+```
++-----------------------------------------------------------------------------------+
+|               Custom Station & Radio-Browser Integration Topology                 |
++-----------------------------------------------------------------------------------+
+|  [RadioWidgetView.xaml]                                                           |
+|   - 4-Col Grid: Station Cards with Right-Click ContextMenu (Play / Copy / Delete) |
+|   - Trailing '+' Custom Station Card                                              |
++-----------------------------------------------------------------------------------+
+       | (Click '+' Card)                                        ^ (Auto-Refresh)
+       v                                                         |
++-----------------------------------------------------------------------------------+
+|  [AcrylicModalWindow (Mode: AddRadioStation)]                                      |
+|   ├── Column 0: Frosted Acrylic Sidebar with Radio Glyph                          |
+|   └── Column 1: Obsidian Panel with Two-Tab Switcher                              |
+|         ├── Tab 1: [ Search Stations ] ──► RadioBrowserClient (Mirror Failover)    |
+|         └── Tab 2: [ Direct URL ]     ──► StreamUrlProbeService (audio/* check)   |
++-----------------------------------------------------------------------------------+
+                                       |
+                                       v (Add Station)
++-----------------------------------------------------------------------------------+
+|  [RadioCatalogService (Singleton)]                                                |
+|   - Master Unified Catalog: %LocalAppData%\MetroHub\radio_catalog.json           |
+|   - Atomic Win32 ReplaceFileW Persistence via StorageService                      |
+|   - Zero-Delay 0ms Memory Cache                                                   |
++-----------------------------------------------------------------------------------+
+       |                                                         ^ (Healed URL)
+       v                                                         |
++-----------------------------------------------------------------------------------+
+|  [RadioAudioService (BASS Audio Engine)]                                          |
+|   - Plays live stream with 180ms debounced cancellation                           |
+|   - Direct socket streaming (Un4seen BASS x64)                                    |
+|   - On 404 / Dead Stream ──► Silent Self-Healing Trigger ─────────┘                |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+### 7.3 Phase-by-Phase Implementation Roadmap
+
+> [!IMPORTANT]
+> **Execution Rule:** Each phase represents a distinct, verifiable architectural boundary. Work MUST stop after each phase for user review, automated testing, and verification before proceeding to the next phase.
+
+```
++-----------------------------------------------------------------------------------+
+|                        Phase-by-Phase Execution Plan                              |
++-----------------------------------------------------------------------------------+
+|  [Phase 1: Unified Storage & Catalog Modernization]                               |
+|   - Update RadioStation model: Add isCustom and apiStationUuid                    |
+|   - Refactor RadioCatalogService for %LocalAppData% clone & atomic persistence    |
+|   - Unit tests for atomic saves, factory preservation, and 0ms offline boot       |
+|   ===> [CHECKPOINT: Compile, Test, Stop for Verification]                         |
+|                                                                                   |
+|  [Phase 2: Zero-Dependency Radio-Browser Client & Link Validator]                 |
+|   - Implement RadioBrowserClient (HttpClient, DNS mirrors: de1/nl1/at1, timeout)  |
+|   - Implement StreamUrlProbeService (audio/* verification, .pls/.m3u unwrap)      |
+|   - Unit tests for search parsing, mirror failover, and link validation           |
+|   ===> [CHECKPOINT: Compile, Test, Stop for Verification]                         |
+|                                                                                   |
+|  [Phase 3: AcrylicModalWindow Integration (AddRadioStation Mode)]                  |
+|   - Add AcrylicModalMode.AddRadioStation to AcrylicModalWindow                    |
+|   - Build RadioSidebarGlyph and RadioFormGrid (Two-Tab Switcher)                  |
+|   - Wire debounced live search and direct URL probe in the modal                  |
+|   - Connect '+' card click in RadioWidgetViewModel to launch modal                |
+|   ===> [CHECKPOINT: Compile, Test, Stop for Verification]                         |
+|                                                                                   |
+|  [Phase 4: Right-Click Context Menu & Clean Station Deletion]                     |
+|   - Add <Button.ContextMenu> to RadioStationTileButtonStyle                       |
+|   - Wire Play, Copy Link, and Delete Station (red)                                |
+|   - Implement DeleteStationCommand in RadioWidgetViewModel with audio cutoff      |
+|   - Suppress context menu on '+' placeholder card                                 |
+|   ===> [CHECKPOINT: Compile, Test, Stop for Verification]                         |
+|                                                                                   |
+|  [Phase 5: Self-Healing Resilience & Full End-to-End Verification]                |
+|   - Wire automatic stream failover & URL healing in RadioAudioService             |
+|   - Full test suite run (dotnet test) across all tests                            |
+|   - Desktop build, publish, and live verification                                 |
+|   ===> [FINAL PROJECT SIGN-OFF]                                                   |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+#### Detailed Phase Specifications
+
+#### Phase 1: Unified Storage & Catalog Modernization
+1. **Model Modernization (`RadioModels.cs`):**
+   * Extend `RadioStation` record with:
+     ```csharp
+     [JsonPropertyName("isCustom")]
+     public bool IsCustom { get; init; } = false;
+
+     [JsonPropertyName("apiStationUuid")]
+     public string? ApiStationUuid { get; init; }
+     ```
+2. **Unified Catalog Service (`RadioCatalogService.cs`):**
+   * Path: `%LocalAppData%\MetroHub\radio_catalog.json`.
+   * On boot: Check if file exists. If absent, load bundled `pack://application:,,,/MetroHub;component/Assets/Radio/radio_catalog.json` and clone to AppData via `StorageService.SaveAtomic`.
+   * Add methods:
+     * `Task AddCustomStationAsync(RadioStation station, string categoryId)`
+     * `Task DeleteStationAsync(string stationId)`
+     * `Task UpdateStationUrlAsync(string stationId, string newStreamUrl)`
+     * `Task RestoreFactoryDefaultsAsync()`
+3. **ViewModel Synchronization (`RadioWidgetViewModel.cs`):**
+   * Update `LoadCategoryStations` to read from the unified catalog.
+4. **Verification Gate:**
+   * Unit tests verifying first-run clone, station addition, deletion, and cold boot without network.
+
+---
+
+#### Phase 2: Zero-Dependency Radio-Browser Client & Link Validator
+1. **API Client (`MetroHub.Core.Radio.RadioBrowserClient.cs`):**
+   * Pure native `HttpClient` singleton with `IHttpClientFactory` or static handler.
+   * Round-robin DNS mirrors: `de1.api.radio-browser.info`, `nl1.api.radio-browser.info`, `at1.api.radio-browser.info`.
+   * Methods:
+     * `Task<IReadOnlyList<RadioBrowserStationDto>> SearchStationsAsync(string query, CancellationToken ct)`
+     * `Task<string?> ResolveWorkingUrlAsync(string stationUuid, string stationName, CancellationToken ct)`
+   * Strict 3-second timeout per mirror request; automatic failover to next mirror if primary fails.
+2. **Link Validator (`MetroHub.Core.Radio.StreamUrlProbeService.cs`):**
+   * `Task<StreamProbeResult> ProbeUrlAsync(string rawUrl, CancellationToken ct)`:
+     * URL sanitization (trim whitespace, auto-prepend `https://` if missing scheme).
+     * Send HTTP `HEAD` with modern desktop `User-Agent`.
+     * If `Content-Type` is `audio/*` -> Valid direct stream.
+     * If `Content-Type` is `text/html` -> Reject with clean user message.
+     * If extension is `.pls` or `.m3u`: fetch text, extract primary stream URL. If playlist contains > 5 channels, prompt user / select first channel.
+3. **Verification Gate:**
+   * Automated tests covering search serialization, mirror failover, direct link validation, and playlist unwrapping.
+
+---
+
+#### Phase 3: AcrylicModalWindow Integration (`AddRadioStation` Mode)
+1. **Modal Mode Definition (`AcrylicModalWindow.xaml.cs`):**
+   * Add `AcrylicModalMode.AddRadioStation` to `AcrylicModalMode` enum.
+2. **Left Sidebar Glyph (`AcrylicModalWindow.xaml`):**
+   * Add `RadioSidebarGlyph` container with `SymbolRegular.Radio24` or headphones vector glyph.
+3. **Right Content Form (`RadioFormGrid`):**
+   * **Header:** "Add Radio Station".
+   * **Segmented Two-Tab Switcher:**
+     * `[ Search Stations ]` (Selected by default)
+     * `[ Direct Stream URL ]`
+   * **Tab 1: Search Form:**
+     * Search TextBox with `FluentGlassSearchInputStyle`, left search icon, and clear button.
+     * 300ms debounce timer with `CancellationTokenSource`.
+     * Suggestions `ListBox` styled with MetroHub's 4px floating scrollbar.
+     * Each item shows: Station Name, Bitrate badge (`128k`), Genre/Tags, and an "Add" button.
+   * **Tab 2: Direct URL Form:**
+     * URL Input with embedded `Paste` button (reusing `FluentGlassUrlWithPasteInputStyle`).
+     * Real-time inline validation message (Valid audio stream, Webpage error, Playlist info).
+     * Station Name input (auto-inferred or user-editable).
+   * **Footer:** "Add Station" primary action button + Dismiss '✕'.
+4. **Wiring `RadioWidgetViewModel.cs`:**
+   * Clicking the `+` placeholder tile instantiates `AcrylicModalWindow`, invokes `SetupRadioStation(activeCategory)`, and calls `ShowDialog()`.
+   * On modal success, newly added station appears immediately in the active category grid.
+5. **Verification Gate:**
+   * Manual UI test: Search and add "Lofi Girl", verify appearance in grid; paste direct URL, verify appearance in grid.
+
+---
+
+#### Phase 4: Right-Click Context Menu & Clean Station Deletion
+1. **XAML Context Menu (`RadioWidgetView.xaml`):**
+   * Add `<Button.ContextMenu>` to `RadioStationTileButtonStyle`:
+     ```xaml
+     <ContextMenu>
+         <MenuItem Header="Play Station" Command="{Binding ...SelectStationCommand}" />
+         <MenuItem Header="Copy Stream URL" Command="{Binding ...CopyStreamUrlCommand}" />
+         <Separator Visibility="{Binding IsCustom, Converter={StaticResource BoolToVis}}" />
+         <MenuItem Header="Delete Station" 
+                   Foreground="#FF6B6B"
+                   Visibility="{Binding IsCustom, Converter={StaticResource BoolToVis}}"
+                   Command="{Binding ...DeleteStationCommand}" />
+     </ContextMenu>
+     ```
+2. **Context Menu Guard:**
+   * Disable/suppress ContextMenu on `RadioStationItemViewModel.IsAddPlaceholder == true`.
+3. **Deletion Logic (`RadioWidgetViewModel.cs`):**
+   * Implement `DeleteStationCommand`:
+     1. If target station is currently playing: immediately call `_audioService.Stop()`.
+     2. Reset bottom player bar to idle.
+     3. Remove `RadioStationItemViewModel` from `VisibleStations`.
+     4. Call `_catalogService.DeleteStationAsync(station.Id)`.
+4. **Copy Stream URL:**
+   * Implement `CopyStreamUrlCommand` using `Clipboard.SetText(station.StreamUrl)`.
+5. **Verification Gate:**
+   * Test right-clicking custom station: verify Delete is visible and works. Test right-clicking factory preset: verify Delete is hidden. Test deleting actively playing station: verify audio stops instantly.
+
+---
+
+#### Phase 5: Self-Healing Resilience & Full End-to-End Verification
+1. **Self-Healing Stream Resolver (`RadioAudioService.cs`):**
+   * Catch `Bass.LastError == Errors.FileOpen || Errors.Timeout` in `PlayStationAsync`.
+   * If station has `apiStationUuid` or valid name: invoke `_radioBrowserClient.ResolveWorkingUrlAsync`.
+   * If new working stream URL is found:
+     * Update in-memory station.
+     * Persist to `%LocalAppData%\MetroHub\radio_catalog.json` via `_catalogService.UpdateStationUrlAsync`.
+     * Retry stream playback seamlessly.
+2. **Comprehensive Test Suite:**
+   * Run all unit tests (`dotnet test`).
+   * Verify zero regressions across entire MetroHub solution (60+ tests).
+3. **Final Release Compilation & Desktop Packaging:**
+   * Publish updated Release build to desktop.
+   * Final sign-off.
+
+---
+
+### 7.4 30 Deep Edge Cases & Mitigation Matrix
+
+| # | Domain | Edge Case Scenario | Bulletproof Engineering Mitigation |
+| :---: | :--- | :--- | :--- |
+| **1** | **Network** | Radio-Browser primary mirror (`de1`) is down or blocked by ISP. | Cycle through round-robin mirrors (`nl1`, `at1.api.radio-browser.info`) with 3s timeout per attempt. |
+| **2** | **Network** | Device is completely offline when user opens "Add Station" popup. | Display friendly offline banner: *"Offline — You can still paste local network or direct stream URLs."* |
+| **3** | **Network** | Wi-Fi disconnects mid-stream while playing. | BASS triggers `SyncFlags.Stall`. Auto-reconnect with exponential backoff (2s, 5s, 10s). Transition to Error state cleanly after 30s. |
+| **4** | **Search** | User types rapidly ("J", "Ja", "Jaz", "Jazz"). | 300ms debounce timer + cancel previous `CancellationTokenSource` on every keystroke. Prevents server spam and out-of-order responses. |
+| **5** | **Search** | Search query returns 0 matching stations. | Show clean, polite empty state: *"No stations found matching '{query}'. Try another keyword or paste a direct stream URL."* |
+| **6** | **Search** | Search query contains special characters, spaces, or unicode (e.g. `Música 日本語`). | URL-encode search parameters using `Uri.EscapeDataString`. |
+| **7** | **URL Input** | User pastes a website link instead of a stream (e.g. `youtube.com`, `somafm.com/defcon/`). | Quick 1s HTTP probe inspects `Content-Type`. If `text/html`, reject with: *"This is a website link, not an audio stream."* |
+| **8** | **URL Input** | User pastes raw URL without `http://` or `https://`. | Auto-trim whitespace and prepend `https://` by default. |
+| **9** | **URL Input** | User pastes a single-station `.pls` or `.m3u` file. | Probe parses playlist text, extracts primary `File1=http://...` stream URL, and saves the direct audio mount. |
+| **10** | **URL Input** | User pastes a massive IPTV / 5,000-channel `.m3u` file. | Parser counts `#EXTINF` entries. If $>5$, reject bulk spam: *"Multi-channel playlists are not supported. Please paste a single station stream."* |
+| **11** | **URL Input** | Stream requires non-standard port (`:8000`, `:8835`, `:9050`). | BASS socket engine connects directly to non-standard TCP/HTTP ports without restriction. |
+| **12** | **URL Input** | Stream uses HTTP but website/app is HTTPS (Mixed Content). | Direct BASS socket streaming bypasses browser mixed-content restrictions entirely. |
+| **13** | **URL Input** | User tries to add a station that already exists in the catalog. | Check existing URLs and IDs. If duplicate exists, highlight existing card rather than duplicating entries. |
+| **14** | **Audio** | User deletes the station that is actively playing. | Immediate execution: 1. `_audioService.Stop()`, 2. Reset bottom player bar, 3. Remove UI card, 4. Persist deletion to disk. Audio never orphans. |
+| **15** | **Audio** | Rapid clicking between 10 station tiles in 2 seconds. | 180ms debounce + atomic cancellation of preceding stream initialization. Previous BASS handle is freed immediately. |
+| **16** | **Audio** | Stream server accepts connection but sends 0 audio bytes (zombie stream). | BASS network timeout configured to 8,000ms. If no audio data arrives within 8s, trigger error state gracefully. |
+| **17** | **Audio** | Audio output device unplugged (headphones disconnected) while playing. | BASS configured with `IncludeDefaultDevice`. Audio automatically migrates to laptop speakers without throwing an unhandled exception. |
+| **18** | **Audio** | System enters Sleep / Modern Standby (S0ix) during playback. | Listen for Windows Power Resume event; re-initialize BASS audio stream cleanly on wake. |
+| **19** | **Storage** | App force-killed or power cut during catalog JSON save. | Win32 `ReplaceFileW` via `StorageService`: save to `.tmp` file, flush, and atomically swap with target file. |
+| **20** | **Storage** | `%LocalAppData%\MetroHub\radio_catalog.json` becomes corrupted or edited manually. | Deserializer catches exception, logs diagnostic copy, and falls back to bundled `Assets/Radio/radio_catalog.json`. |
+| **21** | **Storage** | First app launch on a brand-new computer. | Automatically clones embedded `Assets/Radio/radio_catalog.json` to AppData in $<5\text{ ms}$. Zero network required. |
+| **22** | **UI/UX** | Custom station name is 80 characters long. | Station tile TextBlock uses `TextTrimming="CharacterEllipsis"` with `MaxHeight="42"` and full name in `ToolTip`. |
+| **23** | **UI/UX** | User right-clicks the trailing `+ Custom Station` placeholder tile. | Context menu is explicitly suppressed on the placeholder card. |
+| **24** | **UI/UX** | User switches category tabs while music is playing. | Playback continues uninterrupted in the background. Active station aura visualizer resumes if returning to that tab. |
+| **25** | **UI/UX** | Next / Previous transport buttons pressed in category with custom stations. | Skips the `+` placeholder tile and loops seamlessly across real stations only. |
+| **26** | **UI/UX** | Right-click context menu opened on factory presets vs custom stations. | Custom stations display "Delete Station" in red. Factory presets hide the delete item to prevent accidental deletion. |
+| **27** | **Self-Healing**| Factory preset stream URL goes dead (HTTP 404 / connection refused). | RadioAudioService catches error, queries Radio-Browser by `apiStationUuid` / name, updates catalog JSON, and plays new URL. |
+| **28** | **Memory** | User performs 50 consecutive searches in the popup dialog. | Zero memory leak: search results use lightweight DTOs; previous HTTP responses are disposed; no images/favicons cached in RAM. |
+| **29** | **Lifecycle**| Radio widget unpinned / removed from dashboard. | `Teardown()` cascades down, stopping audio playback and freeing all native BASS channel handles immediately. |
+| **30** | **DPI/Scale** | Popup and context menus rendered at 125%, 150%, 175%, 200% Windows scaling. | All borders use `SnapsToDevicePixels="True"` and `UseLayoutRounding="True"`. Fonts use Segoe UI Variable with ClearType hint. |
+
+---
+
+### 7.5 Mandatory Checkpoint & User Permission Gate
+> [!IMPORTANT]
+> The architectural specification and roadmap above is complete and ready for execution.
+> Implementation will proceed strictly in order: **Phase 1 ➔ Phase 2 ➔ Phase 3 ➔ Phase 4 ➔ Phase 5**.
+> We will stop after each phase for user review, automated testing, and verification.
+
+
 
