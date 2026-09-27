@@ -80,6 +80,9 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
         _audioService.MuteStateChanged += OnAudioMuteStateChanged;
         _audioService.ErrorOccurred += OnAudioErrorOccurred;
 
+        // Subscribe to catalog updates (custom station added/deleted/healed)
+        _catalogService.CatalogChanged += OnCatalogChanged;
+
         // Initialize state from audio service
         SyncFromAudioService();
     }
@@ -357,10 +360,20 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
         action();
     }
 
+    private void OnCatalogChanged(object? sender, EventArgs e)
+    {
+        DispatchToUi(() =>
+        {
+            LoadCategoryStations(SelectedCategoryId);
+            UpdateTileStates();
+        });
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
+            _catalogService.CatalogChanged -= OnCatalogChanged;
             _audioService.CurrentStationChanged -= OnAudioCurrentStationChanged;
             _audioService.PlaybackStateChanged -= OnAudioPlaybackStateChanged;
             _audioService.BufferingStateChanged -= OnAudioBufferingStateChanged;

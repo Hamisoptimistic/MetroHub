@@ -20,6 +20,7 @@ public sealed partial class RadioStationItemViewModel : ObservableObject
     public string Description => Station?.Description ?? "Add your own custom streaming link";
     public string Icon => Station?.Icon ?? "Add24";
     public string Category => Station?.Category ?? string.Empty;
+    public bool IsCustom => Station?.IsCustom ?? false;
 
     [ObservableProperty]
     private bool _isActive;

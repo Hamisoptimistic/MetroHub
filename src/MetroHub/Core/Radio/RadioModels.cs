@@ -32,6 +32,12 @@ public sealed record RadioStation
 
     [JsonPropertyName("homepageUrl")]
     public string HomepageUrl { get; init; } = string.Empty;
+
+    [JsonPropertyName("isCustom")]
+    public bool IsCustom { get; init; } = false;
+
+    [JsonPropertyName("apiStationUuid")]
+    public string? ApiStationUuid { get; init; }
 }
 
 /// <summary>
