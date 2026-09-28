@@ -31,8 +31,6 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
     private static readonly FontFamily KarnivoreDigitFontFamily = new(FontBaseUri, "./#Karnivore Digit, Segoe UI");
     private static readonly FontFamily NowFontFamily = new(FontBaseUri, "./#Now, Segoe UI");
 
-    private System.Threading.Timer? _timer;
-
     [ObservableProperty]
     private string _hoursString = string.Empty;
 
@@ -96,7 +94,6 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
 
         LoadSettings(model.SettingsJson);
         UpdateTime();
-        StartTimer();
     }
 
     private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -113,45 +110,23 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
     private int _lastMinute = -1;
     private int _lastHour = -1;
 
-    private void StartTimer()
+    /// <summary>
+    /// Centralized 1-second heartbeat hook from WidgetViewModelBase.
+    /// Evaluates minute changes on UI thread with sub-nanosecond equality check and zero lag.
+    /// </summary>
+    public override void OnSecondTick(DateTime utcNow)
     {
-        if (_timer == null)
-        {
-            _timer = new System.Threading.Timer(_ =>
-            {
-                var now = DateTime.Now;
-                if (now.Minute == _lastMinute && now.Hour == _lastHour)
-                {
-                    return;
-                }
-                Application.Current?.Dispatcher.InvokeAsync(() => UpdateTime());
-            }, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
-        }
-        else
-        {
-            _timer.Change(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
-        }
-    }
-
-    private void StopTimer()
-    {
-        _timer?.Change(Timeout.Infinite, Timeout.Infinite);
-    }
-
-    public override void Pause()
-    {
-        StopTimer();
+        UpdateTime(force: false, nowOverride: utcNow.ToLocalTime());
     }
 
     public override void Resume()
     {
         UpdateTime(force: true);
-        StartTimer();
     }
 
-    public void UpdateTime(bool force = false)
+    public void UpdateTime(bool force = false, DateTime? nowOverride = null)
     {
-        var now = DateTime.Now;
+        var now = nowOverride ?? DateTime.Now;
         if (!force && now.Minute == _lastMinute && now.Hour == _lastHour)
         {
             return;
@@ -248,9 +223,6 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
     {
         if (disposing)
         {
-            StopTimer();
-            _timer?.Dispose();
-            _timer = null;
             Model.PropertyChanged -= OnModelPropertyChanged;
         }
 

@@ -24,7 +24,6 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
     private readonly PowerAwakeService _powerService;
     private readonly NightLightService _nightLightService;
 
-    private System.Threading.Timer? _uiTimer;
     private bool _isHubVisible = true;
     private string _lastFormattedCountdown = string.Empty;
     private CaffeineSleepWidgetSettings _settings = new();
@@ -207,12 +206,9 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
 
         LoadSettings(model.SettingsJson);
 
-        // Initialize 1 Hz UI countdown timer (fires off-UI thread via System.Threading.Timer)
-        _uiTimer = new System.Threading.Timer(OnTimerTick, null, Timeout.Infinite, Timeout.Infinite);
-
         if (_powerService.Mode == AwakeMode.Timed)
         {
-            StartUiCountdownTimer();
+            UpdateCountdownTextFromRemaining();
         }
     }
 
@@ -261,7 +257,6 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
     [RelayCommand]
     private void SetPassiveMode()
     {
-        StopUiCountdownTimer();
         UpdateCountdownText(string.Empty);
         _powerService.SetPassive();
     }
@@ -269,7 +264,6 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
     [RelayCommand]
     private void SetIndefiniteMode()
     {
-        StopUiCountdownTimer();
         UpdateCountdownText(string.Empty);
         _powerService.SetIndefinite();
     }
@@ -291,8 +285,7 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
         SaveSettings();
 
         _powerService.SetTimed(TimeSpan.FromMinutes(minutes));
-        StartUiCountdownTimer();
-        OnTimerTick(null);
+        UpdateCountdownTextFromRemaining();
     }
 
     [RelayCommand]
@@ -343,12 +336,10 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
 
             if (_powerService.Mode == AwakeMode.Timed)
             {
-                StartUiCountdownTimer();
-                OnTimerTick(null);
+                UpdateCountdownTextFromRemaining();
             }
             else
             {
-                StopUiCountdownTimer();
                 UpdateCountdownText(string.Empty);
             }
         });
@@ -368,21 +359,18 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
         });
     }
 
-    private void StartUiCountdownTimer()
+    /// <summary>
+    /// Centralized 1-second heartbeat hook from WidgetViewModelBase.
+    /// Drives countdown text updating directly on the UI thread without thread hops.
+    /// </summary>
+    public override void OnSecondTick(DateTime utcNow)
     {
-        if (!_isHubVisible) return;
-        _uiTimer?.Change(TimeSpan.Zero, TimeSpan.FromSeconds(1));
+        if (_powerService.Mode != AwakeMode.Timed) return;
+        UpdateCountdownTextFromRemaining();
     }
 
-    private void StopUiCountdownTimer()
+    private void UpdateCountdownTextFromRemaining()
     {
-        _uiTimer?.Change(Timeout.Infinite, Timeout.Infinite);
-    }
-
-    private void OnTimerTick(object? _)
-    {
-        if (!_isHubVisible) return;
-
         var remaining = _powerService.TimeRemaining;
         if (!remaining.HasValue || remaining.Value <= TimeSpan.Zero)
         {
@@ -404,11 +392,8 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
         if (string.Equals(_lastFormattedCountdown, formatted, StringComparison.Ordinal)) return;
         _lastFormattedCountdown = formatted;
 
-        Application.Current?.Dispatcher.InvokeAsync(() =>
-        {
-            CountdownText = formatted;
-            OnPropertyChanged(nameof(ModeButtonText));
-        });
+        CountdownText = formatted;
+        OnPropertyChanged(nameof(ModeButtonText));
     }
 
     #endregion
@@ -419,8 +404,6 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
     {
         base.Pause();
         _isHubVisible = false;
-        // Stop UI countdown ticks completely while hidden in tray
-        StopUiCountdownTimer();
         OnPropertyChanged(nameof(IsSteamAnimating));
         OnPropertyChanged(nameof(IsWarmSunAnimating));
     }
@@ -446,8 +429,7 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
 
         if (_powerService.Mode == AwakeMode.Timed)
         {
-            StartUiCountdownTimer();
-            OnTimerTick(null);
+            UpdateCountdownTextFromRemaining();
         }
     }
 
@@ -460,11 +442,6 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
         if (disposing)
         {
             SaveSettings();
-
-            // Stop and dispose countdown timer
-            StopUiCountdownTimer();
-            _uiTimer?.Dispose();
-            _uiTimer = null;
 
             // Unsubscribe named event handlers to eliminate leaks
             _powerService.StateChanged -= OnPowerServiceStateChanged;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Messaging;
 
 namespace MetroHub.Widgets;
@@ -23,6 +24,7 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
     {
         Model = model ?? throw new ArgumentNullException(nameof(model));
         IsActive = true;
+        WidgetHeartbeatService.SecondTick += OnSecondTickInternal;
     }
 
     public virtual void Initialize(TileModel model)
@@ -52,6 +54,20 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
     /// Lifecycle hook: resume timers/polling when MetroHub is visible.
     /// </summary>
     public virtual void Resume() { }
+
+    /// <summary>
+    /// Lifecycle hook: called automatically once every second while MetroHub is visible.
+    /// Widgets override this hook to perform work instead of managing their own DispatcherTimer instances.
+    /// </summary>
+    public virtual void OnSecondTick(DateTime utcNow) { }
+
+    private void OnSecondTickInternal(DateTime utcNow)
+    {
+        if (IsActive && !_disposed)
+        {
+            OnSecondTick(utcNow);
+        }
+    }
 
     /// <summary>
     /// Centralized hub visibility recipient for all widgets.
@@ -91,6 +107,7 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
 
         if (disposing)
         {
+            WidgetHeartbeatService.SecondTick -= OnSecondTickInternal;
             Pause();
             IsActive = false; // Deactivates CommunityToolkit messenger subscriptions cleanly
         }

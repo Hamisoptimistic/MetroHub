@@ -29,7 +29,6 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
         if (RedBrush.CanFreeze) RedBrush.Freeze();
     }
 
-    private readonly DispatcherTimer _countdownTimer;
     private int _remainingSeconds = 0;
     private string? _pendingAction;
 
@@ -103,12 +102,6 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
 
     public PowerWidgetViewModel(TileModel model) : base(model)
     {
-        _countdownTimer = new DispatcherTimer(DispatcherPriority.Background)
-        {
-            Interval = TimeSpan.FromSeconds(1)
-        };
-        _countdownTimer.Tick += (s, e) => OnCountdownTick();
-
         Model.PropertyChanged += OnModelPropertyChanged;
     }
 
@@ -147,7 +140,16 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
         _remainingSeconds = 5;
 
         ApplyTileCountdownDisplay(action, _remainingSeconds);
-        _countdownTimer.Start();
+    }
+
+    /// <summary>
+    /// Centralized 1-second heartbeat hook from WidgetViewModelBase.
+    /// Drives power action countdown ticks with zero timer sprawl.
+    /// </summary>
+    public override void OnSecondTick(DateTime utcNow)
+    {
+        if (_remainingSeconds <= 0) return;
+        OnCountdownTick();
     }
 
     private void OnCountdownTick()
@@ -162,7 +164,6 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
         }
         else
         {
-            _countdownTimer.Stop();
             string act = _pendingAction ?? string.Empty;
             _pendingAction = null;
             _remainingSeconds = 0;
@@ -234,7 +235,6 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
 
     private void CancelPendingCountdown()
     {
-        _countdownTimer.Stop();
         _remainingSeconds = 0;
         _pendingAction = null;
         ResetAllTileDisplays();
@@ -304,7 +304,7 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
         if (disposing)
         {
             Model.PropertyChanged -= OnModelPropertyChanged;
-            _countdownTimer.Stop();
+            CancelPendingCountdown();
         }
         base.Dispose(disposing);
     }

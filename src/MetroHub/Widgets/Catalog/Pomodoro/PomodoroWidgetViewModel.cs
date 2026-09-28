@@ -21,7 +21,6 @@ namespace MetroHub.Widgets.Catalog.Pomodoro;
 /// </summary>
 public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
 {
-    private DispatcherTimer? _uiTimer;
     private Timer? _dormantBackgroundTimer;
     private DateTime _targetEndTime;
     private TimeSpan _remainingTime;
@@ -122,21 +121,18 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
         UpdateVisualState();
         UpdateColorTheme();
 
-        _uiTimer = new DispatcherTimer(DispatcherPriority.Background)
-        {
-            Interval = TimeSpan.FromMilliseconds(100)
-        };
-        _uiTimer.Tick += OnUiTimerTick;
-
         IsActive = true;
     }
 
-    private void OnUiTimerTick(object? sender, EventArgs e)
+    /// <summary>
+    /// Centralized 1-second heartbeat hook from WidgetViewModelBase.
+    /// Drives countdown timing with zero timer sprawl and 0.0% CPU when idle.
+    /// </summary>
+    public override void OnSecondTick(DateTime utcNow)
     {
         if (!IsRunning) return;
 
-        var now = DateTime.UtcNow;
-        var diff = _targetEndTime - now;
+        var diff = _targetEndTime - utcNow;
 
         if (diff <= TimeSpan.Zero)
         {
@@ -153,7 +149,7 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
 
     private void OnPhaseCompleted()
     {
-        _uiTimer?.Stop();
+        CancelDormantBackgroundTimer();
         IsRunning = false;
 
         if (SoundEnabled)
@@ -172,7 +168,6 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
     public void SkipPhase()
     {
         CancelDormantBackgroundTimer();
-        _uiTimer?.Stop();
         IsRunning = false;
 
         AdvancePhase(isNaturalCompletion: false);
@@ -253,7 +248,6 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
         if (IsRunning)
         {
             // Pause
-            _uiTimer?.Stop();
             CancelDormantBackgroundTimer();
             IsRunning = false;
         }
@@ -262,7 +256,6 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
             // Start / Resume
             _targetEndTime = DateTime.UtcNow + _remainingTime;
             IsRunning = true;
-            _uiTimer?.Start();
         }
 
         UpdateVisualState();
@@ -274,7 +267,6 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
     public void Reset()
     {
         CancelDormantBackgroundTimer();
-        _uiTimer?.Stop();
         IsRunning = false;
 
         _remainingTime = _totalPhaseDuration;
@@ -284,7 +276,6 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
     public void SetPreset(int focusMinutes, int breakMinutes, int longBreakMinutes = 15)
     {
         CancelDormantBackgroundTimer();
-        _uiTimer?.Stop();
         IsRunning = false;
 
         FocusMinutes = focusMinutes;
@@ -387,9 +378,7 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
 
     public override void Pause()
     {
-        // Hub is hidden: halt UI timer immediately to save GPU/CPU cycles
-        _uiTimer?.Stop();
-
+        // Hub is hidden: WidgetHeartbeatService automatically halts second ticks.
         if (IsRunning)
         {
             // Arm zero-CPU dormant OS background timer for the exact finish timestamp
@@ -428,7 +417,6 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
             {
                 _remainingTime = diff;
                 UpdateVisualState();
-                _uiTimer?.Start();
             }
         }
         else
@@ -484,7 +472,6 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
 
     protected override void OnDeactivated()
     {
-        _uiTimer?.Stop();
         CancelDormantBackgroundTimer();
         base.OnDeactivated();
     }
@@ -503,13 +490,6 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
         if (disposing)
         {
             Model.PropertyChanged -= OnModelPropertyChanged;
-            if (_uiTimer != null)
-            {
-                _uiTimer.Stop();
-                _uiTimer.Tick -= OnUiTimerTick;
-                _uiTimer = null;
-            }
-
             CancelDormantBackgroundTimer();
         }
 

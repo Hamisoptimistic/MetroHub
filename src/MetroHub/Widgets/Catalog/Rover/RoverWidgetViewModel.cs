@@ -36,8 +36,9 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
     private readonly RoverAnimationEngine _engine = new();
     private readonly RoverAudioService _audioService = new();
 
-    private readonly DispatcherTimer _idleCheckTimer;
-    private readonly DispatcherTimer _ambientTimer;
+    private int _secondsSinceLastIdleCheck = 0;
+    private int _secondsUntilNextAmbient = 20;
+    private bool _isAmbientActive = true;
 
     // Windows Media SMTC integration (Zero-polling event driven)
     private MediaManager? _mediaManager;
@@ -181,26 +182,11 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
     {
         _engine.SoundTriggered += OnSoundTriggered;
 
-        // 1. Inactivity detection timer (checks user idle time every 5 seconds)
-        _idleCheckTimer = new DispatcherTimer(DispatcherPriority.Background)
-        {
-            Interval = TimeSpan.FromSeconds(5)
-        };
-        _idleCheckTimer.Tick += OnIdleCheckTick;
-
-        // 2. Ambient behavior timer (Rover stretches, looks around occasionally when idle)
-        _ambientTimer = new DispatcherTimer(DispatcherPriority.Background)
-        {
-            Interval = TimeSpan.FromSeconds(20)
-        };
-        _ambientTimer.Tick += OnAmbientTimerTick;
-
         LoadSettings(model.SettingsJson);
 
         // Start in resting pose with 0% CPU
         _engine.SetStaticPose("RestPose");
-        _idleCheckTimer.Start();
-        _ambientTimer.Start();
+        _secondsUntilNextAmbient = RandomNumberGenerator.GetInt32(15, 31);
 
         // Initialize zero-polling Windows Media SMTC monitor
         _ = InitMediaControllerAsync();
@@ -448,7 +434,7 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
     {
         _wasUserIdle = true;
         State = RoverState.Sleeping;
-        _ambientTimer.Stop();
+        _isAmbientActive = false;
 
         _engine.Play("LieDown", loop: false, onComplete: () =>
         {
@@ -461,7 +447,8 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
     {
         _wasUserIdle = false;
         State = RoverState.Alert;
-        _ambientTimer.Start();
+        _isAmbientActive = true;
+        _secondsUntilNextAmbient = RandomNumberGenerator.GetInt32(15, 31);
         _audioService.PlayBark();
 
         _engine.Play("WakeUp", loop: false, onComplete: () =>
@@ -477,7 +464,34 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
         IsMuted = !IsMuted;
     }
 
-    private void OnIdleCheckTick(object? sender, EventArgs e)
+    /// <summary>
+    /// Centralized 1-second heartbeat hook from WidgetViewModelBase.
+    /// Handles user idle checks (every 5 seconds) and ambient Rover behavior (every 15-30s)
+    /// without keeping multiple background DispatcherTimer instances spinning.
+    /// </summary>
+    public override void OnSecondTick(DateTime utcNow)
+    {
+        // 1. Idle check every 5 seconds
+        _secondsSinceLastIdleCheck++;
+        if (_secondsSinceLastIdleCheck >= 5)
+        {
+            _secondsSinceLastIdleCheck = 0;
+            CheckUserIdle();
+        }
+
+        // 2. Ambient behavior timer
+        if (_isAmbientActive && _state == RoverState.Idle && !_engine.IsRunning && !_isPlayingMedia)
+        {
+            _secondsUntilNextAmbient--;
+            if (_secondsUntilNextAmbient <= 0)
+            {
+                _secondsUntilNextAmbient = RandomNumberGenerator.GetInt32(15, 31);
+                TriggerAmbientBehavior();
+            }
+        }
+    }
+
+    private void CheckUserIdle()
     {
         TimeSpan idleTime = GetUserIdleTime();
         bool isIdle = idleTime.TotalMinutes >= _sleepTimeoutMinutes;
@@ -494,7 +508,7 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    private void OnAmbientTimerTick(object? sender, EventArgs e)
+    private void TriggerAmbientBehavior()
     {
         // Only trigger ambient behavior when MetroHub is active and Rover is idle (not sleeping, doing trick, or jamming to music)
         if (_state != RoverState.Idle || _engine.IsRunning || _isPlayingMedia) return;
@@ -510,8 +524,6 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
                 _engine.SetStaticPose("RestPose");
             });
         }
-
-        _ambientTimer.Interval = TimeSpan.FromSeconds(RandomNumberGenerator.GetInt32(15, 31));
     }
 
     private static TimeSpan GetUserIdleTime()
@@ -531,19 +543,17 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
 
     public override void Pause()
     {
-        // MetroHub window is hidden: Halt timers to guarantee 0.000% CPU usage
-        _idleCheckTimer.Stop();
-        _ambientTimer.Stop();
+        // MetroHub window is hidden: Stop any playing animations
         _engine.Stop();
     }
 
     public override void Resume()
     {
-        // MetroHub window is visible again: Restore timers
-        _idleCheckTimer.Start();
+        // MetroHub window is visible again: Restore ambient behavior
         if (_state != RoverState.Sleeping)
         {
-            _ambientTimer.Start();
+            _isAmbientActive = true;
+            _secondsUntilNextAmbient = RandomNumberGenerator.GetInt32(15, 31);
             if (_isPlayingMedia)
             {
                 StartMusicGroove();
@@ -591,8 +601,6 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
     {
         if (disposing)
         {
-            _idleCheckTimer.Stop();
-            _ambientTimer.Stop();
             _engine.Stop();
             _engine.SoundTriggered -= OnSoundTriggered;
 
