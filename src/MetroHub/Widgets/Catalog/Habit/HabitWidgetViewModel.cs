@@ -6,9 +6,12 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
+using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Habit;
 
@@ -24,12 +27,25 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
         WidgetSize.Huge // 8x6 layout
     };
 
+    /// <summary>Registry id of this widget (state-file directory + tile target path).</summary>
+    public const string WidgetId = "habit";
+
+    /// <summary>Idle delay before a debounced flush (migration + layout pointer only).</summary>
+    private const int SaveDelayMs = 400;
+
     private static readonly JsonSerializerOptions _jsonOpts = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    private HabitWidgetSettings _settings = new();
+    private readonly IWidgetStateStore _stateStore;
+    private HabitWidgetState _state = new();
+    private DispatcherTimer? _saveTimer;
+    private bool _isSettingsLoaded;
+    private string? _lastSavedStateJson;    // state-file payload from the last write (skip unchanged)
+    private bool _layoutStubPersisted;      // SettingsJson already carries the slim schema-2 pointer
+    private bool _legacyPayloadPresent;     // layout.json still holds the inline grid → rewrite once
+    private bool _stateNeedsInitialWrite;   // no state file yet (first run or fresh migration)
     private DateTime _currentDisplayMonth;
     private DateTime _lastCheckedDate = DateTime.Today;
     private System.Threading.Timer? _midnightTimer;
@@ -77,8 +93,15 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
 
     public IReadOnlyList<string> DayOfWeekHeaders { get; }
 
-    public HabitWidgetViewModel(TileModel model) : base(model)
+    public HabitWidgetViewModel(TileModel model) : this(model, WidgetStateStore.Default)
     {
+    }
+
+    /// <summary>Test seam: inject a state store rooted somewhere other than %LocalAppData%.</summary>
+    public HabitWidgetViewModel(TileModel model, IWidgetStateStore stateStore) : base(model)
+    {
+        _stateStore = stateStore ?? WidgetStateStore.Default;
+
         // Enforce 8x6 Huge dimensions and auto-upgrade any existing 8x4 tiles
         if (model.SpanX != 8 || model.SpanY != 6)
         {
@@ -102,8 +125,9 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
         _lastCheckedDate = now;
 
         LoadSettings(model.SettingsJson);
+        _isSettingsLoaded = true;
 
-        if (string.IsNullOrWhiteSpace(_settings.HabitName))
+        if (string.IsNullOrWhiteSpace(_state.HabitName))
         {
             IsSetupMode = true;
             SetupInputName = string.Empty;
@@ -111,65 +135,186 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
         }
         else
         {
-            HabitName = _settings.HabitName;
+            HabitName = _state.HabitName;
             model.Title = HabitName;
-            IconSymbol = _settings.IconSymbol;
-            AccentColorHex = _settings.AccentColorHex;
+            IconSymbol = _state.IconSymbol;
+            AccentColorHex = _state.AccentColorHex;
             IsSetupMode = false;
         }
+
+        // Content changes save inline (the payload is tiny); this timer only carries the one-time
+        // migration write and the layout pointer.
+        _saveTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(SaveDelayMs)
+        };
+        _saveTimer.Tick += (s, e) =>
+        {
+            _saveTimer.Stop();
+            SaveContent();
+            SaveLayoutIfNeeded();
+        };
 
         RebuildMonthGrid();
         RecalculateStreak();
         StartMidnightTimer();
+
+        // Migration / first run: persist the grid once and strip the inline payload from layout.json.
+        if (_legacyPayloadPresent || _stateNeedsInitialWrite)
+        {
+            ScheduleSave();
+        }
     }
 
     protected override void LoadSettings(string? settingsJson)
     {
-        if (string.IsNullOrWhiteSpace(settingsJson))
+        _lastSavedStateJson = null;
+
+        HabitWidgetSettings? settings = null;
+        if (!string.IsNullOrWhiteSpace(settingsJson))
         {
-            _settings = new HabitWidgetSettings();
+            try
+            {
+                // Case-insensitive on purpose: pre-split payloads were PascalCase.
+                settings = JsonSerializer.Deserialize<HabitWidgetSettings>(settingsJson, _jsonOpts);
+            }
+            catch
+            {
+                settings = null;
+            }
+        }
+
+        _legacyPayloadPresent = settings?.IsLegacyPayload == true;
+        _layoutStubPersisted = settings is { IsLegacyPayload: false };
+
+        // Source of truth: the widget state file. The layout payload is only a migration input.
+        HabitWidgetState? state = TryReadStateFile();
+        if (state == null)
+        {
+            _stateNeedsInitialWrite = true;
+            state = _legacyPayloadPresent ? settings!.TryBuildLegacyState() : null;
+        }
+
+        _state = state ?? new HabitWidgetState();
+        _state.Normalize();
+    }
+
+    private HabitWidgetState? TryReadStateFile()
+    {
+        try
+        {
+            string? json = _stateStore.Read(WidgetId, Model.Id);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return null;
+            }
+
+            var state = WidgetSerializer.Deserialize<HabitWidgetState>(json);
+            if (state == null)
+            {
+                return null;
+            }
+
+            state.Normalize();
+            return state;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Lifecycle save: the day grid mirror plus the slim layout pointer. Both halves are
+    /// diff-guarded, so the call sites that fire on every single day toggle and on every hub hide
+    /// write the small state file at most once and never rewrite an unchanged layout payload.
+    /// </summary>
+    public override void SaveSettings()
+    {
+        Model.Title = HabitName;
+        SaveContent();
+        SaveLayoutIfNeeded();
+    }
+
+    /// <summary>
+    /// Writes the habit name/icon/accent and the day grid to the widget state file. Deliberately
+    /// does not touch layout.json — that is the whole point of the split. Skipped when the
+    /// serialized payload is byte-identical to the last write.
+    /// </summary>
+    public void SaveContent()
+    {
+        try
+        {
+            string json = WidgetSerializer.Serialize(_state.CloneForSave(HabitName, IconSymbol, AccentColorHex));
+
+            _stateNeedsInitialWrite = false;
+            if (string.Equals(json, _lastSavedStateJson, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _lastSavedStateJson = json;
+            _stateStore.Write(WidgetId, Model.Id, json);
+        }
+        catch
+        {
+            // Suppress serialization error
+        }
+    }
+
+    /// <summary>
+    /// Writes the slim layout payload (schema + state pointer) into the tile's SettingsJson and,
+    /// only when it actually changed, asks the hub to persist layout.json.
+    /// </summary>
+    public void SaveLayoutIfNeeded()
+    {
+        _saveTimer?.Stop();
+        if (_layoutStubPersisted && !_legacyPayloadPresent)
+        {
             return;
         }
 
         try
         {
-            _settings = JsonSerializer.Deserialize<HabitWidgetSettings>(settingsJson, _jsonOpts) ?? new HabitWidgetSettings();
-            _settings.DayStates ??= new();
-        }
-        catch
-        {
-            _settings = new HabitWidgetSettings();
-        }
-    }
+            var settings = new HabitWidgetSettings
+            {
+                SchemaVersion = HabitWidgetSettings.CurrentSchemaVersion,
+                StateRef = Model.Id
+            };
 
-    public override void SaveSettings()
-    {
-        _settings.HabitName = HabitName;
-        _settings.IconSymbol = IconSymbol;
-        _settings.AccentColorHex = AccentColorHex;
-
-        try
-        {
-            Model.SettingsJson = JsonSerializer.Serialize(_settings);
-            Model.Title = HabitName;
+            Model.SettingsJson = WidgetSerializer.Serialize(settings);
+            _layoutStubPersisted = true;
+            _legacyPayloadPresent = false;
 
             var mw = MainWindow.Current;
-            if (mw != null)
+            if (mw == null)
             {
-                if (mw.Dispatcher.CheckAccess())
-                {
-                    mw.SaveGroupsAndLayout();
-                }
-                else
-                {
-                    mw.Dispatcher.Invoke(() => mw.SaveGroupsAndLayout());
-                }
+                // No hub yet (unit tests / early startup): the slim payload is in memory and the
+                // next hub save persists it. Keep the flag so this retries.
+                _layoutStubPersisted = false;
+                return;
+            }
+
+            if (mw.Dispatcher.CheckAccess())
+            {
+                mw.SaveGroupsAndLayout();
+            }
+            else
+            {
+                mw.Dispatcher.Invoke(() => mw.SaveGroupsAndLayout());
             }
         }
         catch
         {
             // Suppress serialization error
         }
+    }
+
+    private void ScheduleSave()
+    {
+        if (!_isSettingsLoaded) return;
+        _saveTimer?.Stop();
+        _saveTimer?.Start();
     }
 
     public override void Pause()
@@ -289,7 +434,7 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
             bool isFuture = cellDate.Date > today;
 
             HabitDayState state = HabitDayState.Unmarked;
-            if (_settings.DayStates.TryGetValue(key, out byte stateByte))
+            if (_state.DayStates.TryGetValue(key, out byte stateByte))
             {
                 state = (HabitDayState)stateByte;
             }
@@ -303,7 +448,7 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
         DateTime today = DateTime.Today;
         int todayKey = today.Year * 10000 + today.Month * 100 + today.Day;
 
-        _settings.DayStates.TryGetValue(todayKey, out byte todayStateByte);
+        _state.DayStates.TryGetValue(todayKey, out byte todayStateByte);
         var todayState = (HabitDayState)todayStateByte;
 
         // If today is explicitly marked Failed, streak is broken immediately
@@ -331,7 +476,7 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
         while (true)
         {
             int key = checkDate.Year * 10000 + checkDate.Month * 100 + checkDate.Day;
-            if (_settings.DayStates.TryGetValue(key, out byte stateByte) && (HabitDayState)stateByte == HabitDayState.Done)
+            if (_state.DayStates.TryGetValue(key, out byte stateByte) && (HabitDayState)stateByte == HabitDayState.Done)
             {
                 count++;
                 checkDate = checkDate.AddDays(-1);
@@ -398,11 +543,11 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
 
         if (state == HabitDayState.Unmarked)
         {
-            _settings.DayStates.Remove(day.DateKey);
+            _state.DayStates.Remove(day.DateKey);
         }
         else
         {
-            _settings.DayStates[day.DateKey] = (byte)state;
+            _state.DayStates[day.DateKey] = (byte)state;
         }
 
         RecalculateStreak();
@@ -445,7 +590,7 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
         }
         else
         {
-            _settings.DayStates.TryGetValue(todayKey, out byte currentByte);
+            _state.DayStates.TryGetValue(todayKey, out byte currentByte);
             var current = (HabitDayState)currentByte;
             var nextState = current switch
             {
@@ -456,9 +601,9 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
             };
 
             if (nextState == HabitDayState.Unmarked)
-                _settings.DayStates.Remove(todayKey);
+                _state.DayStates.Remove(todayKey);
             else
-                _settings.DayStates[todayKey] = (byte)nextState;
+                _state.DayStates[todayKey] = (byte)nextState;
 
             RecalculateStreak();
             SaveSettings();
@@ -498,7 +643,7 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
     [RelayCommand]
     public void ResetAllData()
     {
-        _settings.DayStates.Clear();
+        _state.DayStates.Clear();
         RecalculateStreak();
         RebuildMonthGrid();
         SaveSettings();
@@ -520,6 +665,11 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
             StopMidnightTimer();
             _midnightTimer?.Dispose();
             _midnightTimer = null;
+            _saveTimer?.Stop();
+
+            // Never lose in-flight edits: the day grid mirror + the slim layout pointer.
+            SaveContent();
+            SaveLayoutIfNeeded();
         }
 
         base.Dispose(disposing);

@@ -1,0 +1,323 @@
+<UserControl x:Class="MetroHub.Presentation.Controls.WidgetTabStrip"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             mc:Ignorable="d" 
+             d:DesignHeight="38" d:DesignWidth="400"
+             Focusable="False"
+             FocusVisualStyle="{x:Null}"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True"
+             Tag="InteractiveControl">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- Tab Close Button (18x18, subtle hover red) -->
+        <Style x:Key="TabCloseButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="#70FFFFFF" />
+            <Setter Property="Width" Value="18" />
+            <Setter Property="Height" Value="18" />
+            <Setter Property="Margin" Value="4,0,0,0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Tag" Value="InteractiveControl" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="CloseBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="3"
+                                SnapsToDevicePixels="True">
+                            <ui:SymbolIcon Symbol="Dismiss16"
+                                           FontSize="10"
+                                           Foreground="{TemplateBinding Foreground}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CloseBorder" Property="Background" Value="#25FF453A" />
+                                <Setter Property="Foreground" Value="#FF6B6B" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="CloseBorder" Property="Background" Value="#45FF453A" />
+                                <Setter Property="Foreground" Value="#FF6B6B" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Overflow Chevron Scroll Button Style (18x26, ghost hover) -->
+        <Style x:Key="TabScrollChevronButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="#85FFFFFF" />
+            <Setter Property="Width" Value="18" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Tag" Value="InteractiveControl" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ChevronBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="3"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ChevronBorder" Property="Background" Value="#15FFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ChevronBorder" Property="Background" Value="#25FFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- New Tab Plus Button Style -->
+        <Style x:Key="AddTabButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="#80FFFFFF" />
+            <Setter Property="Width" Value="26" />
+            <Setter Property="Height" Value="26" />
+            <Setter Property="Margin" Value="2,0,4,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Tag" Value="InteractiveControl" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4"
+                                SnapsToDevicePixels="True">
+                            <ui:SymbolIcon Symbol="Add16"
+                                           FontSize="12"
+                                           Foreground="{TemplateBinding Foreground}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#15FFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#25FFFFFF" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.3" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid SnapsToDevicePixels="True" VerticalAlignment="Stretch">
+        <Grid.ColumnDefinitions>
+            <!-- Col 0: Left Scroll Chevron (<) -->
+            <ColumnDefinition Width="Auto" />
+            <!-- Col 1: Scrollable Tab Strip (contains tabs + [+] button) -->
+            <ColumnDefinition Width="*" />
+            <!-- Col 2: Right Scroll Chevron (>) -->
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Scroll Chevron Button (<) -->
+        <Button x:Name="PART_ScrollLeftButton"
+                Grid.Column="0"
+                Style="{StaticResource TabScrollChevronButtonStyle}"
+                Click="ScrollLeftButton_Click"
+                ToolTip="Scroll tabs left"
+                Visibility="Collapsed"
+                Margin="0,0,2,0">
+            <ui:SymbolIcon Symbol="ChevronLeft16" FontSize="11" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+        </Button>
+
+        <!-- Scrollable Tabs Container (Mouse wheel horizontally scrolls) -->
+        <ScrollViewer x:Name="PART_ScrollViewer"
+                      Grid.Column="1"
+                      Focusable="False"
+                      FocusVisualStyle="{x:Null}"
+                      HorizontalScrollBarVisibility="Hidden"
+                      VerticalScrollBarVisibility="Disabled"
+                      controls:HorizontalScrollBehavior.IsEnabled="True"
+                      controls:HorizontalScrollBehavior.ScrollFactor="0.6"
+                      controls:AutoHideScrollBehavior.IsEnabled="False"
+                      ScrollChanged="ScrollViewer_ScrollChanged"
+                      VerticalAlignment="Stretch">
+            <Grid x:Name="PART_TabStripHost" VerticalAlignment="Stretch" SnapsToDevicePixels="True">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Stretch">
+                    <ItemsControl x:Name="PART_ItemsControl"
+                                  ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource AncestorType=controls:WidgetTabStrip}}"
+                                  VerticalAlignment="Stretch"
+                                  Focusable="False">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Stretch" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid x:Name="TabRootGrid"
+                                      VerticalAlignment="Stretch"
+                                      Height="38"
+                                      SnapsToDevicePixels="True">
+                                    <Grid.Triggers>
+                                        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                     From="0.0" To="1.0"
+                                                                     Duration="0:0:0.16" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Grid.Triggers>
+                                    <!-- Tab Interactive Area -->
+                                    <Border x:Name="TabBorder"
+                                            Background="Transparent"
+                                            Cursor="Hand"
+                                            MouseLeftButtonDown="TabBorder_MouseLeftButtonDown"
+                                            Padding="10,0,8,0"
+                                            VerticalAlignment="Stretch"
+                                            SnapsToDevicePixels="True"
+                                            Tag="InteractiveControl">
+                                        <Grid VerticalAlignment="Center">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Dirty indicator dot (5px circle) -->
+                                            <Ellipse Grid.Column="0"
+                                                     Width="5"
+                                                     Height="5"
+                                                     Fill="#4CC2FF"
+                                                     Margin="0,0,6,0"
+                                                     VerticalAlignment="Center"
+                                                     Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}" />
+
+                                            <!-- Tab Title (content-sized with 120px max cap + ellipsis) -->
+                                            <TextBlock x:Name="TabTitleText"
+                                                       Grid.Column="1"
+                                                       Text="{Binding DisplayTitle}"
+                                                       FontSize="12"
+                                                       Foreground="#80FFFFFF"
+                                                       FontFamily="{DynamicResource AppFontFamily}"
+                                                       VerticalAlignment="Center"
+                                                       MaxWidth="120"
+                                                       TextTrimming="CharacterEllipsis" />
+
+                                            <!-- Close Button (✕) with fixed reserved space -->
+                                            <Button x:Name="CloseButton"
+                                                    Grid.Column="2"
+                                                    Style="{StaticResource TabCloseButtonStyle}"
+                                                    Click="CloseButton_Click"
+                                                    ToolTip="Close tab (Ctrl+W)"
+                                                    Opacity="0"
+                                                    IsHitTestVisible="False"
+                                                    Tag="InteractiveControl" />
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Subtle Hairline Separator between inactive tabs -->
+                                    <Border x:Name="TabDivider"
+                                            Width="1"
+                                            Height="14"
+                                            Background="#18FFFFFF"
+                                            HorizontalAlignment="Right"
+                                            VerticalAlignment="Center"
+                                            SnapsToDevicePixels="True" />
+                                </Grid>
+                                <DataTemplate.Triggers>
+                                    <!-- Hover state reveals close button without resizing tab -->
+                                    <Trigger SourceName="TabBorder" Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="TabBorder" Property="Background" Value="#0AFFFFFF" />
+                                        <Setter TargetName="TabTitleText" Property="Foreground" Value="#E0FFFFFF" />
+                                        <Setter TargetName="CloseButton" Property="Opacity" Value="0.75" />
+                                        <Setter TargetName="CloseButton" Property="IsHitTestVisible" Value="True" />
+                                    </Trigger>
+                                    <!-- Active Tab State -->
+                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                        <Setter TargetName="TabBorder" Property="Background" Value="#0CFFFFFF" />
+                                        <Setter TargetName="TabTitleText" Property="Foreground" Value="#FFFFFF" />
+                                        <Setter TargetName="TabTitleText" Property="FontWeight" Value="SemiBold" />
+                                        <Setter TargetName="CloseButton" Property="Opacity" Value="0.85" />
+                                        <Setter TargetName="CloseButton" Property="IsHitTestVisible" Value="True" />
+                                        <Setter TargetName="TabDivider" Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Add Tab Button (+) immediately next to the last tab -->
+                    <Button x:Name="PART_AddButton"
+                            Style="{StaticResource AddTabButtonStyle}"
+                            Click="AddButton_Click"
+                            ToolTip="{Binding AddTabToolTip, RelativeSource={RelativeSource AncestorType=controls:WidgetTabStrip}}"
+                            IsEnabled="{Binding CanAddTab, RelativeSource={RelativeSource AncestorType=controls:WidgetTabStrip}}"
+                            Tag="InteractiveControl" />
+                </StackPanel>
+
+                <!-- Hardware-Accelerated Sliding Active Indicator -->
+                <Border x:Name="PART_SlidingIndicator"
+                        Height="2"
+                        VerticalAlignment="Bottom"
+                        HorizontalAlignment="Left"
+                        Width="0"
+                        Background="#FFFFFF"
+                        Opacity="0"
+                        Panel.ZIndex="25"
+                        SnapsToDevicePixels="True">
+                    <Border.RenderTransform>
+                        <TranslateTransform x:Name="PART_IndicatorTransform" X="0" />
+                    </Border.RenderTransform>
+                    <Border.Effect>
+                        <DropShadowEffect Color="#FFFFFF"
+                                          BlurRadius="8"
+                                          ShadowDepth="0"
+                                          Opacity="0.8"
+                                          RenderingBias="Performance" />
+                    </Border.Effect>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+
+        <!-- Right Scroll Chevron Button (>) -->
+        <Button x:Name="PART_ScrollRightButton"
+                Grid.Column="2"
+                Style="{StaticResource TabScrollChevronButtonStyle}"
+                Click="ScrollRightButton_Click"
+                ToolTip="Scroll tabs right"
+                Visibility="Collapsed"
+                Margin="2,0,2,0">
+            <ui:SymbolIcon Symbol="ChevronRight16" FontSize="11" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+        </Button>
+    </Grid>
+</UserControl>

@@ -24,6 +24,12 @@ public static class AppPaths
     public static readonly string LogsDir = Path.Combine(AppDataDir, "logs");
     public static readonly string BackupsDir = Path.Combine(AppDataDir, "backups");
 
+    // ── Widget state (per-tile autosave mirrors) ─────────────
+    /// <summary>Root for widget-owned state files: config\widgets\{widgetId}\{tileId}.json.</summary>
+    public static readonly string WidgetStateDir = Path.Combine(ConfigDir, "widgets");
+    /// <summary>Rollover copies for widget state files: backups\widgets\{widgetId}\{tileId}.json.bak.</summary>
+    public static readonly string WidgetStateBakDir = Path.Combine(BackupsDir, "widgets");
+
     // ── Sub-caches ───────────────────────────────────────────
     public static readonly string PrimaryIconsDir = Path.Combine(CacheDir, "icons");
     public static readonly string LegacyIconsDir = Path.Combine(AppDataDir, "icons");

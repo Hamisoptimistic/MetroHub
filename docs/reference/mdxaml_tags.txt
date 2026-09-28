@@ -1,0 +1,25 @@
+Paragraph Tag=Heading1 Text='H1 head'
+Paragraph Tag=Heading2 Text='H2 head'
+Paragraph Tag=Heading3 Text='H3 head'
+Paragraph Tag=Heading4 Text='H4 head'
+Paragraph Tag=- Text='Plain paragraph with inline code and  an…'
+Section Tag=Blockquote Text=''
+  Paragraph Tag=- Text='A blockquote line'
+List Tag=- Text=''
+  Paragraph Tag=- Text='bullet one'
+  Paragraph Tag=- Text='bullet two'
+List Tag=- Text=''
+  Paragraph Tag=- Text='numbered one'
+  Paragraph Tag=- Text='numbered two'
+Table Tag=- Text=''
+  RowGroup Tag=TableHeader
+    Row Tag=-
+  RowGroup Tag=TableBody
+    Row Tag=OddTableRow
+    Row Tag=EvenTableRow
+Paragraph Tag=CodeBlock Text='fenced code line 1
+fenced code line 2'
+Paragraph Tag=CodeBlock Text='indented code line'
+BlockUIContainer Tag=RuleSingle Text=''
+  Child=System.Windows.Controls.Separator
+Paragraph Tag=- Text='Term below a rule.'

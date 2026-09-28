@@ -8,6 +8,7 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Notepad;
@@ -17,11 +18,32 @@ namespace MetroHub.Widgets.Catalog.Notepad;
 /// Supports 8x4 (Mega), 8x6 (Huge), 8x8 (Canvas), and 8x10 (Full) grid dimensions.
 /// Implements debounced auto-saving, dual-mode view switching, smart list transformation,
 /// and reactive to-do task management.
+/// <para>
+/// Persistence is split two ways: the note body and to-do list live in the widget state file
+/// (<c>config\widgets\notepad\{tileId}.json</c>, written on an idle debounce), while
+/// <c>layout.json</c> only ever holds a slim schema + state pointer. That split is what keeps a
+/// typing pause from re-serializing and fsync-ing the whole hub layout.
+/// </para>
 /// </summary>
 public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
 {
+    /// <summary>Registry id of this widget (state-file directory + tile target path).</summary>
+    public const string WidgetId = "notepad";
+
+    /// <summary>Idle delay before an autosave writes the widget state file.</summary>
+    private const int ContentSaveDelayMs = 400;
+
+    /// <summary>Idle delay before a layout-pointer change reaches layout.json.</summary>
+    private const int LayoutSaveDelayMs = 400;
+
+    private readonly IWidgetStateStore _stateStore;
     private DispatcherTimer? _debounceTimer;
+    private DispatcherTimer? _layoutTimer;
     private bool _isSettingsLoaded;
+    private string? _lastSavedStateJson;    // state-file payload from the last write (skip unchanged)
+    private bool _layoutStubPersisted;      // SettingsJson already carries the slim schema-2 pointer
+    private bool _legacyPayloadPresent;     // layout.json still holds the inline note → rewrite once
+    private bool _stateNeedsInitialWrite;   // no state file yet (first run or fresh migration)
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
@@ -91,8 +113,15 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
 
     #endregion
 
-    public NotepadWidgetViewModel(TileModel model) : base(model)
+    public NotepadWidgetViewModel(TileModel model) : this(model, WidgetStateStore.Default)
     {
+    }
+
+    /// <summary>Test seam: inject a state store rooted somewhere other than %LocalAppData%.</summary>
+    public NotepadWidgetViewModel(TileModel model, IWidgetStateStore stateStore) : base(model)
+    {
+        _stateStore = stateStore ?? WidgetStateStore.Default;
+
         // Enforce supported grid bounds
         if (model.SpanX != 8 || (model.SpanY != 4 && model.SpanY != 6 && model.SpanY != 8 && model.SpanY != 10))
         {
@@ -102,19 +131,40 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
 
         Model.PropertyChanged += OnModelPropertyChanged;
 
-        // Initialize background debouncer (400ms)
+        // Content autosave: writes the widget state file only — never layout.json.
         _debounceTimer = new DispatcherTimer(DispatcherPriority.Background)
         {
-            Interval = TimeSpan.FromMilliseconds(400)
+            Interval = TimeSpan.FromMilliseconds(ContentSaveDelayMs)
         };
         _debounceTimer.Tick += (s, e) =>
         {
             _debounceTimer.Stop();
-            SaveSettings();
+            SaveContent();
+        };
+
+        _layoutTimer = new DispatcherTimer(DispatcherPriority.Background)
+        {
+            Interval = TimeSpan.FromMilliseconds(LayoutSaveDelayMs)
+        };
+        _layoutTimer.Tick += (s, e) =>
+        {
+            _layoutTimer.Stop();
+            SaveLayoutIfNeeded();
         };
 
         LoadSettings(model.SettingsJson);
         _isSettingsLoaded = true;
+
+        // Migration / first run: persist the note once (state file) and, when the layout still
+        // carries the inline note, strip it. Both are idempotent and never run per keystroke.
+        if (_legacyPayloadPresent || _stateNeedsInitialWrite)
+        {
+            ScheduleSave();
+        }
+        if (_legacyPayloadPresent)
+        {
+            ScheduleLayoutSave();
+        }
     }
 
     #region Property Change Handlers
@@ -182,82 +232,90 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
 
     #region Auto-Save & Settings Serialization
 
+    /// <summary>Debounced autosave: schedules the cheap state-file write.</summary>
     public void ScheduleSave()
     {
+        if (!_isSettingsLoaded) return;
         _debounceTimer?.Stop();
         _debounceTimer?.Start();
     }
 
-    protected override void LoadSettings(string? settingsJson)
+    private void ScheduleLayoutSave()
     {
-        if (string.IsNullOrWhiteSpace(settingsJson))
+        if (!_isSettingsLoaded) return;
+        _layoutTimer?.Stop();
+        _layoutTimer?.Start();
+    }
+
+    /// <summary>
+    /// Autosave: writes the note body + to-do list to the widget state file. Deliberately does not
+    /// touch layout.json — that is the whole point of the split. Skipped when the serialized
+    /// payload is byte-identical to the last write.
+    /// </summary>
+    public void SaveContent()
+    {
+        _debounceTimer?.Stop();
+        try
         {
-            // Initial defaults for first-time placement: completely clean canvas
-            NoteText = string.Empty;
-            ActiveViewMode = "Notes";
-            Tasks.Clear();
-            NotifyTaskCounts();
+            var payload = new NotepadWidgetState().CloneForSave(NoteText, ActiveViewMode, Tasks);
+            string json = WidgetSerializer.Serialize(payload);
+
+            _stateNeedsInitialWrite = false;
+            if (string.Equals(json, _lastSavedStateJson, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _lastSavedStateJson = json;
+            _stateStore.Write(WidgetId, Model.Id, json);
+        }
+        catch
+        {
+            // Fail-safe
+        }
+    }
+
+    /// <summary>
+    /// Writes the slim layout payload (schema + state pointer) into the tile's SettingsJson and,
+    /// only when it actually changed, asks the hub to persist layout.json. Migration and lifecycle
+    /// saves call this; the typing path never does.
+    /// </summary>
+    public void SaveLayoutIfNeeded()
+    {
+        _layoutTimer?.Stop();
+        if (_layoutStubPersisted && !_legacyPayloadPresent)
+        {
             return;
         }
 
         try
         {
-            var settings = WidgetSerializer.Deserialize<NotepadWidgetSettings>(settingsJson);
-            if (settings != null)
-            {
-                NoteText = settings.NoteText ?? string.Empty;
-                ActiveViewMode = string.Equals(settings.ActiveViewMode, "Todo", StringComparison.OrdinalIgnoreCase) ? "Todo" : "Notes";
-
-                // Unwire any old tasks
-                foreach (var oldTask in Tasks)
-                {
-                    UnwireTask(oldTask);
-                }
-                Tasks.Clear();
-
-                if (settings.Tasks != null)
-                {
-                    foreach (var task in settings.Tasks)
-                    {
-                        WireTask(task);
-                        Tasks.Add(task);
-                    }
-                }
-            }
-        }
-        catch
-        {
-            // Graceful fallback to empty state
-        }
-
-        NotifyTaskCounts();
-    }
-
-    public override void SaveSettings()
-    {
-        _debounceTimer?.Stop();
-        try
-        {
             var settings = new NotepadWidgetSettings
             {
-                NoteText = NoteText,
-                ActiveViewMode = ActiveViewMode,
-                Tasks = new List<TodoTaskItem>(Tasks)
+                SchemaVersion = NotepadWidgetSettings.CurrentSchemaVersion,
+                StateRef = Model.Id
             };
 
             Model.SettingsJson = WidgetSerializer.Serialize(settings);
+            _layoutStubPersisted = true;
+            _legacyPayloadPresent = false;
 
             var mw = MainWindow.Current;
-            if (mw != null)
+            if (mw == null)
             {
-                if (mw.Dispatcher.CheckAccess())
-                {
-                    mw.SaveGroupsAndLayout();
-                }
-                else
-                {
-                    mw.Dispatcher.Invoke(() => mw.SaveGroupsAndLayout());
-                }
+                // No hub yet (unit tests / early startup): the slim payload is in memory and the
+                // next hub save persists it. Keep the flag so this retries.
+                _layoutStubPersisted = false;
+                return;
+            }
+
+            if (mw.Dispatcher.CheckAccess())
+            {
+                mw.SaveGroupsAndLayout();
+            }
+            else
+            {
+                mw.Dispatcher.Invoke(() => mw.SaveGroupsAndLayout());
             }
         }
         catch
@@ -266,14 +324,95 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
         }
     }
 
+    protected override void LoadSettings(string? settingsJson)
+    {
+        _debounceTimer?.Stop();
+        _layoutTimer?.Stop();
+        _lastSavedStateJson = null;
+
+        NotepadWidgetSettings? settings = null;
+        if (!string.IsNullOrWhiteSpace(settingsJson))
+        {
+            try
+            {
+                settings = WidgetSerializer.Deserialize<NotepadWidgetSettings>(settingsJson);
+            }
+            catch
+            {
+                settings = null;
+            }
+        }
+
+        _legacyPayloadPresent = settings?.IsLegacyPayload == true;
+        _layoutStubPersisted = settings is { IsLegacyPayload: false };
+
+        // Source of truth: the widget state file. The layout payload is only a migration input.
+        NotepadWidgetState? state = TryReadStateFile();
+        if (state == null)
+        {
+            _stateNeedsInitialWrite = true;
+            state = _legacyPayloadPresent ? settings!.TryBuildLegacyState() : null;
+        }
+
+        state ??= new NotepadWidgetState();
+        state.Normalize();
+
+        NoteText = state.NoteText;
+        ActiveViewMode = state.ActiveViewMode;
+
+        // Unwire any old tasks
+        foreach (var oldTask in Tasks)
+        {
+            UnwireTask(oldTask);
+        }
+        Tasks.Clear();
+
+        foreach (var task in state.Tasks)
+        {
+            WireTask(task);
+            Tasks.Add(task);
+        }
+
+        NotifyTaskCounts();
+    }
+
+    private NotepadWidgetState? TryReadStateFile()
+    {
+        try
+        {
+            string? json = _stateStore.Read(WidgetId, Model.Id);
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return null;
+            }
+
+            var state = WidgetSerializer.Deserialize<NotepadWidgetState>(json);
+            if (state == null)
+            {
+                return null;
+            }
+
+            state.Normalize();
+            return state;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Lifecycle save: the note mirror plus the slim layout pointer.</summary>
+    public override void SaveSettings()
+    {
+        SaveContent();
+        SaveLayoutIfNeeded();
+    }
+
     public override void Pause()
     {
         base.Pause();
-        // Flush any unsaved changes immediately when hub hides
-        if (_debounceTimer?.IsEnabled == true)
-        {
-            SaveSettings();
-        }
+        // Both halves are diff-guarded, so flushing on every hub hide is cheap when nothing changed.
+        SaveSettings();
     }
 
     private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -293,7 +432,11 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
         {
             Model.PropertyChanged -= OnModelPropertyChanged;
             _debounceTimer?.Stop();
-            SaveSettings();
+            _layoutTimer?.Stop();
+
+            // Never lose in-flight edits: the note mirror + the slim layout pointer.
+            SaveContent();
+            SaveLayoutIfNeeded();
 
             foreach (var task in Tasks)
             {

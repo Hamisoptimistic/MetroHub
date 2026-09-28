@@ -246,10 +246,14 @@ public partial class MainWindow : BorderlessFluentWindow
                 var clicked = e.OriginalSource as DependencyObject;
                 if (clicked == null || !IsDescendantOf(clicked, textInput))
                 {
-                    // If the user clicked inside the same Notepad widget (e.g. formatting buttons or todo switches),
+                    // If the user clicked inside the same text widget (e.g. formatting buttons or todo switches),
                     // allow that widget to manage its own focus.
                     var notepadView = FindParent<MetroHub.Widgets.Catalog.Notepad.NotepadWidgetView>(textInput);
-                    if (notepadView != null && clicked != null && IsDescendantOf(clicked, notepadView))
+                    var markdownView = notepadView == null
+                        ? FindParent<MetroHub.Widgets.Catalog.Markdown.MarkdownWidgetView>(textInput)
+                        : null;
+                    if (clicked != null && ((notepadView != null && IsDescendantOf(clicked, notepadView)) ||
+                        (markdownView != null && IsDescendantOf(clicked, markdownView))))
                     {
                         return;
                     }
@@ -404,6 +408,10 @@ public partial class MainWindow : BorderlessFluentWindow
             t.Row = Math.Max(1, t.Row);
             t.X = GridPlacementService.PixelXFromCol(t.Col);
         }
+
+        // Housekeeping: widget state files are keyed by tile id, so files whose tile no longer
+        // exists are dead weight. Pruned at startup only — same-session undo/unpin stays recoverable.
+        WidgetStateStore.Default.PruneAllExcept(Tiles.Select(t => t.Id).ToHashSet());
 
         // Temporary sample stub widget tile for Phase 0.2 visual verification
         if (!Tiles.Any(t => t.TileType == TileType.Widget))
@@ -5507,7 +5515,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
             Tiles.Add(groupTile);
             var mod = GridPlacementService.PlaceTileInGroup(
-                groupTile, pinSlotCol, pinSlotRow, pinSlotCol, pinSlotRow, targetGroup, Tiles);
+                groupTile, pinSlotCol, pinSlotRow, pinSlotCol, pinSlotRow, targetGroup, Tiles, Groups, false);
             var pushed = GridPlacementService.PushLowerGroupsDown(targetGroup, Groups, Tiles);
             foreach (var pt in pushed)
             {
@@ -5551,16 +5559,23 @@ public partial class MainWindow : BorderlessFluentWindow
 
         Tiles.Add(tile);
 
+        var modLoose = GridPlacementService.PlaceAndResolveCollisions(
+            tile, freeCol, freeRow, freeCol, freeRow, maxCols, Tiles, groups: Groups);
+
         if (Groups != null && Groups.Count > 0)
         {
             var looseTiles = Tiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
             var pushedGroupTiles = GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, Groups, Tiles);
-            AnimateModifiedTiles(pushedGroupTiles);
+            foreach (var pt in pushedGroupTiles)
+            {
+                if (!modLoose.Contains(pt)) modLoose.Add(pt);
+            }
             UpdateGroupHeaderPositions(animate: true);
             CompactGroupGaps();
-            SaveGroupsAndLayout();
         }
 
+        AnimateModifiedTiles(modLoose);
+        SaveGroupsAndLayout();
         StorageService.SaveLayout(Tiles);
         UpdateCanvasHeight();
         UpdateExposedAddSlots();

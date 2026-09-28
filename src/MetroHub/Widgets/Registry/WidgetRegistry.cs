@@ -373,6 +373,26 @@ public static class WidgetRegistry
             Factory: model => new MetroHub.Widgets.Catalog.Rover.RoverWidgetViewModel(model),
             Category: "Lifestyle"
         ));
+
+        // Register Markdown Notes widget
+        Register(new WidgetDefinition(
+            Id: "markdown",
+            DisplayName: "Markdown Notes",
+            Description: "Write markdown and flip to a rendered preview — open .md files, local images, offline",
+            Icon: SymbolRegular.DocumentEdit24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Mega,   // 8x4
+                WidgetSize.Huge,   // 8x6
+                WidgetSize.Canvas, // 8x8
+                WidgetSize.Full    // 8x10
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Markdown.MarkdownWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Markdown.MarkdownWidgetView),
+            DefaultSize: WidgetSize.Mega,
+            Factory: model => new MetroHub.Widgets.Catalog.Markdown.MarkdownWidgetViewModel(model),
+            Category: "Productivity"
+        ));
     }
 
     public static void Register(WidgetDefinition definition)
