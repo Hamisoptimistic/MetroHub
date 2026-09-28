@@ -595,6 +595,7 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
             BackgroundStyle = _backgroundStyle
         };
         Model.SettingsJson = WidgetSerializer.Serialize(settings);
+        NotifySettingsChanged();
     }
 
     protected override void Dispose(bool disposing)

@@ -1128,7 +1128,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     {
         Model.TargetPath = "media";
         Model.SettingsJson = WidgetSerializer.Serialize(_settings);
-        MainWindow.Current?.SaveGroupsAndLayout();
+        NotifySettingsChanged();
     }
 
     private void RunOnUi(Action action)

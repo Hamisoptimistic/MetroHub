@@ -410,7 +410,7 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase
         };
 
         Model.SettingsJson = JsonSerializer.Serialize(settings);
-        MainWindow.Current?.SaveGroupsAndLayout();
+        NotifySettingsChanged();
     }
 
     public override void Pause()

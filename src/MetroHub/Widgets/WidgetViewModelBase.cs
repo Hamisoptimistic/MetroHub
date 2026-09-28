@@ -46,6 +46,15 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
     public virtual void SaveSettings() { }
 
     /// <summary>
+    /// Notifies the hub via messenger that this widget's settings or layout reference were updated.
+    /// Eliminates direct coupling from widget ViewModels to MainWindow.Current.
+    /// </summary>
+    protected void NotifySettingsChanged()
+    {
+        WidgetMessenger.Default.Send(new WidgetSettingsChangedMessage(Model.Id, Model.SettingsJson));
+    }
+
+    /// <summary>
     /// Lifecycle hook: pause timers/polling when MetroHub is hidden.
     /// </summary>
     public virtual void Pause() { }

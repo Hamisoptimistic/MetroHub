@@ -468,6 +468,7 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
 
         var json = WidgetSerializer.Serialize(settings);
         Model.SettingsJson = json;
+        NotifySettingsChanged();
     }
 
     protected override void OnDeactivated()

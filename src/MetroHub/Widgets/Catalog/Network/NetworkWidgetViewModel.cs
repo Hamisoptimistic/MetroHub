@@ -854,6 +854,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         };
         Model.TargetPath = "network";
         Model.SettingsJson = WidgetSerializer.Serialize(settings);
+        NotifySettingsChanged();
     }
 
     [RelayCommand]

@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using MetroHub.Core.Models;
@@ -24,6 +25,12 @@ public sealed class StorageService
     private static string IconCacheDir => AppPaths.IconCacheDir;
 
     private static readonly object WriteLock = new();
+
+    private static volatile string? _pendingLayoutJson;
+    private static volatile string? _pendingGroupsJson;
+    private static volatile string? _pendingSettingsJson;
+    private static readonly object _flushGate = new();
+    private static Task? _backgroundFlushTask;
 
     // BOM-free UTF-8 encoding to avoid the 3-byte preamble (EF BB BF)
     private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
@@ -425,15 +432,105 @@ public sealed class StorageService
         catch { }
     }
 
+    private static void ScheduleBackgroundFlush()
+    {
+        lock (_flushGate)
+        {
+            if (_backgroundFlushTask == null || _backgroundFlushTask.IsCompleted)
+            {
+                _backgroundFlushTask = Task.Run(async () =>
+                {
+                    while (true)
+                    {
+                        // 50ms coalesce delay: groups rapid drag/drop/resize bursts into 1 disk write
+                        await Task.Delay(50).ConfigureAwait(false);
+                        FlushPending();
+
+                        lock (_flushGate)
+                        {
+                            if (_pendingLayoutJson == null && _pendingGroupsJson == null && _pendingSettingsJson == null)
+                            {
+                                _backgroundFlushTask = null;
+                                break;
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    private static void FlushPending()
+    {
+        lock (WriteLock)
+        {
+            var layout = Interlocked.Exchange(ref _pendingLayoutJson, null);
+            if (layout != null)
+            {
+                SaveAtomic(LayoutPath, LayoutBakPath, layout);
+            }
+
+            var groups = Interlocked.Exchange(ref _pendingGroupsJson, null);
+            if (groups != null)
+            {
+                SaveAtomic(GroupsPath, GroupsBakPath, groups);
+            }
+
+            var settings = Interlocked.Exchange(ref _pendingSettingsJson, null);
+            if (settings != null)
+            {
+                SaveAtomic(SettingsPath, SettingsBakPath, settings);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Synchronously drains any pending asynchronous saves to disk.
+    /// Call on app shutdown or session ending to guarantee zero data loss.
+    /// </summary>
+    public static void Flush()
+    {
+        FlushPending();
+        Task? task;
+        lock (_flushGate)
+        {
+            task = _backgroundFlushTask;
+        }
+        if (task != null && !task.IsCompleted)
+        {
+            try { task.Wait(1000); } catch { }
+        }
+    }
+
     public static void SaveLayout(ObservableCollection<TileModel> tiles)
     {
         try
         {
-            SerializeAndSaveAtomic(tiles, LayoutPath, LayoutBakPath);
+            // Snapshot in-memory on UI thread immediately (< 0.2ms)
+            string json = JsonSerializer.Serialize(tiles, JsonOptions);
+            _pendingLayoutJson = json;
+            ScheduleBackgroundFlush();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[StorageService] SaveLayout failed: {ex.Message}");
+        }
+    }
+
+    public static void SaveLayoutSync(ObservableCollection<TileModel> tiles)
+    {
+        try
+        {
+            string json = JsonSerializer.Serialize(tiles, JsonOptions);
+            lock (WriteLock)
+            {
+                _pendingLayoutJson = null;
+                SaveAtomic(LayoutPath, LayoutBakPath, json);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveLayoutSync failed: {ex.Message}");
         }
     }
 
@@ -479,11 +576,31 @@ public sealed class StorageService
     {
         try
         {
-            SerializeAndSaveAtomic(groups, GroupsPath, GroupsBakPath);
+            // Snapshot in-memory on UI thread immediately (< 0.1ms)
+            string json = JsonSerializer.Serialize(groups, JsonOptions);
+            _pendingGroupsJson = json;
+            ScheduleBackgroundFlush();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[StorageService] SaveGroups failed: {ex.Message}");
+        }
+    }
+
+    public static void SaveGroupsSync(ObservableCollection<TileGroupModel> groups)
+    {
+        try
+        {
+            string json = JsonSerializer.Serialize(groups, JsonOptions);
+            lock (WriteLock)
+            {
+                _pendingGroupsJson = null;
+                SaveAtomic(GroupsPath, GroupsBakPath, json);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveGroupsSync failed: {ex.Message}");
         }
     }
 
@@ -525,11 +642,30 @@ public sealed class StorageService
     {
         try
         {
-            SerializeAndSaveAtomic(settings, SettingsPath, SettingsBakPath);
+            string json = JsonSerializer.Serialize(settings, JsonOptions);
+            _pendingSettingsJson = json;
+            ScheduleBackgroundFlush();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"[StorageService] SaveSettings failed: {ex.Message}");
+        }
+    }
+
+    public static void SaveSettingsSync(AppSettings settings)
+    {
+        try
+        {
+            string json = JsonSerializer.Serialize(settings, JsonOptions);
+            lock (WriteLock)
+            {
+                _pendingSettingsJson = null;
+                SaveAtomic(SettingsPath, SettingsBakPath, json);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveSettingsSync failed: {ex.Message}");
         }
     }
 

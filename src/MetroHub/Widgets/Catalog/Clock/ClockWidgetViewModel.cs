@@ -174,7 +174,7 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
         };
         Model.TargetPath = "clock";
         Model.SettingsJson = WidgetSerializer.Serialize(settings);
-        MainWindow.Current?.SaveGroupsAndLayout();
+        NotifySettingsChanged();
     }
 
     public void SetTimeFormat(bool is24Hour)

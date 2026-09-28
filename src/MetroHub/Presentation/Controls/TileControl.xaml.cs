@@ -241,7 +241,7 @@ public partial class TileControl : UserControl
                 _lastControlLaunchTime = now;
             }
 
-            NativeMethods.LaunchTarget(tile.TargetPath, tile.Arguments, tile.RunAsAdmin);
+            NativeMethods.LaunchTargetAsync(tile.TargetPath, tile.Arguments, tile.RunAsAdmin, tile.Title);
             RaiseEvent(new RoutedEventArgs(TileActivatedEvent, tile));
         }
     }
@@ -1639,7 +1639,7 @@ public partial class TileControl : UserControl
     {
         if (DataContext is TileModel tile && !string.IsNullOrWhiteSpace(tile.TargetPath))
         {
-            NativeMethods.LaunchTarget(tile.TargetPath, tile.Arguments, runAsAdmin: true);
+            NativeMethods.LaunchTargetAsync(tile.TargetPath, tile.Arguments, runAsAdmin: true, displayName: tile.Title);
             RaiseEvent(new RoutedEventArgs(TileActivatedEvent, tile));
         }
     }

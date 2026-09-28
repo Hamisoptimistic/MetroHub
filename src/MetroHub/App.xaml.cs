@@ -56,10 +56,7 @@ public partial class App : Application
         _ownsMutex = isNewInstance;
         if (!isNewInstance)
         {
-            // Broadcast the custom registered message directly into the running instance's message queue!
-            NativeMethods.PostMessage(NativeMethods.HWND_BROADCAST, NativeMethods.WM_SHOW_METROHUB, IntPtr.Zero, IntPtr.Zero);
-
-            // Signal the fallback wake event as well
+            // Signal the existing running instance's wake event
             try
             {
                 using var wakeEvent = EventWaitHandle.OpenExisting(EventName);
@@ -160,6 +157,7 @@ public partial class App : Application
         try
         {
             _mainWindow?.SaveGroupsAndLayout();
+            StorageService.Flush();
         }
         catch { }
 
@@ -171,6 +169,7 @@ public partial class App : Application
         try
         {
             _mainWindow?.SaveGroupsAndLayout();
+            StorageService.Flush();
         }
         catch { }
 

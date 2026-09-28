@@ -144,6 +144,7 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
                 LastStationId = _audioService.CurrentStation?.Id
             };
             Model.SettingsJson = WidgetSerializer.Serialize(settings);
+            NotifySettingsChanged();
         }
         catch (Exception ex)
         {
@@ -408,10 +409,11 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
 
     private static void DispatchToUi(Action action)
     {
-        var dispatcher = Application.Current?.Dispatcher;
+        var app = Application.Current;
+        var dispatcher = app?.Dispatcher;
         if (dispatcher != null && !dispatcher.CheckAccess() && dispatcher.Thread.IsAlive && !dispatcher.HasShutdownStarted)
         {
-            if (MetroHub.MainWindow.Current != null)
+            if (app?.MainWindow != null)
             {
                 _ = dispatcher.BeginInvoke(action);
                 return;

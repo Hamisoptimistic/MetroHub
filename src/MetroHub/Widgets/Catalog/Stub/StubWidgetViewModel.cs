@@ -66,7 +66,7 @@ public sealed partial class StubWidgetViewModel : WidgetViewModelBase
         };
         Model.TargetPath = "stub";
         Model.SettingsJson = WidgetSerializer.Serialize(settings);
-        MainWindow.Current?.SaveGroupsAndLayout();
+        NotifySettingsChanged();
     }
 
     [RelayCommand]

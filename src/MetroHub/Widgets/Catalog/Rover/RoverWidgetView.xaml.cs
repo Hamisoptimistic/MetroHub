@@ -68,7 +68,18 @@ public partial class RoverWidgetView : UserControl
 
     private void OnEngineFrameChanged(int x, int y)
     {
-        UpdateAllSpriteBrushes(x, y);
+        if (Dispatcher.CheckAccess())
+        {
+            UpdateAllSpriteBrushes(x, y);
+        }
+        else if (!Dispatcher.HasShutdownStarted)
+        {
+            try
+            {
+                Dispatcher.Invoke(() => UpdateAllSpriteBrushes(x, y));
+            }
+            catch { }
+        }
     }
 
     private void UpdateAllSpriteBrushes(int x, int y)

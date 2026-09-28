@@ -86,6 +86,7 @@ public sealed partial class QuickControlsWidgetViewModel : WidgetViewModelBase
         var settings = new QuickControlsWidgetSettings();
         Model.TargetPath = "quick_controls";
         Model.SettingsJson = WidgetSerializer.Serialize(settings);
+        NotifySettingsChanged();
     }
 
     public override void Pause()

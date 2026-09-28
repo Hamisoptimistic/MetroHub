@@ -16,6 +16,8 @@ using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 using MetroHub.Core.Services.Catalog;
 using MetroHub.Presentation.Controls;
+using MetroHub.Widgets.Messaging;
+using CommunityToolkit.Mvvm.Messaging;
 using Wpf.Ui.Controls;
 using MenuItem = System.Windows.Controls.MenuItem;
 using ContextMenu = System.Windows.Controls.ContextMenu;
@@ -221,6 +223,11 @@ public partial class MainWindow : BorderlessFluentWindow
         PreviewTextInput += OnWindowPreviewTextInput;
         PreviewMouseDown += OnWindowPreviewMouseDown;
         ContentScrollViewer.ScrollChanged += OnContentScrollViewerScrollChanged;
+
+        // Auto-persist layout in background when any widget notifies of settings changes
+        WeakReferenceMessenger.Default.Register<MainWindow, WidgetSettingsChangedMessage>(
+            this,
+            (r, msg) => StorageService.SaveLayout(r.Tiles));
     }
 
     private void OnWindowPreviewMouseDown(object sender, MouseButtonEventArgs e)
@@ -404,24 +411,6 @@ public partial class MainWindow : BorderlessFluentWindow
         // exists are dead weight. Pruned at startup only — same-session undo/unpin stays recoverable.
         WidgetStateStore.Default.PruneAllExcept(Tiles.Select(t => t.Id).ToHashSet());
 
-        // Temporary sample stub widget tile for Phase 0.2 visual verification
-        if (!Tiles.Any(t => t.TileType == TileType.Widget))
-        {
-            var testWidget = new TileModel
-            {
-                Title = "Widget Preview",
-                TargetPath = "stub",
-                TileType = TileType.Widget,
-                Col = 12,
-                Row = 1,
-                SpanX = 2,
-                SpanY = 2,
-                X = GridPlacementService.PixelXFromCol(12),
-                Y = GridPlacementService.PixelYFromRow(1)
-            };
-            Tiles.Add(testWidget);
-        }
-
         DiscoverGroupsFromTiles();
         EnsureGroupIndices();
         MigrateGroupColumnOffsets();
@@ -597,6 +586,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private const int WM_SETTINGCHANGE = 0x001A;
     private const int WM_GETOBJECT = 0x003D;
+    private const int WM_DISPLAYCHANGE = 0x007E;
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
@@ -610,6 +600,19 @@ public partial class MainWindow : BorderlessFluentWindow
         {
             Dispatcher.Invoke(ShowScreen);
             handled = true;
+        }
+        else if (msg == WM_DISPLAYCHANGE)
+        {
+            Dispatcher.InvokeAsync(async () =>
+            {
+                if (IsVisible)
+                {
+                    SnapToWorkArea();
+                    ApplyConfiguredBackdrop();
+                    await Task.Delay(200);
+                    SnapToWorkArea();
+                }
+            });
         }
         else if (msg == WM_SETTINGCHANGE)
         {
@@ -951,6 +954,7 @@ public partial class MainWindow : BorderlessFluentWindow
         }
         else
         {
+            try { StorageService.Flush(); } catch { }
             UninstallWinEventHook();
             _hotkeyService.Dispose();
             base.OnClosing(e);
@@ -960,7 +964,12 @@ public partial class MainWindow : BorderlessFluentWindow
     public void ExitApplication()
     {
         _isClosingToExit = true;
-        try { SaveGroupsAndLayout(); } catch { }
+        try
+        {
+            SaveGroupsAndLayout();
+            StorageService.Flush();
+        }
+        catch { }
         InstalledAppsService.PauseWatchers();
         UninstallWinEventHook();
         _hotkeyService.Dispose();

@@ -156,6 +156,9 @@ public class RoverWidgetTests
                 if (size.SpanX == 4 && size.SpanY == 2) Assert.True(vm.IsWide);
                 if (size.SpanX == 4 && size.SpanY == 4) Assert.True(vm.IsLarge);
                 if (size.SpanX == 8) Assert.True(vm.IsBanner);
+
+                view.DataContext = null;
+                vm.Dispose();
             }
         });
         thread.SetApartmentState(ApartmentState.STA);
@@ -245,6 +248,9 @@ public class RoverWidgetTests
                 string path = Path.Combine(outDir, $"{s.Name}.png");
                 using var fs = File.Create(path);
                 encoder.Save(fs);
+
+                view.DataContext = null;
+                vm.Dispose();
             }
         });
         thread.SetApartmentState(ApartmentState.STA);

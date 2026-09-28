@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
@@ -255,59 +256,114 @@ public static class NativeMethods
 
         try
         {
-            string targetPath = path.Trim();
-            if (targetPath.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
-            {
-                targetPath = "https://" + targetPath;
-            }
-            else if (!targetPath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-                     !targetPath.StartsWith("https://", StringComparison.OrdinalIgnoreCase) &&
-                     !targetPath.StartsWith("shell:", StringComparison.OrdinalIgnoreCase) &&
-                     !targetPath.Contains('\\') &&
-                     !File.Exists(targetPath) &&
-                     !Directory.Exists(targetPath) &&
-                     (targetPath.EndsWith(".com", StringComparison.OrdinalIgnoreCase) ||
-                      targetPath.EndsWith(".org", StringComparison.OrdinalIgnoreCase) ||
-                      targetPath.EndsWith(".net", StringComparison.OrdinalIgnoreCase) ||
-                      targetPath.EndsWith(".io", StringComparison.OrdinalIgnoreCase) ||
-                      targetPath.EndsWith(".tv", StringComparison.OrdinalIgnoreCase) ||
-                      targetPath.EndsWith(".app", StringComparison.OrdinalIgnoreCase) ||
-                      targetPath.EndsWith(".ai", StringComparison.OrdinalIgnoreCase)))
-            {
-                targetPath = "https://" + targetPath;
-            }
-
-            var psi = new ProcessStartInfo
-            {
-                FileName = targetPath,
-                Arguments = args ?? string.Empty,
-                UseShellExecute = true
-            };
-
-            string? workDir = ResolveWorkingDirectory(path);
-            if (!string.IsNullOrWhiteSpace(workDir) && Directory.Exists(workDir))
-            {
-                psi.WorkingDirectory = workDir;
-            }
-
-            if (path.StartsWith("shell:", StringComparison.OrdinalIgnoreCase))
-            {
-                psi.FileName = "explorer.exe";
-                psi.Arguments = $"\"{path}\"";
-            }
-
-            if (runAsAdmin)
-            {
-                psi.Verb = "runas";
-            }
-
-            Process.Start(psi);
+            LaunchTargetCore(path, args, runAsAdmin);
             return true;
         }
         catch
         {
             return false;
         }
+    }
+
+    public static void LaunchTargetAsync(string path, string? args = null, bool runAsAdmin = false, string? displayName = null)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        string launchKey = $"{path.Trim()}|{args?.Trim()}|{runAsAdmin}";
+        lock (_launchLock)
+        {
+            var now = DateTime.UtcNow;
+            if (string.Equals(_lastLaunchKey, launchKey, StringComparison.OrdinalIgnoreCase) &&
+                (now - _lastLaunchTime).TotalMilliseconds < 800)
+            {
+                return;
+            }
+
+            _lastLaunchKey = launchKey;
+            _lastLaunchTime = now;
+        }
+
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                LaunchTargetCore(path, args, runAsAdmin);
+            }
+            catch (System.ComponentModel.Win32Exception win32Ex) when (win32Ex.NativeErrorCode == 1223)
+            {
+                // 1223 = ERROR_CANCELLED: User clicked "No" / "Cancel" on UAC prompt. Not an error.
+            }
+            catch (Exception ex)
+            {
+                string title = !string.IsNullOrWhiteSpace(displayName)
+                    ? displayName
+                    : Path.GetFileNameWithoutExtension(path);
+                if (string.IsNullOrWhiteSpace(title)) title = path;
+
+                System.Windows.Application.Current?.Dispatcher.InvokeAsync(() =>
+                {
+                    if (MainWindow.Current != null)
+                    {
+                        if (!MainWindow.Current.IsVisible)
+                        {
+                            MainWindow.Current.ShowScreen();
+                        }
+                        MainWindow.Current.ShowToast($"Could not launch {title}: {ex.Message}", isError: true);
+                    }
+                });
+            }
+        });
+    }
+
+    private static void LaunchTargetCore(string path, string? args, bool runAsAdmin)
+    {
+        string targetPath = path.Trim();
+        if (targetPath.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
+        {
+            targetPath = "https://" + targetPath;
+        }
+        else if (!targetPath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                 !targetPath.StartsWith("https://", StringComparison.OrdinalIgnoreCase) &&
+                 !targetPath.StartsWith("shell:", StringComparison.OrdinalIgnoreCase) &&
+                 !targetPath.Contains('\\') &&
+                 !File.Exists(targetPath) &&
+                 !Directory.Exists(targetPath) &&
+                 (targetPath.EndsWith(".com", StringComparison.OrdinalIgnoreCase) ||
+                  targetPath.EndsWith(".org", StringComparison.OrdinalIgnoreCase) ||
+                  targetPath.EndsWith(".net", StringComparison.OrdinalIgnoreCase) ||
+                  targetPath.EndsWith(".io", StringComparison.OrdinalIgnoreCase) ||
+                  targetPath.EndsWith(".tv", StringComparison.OrdinalIgnoreCase) ||
+                  targetPath.EndsWith(".app", StringComparison.OrdinalIgnoreCase) ||
+                  targetPath.EndsWith(".ai", StringComparison.OrdinalIgnoreCase)))
+        {
+            targetPath = "https://" + targetPath;
+        }
+
+        var psi = new ProcessStartInfo
+        {
+            FileName = targetPath,
+            Arguments = args ?? string.Empty,
+            UseShellExecute = true
+        };
+
+        string? workDir = ResolveWorkingDirectory(path);
+        if (!string.IsNullOrWhiteSpace(workDir) && Directory.Exists(workDir))
+        {
+            psi.WorkingDirectory = workDir;
+        }
+
+        if (path.StartsWith("shell:", StringComparison.OrdinalIgnoreCase))
+        {
+            psi.FileName = "explorer.exe";
+            psi.Arguments = $"\"{path}\"";
+        }
+
+        if (runAsAdmin)
+        {
+            psi.Verb = "runas";
+        }
+
+        Process.Start(psi);
     }
 
     public static string? ResolveWorkingDirectory(string path)

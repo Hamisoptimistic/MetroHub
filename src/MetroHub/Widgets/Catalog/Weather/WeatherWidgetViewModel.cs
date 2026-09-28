@@ -245,6 +245,7 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
         try
         {
             Model.SettingsJson = JsonSerializer.Serialize(_settings);
+            NotifySettingsChanged();
         }
         catch { }
     }

@@ -168,7 +168,7 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
 
         Model.TargetPath = "photos";
         Model.SettingsJson = WidgetSerializer.Serialize(settings);
-        MainWindow.Current?.SaveGroupsAndLayout();
+        NotifySettingsChanged();
     }
 
     [RelayCommand]
@@ -189,8 +189,8 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
                 dialog.InitialDirectory = FolderPath;
             }
 
-            var mainWindow = MainWindow.Current;
-            bool? result = mainWindow != null ? dialog.ShowDialog(mainWindow) : dialog.ShowDialog();
+            var owner = Application.Current?.MainWindow;
+            bool? result = owner != null ? dialog.ShowDialog(owner) : dialog.ShowDialog();
 
             if (result == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
             {

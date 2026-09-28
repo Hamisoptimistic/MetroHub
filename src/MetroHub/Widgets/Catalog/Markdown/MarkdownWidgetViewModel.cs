@@ -660,24 +660,7 @@ public sealed partial class MarkdownWidgetViewModel : WidgetViewModelBase
             Model.SettingsJson = json;
             _layoutStubPersisted = true;
             _legacyPayloadPresent = false;
-
-            var mw = MainWindow.Current;
-            if (mw == null)
-            {
-                // No hub yet (unit tests / early startup): the slim payload is in memory and the
-                // next hub save persists it. Keep the flag so this retries.
-                _layoutStubPersisted = false;
-                return;
-            }
-
-            if (mw.Dispatcher.CheckAccess())
-            {
-                mw.SaveGroupsAndLayout();
-            }
-            else
-            {
-                mw.Dispatcher.Invoke(() => mw.SaveGroupsAndLayout());
-            }
+            NotifySettingsChanged();
         }
         catch (Exception ex)
         {

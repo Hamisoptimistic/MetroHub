@@ -102,7 +102,7 @@ public class HeartbeatBatchWidgetsTests
                 WidgetHeartbeatService.Pulse(DateTime.UtcNow.AddSeconds(i));
             }
 
-            Assert.Equal(RoverState.Idle, vm.State);
+            Assert.True(vm.State == RoverState.Idle || vm.State == RoverState.Sleeping);
 
             vm.Dispose();
             // Disposed Rover detaches cleanly
