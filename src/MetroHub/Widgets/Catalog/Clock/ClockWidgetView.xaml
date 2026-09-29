@@ -31,14 +31,14 @@
                                                  FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                                  FontWeight="{Binding ClockFontWeight}"
                                                  FontFamily="{Binding ClockFontFamily}"
-                                                 Foreground="#FFFFFF"
+                                                 Foreground="{DynamicResource TextPrimaryBrush}"
                                                  VerticalAlignment="Center"
                                                  TextAlignment="Center" />
                         <TextBlock Text=":"
                                    FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                    FontWeight="{Binding ClockFontWeight}"
                                    FontFamily="{Binding ClockFontFamily}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center"
                                    Typography.NumeralAlignment="Tabular"
                                    Typography.NumeralStyle="Normal"
@@ -46,11 +46,7 @@
                                    TextOptions.TextRenderingMode="ClearType"
                                    TextOptions.TextHintingMode="Animated">
                             <TextBlock.Effect>
-                                <DropShadowEffect BlurRadius="26"
-                                                  Direction="270"
-                                                  ShadowDepth="4"
-                                                  Opacity="0.22"
-                                                  Color="#080E1A" />
+                                <StaticResource ResourceKey="StudioGlassTextShadow" />
                             </TextBlock.Effect>
                         </TextBlock>
                         <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
@@ -58,7 +54,7 @@
                                                  FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                                  FontWeight="{Binding ClockFontWeight}"
                                                  FontFamily="{Binding ClockFontFamily}"
-                                                 Foreground="#FFFFFF"
+                                                 Foreground="{DynamicResource TextPrimaryBrush}"
                                                  VerticalAlignment="Center"
                                                  TextAlignment="Center" />
                     </StackPanel>
@@ -85,14 +81,14 @@
                                                  FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                                  FontWeight="{Binding ClockFontWeight}"
                                                  FontFamily="{Binding ClockFontFamily}"
-                                                 Foreground="#FFFFFF"
+                                                 Foreground="{DynamicResource TextPrimaryBrush}"
                                                  VerticalAlignment="Center"
                                                  TextAlignment="Center" />
                         <TextBlock Text=":"
                                    FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                    FontWeight="{Binding ClockFontWeight}"
                                    FontFamily="{Binding ClockFontFamily}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center"
                                    Typography.NumeralAlignment="Tabular"
                                    Typography.NumeralStyle="Normal"
@@ -100,11 +96,7 @@
                                    TextOptions.TextRenderingMode="ClearType"
                                    TextOptions.TextHintingMode="Animated">
                             <TextBlock.Effect>
-                                <DropShadowEffect BlurRadius="26"
-                                                  Direction="270"
-                                                  ShadowDepth="4"
-                                                  Opacity="0.22"
-                                                  Color="#080E1A" />
+                                <StaticResource ResourceKey="StudioGlassTextShadow" />
                             </TextBlock.Effect>
                         </TextBlock>
                         <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
@@ -112,7 +104,7 @@
                                                  FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                                  FontWeight="{Binding ClockFontWeight}"
                                                  FontFamily="{Binding ClockFontFamily}"
-                                                 Foreground="#FFFFFF"
+                                                 Foreground="{DynamicResource TextPrimaryBrush}"
                                                  VerticalAlignment="Center"
                                                  TextAlignment="Center" />
                     </StackPanel>
@@ -149,14 +141,14 @@
                                                  FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                                  FontWeight="{Binding ClockFontWeight}"
                                                  FontFamily="{Binding ClockFontFamily}"
-                                                 Foreground="#FFFFFF"
+                                                 Foreground="{DynamicResource TextPrimaryBrush}"
                                                  VerticalAlignment="Center"
                                                  TextAlignment="Center" />
                         <TextBlock Text=":"
                                    FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                    FontWeight="{Binding ClockFontWeight}"
                                    FontFamily="{Binding ClockFontFamily}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center"
                                    Typography.NumeralAlignment="Tabular"
                                    Typography.NumeralStyle="Normal"
@@ -164,11 +156,7 @@
                                    TextOptions.TextRenderingMode="ClearType"
                                    TextOptions.TextHintingMode="Animated">
                             <TextBlock.Effect>
-                                <DropShadowEffect BlurRadius="26"
-                                                  Direction="270"
-                                                  ShadowDepth="4"
-                                                  Opacity="0.22"
-                                                  Color="#080E1A" />
+                                <StaticResource ResourceKey="StudioGlassTextShadow" />
                             </TextBlock.Effect>
                         </TextBlock>
                         <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
@@ -176,7 +164,7 @@
                                                  FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                                  FontWeight="{Binding ClockFontWeight}"
                                                  FontFamily="{Binding ClockFontFamily}"
-                                                 Foreground="#FFFFFF"
+                                                 Foreground="{DynamicResource TextPrimaryBrush}"
                                                  VerticalAlignment="Center"
                                                  TextAlignment="Center" />
                     </StackPanel>

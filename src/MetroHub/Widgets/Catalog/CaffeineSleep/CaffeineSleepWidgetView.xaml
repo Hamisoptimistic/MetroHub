@@ -55,7 +55,7 @@
                                 <Setter Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#14FFFFFF" />
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource WidgetDividerBrush}" />
                                 <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#20FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
@@ -116,7 +116,7 @@
                                            Text="{TemplateBinding Header}"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                           Foreground="#FFFFFF"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
                                            TextAlignment="Center"
@@ -169,7 +169,7 @@
                     <Grid Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <ui:SymbolIcon Symbol="WeatherMoon24"
                                        FontSize="22"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        SnapsToDevicePixels="False" />
@@ -187,7 +187,7 @@
                         <!-- 1. Coffee Mug Base Icon -->
                         <ui:SymbolIcon Symbol="DrinkCoffee24"
                                        FontSize="22"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        SnapsToDevicePixels="False" />

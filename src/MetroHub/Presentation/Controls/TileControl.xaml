@@ -79,7 +79,7 @@
                                FontFamily="{DynamicResource AppFontFamily}"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                SnapsToDevicePixels="True"
                                UseLayoutRounding="True"
                                TextOptions.TextFormattingMode="Ideal"
@@ -133,7 +133,7 @@
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                             <TextBlock Text="{Binding Label}"
                                        HorizontalAlignment="Center"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"

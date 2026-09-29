@@ -317,7 +317,7 @@
                     <!-- Hairline Divider -->
                     <Border Grid.Row="1"
                             Height="1"
-                            Background="#14FFFFFF"
+                            Background="{DynamicResource WidgetDividerBrush}"
                             Margin="0,0,0,14"
                             SnapsToDevicePixels="True" />
 
@@ -379,7 +379,7 @@
                                        Text="Adapter:"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,0,8" />
                             <TextBlock Grid.Row="0" Grid.Column="1"
@@ -399,7 +399,7 @@
                                        Text="DNS:"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,0,8" />
                             <TextBlock Grid.Row="1" Grid.Column="1"
@@ -423,7 +423,7 @@
                                 <TextBlock Text="IPv4:"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#FFFFFF"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                            VerticalAlignment="Center" />
                                 <Button Style="{StaticResource MicroCopyButtonStyle}"
                                         Margin="6,0,0,0"
@@ -451,7 +451,7 @@
                                 <TextBlock Text="MAC:"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#FFFFFF"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                            VerticalAlignment="Center" />
                                 <Button Style="{StaticResource MicroCopyButtonStyle}"
                                         Margin="6,0,0,0"
@@ -476,7 +476,7 @@
                                        Text="Session Uptime:"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,0,8" />
                             <TextBlock Grid.Row="4" Grid.Column="1"
@@ -496,7 +496,7 @@
                                        Text="Link Speed:"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,0,8" />
                             <TextBlock Grid.Row="5" Grid.Column="1"
@@ -516,7 +516,7 @@
                                        Text="IP Assignment:"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,0,8" />
                             <TextBlock Grid.Row="6" Grid.Column="1"
@@ -536,7 +536,7 @@
                                        Text="MTU:"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,0,0" />
                             <TextBlock Grid.Row="7" Grid.Column="1"
@@ -683,7 +683,7 @@
                     <!-- Hairline Divider -->
                     <Border Grid.Row="1"
                             Height="1"
-                            Background="#14FFFFFF"
+                            Background="{DynamicResource WidgetDividerBrush}"
                             Margin="0,0,0,14"
                             SnapsToDevicePixels="True" />
 
@@ -938,7 +938,7 @@
                                                                     Height="32"
                                                                     FontSize="{DynamicResource TypeBodyFontSize}"
                                                                     FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                                                    Foreground="#FFFFFF"
+                                                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                                                     Background="Transparent"
                                                                     BorderBrush="#25FFFFFF"
                                                                     BorderThickness="1"
@@ -995,7 +995,7 @@
                                                         <ui:ProgressRing IsIndeterminate="{Binding IsConnecting}"
                                                                          Width="14"
                                                                          Height="14"
-                                                                         Foreground="#FFFFFF"
+                                                                         Foreground="{DynamicResource TextPrimaryBrush}"
                                                                          HorizontalAlignment="Center"
                                                                          VerticalAlignment="Center" />
                                                     </Border>
@@ -1153,7 +1153,7 @@
                             <ui:ProgressRing IsIndeterminate="{Binding IsWifiRadioBusy}"
                                              Width="36"
                                              Height="36"
-                                             Foreground="#FFFFFF"
+                                             Foreground="{DynamicResource TextPrimaryBrush}"
                                              HorizontalAlignment="Center"
                                              Margin="0,0,0,12" />
                             <TextBlock Text="{Binding WifiTransitionStatusText}"
@@ -1189,14 +1189,14 @@
                         <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                             <ui:SymbolIcon Symbol="ShieldQuestion32"
                                            FontSize="18"
-                                           Foreground="#FFFFFF"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,10,0" />
                             <TextBlock Text="Disable Network Adapters"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
                                        FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -1244,7 +1244,7 @@
                     <!-- Row 1: Hairline Divider (Same as Ethernet & Wi-Fi) -->
                     <Border Grid.Row="1"
                             Height="1"
-                            Background="#14FFFFFF"
+                            Background="{DynamicResource WidgetDividerBrush}"
                             Margin="0,0,0,14"
                             SnapsToDevicePixels="True" />
 
@@ -1289,7 +1289,7 @@
                                                            Text="{Binding Glyph}"
                                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                                            FontSize="18"
-                                                           Foreground="#FFFFFF"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                                            Opacity="{Binding IconOpacity}"
                                                            VerticalAlignment="Center"
                                                            Margin="0,0,14,0"
@@ -1320,7 +1320,7 @@
                                                                      IsIndeterminate="{Binding IsBusy}"
                                                                      Width="14"
                                                                      Height="14"
-                                                                     Foreground="#FFFFFF"
+                                                                     Foreground="{DynamicResource TextPrimaryBrush}"
                                                                      HorizontalAlignment="Left"
                                                                      VerticalAlignment="Center"
                                                                      Margin="4,0,0,0" />
@@ -1511,7 +1511,7 @@
                                                FontFamily="{DynamicResource AppDisplayFontFamily}"
                                                FontSize="{DynamicResource TypeDisplayFontSize}"
                                                FontWeight="{DynamicResource TypeDisplayFontWeight}"
-                                               Foreground="#FFFFFF"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
                                                TextOptions.TextFormattingMode="Display"
                                                Typography.NumeralAlignment="Tabular" />
                                     <TextBlock Text="Mbps"
@@ -1536,7 +1536,7 @@
                                                FontFamily="{DynamicResource AppDisplayFontFamily}"
                                                FontSize="{DynamicResource TypeDisplayFontSize}"
                                                FontWeight="{DynamicResource TypeDisplayFontWeight}"
-                                               Foreground="#FFFFFF"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
                                                TextOptions.TextFormattingMode="Display"
                                                Typography.NumeralAlignment="Tabular" />
                                     <TextBlock Text="Mbps"
@@ -1553,7 +1553,7 @@
                         <Border Grid.Row="1"
                                 Height="1"
                                 HorizontalAlignment="Stretch"
-                                Background="#14FFFFFF"
+                                Background="{DynamicResource WidgetDividerBrush}"
                                 SnapsToDevicePixels="True" />
 
                         <!-- ROW 2: BOTTOM STATUS BAR (Ping flush-left, 3 Dots Center, Jitter flush-right) -->
@@ -1578,7 +1578,7 @@
                                 <TextBlock Text="{Binding SpeedTestPingDisplay}"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                           Foreground="#FFFFFF"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                            VerticalAlignment="Center"
                                            TextOptions.TextFormattingMode="Display"
                                            Typography.NumeralAlignment="Tabular" />
@@ -1610,7 +1610,7 @@
                                 <TextBlock Text="{Binding SpeedTestJitterDisplay}"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                           Foreground="#FFFFFF"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                            VerticalAlignment="Center"
                                            TextOptions.TextFormattingMode="Display"
                                            Typography.NumeralAlignment="Tabular" />
@@ -1654,7 +1654,7 @@
                     <!-- ROW 1: TOP HAIRLINE DIVIDER -->
                     <Border Grid.Row="1"
                             Height="1"
-                            Background="#14FFFFFF"
+                            Background="{DynamicResource WidgetDividerBrush}"
                             Margin="0,4,0,16"
                             SnapsToDevicePixels="True" />
 
@@ -1676,7 +1676,7 @@
                                 <TextBlock Text="{Binding UsageWiredIcon}"
                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="15"
-                                           Foreground="#FFFFFF"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,7,0" />
                                 <TextBlock Text="{Binding UsageWiredTitle}"
@@ -1691,7 +1691,7 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeDisplayFontSize}"
                                        FontWeight="{DynamicResource TypeDisplayFontWeight}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        HorizontalAlignment="Center"
                                        Margin="0,8,0,4"
                                        Typography.NumeralAlignment="Tabular" />
@@ -1740,7 +1740,7 @@
                         <!-- Subtle 1px Vertical Separator -->
                         <Border Grid.Column="1"
                                 Width="1"
-                                Background="#14FFFFFF"
+                                Background="{DynamicResource WidgetDividerBrush}"
                                 Margin="20,2,20,2"
                                 SnapsToDevicePixels="True" />
 
@@ -1751,7 +1751,7 @@
                                 <TextBlock Text="&#xE701;"
                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="15"
-                                           Foreground="#FFFFFF"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,7,0" />
                                 <TextBlock Text="Wi-Fi"
@@ -1766,7 +1766,7 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeDisplayFontSize}"
                                        FontWeight="{DynamicResource TypeDisplayFontWeight}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        HorizontalAlignment="Center"
                                        Margin="0,8,0,4"
                                        Typography.NumeralAlignment="Tabular" />
@@ -1816,7 +1816,7 @@
                     <!-- ROW 3: BOTTOM HAIRLINE DIVIDER -->
                     <Border Grid.Row="3"
                             Height="1"
-                            Background="#14FFFFFF"
+                            Background="{DynamicResource WidgetDividerBrush}"
                             Margin="0,16,0,12"
                             SnapsToDevicePixels="True" />
 
@@ -1844,7 +1844,7 @@
                                  FontFamily="{DynamicResource AppDisplayFontFamily}"
                                  FontSize="{DynamicResource TypeSubtitleFontSize}"
                                  FontWeight="{DynamicResource TypeSubtitleFontWeight}"
-                                 Foreground="#FFFFFF" />
+                                 Foreground="{DynamicResource TextPrimaryBrush}" />
                         </TextBlock>
 
                         <!-- Right: Combined Rx / Tx Breakdown -->

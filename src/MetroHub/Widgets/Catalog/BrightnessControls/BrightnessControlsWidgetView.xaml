@@ -19,7 +19,6 @@
 
     <UserControl.Resources>
         <!-- Volume & Media-Consistent Transport Button Style: Inherits WidgetMicroButtonStyle -->
-        <Style x:Key="BrightnessTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetMicroButtonStyle}" />
     </UserControl.Resources>
 
     <!-- Transparent WidgetCard with Padding="0" so dividers run border-to-border (matching Volume, Focus Timer, Media Player) -->
@@ -59,14 +58,14 @@
 
                 <!-- 1. Day / Night Preset Button (Sun / Moon) -->
                 <Button Grid.Column="0"
-                        Style="{StaticResource BrightnessTransportButtonStyle}"
+                        Style="{StaticResource WidgetMicroButtonStyle}"
                         HorizontalAlignment="Left"
                         Command="{Binding ToggleNightModeCommand}"
                         ToolTip="{Binding NightModeTooltip}">
                     <TextBlock Text="{Binding MasterGlyph}"
                                 FontFamily="{DynamicResource AppIconFontFamily}"
                                 FontSize="16"
-                                Foreground="#FFFFFF"
+                                Foreground="{DynamicResource TextPrimaryBrush}"
                                 VerticalAlignment="Center"
                                 HorizontalAlignment="Center" />
                 </Button>
@@ -86,7 +85,7 @@
 
                 <!-- 3. Link / Sync Button: Displays Link Glyph normally, Cross-fades to % while dragging -->
                 <Button Grid.Column="2"
-                        Style="{StaticResource BrightnessTransportButtonStyle}"
+                        Style="{StaticResource WidgetMicroButtonStyle}"
                         HorizontalAlignment="Right"
                         Command="{Binding ToggleLinkCommand}"
                         ToolTip="{Binding LinkTooltip}"
@@ -97,7 +96,7 @@
                                    Text="{Binding LinkGlyph}"
                                    FontFamily="{DynamicResource AppIconFontFamily}"
                                    FontSize="15"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
                             <TextBlock.Style>
@@ -132,7 +131,7 @@
                                    Text="{Binding MasterBrightnessPercentText}"
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                    FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center"
                                    Margin="0,-1,0,0"
@@ -203,7 +202,7 @@
                                    Text="Displays &amp; Brightness"
                                    FontSize="{DynamicResource TypeHeaderFontSize}"
                                    FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    Margin="6,2,0,8"
                                    SnapsToDevicePixels="True" />
 
@@ -226,7 +225,7 @@
                                                             <Setter Property="Background" Value="#1AFFFFFF" />
                                                         </Trigger>
                                                         <DataTrigger Binding="{Binding IsCurrentCursorMonitor}" Value="True">
-                                                            <Setter Property="Background" Value="#14FFFFFF" />
+                                                            <Setter Property="Background" Value="{DynamicResource WidgetDividerBrush}" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -259,7 +258,7 @@
                                                            Text="{Binding DeviceTypeGlyph}"
                                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                                            FontSize="16"
-                                                           Foreground="#FFFFFF"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                                            VerticalAlignment="Center"
                                                            HorizontalAlignment="Left" />
 
@@ -268,7 +267,7 @@
                                                     <TextBlock Text="{Binding FriendlyName}"
                                                                FontSize="{DynamicResource TypeBodyFontSize}"
                                                                FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                                               Foreground="#FFFFFF"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}"
                                                                TextTrimming="CharacterEllipsis" />
                                                     <TextBlock FontSize="{DynamicResource TypeCaptionFontSize}"
                                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
@@ -313,7 +312,7 @@
                                                            Text="{Binding BrightnessPercentText}"
                                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                                           Foreground="#FFFFFF"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                                            VerticalAlignment="Center"
                                                            HorizontalAlignment="Right"
                                                            Margin="0,-2,0,0"
@@ -335,7 +334,7 @@
                       SnapsToDevicePixels="True">
                     <Border Height="2"
                             VerticalAlignment="Center"
-                            Background="#14FFFFFF"
+                            Background="{DynamicResource WidgetDividerBrush}"
                             CornerRadius="1"
                             SnapsToDevicePixels="True" />
                 </Grid>

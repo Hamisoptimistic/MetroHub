@@ -96,7 +96,7 @@
                            SnapsToDevicePixels="True"
                            VerticalAlignment="Center">
                         <Image.Effect>
-                            <DropShadowEffect BlurRadius="14" Direction="270" ShadowDepth="3" Opacity="0.28" Color="#000000" />
+                            <StaticResource ResourceKey="ShadowCard" />
                         </Image.Effect>
                     </Image>
 
@@ -106,11 +106,11 @@
                                FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                FontWeight="{DynamicResource TypeHeroFontWeight}"
                                FontFamily="{DynamicResource AppDisplayFontFamily}"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center"
                                Margin="0,-4,0,0">
                         <TextBlock.Effect>
-                            <DropShadowEffect BlurRadius="28" Direction="270" ShadowDepth="4" Opacity="0.22" Color="#080E1A" />
+                            <StaticResource ResourceKey="StudioGlassTextShadow" />
                         </TextBlock.Effect>
                     </TextBlock>
                 </Grid>
@@ -142,7 +142,7 @@
                            HorizontalAlignment="Left"
                            VerticalAlignment="Center">
                         <Image.Effect>
-                            <DropShadowEffect BlurRadius="14" Direction="270" ShadowDepth="3" Opacity="0.28" Color="#000000" />
+                            <StaticResource ResourceKey="ShadowCard" />
                         </Image.Effect>
                     </Image>
 
@@ -154,10 +154,10 @@
                                    FontSize="{DynamicResource TypeHeroFontSize}"
                                    FontWeight="{DynamicResource TypeHeroFontWeight}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    HorizontalAlignment="Right">
                             <TextBlock.Effect>
-                                <DropShadowEffect BlurRadius="22" Direction="270" ShadowDepth="3.5" Opacity="0.20" Color="#080E1A" />
+                                <StaticResource ResourceKey="StudioGlassTextShadow" />
                             </TextBlock.Effect>
                         </TextBlock>
                         <TextBlock Text="{Binding ConditionText}"
@@ -184,7 +184,7 @@
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                    FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    HorizontalAlignment="Center"
                                    Margin="0,4,0,0" />
                     </StackPanel>
@@ -201,7 +201,7 @@
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                    FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    HorizontalAlignment="Center"
                                    Margin="0,4,0,0" />
                     </StackPanel>
@@ -218,7 +218,7 @@
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                    FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    HorizontalAlignment="Center"
                                    Margin="0,4,0,0" />
                     </StackPanel>
@@ -240,15 +240,15 @@
                 <!-- Left: Details (Labels crisp & muted, Values Bold pure white) -->
                 <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left">
                     <TextBlock FontFamily="{DynamicResource AppFontFamily}">
-                        <Run Text="AQI&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="#95A8BE" /><Run Text="{Binding AqiText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="#FFFFFF" />
+                        <Run Text="AQI&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="#95A8BE" /><Run Text="{Binding AqiText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="{DynamicResource TextPrimaryBrush}" />
                     </TextBlock>
                     <TextBlock FontFamily="{DynamicResource AppFontFamily}"
                                Margin="0,6,0,0">
-                        <Run Text="Feels like&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="#95A8BE" /><Run Text="{Binding FeelsLikeShortText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="#FFFFFF" />
+                        <Run Text="Feels like&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="#95A8BE" /><Run Text="{Binding FeelsLikeShortText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="{DynamicResource TextPrimaryBrush}" />
                     </TextBlock>
                     <TextBlock FontFamily="{DynamicResource AppFontFamily}"
                                Margin="0,6,0,0">
-                        <Run Text="Humidity&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="#95A8BE" /><Run Text="{Binding HumidityText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="#FFFFFF" />
+                        <Run Text="Humidity&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="#95A8BE" /><Run Text="{Binding HumidityText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="{DynamicResource TextPrimaryBrush}" />
                     </TextBlock>
                 </StackPanel>
 
@@ -261,7 +261,7 @@
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center">
                     <Image.Effect>
-                        <DropShadowEffect BlurRadius="14" Direction="270" ShadowDepth="3" Opacity="0.28" Color="#000000" />
+                        <StaticResource ResourceKey="ShadowCard" />
                     </Image.Effect>
                 </Image>
 
@@ -271,12 +271,12 @@
                            FontSize="{DynamicResource TypeHeroFontSize}"
                            FontWeight="{DynamicResource TypeHeroFontWeight}"
                            FontFamily="{DynamicResource AppDisplayFontFamily}"
-                           Foreground="#FFFFFF"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
                            HorizontalAlignment="Right"
                            VerticalAlignment="Center"
                            Margin="0,-4,0,0">
                     <TextBlock.Effect>
-                        <DropShadowEffect BlurRadius="26" Direction="270" ShadowDepth="4" Opacity="0.22" Color="#080E1A" />
+                        <StaticResource ResourceKey="StudioGlassTextShadow" />
                     </TextBlock.Effect>
                 </TextBlock>
             </Grid>

@@ -233,7 +233,7 @@
                     Margin="14,4,14,12"
                     Height="34"
                     CornerRadius="{DynamicResource ControlCornerRadius}"
-                    Background="#14FFFFFF"
+                    Background="{DynamicResource WidgetDividerBrush}"
                     BorderThickness="0"
                     SnapsToDevicePixels="True">
                 <Grid>

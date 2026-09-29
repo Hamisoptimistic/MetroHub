@@ -30,7 +30,6 @@
         </Style>
 
         <!-- Transport Button Style: Based on WidgetMicroButtonStyle -->
-        <Style x:Key="VolumeTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetMicroButtonStyle}" />
 
         <!-- Transport Play/Pause Button Style: Fluent Ghost Button matching Prev/Next -->
         <Style x:Key="PlayPauseAccentButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetMediumButtonStyle}">
@@ -56,7 +55,7 @@
                         <!-- Seamless border-to-border card container -->
                         <Border x:Name="TileBorder"
                                 Background="Transparent"
-                                BorderBrush="#14FFFFFF"
+                                BorderBrush="{DynamicResource WidgetDividerBrush}"
                                 BorderThickness="1"
                                 Margin="0,0,-1,-1"
                                 SnapsToDevicePixels="True">
@@ -75,7 +74,7 @@
                                                FontFamily="{DynamicResource AppFontFamily}"
                                                FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                                FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                               Foreground="#FFFFFF"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
                                                TextAlignment="Center"
@@ -263,10 +262,10 @@
                     <!-- Left: Transport Controls (Prev, Ghost Play/Pause, Next) -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                         <!-- Previous Station -->
-                        <Button Style="{StaticResource VolumeTransportButtonStyle}"
+                        <Button Style="{StaticResource WidgetMicroButtonStyle}"
                                 Command="{Binding PreviousStationCommand}"
                                 ToolTip="Previous Station">
-                            <ui:SymbolIcon Symbol="Previous24" FontSize="15" Foreground="#FFFFFF" />
+                            <ui:SymbolIcon Symbol="Previous24" FontSize="15" Foreground="{DynamicResource TextPrimaryBrush}" />
                         </Button>
 
                         <!-- Ghost Play/Pause Button -->
@@ -276,7 +275,7 @@
                                 ToolTip="Play / Pause">
                             <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <!-- Play Icon -->
-                                <ui:SymbolIcon Symbol="Play24" FontSize="18" Foreground="#FFFFFF" Margin="2,0,0,0">
+                                <ui:SymbolIcon Symbol="Play24" FontSize="18" Foreground="{DynamicResource TextPrimaryBrush}" Margin="2,0,0,0">
                                     <ui:SymbolIcon.Style>
                                         <Style TargetType="ui:SymbolIcon">
                                             <Setter Property="Visibility" Value="Visible" />
@@ -290,7 +289,7 @@
                                 </ui:SymbolIcon>
 
                                 <!-- Pause Icon -->
-                                <ui:SymbolIcon Symbol="Pause24" FontSize="18" Foreground="#FFFFFF">
+                                <ui:SymbolIcon Symbol="Pause24" FontSize="18" Foreground="{DynamicResource TextPrimaryBrush}">
                                     <ui:SymbolIcon.Style>
                                         <Style TargetType="ui:SymbolIcon">
                                             <Setter Property="Visibility" Value="Collapsed" />
@@ -306,10 +305,10 @@
                         </Button>
 
                         <!-- Next Station -->
-                        <Button Style="{StaticResource VolumeTransportButtonStyle}"
+                        <Button Style="{StaticResource WidgetMicroButtonStyle}"
                                 Command="{Binding NextStationCommand}"
                                 ToolTip="Next Station">
-                            <ui:SymbolIcon Symbol="Next24" FontSize="15" Foreground="#FFFFFF" />
+                            <ui:SymbolIcon Symbol="Next24" FontSize="15" Foreground="{DynamicResource TextPrimaryBrush}" />
                         </Button>
                     </StackPanel>
 
@@ -322,7 +321,7 @@
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"
                                        VerticalAlignment="Center" />
@@ -344,12 +343,12 @@
                     <!-- Right: Mute Button & Fluent Volume Slider -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                         <!-- Mute Toggle Button -->
-                        <Button Style="{StaticResource VolumeTransportButtonStyle}"
+                        <Button Style="{StaticResource WidgetMicroButtonStyle}"
                                 Command="{Binding ToggleMuteCommand}"
                                 ToolTip="Mute / Unmute"
                                 Width="30" Height="30">
                             <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <ui:SymbolIcon Symbol="Speaker224" FontSize="16" Foreground="#FFFFFF">
+                                <ui:SymbolIcon Symbol="Speaker224" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}">
                                     <ui:SymbolIcon.Style>
                                         <Style TargetType="ui:SymbolIcon">
                                             <Setter Property="Visibility" Value="Visible" />

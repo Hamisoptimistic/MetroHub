@@ -158,7 +158,7 @@
                                        Text="&#xE73E;"
                                        FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="9"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        Visibility="Collapsed" />
@@ -394,7 +394,7 @@
 
                     <!-- Microsoft To-Do Style Acrylic Input Bar -->
                     <Border Grid.Row="0"
-                            Background="#14FFFFFF"
+                            Background="{DynamicResource WidgetDividerBrush}"
                             BorderBrush="#18FFFFFF"
                             BorderThickness="1"
                             CornerRadius="4"

@@ -9,7 +9,6 @@
     <CornerRadius x:Key="TileCornerRadius">2</CornerRadius>
     <SolidColorBrush x:Key="FluentHoverBrush" Color="#12FFFFFF" />
     <SolidColorBrush x:Key="FluentPressedBrush" Color="#1EFFFFFF" />
-    <SolidColorBrush x:Key="WidgetDividerBrush" Color="#14FFFFFF" />
 
     <!-- Universal Converters -->
     <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -408,7 +407,7 @@
                                        Text="{TemplateBinding Header}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        TextAlignment="Center"
@@ -575,7 +574,7 @@
                                                                 <DoubleAnimation Storyboard.TargetName="ThumbBorder"
                                                                                  Storyboard.TargetProperty="Width"
                                                                                  To="8"
-                                                                                 Duration="0:0:0.12">
+                                                                                 Duration="{StaticResource FluentDurationFast}">
                                                                     <DoubleAnimation.EasingFunction>
                                                                         <CubicEase EasingMode="EaseOut" />
                                                                     </DoubleAnimation.EasingFunction>
@@ -589,7 +588,7 @@
                                                                 <DoubleAnimation Storyboard.TargetName="ThumbBorder"
                                                                                  Storyboard.TargetProperty="Width"
                                                                                  To="4"
-                                                                                 Duration="0:0:0.16">
+                                                                                 Duration="{StaticResource FluentDurationFast}">
                                                                     <DoubleAnimation.EasingFunction>
                                                                         <CubicEase EasingMode="EaseOut" />
                                                                     </DoubleAnimation.EasingFunction>
@@ -657,7 +656,7 @@
                                                                         <DoubleAnimation Storyboard.TargetName="ThumbBorder"
                                                                                          Storyboard.TargetProperty="Height"
                                                                                          To="8"
-                                                                                         Duration="0:0:0.12">
+                                                                                         Duration="{StaticResource FluentDurationFast}">
                                                                             <DoubleAnimation.EasingFunction>
                                                                                 <CubicEase EasingMode="EaseOut" />
                                                                             </DoubleAnimation.EasingFunction>
@@ -671,7 +670,7 @@
                                                                         <DoubleAnimation Storyboard.TargetName="ThumbBorder"
                                                                                          Storyboard.TargetProperty="Height"
                                                                                          To="4"
-                                                                                         Duration="0:0:0.16">
+                                                                                         Duration="{StaticResource FluentDurationFast}">
                                                                             <DoubleAnimation.EasingFunction>
                                                                                 <CubicEase EasingMode="EaseOut" />
                                                                             </DoubleAnimation.EasingFunction>

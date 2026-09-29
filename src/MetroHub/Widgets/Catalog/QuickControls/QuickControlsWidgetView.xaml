@@ -19,7 +19,6 @@
 
     <UserControl.Resources>
         <!-- Media & Volume Transport Button Style: Inherits WidgetMicroButtonStyle -->
-        <Style x:Key="TransportButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetMicroButtonStyle}" />
     </UserControl.Resources>
 
     <!-- Transparent unified WidgetCard without dividing lines -->
@@ -52,7 +51,7 @@
 
                 <!-- Col 0: Play/Pause Button -->
                 <Button Grid.Column="0"
-                        Style="{StaticResource TransportButtonStyle}"
+                        Style="{StaticResource WidgetMicroButtonStyle}"
                         Command="{Binding Media.TogglePlayPauseCommand}"
                         IsEnabled="{Binding Media.CanPlayPause}"
                         VerticalAlignment="Center"
@@ -95,7 +94,7 @@
                         <TextBlock Text="{Binding Media.Title}"
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                    FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap" />
@@ -128,7 +127,7 @@
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Visibility="{Binding Media.HasMedia, Converter={StaticResource BoolToVis}}">
-                    <Button Style="{StaticResource TransportButtonStyle}"
+                    <Button Style="{StaticResource WidgetMicroButtonStyle}"
                             Command="{Binding Media.SkipPreviousCommand}"
                             IsEnabled="{Binding Media.CanSkipPrevious}"
                             Width="26"
@@ -140,7 +139,7 @@
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center" />
                     </Button>
-                    <Button Style="{StaticResource TransportButtonStyle}"
+                    <Button Style="{StaticResource WidgetMicroButtonStyle}"
                             Command="{Binding Media.SkipNextCommand}"
                             IsEnabled="{Binding Media.CanSkipNext}"
                             Width="26"
@@ -172,14 +171,14 @@
 
                 <!-- 1. Output Logo -->
                 <Button Grid.Column="0"
-                        Style="{StaticResource TransportButtonStyle}"
+                        Style="{StaticResource WidgetMicroButtonStyle}"
                         HorizontalAlignment="Left"
                         Command="{Binding Volume.ToggleNextDeviceCommand}"
                         ToolTip="{Binding Volume.ActiveDeviceName}">
                     <TextBlock Text="{Binding Volume.ActiveDeviceIcon}"
                                FontFamily="{DynamicResource AppIconFontFamily}"
                                FontSize="16"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center" />
                 </Button>
@@ -200,7 +199,7 @@
 
                 <!-- 3. Mute Button / % Display -->
                 <Button Grid.Column="2"
-                        Style="{StaticResource TransportButtonStyle}"
+                        Style="{StaticResource WidgetMicroButtonStyle}"
                         HorizontalAlignment="Right"
                         Command="{Binding Volume.ToggleMasterMuteCommand}"
                         ToolTip="Mute / Unmute Master Volume"
@@ -210,7 +209,7 @@
                         <TextBlock Text="{Binding Volume.MasterGlyph}"
                                    FontFamily="{DynamicResource AppIconFontFamily}"
                                    FontSize="15"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
                             <TextBlock.Style>
@@ -229,7 +228,7 @@
                         <TextBlock Text="{Binding Volume.MasterVolumePercentText}"
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                    FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
                             <TextBlock.Style>
@@ -263,14 +262,14 @@
 
                 <!-- 1. Day / Night Toggle Button -->
                 <Button Grid.Column="0"
-                        Style="{StaticResource TransportButtonStyle}"
+                        Style="{StaticResource WidgetMicroButtonStyle}"
                         HorizontalAlignment="Left"
                         Command="{Binding Brightness.ToggleNightModeCommand}"
                         ToolTip="{Binding Brightness.NightModeTooltip}">
                     <TextBlock Text="{Binding Brightness.MasterGlyph}"
                                FontFamily="{DynamicResource AppIconFontFamily}"
                                FontSize="16"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center" />
                 </Button>
@@ -290,7 +289,7 @@
 
                 <!-- 3. Link / Sync Button / % Display -->
                 <Button Grid.Column="2"
-                        Style="{StaticResource TransportButtonStyle}"
+                        Style="{StaticResource WidgetMicroButtonStyle}"
                         HorizontalAlignment="Right"
                         Command="{Binding Brightness.ToggleLinkCommand}"
                         ToolTip="{Binding Brightness.LinkTooltip}"
@@ -300,7 +299,7 @@
                         <TextBlock Text="{Binding Brightness.LinkGlyph}"
                                    FontFamily="{DynamicResource AppIconFontFamily}"
                                    FontSize="15"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
                             <TextBlock.Style>
@@ -319,7 +318,7 @@
                         <TextBlock Text="{Binding Brightness.MasterBrightnessPercentText}"
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                    FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center"
                                    Margin="0,-1,0,0"

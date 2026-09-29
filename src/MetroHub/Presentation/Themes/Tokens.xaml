@@ -124,4 +124,12 @@
     <CircleEase x:Key="FluentCircleEase" EasingMode="EaseOut" />
     <QuadraticEase x:Key="FluentStandardEase" EasingMode="EaseOut" />
 
+    <!-- ========================================================================= -->
+    <!-- FLUENT 2 ELEVATION & SHADOW TOKENS                                        -->
+    <!-- Note: x:Shared="False" ensures independent Freezable instances per element -->
+    <!-- ========================================================================= -->
+    <DropShadowEffect x:Key="ShadowCard" BlurRadius="14" Direction="270" ShadowDepth="3" Opacity="0.28" Color="#000000" x:Shared="False" />
+    <DropShadowEffect x:Key="StudioGlassTextShadow" BlurRadius="28" Direction="270" ShadowDepth="4" Opacity="0.22" Color="#080E1A" x:Shared="False" />
+    <DropShadowEffect x:Key="GlowDotSmall" BlurRadius="4" ShadowDepth="0" Opacity="0.8" Color="#60CDFF" x:Shared="False" />
+
 </ResourceDictionary>

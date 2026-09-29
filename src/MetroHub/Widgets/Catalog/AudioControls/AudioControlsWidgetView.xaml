@@ -19,7 +19,6 @@
 
     <UserControl.Resources>
         <!-- Media & Pomodoro-Consistent Transport Button Style: Inherits WidgetMicroButtonStyle -->
-        <Style x:Key="VolumeTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetMicroButtonStyle}" />
 
         <!-- Windows 11 Sound Output Device List Item Button Style -->
         <Style x:Key="DeviceListItemButtonStyle" TargetType="Button">
@@ -91,14 +90,14 @@
 
                 <!-- 1. Output Logo (White, Borderless, No Box, Aligned to 14px) -->
                 <Button Grid.Column="0"
-                        Style="{StaticResource VolumeTransportButtonStyle}"
+                        Style="{StaticResource WidgetMicroButtonStyle}"
                         HorizontalAlignment="Left"
                         Command="{Binding ToggleNextDeviceCommand}"
                         ToolTip="{Binding ActiveDeviceName}">
                     <TextBlock Text="{Binding ActiveDeviceIcon}"
                                FontFamily="{DynamicResource AppIconFontFamily}"
                                FontSize="16"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Center" />
                 </Button>
@@ -119,7 +118,7 @@
 
                 <!-- 3. Mute Button: Displays Speaker Glyph normally, Cross-fades to % while dragging/scrolling -->
                 <Button Grid.Column="2"
-                        Style="{StaticResource VolumeTransportButtonStyle}"
+                        Style="{StaticResource WidgetMicroButtonStyle}"
                         HorizontalAlignment="Right"
                         Command="{Binding ToggleMasterMuteCommand}"
                         ToolTip="Mute / Unmute Master Volume"
@@ -130,7 +129,7 @@
                                    Text="{Binding MasterGlyph}"
                                    FontFamily="{DynamicResource AppIconFontFamily}"
                                    FontSize="15"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
                             <TextBlock.Style>
@@ -150,7 +149,7 @@
                                    Text="{Binding MasterVolumePercentText}"
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                    FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
                             <TextBlock.Style>
@@ -204,7 +203,7 @@
                                Text="Output Device"
                                FontSize="{DynamicResource TypeHeaderFontSize}"
                                FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                Margin="6,2,0,8"
                                SnapsToDevicePixels="True" />
 
@@ -250,7 +249,7 @@
                                                                    Text="{Binding IconGlyph}"
                                                                    FontFamily="{DynamicResource AppIconFontFamily}"
                                                                    FontSize="16"
-                                                                   Foreground="#FFFFFF"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                                                    VerticalAlignment="Center"
                                                                    HorizontalAlignment="Left" />
 
@@ -259,7 +258,7 @@
                                                                    Text="{Binding Name}"
                                                                    FontSize="{DynamicResource TypeBodyFontSize}"
                                                                    FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                                                   Foreground="#FFFFFF"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                                                    TextTrimming="CharacterEllipsis"
                                                                    VerticalAlignment="Center"
                                                                    Margin="2,0" />
@@ -269,7 +268,7 @@
                                                                    Text="&#xE73E;"
                                                                    FontFamily="{DynamicResource AppIconFontFamily}"
                                                                    FontSize="13"
-                                                                   Foreground="#FFFFFF"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                                                    HorizontalAlignment="Right"
                                                                    VerticalAlignment="Center"
                                                                    Visibility="{Binding IsDefault, Converter={StaticResource BoolToVis}}" />
@@ -307,7 +306,7 @@
                   SnapsToDevicePixels="True">
                 <Border Height="2"
                         VerticalAlignment="Center"
-                        Background="#14FFFFFF"
+                        Background="{DynamicResource WidgetDividerBrush}"
                         CornerRadius="1"
                         SnapsToDevicePixels="True" />
             </Grid>

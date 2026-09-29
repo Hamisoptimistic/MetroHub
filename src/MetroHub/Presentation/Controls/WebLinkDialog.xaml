@@ -12,7 +12,7 @@
                    Width="620"
                    Height="360"
                    Background="Transparent"
-                   Foreground="#FFFFFF"
+                   Foreground="{DynamicResource TextPrimaryBrush}"
                    FontFamily="{DynamicResource AppFontFamily}"
                    RenderOptions.ClearTypeHint="Enabled"
                    TextOptions.TextFormattingMode="Ideal"
@@ -72,7 +72,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border x:Name="BoxBorder"
-                                Background="#14FFFFFF"
+                                Background="{DynamicResource WidgetDividerBrush}"
                                 BorderBrush="#28FFFFFF"
                                 BorderThickness="1"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
@@ -127,7 +127,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <Border x:Name="BoxBorder"
-                                Background="#14FFFFFF"
+                                Background="{DynamicResource WidgetDividerBrush}"
                                 BorderBrush="#28FFFFFF"
                                 BorderThickness="1"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
@@ -331,7 +331,7 @@
                         <TextBlock Text="Add Web Shortcut"
                                    FontSize="{DynamicResource TypeHeaderFontSize}"
                                    FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    VerticalAlignment="Center" />
 
                         <Button HorizontalAlignment="Right"

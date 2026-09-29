@@ -19,7 +19,6 @@
 
     <UserControl.Resources>
         <!-- Media Transport Button Style: Inherits WidgetMediumButtonStyle -->
-        <Style x:Key="MediaTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetMediumButtonStyle}" />
 
 
     </UserControl.Resources>
@@ -65,7 +64,7 @@
                         <Border Width="{Binding AlbumArtSize}"
                                 Height="{Binding AlbumArtSize}"
                                 CornerRadius="2"
-                                Background="#14FFFFFF"
+                                Background="{DynamicResource WidgetDividerBrush}"
                                 BorderBrush="#20FFFFFF"
                                 BorderThickness="1"
                                 SnapsToDevicePixels="True"
@@ -99,7 +98,7 @@
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
                                        FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"
                                        Margin="0,0,0,3" />
@@ -165,7 +164,7 @@
                                     VerticalAlignment="Center"
                                     Margin="{Binding TransportControlsMargin}">
                             <!-- Previous Track (<) -->
-                            <Button Style="{StaticResource MediaTransportButtonStyle}"
+                            <Button Style="{StaticResource WidgetMediumButtonStyle}"
                                     Command="{Binding SkipPreviousCommand}"
                                     IsEnabled="{Binding CanSkipPrevious}"
                                     ToolTip="Previous">
@@ -177,7 +176,7 @@
                             </Button>
 
                             <!-- Play / Pause (▷ or ||) -->
-                            <Button Style="{StaticResource MediaTransportButtonStyle}"
+                            <Button Style="{StaticResource WidgetMediumButtonStyle}"
                                     Command="{Binding TogglePlayPauseCommand}"
                                     IsEnabled="{Binding CanPlayPause}"
                                     Margin="4,0"
@@ -204,7 +203,7 @@
                             </Button>
 
                             <!-- Next Track (>) -->
-                            <Button Style="{StaticResource MediaTransportButtonStyle}"
+                            <Button Style="{StaticResource WidgetMediumButtonStyle}"
                                     Command="{Binding SkipNextCommand}"
                                     IsEnabled="{Binding CanSkipNext}"
                                     ToolTip="Next">
@@ -222,7 +221,7 @@
                                    HorizontalAlignment="Right"
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
                                    FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    SnapsToDevicePixels="True"
                                    Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}" />
                     </Grid>
@@ -249,7 +248,7 @@
 
                 <!-- Col 0: Play/Pause Button -->
                 <Button Grid.Column="0"
-                        Style="{StaticResource MediaTransportButtonStyle}"
+                        Style="{StaticResource WidgetMediumButtonStyle}"
                         Command="{Binding TogglePlayPauseCommand}"
                         IsEnabled="{Binding CanPlayPause}"
                         VerticalAlignment="Center"
@@ -292,7 +291,7 @@
                         <TextBlock Text="{Binding Title}"
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                    FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap" />
@@ -326,7 +325,7 @@
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}">
-                    <Button Style="{StaticResource MediaTransportButtonStyle}"
+                    <Button Style="{StaticResource WidgetMediumButtonStyle}"
                             Command="{Binding SkipPreviousCommand}"
                             IsEnabled="{Binding CanSkipPrevious}"
                             Width="26"
@@ -338,7 +337,7 @@
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center" />
                     </Button>
-                    <Button Style="{StaticResource MediaTransportButtonStyle}"
+                    <Button Style="{StaticResource WidgetMediumButtonStyle}"
                             Command="{Binding SkipNextCommand}"
                             IsEnabled="{Binding CanSkipNext}"
                             Width="26"
@@ -479,7 +478,7 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
                                        FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"
                                        HorizontalAlignment="Center"
@@ -524,7 +523,7 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center">
                             <!-- Left Button: Backward / Previous Track -->
-                            <Button Style="{StaticResource MediaTransportButtonStyle}"
+                            <Button Style="{StaticResource WidgetMediumButtonStyle}"
                                     Command="{Binding SkipPreviousCommand}"
                                     IsEnabled="{Binding CanSkipPrevious}"
                                     ToolTip="Previous Track"
@@ -541,7 +540,7 @@
                             </Button>
 
                             <!-- Center: Play / Pause Button -->
-                            <Button Style="{StaticResource MediaTransportButtonStyle}"
+                            <Button Style="{StaticResource WidgetMediumButtonStyle}"
                                     Command="{Binding TogglePlayPauseCommand}"
                                     IsEnabled="{Binding CanPlayPause}"
                                     ToolTip="Play / Pause"
@@ -550,7 +549,7 @@
                                     VerticalAlignment="Center">
                                 <TextBlock FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="18"
-                                           Foreground="#FFFFFF"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Center">
                                     <TextBlock.Style>
@@ -569,7 +568,7 @@
                             </Button>
 
                             <!-- Right Button: Forward / Next Track -->
-                            <Button Style="{StaticResource MediaTransportButtonStyle}"
+                            <Button Style="{StaticResource WidgetMediumButtonStyle}"
                                     Command="{Binding SkipNextCommand}"
                                     IsEnabled="{Binding CanSkipNext}"
                                     ToolTip="Next Track"

@@ -64,7 +64,6 @@
         </Style>
 
         <!-- Media Player Standard Borderless Transport Button Style: Inherits WidgetMediumButtonStyle -->
-        <Style x:Key="PhotoTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetMediumButtonStyle}" />
     </UserControl.Resources>
 
     <widgets:WidgetCard Padding="0" Background="Transparent">
@@ -110,7 +109,7 @@
                     <TextBlock Text="Photo Stream"
                                FontSize="{DynamicResource TypeHeaderFontSize}"
                                FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,2" />
 
@@ -134,13 +133,13 @@
                             <TextBlock Text="&#xED25;"
                                        FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="14"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,8,0" />
                             <TextBlock Text="Choose Photos Folder"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
@@ -330,7 +329,7 @@
                     </StackPanel.Style>
 
                     <!-- Previous Photo Button -->
-                    <Button Style="{StaticResource PhotoTransportButtonStyle}"
+                    <Button Style="{StaticResource WidgetMediumButtonStyle}"
                             Command="{Binding PreviousPhotoCommand}"
                             ToolTip="Previous Photo"
                             Tag="InteractiveControl"
@@ -343,7 +342,7 @@
                     </Button>
 
                     <!-- Change Folder Button -->
-                    <Button Style="{StaticResource PhotoTransportButtonStyle}"
+                    <Button Style="{StaticResource WidgetMediumButtonStyle}"
                             Command="{Binding ChooseFolderCommand}"
                             ToolTip="Change Folder"
                             Tag="InteractiveControl"
@@ -356,7 +355,7 @@
                     </Button>
 
                     <!-- Next Photo Button -->
-                    <Button Style="{StaticResource PhotoTransportButtonStyle}"
+                    <Button Style="{StaticResource WidgetMediumButtonStyle}"
                             Command="{Binding NextPhotoCommand}"
                             ToolTip="Next Photo"
                             Tag="InteractiveControl">

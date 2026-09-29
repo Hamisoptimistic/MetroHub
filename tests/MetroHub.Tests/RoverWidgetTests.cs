@@ -17,6 +17,10 @@ public class RoverWidgetTests
         {
             try { new Application(); } catch { }
         }
+        if (Application.Current != null && !Application.Current.Resources.Contains("BoolToVis"))
+        {
+            Application.Current.Resources["BoolToVis"] = new System.Windows.Controls.BooleanToVisibilityConverter();
+        }
     }
 
     [Fact]

@@ -12,7 +12,6 @@
              UseLayoutRounding="True">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
         <!-- Nostalgic XP Bliss Grass Accent Gradient -->
         <LinearGradientBrush x:Key="XpBlissBackground" StartPoint="0,0" EndPoint="0,1">

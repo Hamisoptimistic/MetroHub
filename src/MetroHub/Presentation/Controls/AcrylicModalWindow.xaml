@@ -12,7 +12,7 @@
                     Width="620"
                     Height="360"
                     Background="Transparent"
-                    Foreground="#FFFFFF"
+                    Foreground="{DynamicResource TextPrimaryBrush}"
                     SnapsToDevicePixels="True"
                     UseLayoutRounding="True">
     <Grid />

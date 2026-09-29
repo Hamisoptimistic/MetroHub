@@ -18,7 +18,6 @@
 
     <UserControl.Resources>
         <!-- Media-Consistent Transport Button Style: Inherits WidgetMediumButtonStyle -->
-        <Style x:Key="PomodoroTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetMediumButtonStyle}" />
 
         <!-- Round Indicator Dot Style: Inherits WidgetIndicatorDotStyle -->
         <Style x:Key="CycleDotStyle" TargetType="Border" BasedOn="{StaticResource WidgetIndicatorDotStyle}" />
@@ -86,13 +85,13 @@
                                    FontSize="{DynamicResource TypeDisplayFontSize}"
                                    FontWeight="{DynamicResource TypeDisplayFontWeight}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    Margin="0,0,0,6" />
 
                         <!-- Transport Controls Aligned with Text Above: Reset, Play/Pause, Skip -->
                         <StackPanel Orientation="Horizontal" Margin="0">
                             <!-- Reset (↺) -->
-                            <Button Style="{StaticResource PomodoroTransportButtonStyle}"
+                            <Button Style="{StaticResource WidgetMediumButtonStyle}"
                                     Command="{Binding ResetCommand}"
                                     ToolTip="Reset Timer">
                                 <TextBlock Text="&#xE777;"
@@ -103,7 +102,7 @@
                             </Button>
 
                             <!-- Play / Pause (▷ or ||) -->
-                            <Button Style="{StaticResource PomodoroTransportButtonStyle}"
+                            <Button Style="{StaticResource WidgetMediumButtonStyle}"
                                     Command="{Binding TogglePlayPauseCommand}"
                                     Margin="4,0"
                                     ToolTip="{Binding PlayPauseTooltip}">
@@ -128,7 +127,7 @@
                             </Button>
 
                             <!-- Skip (⏭) -->
-                            <Button Style="{StaticResource PomodoroTransportButtonStyle}"
+                            <Button Style="{StaticResource WidgetMediumButtonStyle}"
                                     Command="{Binding SkipPhaseCommand}"
                                     ToolTip="Skip to next phase">
                                 <TextBlock Text="&#xE76C;"
@@ -174,7 +173,7 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
                                        FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                       Foreground="#FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        Margin="0,0,0,3" />
 
                             <!-- Big Time Readout (Matches Artist Name) -->
@@ -250,7 +249,7 @@
                                     VerticalAlignment="Center"
                                     Margin="-9.5,0,0,0">
                             <!-- Reset (↺) -->
-                            <Button Style="{StaticResource PomodoroTransportButtonStyle}"
+                            <Button Style="{StaticResource WidgetMediumButtonStyle}"
                                     Command="{Binding ResetCommand}"
                                     ToolTip="Reset Session">
                                 <TextBlock Text="&#xE777;"
@@ -261,7 +260,7 @@
                             </Button>
 
                             <!-- Play / Pause (▷ or ||) -->
-                            <Button Style="{StaticResource PomodoroTransportButtonStyle}"
+                            <Button Style="{StaticResource WidgetMediumButtonStyle}"
                                     Command="{Binding TogglePlayPauseCommand}"
                                     Margin="4,0"
                                     ToolTip="{Binding PlayPauseTooltip}">
@@ -286,7 +285,7 @@
                             </Button>
 
                             <!-- Skip to next phase (⏭) -->
-                            <Button Style="{StaticResource PomodoroTransportButtonStyle}"
+                            <Button Style="{StaticResource WidgetMediumButtonStyle}"
                                     Command="{Binding SkipPhaseCommand}"
                                     ToolTip="Skip to next phase">
                                 <TextBlock Text="&#xE76C;"

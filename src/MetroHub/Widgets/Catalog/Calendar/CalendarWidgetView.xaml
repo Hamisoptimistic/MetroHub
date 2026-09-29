@@ -61,7 +61,7 @@
                                FontFamily="{DynamicResource AppDisplayFontFamily}"
                                FontSize="{DynamicResource TypeHeaderFontSize}"
                                FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                               Foreground="#FFFFFF" />
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
 
                     <!-- Right Chevron Button -->
                     <Button HorizontalAlignment="Right"
@@ -151,7 +151,7 @@
                                                 RenderOptions.EdgeMode="Unspecified"
                                                 SnapsToDevicePixels="True">
                                             <Border.Effect>
-                                                <DropShadowEffect Color="#60CDFF" BlurRadius="4" ShadowDepth="0" Opacity="0.8" />
+                                                <StaticResource ResourceKey="GlowDotSmall" />
                                             </Border.Effect>
                                         </Border>
                                     </Grid>
@@ -226,7 +226,7 @@
                            FontFamily="{DynamicResource AppDisplayFontFamily}"
                            FontSize="{DynamicResource TypeCalendarDayCoordinateFontSize}"
                            FontWeight="{DynamicResource TypeDisplayFontWeight}"
-                           Foreground="#FFFFFF"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
                            SnapsToDevicePixels="True" />
 
                 <!-- Month + year: flush with the bottom edge, year trailing and dimmer -->

@@ -219,7 +219,7 @@
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    FontSize="{DynamicResource TypeHeaderFontSize}"
                                    FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                   Foreground="#FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                     </Button>
@@ -337,7 +337,7 @@
                                                    FontFamily="{DynamicResource AppFontFamily}"
                                                    FontSize="{DynamicResource TypeBodyFontSize}"
                                                    FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                                   Foreground="#FFFFFF"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
                                                    SnapsToDevicePixels="True" />
@@ -356,7 +356,7 @@
                                                 RenderOptions.EdgeMode="Unspecified"
                                                 SnapsToDevicePixels="False">
                                             <Border.Effect>
-                                                <DropShadowEffect Color="#60CDFF" BlurRadius="4" ShadowDepth="0" Opacity="0.8" />
+                                                <StaticResource ResourceKey="GlowDotSmall" />
                                             </Border.Effect>
                                         </Border>
                                     </Grid>
@@ -434,7 +434,7 @@
                                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                                    FontSize="{DynamicResource TypeHeaderFontSize}"
                                                    FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                                   Foreground="#FFFFFF"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                                    VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis" />
                                         <ui:SymbolIcon x:Name="EditPencil"
@@ -514,7 +514,7 @@
                                FontFamily="{DynamicResource AppFontFamily}"
                                FontSize="{DynamicResource TypeHeaderFontSize}"
                                FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                               Foreground="#FFFFFF"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center" />
 
                     <Button HorizontalAlignment="Right"
@@ -556,7 +556,7 @@
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
-                            <ui:SymbolIcon Symbol="TargetArrow24" FontSize="16" Foreground="#FFFFFF" />
+                            <ui:SymbolIcon Symbol="TargetArrow24" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
                         </Button>
 
                         <Button Command="{Binding SelectIconCommand}" CommandParameter="PersonRunning20" ToolTip="Running">
@@ -571,7 +571,7 @@
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
-                            <ui:SymbolIcon Symbol="PersonRunning20" FontSize="16" Foreground="#FFFFFF" />
+                            <ui:SymbolIcon Symbol="PersonRunning20" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
                         </Button>
 
                         <Button Command="{Binding SelectIconCommand}" CommandParameter="Book24" ToolTip="Reading">
@@ -586,7 +586,7 @@
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
-                            <ui:SymbolIcon Symbol="Book24" FontSize="16" Foreground="#FFFFFF" />
+                            <ui:SymbolIcon Symbol="Book24" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
                         </Button>
 
                         <Button Command="{Binding SelectIconCommand}" CommandParameter="Code24" ToolTip="Coding">
@@ -601,7 +601,7 @@
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
-                            <ui:SymbolIcon Symbol="Code24" FontSize="16" Foreground="#FFFFFF" />
+                            <ui:SymbolIcon Symbol="Code24" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
                         </Button>
 
                         <Button Command="{Binding SelectIconCommand}" CommandParameter="BrainCircuit24" ToolTip="Brain / Mind">
@@ -616,7 +616,7 @@
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
-                            <ui:SymbolIcon Symbol="BrainCircuit24" FontSize="16" Foreground="#FFFFFF" />
+                            <ui:SymbolIcon Symbol="BrainCircuit24" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
                         </Button>
 
                         <Button Command="{Binding SelectIconCommand}" CommandParameter="Prohibited24" ToolTip="Avoid / Prohibited">
@@ -631,7 +631,7 @@
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
-                            <ui:SymbolIcon Symbol="Prohibited24" FontSize="16" Foreground="#FFFFFF" />
+                            <ui:SymbolIcon Symbol="Prohibited24" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
                         </Button>
 
                         <Button Command="{Binding SelectIconCommand}" CommandParameter="Dumbbell24" ToolTip="Workout">
@@ -646,7 +646,7 @@
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
-                            <ui:SymbolIcon Symbol="Dumbbell24" FontSize="16" Foreground="#FFFFFF" />
+                            <ui:SymbolIcon Symbol="Dumbbell24" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
                         </Button>
 
                         <Button Command="{Binding SelectIconCommand}" CommandParameter="Drop24" ToolTip="Hydration">
@@ -661,7 +661,7 @@
                                     </Style.Triggers>
                                 </Style>
                             </Button.Style>
-                            <ui:SymbolIcon Symbol="Drop24" FontSize="16" Foreground="#FFFFFF" />
+                            <ui:SymbolIcon Symbol="Drop24" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
                         </Button>
                     </WrapPanel>
                 </StackPanel>
@@ -696,7 +696,7 @@
                                 FontSize="{DynamicResource TypeCaptionFontSize}"
                                 FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                 Background="#0B9E76"
-                                Foreground="#FFFFFF"
+                                Foreground="{DynamicResource TextPrimaryBrush}"
                                 BorderThickness="0">
                             <Button.Resources>
                                 <Style TargetType="Border">
