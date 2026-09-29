@@ -1,8 +1,12 @@
+using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
+using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
+using MetroHub.Presentation.Messaging;
 
 namespace MetroHub.Presentation.Controls;
 
@@ -133,7 +137,7 @@ public partial class GroupHeaderControl : UserControl
         if (DataContext is not TileGroupModel group) return;
         if (group.IsLocked)
         {
-            MainWindow.Current?.FlashLockedGroupPerimeter(group);
+            WeakReferenceMessenger.Default.Send(new GroupFlashLockedMessage(group));
             return;
         }
 
@@ -157,11 +161,8 @@ public partial class GroupHeaderControl : UserControl
 
         if (group.Title != newTitle)
         {
-            if (MainWindow.Current != null)
-            {
-                MainWindow.Current.RenameGroup(group, newTitle);
-            }
-            else
+            var msg = WeakReferenceMessenger.Default.Send(new GroupRenameMessage(group, newTitle));
+            if (!msg.HasReceivedResponse)
             {
                 group.Title = newTitle;
             }
@@ -232,7 +233,7 @@ public partial class GroupHeaderControl : UserControl
                 if (_isPotentialDrag && (Math.Abs(diff.X) > 5 || Math.Abs(diff.Y) > 5))
                 {
                     _isPotentialDrag = false;
-                    MainWindow.Current?.FlashLockedGroupPerimeter(group);
+                    WeakReferenceMessenger.Default.Send(new GroupFlashLockedMessage(group));
                 }
                 return;
             }
@@ -240,7 +241,7 @@ public partial class GroupHeaderControl : UserControl
             if (Math.Abs(diff.X) > 6 || Math.Abs(diff.Y) > 6)
             {
                 _isPotentialDrag = false;
-                MainWindow.Current?.StartGroupDrag(group, e);
+                WeakReferenceMessenger.Default.Send(new GroupStartDragMessage(group, e));
             }
         }
     }
@@ -268,11 +269,8 @@ public partial class GroupHeaderControl : UserControl
     {
         if (DataContext is not TileGroupModel group) return;
 
-        if (MainWindow.Current != null)
-        {
-            MainWindow.Current.ToggleGroupLock(group);
-        }
-        else
+        var msg = WeakReferenceMessenger.Default.Send(new GroupToggleLockMessage(group));
+        if (!msg.HasReceivedResponse)
         {
             group.IsLocked = !group.IsLocked;
         }
@@ -319,7 +317,7 @@ public partial class GroupHeaderControl : UserControl
     {
         if (sender is MenuItem item && item.Tag is string hex && DataContext is TileGroupModel group)
         {
-            MainWindow.Current?.SetGroupColor(group, hex);
+            WeakReferenceMessenger.Default.Send(new GroupSetColorMessage(group, hex));
             if (HeaderColorMenuItem != null)
             {
                 foreach (var mi in HeaderColorMenuItem.Items.OfType<MenuItem>())
@@ -339,7 +337,7 @@ public partial class GroupHeaderControl : UserControl
             {
                 hex = null;
             }
-            MainWindow.Current?.SetGroupTintColor(group, hex);
+            WeakReferenceMessenger.Default.Send(new GroupSetTintColorMessage(group, hex));
             if (TintColorMenuItem != null)
             {
                 foreach (var mi in TintColorMenuItem.Items.OfType<MenuItem>())
@@ -386,10 +384,10 @@ public partial class GroupHeaderControl : UserControl
         {
             if (group.IsLocked)
             {
-                MainWindow.Current?.FlashLockedGroupPerimeter(group);
+                WeakReferenceMessenger.Default.Send(new GroupFlashLockedMessage(group));
                 return;
             }
-            MainWindow.Current?.UngroupTiles(group);
+            WeakReferenceMessenger.Default.Send(new GroupUngroupMessage(group));
         }
     }
 
@@ -399,10 +397,10 @@ public partial class GroupHeaderControl : UserControl
         {
             if (group.IsLocked)
             {
-                MainWindow.Current?.FlashLockedGroupPerimeter(group);
+                WeakReferenceMessenger.Default.Send(new GroupFlashLockedMessage(group));
                 return;
             }
-            MainWindow.Current?.DeleteGroupAndTiles(group);
+            WeakReferenceMessenger.Default.Send(new GroupDeleteMessage(group));
         }
     }
 }

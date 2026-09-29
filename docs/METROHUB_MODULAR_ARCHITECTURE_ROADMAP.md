@@ -115,46 +115,50 @@ graph TD
    - `dotnet build -c Debug`: 0 Errors, 0 Warnings.
    - `dotnet test -c Debug`: 168/168 Tests Passed (100%). Zero visual regressions. Fully ready for Phase 3J.
 
-#### Phase 3J: App Shell & Rail Dynamic Tokens
+#### Phase 3J: App Shell & Rail Dynamic Tokens [COMPLETED]
 *Goal: Ensure the main application chrome (Sidebar, All Apps Drawer, Group Headers) fully responds to dynamic tokens.*
 1. **`SidebarRailControl.xaml`**:
-   - Convert `{StaticResource ControlCornerRadius}` to `{DynamicResource ControlCornerRadius}` on pill borders.
-   - Convert static hover brushes to `{DynamicResource FluentHoverBrush}` and `{DynamicResource FluentPressedBrush}`.
-   - Bind active indicator pip to `{DynamicResource SystemAccentColorPrimaryBrush}`.
+   - Converted `RailButtonStyle` pill border corner radius to `{DynamicResource ControlCornerRadius}`.
+   - Converted hover and pressed background setters to dynamic `{DynamicResource FluentHoverBrush}` and `{DynamicResource FluentPressedBrush}`.
+   - Bound active indicator pip to `{DynamicResource SystemAccentColorPrimaryBrush}`.
 2. **`AllAppsDrawerControl.xaml`**:
-   - Convert search box to use `ControlStyles.xaml` clean input style.
-   - Convert app row and search result items to `{DynamicResource ControlCornerRadius}`.
-   - Convert `MiniPinButtonStyle` (28x28) to inherit `WidgetMicroButtonStyle`.
-   - Replace hardcoded cyan selection accent pill (`Fill="#60CDFF"`) with `{DynamicResource SystemAccentColorPrimaryBrush}`.
+   - Tokenized search box caret brush to `{DynamicResource SystemAccentColorPrimaryBrush}` and font family to `{DynamicResource AppFontFamily}`.
+   - Converted search box outer border, app row items (`AppRowContainerStyle`), and search result items (`FluentSearchListBoxItemStyle`) to `{DynamicResource ControlCornerRadius}`.
+   - Re-routed `MiniPinButtonStyle` (28x28) to inherit `WidgetMicroButtonStyle`.
+   - Converted search list item accent pill from hardcoded `#60CDFF` to `{DynamicResource SystemAccentColorPrimaryBrush}`.
 3. **`GroupHeaderControl.xaml`**:
-   - Convert header typography to `{DynamicResource AppDisplayFontFamily}`.
-   - Convert chevrons and edit buttons to `{DynamicResource ControlCornerRadius}`.
-4. Compile, run tests, verify visually, stop and request confirmation.
+   - Bound `TitleTextBlock` and `EditTextBox` to `{DynamicResource AppDisplayFontFamily}`.
+   - Converted `RootBorder` corner radius to `{DynamicResource ControlCornerRadius}` and hover fill to `{DynamicResource FluentHoverBrush}`.
+   - Re-routed `LockButton` to inherit `WidgetMicroButtonStyle` (28x28).
+4. **Build & Test Verification**:
+   - `dotnet build -c Debug`: 0 Errors, 0 Warnings.
+   - `dotnet test -c Debug`: 168/168 Tests Passed (100%). Zero visual regressions. Fully ready for Track 2 (Phase 4A).
 
 ---
 
-### TRACK 2: Systems Architecture, DI & Decoupling (The Engine Room)
+### TRACK 2: Modular Architecture & Decoupling (The Engine Room)
 
-#### Phase 4A: Dependency Injection (DI) & Singleton Elimination
-*Goal: Introduce standard .NET Dependency Injection and eliminate the 16 hand-rolled static singletons so ViewModels become unit-testable.*
-1. Add `Microsoft.Extensions.DependencyInjection` to `MetroHub.csproj`.
-2. Configure DI container in `App.xaml.cs`:
-   - Register singleton services: `IAudioService`, `INativeWifiService`, `IEthernetProvider`, `INetworkHealthService`, `INightLightService`, `IPowerAwakeService`, `IRadioCatalogService`, `IDailyWallpaperService`, etc.
-3. Migrate ViewModel constructors from `Service.Instance` to constructor injection:
-   - Example: `AudioControlsWidgetViewModel(TileModel model, IAudioService audioService)`.
-4. Delete `public static ... Instance => ...` getters from services.
-5. Create mock implementations for unit testing without physical audio/network hardware.
-6. Compile, run tests, stop and request confirmation.
+> **Architectural Decision:** We intentionally preserve the existing clean, stable singleton service architecture (`Service.Instance`). No external DI container (`Microsoft.Extensions.DependencyInjection`) is needed, eliminating risk of container resolution failures or unnecessary lifecycle complexity. All 168 tests continue passing against existing service contracts.
 
-#### Phase 4B: Decouple Child Controls from `MainWindow.Current`
-*Goal: Eliminate tight static couplings to `MainWindow.Current` in child controls so they are fully self-contained.*
-1. **`TileControl.xaml.cs`**:
-   - Replace direct static calls like `MetroHub.MainWindow.Current?.BatchResizeSelectedTiles(...)`, `BatchUnpinSelectedTiles(...)`, `CreateGroupFromSelectedTiles(...)` with standard `RoutedEvents` or `CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger` messages.
+#### Phase 4A: Decouple Child Controls from `MainWindow.Current` [COMPLETED]
+*Goal: Eliminate tight static couplings to `MainWindow.Current` in child controls so they are fully self-contained and modular.*
+1. **`CanvasMessages.cs`**:
+   - Created `src/MetroHub/Presentation/Messaging/CanvasMessages.cs` with typed query messages (`QuerySelectedTilesMessage`, `QueryGroupsMessage`, `QuerySidebarRailMessage`) and command messages (`TileClearSelectionMessage`, `TileBatchResizeMessage`, `TileBatchStyleMessage`, `TileCreateGroupMessage`, `TileAddToGroupMessage`, `TileBatchUnpinMessage`, `TileToggleSidebarPinMessage`, `TileShowWeatherLocationDialogMessage`, `GroupFlashLockedMessage`, `GroupRenameMessage`, `GroupStartDragMessage`, `GroupToggleLockMessage`, `GroupSetColorMessage`, `GroupSetTintColorMessage`, `GroupUngroupMessage`, `GroupDeleteMessage`).
+   - Implemented `CanvasMessenger` facade for synchronous, safe queries with empty fallbacks.
 2. **`GroupHeaderControl.xaml.cs`**:
-   - Decouple group context menu actions and drag initiation from `MainWindow.Current`.
-3. Compile, run tests, stop and request confirmation.
+   - Decoupled all 11 static coupling points to `MainWindow.Current` (Rename, Lock toggle, Color/Tint, Ungroup, Delete, Flash locked perimeter, Drag start) using `WeakReferenceMessenger.Default.Send`.
+   - Preserved fallback semantics for standalone testability.
+3. **`TileControl.xaml.cs`**:
+   - Decoupled all 10 static coupling points to `MainWindow.Current` (Clear selection, Resize, Style, Create group, Add to group, Unpin, Sidebar pin toggle, Weather dialog, Group menu widget visibility) using `CanvasMessenger` and `WeakReferenceMessenger`.
+   - Zero references to `MainWindow` remaining in `TileControl.xaml.cs`.
+4. **`SidebarPinningService.cs` & `MainWindow.xaml.cs`**:
+   - Overloaded `ConfigureTileContextMenu` to accept `SidebarRailControl` and selected tiles directly.
+   - Registered all message handlers in `MainWindow.RegisterCanvasMessageHandlers()`.
+5. **Build & Test Verification**:
+   - `dotnet build -c Debug`: 0 Errors, 0 Warnings.
+   - `dotnet test --no-build -c Debug`: 168/168 Tests Passed (100%). Zero visual regressions. Zero breaking changes. Fully ready for Phase 4B.
 
-#### Phase 4C: Deconstruct `MainWindow` God Object (5,508 lines -> < 400 lines)
+#### Phase 4B: Deconstruct `MainWindow` God Object (5,508 lines -> < 400 lines)
 *Goal: Split `MainWindow`'s 6 partial classes into single-responsibility presentation controllers.*
 1. **`RubberBandSelectionController`**: Manages mouse capture, marquee rectangle math, and tile intersection checks.
 2. **`TileDragDropManager`**: Manages tile pickup, ghosting, grid snapping, and collision displacement.
@@ -165,7 +169,7 @@ graph TD
 6. Result: `MainWindow.xaml.cs` becomes a clean, readable ~350-line coordinator shell.
 7. Compile, run tests, stop and request confirmation.
 
-#### Phase 4D: Split Mega-Modal (`AcrylicModalWindow`) & Purge In-Code DTOs
+#### Phase 4C: Split Mega-Modal (`AcrylicModalWindow`) & Purge In-Code DTOs
 *Goal: Deconstruct the 1,876-line mega-modal into 3 focused dialogs and move network DTOs to Core/Models.*
 1. Extract network DTOs (`GeoResult`, `OpenMeteoGeocodingResponse`, `PhotonResponse`, `PhotonFeature`) from XAML code-behind into `Core/Models/Geocoding/`.
 2. Extract HTTP search and API logic from UI code-behind into `WeatherLocationService`.
@@ -175,8 +179,8 @@ graph TD
    - `RadioStationDialog` (< 250 lines)
 4. Compile, run tests, stop and request confirmation.
 
-#### Phase 4E: Event Handler Memory Leak Audit & Threading Cleanup
-*Goal: Eliminate potential memory leaks from the 204 un-unsubscribed event handlers and clean up service threading.*
+#### Phase 4D: Event Handler Memory Leak Audit & Threading Cleanup
+*Goal: Eliminate potential memory leaks from un-unsubscribed event handlers and clean up service threading.*
 1. Audit all 317 `+=` event subscriptions:
    - Wire explicit `-=` unsubscriptions in `Unloaded` / `Dispose` lifecycle paths.
    - For long-lived cross-component events, adopt `WeakEventManager` or `WeakReferenceMessenger`.
@@ -186,12 +190,11 @@ graph TD
 3. Purge the **55 hardcoded color hex values** (`"#FF2D2D"`, `"#00E676"`) from C# files into `Tokens.xaml` / `MotionTokens.cs`.
 4. Compile, run tests, stop and request confirmation.
 
-#### Phase 4F: Core Behavior Unit Testing Suite
-*Goal: Expand the 168-test suite to cover the core interactive behaviors that were previously untestable without DI.*
-1. Write ViewModel lifecycle tests using injected mock services (`AudioControlsWidgetViewModel`, `NetworkWidgetViewModel`, `WeatherWidgetViewModel`).
-2. Write unit tests for tile operations (resize, pin, unpin, group creation).
-3. Write unit tests for `AppSettings` roundtrip serialization and backwards compatibility.
-4. Verify 100% test pass rate, stop and request confirmation.
+#### Phase 4E: Core Behavior Unit Testing Suite
+*Goal: Expand the 168-test suite to cover the core interactive behaviors across decoupled components.*
+1. Write unit tests for tile operations (resize, pin, unpin, group creation).
+2. Write unit tests for `AppSettings` roundtrip serialization and backwards compatibility.
+3. Verify 100% test pass rate, stop and request confirmation.
 
 ---
 

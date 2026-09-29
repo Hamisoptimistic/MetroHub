@@ -323,7 +323,8 @@ public static class SidebarPinningService
         MenuItem? menuItem,
         SymbolIcon? icon,
         TileModel? tile,
-        MainWindow? mainWindow)
+        SidebarRailControl? rail,
+        IReadOnlyList<TileModel>? selectedTiles)
     {
         if (menuItem == null) return;
 
@@ -334,9 +335,7 @@ public static class SidebarPinningService
         }
 
         menuItem.Visibility = Visibility.Visible;
-        var rail = mainWindow?.SidebarRail;
 
-        var selectedTiles = mainWindow?.SelectedTiles;
         if (tile.IsSelected && selectedTiles != null && selectedTiles.Count > 1)
         {
             var eligible = selectedTiles.Where(CanPinTile).ToList();
@@ -376,6 +375,19 @@ public static class SidebarPinningService
                 icon.Symbol = pinned ? SymbolRegular.PinOff24 : SymbolRegular.Pin24;
             }
         }
+    }
+
+    /// <summary>
+    /// Configures the tile context menu's Pin/Unpin sidebar item based on current tile eligibility,
+    /// pinned state, and multi-selection count.
+    /// </summary>
+    public static void ConfigureTileContextMenu(
+        MenuItem? menuItem,
+        SymbolIcon? icon,
+        TileModel? tile,
+        MainWindow? mainWindow)
+    {
+        ConfigureTileContextMenu(menuItem, icon, tile, mainWindow?.SidebarRail, mainWindow?.SelectedTiles);
     }
 
     /// <summary>

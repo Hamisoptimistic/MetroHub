@@ -6,8 +6,10 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
+using MetroHub.Presentation.Messaging;
 using MetroHub.Widgets;
 
 namespace MetroHub.Presentation.Controls;
@@ -371,13 +373,11 @@ public partial class TileControl : UserControl
     private void OnPreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (DataContext is not TileModel tile) return;
-        var mainWindow = MetroHub.MainWindow.Current;
-        if (mainWindow == null) return;
 
         // If tile is not currently selected, clear other selections and select this one
         if (!tile.IsSelected)
         {
-            mainWindow.ClearTileSelection();
+            WeakReferenceMessenger.Default.Send(new TileClearSelectionMessage());
             tile.IsSelected = true;
         }
     }
@@ -385,16 +385,15 @@ public partial class TileControl : UserControl
     private void OnContextMenuOpening(object sender, ContextMenuEventArgs e)
     {
         if (DataContext is not TileModel tile) return;
-        var mainWindow = MetroHub.MainWindow.Current;
-        if (mainWindow == null) return;
 
         if (!tile.IsSelected)
         {
-            mainWindow.ClearTileSelection();
+            WeakReferenceMessenger.Default.Send(new TileClearSelectionMessage());
             tile.IsSelected = true;
         }
 
-        int selectedCount = mainWindow.SelectedTiles.Count;
+        var selectedTiles = CanvasMessenger.GetSelectedTiles();
+        int selectedCount = selectedTiles.Count;
         if (tile.IsSelected && selectedCount > 1)
         {
             ResizeMenuItem.Header = "Resize";
@@ -874,7 +873,7 @@ public partial class TileControl : UserControl
                 };
                 changeLocationItem.Click += (s, ev) =>
                 {
-                    MetroHub.MainWindow.Current?.ShowSetWeatherLocationDialog(weatherVm);
+                    WeakReferenceMessenger.Default.Send(new TileShowWeatherLocationDialogMessage(weatherVm));
                 };
 
                 var autoLocationItem = new MenuItem
@@ -1367,7 +1366,7 @@ public partial class TileControl : UserControl
             }
             StyleMenuItem.Visibility = Visibility.Visible;
             UnpinSeparator.Visibility = Visibility.Visible;
-            GroupMenuItem.Visibility = mainWindow.SelectedTiles.Any(t => t.TileType == TileType.Widget)
+            GroupMenuItem.Visibility = selectedTiles.Any(t => t.TileType == TileType.Widget)
                 ? Visibility.Collapsed
                 : Visibility.Visible;
 
@@ -1385,8 +1384,9 @@ public partial class TileControl : UserControl
         }
 
         PopulateResizeSubmenu(tile);
-        PopulateAddToGroupSubmenu(mainWindow);
-        SidebarPinningService.ConfigureTileContextMenu(PinToSidebarMenuItem, PinToSidebarIcon, tile, mainWindow);
+        PopulateAddToGroupSubmenu();
+        var rail = CanvasMessenger.GetSidebarRail();
+        SidebarPinningService.ConfigureTileContextMenu(PinToSidebarMenuItem, PinToSidebarIcon, tile, rail, selectedTiles);
     }
 
     private void PopulateResizeSubmenu(TileModel tile)
@@ -1459,13 +1459,13 @@ public partial class TileControl : UserControl
         ResizeMenuItem.Visibility = Visibility.Visible;
     }
 
-    private void PopulateAddToGroupSubmenu(MetroHub.MainWindow mainWindow)
+    private void PopulateAddToGroupSubmenu()
     {
         if (AddToGroupMenuItem == null) return;
 
         AddToGroupMenuItem.Items.Clear();
 
-        var groups = mainWindow.Groups.ToList();
+        var groups = CanvasMessenger.GetGroups();
         if (groups.Count == 0)
         {
             var emptyItem = new MenuItem
@@ -1546,12 +1546,12 @@ public partial class TileControl : UserControl
                 var targetGroup = group;
                 item.Click += (s, e) =>
                 {
-                    var targets = mainWindow.SelectedTiles;
+                    var targets = CanvasMessenger.GetSelectedTiles();
                     if (targets.Count == 0 && DataContext is TileModel currentTile)
                     {
                         targets = new List<TileModel> { currentTile };
                     }
-                    mainWindow.AddTilesToExistingGroup(targets, targetGroup);
+                    WeakReferenceMessenger.Default.Send(new TileAddToGroupMessage(targets, targetGroup));
                 };
             }
 
@@ -1563,7 +1563,7 @@ public partial class TileControl : UserControl
     {
         if (DataContext is TileModel tile)
         {
-            MetroHub.MainWindow.Current?.CreateGroupFromSelectedTiles(tile);
+            WeakReferenceMessenger.Default.Send(new TileCreateGroupMessage(tile));
         }
     }
 
@@ -1571,7 +1571,7 @@ public partial class TileControl : UserControl
     {
         if (DataContext is TileModel tile)
         {
-            MetroHub.MainWindow.Current?.BatchStyleSelectedTiles("Default", tile);
+            WeakReferenceMessenger.Default.Send(new TileBatchStyleMessage("Default", tile));
         }
     }
 
@@ -1579,7 +1579,7 @@ public partial class TileControl : UserControl
     {
         if (DataContext is TileModel tile)
         {
-            MetroHub.MainWindow.Current?.BatchStyleSelectedTiles("Colourful", tile);
+            WeakReferenceMessenger.Default.Send(new TileBatchStyleMessage("Colourful", tile));
         }
     }
 
@@ -1600,7 +1600,7 @@ public partial class TileControl : UserControl
     {
         if (DataContext is TileModel tile)
         {
-            MetroHub.MainWindow.Current?.BatchResizeSelectedTiles(newSpanX, newSpanY, tile);
+            WeakReferenceMessenger.Default.Send(new TileBatchResizeMessage(newSpanX, newSpanY, tile));
         }
     }
 
@@ -1676,7 +1676,7 @@ public partial class TileControl : UserControl
     {
         if (DataContext is TileModel tile)
         {
-            SidebarPinningService.HandleContextMenuClick(tile, MetroHub.MainWindow.Current);
+            WeakReferenceMessenger.Default.Send(new TileToggleSidebarPinMessage(tile));
         }
     }
 
@@ -1684,7 +1684,7 @@ public partial class TileControl : UserControl
     {
         if (DataContext is TileModel tile)
         {
-            MetroHub.MainWindow.Current?.BatchUnpinSelectedTiles(tile);
+            WeakReferenceMessenger.Default.Send(new TileBatchUnpinMessage(tile));
         }
     }
 }

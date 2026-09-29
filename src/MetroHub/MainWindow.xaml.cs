@@ -16,6 +16,7 @@ using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 using MetroHub.Core.Services.Catalog;
 using MetroHub.Presentation.Controls;
+using MetroHub.Presentation.Messaging;
 using MetroHub.Widgets.Messaging;
 using CommunityToolkit.Mvvm.Messaging;
 using Wpf.Ui.Controls;
@@ -232,6 +233,44 @@ public partial class MainWindow : BorderlessFluentWindow
         WeakReferenceMessenger.Default.Register<MainWindow, WidgetSettingsChangedMessage>(
             this,
             (r, msg) => StorageService.SaveLayout(r.Tiles));
+
+        RegisterCanvasMessageHandlers();
+    }
+
+    private void RegisterCanvasMessageHandlers()
+    {
+        WeakReferenceMessenger.Default.Register<MainWindow, QuerySelectedTilesMessage>(this, (r, m) => m.Reply(r.SelectedTiles));
+        WeakReferenceMessenger.Default.Register<MainWindow, QueryGroupsMessage>(this, (r, m) => m.Reply(r.Groups));
+        WeakReferenceMessenger.Default.Register<MainWindow, QuerySidebarRailMessage>(this, (r, m) => m.Reply(r.SidebarRail));
+
+        WeakReferenceMessenger.Default.Register<MainWindow, TileClearSelectionMessage>(this, (r, m) => r.ClearTileSelection());
+        WeakReferenceMessenger.Default.Register<MainWindow, TileBatchResizeMessage>(this, (r, m) => r.BatchResizeSelectedTiles(m.SpanX, m.SpanY, m.SourceTile));
+        WeakReferenceMessenger.Default.Register<MainWindow, TileBatchStyleMessage>(this, (r, m) => r.BatchStyleSelectedTiles(m.Style, m.SourceTile));
+        WeakReferenceMessenger.Default.Register<MainWindow, TileCreateGroupMessage>(this, (r, m) => r.CreateGroupFromSelectedTiles(m.SourceTile));
+        WeakReferenceMessenger.Default.Register<MainWindow, TileAddToGroupMessage>(this, (r, m) => r.AddTilesToExistingGroup(m.Targets as IList<TileModel> ?? m.Targets.ToList(), m.TargetGroup));
+        WeakReferenceMessenger.Default.Register<MainWindow, TileBatchUnpinMessage>(this, (r, m) => r.BatchUnpinSelectedTiles(m.SourceTile));
+        WeakReferenceMessenger.Default.Register<MainWindow, TileToggleSidebarPinMessage>(this, (r, m) => SidebarPinningService.HandleContextMenuClick(m.Tile, r));
+        WeakReferenceMessenger.Default.Register<MainWindow, TileShowWeatherLocationDialogMessage>(this, (r, m) => r.ShowSetWeatherLocationDialog(m.WeatherVm));
+
+        WeakReferenceMessenger.Default.Register<MainWindow, GroupFlashLockedMessage>(this, (r, m) => r.FlashLockedGroupPerimeter(m.Group));
+        WeakReferenceMessenger.Default.Register<MainWindow, GroupRenameMessage>(this, (r, m) =>
+        {
+            r.RenameGroup(m.Group, m.NewTitle);
+            m.Reply(true);
+        });
+        WeakReferenceMessenger.Default.Register<MainWindow, GroupStartDragMessage>(this, (r, m) => r.StartGroupDrag(m.Group, m.MouseArgs));
+        WeakReferenceMessenger.Default.Register<MainWindow, GroupToggleLockMessage>(this, (r, m) =>
+        {
+            r.ToggleGroupLock(m.Group);
+            m.Reply(true);
+        });
+        WeakReferenceMessenger.Default.Register<MainWindow, GroupSetColorMessage>(this, (r, m) =>
+        {
+            if (m.HexColor != null) r.SetGroupColor(m.Group, m.HexColor);
+        });
+        WeakReferenceMessenger.Default.Register<MainWindow, GroupSetTintColorMessage>(this, (r, m) => r.SetGroupTintColor(m.Group, m.HexTint));
+        WeakReferenceMessenger.Default.Register<MainWindow, GroupUngroupMessage>(this, (r, m) => r.UngroupTiles(m.Group));
+        WeakReferenceMessenger.Default.Register<MainWindow, GroupDeleteMessage>(this, (r, m) => r.DeleteGroupAndTiles(m.Group));
     }
 
     private void OnWindowPreviewMouseDown(object sender, MouseButtonEventArgs e)
