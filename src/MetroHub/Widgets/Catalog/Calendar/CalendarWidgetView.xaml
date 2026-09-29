@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Widgets.Catalog.Calendar.CalendarWidgetView"
+<UserControl x:Class="MetroHub.Widgets.Catalog.Calendar.CalendarWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -17,8 +17,6 @@
              RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
-
         <!-- Windows Calendar Palette Tokens (Aligned with Habit Widget) -->
         <SolidColorBrush x:Key="MonthBlockBrush" Color="#18FFFFFF" />
         <SolidColorBrush x:Key="OutOfMonthTextBrush" Color="#40FFFFFF" />
@@ -26,36 +24,8 @@
         <SolidColorBrush x:Key="WeekdayHeaderBrush" Color="#80FFFFFF" />
         <SolidColorBrush x:Key="CellHoverBrush" Color="#18FFFFFF" />
 
-        <!-- 28x28 Transparent Month Stepper Navigation Button Style -->
-        <Style x:Key="CalendarNavButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#C0FFFFFF" />
-            <Setter Property="Width" Value="28" />
-            <Setter Property="Height" Value="28" />
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="4"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <!-- 28x28 Month Stepper Navigation Button Style: Inherits Universal WidgetNavButtonStyle -->
+        <Style x:Key="CalendarNavButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetNavButtonStyle}" />
 
     </UserControl.Resources>
 
@@ -87,7 +57,7 @@
                     <TextBlock HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                Text="{Binding MonthYearTitle}"
-                               FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                               FontFamily="{DynamicResource AppDisplayFontFamily}"
                                FontSize="15"
                                FontWeight="Bold"
                                Foreground="#FFFFFF" />
@@ -104,13 +74,13 @@
 
                 <!-- 2. Weekday Header (Su, Mo, Tu, We, Th, Fr, Sa) -->
                 <UniformGrid Grid.Row="1" Columns="7" Margin="0,0,0,6">
-                    <TextBlock Text="Su" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Mo" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Tu" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="We" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Th" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Fr" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Sa" HorizontalAlignment="Center" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="Su" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="Mo" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="Tu" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="We" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="Th" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="Fr" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="Sa" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
                 </UniformGrid>
 
                 <!-- 3. 42-Day Grid Area (Seamless Single-Polygon Month Backplate + Number Grid) -->
@@ -160,7 +130,7 @@
                                                    Text="{Binding DayText}"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
-                                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                                   FontFamily="{DynamicResource AppFontFamily}"
                                                    FontSize="13.5"
                                                    FontWeight="Normal"
                                                    Foreground="{StaticResource OutOfMonthTextBrush}"
@@ -232,7 +202,7 @@
                            HorizontalAlignment="Center"
                            VerticalAlignment="Top"
                            TextAlignment="Center"
-                           FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                           FontFamily="{DynamicResource AppDisplayFontFamily}"
                            FontSize="22"
                            FontWeight="Medium"
                            Foreground="#A0FFFFFF"
@@ -252,7 +222,7 @@
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            TextAlignment="Center"
-                           FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                           FontFamily="{DynamicResource AppDisplayFontFamily}"
                            FontSize="112"
                            FontWeight="SemiBold"
                            Foreground="#FFFFFF"
@@ -265,7 +235,7 @@
                             VerticalAlignment="Bottom"
                             SnapsToDevicePixels="True">
                     <TextBlock Text="{Binding TodayMonthName}"
-                               FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                               FontFamily="{DynamicResource AppDisplayFontFamily}"
                                FontSize="17"
                                FontWeight="Medium"
                                Foreground="#B0FFFFFF"
@@ -274,7 +244,7 @@
                                SnapsToDevicePixels="True" />
                     <TextBlock Text="{Binding TodayYear}"
                                Margin="6,0,0,0"
-                               FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                               FontFamily="{DynamicResource AppDisplayFontFamily}"
                                FontSize="17"
                                FontWeight="Medium"
                                Foreground="#70FFFFFF"

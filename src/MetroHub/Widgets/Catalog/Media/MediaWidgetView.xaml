@@ -17,15 +17,8 @@
              RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
-
-        <!-- Media Transport Button Style: Inherits FluentGhostButtonStyle (2px Corner Radius, unified sidebar hover) -->
-        <Style x:Key="MediaTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}">
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="28" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Focusable" Value="False" />
-        </Style>
+        <!-- Media Transport Button Style: Inherits WidgetMediumButtonStyle -->
+        <Style x:Key="MediaTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetMediumButtonStyle}" />
 
 
     </UserControl.Resources>

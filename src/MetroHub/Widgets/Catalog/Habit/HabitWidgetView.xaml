@@ -17,41 +17,12 @@
              RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <SolidColorBrush x:Key="MonthBackplateBrush" Color="#18FFFFFF" />
 
-        <!-- 28x28 Transparent Month Stepper Navigation Button Style -->
-        <Style x:Key="HabitNavButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#C0FFFFFF" />
-            <Setter Property="Width" Value="28" />
-            <Setter Property="Height" Value="28" />
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="4"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <!-- 28x28 Month Stepper Navigation Button Style: Inherits Universal WidgetNavButtonStyle -->
+        <Style x:Key="HabitNavButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetNavButtonStyle}" />
 
-        <!-- Sleek Fluent Dismiss Button Style (28x28, 2px CornerRadius) -->
+        <!-- Sleek Fluent Dismiss Button Style (28x28) -->
         <Style x:Key="HabitDismissButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -61,7 +32,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="2" SnapsToDevicePixels="True">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}" SnapsToDevicePixels="True">
                             <Path x:Name="Icon"
                                   Width="10" Height="10"
                                   Data="M 0.5,0.5 L 9.5,9.5 M 0.5,9.5 L 9.5,0.5"
@@ -243,7 +214,7 @@
                             Padding="8,3"
                             Focusable="False">
                         <TextBlock Text="{Binding DisplayMonthYear}"
-                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    FontSize="15"
                                    FontWeight="Bold"
                                    Foreground="#FFFFFF"
@@ -271,7 +242,7 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}"
-                                       FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                       FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="11.5"
                                        FontWeight="SemiBold"
                                        Foreground="#80FFFFFF"
@@ -361,7 +332,7 @@
                                         <!-- Day Number Label -->
                                         <TextBlock x:Name="DayLabel"
                                                    Text="{Binding DayNumber}"
-                                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                                   FontFamily="{DynamicResource AppFontFamily}"
                                                    FontSize="13"
                                                    FontWeight="SemiBold"
                                                    Foreground="#FFFFFF"
@@ -458,7 +429,7 @@
                                                        VerticalAlignment="Center"
                                                        Margin="0,0,7,0" />
                                         <TextBlock Text="{Binding HabitName}"
-                                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
                                                    FontSize="16"
                                                    FontWeight="Bold"
                                                    Foreground="#FFFFFF"
@@ -500,7 +471,7 @@
                             </ui:SymbolIcon.Effect>
                         </ui:SymbolIcon>
                         <TextBlock Text="{Binding ActiveStreakText}"
-                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    FontSize="16"
                                    FontWeight="Bold"
                                    VerticalAlignment="Center"
@@ -538,7 +509,7 @@
                 <!-- Header -->
                 <Grid Grid.Row="0" Margin="0,0,0,16">
                     <TextBlock Text="Habit"
-                               FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                               FontFamily="{DynamicResource AppFontFamily}"
                                FontSize="14.5"
                                FontWeight="SemiBold"
                                Foreground="#FFFFFF"

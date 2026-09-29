@@ -41,4 +41,32 @@
     <SolidColorBrush x:Key="FluentPressedBrush" Color="#1EFFFFFF" />
     <SolidColorBrush x:Key="FluentHoverBorderBrush" Color="Transparent" />
 
+    <!-- ========================================================================= -->
+    <!-- UNIVERSAL SEMANTIC STATUS COLORS (Constant across all themes)             -->
+    <!-- ========================================================================= -->
+    <Color x:Key="StatusSuccessColor">#00E676</Color>
+    <SolidColorBrush x:Key="StatusSuccessBrush" Color="{StaticResource StatusSuccessColor}" />
+    <Color x:Key="StatusWarningColor">#FFB900</Color>
+    <SolidColorBrush x:Key="StatusWarningBrush" Color="{StaticResource StatusWarningColor}" />
+    <Color x:Key="StatusDangerColor">#FF453A</Color>
+    <SolidColorBrush x:Key="StatusDangerBrush" Color="{StaticResource StatusDangerColor}" />
+
+    <!-- Universal Hairline Divider Token -->
+    <Color x:Key="WidgetDividerColor">#14FFFFFF</Color>
+    <SolidColorBrush x:Key="WidgetDividerBrush" Color="{StaticResource WidgetDividerColor}" />
+
+    <!-- ========================================================================= -->
+    <!-- FLUENT 2 MOTION & ANIMATION TOKENS                                        -->
+    <!-- ========================================================================= -->
+    <!-- Standard Microsoft Fluent Durations -->
+    <Duration x:Key="FluentDurationFast">0:0:0.100</Duration>
+    <Duration x:Key="FluentDurationNormal">0:0:0.200</Duration>
+    <Duration x:Key="FluentDurationGentle">0:0:0.350</Duration>
+
+    <!-- Standard Microsoft Fluent Easing Curves -->
+    <CubicEase x:Key="FluentDecelerateEase" EasingMode="EaseOut" />
+    <CubicEase x:Key="FluentAccelerateEase" EasingMode="EaseIn" />
+    <CircleEase x:Key="FluentCircleEase" EasingMode="EaseOut" />
+    <QuadraticEase x:Key="FluentStandardEase" EasingMode="EaseOut" />
+
 </ResourceDictionary>

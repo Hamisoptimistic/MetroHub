@@ -17,35 +17,9 @@
              RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
-        <!-- Fluent Flat Button Style for Hover Controls -->
-        <Style x:Key="QuoteActionButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
+        <!-- Fluent Flat Button Style for Hover Controls: Inherits WidgetMicroButtonStyle -->
+        <Style x:Key="QuoteActionButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetMicroButtonStyle}">
             <Setter Property="Foreground" Value="#E5E9F0" />
-            <Setter Property="Width" Value="28" />
-            <Setter Property="Height" Value="26" />
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="2"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#45FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
     </UserControl.Resources>
 
@@ -135,7 +109,7 @@
                            HorizontalAlignment="Right"
                            VerticalAlignment="Center"
                            FontSize="12.5"
-                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                           FontFamily="{DynamicResource AppFontFamily}"
                            FontWeight="SemiBold"
                            Foreground="#D8D2C6"
                            TextOptions.TextFormattingMode="Ideal"

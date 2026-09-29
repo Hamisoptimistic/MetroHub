@@ -22,7 +22,6 @@
              RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <conv:StringToBrushConverter x:Key="StringToBrush" />
 
         <!-- Strips default dotted focus border across all controls -->
@@ -44,7 +43,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Border"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="{StaticResource ControlCornerRadius}"
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
                                 SnapsToDevicePixels="True">
                             <ui:SymbolIcon x:Name="CopyIcon"
                                            Symbol="Copy16"
@@ -55,11 +54,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="{StaticResource FluentHoverBrush}" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
                                 <Setter TargetName="CopyIcon" Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="{StaticResource FluentPressedBrush}" />
+                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
                                 <Setter TargetName="CopyIcon" Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -68,13 +67,8 @@
             </Setter>
         </Style>
 
-        <!-- Sleek Micro Icon Button Style: Fully inherits Universal Fluent Ghost Button (2px corner radius, exact sidebar hover) -->
-        <Style x:Key="MicroIconButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}">
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="28" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Focusable" Value="False" />
-        </Style>
+        <!-- Sleek Micro Icon Button Style: Fully inherits Universal WidgetMediumButtonStyle -->
+        <Style x:Key="MicroIconButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetMediumButtonStyle}" />
 
         <!-- Wi-Fi Connect Action Button (Matching App.xaml Cohesive Action Button Style) -->
         <Style x:Key="FluentWifiActionButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentCohesiveActionButtonStyle}">
@@ -89,9 +83,6 @@
             <Setter Property="Height" Value="28" />
             <Setter Property="Focusable" Value="False" />
         </Style>
-
-        <!-- Universal 4px Fluent Floating ScrollBar: Invisible by default, reveals on scroll/hover via AutoHideScrollBehavior -->
-        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
 
 
 
@@ -733,10 +724,6 @@
                                      VirtualizingPanel.CacheLengthUnit="Page"
                                      SelectionMode="Single"
                                      Focusable="False">
-                            <ui:ListView.Resources>
-                                <!-- Universal 4px Fluent Floating ScrollBar from WidgetStyles.xaml -->
-                                <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
-                            </ui:ListView.Resources>
                             <ui:ListView.ItemContainerStyle>
                                 <Style TargetType="{x:Type ListViewItem}">
                                     <Setter Property="HorizontalContentAlignment" Value="Stretch" />

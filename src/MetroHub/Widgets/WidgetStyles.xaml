@@ -9,6 +9,10 @@
     <CornerRadius x:Key="TileCornerRadius">2</CornerRadius>
     <SolidColorBrush x:Key="FluentHoverBrush" Color="#12FFFFFF" />
     <SolidColorBrush x:Key="FluentPressedBrush" Color="#1EFFFFFF" />
+    <SolidColorBrush x:Key="WidgetDividerBrush" Color="#14FFFFFF" />
+
+    <!-- Universal Converters -->
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
     <!-- ========================================================================= -->
     <!-- UNIVERSAL FLUENT GREEN TOGGLESWITCH — Brush Overrides                     -->
@@ -91,6 +95,84 @@
 
     <!-- Implicit default: every ui:ToggleSwitch automatically receives the Fluent Green styling -->
     <Style TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource FluentGreenToggleSwitchStyle}" />
+
+    <!-- Named style: Amber ToggleSwitch (Caffeine, Night Light, Awake) -->
+    <Style x:Key="FluentAmberToggleSwitchStyle" TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource DefaultUiToggleSwitchStyle}">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Style.Resources>
+            <!-- ON state: Warm Amber #FFB900 track with Solid Black #000000 knob -->
+            <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#FFB900" />
+            <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#FFC629" />
+            <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#E5A600" />
+            <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="#80FFB900" />
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#FFB900" />
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#FFC629" />
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="#E5A600" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#000000" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#1A1A1A" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#000000" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#000000" />
+
+            <!-- OFF state: Transparent track, subtle fluent outline (#70FFFFFF), silver knob (#CECECE) -->
+            <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="Transparent" />
+            <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#0DFFFFFF" />
+            <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#18FFFFFF" />
+            <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled" Color="Transparent" />
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="#70FFFFFF" />
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="#90FFFFFF" />
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="#55FFFFFF" />
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled" Color="#35FFFFFF" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#CECECE" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#B0B0B0" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="#60FFFFFF" />
+
+            <!-- Accent overrides for ToggleSwitch -->
+            <SolidColorBrush x:Key="SystemAccentColorBrush" Color="#FFB900" />
+            <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#FFB900" />
+            <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="#E5A600" />
+        </Style.Resources>
+    </Style>
+
+    <!-- Named style: Danger / DND Red ToggleSwitch -->
+    <Style x:Key="FluentRedToggleSwitchStyle" TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource DefaultUiToggleSwitchStyle}">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Style.Resources>
+            <!-- ON state: Danger Red #FF453A track with Solid Black #000000 knob -->
+            <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#FF453A" />
+            <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#FF6961" />
+            <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#D9362C" />
+            <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="#80FF453A" />
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#FF453A" />
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#FF6961" />
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="#D9362C" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#000000" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#1A1A1A" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#000000" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#000000" />
+
+            <!-- OFF state: Transparent track, subtle fluent outline (#70FFFFFF), silver knob (#CECECE) -->
+            <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="Transparent" />
+            <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#0DFFFFFF" />
+            <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#18FFFFFF" />
+            <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled" Color="Transparent" />
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="#70FFFFFF" />
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="#90FFFFFF" />
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="#55FFFFFF" />
+            <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled" Color="#35FFFFFF" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#CECECE" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#B0B0B0" />
+            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="#60FFFFFF" />
+
+            <!-- Accent overrides for ToggleSwitch -->
+            <SolidColorBrush x:Key="SystemAccentColorBrush" Color="#FF453A" />
+            <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#FF453A" />
+            <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="#D9362C" />
+        </Style.Resources>
+    </Style>
 
     <!-- 
         Shared WidgetCard Shell Style (Phase 0.2)
@@ -668,6 +750,71 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- ========================================================================= -->
+    <!-- UNIVERSAL WIDGET INTERACTION PRIMITIVES (Phase 3H)                        -->
+    <!-- ========================================================================= -->
+
+    <!-- Implicit Default for ScrollBar across all widgets: Auto-inherits 4px floating scrollbar -->
+    <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
+
+    <!-- Universal 28x28 Micro Ghost Button Style (Audio mute, quick action, radio volume, refresh) -->
+    <Style x:Key="WidgetMicroButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Tag" Value="InteractiveControl" />
+    </Style>
+
+    <!-- Universal 32x28 Medium Ghost Button Style (Media transport, pomodoro timer, gallery) -->
+    <Style x:Key="WidgetMediumButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}">
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Tag" Value="InteractiveControl" />
+    </Style>
+
+    <!-- Universal 28x28 Stepper Navigation Button (Calendar, Habit, Pagination) -->
+    <Style x:Key="WidgetNavButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Foreground" Value="#C0FFFFFF" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Tag" Value="InteractiveControl" />
+    </Style>
+
+    <!-- Universal 1px Horizontal Hairline Divider -->
+    <Style x:Key="WidgetHairlineDividerStyle" TargetType="Border">
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource WidgetDividerBrush}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+    </Style>
+
+    <!-- Universal 1px Vertical Hairline Divider -->
+    <Style x:Key="WidgetVerticalHairlineDividerStyle" TargetType="Border">
+        <Setter Property="Width" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource WidgetDividerBrush}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+    </Style>
+
+    <!-- Universal 7px Round Indicator Dot (Pomodoro cycles, Network status, Activity pips) -->
+    <Style x:Key="WidgetIndicatorDotStyle" TargetType="Border">
+        <Setter Property="Width" Value="7" />
+        <Setter Property="Height" Value="7" />
+        <Setter Property="CornerRadius" Value="3.5" />
+        <Setter Property="Margin" Value="2.5,0" />
+        <Setter Property="Background" Value="#25FFFFFF" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
     </Style>
 
 </ResourceDictionary>

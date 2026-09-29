@@ -16,11 +16,6 @@
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Animated"
              RenderOptions.ClearTypeHint="Enabled">
-
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
-    </UserControl.Resources>
-
     <widgets:WidgetCard Padding="12,10,12,10">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
             <!-- 1. Wide 4x2 Layout: Time Centered in Viewbox with Micro-Motion -->

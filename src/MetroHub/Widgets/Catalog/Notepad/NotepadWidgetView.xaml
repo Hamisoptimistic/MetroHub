@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Widgets.Catalog.Notepad.NotepadWidgetView"
+<UserControl x:Class="MetroHub.Widgets.Catalog.Notepad.NotepadWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -20,15 +20,10 @@
              RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
-
         <!-- Strip default dotted focus rectangle across all controls in widget -->
         <Style TargetType="{x:Type Control}">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         </Style>
-
-        <!-- Universal 4px Fluent Floating ScrollBar: Invisible by default, reveals on scroll/hover via AutoHideScrollBehavior -->
-        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
 
         <!-- Compact Network-Style Icon Tile (40x38, perfectly centered 16px icon, space-efficient) -->
         <Style x:Key="NotepadTileStyle" TargetType="{x:Type widgets:WidgetTile}">
@@ -338,10 +333,7 @@
         <!-- Runs border-to-border (100% full width, zero margin)                      -->
         <!-- ========================================================================= -->
         <Border Grid.Row="1"
-                Height="1"
-                HorizontalAlignment="Stretch"
-                Background="#14FFFFFF"
-                SnapsToDevicePixels="True" />
+                Style="{StaticResource WidgetHairlineDividerStyle}" />
 
             <!-- ========================================================================= -->
             <!-- ROW 2: CONTENT AREA (NOTES OR TO-DO)                                      -->

@@ -27,15 +27,10 @@
          Ctrl+Z / Ctrl+Y for itself. -->
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
-
         <!-- Base control styles -->
         <Style TargetType="{x:Type Control}">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         </Style>
-
-        <!-- Floating ScrollBar -->
-        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
 
         <!-- Modern Monospace Editor (Notepad / Cascadia style) -->
         <Style x:Key="MarkdownEditorStyle" TargetType="{x:Type TextBox}">
@@ -370,10 +365,7 @@
         <!-- Runs border-to-border (100% full width, zero margin)                      -->
         <!-- ========================================================================= -->
         <Border Grid.Row="1"
-                Height="1"
-                HorizontalAlignment="Stretch"
-                Background="#14FFFFFF"
-                SnapsToDevicePixels="True" />
+                Style="{StaticResource WidgetHairlineDividerStyle}" />
 
         <!-- ========================================================================= -->
         <!-- ROW 2: CONTENT AREA (WRITE OR PREVIEW)                                    -->

@@ -17,15 +17,8 @@
              RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
-
-        <!-- Media & Pomodoro-Consistent Transport Button Style: Inherits FluentGhostButtonStyle (2px Corner Radius, unified sidebar hover) -->
-        <Style x:Key="VolumeTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}">
-            <Setter Property="Width" Value="28" />
-            <Setter Property="Height" Value="28" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Focusable" Value="False" />
-        </Style>
+        <!-- Media & Pomodoro-Consistent Transport Button Style: Inherits WidgetMicroButtonStyle -->
+        <Style x:Key="VolumeTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetMicroButtonStyle}" />
 
         <!-- Windows 11 Sound Output Device List Item Button Style -->
         <Style x:Key="DeviceListItemButtonStyle" TargetType="Button">
@@ -41,7 +34,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="CardBorder"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="2"
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter Margin="0" VerticalAlignment="Center" />
                         </Border>
@@ -57,9 +50,6 @@
                 </Setter.Value>
             </Setter>
         </Style>
-
-        <!-- Universal 4px Fluent Floating ScrollBar: Invisible by default, reveals on scroll/hover via AutoHideScrollBehavior -->
-        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
 
     </UserControl.Resources>
 

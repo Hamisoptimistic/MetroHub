@@ -16,25 +16,11 @@
              RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <!-- Media-Consistent Transport Button Style: Inherits WidgetMediumButtonStyle -->
+        <Style x:Key="PomodoroTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetMediumButtonStyle}" />
 
-        <!-- Media-Consistent Transport Button Style: Inherits FluentGhostButtonStyle (2px Corner Radius, unified sidebar hover) -->
-        <Style x:Key="PomodoroTransportButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}">
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="28" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Focusable" Value="False" />
-        </Style>
-
-        <!-- Round Indicator Dot Style -->
-        <Style x:Key="CycleDotStyle" TargetType="Border">
-            <Setter Property="Width" Value="7" />
-            <Setter Property="Height" Value="7" />
-            <Setter Property="CornerRadius" Value="3.5" />
-            <Setter Property="Margin" Value="2.5,0" />
-            <Setter Property="Background" Value="#25FFFFFF" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-        </Style>
+        <!-- Round Indicator Dot Style: Inherits WidgetIndicatorDotStyle -->
+        <Style x:Key="CycleDotStyle" TargetType="Border" BasedOn="{StaticResource WidgetIndicatorDotStyle}" />
     </UserControl.Resources>
 
     <!-- Transparent WidgetCard to inherit the exact glass/acrylic tile background of other tiles -->

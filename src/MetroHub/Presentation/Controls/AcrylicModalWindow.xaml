@@ -14,7 +14,7 @@
                   Height="360"
                   Background="Transparent"
                   Foreground="#FFFFFF"
-                  FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                  FontFamily="{DynamicResource AppFontFamily}"
                   RenderOptions.ClearTypeHint="Enabled"
                   TextOptions.TextFormattingMode="Ideal"
                   TextOptions.TextRenderingMode="ClearType"
@@ -23,25 +23,7 @@
                   UseLayoutRounding="True">
 
     <Window.Resources>
-        <!-- Crisp Anti-Aliased DirectWrite TextBlock Style -->
-        <Style TargetType="TextBlock">
-            <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
-            <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
-            <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
-            <Setter Property="TextOptions.TextHintingMode" Value="Auto" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-            <Setter Property="UseLayoutRounding" Value="True" />
-        </Style>
-
-        <!-- Fluent Icon Anti-Aliasing Style: Eliminates staircase pixelation on curved vector glyphs -->
-        <Style TargetType="{x:Type ui:SymbolIcon}">
-            <Setter Property="SnapsToDevicePixels" Value="False" />
-            <Setter Property="UseLayoutRounding" Value="False" />
-            <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
-            <Setter Property="TextOptions.TextHintingMode" Value="Animated" />
-        </Style>
-
-        <!-- Sleek Fluent Dismiss Button Style (32x32, 2px CornerRadius) -->
+        <!-- Sleek Fluent Dismiss Button Style (32x32) -->
         <Style x:Key="ModalDismissButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -51,7 +33,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="2" SnapsToDevicePixels="True">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}" SnapsToDevicePixels="True">
                             <Path x:Name="Icon"
                                   Width="10" Height="10"
                                   Data="M 0.5,0.5 L 9.5,9.5 M 0.5,9.5 L 9.5,0.5"
@@ -121,7 +103,7 @@
                                 Background="#14FFFFFF"
                                 BorderBrush="#28FFFFFF"
                                 BorderThickness="1"
-                                CornerRadius="2"
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
                                 SnapsToDevicePixels="True">
                             <Grid Margin="10,0,10,0">
                                 <ScrollViewer x:Name="PART_ContentHost"
@@ -163,7 +145,7 @@
                                 Background="#14FFFFFF"
                                 BorderBrush="#28FFFFFF"
                                 BorderThickness="1"
-                                CornerRadius="2"
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
                                 SnapsToDevicePixels="True">
                             <Grid Margin="10,0,80,0">
                                 <Grid.ColumnDefinitions>
@@ -220,7 +202,7 @@
                                 Background="#14FFFFFF"
                                 BorderBrush="#28FFFFFF"
                                 BorderThickness="1"
-                                CornerRadius="2"
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
                                 SnapsToDevicePixels="True">
                             <Grid Margin="10,0,10,0">
                                 <Grid.ColumnDefinitions>
@@ -268,7 +250,7 @@
                     <ControlTemplate TargetType="ListBoxItem">
                         <Border x:Name="ItemBorder"
                                 Background="Transparent"
-                                CornerRadius="2"
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
                                 Margin="2,1,2,1"
                                 Padding="{TemplateBinding Padding}"
                                 SnapsToDevicePixels="True">
@@ -332,7 +314,7 @@
                                 <!-- Inner Dot: Smooth Anti-Aliased Bullet -->
                                 <Ellipse x:Name="InnerDot"
                                          Width="8" Height="8"
-                                         Fill="#0078D4"
+                                         Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
                                          Opacity="0"
                                          SnapsToDevicePixels="False"
                                          UseLayoutRounding="False"
@@ -348,8 +330,8 @@
                                 <Setter TargetName="OuterRing" Property="Fill" Value="#1CFFFFFF" />
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="OuterRing" Property="Stroke" Value="#0078D4" />
-                                <Setter TargetName="OuterRing" Property="Fill" Value="#250078D4" />
+                                <Setter TargetName="OuterRing" Property="Stroke" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+                                <Setter TargetName="OuterRing" Property="Fill" Value="{DynamicResource SystemAccentColorTertiaryBrush}" />
                                 <Setter TargetName="InnerDot" Property="Opacity" Value="1.0" />
                             </Trigger>
                             <MultiTrigger>
@@ -357,8 +339,8 @@
                                     <Condition Property="IsChecked" Value="True" />
                                     <Condition Property="IsMouseOver" Value="True" />
                                 </MultiTrigger.Conditions>
-                                <Setter TargetName="OuterRing" Property="Stroke" Value="#1A88E0" />
-                                <Setter TargetName="InnerDot" Property="Fill" Value="#1A88E0" />
+                                <Setter TargetName="OuterRing" Property="Stroke" Value="{DynamicResource SystemAccentColorSecondaryBrush}" />
+                                <Setter TargetName="InnerDot" Property="Fill" Value="{DynamicResource SystemAccentColorSecondaryBrush}" />
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -380,7 +362,7 @@
                     <ControlTemplate TargetType="RadioButton">
                         <Border x:Name="TabBorder"
                                 Background="Transparent"
-                                CornerRadius="2"
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
                                 Padding="14,0"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -422,7 +404,7 @@
                 </StackPanel>
                 <Border Grid.Column="1"
                         Background="#15FFFFFF"
-                        CornerRadius="2"
+                        CornerRadius="{DynamicResource ControlCornerRadius}"
                         Padding="6,2"
                         VerticalAlignment="Center"
                         Margin="8,0,0,0">
@@ -434,10 +416,10 @@
         </DataTemplate>
     </Window.Resources>
 
-    <!-- Borderless Window Wrapper (CornerRadius: 2px) -->
+    <!-- Borderless Window Wrapper -->
     <Border Background="Transparent"
             BorderThickness="0"
-            CornerRadius="2"
+            CornerRadius="{DynamicResource ControlCornerRadius}"
             SnapsToDevicePixels="True">
         <Grid RenderOptions.ClearTypeHint="Enabled">
             <Grid.ColumnDefinitions>
@@ -732,7 +714,7 @@
                         <!-- Two-Tab Segmented Selector -->
                         <Border Grid.Row="0"
                                 Background="#12FFFFFF"
-                                CornerRadius="2"
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
                                 Padding="2"
                                 HorizontalAlignment="Left"
                                 Margin="0,0,0,10">
@@ -786,7 +768,7 @@
                                     Background="#14FFFFFF"
                                     BorderBrush="#25FFFFFF"
                                     BorderThickness="1"
-                                    CornerRadius="2"
+                                    CornerRadius="{DynamicResource ControlCornerRadius}"
                                     Margin="0,8,0,0"
                                     SnapsToDevicePixels="True">
                                 <Grid>

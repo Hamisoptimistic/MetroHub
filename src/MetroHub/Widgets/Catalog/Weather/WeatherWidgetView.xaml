@@ -17,38 +17,6 @@
              RenderOptions.ClearTypeHint="Enabled">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
-
-        <!-- Media-Consistent 32x28 Transparent Button Style -->
-        <Style x:Key="WeatherTransportButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#E0FFFFFF" />
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="28" />
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="2"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#40FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
         <!-- 100% GPU-drawn frozen OpacityMask for Horizon Aura spread (0 CPU / 0 allocations).
              Bright opaque baseline hugging the edge, fast falloff: the neon heat-map bleed. -->
         <LinearGradientBrush x:Key="HorizonAuraMaskBrush" StartPoint="0,1" EndPoint="0,0" po:Freeze="True">
@@ -77,13 +45,13 @@
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
             <!-- 1. Atmospheric Ambient Condition Aura (Dynamic, 100% GPU-drawn frozen brush, 0 CPU/RAM) -->
             <Border Background="{Binding AmbientGlowBrush}"
-                    CornerRadius="2"
+                    CornerRadius="{DynamicResource TileCornerRadius}"
                     IsHitTestVisible="False" />
 
             <!-- 2. Atmospheric Horizon Aura (Expansive Horizon Aura, 100% Direct3D GPU-drawn, 0 CPU/RAM) -->
             <Border Background="{Binding HorizonAuraBrush}"
                     OpacityMask="{StaticResource HorizonAuraMaskBrush}"
-                    CornerRadius="2"
+                    CornerRadius="{DynamicResource TileCornerRadius}"
                     IsHitTestVisible="False" />
 
             <!-- 2b. Hot edge core: 3px neon baseline feeding the bloom (same frozen brush, unmasked) -->
@@ -95,12 +63,12 @@
 
             <!-- 3. Glass Top Specular Sheen (Subtle light catch across upper half) -->
             <Border Background="{StaticResource WeatherGlassSheenBrush}"
-                    CornerRadius="2"
+                    CornerRadius="{DynamicResource TileCornerRadius}"
                     IsHitTestVisible="False" />
 
             <!-- 4. Glass Top Rim Light (1px specular edge along top border) -->
             <Border BorderBrush="{StaticResource WeatherGlassRimBrush}"
-                    CornerRadius="2"
+                    CornerRadius="{DynamicResource TileCornerRadius}"
                     BorderThickness="0,1,0,0"
                     IsHitTestVisible="False" />
 
@@ -136,7 +104,7 @@
                                Text="{Binding TemperatureText}"
                                FontSize="100"
                                FontWeight="Bold"
-                               FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                               FontFamily="{DynamicResource AppDisplayFontFamily}"
                                Foreground="#FFFFFF"
                                VerticalAlignment="Center"
                                Margin="0,-4,0,0">
@@ -184,7 +152,7 @@
                         <TextBlock Text="{Binding TemperatureText}"
                                    FontSize="54"
                                    FontWeight="Bold"
-                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    Foreground="#FFFFFF"
                                    HorizontalAlignment="Right">
                             <TextBlock.Effect>
@@ -194,7 +162,7 @@
                         <TextBlock Text="{Binding ConditionText}"
                                    FontSize="15"
                                    FontWeight="SemiBold"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                   FontFamily="{DynamicResource AppFontFamily}"
                                    Foreground="#D8E2EC"
                                    HorizontalAlignment="Right"
                                    Margin="0,2,0,0" />
@@ -207,13 +175,13 @@
                     <StackPanel HorizontalAlignment="Center">
                         <TextBlock Text="AQI"
                                    FontSize="12"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                   FontFamily="{DynamicResource AppFontFamily}"
                                    Foreground="#95A8BE"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding AqiText}"
                                    FontSize="16"
                                    FontWeight="Bold"
-                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    Foreground="#FFFFFF"
                                    HorizontalAlignment="Center"
                                    Margin="0,4,0,0" />
@@ -223,13 +191,13 @@
                     <StackPanel HorizontalAlignment="Center">
                         <TextBlock Text="Humidity"
                                    FontSize="12"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                   FontFamily="{DynamicResource AppFontFamily}"
                                    Foreground="#95A8BE"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding HumidityText}"
                                    FontSize="16"
                                    FontWeight="Bold"
-                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    Foreground="#FFFFFF"
                                    HorizontalAlignment="Center"
                                    Margin="0,4,0,0" />
@@ -239,13 +207,13 @@
                     <StackPanel HorizontalAlignment="Center">
                         <TextBlock Text="Precip"
                                    FontSize="12"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                                   FontFamily="{DynamicResource AppFontFamily}"
                                    Foreground="#95A8BE"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding PrecipitationProbabilityText}"
                                    FontSize="16"
                                    FontWeight="Bold"
-                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    Foreground="#FFFFFF"
                                    HorizontalAlignment="Center"
                                    Margin="0,4,0,0" />
@@ -267,14 +235,14 @@
 
                 <!-- Left: Details (Labels crisp & muted, Values 15px Bold pure white) -->
                 <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left">
-                    <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif">
+                    <TextBlock FontFamily="{DynamicResource AppFontFamily}">
                         <Run Text="AQI&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="#95A8BE" /><Run Text="{Binding AqiText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
                     </TextBlock>
-                    <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                    <TextBlock FontFamily="{DynamicResource AppFontFamily}"
                                Margin="0,6,0,0">
                         <Run Text="Feels like&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="#95A8BE" /><Run Text="{Binding FeelsLikeShortText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
                     </TextBlock>
-                    <TextBlock FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"
+                    <TextBlock FontFamily="{DynamicResource AppFontFamily}"
                                Margin="0,6,0,0">
                         <Run Text="Humidity&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="#95A8BE" /><Run Text="{Binding HumidityText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
                     </TextBlock>
@@ -298,7 +266,7 @@
                            Text="{Binding TemperatureText}"
                            FontSize="72"
                            FontWeight="Bold"
-                           FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                           FontFamily="{DynamicResource AppDisplayFontFamily}"
                            Foreground="#FFFFFF"
                            HorizontalAlignment="Right"
                            VerticalAlignment="Center"
