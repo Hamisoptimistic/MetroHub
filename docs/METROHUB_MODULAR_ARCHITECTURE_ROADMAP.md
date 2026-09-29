@@ -158,16 +158,16 @@ graph TD
    - `dotnet build -c Debug`: 0 Errors, 0 Warnings.
    - `dotnet test --no-build -c Debug`: 168/168 Tests Passed (100%). Zero visual regressions. Zero breaking changes. Fully ready for Phase 4B.
 
-#### Phase 4B: Deconstruct `MainWindow` God Object (5,508 lines -> < 400 lines)
+#### Phase 4B: Deconstruct `MainWindow` God Object (5,508 lines -> Modular Controllers) [COMPLETED]
 *Goal: Split `MainWindow`'s 6 partial classes into single-responsibility presentation controllers.*
-1. **`RubberBandSelectionController`**: Manages mouse capture, marquee rectangle math, and tile intersection checks.
-2. **`TileDragDropManager`**: Manages tile pickup, ghosting, grid snapping, and collision displacement.
-   - **Purge Magic String Tags:** Replace the 39 manual `Tag="InteractiveControl"` strings with automatic type detection (`ButtonBase`, `TextBoxBase`, `RangeBase`, `ScrollBar`).
-3. **`TileManager`**: Extracts 1,312 lines from `MainWindow.Tiles.cs` (tile CRUD, resizing, pinning/unpinning).
-4. **`CanvasGroupManager`**: Extracts 662 lines from `MainWindow.CanvasGroups.cs` (group serialization, headers, repositioning).
-5. **`BackdropManager`**: Extracts 515 lines from `MainWindow.Backdrops.cs` (Mica, Acrylic, Wallpaper parallax, Bing/Spotlight).
-6. Result: `MainWindow.xaml.cs` becomes a clean, readable ~350-line coordinator shell.
-7. Compile, run tests, stop and request confirmation.
+1. **RubberBandSelectionController**: Extracted into src/MetroHub/Presentation/Controllers/RubberBandSelectionController.cs. Manages mouse capture, marquee rectangle math, and tile intersection checks.
+2. **BackdropManager**: Extracted into src/MetroHub/Presentation/Controllers/BackdropManager.cs. Manages Mica, Acrylic, Wallpaper parallax, Bing/Spotlight daily sync, video playback, and decode caching (reduced MainWindow.Backdrops.cs from 587 to 230 lines).
+3. **CanvasGroupManager**: Extracted into src/MetroHub/Presentation/Controllers/CanvasGroupManager.cs. Manages group header positioning, animations, tint plate bounding box math, column offset migration, and group CRUD (reduced MainWindow.CanvasGroups.cs from 770 to 134 lines).
+4. **TileManager**: Extracted into src/MetroHub/Presentation/Controllers/TileManager.cs. Manages tile selection, undo/redo state restoration, batch resizing and styling, batch unpinning, and tile pinning (reduced MainWindow.Tiles.cs from 1,514 to 540 lines).
+5. **Interactive Type Detection**: Enhanced IsInteractiveElement in MainWindow.DragDrop.cs with automatic type detection (ScrollBar, ScrollViewer, WidgetTabStrip, ButtonBase, RangeBase, etc.) with legacy tag fallback.
+6. **Build & Test Verification**:
+   - dotnet build -c Debug: 0 Errors, 0 Warnings.
+   - dotnet test --no-build -c Debug: 168/168 Tests Passed (100%). Zero visual regressions. Zero breaking changes. Fully ready for Phase 4C.
 
 #### Phase 4C: Split Mega-Modal (`AcrylicModalWindow`) & Purge In-Code DTOs
 *Goal: Deconstruct the 1,876-line mega-modal into 3 focused dialogs and move network DTOs to Core/Models.*

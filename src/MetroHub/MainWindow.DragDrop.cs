@@ -10,6 +10,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
+using MetroHub.Presentation.Controllers;
 using ContextMenu = System.Windows.Controls.ContextMenu;
 
 namespace MetroHub;
@@ -44,10 +45,13 @@ public partial class MainWindow
     private int _groupDragTargetColIndex;
     private int _groupDragTargetRow;
 
-    private bool _isRubberBanding;
-    private Point _rubberBandStartPoint;
-    private bool _rubberBandHasMoved;
-    private HashSet<TileModel> _preRubberBandSelected = new();
+    private RubberBandSelectionController? _rubberBandController;
+    private bool _isRubberBanding => _rubberBandController?.IsActive ?? false;
+    private RubberBandSelectionController RubberBandController => _rubberBandController ??= new RubberBandSelectionController(
+        RootGrid,
+        RubberBandBox,
+        () => Tiles,
+        ClearTileSelection);
     private List<TileModel> _draggedCluster = new();
     private Dictionary<TileModel, (double X, double Y, int Col, int Row)> _dragClusterOriginals = new();
     private (double MinRelX, double MaxRelX, double MinRelY, double MaxRelY) _clusterRelBounds;
@@ -207,7 +211,7 @@ public partial class MainWindow
         if (tileControl != null && tileControl.DataContext is TileModel tile)
         {
             _preDragLayoutSnapshot = LayoutHistoryService.CaptureSnapshot(Tiles, Groups);
-            _isRubberBanding = false;
+            RubberBandController.Cancel();
             _draggedTile = tile;
 
             _draggedControl = tileControl;
@@ -298,27 +302,7 @@ public partial class MainWindow
                 return;
             }
 
-            _isRubberBanding = true;
-            _rubberBandHasMoved = false;
-            _rubberBandStartPoint = canvasMouse;
-            _preRubberBandSelected = new HashSet<TileModel>(Tiles.Where(t => t.IsSelected));
-
-            if (!isCtrlDown)
-            {
-                ClearTileSelection();
-                _preRubberBandSelected.Clear();
-            }
-
-            if (RubberBandBox != null)
-            {
-                Canvas.SetLeft(RubberBandBox, canvasMouse.X);
-                Canvas.SetTop(RubberBandBox, canvasMouse.Y);
-                RubberBandBox.Width = 0;
-                RubberBandBox.Height = 0;
-                RubberBandBox.Visibility = Visibility.Collapsed;
-            }
-
-            RootGrid.CaptureMouse();
+            RubberBandController.Start(canvasMouse, isCtrlDown);
         }
     }
 
@@ -328,46 +312,8 @@ public partial class MainWindow
 
         if (_isRubberBanding)
         {
-            Vector diff = canvasMouse - _rubberBandStartPoint;
-            if (Math.Abs(diff.X) > 3 || Math.Abs(diff.Y) > 3)
-            {
-                _rubberBandHasMoved = true;
-            }
-
-            if (_rubberBandHasMoved && RubberBandBox != null)
-            {
-                double left = Math.Min(_rubberBandStartPoint.X, canvasMouse.X);
-                double top = Math.Min(_rubberBandStartPoint.Y, canvasMouse.Y);
-                double width = Math.Abs(canvasMouse.X - _rubberBandStartPoint.X);
-                double height = Math.Abs(canvasMouse.Y - _rubberBandStartPoint.Y);
-
-                Canvas.SetLeft(RubberBandBox, left);
-                Canvas.SetTop(RubberBandBox, top);
-                RubberBandBox.Width = width;
-                RubberBandBox.Height = height;
-                RubberBandBox.Visibility = Visibility.Visible;
-
-                var marqueeRect = new Rect(left, top, width, height);
-                bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
-
-                foreach (var t in Tiles)
-                {
-                    var tileRect = new Rect(t.X, t.Y, t.WidthPixels, t.HeightPixels);
-                    bool intersects = marqueeRect.IntersectsWith(tileRect);
-
-                    if (isCtrlDown)
-                    {
-                        t.IsSelected = intersects
-                            ? !_preRubberBandSelected.Contains(t)
-                            : _preRubberBandSelected.Contains(t);
-                    }
-                    else
-                    {
-                        t.IsSelected = intersects;
-                    }
-                }
-            }
-
+            bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+            RubberBandController.Update(canvasMouse, isCtrlDown);
             return;
         }
 
@@ -685,23 +631,8 @@ public partial class MainWindow
     {
         if (_isRubberBanding)
         {
-            _isRubberBanding = false;
-            RootGrid.ReleaseMouseCapture();
-
-            if (RubberBandBox != null)
-            {
-                RubberBandBox.Visibility = Visibility.Collapsed;
-            }
-
-            if (!_rubberBandHasMoved)
-            {
-                bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
-                if (!isCtrlDown)
-                {
-                    ClearTileSelection();
-                }
-            }
-
+            bool isCtrlDown = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
+            RubberBandController.End(isCtrlDown);
             e.Handled = true;
             return;
         }
@@ -1126,8 +1057,7 @@ public partial class MainWindow
 
         if (_isRubberBanding)
         {
-            _isRubberBanding = false;
-            if (RubberBandBox != null) RubberBandBox.Visibility = Visibility.Collapsed;
+            RubberBandController.Cancel();
         }
 
         if (DropSlotIndicator != null) DropSlotIndicator.Visibility = Visibility.Collapsed;
@@ -1277,9 +1207,7 @@ public partial class MainWindow
     {
         if (_isRubberBanding)
         {
-            _isRubberBanding = false;
-            if (RubberBandBox != null) RubberBandBox.Visibility = Visibility.Collapsed;
-            RootGrid.ReleaseMouseCapture();
+            RubberBandController.End(false);
         }
 
         if (_isPotentialDrag && !_isDragging)
@@ -1371,6 +1299,8 @@ public partial class MainWindow
                 current is System.Windows.Controls.Primitives.RangeBase ||
                 current is System.Windows.Controls.Slider ||
                 current is System.Windows.Controls.ProgressBar ||
+                current is System.Windows.Controls.Primitives.ScrollBar ||
+                current is System.Windows.Controls.ScrollViewer ||
                 current is System.Windows.Controls.ListBoxItem ||
                 current is System.Windows.Controls.Primitives.Selector ||
                 current is ContextMenu ||
@@ -1378,7 +1308,8 @@ public partial class MainWindow
                 current is Widgets.WidgetSegmentedControl ||
                 current is Widgets.WidgetSegmentedItem ||
                 current is Widgets.WidgetTiles ||
-                current is Widgets.WidgetTile)
+                current is Widgets.WidgetTile ||
+                current is Presentation.Controls.WidgetTabStrip)
             {
                 return true;
             }
