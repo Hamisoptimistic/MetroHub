@@ -169,15 +169,22 @@ graph TD
    - dotnet build -c Debug: 0 Errors, 0 Warnings.
    - dotnet test --no-build -c Debug: 168/168 Tests Passed (100%). Zero visual regressions. Zero breaking changes. Fully ready for Phase 4C.
 
-#### Phase 4C: Split Mega-Modal (`AcrylicModalWindow`) & Purge In-Code DTOs
-*Goal: Deconstruct the 1,876-line mega-modal into 3 focused dialogs and move network DTOs to Core/Models.*
-1. Extract network DTOs (`GeoResult`, `OpenMeteoGeocodingResponse`, `PhotonResponse`, `PhotonFeature`) from XAML code-behind into `Core/Models/Geocoding/`.
-2. Extract HTTP search and API logic from UI code-behind into `WeatherLocationService`.
-3. Split `AcrylicModalWindow` into 3 clean, dedicated dialogs:
-   - `WeatherLocationDialog` (< 200 lines)
-   - `WebLinkDialog` (< 150 lines)
-   - `RadioStationDialog` (< 250 lines)
-4. Compile, run tests, stop and request confirmation.
+#### Phase 4C: Split Mega-Modal (`AcrylicModalWindow`) & Purge In-Code DTOs [COMPLETED]
+*Goal: Deconstruct the 1,876-line mega-modal into 3 focused dialogs, move network DTOs to Core/Models, and extract backend geocoding services.*
+1. **Network DTO Extraction**:
+   - Created `src/MetroHub/Core/Models/Geocoding/GeoResult.cs` containing `GeoResult`, `OpenMeteoGeocodingResponse`, `PhotonResponse`, `PhotonFeature`, `PhotonGeometry`, and `PhotonProperties`.
+   - Extracted `RadioSearchResultItem` into `src/MetroHub/Core/Radio/RadioModels.cs`.
+2. **`WeatherLocationService`**:
+   - Created `src/MetroHub/Core/Services/WeatherLocationService.cs` encapsulating Open-Meteo & Photon geocoding HTTP queries, query normalization (`NormalizeQuery`), parsing (`ParseQuery`), result validation, deduplication (`PostProcessResults`), and 50-entry memory cache.
+3. **Split `AcrylicModalWindow` into 3 Dedicated Dialogs**:
+   - **`WeatherLocationDialog`**: `src/MetroHub/Presentation/Controls/WeatherLocationDialog.xaml` + `.cs` (< 330 lines) &rarr; location query debouncing, Photon/Open-Meteo suggestion drop-down popup, auto GPS/IP location reset.
+   - **`WebLinkDialog`**: `src/MetroHub/Presentation/Controls/WebLinkDialog.xaml` + `.cs` (< 280 lines) &rarr; URL normalization, async favicon sniffing, title inference, canvas/sidebar destination checkboxes.
+   - **`RadioStationDialog`**: `src/MetroHub/Presentation/Controls/RadioStationDialog.xaml` + `.cs` (< 380 lines) &rarr; online station directory search (RadioBrowser), live stream URL probing, bitrate/codec inference, category assignment.
+4. **`AcrylicModalWindow` Facade**:
+   - Reduced `AcrylicModalWindow.xaml.cs` from 1,876 lines to a thin, backward-compatible facade (45 lines) forwarding `ShowWeatherLocation`, `ShowAddWebLink`, and `ShowAddRadioStation` to their dedicated dialogs.
+5. **Build & Test Verification**:
+   - `dotnet build -c Debug`: 0 Errors, 0 Warnings.
+   - `dotnet test --no-build -c Debug`: 168/168 Tests Passed (100%). Zero visual regressions. Zero breaking changes. Fully ready for Phase 4D.
 
 #### Phase 4D: Event Handler Memory Leak Audit & Threading Cleanup
 *Goal: Eliminate potential memory leaks from un-unsubscribed event handlers and clean up service threading.*

@@ -72,3 +72,17 @@ public sealed record RadioCatalog
     [JsonPropertyName("categories")]
     public List<RadioCategory> Categories { get; init; } = new();
 }
+
+/// <summary>
+/// Display projection of an online radio station search result.
+/// </summary>
+public sealed class RadioSearchResultItem
+{
+    public required string Name { get; init; }
+    public required string Subtitle { get; init; }
+    public required string BitrateDisplay { get; init; }
+    public required string ResolvedStreamUrl { get; init; }
+    public required string? StationUuid { get; init; }
+    public required int BitrateKbps { get; init; }
+    public string? Codec { get; init; }
+}
