@@ -197,12 +197,14 @@
             <!-- Border-to-border, 0 outer margin/padding, 126px per column                -->
             <!-- ========================================================================= -->
             <Grid Grid.Row="1" Background="Transparent" SnapsToDevicePixels="True">
-                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                <ScrollViewer x:Name="StationScrollViewer"
+                              VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
                               Padding="0"
                               Margin="0"
                               SnapsToDevicePixels="True">
-                    <ItemsControl ItemsSource="{Binding VisibleStations}"
+                    <ItemsControl x:Name="StationItemsControl"
+                                  ItemsSource="{Binding VisibleStations}"
                                   SnapsToDevicePixels="True">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>

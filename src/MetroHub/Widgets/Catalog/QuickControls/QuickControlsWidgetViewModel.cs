@@ -89,6 +89,13 @@ public sealed partial class QuickControlsWidgetViewModel : WidgetViewModelBase
         NotifySettingsChanged();
     }
 
+    public override void OnSecondTick(DateTime utcNow)
+    {
+        Media.OnSecondTick(utcNow);
+        Volume.OnSecondTick(utcNow);
+        Brightness.OnSecondTick(utcNow);
+    }
+
     public override void Pause()
     {
         Media.Pause();

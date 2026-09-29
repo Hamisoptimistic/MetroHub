@@ -75,7 +75,6 @@ public partial class MonitorItemViewModel : ObservableObject
 public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelBase
 {
     private readonly MonitorBrightnessService _brightnessService;
-    private System.Threading.Timer? _cursorTimer;
     private bool _isHubVisible = true;
     private bool _isUpdatingMasterInternally;
     private string? _pinnedCursorMonitorId;
@@ -136,39 +135,7 @@ public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelB
 
         Model.PropertyChanged += OnModelPropertyChanged;
 
-        // Initialize 1-second background timer for auto cursor screen detection
-        _cursorTimer = new System.Threading.Timer(_ =>
-        {
-            if (!_isHubVisible) return;
-            try
-            {
-                var lastMonitors = _brightnessService.LastMonitors;
-                string? cursorMonitorId = _brightnessService.GetCurrentCursorMonitorId(lastMonitors);
-
-                if (!string.IsNullOrEmpty(cursorMonitorId))
-                {
-                    // If user manually clicked a monitor, only reset pin if cursor moves to a different screen
-                    if (!string.IsNullOrEmpty(_pinnedCursorMonitorId) &&
-                        string.Equals(_pinnedCursorMonitorId, cursorMonitorId, StringComparison.OrdinalIgnoreCase))
-                    {
-                        return;
-                    }
-                    _pinnedCursorMonitorId = null;
-
-                    Application.Current?.Dispatcher.InvokeAsync(() =>
-                    {
-                        ProcessCursorMonitorChange(cursorMonitorId);
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[BrightnessControlsWidget] Cursor tracking error: {ex.Message}");
-            }
-        }, null, Timeout.Infinite, Timeout.Infinite);
-
         RefreshAll();
-        UpdateCursorTimerState();
     }
 
     protected override void LoadSettings(string? settingsJson)
@@ -489,18 +456,40 @@ public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelB
                 }
             }
         }
-        UpdateCursorTimerState();
     }
 
-    private void UpdateCursorTimerState()
+    /// <summary>
+    /// Centralized 1-second heartbeat hook from WidgetViewModelBase.
+    /// Drives multi-monitor cursor tracking with zero independent timer allocations.
+    /// </summary>
+    public override void OnSecondTick(DateTime utcNow)
     {
-        if (_isHubVisible && Monitors.Count > 1)
+        if (!_isHubVisible || Monitors.Count <= 1) return;
+
+        try
         {
-            _cursorTimer?.Change(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+            var lastMonitors = _brightnessService.LastMonitors;
+            string? cursorMonitorId = _brightnessService.GetCurrentCursorMonitorId(lastMonitors);
+
+            if (!string.IsNullOrEmpty(cursorMonitorId))
+            {
+                // If user manually clicked a monitor, only reset pin if cursor moves to a different screen
+                if (!string.IsNullOrEmpty(_pinnedCursorMonitorId) &&
+                    string.Equals(_pinnedCursorMonitorId, cursorMonitorId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return;
+                }
+                _pinnedCursorMonitorId = null;
+
+                Application.Current?.Dispatcher.InvokeAsync(() =>
+                {
+                    ProcessCursorMonitorChange(cursorMonitorId);
+                });
+            }
         }
-        else
+        catch (Exception ex)
         {
-            _cursorTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+            System.Diagnostics.Debug.WriteLine($"[BrightnessControlsWidget] Cursor tracking error: {ex.Message}");
         }
     }
 
@@ -518,14 +507,12 @@ public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelB
     {
         base.Pause();
         _isHubVisible = false;
-        UpdateCursorTimerState();
     }
 
     public override void Resume()
     {
         base.Resume();
         _isHubVisible = true;
-        UpdateCursorTimerState();
         RefreshAll();
     }
 
@@ -543,8 +530,6 @@ public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelB
         {
             Model.PropertyChanged -= OnModelPropertyChanged;
             _brightnessService.MonitorsChanged -= OnBrightnessServiceMonitorsChanged;
-            _cursorTimer?.Dispose();
-            _cursorTimer = null;
             Monitors.Clear();
         }
 

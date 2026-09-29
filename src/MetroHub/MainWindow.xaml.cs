@@ -173,6 +173,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private readonly HotkeyService _hotkeyService = new();
     private bool _isClosingToExit = false;
+    private IntPtr _previousForegroundWindow = IntPtr.Zero;
 
     private bool _isDismissing
     {
@@ -182,6 +183,9 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private IntPtr _winEventHook = IntPtr.Zero;
     private NativeMethods.WinEventDelegate? _winEventDelegate;
+    private IntPtr _keyboardHook = IntPtr.Zero;
+    private NativeMethods.LowLevelKeyboardProc? _keyboardHookProc;
+    private volatile bool _suppressNextAltKeyUp = false;
 
     public MainWindow()
     {
@@ -376,7 +380,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
         if (!IsDialogOpen && IsVisible && !_isDismissing)
         {
-            HideScreen();
+            HideScreen(restorePreviousFocus: false);
         }
     }
 
@@ -477,7 +481,7 @@ public partial class MainWindow : BorderlessFluentWindow
             {
                 if (IsVisible && !_isDismissing && !IsDialogOpen)
                 {
-                    HideScreen();
+                    HideScreen(restorePreviousFocus: false);
                 }
             });
         }
@@ -516,7 +520,8 @@ public partial class MainWindow : BorderlessFluentWindow
 
     public void DismissWithAnimation()
     {
-        if (_isDismissing || !IsVisible) return;
+        if (!IsVisible) return;
+        _isDismissing = true;
 
         // Immediately disable hit-testing so tiles/widgets cannot be clicked during exit fade
         if (RootGrid != null) RootGrid.IsHitTestVisible = false;
@@ -534,12 +539,17 @@ public partial class MainWindow : BorderlessFluentWindow
 
         if (TryFindResource("ExitStoryboard") is Storyboard exitStoryboard)
         {
-            _isDismissing = true;
             var sb = exitStoryboard.Clone();
-
             Timeline.SetDesiredFrameRate(sb, NativeMethods.GetScreenRefreshRate());
-            sb.Completed += (s, e) =>
+
+            bool completedHandled = false;
+            EventHandler? completedHandler = null;
+            completedHandler = (s, e) =>
             {
+                if (completedHandled) return;
+                completedHandled = true;
+                if (completedHandler != null) sb.Completed -= completedHandler;
+
                 Hide();
                 _isDismissing = false;
                 _isFullyActivated = false;
@@ -566,6 +576,8 @@ public partial class MainWindow : BorderlessFluentWindow
                     MetroHub.Core.Services.HiddenDiagnosticsLogger.LogMemorySnapshot("HUB HIDE", currentMB);
                 }, DispatcherPriority.ApplicationIdle);
             };
+
+            sb.Completed += completedHandler;
             sb.Begin(this, isControllable: true);
         }
         else
@@ -682,7 +694,7 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         if (IsVisible && !_isDismissing)
         {
-            HideScreen();
+            HideScreen(restorePreviousFocus: true);
         }
         else
         {
@@ -695,6 +707,20 @@ public partial class MainWindow : BorderlessFluentWindow
         if (_isDragging || _isPotentialDrag || _isRubberBanding)
         {
             CancelActiveDrag();
+        }
+
+        // Capture previous active foreground window BEFORE MetroHub takes focus (resolving to root owner for Electron/Chromium apps)
+        IntPtr foreHwnd = NativeMethods.GetForegroundWindow();
+        if (foreHwnd != IntPtr.Zero)
+        {
+            IntPtr root = NativeMethods.GetAncestor(foreHwnd, NativeMethods.GA_ROOTOWNER);
+            if (root != IntPtr.Zero) foreHwnd = root;
+        }
+
+        IntPtr myHwnd = new WindowInteropHelper(this).Handle;
+        if (foreHwnd != IntPtr.Zero && foreHwnd != myHwnd)
+        {
+            _previousForegroundWindow = foreHwnd;
         }
 
         _isDismissing = false;
@@ -712,6 +738,7 @@ public partial class MainWindow : BorderlessFluentWindow
         Show();
         WindowState = WindowState.Normal;
         Topmost = true;
+        InstallKeyboardHook();
 
         ApplyConfiguredBackdrop();
 
@@ -722,7 +749,7 @@ public partial class MainWindow : BorderlessFluentWindow
             try { WallpaperVideo!.Play(); } catch { }
         }
 
-        IntPtr hwnd = new WindowInteropHelper(this).Handle;
+        IntPtr hwnd = myHwnd != IntPtr.Zero ? myHwnd : new WindowInteropHelper(this).Handle;
         if (hwnd != IntPtr.Zero)
         {
             NativeMethods.ForceForeground(hwnd);
@@ -737,14 +764,6 @@ public partial class MainWindow : BorderlessFluentWindow
         // Phase 2 (Cohesive Fluent Entrance): Dispatch once WPF completes Measure, Arrange, and initial GPU render
         Dispatcher.InvokeAsync(() =>
         {
-            if (hwnd != IntPtr.Zero)
-            {
-                NativeMethods.ForceForeground(hwnd);
-            }
-            Activate();
-            Focus();
-            Keyboard.Focus(this);
-
             PlayOpenAnimation();
         }, DispatcherPriority.Render);
 
@@ -759,8 +778,35 @@ public partial class MainWindow : BorderlessFluentWindow
         MetroHub.Core.Services.HiddenDiagnosticsLogger.LogTransition(true);
     }
 
-    public void HideScreen()
+    public void HideScreen(bool restorePreviousFocus = true)
     {
+        if (_isDismissing || !IsVisible) return;
+        _isDismissing = true;
+        UninstallKeyboardHook();
+
+        if (restorePreviousFocus && _previousForegroundWindow != IntPtr.Zero)
+        {
+            IntPtr targetHwnd = _previousForegroundWindow;
+            _previousForegroundWindow = IntPtr.Zero;
+            if (NativeMethods.IsWindow(targetHwnd))
+            {
+                if (NativeMethods.IsIconic(targetHwnd))
+                {
+                    NativeMethods.ShowWindow(targetHwnd, NativeMethods.SW_RESTORE);
+                }
+
+                // Synthetically release the Alt key so the incoming restored window
+                // does not receive a lingering Alt modifier or activate its menu bar.
+                NativeMethods.keybd_event(NativeMethods.VK_MENU, 0, NativeMethods.KEYEVENTF_KEYUP, UIntPtr.Zero);
+
+                NativeMethods.ForceForeground(targetHwnd);
+            }
+        }
+        else
+        {
+            _previousForegroundWindow = IntPtr.Zero;
+        }
+
         MetroHub.Core.Services.HiddenDiagnosticsLogger.LogTransition(false);
         if (AllAppsDrawer != null && AllAppsDrawer.IsOpen)
         {
@@ -853,18 +899,26 @@ public partial class MainWindow : BorderlessFluentWindow
                 return;
             }
 
-            HideScreen();
+            HideScreen(restorePreviousFocus: true);
             e.Handled = true;
             return;
         }
 
-        if ((e.Key == Key.Tab || e.SystemKey == Key.Tab) && ((Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt || e.KeyboardDevice.Modifiers.HasFlag(ModifierKeys.Alt)))
+        bool isAltPressed = (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt || e.KeyboardDevice.Modifiers.HasFlag(ModifierKeys.Alt);
+        bool isTabOrEsc = e.Key == Key.Tab || e.SystemKey == Key.Tab || e.Key == Key.Escape || e.SystemKey == Key.Escape;
+
+        if (isAltPressed && isTabOrEsc)
         {
             if (_isDragging || _isPotentialDrag || _isRubberBanding)
             {
                 CancelActiveDrag();
             }
-            HideScreen();
+
+            // Synthetically release the Alt key in Windows so the incoming restored window
+            // does not receive a lingering Alt+Tab gesture and double-switch to a second app.
+            NativeMethods.keybd_event(NativeMethods.VK_MENU, 0, NativeMethods.KEYEVENTF_KEYUP, UIntPtr.Zero);
+
+            HideScreen(restorePreviousFocus: true);
             e.Handled = true;
         }
     }
@@ -892,7 +946,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private void OnCloseToTrayClick(object sender, RoutedEventArgs e)
     {
-        HideScreen();
+        HideScreen(restorePreviousFocus: true);
     }
 
     private void OnWindowPreviewTextInput(object sender, TextCompositionEventArgs e)
@@ -950,7 +1004,7 @@ public partial class MainWindow : BorderlessFluentWindow
         if (!_isClosingToExit)
         {
             e.Cancel = true;
-            HideScreen();
+            HideScreen(restorePreviousFocus: true);
         }
         else
         {
@@ -970,11 +1024,23 @@ public partial class MainWindow : BorderlessFluentWindow
             StorageService.Flush();
         }
         catch { }
+
+        // Cleanly dispose and tear down all active widget models (audio endpoints, media sessions, timers)
+        try
+        {
+            foreach (var tile in Tiles)
+            {
+                tile.Teardown();
+            }
+        }
+        catch { }
+
         InstalledAppsService.PauseWatchers();
         UninstallWinEventHook();
+        UninstallKeyboardHook();
         _hotkeyService.Dispose();
         Close();
-        Application.Current.Shutdown();
+        Application.Current?.Shutdown();
     }
 
     private void UninstallWinEventHook()
@@ -999,5 +1065,76 @@ public partial class MainWindow : BorderlessFluentWindow
             0,
             0,
             NativeMethods.WINEVENT_OUTOFCONTEXT);
+    }
+
+    private void InstallKeyboardHook()
+    {
+        if (_keyboardHook != IntPtr.Zero) return;
+        _keyboardHookProc = LowLevelKeyboardHookCallback;
+        _keyboardHook = NativeMethods.SetWindowsHookEx(
+            NativeMethods.WH_KEYBOARD_LL,
+            _keyboardHookProc,
+            IntPtr.Zero,
+            0);
+    }
+
+    private void UninstallKeyboardHook()
+    {
+        _suppressNextAltKeyUp = false;
+        if (_keyboardHook != IntPtr.Zero)
+        {
+            NativeMethods.UnhookWindowsHookEx(_keyboardHook);
+            _keyboardHook = IntPtr.Zero;
+            _keyboardHookProc = null;
+        }
+    }
+
+    private IntPtr LowLevelKeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+    {
+        if (nCode >= 0)
+        {
+            int msg = wParam.ToInt32();
+            if (msg == NativeMethods.WM_KEYDOWN || msg == NativeMethods.WM_SYSKEYDOWN)
+            {
+                var kbd = System.Runtime.InteropServices.Marshal.PtrToStructure<NativeMethods.KBDLLHOOKSTRUCT>(lParam);
+                bool isAltDown = (kbd.flags & NativeMethods.LLKHF_ALTDOWN) != 0 ||
+                                 (NativeMethods.GetAsyncKeyState((int)NativeMethods.VK_MENU) & 0x8000) != 0;
+                bool isTab = kbd.vkCode == NativeMethods.VK_TAB;
+                bool isEsc = kbd.vkCode == NativeMethods.VK_ESCAPE;
+
+                if (isAltDown && (isTab || isEsc))
+                {
+                    if (IsVisible)
+                    {
+                        _suppressNextAltKeyUp = true;
+
+                        if (!_isDismissing)
+                        {
+                            Dispatcher.InvokeAsync(() =>
+                            {
+                                HideScreen(restorePreviousFocus: true);
+                            });
+                        }
+
+                        // Swallows the Alt+Tab / Alt+Esc keystroke at the OS level so Windows Shell
+                        // never receives it and never executes the second jump to another app!
+                        return (IntPtr)1;
+                    }
+                }
+            }
+            else if (msg == NativeMethods.WM_KEYUP || msg == NativeMethods.WM_SYSKEYUP)
+            {
+                var kbd = System.Runtime.InteropServices.Marshal.PtrToStructure<NativeMethods.KBDLLHOOKSTRUCT>(lParam);
+                if (kbd.vkCode == NativeMethods.VK_MENU && _suppressNextAltKeyUp)
+                {
+                    _suppressNextAltKeyUp = false;
+                    // Swallow the Alt keyup so the restored target application does not
+                    // receive an orphaned Alt press that activates its menu bar or ribbon.
+                    return (IntPtr)1;
+                }
+            }
+        }
+
+        return NativeMethods.CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
     }
 }

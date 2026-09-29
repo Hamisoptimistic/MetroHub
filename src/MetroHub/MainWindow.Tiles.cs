@@ -195,7 +195,7 @@ public partial class MainWindow
     {
         if (Settings.CloseOnLaunch)
         {
-            HideScreen();
+            HideScreen(restorePreviousFocus: false);
         }
     }
 

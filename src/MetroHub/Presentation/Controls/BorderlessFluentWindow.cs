@@ -70,6 +70,11 @@ public class BorderlessFluentWindow : FluentWindow
                 source.CompositionTarget.BackgroundColor = System.Windows.Media.Colors.Transparent;
             }
             source?.AddHook(HwndMessageHook);
+
+            // Ensure window has WS_EX_TOOLWINDOW and no WS_EX_APPWINDOW so Windows DWM treats it as an overlay
+            // and excludes it from the Alt+Tab MRU stack (just like Windows Start menu or Game bar)
+            int exStyle = NativeMethods.GetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE);
+            NativeMethods.SetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE, (exStyle | NativeMethods.WS_EX_TOOLWINDOW) & ~NativeMethods.WS_EX_APPWINDOW);
         }
 
         ApplyBorderlessAttributes();

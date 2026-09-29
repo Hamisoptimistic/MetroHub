@@ -409,15 +409,11 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
 
     private static void DispatchToUi(Action action)
     {
-        var app = Application.Current;
-        var dispatcher = app?.Dispatcher;
+        var dispatcher = Application.Current?.Dispatcher;
         if (dispatcher != null && !dispatcher.CheckAccess() && dispatcher.Thread.IsAlive && !dispatcher.HasShutdownStarted)
         {
-            if (app?.MainWindow != null)
-            {
-                _ = dispatcher.BeginInvoke(action);
-                return;
-            }
+            _ = dispatcher.BeginInvoke(action);
+            return;
         }
 
         action();

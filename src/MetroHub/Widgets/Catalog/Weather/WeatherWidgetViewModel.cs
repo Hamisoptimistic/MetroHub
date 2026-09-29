@@ -380,7 +380,7 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
         bool shouldShowLoading = forceRefresh || _latestData == null;
         if (shouldShowLoading)
         {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await SafeDispatchAsync(() =>
             {
                 IsLoading = true;
                 HasError = false;
@@ -417,7 +417,7 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
                 _latestData = data;
                 _lastFetchTime = data.TimestampUtc;
 
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                await SafeDispatchAsync(() =>
                 {
                     ApplyWeatherToUi(data);
                     if (shouldShowLoading) IsLoading = false;
@@ -425,7 +425,7 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
             }
             else
             {
-                await Application.Current.Dispatcher.InvokeAsync(() =>
+                await SafeDispatchAsync(() =>
                 {
                     if (shouldShowLoading) IsLoading = false;
                     if (_latestData == null)
@@ -442,7 +442,7 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
         }
         catch (Exception ex)
         {
-            await Application.Current.Dispatcher.InvokeAsync(() =>
+            await SafeDispatchAsync(() =>
             {
                 if (shouldShowLoading) IsLoading = false;
                 if (_latestData == null)
@@ -455,6 +455,19 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
         finally
         {
             Interlocked.Exchange(ref _isFetching, 0);
+        }
+    }
+
+    private static async Task SafeDispatchAsync(Action action)
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher != null && !dispatcher.HasShutdownStarted)
+        {
+            await dispatcher.InvokeAsync(action);
+        }
+        else
+        {
+            action();
         }
     }
 

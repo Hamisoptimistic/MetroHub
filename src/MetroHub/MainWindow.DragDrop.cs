@@ -1092,7 +1092,7 @@ public partial class MainWindow
                         controlToLaunch.LaunchTile();
                         if (!isWidget && Settings.CloseOnLaunch)
                         {
-                            HideScreen();
+                            HideScreen(restorePreviousFocus: false);
                         }
                     }
                     finally

@@ -126,29 +126,39 @@ public sealed partial class CalendarWidgetViewModel : WidgetViewModelBase
 
     private void StartMidnightTimer()
     {
+        TimeSpan timeToMidnight = (DateTime.Today.AddDays(1) - DateTime.Now).Add(TimeSpan.FromSeconds(1));
+        if (timeToMidnight <= TimeSpan.Zero || timeToMidnight > TimeSpan.FromDays(1))
+        {
+            timeToMidnight = TimeSpan.FromSeconds(1);
+        }
+
         if (_midnightTimer == null)
         {
             _midnightTimer = new System.Threading.Timer(_ =>
             {
-                if (DateTime.Today != _lastCheckedDate)
-                {
-                    _lastCheckedDate = DateTime.Today;
-                    Application.Current?.Dispatcher.InvokeAsync(() =>
-                    {
-                        RefreshTodayCard();
-
-                        if (IsFullSize && IsViewingCurrentMonth)
-                        {
-                            RebuildCalendar();
-                        }
-                    });
-                }
-            }, null, TimeSpan.FromMinutes(15), TimeSpan.FromMinutes(15));
+                OnDateRollover();
+            }, null, timeToMidnight, Timeout.InfiniteTimeSpan);
         }
         else
         {
-            _midnightTimer.Change(TimeSpan.FromMinutes(15), TimeSpan.FromMinutes(15));
+            _midnightTimer.Change(timeToMidnight, Timeout.InfiniteTimeSpan);
         }
+    }
+
+    private void OnDateRollover()
+    {
+        _lastCheckedDate = DateTime.Today;
+        Application.Current?.Dispatcher.InvokeAsync(() =>
+        {
+            RefreshTodayCard();
+
+            if (IsFullSize && IsViewingCurrentMonth)
+            {
+                RebuildCalendar();
+            }
+        });
+
+        StartMidnightTimer();
     }
 
     private void StopMidnightTimer()

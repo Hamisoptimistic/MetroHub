@@ -753,7 +753,7 @@ namespace MetroHub.Presentation.Controls
             {
                 AppLaunchRequested?.Invoke(this, item);
                 Close();
-                MainWindow.Current?.HideScreen();
+                MainWindow.Current?.HideScreen(restorePreviousFocus: false);
             }
         }
 
@@ -785,7 +785,7 @@ namespace MetroHub.Presentation.Controls
 
                 // Close drawer and hide MetroHub on successful launch so elevated prompt and window come forward
                 Close();
-                MainWindow.Current?.HideScreen();
+                MainWindow.Current?.HideScreen(restorePreviousFocus: false);
             }
             catch (Exception ex)
             {

@@ -327,6 +327,43 @@ public class RadioWidgetTests
         });
     }
 
+    [Fact]
+    public void RadioWidgetViewModel_BackgroundThreadAudioEvents_DispatchesSafelyWithoutException()
+    {
+        RunInSta(() =>
+        {
+            var fakeAudio = new FakeAudioService();
+            string tempCatalogPath = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"radio_vm_bg_{Guid.NewGuid():N}.json");
+            try
+            {
+                var customCatalogService = new RadioCatalogService(tempCatalogPath);
+                customCatalogService.LoadCatalog();
+                var model = new TileModel { TileType = TileType.Widget, TargetPath = "radio", SpanX = 8, SpanY = 6 };
+                var vm = new RadioWidgetViewModel(model, fakeAudio, customCatalogService);
+                vm.Initialize(model);
+
+                // Trigger events from a background threadpool thread (as RadioAudioService does)
+                var bgTask = Task.Run(() =>
+                {
+                    var station = new RadioStation { Id = "test_bg", Name = "Background Radio", StreamUrl = "http://fake.stream" };
+                    fakeAudio.TriggerCurrentStation(station);
+                    fakeAudio.TriggerBuffering(true);
+                    fakeAudio.TriggerPlayback(true);
+                    fakeAudio.TriggerPlayback(false);
+                });
+
+                bool completed = bgTask.Wait(TimeSpan.FromSeconds(5));
+                Assert.True(completed);
+                Assert.True(bgTask.IsCompletedSuccessfully);
+            }
+            finally
+            {
+                try { if (System.IO.File.Exists(tempCatalogPath)) System.IO.File.Delete(tempCatalogPath); } catch { }
+                try { if (System.IO.File.Exists(tempCatalogPath + ".bak")) System.IO.File.Delete(tempCatalogPath + ".bak"); } catch { }
+            }
+        });
+    }
+
     private class FakeAudioService : IRadioAudioService
     {
         public RadioStation? CurrentStation { get; set; }

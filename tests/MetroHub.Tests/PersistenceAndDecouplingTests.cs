@@ -22,63 +22,99 @@ public class PersistenceAndDecouplingTests
     [Fact]
     public void StorageService_Flush_SynchronouslyWritesPendingLayout()
     {
-        var testTiles = new ObservableCollection<TileModel>
+        var original = StorageService.LoadLayout();
+        try
         {
-            new()
+            var testTiles = new ObservableCollection<TileModel>
             {
-                Id = "test_persistence_tile_1",
-                Title = "Flush Test Tile",
-                TileType = TileType.App,
-                TargetPath = "C:\\Windows\\notepad.exe",
-                Col = 0,
-                Row = 1,
-                X = 0,
-                Y = 48
+                new()
+                {
+                    Id = "test_persistence_tile_1",
+                    Title = "Flush Test Tile",
+                    TileType = TileType.App,
+                    TargetPath = "C:\\Windows\\notepad.exe",
+                    Col = 0,
+                    Row = 1,
+                    X = 0,
+                    Y = 48
+                }
+            };
+
+            StorageService.SaveLayout(testTiles);
+            StorageService.Flush();
+
+            var loaded = StorageService.LoadLayout();
+            Assert.NotNull(loaded);
+            Assert.Contains(loaded, t => t.Id == "test_persistence_tile_1");
+        }
+        finally
+        {
+            if (original != null)
+            {
+                StorageService.SaveLayout(original);
+                StorageService.Flush();
             }
-        };
-
-        StorageService.SaveLayout(testTiles);
-        StorageService.Flush();
-
-        var loaded = StorageService.LoadLayout();
-        Assert.NotNull(loaded);
-        Assert.Contains(loaded, t => t.Id == "test_persistence_tile_1");
+        }
     }
 
     [Fact]
     public void StorageService_Flush_SynchronouslyWritesPendingGroups()
     {
-        var testGroups = new ObservableCollection<TileGroupModel>
+        var original = StorageService.LoadGroups();
+        try
         {
-            new()
+            var testGroups = new ObservableCollection<TileGroupModel>
             {
-                Id = "test_group_flush_1",
-                Title = "Flush Group",
-                Col = 0,
-                Row = 0
+                new()
+                {
+                    Id = "test_group_flush_1",
+                    Title = "Flush Group",
+                    Col = 0,
+                    Row = 0
+                }
+            };
+
+            StorageService.SaveGroups(testGroups);
+            StorageService.Flush();
+
+            var loaded = StorageService.LoadGroups();
+            Assert.NotNull(loaded);
+            Assert.Contains(loaded, g => g.Id == "test_group_flush_1");
+        }
+        finally
+        {
+            if (original != null)
+            {
+                StorageService.SaveGroups(original);
+                StorageService.Flush();
             }
-        };
-
-        StorageService.SaveGroups(testGroups);
-        StorageService.Flush();
-
-        var loaded = StorageService.LoadGroups();
-        Assert.NotNull(loaded);
-        Assert.Contains(loaded, g => g.Id == "test_group_flush_1");
+        }
     }
 
     [Fact]
     public void StorageService_Flush_SynchronouslyWritesPendingSettings()
     {
-        var settings = StorageService.LoadSettings();
-        settings.GridBaseSize = 72;
+        var original = StorageService.LoadSettings();
+        try
+        {
+            var settings = StorageService.LoadSettings();
+            settings.GridBaseSize = 72;
 
-        StorageService.SaveSettings(settings);
-        StorageService.Flush();
+            StorageService.SaveSettings(settings);
+            StorageService.Flush();
 
-        var loaded = StorageService.LoadSettings();
-        Assert.NotNull(loaded);
-        Assert.Equal(72, loaded.GridBaseSize);
+            var loaded = StorageService.LoadSettings();
+            Assert.NotNull(loaded);
+            Assert.Equal(72, loaded.GridBaseSize);
+        }
+        finally
+        {
+            if (original != null)
+            {
+                StorageService.SaveSettings(original);
+                StorageService.Flush();
+            }
+        }
     }
 
     [Fact]
