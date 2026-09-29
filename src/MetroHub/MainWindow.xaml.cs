@@ -387,6 +387,7 @@ public partial class MainWindow : BorderlessFluentWindow
     private void LoadData()
     {
         Settings = StorageService.LoadSettings();
+        Application.Current.Resources["TileCornerRadius"] = new CornerRadius(Settings.TileCornerRadius);
         Tiles = StorageService.LoadLayout();
         Groups = StorageService.LoadGroups();
         GridPlacementService.SetActiveGroups(Groups);

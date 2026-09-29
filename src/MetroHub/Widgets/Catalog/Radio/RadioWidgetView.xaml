@@ -151,7 +151,7 @@
     </UserControl.Resources>
 
     <!-- Transparent WidgetCard Shell (Padding="0" for seamless border-to-border alignment) -->
-    <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
+    <widgets:WidgetCard Padding="0" Background="Transparent">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True">
             <Grid.RowDefinitions>
                 <!-- Row 0: Top Category Tabs (76px) -->

@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Widgets.Catalog.Network.NetworkWidgetView"
+<UserControl x:Class="MetroHub.Widgets.Catalog.Network.NetworkWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -239,7 +239,7 @@
     </UserControl.Resources>
 
     <!-- Outer Widget Card with Padding="0" so dividing borders run border-to-border -->
-    <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
+    <widgets:WidgetCard Padding="0" Background="Transparent">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True" Background="Transparent">
             <Grid.RowDefinitions>
                 <!-- Row 0: Top 5-Tile Segmented Region (Height 76px, with seamless bottom separator) -->

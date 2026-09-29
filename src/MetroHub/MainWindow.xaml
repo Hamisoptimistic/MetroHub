@@ -417,13 +417,23 @@
                                 <MenuItem x:Name="DimHeavyItem" Header="Heavy (65%)" IsCheckable="True" Click="OnWallpaperDimHeavyClick" />
                             </MenuItem>
                         </MenuItem>
+
+                        <MenuItem Header="Tile Corners">
+                            <MenuItem.Icon>
+                                <ui:SymbolIcon Symbol="Shapes24" FontSize="20" Foreground="#D0FFFFFF" />
+                            </MenuItem.Icon>
+                            <MenuItem x:Name="TileCornerSharpItem" Header="Sharp Metro (0px)" IsCheckable="True" Click="OnTileCornerSharpClick" />
+                            <MenuItem x:Name="TileCornerSubtleItem" Header="Subtle Edge (2px)" IsCheckable="True" Click="OnTileCornerSubtleClick" />
+                            <MenuItem x:Name="TileCornerMediumItem" Header="Medium Fluent (4px)" IsCheckable="True" Click="OnTileCornerMediumClick" />
+                            <MenuItem x:Name="TileCornerRoundedItem" Header="Rounded Fluent (8px)" IsCheckable="True" Click="OnTileCornerRoundedClick" />
+                        </MenuItem>
                     </ContextMenu>
                 </Grid.ContextMenu>
                 <!-- Drop Target Slot Indicator (snaps to grid in real-time) -->
                 <Canvas x:Name="DropIndicatorCanvas" IsHitTestVisible="False" Panel.ZIndex="2000">
                     <Border x:Name="DropSlotIndicator"
                             Visibility="Collapsed"
-                            CornerRadius="2"
+                            CornerRadius="{DynamicResource TileCornerRadius}"
                             BorderThickness="1.5"
                             BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
                             Background="#3060CDFF"

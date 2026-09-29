@@ -29,7 +29,7 @@
     </UserControl.Resources>
 
     <!-- Transparent unified WidgetCard without dividing lines -->
-    <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
+    <widgets:WidgetCard Padding="0" Background="Transparent">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True" Background="Transparent">
             <Grid.RowDefinitions>
                 <!-- Row 0: Media Player Strip (~56px) -->

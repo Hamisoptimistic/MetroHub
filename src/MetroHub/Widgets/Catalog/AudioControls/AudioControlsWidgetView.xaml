@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Widgets.Catalog.AudioControls.AudioControlsWidgetView"
+<UserControl x:Class="MetroHub.Widgets.Catalog.AudioControls.AudioControlsWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -64,7 +64,7 @@
     </UserControl.Resources>
 
     <!-- Transparent WidgetCard with Padding="0" so dividers run border-to-border (like Focus Timer & Media Player) -->
-    <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
+    <widgets:WidgetCard Padding="0" Background="Transparent">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True" Background="Transparent">
             <Grid.RowDefinitions>
                 <!-- Row 0: Top Master Audio Strip (Output Logo + Master Seekbar + Mute Button) -->

@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Widgets.Catalog.Quotes.QuotesWidgetView"
+<UserControl x:Class="MetroHub.Widgets.Catalog.Quotes.QuotesWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -50,7 +50,7 @@
     </UserControl.Resources>
 
     <!-- Transparent WidgetCard to inherit the exact glass/acrylic tile background of other tiles -->
-    <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
+    <widgets:WidgetCard Padding="0" Background="Transparent">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />    <!-- Row 0: Centered Scaling Quote Text -->

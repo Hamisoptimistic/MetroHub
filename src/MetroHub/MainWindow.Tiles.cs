@@ -895,6 +895,7 @@ public partial class MainWindow
 
         bool isInsideGroup = _activeContextMenuGroup != null;
         UpdateBackdropMenuChecks();
+        UpdateTileCornerMenuChecks();
 
         if (GroupMenuSeparator != null)
             GroupMenuSeparator.Visibility = isInsideGroup ? Visibility.Visible : Visibility.Collapsed;
@@ -1488,4 +1489,25 @@ public partial class MainWindow
         }
     }
 
+    private void OnTileCornerSharpClick(object sender, RoutedEventArgs e) => ApplyTileCornerRadius(0);
+    private void OnTileCornerSubtleClick(object sender, RoutedEventArgs e) => ApplyTileCornerRadius(2);
+    private void OnTileCornerMediumClick(object sender, RoutedEventArgs e) => ApplyTileCornerRadius(4);
+    private void OnTileCornerRoundedClick(object sender, RoutedEventArgs e) => ApplyTileCornerRadius(8);
+
+    public void ApplyTileCornerRadius(int radius)
+    {
+        Settings.TileCornerRadius = radius;
+        StorageService.SaveSettings(Settings);
+        Application.Current.Resources["TileCornerRadius"] = new CornerRadius(radius);
+        UpdateTileCornerMenuChecks();
+    }
+
+    private void UpdateTileCornerMenuChecks()
+    {
+        int r = Settings.TileCornerRadius;
+        if (TileCornerSharpItem != null) TileCornerSharpItem.IsChecked = r == 0;
+        if (TileCornerSubtleItem != null) TileCornerSubtleItem.IsChecked = r == 2;
+        if (TileCornerMediumItem != null) TileCornerMediumItem.IsChecked = r == 4;
+        if (TileCornerRoundedItem != null) TileCornerRoundedItem.IsChecked = r == 8;
+    }
 }

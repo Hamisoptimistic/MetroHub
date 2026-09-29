@@ -20,6 +20,7 @@ public sealed class AppSettings
     public int TileGap { get; set; } = 8;
     public double AcrylicOpacity { get; set; } = 0.85;
     public int GroupColumnWidth { get; set; } = 8; // Fixed 8 units
+    public int TileCornerRadius { get; set; } = 2; // 0 (Metro Sharp), 2 (Subtle Edge), 4 (Medium), 8 (Fluent Rounded)
 
     public bool SidebarAutoHide { get; set; } = true;
     public bool SidebarPinned { get; set; } = false;

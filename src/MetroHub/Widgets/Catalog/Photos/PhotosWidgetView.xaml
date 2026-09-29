@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Widgets.Catalog.Photos.PhotosWidgetView"
+<UserControl x:Class="MetroHub.Widgets.Catalog.Photos.PhotosWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -99,7 +99,7 @@
         </Style>
     </UserControl.Resources>
 
-    <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
+    <widgets:WidgetCard Padding="0" Background="Transparent">
         <Grid x:Name="RootContainer" ClipToBounds="True" SnapsToDevicePixels="True">
 
             <!-- ============================================================== -->

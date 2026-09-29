@@ -1,0 +1,44 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ========================================================================= -->
+    <!-- CENTRAL TYPOGRAPHY & ICON TOKENS                                          -->
+    <!-- ========================================================================= -->
+    <FontFamily x:Key="AppFontFamily">Segoe UI Variable Text, Segoe UI Variable, Segoe UI, sans-serif</FontFamily>
+    <FontFamily x:Key="AppDisplayFontFamily">Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif</FontFamily>
+    <FontFamily x:Key="AppIconFontFamily">Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif</FontFamily>
+    <FontFamily x:Key="AppMonoFontFamily">Consolas, Cascadia Code, Segoe UI Mono, monospace</FontFamily>
+
+    <!-- ========================================================================= -->
+    <!-- OBSIDIAN ACRYLIC CONTENTDIALOG THEME TOKENS (WPF-UI 3.0.4)                -->
+    <!-- ========================================================================= -->
+    <SolidColorBrush x:Key="ContentDialogBackground" Color="#F214161A" />
+    <SolidColorBrush x:Key="ContentDialogBorderBrush" Color="#35FFFFFF" />
+    <SolidColorBrush x:Key="ContentDialogSmokeFill" Color="#8A08080C" />
+    <SolidColorBrush x:Key="SmokeFillColorDefaultBrush" Color="#8A08080C" />
+    <SolidColorBrush x:Key="ContentDialogSeparatorBorderBrush" Color="#18FFFFFF" />
+    <SolidColorBrush x:Key="ContentDialogTopOverlay" Color="#08FFFFFF" />
+    <CornerRadius x:Key="DialogOverlayCornerRadius">10,10,0,0</CornerRadius>
+    <CornerRadius x:Key="DialogFooterCornerRadius">0,0,10,10</CornerRadius>
+
+    <!-- ========================================================================= -->
+    <!-- UNIVERSAL FLUENT GEOMETRY & INTERACTION TOKENS                            -->
+    <!-- ========================================================================= -->
+    <!-- Standard Control & Button Corner Radius -->
+    <CornerRadius x:Key="ControlCornerRadius">2</CornerRadius>
+    <CornerRadius x:Key="ControlCornerRadiusSmall">2</CornerRadius>
+    <CornerRadius x:Key="ControlCornerRadiusLarge">4</CornerRadius>
+
+    <!-- ContextMenu & Dropdown Container / Item Radius -->
+    <CornerRadius x:Key="ContextMenuCornerRadius">2</CornerRadius>
+
+    <!-- MetroHub Tile Geometry Tokens -->
+    <!-- Default: 2 for Subtle Fluent/Metro edge. (0 = Sharp Metro, 2 = Subtle Fluent, 4 = Medium Fluent, 8 = Rounded Fluent) -->
+    <CornerRadius x:Key="TileCornerRadius">2</CornerRadius>
+
+    <!-- Universal Fluent Dark-Glass Interaction Brushes -->
+    <SolidColorBrush x:Key="FluentHoverBrush" Color="#12FFFFFF" />
+    <SolidColorBrush x:Key="FluentPressedBrush" Color="#1EFFFFFF" />
+    <SolidColorBrush x:Key="FluentHoverBorderBrush" Color="Transparent" />
+
+</ResourceDictionary>

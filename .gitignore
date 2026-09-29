@@ -35,4 +35,6 @@ desktop_*.json
 *.log
 
 videoplayback.webm
+.freebuff/
+*_wpftmp.csproj
 

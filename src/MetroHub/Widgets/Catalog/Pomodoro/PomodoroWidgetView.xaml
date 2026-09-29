@@ -38,7 +38,7 @@
     </UserControl.Resources>
 
     <!-- Transparent WidgetCard to inherit the exact glass/acrylic tile background of other tiles -->
-    <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
+    <widgets:WidgetCard Padding="0" Background="Transparent">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True">
 
             <!-- ============================================================ -->

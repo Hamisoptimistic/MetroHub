@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Widgets.Catalog.BrightnessControls.BrightnessControlsWidgetView"
+<UserControl x:Class="MetroHub.Widgets.Catalog.BrightnessControls.BrightnessControlsWidgetView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -58,7 +58,7 @@
     </UserControl.Resources>
 
     <!-- Transparent WidgetCard with Padding="0" so dividers run border-to-border (matching Volume, Focus Timer, Media Player) -->
-    <widgets:WidgetCard Padding="0" Background="Transparent" CornerRadius="2">
+    <widgets:WidgetCard Padding="0" Background="Transparent">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True" Background="Transparent">
             <Grid.RowDefinitions>
                 <!-- Row 0: Top Master Brightness Strip (Day/Night Toggle + Master Seekbar + Link Button) -->

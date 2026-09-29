@@ -251,7 +251,7 @@
 
     <Border x:Name="RootBorder"
             Background="Transparent"
-            CornerRadius="2"
+            CornerRadius="{DynamicResource TileCornerRadius}"
             ClipToBounds="True"
             Width="{Binding SpanX, Converter={StaticResource SpanConverter}}"
             Height="{Binding SpanY, Converter={StaticResource SpanConverter}}"
@@ -340,7 +340,7 @@
         <Grid>
             <!-- Fluent Reveal Highlight: Surface Spotlight -->
             <Border x:Name="RevealFillBorder"
-                    CornerRadius="2"
+                    CornerRadius="{DynamicResource TileCornerRadius}"
                     IsHitTestVisible="False"
                     Opacity="0">
                 <Border.Style>
@@ -370,7 +370,7 @@
 
             <!-- Fluent Reveal Highlight: Edge Illumination (above ContentPresenter so it shows on top of full-bleed widget content e.g. photos) -->
             <Border x:Name="RevealEdgeBorder"
-                    CornerRadius="2"
+                    CornerRadius="{DynamicResource TileCornerRadius}"
                     BorderThickness="1.2"
                     IsHitTestVisible="False"
                     Opacity="0">

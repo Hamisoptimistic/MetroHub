@@ -1,0 +1,346 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:MetroHub"
+                    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+
+    <!-- ========================================================================= -->
+    <!-- AUTHENTIC WINDOWS 11 FLUENT CONTEXTMENU STYLE                             -->
+    <!-- With Integrated Responsive Scaling and DirectWrite Typography            -->
+    <!-- ========================================================================= -->
+    <Style TargetType="{x:Type ContextMenu}">
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+        <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
+        <Setter Property="LayoutTransform">
+            <Setter.Value>
+                <ScaleTransform ScaleX="{Binding Source={x:Static local:MainWindow.Current}, Path=CurrentScale, FallbackValue=1.0}"
+                                ScaleY="{Binding Source={x:Static local:MainWindow.Current}, Path=CurrentScale, FallbackValue=1.0}" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Foreground" Value="{DynamicResource ContextMenuForeground}" />
+        <Setter Property="Background" Value="{DynamicResource ContextMenuBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource ContextMenuBorderBrush}" />
+        <Setter Property="MinWidth" Value="140" />
+        <Setter Property="Padding" Value="0,3,0,3" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="HasDropShadow" Value="False" />
+        <Setter Property="Grid.IsSharedSizeScope" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ContextMenu}">
+                    <Border x:Name="Border"
+                            BorderThickness="1"
+                            Padding="0,3,0,3"
+                            CornerRadius="{DynamicResource ContextMenuCornerRadius}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            Background="{TemplateBinding Background}"
+                            SnapsToDevicePixels="True"
+                            UseLayoutRounding="True">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="MenuTranslate" Y="0" />
+                        </Border.RenderTransform>
+                        <StackPanel Orientation="Vertical"
+                                    IsItemsHost="True"
+                                    ClipToBounds="True"
+                                    KeyboardNavigation.DirectionalNavigation="Cycle" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsOpen" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <!-- Smooth 12px subtle glide matching WPF-UI design language without window clipping -->
+                                        <DoubleAnimation Storyboard.TargetName="Border"
+                                                         Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                         From="-12" To="0"
+                                                         Duration="0:0:0.16">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CircleEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <!-- Smooth opacity fade in -->
+                                        <DoubleAnimation Storyboard.TargetName="Border"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         From="0.0" To="1.0"
+                                                         Duration="0:0:0.14">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CircleEase EasingMode="EaseOut" />
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Universal Fluent ContextMenu Separator Style: Crisp, visible hairline divider matching Sidebar -->
+    <Style TargetType="{x:Type Separator}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Separator}">
+                    <Grid Height="12" Background="Transparent" SnapsToDevicePixels="True">
+                        <Rectangle Height="1"
+                                   Margin="10,0,10,0"
+                                   Fill="#45FFFFFF"
+                                   SnapsToDevicePixels="True"
+                                   UseLayoutRounding="True"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Universal Fluent SubmenuItem Template: Zero Square Checkbox, Modern Far-Left Active Pill Indicator -->
+    <ControlTemplate x:Key="UniversalFluentSubmenuItemTemplate" TargetType="{x:Type MenuItem}">
+        <Border x:Name="Border"
+                Background="Transparent"
+                CornerRadius="{DynamicResource ContextMenuCornerRadius}"
+                Margin="4,1,4,1"
+                SnapsToDevicePixels="True"
+                UseLayoutRounding="True">
+            <Grid Height="{TemplateBinding MinHeight}">
+                <!-- Windows 11 Fluent Active Selection Indicator: Sleek vertical accent pill docked to far-left -->
+                <Border x:Name="ActiveIndicator"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Width="3"
+                        Height="16"
+                        CornerRadius="1.5"
+                        Margin="2,0,0,0"
+                        Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                        Visibility="Collapsed"
+                        SnapsToDevicePixels="True" />
+
+                <!-- Content Grid: Icon + Header + InputGestureText -->
+                <Grid Margin="12,5,10,5" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut" />
+                    </Grid.ColumnDefinitions>
+
+                    <ContentPresenter x:Name="IconHost"
+                                      Content="{TemplateBinding Icon}"
+                                      Margin="0,0,8,0"
+                                      VerticalAlignment="Center"
+                                      Grid.Column="0" />
+
+                    <ContentPresenter x:Name="HeaderHost"
+                                      ContentSource="Header"
+                                      RecognizesAccessKey="True"
+                                      VerticalAlignment="Center"
+                                      TextElement.Foreground="{TemplateBinding Foreground}"
+                                      Grid.Column="1" />
+
+                    <TextBlock x:Name="InputGestureHost"
+                               Text="{TemplateBinding InputGestureText}"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextFillColorDisabledBrush}"
+                               Margin="20,0,0,0"
+                               VerticalAlignment="Center"
+                               Grid.Column="2" />
+                </Grid>
+            </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="Icon" Value="{x:Null}">
+                <Setter TargetName="IconHost" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="InputGestureText" Value="{x:Null}">
+                <Setter TargetName="InputGestureHost" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="InputGestureText" Value="">
+                <Setter TargetName="InputGestureHost" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <!-- Active/Selected Pill Indicator: Triggers automatically whenever IsChecked is True -->
+            <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="IsHighlighted" Value="True">
+                <Setter TargetName="Border" Property="Background" Value="{DynamicResource MenuBarItemBackgroundSelected}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                <Setter TargetName="ActiveIndicator" Property="Opacity" Value="0.4" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!-- Universal Fluent SubmenuHeader Template: Parent items with sub-menus & smooth popup -->
+    <ControlTemplate x:Key="UniversalFluentSubmenuHeaderTemplate" TargetType="{x:Type MenuItem}">
+        <Grid>
+            <Border x:Name="Border"
+                    Background="Transparent"
+                    CornerRadius="{DynamicResource ContextMenuCornerRadius}"
+                    Margin="4,1,4,1"
+                    SnapsToDevicePixels="True"
+                    UseLayoutRounding="True">
+                <Grid Height="{TemplateBinding MinHeight}">
+                    <!-- Active indicator on SubmenuHeader if ever checked -->
+                    <Border x:Name="ActiveIndicator"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Width="3"
+                            Height="16"
+                            CornerRadius="1.5"
+                            Margin="2,0,0,0"
+                            Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                            Visibility="Collapsed"
+                            SnapsToDevicePixels="True" />
+
+                    <Grid Margin="12,5,10,5" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <ContentPresenter x:Name="IconHost"
+                                          Content="{TemplateBinding Icon}"
+                                          Margin="0,0,8,0"
+                                          VerticalAlignment="Center"
+                                          Grid.Column="0" />
+
+                        <ContentPresenter x:Name="HeaderHost"
+                                          ContentSource="Header"
+                                          RecognizesAccessKey="True"
+                                          VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          Grid.Column="1" />
+
+                        <ui:SymbolIcon x:Name="Chevron"
+                                       Symbol="ChevronRight20"
+                                       FontSize="14"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="12,0,0,0"
+                                       Grid.Column="2" />
+                    </Grid>
+                </Grid>
+            </Border>
+            <Popup x:Name="Popup"
+                   IsOpen="{TemplateBinding IsSubmenuOpen}"
+                   Placement="Right"
+                   VerticalOffset="-3"
+                   PopupAnimation="None"
+                   AllowsTransparency="True"
+                   Focusable="False">
+                <Border x:Name="SubmenuBorder"
+                        BorderThickness="1"
+                        Padding="0,3,0,3"
+                        CornerRadius="{DynamicResource ContextMenuCornerRadius}"
+                        BorderBrush="{DynamicResource ContextMenuBorderBrush}"
+                        Background="{DynamicResource ContextMenuBackground}"
+                        Margin="8,6,8,12"
+                        SnapsToDevicePixels="True"
+                        UseLayoutRounding="True"
+                        CacheMode="BitmapCache">
+                    <Border.LayoutTransform>
+                        <ScaleTransform ScaleX="{Binding Source={x:Static local:MainWindow.Current}, Path=CurrentScale, FallbackValue=1.0}"
+                                        ScaleY="{Binding Source={x:Static local:MainWindow.Current}, Path=CurrentScale, FallbackValue=1.0}" />
+                    </Border.LayoutTransform>
+                    <Border.RenderTransform>
+                        <TranslateTransform x:Name="SubmenuTranslate" Y="0" />
+                    </Border.RenderTransform>
+                    <Border.Effect>
+                        <DropShadowEffect ShadowDepth="4" Direction="270" Opacity="0.35" BlurRadius="16" />
+                    </Border.Effect>
+                    <ui:PassiveScrollViewer CanContentScroll="True"
+                                            HorizontalScrollBarVisibility="Disabled"
+                                            VerticalScrollBarVisibility="Auto"
+                                            MaxHeight="460">
+                        <StackPanel IsItemsHost="True"
+                                    KeyboardNavigation.DirectionalNavigation="Cycle" />
+                    </ui:PassiveScrollViewer>
+                </Border>
+            </Popup>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="Icon" Value="{x:Null}">
+                <Setter TargetName="IconHost" Property="Visibility" Value="Collapsed" />
+            </Trigger>
+            <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="IsHighlighted" Value="True">
+                <Setter TargetName="Border" Property="Background" Value="{DynamicResource MenuBarItemBackgroundSelected}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                <Setter TargetName="ActiveIndicator" Property="Opacity" Value="0.4" />
+                <Setter TargetName="Chevron" Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+            </Trigger>
+            <Trigger Property="IsSubmenuOpen" Value="True">
+                <Trigger.EnterActions>
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="SubmenuBorder"
+                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                             From="-8" To="0"
+                                             Duration="0:0:0.14">
+                                <DoubleAnimation.EasingFunction>
+                                    <CircleEase EasingMode="EaseOut" />
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                            <DoubleAnimation Storyboard.TargetName="SubmenuBorder"
+                                             Storyboard.TargetProperty="Opacity"
+                                             From="0.0" To="1.0"
+                                             Duration="0:0:0.12">
+                                <DoubleAnimation.EasingFunction>
+                                    <CircleEase EasingMode="EaseOut" />
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </Trigger.EnterActions>
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!-- Universal Windows 11 Fluent MenuItem Style (Automatic for all existing and future context menus) -->
+    <Style TargetType="{x:Type MenuItem}">
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="Foreground" Value="{DynamicResource ContextMenuForeground}" />
+        <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+        <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+        <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="Template" Value="{StaticResource UniversalFluentSubmenuItemTemplate}" />
+        <Style.Triggers>
+            <Trigger Property="Role" Value="TopLevelItem">
+                <Setter Property="Template" Value="{StaticResource UniversalFluentSubmenuItemTemplate}" />
+            </Trigger>
+            <Trigger Property="Role" Value="SubmenuItem">
+                <Setter Property="Template" Value="{StaticResource UniversalFluentSubmenuItemTemplate}" />
+            </Trigger>
+            <Trigger Property="Role" Value="SubmenuHeader">
+                <Setter Property="Template" Value="{StaticResource UniversalFluentSubmenuHeaderTemplate}" />
+            </Trigger>
+            <Trigger Property="Role" Value="TopLevelHeader">
+                <Setter Property="Template" Value="{StaticResource UniversalFluentSubmenuHeaderTemplate}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+</ResourceDictionary>
