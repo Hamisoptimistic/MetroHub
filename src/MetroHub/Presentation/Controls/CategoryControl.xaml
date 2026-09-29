@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MetroHub.Presentation.Controls.CategoryControl"
+<UserControl x:Class="MetroHub.Presentation.Controls.CategoryControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -16,8 +16,9 @@
         <DockPanel Margin="6,0,6,10">
             <TextBox x:Name="HeaderTextBox"
                      Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                     FontSize="18"
-                     FontWeight="SemiBold"
+                     FontFamily="{DynamicResource AppDisplayFontFamily}"
+                     FontSize="{DynamicResource TypeSubtitleFontSize}"
+                     FontWeight="{DynamicResource TypeSubtitleFontWeight}"
                      Foreground="#F0FFFFFF"
                      Background="Transparent"
                      BorderThickness="0"
@@ -29,8 +30,8 @@
             <Button DockPanel.Dock="Right"
                     Content="+"
                     Width="28" Height="28"
-                    FontSize="16"
-                    FontWeight="Bold"
+                    FontSize="{DynamicResource TypeHeaderFontSize}"
+                    FontWeight="{DynamicResource TypeHeaderFontWeight}"
                     Foreground="#A0FFFFFF"
                     Background="#1AFFFFFF"
                     BorderThickness="0"
@@ -75,8 +76,8 @@
                 MouseEnter="OnGhostTileMouseEnter"
                 MouseLeave="OnGhostTileMouseLeave">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="+" FontSize="18" FontWeight="Bold" Foreground="#80FFFFFF" Margin="0,0,6,0"/>
-                <TextBlock Text="Add Tile" FontSize="12" Foreground="#80FFFFFF" VerticalAlignment="Center"/>
+                <TextBlock Text="+" FontSize="{DynamicResource TypeSubtitleFontSize}" FontWeight="{DynamicResource TypeSubtitleFontWeight}" Foreground="#80FFFFFF" Margin="0,0,6,0"/>
+                <TextBlock Text="Add Tile" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="#80FFFFFF" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
     </StackPanel>

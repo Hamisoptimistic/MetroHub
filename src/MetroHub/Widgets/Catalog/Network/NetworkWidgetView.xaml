@@ -19,7 +19,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <conv:StringToBrushConverter x:Key="StringToBrush" />
@@ -93,8 +94,8 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="FontFamily" Value="{DynamicResource AppDisplayFontFamily}" />
-            <Setter Property="FontSize" Value="36" />
-            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeDisplayFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeDisplayFontWeight}" />
             <Setter Property="Focusable" Value="False" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -306,8 +307,8 @@
                                        Margin="0,0,10,0" />
                             <TextBlock Text="{Binding EthernetPanelTitle}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       FontSize="16"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeHeaderFontSize}"
+                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                        Foreground="{Binding EthernetPanelTitleColor}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
@@ -376,15 +377,15 @@
                             <!-- 1. ADAPTER -->
                             <TextBlock Grid.Row="0" Grid.Column="0"
                                        Text="Adapter:"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#FFFFFF"
                                        VerticalAlignment="Center"
                                        Margin="0,0,0,8" />
                             <TextBlock Grid.Row="0" Grid.Column="1"
                                        Text="{Binding Ethernet.Description}"
-                                       FontSize="13.5"
-                                       FontWeight="Normal"
+                                       FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="#D0FFFFFF"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
@@ -396,16 +397,16 @@
                             <!-- 2. DNS -->
                             <TextBlock Grid.Row="1" Grid.Column="0"
                                        Text="DNS:"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#FFFFFF"
                                        VerticalAlignment="Center"
                                        Margin="0,0,0,8" />
                             <TextBlock Grid.Row="1" Grid.Column="1"
                                        Text="{Binding Ethernet.DnsServersString}"
                                        Typography.NumeralAlignment="Tabular"
-                                       FontSize="13.5"
-                                       FontWeight="Normal"
+                                       FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="#D0FFFFFF"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
@@ -420,8 +421,8 @@
                                         VerticalAlignment="Center"
                                         Margin="0,0,0,8">
                                 <TextBlock Text="IPv4:"
-                                           FontSize="14"
-                                           FontWeight="SemiBold"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#FFFFFF"
                                            VerticalAlignment="Center" />
                                 <Button Style="{StaticResource MicroCopyButtonStyle}"
@@ -433,8 +434,8 @@
                             <TextBlock Grid.Row="2" Grid.Column="1"
                                        Text="{Binding Ethernet.IpAddress}"
                                        Typography.NumeralAlignment="Tabular"
-                                       FontSize="13.5"
-                                       FontWeight="Normal"
+                                       FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="#D0FFFFFF"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
@@ -448,8 +449,8 @@
                                         VerticalAlignment="Center"
                                         Margin="0,0,0,8">
                                 <TextBlock Text="MAC:"
-                                           FontSize="14"
-                                           FontWeight="SemiBold"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#FFFFFF"
                                            VerticalAlignment="Center" />
                                 <Button Style="{StaticResource MicroCopyButtonStyle}"
@@ -461,8 +462,8 @@
                             <TextBlock Grid.Row="3" Grid.Column="1"
                                        Text="{Binding Ethernet.MacAddress}"
                                        Typography.NumeralAlignment="Tabular"
-                                       FontSize="13.5"
-                                       FontWeight="Normal"
+                                       FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="#D0FFFFFF"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
@@ -473,16 +474,16 @@
                             <!-- 5. SESSION UPTIME -->
                             <TextBlock Grid.Row="4" Grid.Column="0"
                                        Text="Session Uptime:"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#FFFFFF"
                                        VerticalAlignment="Center"
                                        Margin="0,0,0,8" />
                             <TextBlock Grid.Row="4" Grid.Column="1"
                                        Text="{Binding Ethernet.DurationString}"
                                        Typography.NumeralAlignment="Tabular"
-                                       FontSize="13.5"
-                                       FontWeight="Normal"
+                                       FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="#D0FFFFFF"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
@@ -493,16 +494,16 @@
                             <!-- 6. LINK SPEED -->
                             <TextBlock Grid.Row="5" Grid.Column="0"
                                        Text="Link Speed:"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#FFFFFF"
                                        VerticalAlignment="Center"
                                        Margin="0,0,0,8" />
                             <TextBlock Grid.Row="5" Grid.Column="1"
                                        Text="{Binding Ethernet.LinkSpeedString}"
                                        Typography.NumeralAlignment="Tabular"
-                                       FontSize="13.5"
-                                       FontWeight="Normal"
+                                       FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="#D0FFFFFF"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
@@ -513,15 +514,15 @@
                             <!-- 7. IP ASSIGNMENT -->
                             <TextBlock Grid.Row="6" Grid.Column="0"
                                        Text="IP Assignment:"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#FFFFFF"
                                        VerticalAlignment="Center"
                                        Margin="0,0,0,8" />
                             <TextBlock Grid.Row="6" Grid.Column="1"
                                        Text="{Binding Ethernet.IpAssignment}"
-                                       FontSize="13.5"
-                                       FontWeight="Normal"
+                                       FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="#D0FFFFFF"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
@@ -533,16 +534,16 @@
                             <!-- 8. MTU -->
                             <TextBlock Grid.Row="7" Grid.Column="0"
                                        Text="MTU:"
-                                       FontSize="14"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#FFFFFF"
                                        VerticalAlignment="Center"
                                        Margin="0,0,0,0" />
                             <TextBlock Grid.Row="7" Grid.Column="1"
                                        Text="{Binding Ethernet.MtuString}"
                                        Typography.NumeralAlignment="Tabular"
-                                       FontSize="13.5"
-                                       FontWeight="Normal"
+                                       FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="#D0FFFFFF"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
@@ -585,8 +586,8 @@
                                        Margin="0,0,0,12" />
                             <TextBlock Text="{Binding EthernetTurnedOffBannerTitle}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       FontSize="16"
-                                       FontWeight="Bold"
+                                       FontSize="{DynamicResource TypeHeaderFontSize}"
+                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                        Foreground="#D0FFFFFF"
                                        HorizontalAlignment="Center" />
                         </StackPanel>
@@ -623,8 +624,8 @@
                                        Margin="0,0,10,0" />
                             <TextBlock Text="{Binding WifiPanelTitle}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       FontSize="16"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeHeaderFontSize}"
+                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                        Foreground="{Binding WifiPanelTitleColor}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
@@ -701,7 +702,8 @@
                                            HorizontalAlignment="Center"
                                            Margin="0,0,0,8" />
                             <TextBlock Text="Scanning for available networks..."
-                                       FontSize="13"
+                                       FontSize="{DynamicResource TypeBodyFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyFontWeight}"
                                        Foreground="#75FFFFFF"
                                        HorizontalAlignment="Center" />
                         </StackPanel>
@@ -833,13 +835,14 @@
                                                 <!-- SSID + Subtitle (neutral typography) -->
                                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Ssid}"
-                                                               FontSize="13"
-                                                               FontWeight="SemiBold"
+                                                               FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                                                Foreground="#F2FFFFFF"
                                                                TextTrimming="CharacterEllipsis"
                                                                ToolTip="{Binding Ssid}" />
                                                     <TextBlock Text="{Binding SubtitleText}"
-                                                               FontSize="11"
+                                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                                Foreground="{Binding SubtitleColor, Converter={StaticResource StringToBrush}}"
                                                                Margin="0,2,0,0" />
                                                 </StackPanel>
@@ -914,8 +917,8 @@
                                             <StackPanel Margin="12,2,12,12">
                                                 <!-- Wi-Fi Standard + Security -->
                                                 <TextBlock Text="{Binding SecurityDetailsDisplay}"
-                                                           FontSize="11.5"
-                                                           FontWeight="SemiBold"
+                                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                            Foreground="#70FFFFFF"
                                                            Margin="0,0,0,8" />
 
@@ -925,15 +928,16 @@
                                                     <!-- Error indicator positioned where "Network password" was -->
                                                     <TextBlock Text="Incorrect password"
                                                                Visibility="{Binding HasConnectionError, Converter={StaticResource BoolToVis}}"
-                                                               FontSize="11"
-                                                               FontWeight="SemiBold"
+                                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                                Foreground="#FF4D4D"
                                                                Margin="0,0,0,4" />
 
                                                     <!-- WPF-UI ui:PasswordBox: transparent background, no orange indicator -->
                                                     <ui:PasswordBox x:Name="WifiPasswordBox"
                                                                     Height="32"
-                                                                    FontSize="12.5"
+                                                                    FontSize="{DynamicResource TypeBodyFontSize}"
+                                                                    FontWeight="{DynamicResource TypeBodyFontWeight}"
                                                                     Foreground="#FFFFFF"
                                                                     Background="Transparent"
                                                                     BorderBrush="#25FFFFFF"
@@ -1114,8 +1118,8 @@
                                            Margin="0,0,0,12" />
                             <TextBlock Text="{Binding WifiTurnedOffBannerTitle}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       FontSize="16"
-                                       FontWeight="Bold"
+                                       FontSize="{DynamicResource TypeHeaderFontSize}"
+                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                        Foreground="#D0FFFFFF"
                                        HorizontalAlignment="Center" />
                         </StackPanel>
@@ -1153,8 +1157,8 @@
                                              HorizontalAlignment="Center"
                                              Margin="0,0,0,12" />
                             <TextBlock Text="{Binding WifiTransitionStatusText}"
-                                       FontSize="13"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeBodyFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyFontWeight}"
                                        Foreground="#B0FFFFFF"
                                        HorizontalAlignment="Center" />
                         </StackPanel>
@@ -1190,8 +1194,8 @@
                                            Margin="0,0,10,0" />
                             <TextBlock Text="Disable Network Adapters"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       FontSize="16"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeHeaderFontSize}"
+                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                        Foreground="#FFFFFF"
                                        VerticalAlignment="Center"
                                        TextTrimming="CharacterEllipsis" />
@@ -1294,13 +1298,14 @@
                                                 <!-- Center: Name + Subtitle (Description • Status) -->
                                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Name}"
-                                                               FontSize="13"
-                                                               FontWeight="SemiBold"
+                                                               FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                                                Foreground="#F2FFFFFF"
                                                                TextTrimming="CharacterEllipsis"
                                                                ToolTip="{Binding Name}" />
                                                     <TextBlock Text="{Binding SubtitleText}"
-                                                               FontSize="11"
+                                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                                Foreground="#85FFFFFF"
                                                                TextWrapping="Wrap"
                                                                TextTrimming="CharacterEllipsis"
@@ -1352,13 +1357,13 @@
                                                Margin="0,0,0,12" />
                                 <TextBlock Text="No Adapters Detected"
                                            FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                           FontSize="16"
-                                           FontWeight="Bold"
+                                           FontSize="{DynamicResource TypeHeaderFontSize}"
+                                           FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                            Foreground="#D0FFFFFF"
                                            HorizontalAlignment="Center" />
                                 <TextBlock Text="No physical Ethernet or Wi-Fi hardware interfaces available"
-                                           FontSize="12"
-                                           FontWeight="SemiBold"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#85FFFFFF"
                                            HorizontalAlignment="Center"
                                            Margin="0,6,0,0" />
@@ -1459,8 +1464,8 @@
                                         Command="{Binding StartSpeedTestCommand}"
                                         ToolTip="{Binding SpeedTestStatusMessage}" />
                                 <TextBlock Text="{Binding SpeedTestStatusMessage}"
-                                           FontSize="13"
-                                           FontWeight="SemiBold"
+                                           FontSize="{DynamicResource TypeBodyFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyFontWeight}"
                                            Foreground="#FF6B6B"
                                            HorizontalAlignment="Center"
                                            TextAlignment="Center"
@@ -1497,20 +1502,21 @@
                             <!-- Left: Download (Flush with left end of separator) -->
                             <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center">
                                 <TextBlock Text="Download"
-                                           FontSize="12"
-                                           FontWeight="Medium"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#95FFFFFF"
                                            Margin="0,0,0,3" />
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{Binding SpeedTestDownloadDisplay}"
                                                FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                               FontSize="22"
-                                               FontWeight="Bold"
+                                               FontSize="{DynamicResource TypeDisplayFontSize}"
+                                               FontWeight="{DynamicResource TypeDisplayFontWeight}"
                                                Foreground="#FFFFFF"
                                                TextOptions.TextFormattingMode="Display"
                                                Typography.NumeralAlignment="Tabular" />
                                     <TextBlock Text="Mbps"
-                                               FontSize="12.5"
+                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                Foreground="#80FFFFFF"
                                                VerticalAlignment="Bottom"
                                                Margin="4,0,0,2" />
@@ -1520,21 +1526,22 @@
                             <!-- Right: Upload (Flush with right end of separator) -->
                             <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
                                 <TextBlock Text="Upload"
-                                           FontSize="12"
-                                           FontWeight="Medium"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#95FFFFFF"
                                            HorizontalAlignment="Right"
                                            Margin="0,0,0,3" />
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                     <TextBlock Text="{Binding SpeedTestUploadDisplay}"
                                                FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                               FontSize="22"
-                                               FontWeight="Bold"
+                                               FontSize="{DynamicResource TypeDisplayFontSize}"
+                                               FontWeight="{DynamicResource TypeDisplayFontWeight}"
                                                Foreground="#FFFFFF"
                                                TextOptions.TextFormattingMode="Display"
                                                Typography.NumeralAlignment="Tabular" />
                                     <TextBlock Text="Mbps"
-                                               FontSize="12.5"
+                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                Foreground="#80FFFFFF"
                                                VerticalAlignment="Bottom"
                                                Margin="4,0,0,2" />
@@ -1563,13 +1570,14 @@
                             <!-- Left: Ping (Flush with left end of separator) -->
                             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
                                 <TextBlock Text="Ping"
-                                           FontSize="11.5"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#75FFFFFF"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding SpeedTestPingDisplay}"
-                                           FontSize="11.5"
-                                           FontWeight="SemiBold"
+                                           FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                            Foreground="#FFFFFF"
                                            VerticalAlignment="Center"
                                            TextOptions.TextFormattingMode="Display"
@@ -1594,13 +1602,14 @@
                             <!-- Right: Jitter (Flush with right end of separator) -->
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                                 <TextBlock Text="Jitter"
-                                           FontSize="11.5"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#75FFFFFF"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding SpeedTestJitterDisplay}"
-                                           FontSize="11.5"
-                                           FontWeight="SemiBold"
+                                           FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                            Foreground="#FFFFFF"
                                            VerticalAlignment="Center"
                                            TextOptions.TextFormattingMode="Display"
@@ -1636,10 +1645,10 @@
                                                     Height="32"
                                                     Margin="0,0,0,8"
                                                     SelectedValue="{Binding SelectedDataUsageTimeframe, Mode=TwoWay}">
-                        <widgets:WidgetSegmentedItem Content="Session" Value="{x:Static corenet:DataUsageTimeframe.Session}" Height="32" FontSize="13" />
-                        <widgets:WidgetSegmentedItem Content="24h" Value="{x:Static corenet:DataUsageTimeframe.Last24Hours}" Height="32" FontSize="13" />
-                        <widgets:WidgetSegmentedItem Content="7d" Value="{x:Static corenet:DataUsageTimeframe.Last7Days}" Height="32" FontSize="13" />
-                        <widgets:WidgetSegmentedItem Content="30d" Value="{x:Static corenet:DataUsageTimeframe.Last30Days}" Height="32" FontSize="13" />
+                        <widgets:WidgetSegmentedItem Content="Session" Value="{x:Static corenet:DataUsageTimeframe.Session}" Height="32" />
+                        <widgets:WidgetSegmentedItem Content="24h" Value="{x:Static corenet:DataUsageTimeframe.Last24Hours}" Height="32" />
+                        <widgets:WidgetSegmentedItem Content="7d" Value="{x:Static corenet:DataUsageTimeframe.Last7Days}" Height="32" />
+                        <widgets:WidgetSegmentedItem Content="30d" Value="{x:Static corenet:DataUsageTimeframe.Last30Days}" Height="32" />
                     </widgets:WidgetSegmentedControl>
 
                     <!-- ROW 1: TOP HAIRLINE DIVIDER -->
@@ -1671,8 +1680,8 @@
                                            VerticalAlignment="Center"
                                            Margin="0,0,7,0" />
                                 <TextBlock Text="{Binding UsageWiredTitle}"
-                                           FontSize="12"
-                                           FontWeight="Bold"
+                                           FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                            Foreground="#E0FFFFFF"
                                            VerticalAlignment="Center" />
                             </StackPanel>
@@ -1680,8 +1689,8 @@
                             <!-- Hero Big Usage Number -->
                             <TextBlock Text="{Binding EthernetUsageTotalDisplay}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       FontSize="26"
-                                       FontWeight="Bold"
+                                       FontSize="{DynamicResource TypeDisplayFontSize}"
+                                       FontWeight="{DynamicResource TypeDisplayFontWeight}"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
                                        Margin="0,8,0,4"
@@ -1698,7 +1707,8 @@
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding EthernetDataUsage.FormattedReceived}"
-                                           FontSize="11.5"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#90FFFFFF"
                                            VerticalAlignment="Center"
                                            Typography.NumeralAlignment="Tabular" />
@@ -1710,7 +1720,8 @@
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding EthernetDataUsage.FormattedSent}"
-                                           FontSize="11.5"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#90FFFFFF"
                                            VerticalAlignment="Center"
                                            Typography.NumeralAlignment="Tabular" />
@@ -1718,7 +1729,8 @@
 
                             <!-- No Adapter Fallback Text -->
                             <TextBlock Text="No adapter detected"
-                                       FontSize="11.5"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#60FFFFFF"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
@@ -1743,8 +1755,8 @@
                                            VerticalAlignment="Center"
                                            Margin="0,0,7,0" />
                                 <TextBlock Text="Wi-Fi"
-                                           FontSize="12"
-                                           FontWeight="Bold"
+                                           FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                            Foreground="#E0FFFFFF"
                                            VerticalAlignment="Center" />
                             </StackPanel>
@@ -1752,8 +1764,8 @@
                             <!-- Hero Big Usage Number -->
                             <TextBlock Text="{Binding WifiUsageTotalDisplay}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       FontSize="26"
-                                       FontWeight="Bold"
+                                       FontSize="{DynamicResource TypeDisplayFontSize}"
+                                       FontWeight="{DynamicResource TypeDisplayFontWeight}"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
                                        Margin="0,8,0,4"
@@ -1770,7 +1782,8 @@
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding WifiDataUsage.FormattedReceived}"
-                                           FontSize="11.5"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#90FFFFFF"
                                            VerticalAlignment="Center"
                                            Typography.NumeralAlignment="Tabular" />
@@ -1782,7 +1795,8 @@
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding WifiDataUsage.FormattedSent}"
-                                           FontSize="11.5"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#90FFFFFF"
                                            VerticalAlignment="Center"
                                            Typography.NumeralAlignment="Tabular" />
@@ -1790,7 +1804,8 @@
 
                             <!-- No Adapter Fallback Text -->
                             <TextBlock Text="No adapter detected"
-                                       FontSize="11.5"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#60FFFFFF"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
@@ -1820,15 +1835,15 @@
                                    VerticalAlignment="Center"
                                    Typography.NumeralAlignment="Tabular">
                             <Run Text="TOTAL CONSUMED"
-                                 FontSize="11"
-                                 FontWeight="Bold"
+                                 FontSize="{DynamicResource TypeCaptionFontSize}"
+                                 FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                  Foreground="#70FFFFFF" />
                             <Run Text="  "
-                                 FontSize="14" />
+                                 FontSize="{DynamicResource TypeBodyFontSize}" />
                             <Run Text="{Binding TotalCombinedDisplay, Mode=OneWay}"
                                  FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                 FontSize="20"
-                                 FontWeight="Bold"
+                                 FontSize="{DynamicResource TypeSubtitleFontSize}"
+                                 FontWeight="{DynamicResource TypeSubtitleFontWeight}"
                                  Foreground="#FFFFFF" />
                         </TextBlock>
 
@@ -1841,8 +1856,8 @@
                                        VerticalAlignment="Center"
                                        Margin="0,0,4,0" />
                             <TextBlock Text="{Binding TotalCombinedReceivedDisplay}"
-                                       FontSize="11.5"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#95FFFFFF"
                                        VerticalAlignment="Center"
                                        Typography.NumeralAlignment="Tabular" />
@@ -1854,8 +1869,8 @@
                                        VerticalAlignment="Center"
                                        Margin="0,0,4,0" />
                             <TextBlock Text="{Binding TotalCombinedSentDisplay}"
-                                       FontSize="11.5"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#95FFFFFF"
                                        VerticalAlignment="Center"
                                        Typography.NumeralAlignment="Tabular" />

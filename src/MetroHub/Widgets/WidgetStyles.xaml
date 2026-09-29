@@ -224,8 +224,8 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Foreground" Value="#70FFFFFF" />
-        <Setter Property="FontSize" Value="12" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="{DynamicResource TypeCaptionFontSize}" />
+        <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
         <Setter Property="Height" Value="28" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -406,8 +406,8 @@
                             <!-- Header Text: Pinned to exact identical baseline across every single tile -->
                             <TextBlock Grid.Row="2"
                                        Text="{TemplateBinding Header}"
-                                       FontSize="11.5"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="#FFFFFF"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"

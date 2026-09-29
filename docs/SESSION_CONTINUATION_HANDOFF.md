@@ -29,7 +29,14 @@
    - Native Win32 DWM acrylic backdrop, seamless non-rounded window borders (`BorderThickness="0"`), light-dismiss (`OnDeactivated`), and Escape key preview handling surgically restored to all 3 dialogs.
    - Comprehensive unit test suite expanded to **213 tests** covering tile layout, undo/redo, DPI scaling, geocoding query normalization, and STA view instantiation.
 
-3. **Accent Token Unification (Option B)**:
+3. **Track 2 Extension: Phase 4F — Universal Fluent 2 Typography Tokenization [COMPLETED]**:
+   - Master typography tokens declared in `src/MetroHub/Presentation/Themes/Tokens.xaml` (`TypeCaption` 12px, `TypeBody` 14px, `TypeBodyStrong` 14px SemiBold, `TypeHeader` 16px SemiBold, `TypeSubtitle` 18px Bold, `TypeDisplay` 28px SemiBold, `TypeHero` 72px Bold, `TypeMonoCode` 13px Cascadia Code, coordinate tokens, and contrast brushes).
+   - Eliminated all 18+ legacy arbitrary, fractional, and sub-12px font sizes across the entire application.
+   - Enforced Fluent 2 invariants: absolute minimum floor of `12px Regular`, heavy weight minimum floor of `14px SemiBold`.
+   - Tokenized all chrome, shell controls, dialogs, styles, and all 19 widgets with `{DynamicResource}` bindings to ensure future Phase 5A font and `TextScaleFactor` live changes work instantly without restart.
+   - Verified 100% build and test pass: **213/213 tests passing (100%)**, zero errors, zero warnings.
+
+4. **Accent Token Unification (Option B)**:
    - Leaked root accent brushes in `WidgetStyles.xaml` purged (preventing global green contamination).
    - Authoritative central Fluent 2 accent color tokens declared in `Tokens.xaml`:
      - `SystemAccentColor` = `#4CC2FF`
@@ -121,7 +128,7 @@ Copy and paste the prompt below into the new chat session to continue immediatel
 ```text
 Please read docs/SESSION_CONTINUATION_HANDOFF.md and docs/METROHUB_MODULAR_ARCHITECTURE_ROADMAP.md.
 
-We have completed Track 1 (Phases 3A-3J) and Track 2 (Phases 4A-4E). All 213 unit tests are currently passing and Option B (unified accent tokens) is verified.
+We have completed Track 1 (Phases 3A-3J) and Track 2 (Phases 4A-4F). All 213 unit tests are currently passing and Option B (unified accent tokens) is verified.
 
 We are now ready to begin Track 3: The Settings Engine (Phase 5A: AppSettings Engine Expansion). 
 Please provide your plan for Phase 5A following the Dual Explanation format, preserving Service.Instance, and maintaining zero test regressions. Do not write code until I approve your plan.

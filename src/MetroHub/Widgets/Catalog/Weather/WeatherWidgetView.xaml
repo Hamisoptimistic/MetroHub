@@ -14,7 +14,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <!-- 100% GPU-drawn frozen OpacityMask for Horizon Aura spread (0 CPU / 0 allocations).
@@ -102,8 +103,8 @@
                     <!-- Right: Standardized Temperature (Matched height) -->
                     <TextBlock Grid.Column="2"
                                Text="{Binding TemperatureText}"
-                               FontSize="100"
-                               FontWeight="Bold"
+                               FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
+                               FontWeight="{DynamicResource TypeHeroFontWeight}"
                                FontFamily="{DynamicResource AppDisplayFontFamily}"
                                Foreground="#FFFFFF"
                                VerticalAlignment="Center"
@@ -150,8 +151,8 @@
                                 VerticalAlignment="Center"
                                 HorizontalAlignment="Right">
                         <TextBlock Text="{Binding TemperatureText}"
-                                   FontSize="54"
-                                   FontWeight="Bold"
+                                   FontSize="{DynamicResource TypeHeroFontSize}"
+                                   FontWeight="{DynamicResource TypeHeroFontWeight}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    Foreground="#FFFFFF"
                                    HorizontalAlignment="Right">
@@ -160,8 +161,8 @@
                             </TextBlock.Effect>
                         </TextBlock>
                         <TextBlock Text="{Binding ConditionText}"
-                                   FontSize="15"
-                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                    FontFamily="{DynamicResource AppFontFamily}"
                                    Foreground="#D8E2EC"
                                    HorizontalAlignment="Right"
@@ -174,13 +175,14 @@
                     <!-- Column 1: AQI -->
                     <StackPanel HorizontalAlignment="Center">
                         <TextBlock Text="AQI"
-                                   FontSize="12"
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                    FontFamily="{DynamicResource AppFontFamily}"
                                    Foreground="#95A8BE"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding AqiText}"
-                                   FontSize="16"
-                                   FontWeight="Bold"
+                                   FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    Foreground="#FFFFFF"
                                    HorizontalAlignment="Center"
@@ -190,13 +192,14 @@
                     <!-- Column 2: Humidity -->
                     <StackPanel HorizontalAlignment="Center">
                         <TextBlock Text="Humidity"
-                                   FontSize="12"
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                    FontFamily="{DynamicResource AppFontFamily}"
                                    Foreground="#95A8BE"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding HumidityText}"
-                                   FontSize="16"
-                                   FontWeight="Bold"
+                                   FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    Foreground="#FFFFFF"
                                    HorizontalAlignment="Center"
@@ -206,13 +209,14 @@
                     <!-- Column 3: Precipitation -->
                     <StackPanel HorizontalAlignment="Center">
                         <TextBlock Text="Precip"
-                                   FontSize="12"
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                    FontFamily="{DynamicResource AppFontFamily}"
                                    Foreground="#95A8BE"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding PrecipitationProbabilityText}"
-                                   FontSize="16"
-                                   FontWeight="Bold"
+                                   FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    Foreground="#FFFFFF"
                                    HorizontalAlignment="Center"
@@ -233,18 +237,18 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Left: Details (Labels crisp & muted, Values 15px Bold pure white) -->
+                <!-- Left: Details (Labels crisp & muted, Values Bold pure white) -->
                 <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left">
                     <TextBlock FontFamily="{DynamicResource AppFontFamily}">
-                        <Run Text="AQI&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="#95A8BE" /><Run Text="{Binding AqiText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
+                        <Run Text="AQI&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="#95A8BE" /><Run Text="{Binding AqiText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="#FFFFFF" />
                     </TextBlock>
                     <TextBlock FontFamily="{DynamicResource AppFontFamily}"
                                Margin="0,6,0,0">
-                        <Run Text="Feels like&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="#95A8BE" /><Run Text="{Binding FeelsLikeShortText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
+                        <Run Text="Feels like&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="#95A8BE" /><Run Text="{Binding FeelsLikeShortText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="#FFFFFF" />
                     </TextBlock>
                     <TextBlock FontFamily="{DynamicResource AppFontFamily}"
                                Margin="0,6,0,0">
-                        <Run Text="Humidity&#x20;" FontSize="12.5" FontWeight="Normal" Foreground="#95A8BE" /><Run Text="{Binding HumidityText}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF" />
+                        <Run Text="Humidity&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="#95A8BE" /><Run Text="{Binding HumidityText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="#FFFFFF" />
                     </TextBlock>
                 </StackPanel>
 
@@ -264,8 +268,8 @@
                 <!-- Right: Standardized Temperature (Ultra-soft ambient floating elevation) -->
                 <TextBlock Grid.Column="2"
                            Text="{Binding TemperatureText}"
-                           FontSize="72"
-                           FontWeight="Bold"
+                           FontSize="{DynamicResource TypeHeroFontSize}"
+                           FontWeight="{DynamicResource TypeHeroFontWeight}"
                            FontFamily="{DynamicResource AppDisplayFontFamily}"
                            Foreground="#FFFFFF"
                            HorizontalAlignment="Right"

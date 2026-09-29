@@ -143,8 +143,8 @@
                 <StackPanel x:Name="ViewPanel" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock x:Name="TitleTextBlock"
                                Text="{Binding Title}"
-                               FontSize="18"
-                               FontWeight="Bold"
+                               FontSize="{DynamicResource TypeSubtitleFontSize}"
+                               FontWeight="{DynamicResource TypeSubtitleFontWeight}"
                                FontFamily="{DynamicResource AppDisplayFontFamily}"
                                Foreground="{Binding HeaderColor, TargetNullValue='#E8FFFFFF', FallbackValue='#E8FFFFFF'}"
                                VerticalAlignment="Center"
@@ -167,8 +167,8 @@
                 <!-- Inline Renaming TextBox: 100% Transparent & Borderless -->
                 <TextBox x:Name="EditTextBox"
                          Visibility="Collapsed"
-                         FontSize="18"
-                         FontWeight="Bold"
+                         FontSize="{DynamicResource TypeSubtitleFontSize}"
+                         FontWeight="{DynamicResource TypeSubtitleFontWeight}"
                          FontFamily="{DynamicResource AppDisplayFontFamily}"
                          Foreground="{Binding HeaderColor, TargetNullValue='#FFFFFF', FallbackValue='#FFFFFF'}"
                          CaretBrush="{Binding HeaderColor, TargetNullValue='#60CDFF', FallbackValue='#60CDFF'}"

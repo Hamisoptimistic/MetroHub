@@ -15,7 +15,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Animated"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppDisplayFontFamily}">
     <widgets:WidgetCard Padding="12,10,12,10">
         <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
             <!-- 1. Wide 4x2 Layout: Time Centered in Viewbox with Micro-Motion -->
@@ -27,14 +28,14 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <clock:AnimatedTimeBlock Text="{Binding HoursString}"
                                                  EnableTextDepth="True"
-                                                 FontSize="{Binding ClockTimeFontSize}"
+                                                 FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                                  FontWeight="{Binding ClockFontWeight}"
                                                  FontFamily="{Binding ClockFontFamily}"
                                                  Foreground="#FFFFFF"
                                                  VerticalAlignment="Center"
                                                  TextAlignment="Center" />
                         <TextBlock Text=":"
-                                   FontSize="{Binding ClockTimeFontSize}"
+                                   FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                    FontWeight="{Binding ClockFontWeight}"
                                    FontFamily="{Binding ClockFontFamily}"
                                    Foreground="#FFFFFF"
@@ -54,7 +55,7 @@
                         </TextBlock>
                         <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
                                                  EnableTextDepth="True"
-                                                 FontSize="{Binding ClockTimeFontSize}"
+                                                 FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                                  FontWeight="{Binding ClockFontWeight}"
                                                  FontFamily="{Binding ClockFontFamily}"
                                                  Foreground="#FFFFFF"
@@ -81,14 +82,14 @@
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <clock:AnimatedTimeBlock Text="{Binding HoursString}"
                                                  EnableTextDepth="True"
-                                                 FontSize="{Binding ClockTimeFontSize}"
+                                                 FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                                  FontWeight="{Binding ClockFontWeight}"
                                                  FontFamily="{Binding ClockFontFamily}"
                                                  Foreground="#FFFFFF"
                                                  VerticalAlignment="Center"
                                                  TextAlignment="Center" />
                         <TextBlock Text=":"
-                                   FontSize="{Binding ClockTimeFontSize}"
+                                   FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                    FontWeight="{Binding ClockFontWeight}"
                                    FontFamily="{Binding ClockFontFamily}"
                                    Foreground="#FFFFFF"
@@ -108,7 +109,7 @@
                         </TextBlock>
                         <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
                                                  EnableTextDepth="True"
-                                                 FontSize="{Binding ClockTimeFontSize}"
+                                                 FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                                  FontWeight="{Binding ClockFontWeight}"
                                                  FontFamily="{Binding ClockFontFamily}"
                                                  Foreground="#FFFFFF"
@@ -120,8 +121,8 @@
                 <!-- Full Date (e.g. Friday, 11 September) - Razor-sharp, clean typography -->
                 <clock:AnimatedTimeBlock Grid.Column="1"
                                          Text="{Binding FullDateString}"
-                                         FontSize="16"
-                                         FontWeight="SemiBold"
+                                         FontSize="{DynamicResource TypeHeaderFontSize}"
+                                         FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                          Foreground="#E0FFFFFF"
                                          VerticalAlignment="Center"
                                          HorizontalAlignment="Right"
@@ -145,14 +146,14 @@
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <clock:AnimatedTimeBlock Text="{Binding HoursString}"
                                                  EnableTextDepth="True"
-                                                 FontSize="{Binding ClockTimeFontSize}"
+                                                 FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                                  FontWeight="{Binding ClockFontWeight}"
                                                  FontFamily="{Binding ClockFontFamily}"
                                                  Foreground="#FFFFFF"
                                                  VerticalAlignment="Center"
                                                  TextAlignment="Center" />
                         <TextBlock Text=":"
-                                   FontSize="{Binding ClockTimeFontSize}"
+                                   FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                    FontWeight="{Binding ClockFontWeight}"
                                    FontFamily="{Binding ClockFontFamily}"
                                    Foreground="#FFFFFF"
@@ -172,7 +173,7 @@
                         </TextBlock>
                         <clock:AnimatedTimeBlock Text="{Binding MinutesString}"
                                                  EnableTextDepth="True"
-                                                 FontSize="{Binding ClockTimeFontSize}"
+                                                 FontSize="{DynamicResource TypeHeroCoordinateFontSize}"
                                                  FontWeight="{Binding ClockFontWeight}"
                                                  FontFamily="{Binding ClockFontFamily}"
                                                  Foreground="#FFFFFF"
@@ -184,8 +185,8 @@
                 <!-- Full Date - Crisp, zero shadow -->
                 <clock:AnimatedTimeBlock Grid.Row="1"
                                          Text="{Binding FullDateString}"
-                                         FontSize="17"
-                                         FontWeight="SemiBold"
+                                         FontSize="{DynamicResource TypeHeaderFontSize}"
+                                         FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                          Foreground="#E0FFFFFF"
                                          HorizontalAlignment="Center"
                                          TextAlignment="Center"

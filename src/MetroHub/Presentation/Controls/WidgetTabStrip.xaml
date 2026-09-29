@@ -226,13 +226,13 @@
                                             <TextBlock x:Name="TabTitleText"
                                                        Grid.Column="1"
                                                        Text="{Binding DisplayTitle}"
-                                                       FontSize="12"
+                                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                        Foreground="#80FFFFFF"
                                                        FontFamily="{DynamicResource AppFontFamily}"
                                                        VerticalAlignment="Center"
                                                        MaxWidth="120"
                                                        TextTrimming="CharacterEllipsis" />
-
                                             <!-- Close Button (✕) with fixed reserved space -->
                                             <Button x:Name="CloseButton"
                                                     Grid.Column="2"
@@ -266,7 +266,7 @@
                                     <DataTrigger Binding="{Binding IsActive}" Value="True">
                                         <Setter TargetName="TabBorder" Property="Background" Value="#0CFFFFFF" />
                                         <Setter TargetName="TabTitleText" Property="Foreground" Value="#FFFFFF" />
-                                        <Setter TargetName="TabTitleText" Property="FontWeight" Value="SemiBold" />
+                                        <Setter TargetName="TabTitleText" Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
                                         <Setter TargetName="CloseButton" Property="Opacity" Value="0.85" />
                                         <Setter TargetName="CloseButton" Property="IsHitTestVisible" Value="True" />
                                         <Setter TargetName="TabDivider" Property="Visibility" Value="Collapsed" />

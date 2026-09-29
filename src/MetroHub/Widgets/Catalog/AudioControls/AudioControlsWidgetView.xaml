@@ -14,7 +14,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <!-- Media & Pomodoro-Consistent Transport Button Style: Inherits WidgetMicroButtonStyle -->
@@ -147,8 +148,8 @@
                         <!-- 2. Volume Percentage Number (e.g. 76%) Shown While Dragging -->
                         <TextBlock x:Name="VolumePercentageText"
                                    Text="{Binding MasterVolumePercentText}"
-                                   FontSize="11.5"
-                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                    Foreground="#FFFFFF"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
@@ -201,8 +202,8 @@
                     <!-- Section Header: Output Device -->
                     <TextBlock Grid.Row="0"
                                Text="Output Device"
-                               FontSize="12"
-                               FontWeight="SemiBold"
+                               FontSize="{DynamicResource TypeHeaderFontSize}"
+                               FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                Foreground="#FFFFFF"
                                Margin="6,2,0,8"
                                SnapsToDevicePixels="True" />
@@ -256,8 +257,8 @@
                                                         <!-- 3. Device Friendly Name (WHITE) -->
                                                         <TextBlock Grid.Column="2"
                                                                    Text="{Binding Name}"
-                                                                   FontSize="13"
-                                                                   FontWeight="Normal"
+                                                                   FontSize="{DynamicResource TypeBodyFontSize}"
+                                                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
                                                                    Foreground="#FFFFFF"
                                                                    TextTrimming="CharacterEllipsis"
                                                                    VerticalAlignment="Center"

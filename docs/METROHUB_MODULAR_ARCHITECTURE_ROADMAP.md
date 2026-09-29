@@ -222,7 +222,7 @@ graph TD
    - `dotnet build -c Debug`: 0 Errors, 0 Warnings.
    - `dotnet test --no-build -c Debug`: **208/208 Tests Passed (100%)** (+40 new test cases). Zero breaking changes. Fully ready for Phase 4F.
 
-#### Phase 4F: Universal Fluent 2 Typography Consolidation & Responsive Type Ramp [PLANNED]
+#### Phase 4F: Universal Fluent 2 Typography Consolidation & Responsive Type Ramp [COMPLETED]
 *Goal: Eliminate all 18+ hardcoded, arbitrary, and fractional font sizes across the entire application shell, modals, context menus, and all 19 widgets. Align 100% with the official Microsoft Windows 11 Fluent 2 Typography standard (`12px Regular` minimum, `14px SemiBold` minimum), tokenize all font sizes and weights via `DynamicResource`, enforce the "Small Tile != Small Font" content degradation rule, and prepare the engine for Phase 5A font customization and `TextScaleFactor`.*
 
 ```
@@ -473,19 +473,20 @@ Small tiles must maintain high readability and touch targets. Instead of scaling
 - **`Weather` Widget**: 4x4 card displays hero temperature, condition, and 3-column metrics (AQI, Humidity, Precip). In 4x2 wide layout, the 3-column metrics collapse to zero height; temperature hero and condition text fill the card cleanly.
 - **`Calendar` Widget**: In 8x6 full mode, renders full 42-day interactive grid with weekday headers. In 4x4 compact mode, the entire grid collapses; only the weekday headline (`28px SemiBold`), ambient day numeral (`112px SemiBold`), and month footer render.
 
-##### 8. Step-by-Step Implementation Sequence
-1. **Tokens Definition**: Declare all `Type...` font sizes, weights, line heights, and brushes in `src/MetroHub/Presentation/Themes/Tokens.xaml`.
-2. **Universal Styles & Menus**: Update `ContextMenuStyles.xaml`, `ControlStyles.xaml`, and `WidgetStyles.xaml` to consume the tokens.
-3. **App Shell & Modals**: Update `SidebarRailControl.xaml`, `AllAppsDrawerControl.xaml`, `GroupHeaderControl.xaml`, `TileControl.xaml`, `RadioStationDialog.xaml`, `WeatherLocationDialog.xaml`, and `WebLinkDialog.xaml`.
-4. **Widgets Batch 1 (System & Control Widgets)**: Update `AudioControls`, `BrightnessControls`, `QuickControls`, `Power`, `CaffeineSleep`.
-5. **Widgets Batch 2 (Media & Audio Widgets)**: Update `Media`, `Radio`, `AtmosphericAuraControl`, `Quotes`.
-6. **Widgets Batch 3 (Information & Time Widgets)**: Update `Clock`, `AnimatedTimeBlock`, `Calendar`, `Weather`, `Network`.
-7. **Widgets Batch 4 (Productivity & Interactive Widgets)**: Update `Notepad`, `Habit`, `Photos`, `Pomodoro`, `Markdown`, `Dino`, `Rover`.
-8. **Automated Verification**:
-   - `dotnet build -c Debug`: Verify 0 errors, 0 warnings.
-   - `dotnet test --no-build -c Debug`: Verify all 208+ unit tests pass.
-   - Run automated STA View Instantiation tests to ensure zero XAML parse errors or missing resource keys.
-   - Inspect optical baselines across all tiles to guarantee zero visual regression.
+##### 8. Step-by-Step Implementation Sequence [COMPLETED]
+1. **Tokens Definition [COMPLETED]**: Declared all `Type...` font sizes, weights, coordinate tokens, and harmonized contrast brushes in `src/MetroHub/Presentation/Themes/Tokens.xaml`.
+2. **Universal Styles & Menus [COMPLETED]**: Updated `ContextMenuStyles.xaml`, `ControlStyles.xaml`, and `WidgetStyles.xaml` with `{DynamicResource}` token bindings.
+3. **App Shell & Modals [COMPLETED]**: Updated `MainWindow.xaml`, `SidebarRailControl.xaml`, `AllAppsDrawerControl.xaml`, `GroupHeaderControl.xaml`, `CategoryControl.xaml`, `TileControl.xaml`, `WidgetTabStrip.xaml`, `RadioStationDialog.xaml`, `WeatherLocationDialog.xaml`, and `WebLinkDialog.xaml`.
+4. **Widgets Batch 1 (System & Control Widgets) [COMPLETED]**: Updated `AudioControls`, `BrightnessControls`, `QuickControls`, `Power`, `CaffeineSleep`.
+5. **Widgets Batch 2 (Media & Audio Widgets) [COMPLETED]**: Updated `Media`, `Radio`, `AtmosphericAuraControl`, `Quotes`.
+6. **Widgets Batch 3 (Information & Time Widgets) [COMPLETED]**: Updated `Clock`, `AnimatedTimeBlock`, `Calendar`, `Weather`, `Network`.
+7. **Widgets Batch 4 (Productivity & Interactive Widgets) [COMPLETED]**: Updated `Notepad`, `Habit`, `Photos`, `Pomodoro`, `Markdown`, `Dino`, `Rover`.
+8. **Automated Verification [COMPLETED]**:
+   - `dotnet build -c Debug`: 0 Errors, 0 Warnings.
+   - `dotnet build -c Release`: 0 Errors, 0 Warnings.
+   - `dotnet test --no-build -c Debug`: **213/213 Tests Passed (100%)**.
+   - Automated STA View Instantiation tests confirmed zero XAML parse errors or missing resource keys.
+   - All text sizes standardized to the Fluent 2 type ramp (12px minimum floor; 14px SemiBold minimum floor). Zero visual regression.
 
 ---
 

@@ -33,7 +33,8 @@
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="CaretBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
             <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="0" />
@@ -195,8 +196,9 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <ui:SymbolIcon Symbol="AppsListDetail24" FontSize="18" Foreground="#EAEAEA" Margin="0,0,8,0" VerticalAlignment="Center" />
                     <TextBlock Text="All apps"
-                               FontSize="14"
-                               FontWeight="SemiBold"
+                               FontSize="{DynamicResource TypeHeaderFontSize}"
+                               FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                               FontFamily="{DynamicResource AppDisplayFontFamily}"
                                Foreground="#EAEAEA"
                                VerticalAlignment="Center" />
                 </StackPanel>
@@ -245,7 +247,8 @@
 
                     <TextBlock x:Name="SearchPlaceholder"
                                Text="Type here to search..."
-                               FontSize="13"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               FontWeight="{DynamicResource TypeBodyFontWeight}"
                                Foreground="#60FFFFFF"
                                VerticalAlignment="Center"
                                Margin="34,0,28,0"
@@ -292,8 +295,8 @@
                                 <StackPanel Margin="0,0,0,6">
                                     <!-- Group Letter Header -->
                                     <TextBlock Text="{Binding Header}"
-                                               FontSize="18"
-                                               FontWeight="Bold"
+                                               FontSize="{DynamicResource TypeSubtitleFontSize}"
+                                               FontWeight="{DynamicResource TypeSubtitleFontWeight}"
                                                FontFamily="{DynamicResource AppDisplayFontFamily}"
                                                Foreground="#70FFFFFF"
                                                Margin="16,12,0,2" />
@@ -325,7 +328,8 @@
 
                                                         <TextBlock Grid.Column="1"
                                                                    Text="{Binding Name}"
-                                                                   FontSize="13"
+                                                                   FontSize="{DynamicResource TypeBodyFontSize}"
+                                                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
                                                                    Foreground="#E6FFFFFF"
                                                                    VerticalAlignment="Center"
                                                                    Margin="8,0,8,0"
@@ -354,7 +358,8 @@
                     <StackPanel>
                         <TextBlock x:Name="NoResultsTextBlock"
                                    Text="No apps found"
-                                   FontSize="13"
+                                   FontSize="{DynamicResource TypeBodyFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
                                    Foreground="#70FFFFFF"
                                    HorizontalAlignment="Center"
                                    Margin="0,32,0,0"
@@ -396,7 +401,8 @@
 
                                         <TextBlock Grid.Column="1"
                                                    Text="{Binding Name}"
-                                                   FontSize="13"
+                                                   FontSize="{DynamicResource TypeBodyFontSize}"
+                                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
                                                    Foreground="#E6FFFFFF"
                                                    VerticalAlignment="Center"
                                                    Margin="8,0,8,0"

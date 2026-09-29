@@ -13,7 +13,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
 
@@ -107,16 +108,16 @@
 
                     <!-- Title -->
                     <TextBlock Text="Photo Stream"
-                               FontSize="15"
-                               FontWeight="SemiBold"
+                               FontSize="{DynamicResource TypeHeaderFontSize}"
+                               FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                Foreground="#FFFFFF"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,2" />
 
                     <!-- Subtitle -->
                     <TextBlock Text="Select a folder to start your live photo stream."
-                               FontSize="11.5"
-                               FontWeight="Normal"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                Foreground="#9BA5B7"
                                HorizontalAlignment="Center"
                                TextAlignment="Center"
@@ -137,8 +138,8 @@
                                        VerticalAlignment="Center"
                                        Margin="0,0,8,0" />
                             <TextBlock Text="Choose Photos Folder"
-                                       FontSize="12.5"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="#FFFFFF"
                                        VerticalAlignment="Center" />
                         </StackPanel>

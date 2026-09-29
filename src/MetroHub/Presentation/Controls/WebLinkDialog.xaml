@@ -61,7 +61,8 @@
         <Style x:Key="FluentGlassUrlWithPasteInputStyle" TargetType="TextBox">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Height" Value="36" />
-            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="CaretBrush" Value="#FFFFFF" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -115,7 +116,8 @@
         <Style x:Key="FluentGlassInputStyle" TargetType="TextBox">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Height" Value="36" />
-            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="CaretBrush" Value="#FFFFFF" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -201,8 +203,8 @@
             <Setter Property="Height" Value="32" />
             <Setter Property="MinWidth" Value="110" />
             <Setter Property="Padding" Value="14,0" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
@@ -233,7 +235,8 @@
             <Setter Property="Height" Value="32" />
             <Setter Property="MinWidth" Value="80" />
             <Setter Property="Padding" Value="14,0" />
-            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeCaptionFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeCaptionFontWeight}" />
             <Setter Property="Foreground" Value="#E0FFFFFF" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
@@ -326,8 +329,8 @@
                     <!-- Header -->
                     <Grid Grid.Row="0" Margin="0,0,0,18">
                         <TextBlock Text="Add Web Shortcut"
-                                   FontSize="14.5"
-                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                    Foreground="#FFFFFF"
                                    VerticalAlignment="Center" />
 
@@ -340,7 +343,8 @@
                     <Grid Grid.Row="1">
                         <StackPanel>
                             <TextBlock Text="Website URL"
-                                       FontSize="12"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#95FFFFFF"
                                        Margin="0,0,0,6" />
 
@@ -359,13 +363,17 @@
                                         Click="OnWebLinkPasteClick">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <ui:SymbolIcon Symbol="ClipboardPaste24" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center" />
-                                        <TextBlock Text="Paste" FontSize="11" VerticalAlignment="Center" />
+                                        <TextBlock Text="Paste"
+                                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                                   VerticalAlignment="Center" />
                                     </StackPanel>
                                 </Button>
                             </Grid>
 
                             <TextBlock Text="Shortcut Label (Optional)"
-                                       FontSize="12"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#95FFFFFF"
                                        Margin="0,14,0,6" />
                             <TextBox x:Name="WebLinkTitleInput"
@@ -380,7 +388,8 @@
                                              IsChecked="True"
                                              Margin="0,0,18,0">
                                     <TextBlock Text="Both canvas &amp; sidebar"
-                                               FontSize="12"
+                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                Foreground="#95FFFFFF"
                                                VerticalAlignment="Center" />
                                 </RadioButton>
@@ -389,7 +398,8 @@
                                              GroupName="ShortcutDest"
                                              Margin="0,0,18,0">
                                     <TextBlock Text="Canvas only"
-                                               FontSize="12"
+                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                Foreground="#95FFFFFF"
                                                VerticalAlignment="Center" />
                                 </RadioButton>
@@ -397,14 +407,16 @@
                                              Style="{StaticResource FluentGlassRadioButtonStyle}"
                                              GroupName="ShortcutDest">
                                     <TextBlock Text="Sidebar only"
-                                               FontSize="12"
+                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                Foreground="#95FFFFFF"
                                                VerticalAlignment="Center" />
                                 </RadioButton>
                             </StackPanel>
 
                             <TextBlock x:Name="WebLinkStatusMessage"
-                                       FontSize="11.5"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#FF8080"
                                        Margin="0,8,0,0"
                                        TextWrapping="Wrap"

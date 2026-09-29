@@ -17,7 +17,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <!-- Strip default dotted focus rectangle across all controls in widget -->
@@ -221,8 +222,9 @@
             <Setter Property="CaretBrush" Value="#FFFFFF" />
             <Setter Property="SelectionBrush" Value="#503A86FF" />
             <Setter Property="SelectionOpacity" Value="0.6" />
-            <Setter Property="FontSize" Value="15" />
-            <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeMonoCodeFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeMonoCodeFontWeight}" />
+            <Setter Property="FontFamily" Value="{DynamicResource AppMonoFontFamily}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Template">
                 <Setter.Value>
@@ -248,7 +250,8 @@
             <Setter Property="CaretBrush" Value="#FFFFFF" />
             <Setter Property="SelectionBrush" Value="#503A86FF" />
             <Setter Property="SelectionOpacity" Value="0.6" />
-            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
             <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -360,7 +363,9 @@
                     <!-- Watermark Placeholder (Hidden immediately when typing) -->
                     <TextBlock Text="Note it down, you know you'll forget"
                                Foreground="#35FFFFFF"
-                               FontSize="15"
+                               FontFamily="{DynamicResource AppMonoFontFamily}"
+                               FontSize="{DynamicResource TypeMonoCodeFontSize}"
+                               FontWeight="{DynamicResource TypeMonoCodeFontWeight}"
                                IsHitTestVisible="False"
                                Margin="4,2,0,0">
                         <TextBlock.Style>
@@ -429,7 +434,8 @@
                                 <!-- Watermark Placeholder with clean breathing room from caret -->
                                 <TextBlock Text="Touch Grass"
                                            Foreground="#50FFFFFF"
-                                           FontSize="13.5"
+                                           FontSize="{DynamicResource TypeBodyFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyFontWeight}"
                                            VerticalAlignment="Center"
                                            IsHitTestVisible="False"
                                            Padding="0"
@@ -493,7 +499,8 @@
                                                        TextWrapping="Wrap"
                                                        VerticalAlignment="Center"
                                                        Margin="0,0,8,0"
-                                                       FontSize="14">
+                                                       FontSize="{DynamicResource TypeBodyFontSize}"
+                                                       FontWeight="{DynamicResource TypeBodyFontWeight}">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Foreground" Value="#FFFFFF" />
@@ -537,7 +544,8 @@
                         <TextBlock Grid.Column="0"
                                    Text="{Binding TasksSummary}"
                                    Foreground="#50FFFFFF"
-                                   FontSize="12"
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                    VerticalAlignment="Center" />
 
                         <Button Grid.Column="1"
@@ -545,7 +553,8 @@
                                 Foreground="#70FFFFFF"
                                 Background="Transparent"
                                 BorderThickness="0"
-                                FontSize="12"
+                                FontSize="{DynamicResource TypeCaptionFontSize}"
+                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                 Focusable="False"
                                 FocusVisualStyle="{x:Null}"
                                 Command="{Binding ClearCompletedCommand}"

@@ -14,7 +14,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <!-- Media Transport Button Style: Inherits WidgetMediumButtonStyle -->
@@ -95,8 +96,8 @@
                         <StackPanel>
                             <!-- Track Title -->
                             <TextBlock Text="{Binding Title}"
-                                       FontSize="{Binding TrackTitleFontSize}"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeHeaderFontSize}"
+                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        Foreground="#FFFFFF"
                                        TextTrimming="CharacterEllipsis"
@@ -105,8 +106,9 @@
 
                             <!-- Artist Name -->
                             <TextBlock Text="{Binding Artist}"
-                                       FontSize="{Binding ArtistFontSize}"
-                                       FontWeight="Normal"
+                                       FontSize="{DynamicResource TypeBodyFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                       FontFamily="{DynamicResource AppFontFamily}"
                                        Foreground="#D2D7E2"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"
@@ -137,8 +139,9 @@
                                            VerticalAlignment="Center"
                                            Margin="0,1,6,0" />
                                 <TextBlock Text="{Binding Album}"
-                                           FontSize="13"
-                                           FontWeight="Normal"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           FontFamily="{DynamicResource AppFontFamily}"
                                            Foreground="#9DA5B4"
                                            TextTrimming="CharacterEllipsis"
                                            TextWrapping="NoWrap"
@@ -217,7 +220,8 @@
                         <TextBlock Text="{Binding SourceName}"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Right"
-                                   FontSize="12"
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                    Foreground="#FFFFFF"
                                    SnapsToDevicePixels="True"
                                    Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}" />
@@ -273,10 +277,10 @@
                 <Grid Grid.Column="1" Margin="10,0,10,0" VerticalAlignment="Center">
                     <!-- Idle State: 'No media playing' subtle text -->
                     <TextBlock Text="No media playing"
-                               FontSize="12"
-                               FontWeight="Normal"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                Foreground="#55FFFFFF"
-                               FontFamily="{DynamicResource AppDisplayFontFamily}"
+                               FontFamily="{DynamicResource AppFontFamily}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis"
@@ -286,14 +290,16 @@
                     <StackPanel VerticalAlignment="Center"
                                 Visibility="{Binding HasMedia, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="{Binding Title}"
-                                   FontSize="12.5"
-                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                    Foreground="#FFFFFF"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap" />
                         <TextBlock Text="{Binding Artist}"
-                                   FontSize="11"
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                   FontFamily="{DynamicResource AppFontFamily}"
                                    Foreground="#CAD7EA"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap"
@@ -471,8 +477,8 @@
                             <!-- Song Title -->
                             <TextBlock Text="{Binding Title}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       FontSize="15"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeHeaderFontSize}"
+                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                        Foreground="#FFFFFF"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"
@@ -484,9 +490,9 @@
 
                             <!-- Artist Name -->
                             <TextBlock Text="{Binding Artist}"
-                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       FontSize="13.5"
-                                       FontWeight="Normal"
+                                       FontFamily="{DynamicResource AppFontFamily}"
+                                       FontSize="{DynamicResource TypeBodyFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyFontWeight}"
                                        Foreground="#CAD7EA"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"

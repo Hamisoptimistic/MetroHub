@@ -14,7 +14,8 @@
              RenderOptions.ClearTypeHint="Enabled"
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed">
+             TextOptions.TextHintingMode="Fixed"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <!-- Boolean to Visibility Converter -->
@@ -240,7 +241,7 @@
                                     Click="OnShortcutClick">
                                 <Button.ContextMenu>
                                     <ContextMenu DataContext="{Binding Path=PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
-                                        <MenuItem Header="{Binding Title}" IsEnabled="False" FontWeight="SemiBold" />
+                                        <MenuItem Header="{Binding Title}" IsEnabled="False" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" />
                                         <Separator />
 
                                         <!-- Folder Actions (Visible when IsFolder is True) -->
@@ -434,7 +435,7 @@
                                     Visibility="Collapsed">
                                 <Border.ContextMenu>
                                     <ContextMenu DataContext="{Binding Path=PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
-                                        <MenuItem Header="Divider" IsEnabled="False" FontWeight="SemiBold" />
+                                        <MenuItem Header="Divider" IsEnabled="False" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" />
                                         <Separator />
                                         <MenuItem Header="Move Up" Click="OnMoveUpClick">
                                             <MenuItem.Icon>

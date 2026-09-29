@@ -16,6 +16,7 @@
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
              RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}"
              Width="504"
              Height="376">
 
@@ -71,9 +72,9 @@
                                 <Grid x:Name="StationContent" Margin="10,6">
                                     <TextBlock x:Name="StationNameText"
                                                Text="{Binding Name}"
-                                               FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                               FontSize="11.5"
-                                               FontWeight="SemiBold"
+                                               FontFamily="{DynamicResource AppFontFamily}"
+                                               FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                                Foreground="#FFFFFF"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
@@ -92,8 +93,8 @@
                                                        HorizontalAlignment="Center" />
                                         <TextBlock Text="Custom Station"
                                                    FontFamily="{DynamicResource AppFontFamily}"
-                                                   FontSize="10"
-                                                   FontWeight="SemiBold"
+                                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                    Foreground="#60FFFFFF"
                                                    Margin="0,3,0,0"
                                                    HorizontalAlignment="Center" />
@@ -318,9 +319,9 @@
                         <StackPanel Orientation="Vertical" VerticalAlignment="Center">
                             <!-- Line 1: Radio Name -->
                             <TextBlock Text="{Binding CurrentStationTitle}"
-                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                       FontSize="12.5"
-                                       FontWeight="SemiBold"
+                                       FontFamily="{DynamicResource AppFontFamily}"
+                                       FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="#FFFFFF"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"
@@ -329,8 +330,8 @@
                             <!-- Line 2: Bitrate & Type -->
                             <TextBlock Text="{Binding CurrentStationSubtitle}"
                                        FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="11"
-                                       FontWeight="Normal"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#A0B8D0"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"

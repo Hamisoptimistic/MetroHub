@@ -63,7 +63,8 @@
         <Style x:Key="FluentGlassSearchInputStyle" TargetType="TextBox">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Height" Value="36" />
-            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="CaretBrush" Value="#FFFFFF" />
             <Setter Property="SelectionBrush" Value="#40FFFFFF" />
@@ -119,7 +120,8 @@
         <Style x:Key="FluentGlassInputStyle" TargetType="TextBox">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Height" Value="36" />
-            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="CaretBrush" Value="#FFFFFF" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -160,7 +162,8 @@
         <Style x:Key="FluentGlassUrlWithPasteInputStyle" TargetType="TextBox">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Height" Value="36" />
-            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="CaretBrush" Value="#FFFFFF" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -215,7 +218,8 @@
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Height" Value="28" />
-            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeCaptionFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeCaptionFontWeight}" />
             <Setter Property="Foreground" Value="#80FFFFFF" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -238,7 +242,7 @@
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="TabBorder" Property="Background" Value="#25FFFFFF" />
                                 <Setter Property="Foreground" Value="#FFFFFF" />
-                                <Setter Property="FontWeight" Value="SemiBold" />
+                                <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -304,8 +308,8 @@
             <Setter Property="Height" Value="30" />
             <Setter Property="MinWidth" Value="100" />
             <Setter Property="Padding" Value="16,0" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
@@ -340,7 +344,8 @@
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Height" Value="26" />
             <Setter Property="Padding" Value="8,2" />
-            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeCaptionFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeCaptionFontWeight}" />
             <Setter Property="Foreground" Value="#E0FFFFFF" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
@@ -405,12 +410,13 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <TextBlock Text="{Binding Name}"
-                               FontSize="12.5"
-                               FontWeight="SemiBold"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                Foreground="#FFFFFF"
                                TextTrimming="CharacterEllipsis" />
                     <TextBlock Text="{Binding Subtitle}"
-                               FontSize="11"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                Foreground="#75FFFFFF"
                                Margin="0,2,0,0"
                                TextTrimming="CharacterEllipsis" />
@@ -422,7 +428,8 @@
                         VerticalAlignment="Center"
                         Margin="8,0,0,0">
                     <TextBlock Text="{Binding BitrateDisplay}"
-                               FontSize="10"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                Foreground="#85FFFFFF" />
                 </Border>
             </Grid>
@@ -474,8 +481,8 @@
                     <Grid Grid.Row="0" Margin="0,0,0,18">
                         <TextBlock x:Name="HeaderTitleText"
                                    Text="Add Radio Station"
-                                   FontSize="14.5"
-                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                    Foreground="#FFFFFF"
                                    VerticalAlignment="Center" />
 
@@ -530,7 +537,8 @@
                                          PreviewKeyDown="OnRadioSearchInputKeyDown" />
                                 <TextBlock x:Name="RadioSearchWatermark"
                                            Text="Search station name, genre (e.g. lofi, jazz, ambient)..."
-                                           FontSize="12"
+                                           FontSize="{DynamicResource TypeBodyFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyFontWeight}"
                                            Foreground="#50FFFFFF"
                                            IsHitTestVisible="False"
                                            VerticalAlignment="Center"
@@ -571,7 +579,8 @@
                                     <!-- Search Initial Hint / Empty Text -->
                                     <TextBlock x:Name="RadioSearchPlaceholderText"
                                                Text="Type 2 or more characters to search 40,000+ online stations"
-                                               FontSize="11.5"
+                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                Foreground="#60FFFFFF"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
@@ -583,7 +592,8 @@
                             <!-- Search Status Message -->
                             <TextBlock Grid.Row="2"
                                        x:Name="RadioSearchStatusMessage"
-                                       FontSize="11.5"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#FF8080"
                                        Margin="0,6,0,0"
                                        TextWrapping="Wrap"
@@ -594,7 +604,8 @@
                         <Grid Grid.Row="1" x:Name="RadioDirectPanel" Visibility="Collapsed">
                             <StackPanel>
                                 <TextBlock Text="Audio Stream URL"
-                                           FontSize="12"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#95FFFFFF"
                                            Margin="0,0,0,6" />
 
@@ -612,7 +623,10 @@
                                             Click="OnRadioDirectPasteClick">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <ui:SymbolIcon Symbol="ClipboardPaste24" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center" />
-                                            <TextBlock Text="Paste" FontSize="11" VerticalAlignment="Center" />
+                                            <TextBlock Text="Paste"
+                                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                                       VerticalAlignment="Center" />
                                         </StackPanel>
                                     </Button>
                                 </Grid>
@@ -631,13 +645,15 @@
                                                    VerticalAlignment="Center" />
                                     <TextBlock x:Name="RadioProbeStatusText"
                                                Text="Supports MP3/AAC/OGG streams or single-station .pls/.m3u"
-                                               FontSize="11.5"
+                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                Foreground="#65FFFFFF"
                                                VerticalAlignment="Center" />
                                 </StackPanel>
 
                                 <TextBlock Text="Station Name"
-                                           FontSize="12"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#95FFFFFF"
                                            Margin="0,8,0,6" />
                                 <TextBox x:Name="RadioDirectNameInput"
@@ -646,7 +662,8 @@
                                          KeyDown="OnRadioDirectInputKeyDown" />
 
                                 <TextBlock x:Name="RadioDirectStatusMessage"
-                                           FontSize="11.5"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#FF8080"
                                            Margin="0,6,0,0"
                                            TextWrapping="Wrap"
@@ -657,7 +674,8 @@
                         <!-- Target Category Selector -->
                         <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,8,0,0">
                             <TextBlock Text="Category:"
-                                       FontSize="12"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#80FFFFFF"
                                        VerticalAlignment="Center"
                                        Margin="0,0,12,0" />
@@ -666,24 +684,40 @@
                                          GroupName="RadioCategoryTarget"
                                          IsChecked="True"
                                          Margin="0,0,14,0">
-                                <TextBlock Text="Ambient" FontSize="12" Foreground="#95FFFFFF" VerticalAlignment="Center" />
+                                <TextBlock Text="Ambient"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           Foreground="#95FFFFFF"
+                                           VerticalAlignment="Center" />
                             </RadioButton>
                             <RadioButton x:Name="RadioCatNature"
                                          Style="{StaticResource FluentGlassRadioButtonStyle}"
                                          GroupName="RadioCategoryTarget"
                                          Margin="0,0,14,0">
-                                <TextBlock Text="Nature" FontSize="12" Foreground="#95FFFFFF" VerticalAlignment="Center" />
+                                <TextBlock Text="Nature"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           Foreground="#95FFFFFF"
+                                           VerticalAlignment="Center" />
                             </RadioButton>
                             <RadioButton x:Name="RadioCatLofi"
                                          Style="{StaticResource FluentGlassRadioButtonStyle}"
                                          GroupName="RadioCategoryTarget"
                                          Margin="0,0,14,0">
-                                <TextBlock Text="Lo-Fi" FontSize="12" Foreground="#95FFFFFF" VerticalAlignment="Center" />
+                                <TextBlock Text="Lo-Fi"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           Foreground="#95FFFFFF"
+                                           VerticalAlignment="Center" />
                             </RadioButton>
                             <RadioButton x:Name="RadioCatCoding"
                                          Style="{StaticResource FluentGlassRadioButtonStyle}"
                                          GroupName="RadioCategoryTarget">
-                                <TextBlock Text="Coding" FontSize="12" Foreground="#95FFFFFF" VerticalAlignment="Center" />
+                                <TextBlock Text="Coding"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           Foreground="#95FFFFFF"
+                                           VerticalAlignment="Center" />
                             </RadioButton>
                         </StackPanel>
                     </Grid>
@@ -696,7 +730,6 @@
                                 Height="30"
                                 MinWidth="100"
                                 Padding="16,0"
-                                FontSize="12"
                                 IsDefault="True"
                                 HorizontalAlignment="Right"
                                 Click="OnPrimaryActionButtonClick" />

@@ -18,8 +18,9 @@
         AllowsTransparency="False"
         ShowInTaskbar="False"
         Topmost="True"
-        FontFamily="{StaticResource AppFontFamily}"
-        FontSize="14"
+        FontFamily="{DynamicResource AppFontFamily}"
+        FontSize="{DynamicResource TypeBodyFontSize}"
+        FontWeight="{DynamicResource TypeBodyFontWeight}"
         TextOptions.TextFormattingMode="Ideal"
         TextOptions.TextRenderingMode="ClearType"
         TextOptions.TextHintingMode="Fixed"
@@ -226,7 +227,8 @@
                                                                Text="{Binding Name}"
                                                                VerticalAlignment="Center"
                                                                Margin="10,0,8,0"
-                                                               FontSize="13"
+                                                               FontSize="{DynamicResource TypeBodyFontSize}"
+                                                               FontWeight="{DynamicResource TypeBodyFontWeight}"
                                                                Foreground="#F0FFFFFF" />
                                                 </Grid>
                                             </DataTemplate>
@@ -517,8 +519,8 @@
                                            VerticalAlignment="Center" />
                             <TextBlock x:Name="GroupDropBadgeText"
                                        Text="Add to Section"
-                                       FontSize="12"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="#F5FFFFFF"
                                        VerticalAlignment="Center" />
                         </StackPanel>
@@ -651,7 +653,7 @@
                 Panel.ZIndex="3000">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <ui:SymbolIcon x:Name="NotificationToastIcon" Symbol="Info24" FontSize="18" Foreground="#60CDFF" Margin="0,0,10,0" />
-                <TextBlock x:Name="NotificationToastText" Text="" Foreground="#F0FFFFFF" FontSize="13" FontWeight="Medium" VerticalAlignment="Center" />
+                <TextBlock x:Name="NotificationToastText" Text="" Foreground="#F0FFFFFF" FontSize="{DynamicResource TypeBodyFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" VerticalAlignment="Center" />
             </StackPanel>
         </Border>
         </Grid>

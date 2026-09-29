@@ -13,7 +13,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <!-- Media-Consistent Transport Button Style: Inherits WidgetMediumButtonStyle -->
@@ -75,15 +76,15 @@
                     <StackPanel VerticalAlignment="Center">
                         <!-- Phase Tag -->
                         <TextBlock Text="{Binding PhaseTitle}"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                    Foreground="{Binding GlowSolidBrush}"
                                    Margin="0,0,0,2" />
 
                         <!-- Large Time Readout -->
                         <TextBlock Text="{Binding TimeString}"
-                                   FontSize="28"
-                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource TypeDisplayFontSize}"
+                                   FontWeight="{DynamicResource TypeDisplayFontWeight}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    Foreground="#FFFFFF"
                                    Margin="0,0,0,6" />
@@ -170,23 +171,24 @@
                         <StackPanel>
                             <!-- Phase Title (Matches Track Title) -->
                             <TextBlock Text="{Binding PhaseTitle}"
-                                       FontSize="17"
-                                       FontWeight="SemiBold"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       FontSize="{DynamicResource TypeHeaderFontSize}"
+                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                        Foreground="#FFFFFF"
                                        Margin="0,0,0,3" />
 
                             <!-- Big Time Readout (Matches Artist Name) -->
                             <TextBlock Text="{Binding TimeString}"
-                                       FontSize="28"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeDisplayFontSize}"
+                                       FontWeight="{DynamicResource TypeDisplayFontWeight}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        Foreground="{Binding GlowSolidBrush}"
                                        Margin="0,0,0,4" />
 
                             <!-- Detail line with status & streak (Matches Album detail) -->
                             <TextBlock Text="{Binding StatusString}"
-                                       FontSize="13"
-                                       FontWeight="Normal"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#9DA5B4"
                                        VerticalAlignment="Center" />
                         </StackPanel>

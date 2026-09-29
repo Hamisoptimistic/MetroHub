@@ -18,7 +18,8 @@
              TextOptions.TextFormattingMode="Display"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <!-- Keyboard shortcuts (Ctrl+S / Ctrl+Shift+S / Ctrl+O / Ctrl+T / Ctrl+W / Ctrl+E) are
          installed as InputBindings by the code-behind once the view model is known: they are
@@ -38,8 +39,9 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Foreground" Value="#E0E0E6" />
-            <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Segoe UI Mono, Courier New" />
-            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontFamily" Value="{DynamicResource AppMonoFontFamily}" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeMonoCodeFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeMonoCodeFontWeight}" />
             <Setter Property="CaretBrush" Value="#4CC2FF" />
             <Setter Property="SelectionBrush" Value="#503A86FF" />
             <Setter Property="SelectionOpacity" Value="0.6" />
@@ -68,14 +70,16 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Foreground" Value="#D8D8E0" />
             <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
             <Setter Property="Padding" Value="0" />
         </Style>
 
         <!-- Modern FlowDocument Stylesheet -->
         <Style x:Key="MarkdownDocumentStyle" TargetType="{x:Type FlowDocument}">
             <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
             <Setter Property="Foreground" Value="#D4D4DC" />
             <Setter Property="PagePadding" Value="8,4,12,12" />
             <Setter Property="ColumnWidth" Value="999999" />
@@ -91,43 +95,47 @@
                         <Trigger Property="Tag" Value="Heading1">
                             <Setter Property="Margin" Value="0,16,0,10" />
                             <Setter Property="Foreground" Value="#FFFFFF" />
-                            <Setter Property="FontSize" Value="21" />
-                            <Setter Property="FontWeight" Value="SemiBold" />
+                            <Setter Property="FontFamily" Value="{DynamicResource AppDisplayFontFamily}" />
+                            <Setter Property="FontSize" Value="{DynamicResource TypeDisplayFontSize}" />
+                            <Setter Property="FontWeight" Value="Bold" />
                         </Trigger>
                         <Trigger Property="Tag" Value="Heading2">
                             <Setter Property="Margin" Value="0,14,0,8" />
                             <Setter Property="Foreground" Value="#F0F0F5" />
-                            <Setter Property="FontSize" Value="17" />
-                            <Setter Property="FontWeight" Value="SemiBold" />
+                            <Setter Property="FontFamily" Value="{DynamicResource AppDisplayFontFamily}" />
+                            <Setter Property="FontSize" Value="{DynamicResource TypeSubtitleFontSize}" />
+                            <Setter Property="FontWeight" Value="Bold" />
                         </Trigger>
                         <Trigger Property="Tag" Value="Heading3">
                             <Setter Property="Margin" Value="0,12,0,6" />
                             <Setter Property="Foreground" Value="#E2E2EA" />
-                            <Setter Property="FontSize" Value="15" />
-                            <Setter Property="FontWeight" Value="SemiBold" />
+                            <Setter Property="FontFamily" Value="{DynamicResource AppDisplayFontFamily}" />
+                            <Setter Property="FontSize" Value="{DynamicResource TypeHeaderFontSize}" />
+                            <Setter Property="FontWeight" Value="{DynamicResource TypeHeaderFontWeight}" />
                         </Trigger>
                         <Trigger Property="Tag" Value="Heading4">
                             <Setter Property="Margin" Value="0,10,0,4" />
                             <Setter Property="Foreground" Value="#D4D4DC" />
-                            <Setter Property="FontSize" Value="13.5" />
-                            <Setter Property="FontWeight" Value="SemiBold" />
+                            <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
+                            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
                         </Trigger>
                         <Trigger Property="Tag" Value="Heading5">
                             <Setter Property="Margin" Value="0,8,0,4" />
                             <Setter Property="Foreground" Value="#BEBED0" />
-                            <Setter Property="FontSize" Value="12.5" />
-                            <Setter Property="FontWeight" Value="SemiBold" />
+                            <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
+                            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
                         </Trigger>
                         <Trigger Property="Tag" Value="Heading6">
                             <Setter Property="Margin" Value="0,8,0,4" />
                             <Setter Property="Foreground" Value="#A0A5B2" />
-                            <Setter Property="FontSize" Value="12" />
-                            <Setter Property="FontWeight" Value="SemiBold" />
+                            <Setter Property="FontSize" Value="{DynamicResource TypeCaptionFontSize}" />
+                            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
                         </Trigger>
                         <!-- Code Blocks -->
                         <Trigger Property="Tag" Value="CodeBlock">
-                            <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Segoe UI Mono" />
-                            <Setter Property="FontSize" Value="12" />
+                            <Setter Property="FontFamily" Value="{DynamicResource AppMonoFontFamily}" />
+                            <Setter Property="FontSize" Value="{DynamicResource TypeMonoCodeFontSize}" />
+                            <Setter Property="FontWeight" Value="{DynamicResource TypeMonoCodeFontWeight}" />
                             <Setter Property="LineHeight" Value="18" />
                             <Setter Property="Foreground" Value="#CE9178" />
                             <Setter Property="Background" Value="#16181D" />
@@ -137,7 +145,7 @@
                         <!-- Quarantine placeholder (one bad construct costs one block, not the preview) -->
                         <Trigger Property="Tag" Value="RenderWarning">
                             <Setter Property="Foreground" Value="#FFC66D" />
-                            <Setter Property="FontSize" Value="12" />
+                            <Setter Property="FontSize" Value="{DynamicResource TypeCaptionFontSize}" />
                             <Setter Property="FontStyle" Value="Italic" />
                             <Setter Property="Margin" Value="0,8,0,2" />
                         </Trigger>
@@ -153,8 +161,9 @@
                 <Style TargetType="{x:Type Run}">
                     <Style.Triggers>
                         <Trigger Property="Tag" Value="CodeSpan">
-                            <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Segoe UI Mono" />
-                            <Setter Property="FontSize" Value="12" />
+                            <Setter Property="FontFamily" Value="{DynamicResource AppMonoFontFamily}" />
+                            <Setter Property="FontSize" Value="{DynamicResource TypeMonoCodeFontSize}" />
+                            <Setter Property="FontWeight" Value="{DynamicResource TypeMonoCodeFontWeight}" />
                             <Setter Property="Foreground" Value="#E5C07B" />
                             <Setter Property="Background" Value="#23272E" />
                         </Trigger>
@@ -163,8 +172,9 @@
                 <Style TargetType="{x:Type Span}">
                     <Style.Triggers>
                         <Trigger Property="Tag" Value="CodeSpan">
-                            <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Segoe UI Mono" />
-                            <Setter Property="FontSize" Value="12" />
+                            <Setter Property="FontFamily" Value="{DynamicResource AppMonoFontFamily}" />
+                            <Setter Property="FontSize" Value="{DynamicResource TypeMonoCodeFontSize}" />
+                            <Setter Property="FontWeight" Value="{DynamicResource TypeMonoCodeFontWeight}" />
                             <Setter Property="Foreground" Value="#E5C07B" />
                             <Setter Property="Background" Value="#23272E" />
                         </Trigger>
@@ -390,8 +400,9 @@
                 <!-- Watermark Placeholder (Hidden immediately when typing) -->
                 <TextBlock Text="Write markdown here..."
                            Foreground="#30FFFFFF"
-                           FontFamily="Cascadia Code, Consolas"
-                           FontSize="13"
+                           FontFamily="{DynamicResource AppMonoFontFamily}"
+                           FontSize="{DynamicResource TypeMonoCodeFontSize}"
+                           FontWeight="{DynamicResource TypeMonoCodeFontWeight}"
                            IsHitTestVisible="False"
                            Margin="10,6,0,0">
                     <TextBlock.Style>
@@ -412,7 +423,8 @@
                 <!-- Loading state -->
                 <TextBlock Text="Rendering…"
                            Foreground="#40FFFFFF"
-                           FontSize="13"
+                           FontSize="{DynamicResource TypeBodyFontSize}"
+                           FontWeight="{DynamicResource TypeBodyFontWeight}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center">
                     <TextBlock.Style>
@@ -437,7 +449,8 @@
                     <ui:SymbolIcon Symbol="DocumentError24" FontSize="26" Foreground="#65FFFFFF" HorizontalAlignment="Center" />
                     <TextBlock Text="{Binding BlockedReason}"
                                Foreground="#80FFFFFF"
-                               FontSize="12"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                TextAlignment="Center"
                                TextWrapping="Wrap"
                                Margin="0,8,0,0"
@@ -457,7 +470,8 @@
             <!-- Subtle Status Line (Notifications & warnings) -->
             <TextBlock Text="{Binding StatusMessage}"
                        Foreground="#FFAB91"
-                       FontSize="11"
+                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Bottom"
                        Margin="0,0,0,2"

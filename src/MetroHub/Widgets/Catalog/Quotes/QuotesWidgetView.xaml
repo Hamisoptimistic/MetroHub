@@ -14,7 +14,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <!-- Fluent Flat Button Style for Hover Controls: Inherits WidgetMicroButtonStyle -->
@@ -47,7 +48,7 @@
                                FontFamily="{Binding QuoteFontFamily}"
                                FontStyle="{Binding QuoteFontStyle}"
                                FontWeight="{Binding QuoteFontWeight}"
-                               FontSize="19.5"
+                               FontSize="{DynamicResource TypeQuoteBodyCoordinateFontSize}"
                                Foreground="Transparent"
                                LineHeight="30"
                                LineStackingStrategy="BlockLineHeight"
@@ -62,7 +63,7 @@
                                FontFamily="{Binding QuoteFontFamily}"
                                FontStyle="{Binding QuoteFontStyle}"
                                FontWeight="{Binding QuoteFontWeight}"
-                               FontSize="19.5"
+                               FontSize="{DynamicResource TypeQuoteBodyCoordinateFontSize}"
                                Foreground="#FFF8EE"
                                LineHeight="30"
                                LineStackingStrategy="BlockLineHeight"
@@ -108,9 +109,9 @@
                 <TextBlock Text="{Binding DisplayAuthor}"
                            HorizontalAlignment="Right"
                            VerticalAlignment="Center"
-                           FontSize="12.5"
+                           FontSize="{DynamicResource TypeBodyStrongFontSize}"
                            FontFamily="{DynamicResource AppFontFamily}"
-                           FontWeight="SemiBold"
+                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                            Foreground="#D8D2C6"
                            TextOptions.TextFormattingMode="Ideal"
                            TextOptions.TextRenderingMode="ClearType">

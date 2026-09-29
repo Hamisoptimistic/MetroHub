@@ -14,7 +14,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <!-- Volume & Media-Consistent Transport Button Style: Inherits WidgetMicroButtonStyle -->
@@ -129,8 +130,8 @@
                         <!-- 2. Brightness Percentage Number Shown While Dragging -->
                         <TextBlock x:Name="MasterPercentageText"
                                    Text="{Binding MasterBrightnessPercentText}"
-                                   FontSize="11.5"
-                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                    Foreground="#FFFFFF"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center"
@@ -200,8 +201,8 @@
                         <!-- Section Header: Displays & Brightness -->
                         <TextBlock Grid.Row="0"
                                    Text="Displays &amp; Brightness"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                    Foreground="#FFFFFF"
                                    Margin="6,2,0,8"
                                    SnapsToDevicePixels="True" />
@@ -265,11 +266,12 @@
                                                 <!-- 3. Device Friendly Name & Role Subtitle -->
                                                 <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="2,0,6,0">
                                                     <TextBlock Text="{Binding FriendlyName}"
-                                                               FontSize="13"
-                                                               FontWeight="Normal"
+                                                               FontSize="{DynamicResource TypeBodyFontSize}"
+                                                               FontWeight="{DynamicResource TypeBodyFontWeight}"
                                                                Foreground="#FFFFFF"
                                                                TextTrimming="CharacterEllipsis" />
-                                                    <TextBlock FontSize="11"
+                                                    <TextBlock FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                                Foreground="#80FFFFFF"
                                                                Margin="0,1,0,0">
                                                         <TextBlock.Style>
@@ -309,8 +311,8 @@
                                                 <!-- 5. Brightness Percentage Text (Optically centered to slider track across all monitor rows) -->
                                                 <TextBlock Grid.Column="4"
                                                            Text="{Binding BrightnessPercentText}"
-                                                           FontSize="12"
-                                                           FontWeight="SemiBold"
+                                                           FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                                            Foreground="#FFFFFF"
                                                            VerticalAlignment="Center"
                                                            HorizontalAlignment="Right"

@@ -17,7 +17,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <!-- Cohesive Fluent Action Button Style (Matches Wi-Fi Action / Modal Button) -->
@@ -27,8 +28,8 @@
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Foreground" Value="#F5FFFFFF" />
             <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Padding" Value="10,5,8,5" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -113,8 +114,8 @@
 
                                 <TextBlock Grid.Row="2"
                                            Text="{TemplateBinding Header}"
-                                           FontSize="11.5"
-                                           FontWeight="SemiBold"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                            Foreground="#FFFFFF"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
@@ -380,14 +381,15 @@
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="Turn Off"
-                                       FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="13"
-                                       FontWeight="SemiBold"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       FontSize="{DynamicResource TypeHeaderFontSize}"
+                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                        Foreground="#F2FFFFFF"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="Turns off all connected displays"
                                        FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="11"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#70FFFFFF"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
@@ -402,8 +404,8 @@
                             Padding="14,6,14,6"
                             ToolTip="Instantly powers down all displays into sleep">
                         <TextBlock Text="Turn Off"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                    VerticalAlignment="Center" />
                     </Button>
                 </Grid>
@@ -431,14 +433,15 @@
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="Cinematic fade-out"
-                                       FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="13"
-                                       FontWeight="SemiBold"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       FontSize="{DynamicResource TypeHeaderFontSize}"
+                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                        Foreground="#F2FFFFFF"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="Smoothly dims displays to black before entering standby"
                                        FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="11"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#70FFFFFF"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
@@ -488,14 +491,15 @@
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="{Binding ModeTitle}"
-                                       FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="13"
-                                       FontWeight="SemiBold"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       FontSize="{DynamicResource TypeHeaderFontSize}"
+                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                        Foreground="#F2FFFFFF"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding ModeSubtitle}"
                                        FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="11"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#70FFFFFF"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
@@ -511,8 +515,8 @@
                             ToolTip="Select awake mode">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="{Binding ModeButtonText}"
-                                       FontSize="12"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,6,0" />
                             <ui:SymbolIcon Symbol="ChevronDown16"
@@ -594,14 +598,15 @@
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="Keep screen on"
-                                       FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="13"
-                                       FontWeight="SemiBold"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       FontSize="{DynamicResource TypeHeaderFontSize}"
+                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                        Foreground="#F2FFFFFF"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="Requires Caffeine to be turned on"
                                        FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="11"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#70FFFFFF"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
@@ -651,14 +656,15 @@
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="{Binding NightLightStatusTitle}"
-                                       FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="13"
-                                       FontWeight="SemiBold"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       FontSize="{DynamicResource TypeHeaderFontSize}"
+                                       FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                        Foreground="#F2FFFFFF"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding NightLightStatusSubtitle}"
                                        FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="11"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#70FFFFFF"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
@@ -706,8 +712,8 @@
                     <TextBlock Grid.Column="2"
                                Text="{Binding NightLightStrengthText}"
                                FontFamily="{DynamicResource AppFontFamily}"
-                               FontSize="13"
-                               FontWeight="SemiBold"
+                               FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                Foreground="#E0FFFFFF"
                                Width="44"
                                TextAlignment="Right"

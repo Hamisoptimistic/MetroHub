@@ -9,8 +9,8 @@
     <!-- ========================================================================= -->
     <Style TargetType="{x:Type ContextMenu}">
         <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="14" />
-        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
+        <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
         <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
         <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
         <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
@@ -149,7 +149,8 @@
 
                     <TextBlock x:Name="InputGestureHost"
                                Text="{TemplateBinding InputGestureText}"
-                               FontSize="11"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                Foreground="{DynamicResource TextFillColorDisabledBrush}"
                                Margin="20,0,0,0"
                                VerticalAlignment="Center"
@@ -315,8 +316,8 @@
     <!-- Universal Windows 11 Fluent MenuItem Style (Automatic for all existing and future context menus) -->
     <Style TargetType="{x:Type MenuItem}">
         <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="14" />
-        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
+        <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
         <Setter Property="Foreground" Value="{DynamicResource ContextMenuForeground}" />
         <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled" />
         <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />

@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
     <!-- ========================================================================= -->
     <!-- CENTRAL TYPOGRAPHY & ICON TOKENS                                          -->
@@ -8,6 +9,51 @@
     <FontFamily x:Key="AppDisplayFontFamily">Segoe UI Variable Display, Segoe UI Variable, Segoe UI, sans-serif</FontFamily>
     <FontFamily x:Key="AppIconFontFamily">Segoe Fluent Icons, Segoe MDL2 Assets, sans-serif</FontFamily>
     <FontFamily x:Key="AppMonoFontFamily">Consolas, Cascadia Code, Segoe UI Mono, monospace</FontFamily>
+
+    <!-- Core Fluent 2 Typography Ramp Tokens (Microsoft Standard) -->
+    <!-- Caption: Metadata, timestamps, helper notes, specs, audio bitrates (12px Regular) -->
+    <sys:Double x:Key="TypeCaptionFontSize">12</sys:Double>
+    <x:Static Member="FontWeights.Normal" x:Key="TypeCaptionFontWeight" />
+
+    <!-- Body: Default content, device names, list rows, inputs (14px Regular) -->
+    <sys:Double x:Key="TypeBodyFontSize">14</sys:Double>
+    <x:Static Member="FontWeights.Normal" x:Key="TypeBodyFontWeight" />
+
+    <!-- BodyStrong: Selected items, active device, slider readout, buttons (14px SemiBold) -->
+    <sys:Double x:Key="TypeBodyStrongFontSize">14</sys:Double>
+    <x:Static Member="FontWeights.SemiBold" x:Key="TypeBodyStrongFontWeight" />
+
+    <!-- Header: Widget titles, section headers, dialog titles (16px SemiBold) -->
+    <sys:Double x:Key="TypeHeaderFontSize">16</sys:Double>
+    <x:Static Member="FontWeights.SemiBold" x:Key="TypeHeaderFontWeight" />
+
+    <!-- Subtitle: Group headers, drawer alphabet letters, categories (18px Bold) -->
+    <sys:Double x:Key="TypeSubtitleFontSize">18</sys:Double>
+    <x:Static Member="FontWeights.Bold" x:Key="TypeSubtitleFontWeight" />
+
+    <!-- Display: Card readouts, Pomodoro countdown, Speed test number (28px SemiBold) -->
+    <sys:Double x:Key="TypeDisplayFontSize">28</sys:Double>
+    <x:Static Member="FontWeights.SemiBold" x:Key="TypeDisplayFontWeight" />
+
+    <!-- Hero: Ambient giant readouts (Clock, Weather 24°, Calendar day) (72px Bold) -->
+    <sys:Double x:Key="TypeHeroFontSize">72</sys:Double>
+    <x:Static Member="FontWeights.Bold" x:Key="TypeHeroFontWeight" />
+
+    <!-- Monospace & Code Tokens (Dino, Notepad editor, Markdown code) (13px Regular) -->
+    <sys:Double x:Key="TypeMonoCodeFontSize">13</sys:Double>
+    <x:Static Member="FontWeights.Normal" x:Key="TypeMonoCodeFontWeight" />
+
+    <!-- Viewbox Coordinate Tokens (Geometry basis, not physical screen pixels) -->
+    <sys:Double x:Key="TypeHeroCoordinateFontSize">100.0</sys:Double>
+    <sys:Double x:Key="TypeQuoteBodyCoordinateFontSize">19.5</sys:Double>
+    <sys:Double x:Key="TypeCalendarDayCoordinateFontSize">112.0</sys:Double>
+
+    <!-- Harmonized Text Contrast Brushes -->
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#D8E2EC" />
+    <SolidColorBrush x:Key="TextMutedBrush" Color="#95A8BE" />
+    <SolidColorBrush x:Key="TextSubtleBrush" Color="#70FFFFFF" />
+    <SolidColorBrush x:Key="TextDisabledBrush" Color="#45FFFFFF" />
 
     <!-- ========================================================================= -->
     <!-- OBSIDIAN ACRYLIC CONTENTDIALOG THEME TOKENS (WPF-UI 3.0.4)                -->

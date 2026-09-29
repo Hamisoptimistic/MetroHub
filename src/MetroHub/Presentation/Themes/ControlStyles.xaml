@@ -11,8 +11,8 @@
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Foreground" Value="#F5FFFFFF" />
         <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-        <Setter Property="FontSize" Value="12" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
+        <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -55,6 +55,8 @@
         <Setter Property="BorderBrush" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Foreground" Value="#B5FFFFFF" />
+        <Setter Property="FontSize" Value="{DynamicResource TypeCaptionFontSize}" />
+        <Setter Property="FontWeight" Value="{DynamicResource TypeCaptionFontWeight}" />
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource FluentHoverBrush}" />

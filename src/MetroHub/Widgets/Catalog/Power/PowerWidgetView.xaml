@@ -1,4 +1,4 @@
-﻿<!-- Tag="AllowTileDrag" opts this widget into draggable-anywhere behaviour. The four action
+<!-- Tag="AllowTileDrag" opts this widget into draggable-anywhere behaviour. The four action
      buttons stay fully clickable, but the hub is now allowed to start a tile drag on them, so
      a press-and-move drags the widget while a clean click still fires the action.
      See MainWindow.IsInteractiveElement for the mechanism. -->
@@ -22,7 +22,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <!-- Exact replica of Network Widget WidgetTileStyle: Direct Border with no RenderTransforms for razor-sharp vector icons -->
@@ -111,8 +112,8 @@
                                Text="{Binding LockHeader}"
                                Foreground="{Binding LockForeground}"
                                Visibility="{Binding TextVisibility}"
-                               FontSize="11.5"
-                               FontWeight="SemiBold"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
@@ -156,8 +157,8 @@
                                Text="{Binding SleepHeader}"
                                Foreground="{Binding SleepForeground}"
                                Visibility="{Binding TextVisibility}"
-                               FontSize="11.5"
-                               FontWeight="SemiBold"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
@@ -201,8 +202,8 @@
                                Text="{Binding RestartHeader}"
                                Foreground="{Binding RestartForeground}"
                                Visibility="{Binding TextVisibility}"
-                               FontSize="11.5"
-                               FontWeight="SemiBold"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
@@ -246,8 +247,8 @@
                                Text="{Binding ShutdownHeader}"
                                Foreground="{Binding ShutdownForeground}"
                                Visibility="{Binding TextVisibility}"
-                               FontSize="11.5"
-                               FontWeight="SemiBold"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextAlignment="Center"

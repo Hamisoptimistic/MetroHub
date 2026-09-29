@@ -14,7 +14,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <SolidColorBrush x:Key="MonthBackplateBrush" Color="#18FFFFFF" />
@@ -64,7 +65,8 @@
         <Style x:Key="FluentDarkInputWithIconStyle" TargetType="TextBox">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Height" Value="34" />
-            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="CaretBrush" Value="#FFFFFF" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -215,8 +217,8 @@
                             Focusable="False">
                         <TextBlock Text="{Binding DisplayMonthYear}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                   FontSize="15"
-                                   FontWeight="Bold"
+                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                    Foreground="#FFFFFF"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
@@ -243,8 +245,8 @@
                         <DataTemplate>
                             <TextBlock Text="{Binding}"
                                        FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="11.5"
-                                       FontWeight="SemiBold"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#80FFFFFF"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center" />
@@ -333,8 +335,8 @@
                                         <TextBlock x:Name="DayLabel"
                                                    Text="{Binding DayNumber}"
                                                    FontFamily="{DynamicResource AppFontFamily}"
-                                                   FontSize="13"
-                                                   FontWeight="SemiBold"
+                                                   FontSize="{DynamicResource TypeBodyFontSize}"
+                                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
                                                    Foreground="#FFFFFF"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
@@ -430,8 +432,8 @@
                                                        Margin="0,0,7,0" />
                                         <TextBlock Text="{Binding HabitName}"
                                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                                   FontSize="16"
-                                                   FontWeight="Bold"
+                                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                                    Foreground="#FFFFFF"
                                                    VerticalAlignment="Center"
                                                    TextTrimming="CharacterEllipsis" />
@@ -472,8 +474,8 @@
                         </ui:SymbolIcon>
                         <TextBlock Text="{Binding ActiveStreakText}"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                   FontSize="16"
-                                   FontWeight="Bold"
+                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                    VerticalAlignment="Center"
                                    SnapsToDevicePixels="True">
                             <TextBlock.Style>
@@ -510,8 +512,8 @@
                 <Grid Grid.Row="0" Margin="0,0,0,16">
                     <TextBlock Text="Habit"
                                FontFamily="{DynamicResource AppFontFamily}"
-                               FontSize="14.5"
-                               FontWeight="SemiBold"
+                               FontSize="{DynamicResource TypeHeaderFontSize}"
+                               FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                Foreground="#FFFFFF"
                                VerticalAlignment="Center" />
 
@@ -524,7 +526,8 @@
                 <!-- Habit Name Input -->
                 <StackPanel Grid.Row="1" Margin="0,0,0,16">
                     <TextBlock Text="Habit Name"
-                               FontSize="12"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                Foreground="#95FFFFFF"
                                Margin="0,0,0,6" />
                     <TextBox x:Name="HabitNameInput"
@@ -536,7 +539,8 @@
                 <!-- Icon Preset Picker -->
                 <StackPanel Grid.Row="2" Margin="0,0,0,16">
                     <TextBlock Text="Choose Icon"
-                               FontSize="12"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                Foreground="#95FFFFFF"
                                Margin="0,0,0,6" />
                     <WrapPanel Orientation="Horizontal">
@@ -670,8 +674,8 @@
                                 Height="30"
                                 MinWidth="75"
                                 Padding="14,0"
-                                FontSize="12"
-                                FontWeight="SemiBold"
+                                FontSize="{DynamicResource TypeCaptionFontSize}"
+                                FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                 Background="#1AFFFFFF"
                                 Foreground="#D0FFFFFF"
                                 BorderThickness="1"
@@ -689,8 +693,8 @@
                                 Height="30"
                                 MinWidth="80"
                                 Padding="14,0"
-                                FontSize="12"
-                                FontWeight="SemiBold"
+                                FontSize="{DynamicResource TypeCaptionFontSize}"
+                                FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                 Background="#0B9E76"
                                 Foreground="#FFFFFF"
                                 BorderThickness="0">

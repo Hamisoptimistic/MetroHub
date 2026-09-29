@@ -86,7 +86,8 @@
         <Style x:Key="FluentGlassSearchInputStyle" TargetType="TextBox">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Height" Value="36" />
-            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="CaretBrush" Value="#FFFFFF" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -172,14 +173,15 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="{Binding Name}"
-                           FontSize="12.5"
-                           FontWeight="Medium"
+                           FontSize="{DynamicResource TypeBodyFontSize}"
+                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                            Foreground="#FFFFFF"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" />
                 <TextBlock Grid.Column="1"
                            Text="{Binding DisplaySubtitle}"
-                           FontSize="11"
+                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                            Foreground="#75FFFFFF"
                            VerticalAlignment="Center"
                            Margin="8,0,0,0"
@@ -192,8 +194,8 @@
             <Setter Property="Height" Value="32" />
             <Setter Property="MinWidth" Value="110" />
             <Setter Property="Padding" Value="14,0" />
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
@@ -227,7 +229,8 @@
             <Setter Property="Height" Value="32" />
             <Setter Property="MinWidth" Value="80" />
             <Setter Property="Padding" Value="14,0" />
-            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeCaptionFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeCaptionFontWeight}" />
             <Setter Property="Foreground" Value="#E0FFFFFF" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
@@ -306,8 +309,8 @@
                     <!-- Header -->
                     <Grid Grid.Row="0" Margin="0,0,0,18">
                         <TextBlock Text="Change Location"
-                                   FontSize="14.5"
-                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                    Foreground="#FFFFFF"
                                    VerticalAlignment="Center" />
 
@@ -320,7 +323,8 @@
                     <Grid Grid.Row="1">
                         <StackPanel>
                             <TextBlock Text="City Name"
-                                       FontSize="12"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="#95FFFFFF"
                                        Margin="0,0,0,6" />
 
@@ -370,7 +374,11 @@
                                     Click="OnWeatherAutoLocationClick">
                                 <StackPanel Orientation="Horizontal">
                                     <ui:SymbolIcon Symbol="MyLocation24" FontSize="13" Foreground="#95FFFFFF" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                    <TextBlock Text="Reset to automatic location (GPS / IP)" FontSize="12" Foreground="#95FFFFFF" VerticalAlignment="Center" />
+                                    <TextBlock Text="Reset to automatic location (GPS / IP)"
+                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                               Foreground="#95FFFFFF"
+                                               VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
 
@@ -381,7 +389,8 @@
                                                  Visibility="Collapsed"
                                                  Margin="0,0,6,0" />
                                 <TextBlock x:Name="WeatherStatusMessage"
-                                           FontSize="11.5"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="#FF8080"
                                            TextWrapping="Wrap"
                                            Visibility="Collapsed" />

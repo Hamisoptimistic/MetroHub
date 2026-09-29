@@ -14,7 +14,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <!-- Windows Calendar Palette Tokens (Aligned with Habit Widget) -->
@@ -58,8 +59,8 @@
                                VerticalAlignment="Center"
                                Text="{Binding MonthYearTitle}"
                                FontFamily="{DynamicResource AppDisplayFontFamily}"
-                               FontSize="15"
-                               FontWeight="Bold"
+                               FontSize="{DynamicResource TypeHeaderFontSize}"
+                               FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                Foreground="#FFFFFF" />
 
                     <!-- Right Chevron Button -->
@@ -74,13 +75,13 @@
 
                 <!-- 2. Weekday Header (Su, Mo, Tu, We, Th, Fr, Sa) -->
                 <UniformGrid Grid.Row="1" Columns="7" Margin="0,0,0,6">
-                    <TextBlock Text="Su" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Mo" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Tu" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="We" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Th" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Fr" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Sa" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="Su" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="Mo" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="Tu" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="We" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="Th" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="Fr" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="Sa" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{StaticResource WeekdayHeaderBrush}" />
                 </UniformGrid>
 
                 <!-- 3. 42-Day Grid Area (Seamless Single-Polygon Month Backplate + Number Grid) -->
@@ -131,8 +132,8 @@
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
                                                    FontFamily="{DynamicResource AppFontFamily}"
-                                                   FontSize="13.5"
-                                                   FontWeight="Normal"
+                                                   FontSize="{DynamicResource TypeBodyFontSize}"
+                                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
                                                    Foreground="{StaticResource OutOfMonthTextBrush}"
                                                    SnapsToDevicePixels="True" />
 
@@ -160,7 +161,7 @@
                                     <!-- Current Month: SemiBold White Text (Background is rendered seamlessly by Backplate) -->
                                     <DataTrigger Binding="{Binding IsCurrentMonth}" Value="True">
                                         <Setter TargetName="DayLabel" Property="Foreground" Value="{StaticResource CurrentMonthTextBrush}" />
-                                        <Setter TargetName="DayLabel" Property="FontWeight" Value="SemiBold" />
+                                        <Setter TargetName="DayLabel" Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
                                     </DataTrigger>
 
                                     <!-- Today: Bright Blue Accent Pill Below Date -->
@@ -203,8 +204,8 @@
                            VerticalAlignment="Top"
                            TextAlignment="Center"
                            FontFamily="{DynamicResource AppDisplayFontFamily}"
-                           FontSize="22"
-                           FontWeight="Medium"
+                           FontSize="{DynamicResource TypeDisplayFontSize}"
+                           FontWeight="{DynamicResource TypeDisplayFontWeight}"
                            Foreground="#A0FFFFFF"
                            TextWrapping="NoWrap"
                            TextTrimming="CharacterEllipsis"
@@ -223,8 +224,8 @@
                            VerticalAlignment="Center"
                            TextAlignment="Center"
                            FontFamily="{DynamicResource AppDisplayFontFamily}"
-                           FontSize="112"
-                           FontWeight="SemiBold"
+                           FontSize="{DynamicResource TypeCalendarDayCoordinateFontSize}"
+                           FontWeight="{DynamicResource TypeDisplayFontWeight}"
                            Foreground="#FFFFFF"
                            SnapsToDevicePixels="True" />
 
@@ -235,18 +236,18 @@
                             VerticalAlignment="Bottom"
                             SnapsToDevicePixels="True">
                     <TextBlock Text="{Binding TodayMonthName}"
-                               FontFamily="{DynamicResource AppDisplayFontFamily}"
-                               FontSize="17"
-                               FontWeight="Medium"
+                               FontFamily="{DynamicResource AppFontFamily}"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               FontWeight="{DynamicResource TypeBodyFontWeight}"
                                Foreground="#B0FFFFFF"
                                TextWrapping="NoWrap"
                                TextTrimming="CharacterEllipsis"
                                SnapsToDevicePixels="True" />
                     <TextBlock Text="{Binding TodayYear}"
                                Margin="6,0,0,0"
-                               FontFamily="{DynamicResource AppDisplayFontFamily}"
-                               FontSize="17"
-                               FontWeight="Medium"
+                               FontFamily="{DynamicResource AppFontFamily}"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               FontWeight="{DynamicResource TypeBodyFontWeight}"
                                Foreground="#70FFFFFF"
                                TextWrapping="NoWrap"
                                SnapsToDevicePixels="True" />

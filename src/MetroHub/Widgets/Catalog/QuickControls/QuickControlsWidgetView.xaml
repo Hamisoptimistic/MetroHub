@@ -14,7 +14,8 @@
              TextOptions.TextFormattingMode="Ideal"
              TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled">
+             RenderOptions.ClearTypeHint="Enabled"
+             FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <!-- Media & Volume Transport Button Style: Inherits WidgetMicroButtonStyle -->
@@ -79,10 +80,10 @@
                 <Grid Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
                     <!-- Idle State: 'No media playing' subtle text -->
                     <TextBlock Text="No media playing"
-                               FontSize="12"
-                               FontWeight="Normal"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                Foreground="#55FFFFFF"
-                               FontFamily="{DynamicResource AppDisplayFontFamily}"
+                               FontFamily="{DynamicResource AppFontFamily}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis"
@@ -92,14 +93,15 @@
                     <StackPanel VerticalAlignment="Center"
                                 Visibility="{Binding Media.HasMedia, Converter={StaticResource BoolToVis}}">
                         <TextBlock Text="{Binding Media.Title}"
-                                   FontSize="12.5"
-                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                    Foreground="#FFFFFF"
                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap" />
                         <TextBlock Text="{Binding Media.Artist}"
-                                   FontSize="11"
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                    Foreground="#CAD7EA"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap"
@@ -225,8 +227,8 @@
 
                         <!-- Volume % Number Shown While Dragging -->
                         <TextBlock Text="{Binding Volume.MasterVolumePercentText}"
-                                   FontSize="11.5"
-                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                    Foreground="#FFFFFF"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center">
@@ -315,8 +317,8 @@
 
                         <!-- Brightness % Number Shown While Dragging -->
                         <TextBlock Text="{Binding Brightness.MasterBrightnessPercentText}"
-                                   FontSize="11.5"
-                                   FontWeight="SemiBold"
+                                   FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                    Foreground="#FFFFFF"
                                    VerticalAlignment="Center"
                                    HorizontalAlignment="Center"
