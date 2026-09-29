@@ -59,12 +59,12 @@ graph TD
     end
 
     subgraph Track2 ["Track 2: Systems Architecture, DI & Decoupling (Critic 2)"]
-        P4A["Phase 4A: Dependency Injection (DI) & Singleton Elimination"]
-        P4B["Phase 4B: Decouple Child Controls from MainWindow.Current"]
-        P4C["Phase 4C: Deconstruct MainWindow God Object (5,508 -> 400 lines)"]
-        P4D["Phase 4D: Split Mega-Modal into 3 Dedicated Dialogs"]
-        P4E["Phase 4E: Event Handler Memory Leak Audit & Threading Cleanup"]
-        P4F["Phase 4F: Core Behavior Unit Testing Suite"]
+        P4A["Phase 4A: Decouple Child Controls from MainWindow.Current"]
+        P4B["Phase 4B: Deconstruct MainWindow God Object (5,508 -> Modular)"]
+        P4C["Phase 4C: Split Mega-Modal into 3 Dedicated Dialogs"]
+        P4D["Phase 4D: Event Handler Memory Leak Audit & Threading Cleanup"]
+        P4E["Phase 4E: Core Behavior Unit Testing Suite"]
+        P4F["Phase 4F: Universal Fluent 2 Typography & Responsive Type Ramp"]
         P4A --> P4B --> P4C --> P4D --> P4E --> P4F
     end
 
@@ -220,7 +220,272 @@ graph TD
    - Verified `GeoResult` record equality, immutability, and JSON serialization.
 4. **Build & Test Verification**:
    - `dotnet build -c Debug`: 0 Errors, 0 Warnings.
-   - `dotnet test --no-build -c Debug`: **208/208 Tests Passed (100%)** (+40 new test cases). Zero breaking changes. Fully ready for Track 3 (Phase 5A).
+   - `dotnet test --no-build -c Debug`: **208/208 Tests Passed (100%)** (+40 new test cases). Zero breaking changes. Fully ready for Phase 4F.
+
+#### Phase 4F: Universal Fluent 2 Typography Consolidation & Responsive Type Ramp [PLANNED]
+*Goal: Eliminate all 18+ hardcoded, arbitrary, and fractional font sizes across the entire application shell, modals, context menus, and all 19 widgets. Align 100% with the official Microsoft Windows 11 Fluent 2 Typography standard (`12px Regular` minimum, `14px SemiBold` minimum), tokenize all font sizes and weights via `DynamicResource`, enforce the "Small Tile != Small Font" content degradation rule, and prepare the engine for Phase 5A font customization and `TextScaleFactor`.*
+
+```
+[Tokens.xaml] (Central Single Source of Truth for Typography)
+   ├── TypeCaption     (12px / Regular  / 16px LineHeight) --> Metadata, helper notes, bitrates, timestamps
+   ├── TypeBody        (14px / Regular  / 20px LineHeight) --> Default reading, device names, list rows, inputs
+   ├── TypeBodyStrong  (14px / SemiBold / 20px LineHeight) --> Active/selected values, slider %, button labels
+   ├── TypeHeader      (16px / SemiBold / 24px LineHeight) --> Card titles, section headers, dialog titles
+   ├── TypeSubtitle    (18px / Bold     / 26px LineHeight) --> Group headers, drawer alphabet letters, categories
+   ├── TypeDisplay     (28px / SemiBold / 36px LineHeight) --> Card metrics, Pomodoro timer, speed test readout
+   ├── TypeHero        (72px / Bold     / 92px LineHeight) --> Ambient giant readouts (Clock, Weather 24°, Calendar day)
+   ├── TypeMonoCode    (13px / Regular  / Cascadia Code)   --> Dino arcade HUD, Notepad editor, Markdown code
+   └── Coordinate Tokens (100.0, 19.5, 112.0)              --> Internal Viewbox coordinate grids (Geometry invariant)
+```
+
+##### 1. Microsoft Fluent 2 Ground Rules & Architectural Invariants
+1. **The `12px Regular` Absolute Minimum Floor**: No UI element in the app may render text below `12px`. All legacy `9px`, `10px`, `11px`, and `11.5px` micro-fonts are retired into `TypeCaption` (`12px Regular`).
+2. **The `14px SemiBold` Minimum Floor for Heavy Weights**: To prevent "counter clogging" (ink-bleed where loops in letters like `e`, `a`, `o`, `8` fill with solid color on 100% DPI displays), `SemiBold` weights are strictly prohibited at `12px`. Any emphasized or active text at small scale must use `14px SemiBold` (`TypeBodyStrong`) or rely on high-contrast color tokens (`#FFFFFF` vs `#80FFFFFF`) at `12px Regular`.
+3. **Zero Fractional Floats in Views**: Hardcoded floats (`11.5`, `12.5`, `13.5`, `14.5`, `19.5`) are permanently purged from all `.xaml` files.
+4. **DynamicResource Tokenization for Phase 5A**: Every `FontSize`, `FontWeight`, `FontFamily`, and text `Foreground` must bind via `{DynamicResource ...}`. When Phase 5A introduces `AppFontFamilyPreference` and `TextScaleFactor` (100%, 110%, 125%), updating the tokens in `Tokens.xaml` will scale the entire hub instantly without restarts.
+5. **No Shrinking on Small Tiles ("Small Tile != Small Font")**: Small tiles never decrease font size below the standard ramp. Smaller tiles shed secondary content hierarchically (Captions &rarr; Lists &rarr; Header/Hero only) and clip overflow with `TextTrimming="CharacterEllipsis"`.
+
+##### 2. Design Tokens Specification (`src/MetroHub/Presentation/Themes/Tokens.xaml`)
+```xml
+<!-- Core Fluent 2 Typography Ramp Tokens -->
+<sys:Double x:Key="TypeCaptionFontSize">12</sys:Double>
+<FontWeight x:Key="TypeCaptionFontWeight">Normal</FontWeight>
+
+<sys:Double x:Key="TypeBodyFontSize">14</sys:Double>
+<FontWeight x:Key="TypeBodyFontWeight">Normal</FontWeight>
+
+<sys:Double x:Key="TypeBodyStrongFontSize">14</sys:Double>
+<FontWeight x:Key="TypeBodyStrongFontWeight">SemiBold</FontWeight>
+
+<sys:Double x:Key="TypeHeaderFontSize">16</sys:Double>
+<FontWeight x:Key="TypeHeaderFontWeight">SemiBold</FontWeight>
+
+<sys:Double x:Key="TypeSubtitleFontSize">18</sys:Double>
+<FontWeight x:Key="TypeSubtitleFontWeight">Bold</FontWeight>
+
+<sys:Double x:Key="TypeDisplayFontSize">28</sys:Double>
+<FontWeight x:Key="TypeDisplayFontWeight">SemiBold</FontWeight>
+
+<sys:Double x:Key="TypeHeroFontSize">72</sys:Double>
+<FontWeight x:Key="TypeHeroFontWeight">Bold</FontWeight>
+
+<!-- Monospace & Code Tokens -->
+<sys:Double x:Key="TypeMonoCodeFontSize">13</sys:Double>
+<FontWeight x:Key="TypeMonoCodeFontWeight">Normal</FontWeight>
+
+<!-- Viewbox Internal Coordinate Basis Tokens (Geometry invariants, not physical screen pixels) -->
+<sys:Double x:Key="TypeHeroCoordinateFontSize">100.0</sys:Double>
+<sys:Double x:Key="TypeQuoteBodyCoordinateFontSize">19.5</sys:Double>
+<sys:Double x:Key="TypeCalendarDayCoordinateFontSize">112.0</sys:Double>
+
+<!-- Harmonized Text Contrast Brushes -->
+<SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFFFFF" />
+<SolidColorBrush x:Key="TextSecondaryBrush" Color="#D8E2EC" />
+<SolidColorBrush x:Key="TextMutedBrush" Color="#95A8BE" />
+<SolidColorBrush x:Key="TextSubtleBrush" Color="#70FFFFFF" />
+<SolidColorBrush x:Key="TextDisabledBrush" Color="#45FFFFFF" />
+```
+
+##### 3. App Shell, Rail, Canvas & Chrome Layer Consolidation
+1. **Sidebar Rail (`SidebarRailControl.xaml`)**:
+   - Rail Button Tooltips: Standardized to `TypeCaption` (`12px Regular`).
+   - Context Menu ("Add Shortcut"): Menu items inherit `TypeBody` (`14px Regular`), category labels use `TypeCaption` (`12px Regular`).
+   - Active Indicator & Pin status: Typography decoupled from geometry; icon sizes locked to 16px SymbolIcon.
+2. **All Apps Drawer (`AllAppsDrawerControl.xaml`)**:
+   - Header title ("All apps"): `TypeHeader` (`16px SemiBold`, `AppDisplayFontFamily`, `#EAEAEA`).
+   - Search Box & Search Placeholder ("Type here to search..."): `TypeBody` (`14px Regular`, `#FFFFFF` / `#70FFFFFF`).
+   - Alphabet Group Letter Headers (`A`, `B`, `C`...): `TypeSubtitle` (`18px Bold`, `AppDisplayFontFamily`, `#70FFFFFF`).
+   - App Row Name TextBlock: `TypeBody` (`14px Regular`, `#E6FFFFFF`) with `TextTrimming="CharacterEllipsis"`.
+   - Empty State ("No apps found"): `TypeBody` (`14px Regular`, `#70FFFFFF`).
+   - App Item Context Menu ("Pin to MetroHub", "Uninstall"): Standardized to `ContextMenuStyles.xaml` with semantic red for uninstall.
+3. **Group Headers & Canvas (`GroupHeaderControl.xaml` & `CategoryControl.xaml`)**:
+   - Group Title TextBlock & Inline Edit TextBox: `TypeSubtitle` (`18px Bold`, `AppDisplayFontFamily`, bound to `HeaderColor`).
+   - Category Header TextBox: `TypeSubtitle` (`18px SemiBold`, `AppDisplayFontFamily`).
+   - Add Tile Button ("+"): `TypeHeader` (`16px Bold`).
+   - Context Menus (Color palettes, Rename, Lock): Menu headers `TypeBody` (`14px Regular`).
+4. **Tile Chrome (`TileControl.xaml`)**:
+   - Medium (2x2) and Wide (4x2) App Tile Labels: Standardized to `TypeCaption` (`12px Regular`, `#FFFFFF`) with strict `TextTrimming="CharacterEllipsis"` and `TextWrapping="NoWrap"`.
+   - Stub Widget Labels: Label (`TypeBodyStrong` 14px SemiBold), Summary (`TypeCaption` 12px Regular), Action hint (`TypeCaption` 12px Regular).
+5. **Widget Tab Strip (`WidgetTabStrip.xaml`)**:
+   - Inactive Tabs: `TypeCaption` (`12px Regular`, `#90FFFFFF`).
+   - Active Selected Tab: `TypeBodyStrong` (`14px SemiBold`, `#FFFFFF`).
+   - Chevron Scroll Arrows: `12px` SymbolIcon.
+
+##### 4. Universal Controls & Context Menus Layer
+1. **Context Menu Styles (`ContextMenuStyles.xaml`)**:
+   - Menu Root: `TypeBody` (`14px Regular`, `AppFontFamily`).
+   - Submenu Item Headers: `TypeBody` (`14px Regular`).
+   - InputGestureText Shortcuts: Converted from legacy `11px` to `TypeCaption` (`12px Regular`, `{DynamicResource TextFillColorDisabledBrush}`).
+   - Chevron Glyph: `14px` SymbolIcon.
+2. **Universal Buttons & Inputs (`ControlStyles.xaml` & `WidgetStyles.xaml`)**:
+   - `FluentGhostButtonStyle`: `TypeBody` (`14px Regular`).
+   - `FluentCohesiveActionButtonStyle`: `TypeBodyStrong` (`14px SemiBold`, `#FFFFFF`).
+   - `FluentCohesiveSecondaryButtonStyle`: Converted from legacy `11px` to `TypeCaption` (`12px Regular`, `#E0FFFFFF`).
+   - `FluentVolumeSlider`: Value readout badge standardized to `TypeBodyStrong` (`14px SemiBold`).
+   - `WidgetSegmentedControl`: Inactive items `TypeCaption` (`12px Regular`), active item `TypeBodyStrong` (`14px SemiBold`).
+
+##### 5. Dedicated Modals & Dialogs Layer
+1. **`AcrylicModalWindow.xaml`**: Modal window host typography defaults to `TypeBody` (`14px Regular`, `AppFontFamily`, `#FFFFFF`).
+2. **`RadioStationDialog.xaml`**:
+   - Dialog Title: `TypeHeader` (`16px SemiBold`, `AppDisplayFontFamily`).
+   - Search Input & Watermark: `TypeBody` (`14px Regular`).
+   - Directory Suggestion Name: `TypeBodyStrong` (`14px SemiBold`, `#FFFFFF`).
+   - Station Subtitle / Genre: Converted from legacy `11px` to `TypeCaption` (`12px Regular`, `#75FFFFFF`).
+   - Bitrate Badge ("320k"): Converted from legacy `10px` to `TypeCaption` (`12px Regular`, `#85FFFFFF`).
+   - Action Buttons ("Add Station", "Cancel"): Primary `TypeBodyStrong` (`14px SemiBold`), Secondary `TypeCaption` (`12px Regular`).
+3. **`WeatherLocationDialog.xaml`**:
+   - Dialog Title: `TypeHeader` (`16px SemiBold`, `AppDisplayFontFamily`).
+   - Search Input & Watermark: `TypeBody` (`14px Regular`).
+   - Search Result City: `TypeBodyStrong` (`14px SemiBold`, `#FFFFFF`).
+   - Country / Region Subtitle: Converted from legacy `11px` to `TypeCaption` (`12px Regular`, `#95FFFFFF`).
+   - Auto-Detect Button ("Reset to GPS / IP"): `TypeCaption` (`12px Regular`, `#95FFFFFF`).
+   - Action Buttons ("Apply Location", "Cancel"): Primary `TypeBodyStrong` (`14px SemiBold`), Secondary `TypeCaption` (`12px Regular`).
+4. **`WebLinkDialog.xaml`**:
+   - Dialog Title: `TypeHeader` (`16px SemiBold`, `AppDisplayFontFamily`).
+   - Form Field Labels ("URL", "Display Title"): `TypeCaption` (`12px Regular`, `#90FFFFFF`).
+   - Inputs & Watermarks: `TypeBody` (`14px Regular`).
+   - Paste Micro-Action: Converted from legacy `11px` to `TypeCaption` (`12px Regular`).
+   - Destination Checkboxes: `TypeBody` (`14px Regular`).
+   - Action Buttons ("Create Link", "Cancel"): Primary `TypeBodyStrong` (`14px SemiBold`), Secondary `TypeCaption` (`12px Regular`).
+
+##### 6. Exhaustive 19-Widget Hook-and-Nook Normalization Matrix
+Every text element across all 19 widgets mapped to the unified Fluent 2 type ramp:
+
+| Widget | UI Element | Legacy Size | Proposed Role Token | Family | Size | Weight | Color Token / Value | Small-Tile Degradation Behavior |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **AudioControls** | Header ("Output Device") | `12` | `TypeHeader` | `AppDisplayFontFamily` | `16` | SemiBold | `TextPrimaryBrush` | Always visible (tile anchor) |
+| **AudioControls** | Master Volume % | `11.5` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `TextPrimaryBrush` | Always visible beside slider |
+| **AudioControls** | Device Item Name | `13` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextPrimaryBrush` | Collapsed in `IsCompactMode` |
+| **AudioControls** | Active Device Indicator | `13` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `#00FF85` (Accent) | Collapsed in `IsCompactMode` |
+| **AudioControls** | Device Tooltip | Default | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Tooltip only on hover |
+| **BrightnessControls** | Header ("Displays & Brightness") | `12` | `TypeHeader` | `AppDisplayFontFamily` | `16` | SemiBold | `TextPrimaryBrush` | Always visible |
+| **BrightnessControls** | Master Brightness % | `11.5` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `TextPrimaryBrush` | Always visible beside slider |
+| **BrightnessControls** | Monitor Friendly Name | `13` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextPrimaryBrush` | Collapsed in `IsCompactMode` |
+| **BrightnessControls** | Monitor Role ("Primary Display") | `11` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Collapsed in `IsCompactMode` |
+| **BrightnessControls** | Individual Monitor % | `12` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `TextPrimaryBrush` | Collapsed in `IsCompactMode` |
+| **CaffeineSleep** | Quick Action Header | `11.5` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextSubtleBrush` | Hidden in slim 4x1 tile |
+| **CaffeineSleep** | Preset Buttons ("Indefinite", etc.)| `12` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `TextPrimaryBrush` | Retain icon; hide text if W < 120 |
+| **CaffeineSleep** | Panel Title ("Stay Awake Active") | `13` | `TypeHeader` | `AppDisplayFontFamily` | `16` | SemiBold | `TextPrimaryBrush` | Always visible |
+| **CaffeineSleep** | Panel Subtitle / Remaining time | `11` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextSubtleBrush` | Hidden when tile H < 120 |
+| **CaffeineSleep** | Timer Readout Hero | `13` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `#FFC629` (Warning) | Kept visible with icon |
+| **Calendar** | Month / Year Header | `15` | `TypeHeader` | `AppDisplayFontFamily` | `16` | Bold | `TextPrimaryBrush` | Visible in all modes |
+| **Calendar** | Weekday Column Labels (S M T W T F S)| `11.5` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Hidden in Compact 4x4 card |
+| **Calendar** | 42-Day Date Numeral Cells | `13.5` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextSecondaryBrush`| Hidden in Compact 4x4 card |
+| **Calendar** | Selected / Current Day Cell | `13.5` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `TextPrimaryBrush` | Hidden in Compact 4x4 card |
+| **Calendar** | Compact Card Weekday ("Wednesday") | `22` | `TypeDisplay` | `AppDisplayFontFamily` | `28` | SemiBold | `#60CDFF` | Primary headline in 4x4 card |
+| **Calendar** | Compact Card Big Day Numeral | `112` | `TypeCalendarDayCoordinate`| `AppDisplayFontFamily` | `112` | SemiBold | `TextPrimaryBrush` | Ambient hero; kept in 4x4 card |
+| **Calendar** | Compact Card Month / Year Footer | `17` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextMutedBrush` | Secondary note below big day |
+| **Clock** | Time Digits (Viewbox) | `100.0` | `TypeHeroCoordinate` | `AppDisplayFontFamily` | `100` | SemiBold | `TextPrimaryBrush` | Main visual; scales inside Viewbox |
+| **Clock** | Date Banner ("Wednesday, Sep 30") | `16` | `TypeHeader` | `AppDisplayFontFamily` | `16` | SemiBold | `TextSecondaryBrush`| Collapsed in minimal 4x1 bar |
+| **Clock** | Studio Glass Date Hero | `17` | `TypeHeader` | `AppDisplayFontFamily` | `16` | SemiBold | `TextPrimaryBrush` | Kept in 4x4 card; hidden in 4x1 |
+| **Clock** | AnimatedTimeBlock Flip Numerals | `100.0` | `TypeHeroCoordinate` | `AppDisplayFontFamily` | `100` | SemiBold | `TextPrimaryBrush` | Flip animation coordinate basis |
+| **Dino** | Current Score & High Score | `12` | `TypeMonoCode` | `AppMonoFontFamily` | `13` | Bold | `TextPrimaryBrush` | Always visible top-right |
+| **Dino** | Idle Prompt ("Press Space to Play")| `12` | `TypeMonoCode` | `AppMonoFontFamily` | `13` | Bold | `TextSubtleBrush` | Replaced by game canvas on run |
+| **Dino** | Game Over Banner | `16` | `TypeMonoCode` | `AppMonoFontFamily` | `16` | Bold | `#FF6961` (Danger) | Centered modal on game over |
+| **Dino** | Pause Notice | `15` / `11` | `TypeMonoCode` | `AppMonoFontFamily` | `14` / `12` | Bold | `TextPrimaryBrush` | Overlay banner on focus loss |
+| **Habit** | Stepper Title ("Pushups") | `15` | `TypeHeader` | `AppDisplayFontFamily` | `16` | Bold | `TextPrimaryBrush` | Always visible top header |
+| **Habit** | Weekday Column Labels | `11.5` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Collapsed in compact stepper mode |
+| **Habit** | 42-Day Streak Cells | `13` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextPrimaryBrush` | Replaced by single streak count |
+| **Habit** | Current Streak Hero ("14 Days") | `16` | `TypeDisplay` | `AppDisplayFontFamily` | `28` | Bold | `#00FF85` (Accent) | Preserved in compact mode |
+| **Habit** | Setup Card Inputs & Watermarks | `12`, `14.5` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextPrimaryBrush` | Modal dialog only |
+| **Markdown** | Raw Editor Text | `13.5` | `TypeMonoCode` | `AppMonoFontFamily` | `13` | Regular | `TextSecondaryBrush`| Hidden during markdown preview |
+| **Markdown** | Viewer Base Paragraph | `13.5` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextPrimaryBrush` | Truncated with ellipsis if no scroll |
+| **Markdown** | Headings H1 / H2 / H3 | `21`, `17`, `15`| `TypeMarkdownH` (Ex) | `AppDisplayFontFamily` | `24, 20, 16` | Bold | `TextPrimaryBrush` | Retained in FlowDocument builder |
+| **Markdown** | Inline Code & Code Block | `12` | `TypeMonoCode` | `AppMonoFontFamily` | `13` | Regular | `#60CDFF` | Scrollable horizontally |
+| **Markdown** | Status Bar Word / Char Count | `11` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextSubtleBrush` | Hidden when card H < 140 |
+| **Media** | Track Title (Default card) | `15` | `TypeHeader` | `AppDisplayFontFamily` | `16` | SemiBold | `TextPrimaryBrush` | Always visible; `CharacterEllipsis` |
+| **Media** | Artist Name | `13` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextSecondaryBrush`| Hidden in minimal 4x1 if crowded |
+| **Media** | Album Name | `13` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | 1st to hide when tile shrinks |
+| **Media** | Audio Quality Note ("320 kbps") | `12` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `#60CDFF` | 1st to hide when tile shrinks |
+| **Media** | Slim 4x1 Track Title | `12.5` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `TextPrimaryBrush` | Retained in slim strip |
+| **Media** | Slim 4x1 Artist | `11` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Retained in slim strip |
+| **Media** | Zune Wordmark ("zune") | `38` | `TypeHero` (Brand) | `AppDisplayFontFamily` | `38` | Light | `TextPrimaryBrush` | Zune nostalgic skin only |
+| **Media** | Idle State ("No media playing") | `12` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextSubtleBrush` | Centered empty state |
+| **Network** | Section Headers ("Ethernet", "Wi-Fi") | `16` | `TypeHeader` | `AppDisplayFontFamily` | `16` | SemiBold | `TextPrimaryBrush` | Always visible |
+| **Network** | Spec Labels ("Link Speed", "IP") | `14` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Collapsed in compact tile |
+| **Network** | Spec Values ("1000 Mbps", "192.168..")| `13.5` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `TextPrimaryBrush` | Collapsed in compact tile |
+| **Network** | Wi-Fi SSID Title | `13` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `TextPrimaryBrush` | Kept with connection glyph |
+| **Network** | Wi-Fi Security / BSSID Caption | `11` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextSubtleBrush` | Hidden in compact tile |
+| **Network** | Speed Test START Hero Button | `36` | `TypeDisplay` | `AppDisplayFontFamily` | `28` | Bold | `#00FF85` | Centered trigger |
+| **Network** | Speed Readout Hero ("342.8") | `28` / `36` / `44` | `TypeDisplay` | `AppDisplayFontFamily` | `28` | Bold | `TextPrimaryBrush` | Main metric in speed test |
+| **Network** | Speed Gauge Unit ("Mbps", "ms") | `12` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Below big speed number |
+| **Notepad** | Tab Strip Item Labels | `11.5` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextPrimaryBrush` | Always visible top bar |
+| **Notepad** | Editor Body Content | `13.5` | `TypeMonoCode` | `AppMonoFontFamily` | `13` | Regular | `TextSecondaryBrush`| Vertical scroll active |
+| **Notepad** | Watermark ("Type here...") | `13.5` | `TypeMonoCode` | `AppMonoFontFamily` | `13` | Regular | `TextDisabledBrush` | Cleared on input focus |
+| **Notepad** | Checklist Task Item | `14` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextPrimaryBrush` | Scrolled inside list |
+| **Notepad** | Completed Task Item | `14` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextSubtleBrush` (Strike)| Strikethrough style preserved |
+| **Notepad** | Task Count Summary & "Clear Done"| `12` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Footer bar; hidden if H < 120 |
+| **Photos** | Empty State Title | `15` | `TypeHeader` | `AppDisplayFontFamily` | `16` | SemiBold | `TextPrimaryBrush` | Centered in placeholder |
+| **Photos** | Empty State Caption ("Add a folder")| `11.5` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Hidden on small tile |
+| **Photos** | Action Button ("Browse...") | `12.5` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `TextPrimaryBrush` | Centered action |
+| **Pomodoro** | Phase Title ("FOCUS", "BREAK") | `12` / `17` | `TypeHeader` | `AppDisplayFontFamily` | `16` | SemiBold | `#00FF85` / `#FFC629` | Kept visible top |
+| **Pomodoro** | Countdown Timer Hero ("24:58") | `28` | `TypeDisplay` | `AppDisplayFontFamily` | `28` | SemiBold | `TextPrimaryBrush` | Inside progress ring; always on |
+| **Pomodoro** | Status Note ("Session 3 of 4") | `13` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Collapsed if tile H < 130 |
+| **Power** | Action Button Labels ("Sleep", "Lock")| `11.5` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextPrimaryBrush` | **Collapsed via `TextVisibility`** (icons only) |
+| **QuickControls**| Media Title Strip | `12.5` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `TextPrimaryBrush` | `CharacterEllipsis` active |
+| **QuickControls**| Media Artist Strip | `11` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Collapsed if 1-row tile |
+| **QuickControls**| Drag Volume / Brightness % | `11.5` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextPrimaryBrush` | Floating badge over thumb |
+| **Quotes** | Quote Body Text (Viewbox) | `19.5` | `TypeQuoteCoordinate` | `AppFontFamily` | `19.5` | Italic | `#FFF8EE` | Scales dynamically in Viewbox |
+| **Quotes** | Author Attribution ("— Marcus Aurelius")| `12.5` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `TextSecondaryBrush`| Right-aligned footer |
+| **Radio** | Category Header ("Favorites", "Rock")| `11.5` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Section banner |
+| **Radio** | Station Name | `11.5` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `TextPrimaryBrush` | Station tile label |
+| **Radio** | Now Playing Stream Title | `12.5` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `#00FF85` | Active playback bar |
+| **Radio** | Station Genre / Subtitle | `11` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextSubtleBrush` | Collapsed in compact bar |
+| **Radio** | Add Station ("+ Custom") | `10` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Last tile in grid |
+| **Radio** | AtmosphericAura Status | *None* | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextSubtleBrush` | Visualizer text |
+| **Rover** | Animated Sprite Canvas | *None* | *None (Graphics)* | N/A | N/A | N/A | N/A | Rover is 100% graphics (no text) |
+| **Weather** | 4x2 Wide Temp Hero ("24°") | `100` | `TypeHeroCoordinate` | `AppDisplayFontFamily` | `100` | Bold | `TextPrimaryBrush` | Primary readout |
+| **Weather** | 4x4 Square Temp Hero | `54` | `TypeHero` | `AppDisplayFontFamily` | `72` | Bold | `TextPrimaryBrush` | Right-aligned hero |
+| **Weather** | Condition Text ("Clear Sky") | `15` | `TypeHeader` | `AppFontFamily` | `16` | SemiBold | `TextSecondaryBrush`| Below temperature hero |
+| **Weather** | 4x4 Metric Column Labels ("AQI", ..)| `12` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Collapsed in 4x2 layout |
+| **Weather** | 4x4 Metric Values ("18", "65%") | `16` | `TypeBodyStrong` | `AppDisplayFontFamily` | `14` | SemiBold | `TextPrimaryBrush` | Collapsed in 4x2 layout |
+| **Weather** | 8x2 Banner Metric Labels ("Feels like")| `12.5` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Left details stack |
+| **Weather** | 8x2 Banner Metric Values ("22°") | `15` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `TextPrimaryBrush` | Left details stack |
+| **Weather** | 8x2 Banner Temp Hero | `72` | `TypeHero` | `AppDisplayFontFamily` | `72` | Bold | `TextPrimaryBrush` | Right ambient hero |
+
+##### 7. Responsive Content Degradation Strategy ("Small Tile != Small Font")
+Small tiles must maintain high readability and touch targets. Instead of scaling font sizes down into illegible sub-12px micro-text, widgets implement a strict 4-level reverse-priority content shedding ladder:
+
+```
+[Level 1: Full Size Tile (4x4, 8x6, 8x2 Banner)]
+   ├── Header (Widget Title / Section Title)
+   ├── Hero / Display Readout (Primary Big Metric)
+   ├── Body List (Interactive devices, stations, tasks, forecast columns)
+   └── Caption / Notes (Bitrates, IP addresses, secondary metrics, subtitles)
+         │
+         ▼  (Tile height shrinks or IsCompactMode = true)
+[Level 2: Medium Constraint (4x2, 2x2)]
+   └── DROP: Caption / Notes (Hide helper subtitles, specs, bitrates)
+         │
+         ▼  (Tile drops to 4x1 slim strip or small column)
+[Level 3: Severe Constraint (4x1 Slim Strip)]
+   └── DROP: Body List (Hide device selectors, extra metric columns, task lists)
+         │
+         ▼  (Tile drops to minimum 1x1 or 2x2 square)
+[Level 4: Minimum Anchor (1x1, Micro)]
+   └── RETAIN ONLY: Header + Hero Readout (or Icon + Primary Value)
+```
+
+**Concrete Widget Degradation Behaviors**:
+- **`AudioControls` & `BrightnessControls`**: Large mode shows master slider + scrollable device/display list. In `IsCompactMode`, the device list collapses completely (`Visibility="Collapsed"`). Master slider and volume/brightness percentage remain full-size (`14px SemiBold`).
+- **`Power` Widget**: Drops text labels entirely via `TextVisibility`, rendering crisp 20px glyphs inside square buttons rather than cramming unreadable 9px labels.
+- **`Media` Widget**: 4x6 Zune layout displays wordmark, album art, title, artist, album, and bitrate. In 4x1 slim mode, album and bitrate collapse; title (`14px SemiBold`) and artist (`12px Regular`) occupy a single row with play/pause transport.
+- **`Weather` Widget**: 4x4 card displays hero temperature, condition, and 3-column metrics (AQI, Humidity, Precip). In 4x2 wide layout, the 3-column metrics collapse to zero height; temperature hero and condition text fill the card cleanly.
+- **`Calendar` Widget**: In 8x6 full mode, renders full 42-day interactive grid with weekday headers. In 4x4 compact mode, the entire grid collapses; only the weekday headline (`28px SemiBold`), ambient day numeral (`112px SemiBold`), and month footer render.
+
+##### 8. Step-by-Step Implementation Sequence
+1. **Tokens Definition**: Declare all `Type...` font sizes, weights, line heights, and brushes in `src/MetroHub/Presentation/Themes/Tokens.xaml`.
+2. **Universal Styles & Menus**: Update `ContextMenuStyles.xaml`, `ControlStyles.xaml`, and `WidgetStyles.xaml` to consume the tokens.
+3. **App Shell & Modals**: Update `SidebarRailControl.xaml`, `AllAppsDrawerControl.xaml`, `GroupHeaderControl.xaml`, `TileControl.xaml`, `RadioStationDialog.xaml`, `WeatherLocationDialog.xaml`, and `WebLinkDialog.xaml`.
+4. **Widgets Batch 1 (System & Control Widgets)**: Update `AudioControls`, `BrightnessControls`, `QuickControls`, `Power`, `CaffeineSleep`.
+5. **Widgets Batch 2 (Media & Audio Widgets)**: Update `Media`, `Radio`, `AtmosphericAuraControl`, `Quotes`.
+6. **Widgets Batch 3 (Information & Time Widgets)**: Update `Clock`, `AnimatedTimeBlock`, `Calendar`, `Weather`, `Network`.
+7. **Widgets Batch 4 (Productivity & Interactive Widgets)**: Update `Notepad`, `Habit`, `Photos`, `Pomodoro`, `Markdown`, `Dino`, `Rover`.
+8. **Automated Verification**:
+   - `dotnet build -c Debug`: Verify 0 errors, 0 warnings.
+   - `dotnet test --no-build -c Debug`: Verify all 208+ unit tests pass.
+   - Run automated STA View Instantiation tests to ensure zero XAML parse errors or missing resource keys.
+   - Inspect optical baselines across all tiles to guarantee zero visual regression.
 
 ---
 
