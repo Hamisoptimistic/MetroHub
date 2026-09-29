@@ -144,10 +144,27 @@ public partial class WidgetTabStrip : UserControl
         PART_SlidingIndicator?.BeginAnimation(UIElement.OpacityProperty, null);
         PART_SlidingIndicator?.BeginAnimation(FrameworkElement.WidthProperty, null);
         PART_IndicatorTransform?.BeginAnimation(TranslateTransform.XProperty, null);
+
+        if (_sizeTrackedBorder != null)
+        {
+            _sizeTrackedBorder.SizeChanged -= OnActiveTabSizeChanged;
+            _sizeTrackedBorder = null;
+        }
+
+        if (ItemsSource is INotifyCollectionChanged col)
+        {
+            col.CollectionChanged -= OnCollectionChanged;
+        }
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        if (ItemsSource is INotifyCollectionChanged col)
+        {
+            col.CollectionChanged -= OnCollectionChanged;
+            col.CollectionChanged += OnCollectionChanged;
+        }
+
         UpdateCanAddTab();
         UpdateScrollButtonsVisibility();
         UpdateDividersVisibility();

@@ -1037,6 +1037,24 @@ public partial class MainWindow : BorderlessFluentWindow
     }
 
 
+    private void CleanupEventSubscriptions()
+    {
+        if (SidebarRail != null)
+        {
+            SidebarRail.PinToggled -= OnSidebarPinToggled;
+            SidebarRail.ShortcutsChanged -= OnSidebarShortcutsChanged;
+        }
+
+        InstalledAppsService.AppsCatalogChanged -= OnAppsCatalogChanged;
+
+        if (ContentScrollViewer != null)
+        {
+            ContentScrollViewer.ScrollChanged -= OnContentScrollViewerScrollChanged;
+        }
+
+        WeakReferenceMessenger.Default.UnregisterAll(this);
+    }
+
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
         try { SaveGroupsAndLayout(); } catch { }
@@ -1048,8 +1066,10 @@ public partial class MainWindow : BorderlessFluentWindow
         }
         else
         {
+            CleanupEventSubscriptions();
             try { StorageService.Flush(); } catch { }
             UninstallWinEventHook();
+            UninstallKeyboardHook();
             _hotkeyService.Dispose();
             base.OnClosing(e);
         }
@@ -1075,6 +1095,7 @@ public partial class MainWindow : BorderlessFluentWindow
         }
         catch { }
 
+        CleanupEventSubscriptions();
         InstalledAppsService.PauseWatchers();
         UninstallWinEventHook();
         UninstallKeyboardHook();

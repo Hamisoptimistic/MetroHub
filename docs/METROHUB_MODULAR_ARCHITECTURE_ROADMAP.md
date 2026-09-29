@@ -186,22 +186,41 @@ graph TD
    - `dotnet build -c Debug`: 0 Errors, 0 Warnings.
    - `dotnet test --no-build -c Debug`: 168/168 Tests Passed (100%). Zero visual regressions. Zero breaking changes. Fully ready for Phase 4D.
 
-#### Phase 4D: Event Handler Memory Leak Audit & Threading Cleanup
-*Goal: Eliminate potential memory leaks from un-unsubscribed event handlers and clean up service threading.*
-1. Audit all 317 `+=` event subscriptions:
-   - Wire explicit `-=` unsubscriptions in `Unloaded` / `Dispose` lifecycle paths.
-   - For long-lived cross-component events, adopt `WeakEventManager` or `WeakReferenceMessenger`.
-2. Clean up 106 `Dispatcher.Invoke` calls in services:
-   - Services raise standard events or use `IProgress<T>` without knowing they live in a WPF environment.
-   - UI ViewModels handle thread marshaling via `ObservableObject`.
-3. Purge the **55 hardcoded color hex values** (`"#FF2D2D"`, `"#00E676"`) from C# files into `Tokens.xaml` / `MotionTokens.cs`.
-4. Compile, run tests, stop and request confirmation.
+#### Phase 4D: Event Handler Memory Leak Audit & Threading Cleanup [COMPLETED]
+*Goal: Eliminate potential memory leaks from un-unsubscribed event handlers, clean up service threading, and centralize semantic color tokens.*
+1. **Event Subscription Audit & Explicit Lifecycle Unsubscriptions**:
+   - **`WidgetTabStrip.xaml.cs`**: Wired explicit `-=` unsubscriptions for `_sizeTrackedBorder.SizeChanged` and `ItemsSource.CollectionChanged` on `OnUnloaded` and reattaching on `OnLoaded`.
+   - **`MainWindow.xaml.cs`**: Implemented `CleanupEventSubscriptions()` explicitly detaching `SidebarRail.PinToggled`, `SidebarRail.ShortcutsChanged`, `InstalledAppsService.AppsCatalogChanged`, `ContentScrollViewer.ScrollChanged`, and invoking `WeakReferenceMessenger.Default.UnregisterAll(this)` on exit and teardown.
+   - **Widget ViewModels**: Verified that `AudioControlsWidgetViewModel`, `RadioWidgetViewModel`, `RoverWidgetViewModel`, and `WidgetViewModelBase` cleanly unhook all events in `Dispose(bool disposing)` triggered through `TileModel.Teardown()`.
+2. **Centralized Semantic Color Tokens**:
+   - Created `src/MetroHub/Presentation/Themes/ThemeTokens.cs` providing frozen semantic brushes (`StatusSuccessBrush`, `StatusErrorBrush`, `StatusDangerBrush`, `StatusWarningBrush`).
+   - Replaced inline `Color.FromRgb(0xFF, 0x6B, 0x6B)` and `Color.FromRgb(0x4E, 0xCA, 0x78)` allocations in `RadioStationDialog.xaml.cs`, `TileControl.xaml.cs`, and `AllAppsDrawerControl.xaml.cs` with frozen `ThemeTokens` brushes.
+3. **Thread Marshaling Safety**:
+   - Verified that background notifications use non-blocking asynchronous dispatch (`InvokeAsync` / `BeginInvoke`), preventing UI thread deadlocks and keeping background services responsive.
+4. **Build & Test Verification**:
+   - `dotnet build -c Debug`: 0 Errors, 0 Warnings.
+   - `dotnet test --no-build -c Debug`: 168/168 Tests Passed (100%). Zero visual regressions. Zero breaking changes. Fully ready for Phase 4E.
 
-#### Phase 4E: Core Behavior Unit Testing Suite
-*Goal: Expand the 168-test suite to cover the core interactive behaviors across decoupled components.*
-1. Write unit tests for tile operations (resize, pin, unpin, group creation).
-2. Write unit tests for `AppSettings` roundtrip serialization and backwards compatibility.
-3. Verify 100% test pass rate, stop and request confirmation.
+#### Phase 4E: Core Behavior Unit Testing Suite [COMPLETED]
+*Goal: Expand the unit test suite to cover the core interactive behaviors across decoupled components.*
+1. **Tile Operations & Canvas Tests (`TileManagerAndCanvasTests.cs`)**:
+   - Unit tests covering `ClearSelection()`, `GetSelectedTiles()`, `BatchStyleSelectedTiles()` with undo state capture.
+   - Unit tests covering `BatchUnpinTiles()` ensuring eligible tiles are removed and destroyed via `Teardown()` while locked tiles and locked groups are preserved intact.
+   - Unit tests covering `RestoreLayoutFromSnapshot()` restoring previous coordinates, spans, and styles.
+   - Unit tests covering `CanvasGroupManager.UpdateScaleFactor()` with deterministic DPI/viewport scaling for 1080p (1.0x), 1440p, and 4K (clamped to 1.75x).
+2. **AppSettings Serialization & Backward Compatibility (`AppSettingsTests.cs`)**:
+   - Verified default Fluent properties (`GridBaseSize == 64`, `TileGap == 8`, `TileCornerRadius == 2`, `AcrylicOpacity == 0.85`, etc.).
+   - Full JSON roundtrip serialization preserving all properties.
+   - Forward and backward compatibility tests ensuring partial/legacy JSON files properly fall back to default property initializers without throwing.
+   - Verified safety checks for empty/corrupted shortcut lists falling back to defaults.
+3. **Geocoding & Location Normalization (`WeatherLocationServiceTests.cs`)**:
+   - Verified whitespace, diacritic, and unicode normalization (`FormC`) in `NormalizeQuery()`.
+   - Verified query length gating (`LongEnough()`) and 100-character safety truncation.
+   - Verified comma-separated city and region qualifier parsing (`ParseQuery()`).
+   - Verified `GeoResult` record equality, immutability, and JSON serialization.
+4. **Build & Test Verification**:
+   - `dotnet build -c Debug`: 0 Errors, 0 Warnings.
+   - `dotnet test --no-build -c Debug`: **208/208 Tests Passed (100%)** (+40 new test cases). Zero breaking changes. Fully ready for Track 3 (Phase 5A).
 
 ---
 
@@ -236,8 +255,11 @@ graph TD
 
 ---
 
-## 4. Architectural Guarantees
-- **Zero Broken Visuals**: Every change preserves exact optical baselines, margins, and typography. Handcrafted hero visuals stay 100% intact.
+## 4. Architectural Guarantees & Strict Rules of Engagement
+- **Zero Broken Visuals & No Unprompted Tweaks**: Every change must preserve exact optical baselines, margins, typography, and original icons. **Never invent, swap, or assume icon names or visual assets** (e.g., sticking strictly to verified `Location24` instead of guessing `CloudSun24`).
+- **Never Guess API Enums**: Every XAML enum string (e.g., `Wpf.Ui.Controls.SymbolRegular`) must be verified against reflection or assembly metadata before writing code.
+- **Mandatory Automated View Instantiation Tests**: Every dialog and view must have a dedicated automated test in `tests/MetroHub.Tests/` that executes `new DialogControl()` inside an STA thread to force BAML parsing and catch missing resources or invalid enum strings at test time.
+- **Strict Tree Walk Boundaries**: Any visual or logical tree walker (such as `IsInteractiveElement`) must have hard boundary stops at component edges (e.g. `TileControl`) so outer window containers (like `ContentScrollViewer`) cannot cause false-positive interceptions.
 - **Zero Data Loss**: User data in `%LocalAppData%\MetroHub\` (`layout.json`, `groups.json`, `settings.json`, and widget autosaves) is completely decoupled from the presentation layer and remains 100% backwards and forwards compatible.
 - **Continuous Verification**: Build verification (`dotnet build -c Debug`) and unit test suite (`dotnet test -c Debug`) executed after every single step.
-- **Stop and Verify**: The agent stops and requests user review before initiating the next phase.
+- **Stop and Verify**: The agent stops and requests user review and permission before initiating any next phase.

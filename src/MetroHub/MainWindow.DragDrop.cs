@@ -1276,7 +1276,7 @@ public partial class MainWindow
         }
     }
 
-    private static bool IsInteractiveElement(DependencyObject? dep)
+    internal static bool IsInteractiveElement(DependencyObject? dep)
     {
         // Opt-in escape hatch: a widget whose interactive children would otherwise make the
         // whole tile undraggable can mark itself Tag="AllowTileDrag" (see PowerWidgetView).
@@ -1292,6 +1292,14 @@ public partial class MainWindow
         DependencyObject? current = dep;
         while (current != null)
         {
+            // If we have traversed all children up to the TileControl itself without hitting
+            // an interactive control, the click was on the tile surface (or app icon/title).
+            // Stop immediately so we never walk out to ContentScrollViewer or window-level containers.
+            if (current is Presentation.Controls.TileControl)
+            {
+                return false;
+            }
+
             if (current is System.Windows.Controls.Primitives.TextBoxBase ||
                 current is System.Windows.Controls.PasswordBox ||
                 current is System.Windows.Controls.Primitives.ButtonBase ||
@@ -1299,8 +1307,6 @@ public partial class MainWindow
                 current is System.Windows.Controls.Primitives.RangeBase ||
                 current is System.Windows.Controls.Slider ||
                 current is System.Windows.Controls.ProgressBar ||
-                current is System.Windows.Controls.Primitives.ScrollBar ||
-                current is System.Windows.Controls.ScrollViewer ||
                 current is System.Windows.Controls.ListBoxItem ||
                 current is System.Windows.Controls.Primitives.Selector ||
                 current is ContextMenu ||

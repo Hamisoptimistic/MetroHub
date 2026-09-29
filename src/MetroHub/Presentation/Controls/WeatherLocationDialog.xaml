@@ -257,39 +257,38 @@
         </Style>
     </Window.Resources>
 
-    <!-- Outer Container: 1px border matching theme -->
+    <!-- Borderless Window Wrapper -->
     <Border Background="Transparent"
-            BorderBrush="#35FFFFFF"
-            BorderThickness="1"
-            CornerRadius="2"
+            BorderThickness="0"
+            CornerRadius="{DynamicResource ControlCornerRadius}"
             SnapsToDevicePixels="True">
-        <Grid>
+        <Grid RenderOptions.ClearTypeHint="Enabled">
             <Grid.ColumnDefinitions>
+                <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR -->
                 <ColumnDefinition Width="155" />
+                <!-- COLUMN 1: OBSIDIAN DARK CONTENT PANEL -->
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- COLUMN 0: Frosted Acrylic Sidebar -->
-            <Grid Grid.Column="0">
-                <Border Background="#1A1A1A"
-                        Opacity="0.45"
-                        CornerRadius="2,0,0,2" />
-                <Border BorderBrush="#18FFFFFF"
-                        BorderThickness="0,0,1,0"
-                        CornerRadius="2,0,0,2">
-                    <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <Ellipse Width="110" Height="110" Fill="#12FFFFFF">
-                            <Ellipse.Effect>
-                                <BlurEffect Radius="24" />
-                            </Ellipse.Effect>
-                        </Ellipse>
-                        <ui:SymbolIcon Symbol="CloudSun24"
-                                       FontSize="56"
-                                       Foreground="#D0FFFFFF"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
-                    </Grid>
-                </Border>
+            <!-- ========================================================= -->
+            <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR                        -->
+            <!-- ========================================================= -->
+            <Grid Grid.Column="0"
+                  Background="Transparent">
+                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Background="Transparent"
+                            BorderThickness="0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                        <Image Source="/Assets/Weather/Glassmorphic/cloudy-and-rainny.png"
+                               Width="72"
+                               Height="72"
+                               Stretch="Uniform"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
+                    </Border>
+                </Grid>
             </Grid>
 
             <!-- COLUMN 1: Content Panel -->

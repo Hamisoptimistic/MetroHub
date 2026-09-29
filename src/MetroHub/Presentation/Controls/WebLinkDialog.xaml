@@ -263,50 +263,52 @@
         </Style>
     </Window.Resources>
 
+    <!-- Borderless Window Wrapper -->
     <Border Background="Transparent"
-            BorderBrush="#35FFFFFF"
-            BorderThickness="1"
-            CornerRadius="2"
+            BorderThickness="0"
+            CornerRadius="{DynamicResource ControlCornerRadius}"
             SnapsToDevicePixels="True">
-        <Grid>
+        <Grid RenderOptions.ClearTypeHint="Enabled">
             <Grid.ColumnDefinitions>
+                <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR -->
                 <ColumnDefinition Width="155" />
+                <!-- COLUMN 1: OBSIDIAN DARK CONTENT PANEL -->
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- Frosted Acrylic Sidebar -->
-            <Grid Grid.Column="0">
-                <Border Background="#1A1A1A"
-                        Opacity="0.45"
-                        CornerRadius="2,0,0,2" />
-                <Border BorderBrush="#18FFFFFF"
-                        BorderThickness="0,0,1,0"
-                        CornerRadius="2,0,0,2">
-                    <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <Ellipse Width="110" Height="110" Fill="#12FFFFFF">
-                            <Ellipse.Effect>
-                                <BlurEffect Radius="24" />
-                            </Ellipse.Effect>
-                        </Ellipse>
+            <!-- ========================================================= -->
+            <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR                        -->
+            <!-- ========================================================= -->
+            <Grid Grid.Column="0"
+                  Background="Transparent">
+
+                <!-- Vertically and Horizontally Centered Glyph Container -->
+                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Grid>
+                        <Image x:Name="WebLinkFaviconImage"
+                               Width="42" Height="42"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Visibility="Collapsed"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
+
+                        <Image x:Name="WebLinkFallbackIcon"
+                               Source="/Assets/link.png"
+                               Width="72"
+                               Height="72"
+                               Stretch="Uniform"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
 
                         <ui:ProgressRing x:Name="WebLinkSidebarSpinner"
-                                         Width="32" Height="32"
+                                         Width="24" Height="24"
                                          IsIndeterminate="True"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"
                                          Visibility="Collapsed" />
-
-                        <ui:SymbolIcon x:Name="WebLinkFallbackIcon"
-                                       Symbol="Globe24"
-                                       FontSize="56"
-                                       Foreground="#D0FFFFFF"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
-
-                        <Image x:Name="WebLinkFaviconImage"
-                               Width="56" Height="56"
-                               RenderOptions.BitmapScalingMode="HighQuality"
-                               Visibility="Collapsed" />
                     </Grid>
-                </Border>
+                </Grid>
             </Grid>
 
             <!-- Content Panel -->

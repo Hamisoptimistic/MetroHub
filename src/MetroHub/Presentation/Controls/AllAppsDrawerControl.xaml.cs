@@ -10,6 +10,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
+using MetroHub.Presentation.Themes;
 
 namespace MetroHub.Presentation.Controls
 {
@@ -41,7 +42,7 @@ namespace MetroHub.Presentation.Controls
 
         private static readonly Brush SearchBorderFocusedBrush = CreateFrozenBrush(Color.FromArgb(0x22, 0xFF, 0xFF, 0xFF));
         private static readonly Brush SearchBorderUnfocusedBrush = CreateFrozenBrush(Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF));
-        private static readonly Brush UnpinRedBrush = CreateFrozenBrush(Color.FromRgb(0xFF, 0x6B, 0x6B));
+        private static readonly Brush UnpinRedBrush = ThemeTokens.StatusErrorBrush;
 
         private static Brush CreateFrozenBrush(Color c)
         {

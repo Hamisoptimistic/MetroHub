@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Messaging;
+using MetroHub.Presentation.Themes;
 using MetroHub.Widgets;
 
 namespace MetroHub.Presentation.Controls;
@@ -46,7 +47,7 @@ public partial class TileControl : UserControl
 
 
     private static readonly Brush MenuIconForegroundBrush = CreateFrozenBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF));
-    private static readonly Brush RedMutedBrush = CreateFrozenBrush(Color.FromRgb(0xFF, 0x6B, 0x6B));
+    private static readonly Brush RedMutedBrush = ThemeTokens.StatusErrorBrush;
 
     private static Brush CreateFrozenBrush(Color c)
     {

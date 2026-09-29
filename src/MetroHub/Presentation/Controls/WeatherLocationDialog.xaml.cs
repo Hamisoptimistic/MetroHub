@@ -10,6 +10,8 @@ using System.Windows.Media;
 using MetroHub.Core.Models.Geocoding;
 using MetroHub.Core.Services;
 using MetroHub.Widgets.Catalog.Weather;
+using System.Windows.Interop;
+using System.Windows.Shell;
 using Wpf.Ui.Controls;
 
 namespace MetroHub.Presentation.Controls;
@@ -46,7 +48,100 @@ public partial class WeatherLocationDialog : FluentWindow
 
     protected override void OnBackdropTypeChanged(WindowBackdropType oldValue, WindowBackdropType newValue)
     {
-        // Suppress WPF-UI's default backdrop override
+        // Suppress WPF-UI's built-in backdrop manager which resets Background to solid #202020
+        // or throws if ExtendsContentIntoTitleBar is false. We manage DWM Acrylic directly.
+    }
+
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+        if (e.Property == BackgroundProperty && Background != Brushes.Transparent)
+        {
+            SetCurrentValue(BackgroundProperty, Brushes.Transparent);
+        }
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        Background = Brushes.Transparent;
+
+        IntPtr hwnd = new WindowInteropHelper(this).Handle;
+        if (hwnd != IntPtr.Zero)
+        {
+            var source = HwndSource.FromHwnd(hwnd);
+            if (source?.CompositionTarget != null)
+            {
+                source.CompositionTarget.BackgroundColor = Colors.Transparent;
+            }
+
+            ApplyAcrylicBackdrop(hwnd);
+
+            // Completely hide modal window from Windows Alt+Tab switcher
+            int exStyle = NativeMethods.GetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE);
+            NativeMethods.SetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE, exStyle | NativeMethods.WS_EX_TOOLWINDOW);
+
+            // Responsive scaling: clamp modal to fit comfortably on small displays/high DPI
+            var workArea = SystemParameters.WorkArea;
+            if (workArea.Width > 0 && workArea.Height > 0)
+            {
+                Width = Math.Min(620, Math.Max(480, workArea.Width * 0.85));
+                Height = Math.Min(360, Math.Max(300, workArea.Height * 0.85));
+            }
+
+            if (Owner != null && Owner.ActualWidth > 0 && Owner.ActualHeight > 0)
+            {
+                Left = Owner.Left + (Owner.ActualWidth - Width) / 2;
+                Top = Owner.Top + (Owner.ActualHeight - Height) / 2;
+            }
+            else if (workArea.Width > 0 && workArea.Height > 0)
+            {
+                Left = workArea.Left + (workArea.Width - Width) / 2;
+                Top = workArea.Top + (workArea.Height - Height) / 2;
+            }
+        }
+
+        var chrome = WindowChrome.GetWindowChrome(this);
+        if (chrome != null)
+        {
+            chrome.ResizeBorderThickness = new Thickness(0);
+            chrome.CaptionHeight = 0;
+            chrome.CornerRadius = new CornerRadius(0);
+            chrome.GlassFrameThickness = new Thickness(-1);
+            chrome.NonClientFrameEdges = NonClientFrameEdges.None;
+        }
+    }
+
+    private static void ApplyAcrylicBackdrop(IntPtr hwnd)
+    {
+        try
+        {
+            int darkVal = 1;
+            NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkVal, sizeof(int));
+
+            // Windows 11 rounded corners suppressed for cohesive 2px radius
+            int cornerVal = NativeMethods.DWMWCP_DONOTROUND;
+            NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerVal, sizeof(int));
+
+            // Suppress harsh OS non-client border
+            int borderVal = NativeMethods.DWMWA_COLOR_NONE;
+            NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_BORDER_COLOR, ref borderVal, sizeof(int));
+
+            NativeMethods.MARGINS margins = new(-1, -1, -1, -1);
+            NativeMethods.DwmExtendFrameIntoClientArea(hwnd, ref margins);
+
+            int backdropVal = NativeMethods.DWMSBT_TRANSIENTWINDOW; // 3 = Acrylic
+            int res = NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_SYSTEMBACKDROP_TYPE, ref backdropVal, sizeof(int));
+            if (res != 0)
+            {
+                int trueVal = 1;
+                NativeMethods.DwmSetWindowAttribute(hwnd, 1029, ref trueVal, sizeof(int));
+            }
+
+            NativeMethods.SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
+                NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_FRAMECHANGED);
+        }
+        catch { }
     }
 
     public void Setup(WeatherWidgetViewModel weatherVm)
