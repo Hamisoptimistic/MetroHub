@@ -49,11 +49,6 @@
     <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#B0B0B0" />
     <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="#60FFFFFF" />
 
-    <!-- Accent overrides for ToggleSwitch -->
-    <SolidColorBrush x:Key="SystemAccentColorBrush" Color="#00E676" />
-    <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#00E676" />
-    <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="#00CC6A" />
-
     <!-- Named style: inherits full ControlTemplate from WPF-UI's DefaultUiToggleSwitchStyle -->
     <Style x:Key="FluentGreenToggleSwitchStyle" TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource DefaultUiToggleSwitchStyle}">
         <Setter Property="VerticalAlignment" Value="Center" />

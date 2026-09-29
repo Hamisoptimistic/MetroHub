@@ -29,6 +29,8 @@ public partial class RadioStationDialog : FluentWindow
     private RadioSearchResultItem? _selectedRadioSearchResult;
     private StreamProbeResult? _lastProbeResult;
     private bool _userManuallyEditedRadioName;
+    private bool _isFullyActivated;
+    private DateTime _shownTime;
 
     internal ObservableCollection<RadioSearchResultItem> RadioSearchResults { get; } = new();
 
@@ -69,6 +71,7 @@ public partial class RadioStationDialog : FluentWindow
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
+        _shownTime = DateTime.UtcNow;
         Background = Brushes.Transparent;
 
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
@@ -147,6 +150,59 @@ public partial class RadioStationDialog : FluentWindow
                 NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_FRAMECHANGED);
         }
         catch { }
+    }
+
+    protected override void OnActivated(EventArgs e)
+    {
+        base.OnActivated(e);
+        _isFullyActivated = true;
+    }
+
+    protected override void OnDeactivated(EventArgs e)
+    {
+        base.OnDeactivated(e);
+
+        // Ignore premature deactivation during show/transition
+        if (!_isFullyActivated || (DateTime.UtcNow - _shownTime).TotalMilliseconds < 150)
+        {
+            return;
+        }
+
+        try
+        {
+            if (IsVisible)
+            {
+                DialogResult = false;
+                Close();
+            }
+        }
+        catch { }
+    }
+
+    protected override void OnPreviewKeyDown(KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape)
+        {
+            DialogResult = false;
+            Close();
+            e.Handled = true;
+            return;
+        }
+
+        // Close on Alt+Tab so switching tasks cleanly dismisses the modal
+        if ((e.Key == Key.System && e.SystemKey == Key.Tab) ||
+            ((Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt && (e.Key == Key.Tab || e.SystemKey == Key.Tab)))
+        {
+            try
+            {
+                DialogResult = false;
+            }
+            catch { }
+            Close();
+            return;
+        }
+
+        base.OnPreviewKeyDown(e);
     }
 
     public static RadioStation? Show(Window? owner, string activeCategoryId = "ambient")

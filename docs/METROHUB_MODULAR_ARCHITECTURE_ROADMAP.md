@@ -263,3 +263,6 @@ graph TD
 - **Zero Data Loss**: User data in `%LocalAppData%\MetroHub\` (`layout.json`, `groups.json`, `settings.json`, and widget autosaves) is completely decoupled from the presentation layer and remains 100% backwards and forwards compatible.
 - **Continuous Verification**: Build verification (`dotnet build -c Debug`) and unit test suite (`dotnet test -c Debug`) executed after every single step.
 - **Stop and Verify**: The agent stops and requests user review and permission before initiating any next phase.
+
+
+BUILD AND PUBLISH dont start the app.

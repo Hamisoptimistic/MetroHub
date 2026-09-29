@@ -42,6 +42,15 @@
     <SolidColorBrush x:Key="FluentHoverBorderBrush" Color="Transparent" />
 
     <!-- ========================================================================= -->
+    <!-- CENTRAL FLUENT 2 SYSTEM ACCENT COLOR TOKENS                               -->
+    <!-- ========================================================================= -->
+    <Color x:Key="SystemAccentColor">#4CC2FF</Color>
+    <SolidColorBrush x:Key="SystemAccentColorBrush" Color="{StaticResource SystemAccentColor}" />
+    <SolidColorBrush x:Key="SystemAccentColorPrimaryBrush" Color="#4CC2FF" />
+    <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#60CDFF" />
+    <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="#2886C8" />
+
+    <!-- ========================================================================= -->
     <!-- UNIVERSAL SEMANTIC STATUS COLORS (Constant across all themes)             -->
     <!-- ========================================================================= -->
     <Color x:Key="StatusSuccessColor">#00E676</Color>
