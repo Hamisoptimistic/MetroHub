@@ -100,6 +100,9 @@
     <SolidColorBrush x:Key="SystemAccentColorPrimaryBrush" Color="#4CC2FF" />
     <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#60CDFF" />
     <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="#2886C8" />
+    <SolidColorBrush x:Key="SystemAccentColorSelectionFill" Color="{StaticResource SystemAccentColor}" Opacity="0.15" />
+    <SolidColorBrush x:Key="SystemAccentColorDropSlotFill" Color="{StaticResource SystemAccentColor}" Opacity="0.20" />
+    <SolidColorBrush x:Key="SystemAccentColorGroupDropFill" Color="{StaticResource SystemAccentColor}" Opacity="0.08" />
 
     <!-- ========================================================================= -->
     <!-- UNIVERSAL SEMANTIC STATUS COLORS (Constant across all themes)             -->
@@ -139,6 +142,6 @@
     <!-- ========================================================================= -->
     <DropShadowEffect x:Key="ShadowCard" BlurRadius="14" Direction="270" ShadowDepth="3" Opacity="0.28" Color="#000000" x:Shared="False" />
     <DropShadowEffect x:Key="StudioGlassTextShadow" BlurRadius="28" Direction="270" ShadowDepth="4" Opacity="0.22" Color="#080E1A" x:Shared="False" />
-    <DropShadowEffect x:Key="GlowDotSmall" BlurRadius="4" ShadowDepth="0" Opacity="0.8" Color="#60CDFF" x:Shared="False" />
+    <DropShadowEffect x:Key="GlowDotSmall" BlurRadius="4" ShadowDepth="0" Opacity="0.8" Color="{DynamicResource SystemAccentColor}" x:Shared="False" />
 
 </ResourceDictionary>

@@ -340,5 +340,89 @@ The tests you *do* have are good — persistence, catalog parsing, edge cases. B
 2. **Decompose MainWindow.** Extract `TileManager`, `CanvasDragDropController`, `GroupManager`, `BackdropManager`. MainWindow becomes < 300 lines.
 3. **Split the Mega-Modal.** Three dialog classes. DTOs in `Core/Models/`. HTTP in services. Dialogs bind to ViewModels.
 4. **Audit event handlers.** Every `+=` needs a corresponding `-=` in a cleanup path, or use `WeakEventManager`.
-5. **Move colors to tokens.** All 55 C# hex values → `Tokens.xaml` resources or `MotionTokens.cs` constants.
-6. **Test the core.** With DI in place, write ViewModel lifecycle tests with mock services. Cover drag-drop, resize, pin/unpin, group ops.
+---
+
+## Critic 3: Top 4 Remaining Blunders (Theming & Threading)
+
+> Audited against master design tokens in `Tokens.xaml` and performance standards in `WPF_PERFORMANCE_Deepseek.md`.
+
+---
+
+### Blunder 1: 🟢 Canvas Drag-and-Drop & Marquee Selection Box Hardcoded to `#60CDFF` (Sky Blue) [FIXED]
+
+**Files & Locations:**
+- `src/MetroHub/MainWindow.xaml`:
+  - Line 440: `<Border x:Name="DropSlotIndicator" Background="#3060CDFF">`
+  - Line 443: `<DropShadowEffect ... Color="#60CDFF" />`
+  - Line 452: `<Rectangle x:Name="RubberBandBox" Fill="#2560CDFF" />`
+  - Line 465: `<Border x:Name="GroupDropPerimeterBorder" BorderBrush="#60CDFF">`
+  - Line 466: `Background="#1060CDFF"`
+  - Line 477: `<DropShadowEffect x:Name="GroupDropGlowEffect" ... Color="#60CDFF" />`
+  - Line 536: `<DropShadowEffect ... Color="#60CDFF" />`
+
+**The Problem:**
+These are the central canvas interactions for the whole application. If a user selects Emerald Green, Purple, or Amber in Settings, dropping a tile, marquee selecting tiles, or hovering over groups still flashes hardcoded `#60CDFF` sky blue instead of their chosen accent color.
+
+**The Fix:**
+- Replace `#60CDFF` border and drop shadow colors with `{DynamicResource SystemAccentColorPrimaryBrush}` or `{DynamicResource SystemAccentColorSecondaryBrush}` (or `{DynamicResource SystemAccentColor}`).
+- Replace alpha-blended fills (`#3060CDFF`, `#2560CDFF`, `#1060CDFF`) with centralized accent tint tokens or dynamic opacity brushes.
+
+---
+
+### Blunder 2: 🟢 "Today" Active Date Pill in Calendar & Habit Hardcoded to `#60CDFF` [FIXED]
+
+**Files & Locations:**
+- `src/MetroHub/Widgets/Catalog/Calendar/CalendarWidgetView.xaml:139`:
+  - `<Border x:Name="TodayPill" ... Background="#60CDFF" />`
+- `src/MetroHub/Widgets/Catalog/Habit/HabitWidgetView.xaml:344`:
+  - `<Border x:Name="TodayPill" ... Background="#60CDFF" />`
+- `src/MetroHub/Presentation/Themes/Tokens.xaml:142`:
+  - `<DropShadowEffect x:Key="GlowDotSmall" ... Color="#60CDFF" x:Shared="False" />`
+
+**The Problem:**
+The active day indicator pill in both Calendar and Habit widgets is pinned to `#60CDFF`. When the app's accent theme changes, the calendar date indicator remains blue. Furthermore, `GlowDotSmall` in `Tokens.xaml` is hardcoded to `#60CDFF` rather than resolving from `SystemAccentColor`.
+
+**The Fix:**
+- In `CalendarWidgetView.xaml` and `HabitWidgetView.xaml`: Bind `TodayPill.Background` to `{DynamicResource SystemAccentColorPrimaryBrush}`.
+- In `Tokens.xaml`: Link `GlowDotSmall.Color` to `{DynamicResource SystemAccentColor}` or provide dynamic accent glow tokens.
+
+---
+
+### Blunder 3: 🟢 Synchronous `Dispatcher.Invoke` in Background Tasks (UI Stutter & Deadlock Risk) [FIXED]
+
+**Files & Locations:**
+- `src/MetroHub/Presentation/Controls/RadioStationDialog.xaml.cs`:
+  - Lines 379, 422: `Dispatcher.Invoke(() => ...)` during station search
+  - Lines 526, 577: `Dispatcher.Invoke(() => ...)` during direct stream probing
+- `src/MetroHub/Presentation/Controls/WebLinkDialog.xaml.cs`:
+  - Lines 272, 281, 314: `Dispatcher.Invoke(() => ...)` during webpage scraping & title resolution
+
+**The Problem:**
+Background threads running network tasks (`Task.Run`) marshal back to the UI thread using synchronous `Dispatcher.Invoke`. This halts the background worker thread until the UI thread message queue finishes executing the delegate. If the UI thread is busy rendering an animation, handling window drag, or waiting on another lock, this introduces UI stutter, frame drops, or potential deadlocks.
+
+Per `WPF_PERFORMANCE_Deepseek.md` Rule 6: *"The UI thread is for rendering and input. Everything else goes to a threadpool. Never block on Task.Result or Task.Wait(). Marshal non-blocking via InvokeAsync."*
+
+**The Fix:**
+Replace synchronous `Dispatcher.Invoke(() => { ... })` with non-blocking `Dispatcher.InvokeAsync(() => { ... })` or `await Dispatcher.InvokeAsync(...)`.
+
+---
+
+### Blunder 4: 🟢 Hardcoded Semi-Transparent Overlays in Local Widget Button Styles [FIXED]
+
+**Files & Locations:**
+- `src/MetroHub/Widgets/Catalog/AudioControls/AudioControlsWidgetView.xaml:37, 40, 273, 277` (`#18FFFFFF`, `#28FFFFFF`, `#1EFFFFFF`, `#25FFFFFF`)
+- `src/MetroHub/Widgets/Catalog/CaffeineSleep/CaffeineSleepWidgetView.xaml:20, 21, 47, 48` (`#1CFFFFFF`, `#2AFFFFFF`, `#30FFFFFF`, `#48FFFFFF`)
+- `src/MetroHub/Widgets/Catalog/Photos/PhotosWidgetView.xaml:17, 18, 43, 47` (`#22FFFFFF`, `#35FFFFFF`, `#3DFFFFFF`, `#55FFFFFF`)
+- `src/MetroHub/Widgets/Catalog/Radio/RadioWidgetView.xaml:112, 118` (`#55FFFFFF`, `#75FFFFFF`)
+
+**The Problem:**
+Individual widgets continue to invent one-off hex colors for button hover, pressed, and card border states instead of consuming central design tokens. `Tokens.xaml` and `WidgetStyles.xaml` already declare standardized tokens:
+- `FluentHoverBrush` (`#12FFFFFF`)
+- `FluentPressedBrush` (`#1EFFFFFF`)
+- `WidgetDividerBrush` (`#14FFFFFF`)
+- `WidgetBorderBrush`
+
+Local hardcoded hex values create inconsistent button hover brightness between widgets and prevent global opacity/glass adjustments from applying evenly across the hub.
+
+**The Fix:**
+Replace local hardcoded hover and pressed hex values with `{DynamicResource FluentHoverBrush}`, `{DynamicResource FluentPressedBrush}`, and `{DynamicResource WidgetDividerBrush}`.

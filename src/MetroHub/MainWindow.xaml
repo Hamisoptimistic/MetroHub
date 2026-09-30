@@ -437,10 +437,10 @@
                             CornerRadius="{DynamicResource TileCornerRadius}"
                             BorderThickness="1.5"
                             BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
-                            Background="#3060CDFF"
+                            Background="{DynamicResource SystemAccentColorDropSlotFill}"
                             CacheMode="BitmapCache">
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.6" Color="#60CDFF" />
+                            <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.6" Color="{DynamicResource SystemAccentColor}" />
                         </Border.Effect>
                     </Border>
                 </Canvas>
@@ -449,7 +449,7 @@
                 <Canvas x:Name="RubberBandCanvas" IsHitTestVisible="False" Panel.ZIndex="3000">
                     <Rectangle x:Name="RubberBandBox"
                                Visibility="Collapsed"
-                               Fill="#2560CDFF"
+                               Fill="{DynamicResource SystemAccentColorSelectionFill}"
                                Stroke="{DynamicResource SystemAccentColorPrimaryBrush}"
                                StrokeThickness="1"
                                RadiusX="3"
@@ -462,8 +462,8 @@
                             Visibility="Collapsed"
                             CornerRadius="6"
                             BorderThickness="1"
-                            BorderBrush="#60CDFF"
-                            Background="#1060CDFF"
+                            BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
+                            Background="{DynamicResource SystemAccentColorGroupDropFill}"
                             RenderTransformOrigin="0.5,0.5"
                             CacheMode="BitmapCache">
                         <Border.RenderTransform>
@@ -474,7 +474,7 @@
                                               BlurRadius="20"
                                               ShadowDepth="0"
                                               Opacity="0.65"
-                                              Color="#60CDFF" />
+                                              Color="{DynamicResource SystemAccentColor}" />
                         </Border.Effect>
                     </Border>
 
@@ -533,7 +533,7 @@
                             Background="{DynamicResource SystemAccentColorPrimaryBrush}"
                             CacheMode="BitmapCache">
                         <Border.Effect>
-                            <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.8" Color="#60CDFF" />
+                            <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.8" Color="{DynamicResource SystemAccentColor}" />
                         </Border.Effect>
                     </Border>
                 </Canvas>

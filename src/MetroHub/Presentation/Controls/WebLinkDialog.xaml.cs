@@ -269,7 +269,7 @@ public partial class WebLinkDialog : FluentWindow
                 await Task.Delay(350, token);
                 if (token.IsCancellationRequested) return;
 
-                Dispatcher.Invoke(() =>
+                await Dispatcher.InvokeAsync(() =>
                 {
                     WebLinkSidebarSpinner.Visibility = Visibility.Visible;
                     WebLinkFallbackIcon.Visibility = Visibility.Collapsed;
@@ -278,7 +278,7 @@ public partial class WebLinkDialog : FluentWindow
                 string? iconPath = await WebFaviconService.GetFaviconPathAsync(normalized, token);
                 if (token.IsCancellationRequested) return;
 
-                Dispatcher.Invoke(() =>
+                await Dispatcher.InvokeAsync(() =>
                 {
                     WebLinkSidebarSpinner.Visibility = Visibility.Collapsed;
 
@@ -311,11 +311,14 @@ public partial class WebLinkDialog : FluentWindow
             catch (OperationCanceledException) { }
             catch
             {
-                Dispatcher.Invoke(() =>
+                if (!token.IsCancellationRequested)
                 {
-                    WebLinkSidebarSpinner.Visibility = Visibility.Collapsed;
-                    WebLinkFallbackIcon.Visibility = Visibility.Visible;
-                });
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                        WebLinkSidebarSpinner.Visibility = Visibility.Collapsed;
+                        WebLinkFallbackIcon.Visibility = Visibility.Visible;
+                    });
+                }
             }
         }, token);
     }

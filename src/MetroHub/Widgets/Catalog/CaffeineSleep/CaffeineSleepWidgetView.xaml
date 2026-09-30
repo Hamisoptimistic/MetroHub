@@ -15,51 +15,8 @@
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
-        <!-- Cohesive Fluent Action Button Style (Matches Wi-Fi Action / Modal Button) -->
-        <Style x:Key="FluentModeButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#1CFFFFFF" />
-            <Setter Property="BorderBrush" Value="#2AFFFFFF" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="#F5FFFFFF" />
-            <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-            <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Padding" Value="10,5,8,5" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-            <Setter Property="UseLayoutRounding" Value="True" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="ButtonBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                >
-                            <ContentPresenter HorizontalAlignment="Center"
-                                              VerticalAlignment="Center"
-                                              Margin="{TemplateBinding Padding}"
-                                              />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="#30FFFFFF" />
-                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#48FFFFFF" />
-                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource WidgetDividerBrush}" />
-                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#20FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.35" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <!-- Cohesive Fluent Action Button Style (Inherits central WidgetActionButtonStyle) -->
+        <Style x:Key="FluentModeButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetActionButtonStyle}" />
 
         <!-- Caffeine WidgetTile Style: balanced optical spacing that clears the separator line without over-expanding -->
         <Style TargetType="{x:Type widgets:WidgetTile}" BasedOn="{StaticResource WidgetTileStyle}">

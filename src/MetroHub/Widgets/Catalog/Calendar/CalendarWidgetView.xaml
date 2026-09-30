@@ -136,7 +136,7 @@
                                                 Width="14"
                                                 Height="3.5"
                                                 CornerRadius="2"
-                                                Background="#60CDFF"
+                                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Bottom"
                                                 Margin="1.5,0,0,3"

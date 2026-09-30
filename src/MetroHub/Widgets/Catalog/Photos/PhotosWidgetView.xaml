@@ -12,49 +12,10 @@
 
     <UserControl.Resources>
 
-        <!-- Empty State Select Folder Button Style: Windows 11 Fluent Glass Action Button -->
-        <Style x:Key="SelectFolderButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#22FFFFFF" />
-            <Setter Property="BorderBrush" Value="#35FFFFFF" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <!-- Empty State Select Folder Button Style: Inherits WidgetActionButtonStyle -->
+        <Style x:Key="SelectFolderButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetActionButtonStyle}">
             <Setter Property="Height" Value="34" />
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
-            <Setter Property="RenderTransform">
-                <Setter.Value>
-                    <ScaleTransform ScaleX="1.0" ScaleY="1.0" />
-                </Setter.Value>
-            </Setter>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6"
-                                Padding="18,0"
-                                >
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#3DFFFFFF" />
-                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#65FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#55FFFFFF" />
-                                <Setter Property="RenderTransform">
-                                    <Setter.Value>
-                                        <ScaleTransform ScaleX="0.97" ScaleY="0.97" />
-                                    </Setter.Value>
-                                </Setter>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Padding" Value="18,0" />
         </Style>
 
         <!-- Media Player Standard Borderless Transport Button Style: Inherits WidgetMediumButtonStyle -->

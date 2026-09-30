@@ -14,36 +14,8 @@
     <UserControl.Resources>
         <!-- Media & Pomodoro-Consistent Transport Button Style: Inherits WidgetMicroButtonStyle -->
 
-        <!-- Windows 11 Sound Output Device List Item Button Style -->
-        <Style x:Key="DeviceListItemButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="Height" Value="38" />
-            <Setter Property="Margin" Value="0,2,0,2" />
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="CardBorder"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                >
-                            <ContentPresenter Margin="0" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CardBorder" Property="Background" Value="#18FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="CardBorder" Property="Background" Value="#28FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <!-- Windows 11 Sound Output Device List Item Button Style (Inherits central WidgetListItemButtonStyle) -->
+        <Style x:Key="DeviceListItemButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetListItemButtonStyle}" />
 
     </UserControl.Resources>
 
@@ -270,15 +242,15 @@
                                                 <ControlTemplate.Triggers>
                                                     <!-- Selected / Default Device Highlight -->
                                                     <DataTrigger Binding="{Binding IsDefault}" Value="True">
-                                                        <Setter TargetName="ItemBorder" Property="Background" Value="#1EFFFFFF" />
+                                                        <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
                                                     </DataTrigger>
                                                     <!-- Mouse Hover Highlight -->
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="ItemBorder" Property="Background" Value="#25FFFFFF" />
+                                                        <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
                                                     </Trigger>
                                                     <!-- Mouse Pressed Highlight -->
                                                     <Trigger Property="IsPressed" Value="True">
-                                                        <Setter TargetName="ItemBorder" Property="Background" Value="#35FFFFFF" />
+                                                        <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>

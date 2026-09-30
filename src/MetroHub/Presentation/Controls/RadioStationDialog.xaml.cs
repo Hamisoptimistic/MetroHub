@@ -376,7 +376,7 @@ public partial class RadioStationDialog : FluentWindow
                 var results = await RadioBrowserClient.Instance.SearchStationsAsync(trimmed, limit: 16, ct: token);
                 if (token.IsCancellationRequested) return;
 
-                Dispatcher.Invoke(() =>
+                await Dispatcher.InvokeAsync(() =>
                 {
                     RadioSearchSpinner.Visibility = Visibility.Collapsed;
                     RadioSearchResults.Clear();
@@ -419,13 +419,16 @@ public partial class RadioStationDialog : FluentWindow
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                Dispatcher.Invoke(() =>
+                if (!token.IsCancellationRequested)
                 {
-                    RadioSearchSpinner.Visibility = Visibility.Collapsed;
-                    RadioSearchStatusMessage.Text = $"Search failed: {ex.Message}";
-                    RadioSearchStatusMessage.Foreground = ThemeTokens.StatusErrorBrush;
-                    RadioSearchStatusMessage.Visibility = Visibility.Visible;
-                });
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                        RadioSearchSpinner.Visibility = Visibility.Collapsed;
+                        RadioSearchStatusMessage.Text = $"Search failed: {ex.Message}";
+                        RadioSearchStatusMessage.Foreground = ThemeTokens.StatusErrorBrush;
+                        RadioSearchStatusMessage.Visibility = Visibility.Visible;
+                    });
+                }
             }
         }, token);
     }
@@ -523,7 +526,7 @@ public partial class RadioStationDialog : FluentWindow
                 var result = await StreamUrlProbeService.Instance.ProbeUrlAsync(raw, token);
                 if (token.IsCancellationRequested) return;
 
-                Dispatcher.Invoke(() =>
+                await Dispatcher.InvokeAsync(() =>
                 {
                     RadioProbeSpinner.Visibility = Visibility.Collapsed;
                     _lastProbeResult = result;
@@ -574,16 +577,19 @@ public partial class RadioStationDialog : FluentWindow
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                Dispatcher.Invoke(() =>
+                if (!token.IsCancellationRequested)
                 {
-                    RadioProbeSpinner.Visibility = Visibility.Collapsed;
-                    RadioProbeIcon.Symbol = SymbolRegular.Warning24;
-                    RadioProbeIcon.Foreground = ThemeTokens.StatusErrorBrush;
-                    RadioProbeIcon.Visibility = Visibility.Visible;
-                    RadioProbeStatusText.Text = $"Probe failed: {ex.Message}";
-                    RadioProbeStatusText.Foreground = ThemeTokens.StatusErrorBrush;
-                    UpdateDirectButtonState();
-                });
+                    await Dispatcher.InvokeAsync(() =>
+                    {
+                        RadioProbeSpinner.Visibility = Visibility.Collapsed;
+                        RadioProbeIcon.Symbol = SymbolRegular.Warning24;
+                        RadioProbeIcon.Foreground = ThemeTokens.StatusErrorBrush;
+                        RadioProbeIcon.Visibility = Visibility.Visible;
+                        RadioProbeStatusText.Text = $"Probe failed: {ex.Message}";
+                        RadioProbeStatusText.Foreground = ThemeTokens.StatusErrorBrush;
+                        UpdateDirectButtonState();
+                    });
+                }
             }
         }, token);
     }

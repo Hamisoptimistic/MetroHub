@@ -780,6 +780,67 @@
         <Setter Property="Tag" Value="InteractiveControl" />
     </Style>
 
+    <!-- Universal Fluent Glass Action Button Style (Caffeine mode buttons, Photos action buttons) -->
+    <Style x:Key="WidgetActionButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{DynamicResource FluentHoverBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource WidgetDividerBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
+        <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Padding" Value="10,5,8,5" />
+        <Setter Property="Tag" Value="InteractiveControl" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="ButtonBorder"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{DynamicResource ControlCornerRadius}">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                          Margin="{TemplateBinding Padding}" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
+                            <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource TextDisabledBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource WidgetDividerBrush}" />
+                            <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource WidgetDividerBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.35" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Universal 38px Sound / Media List Item Row Button Style -->
+    <Style x:Key="WidgetListItemButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Height" Value="38" />
+        <Setter Property="Margin" Value="0,2,0,2" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Tag" Value="InteractiveControl" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+    </Style>
+
     <!-- Universal 1px Horizontal Hairline Divider -->
     <Style x:Key="WidgetHairlineDividerStyle" TargetType="Border">
         <Setter Property="Height" Value="1" />
