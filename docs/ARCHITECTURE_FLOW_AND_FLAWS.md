@@ -25,7 +25,6 @@ flowchart TD
         BEAT["WidgetHeartbeatService<br/>(1-Second Timer Engine)"]:::green
         GUARD{"Host Guard<br/>(Safe.Try Firewall)"}:::green
         LOGGER["HiddenDiagnosticsLogger<br/>(Memory & Diagnostic Logging)"]:::green
-        SHIM["TEMP-SHIM(T-22)<br/>IsHubHidden Forwarder"]:::red
     end
 
     %% --- WIDGET LAYER ---
@@ -50,7 +49,6 @@ flowchart TD
 
     MAIN -->|"Updates State"| HUBSTATE
     MAIN -.->|"Logs Transitions"| LOGGER
-    SHIM -.->|"Legacy Call"| HUBSTATE
 
     HUBSTATE -->|"Start / Stop"| BEAT
     HUBSTATE -->|"Broadcast Visibility"| MSG
@@ -124,12 +122,9 @@ flowchart TD
 
 ---
 
-### 🟥 Flaw 3: `TEMP-SHIM(T-22)` (Legacy Forwarder)
-- **Location:** `src/MetroHub/Core/Services/HiddenDiagnosticsLogger.cs` (`IsHubHidden`)
-- **The Problem:** 
-  `HiddenDiagnosticsLogger.IsHubHidden` was historically used as an application-state flag. We decoupled it in Task T-22, but left a forwarding property pointing to `HubState.IsHidden` so external/legacy code wouldn't break.
-- **Future Solution:** 
-  Once all callers across all branches and plugins are confirmed clean, remove this forwarder to keep `HiddenDiagnosticsLogger` 100% state-free.
+### 🟩 Flaw 3 (Resolved): `TEMP-SHIM(T-22)` Legacy Forwarder Removed
+- **Status:** **REMOVED**
+- `HiddenDiagnosticsLogger.IsHubHidden` was verified to have 0 callers across the solution and has been deleted. `HiddenDiagnosticsLogger` is now 100% state-free.
 
 ---
 

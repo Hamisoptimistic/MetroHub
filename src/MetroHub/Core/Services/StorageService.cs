@@ -320,8 +320,7 @@ public sealed class StorageService
                 tile.TileType = TileType.WebUrl;
 
                 bool isBogusOrMissing = string.IsNullOrWhiteSpace(tile.IconPath) ||
-                                        !File.Exists(tile.IconPath) ||
-                                        Path.GetFileName(tile.IconPath).StartsWith("v5_", StringComparison.OrdinalIgnoreCase);
+                                        !File.Exists(tile.IconPath);
 
                 string domain = WebFaviconService.ExtractDomain(tile.TargetPath);
                 if (!string.IsNullOrWhiteSpace(domain))
@@ -334,12 +333,6 @@ public sealed class StorageService
                     {
                         if (tile.IconPath != cachedPath)
                         {
-                            if (!string.IsNullOrWhiteSpace(tile.IconPath) &&
-                                Path.GetFileName(tile.IconPath).StartsWith("v5_", StringComparison.OrdinalIgnoreCase))
-                            {
-                                Safe.Try(() => { if (File.Exists(tile.IconPath)) File.Delete(tile.IconPath); }, context: $"StorageService.NormalizeTiles.DeleteIcon({tile.IconPath})");
-                            }
-
                             tile.IconPath = cachedPath;
                             dirty = true;
                         }

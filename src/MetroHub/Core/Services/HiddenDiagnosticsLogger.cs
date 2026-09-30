@@ -17,8 +17,6 @@ public static class HiddenDiagnosticsLogger
     private static string _logFilePath = AppPaths.HiddenDiagnosticsLogPath;
     private static readonly object _lock = new();
 
-    // TEMP-SHIM(T-22): Forwarder for legacy callers to HubState.IsHidden
-    public static bool IsHubHidden => HubState.IsHidden;
 
     static HiddenDiagnosticsLogger()
     {
