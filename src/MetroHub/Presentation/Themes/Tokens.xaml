@@ -48,6 +48,9 @@
     <sys:Double x:Key="TypeQuoteBodyCoordinateFontSize">19.5</sys:Double>
     <sys:Double x:Key="TypeCalendarDayCoordinateFontSize">112.0</sys:Double>
 
+    <!-- Responsive Hub UI Scale Factor Token (Default 1.0 = 100%) -->
+    <sys:Double x:Key="AppUiScale">1.0</sys:Double>
+
     <!-- Harmonized Text Contrast Colors & Brushes -->
     <Color x:Key="TextPrimaryColor">#FFFFFF</Color>
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />

@@ -39,3 +39,5 @@ videoplayback.webm
 *_wpftmp.csproj
 
 docs/ARCHITECTURE_SIMPLE_FLOW.html
+tools/arch-map/
+docs/arch-map/

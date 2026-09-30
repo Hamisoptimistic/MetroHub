@@ -164,7 +164,16 @@ public partial class MainWindow : BorderlessFluentWindow
     }
 
     public static readonly DependencyProperty CurrentScaleProperty =
-        DependencyProperty.Register(nameof(CurrentScale), typeof(double), typeof(MainWindow), new PropertyMetadata(1.0));
+        DependencyProperty.Register(nameof(CurrentScale), typeof(double), typeof(MainWindow),
+            new PropertyMetadata(1.0, OnCurrentScaleChanged));
+
+    private static void OnCurrentScaleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is double scale && Application.Current != null)
+        {
+            Application.Current.Resources["AppUiScale"] = scale;
+        }
+    }
 
     public double CurrentScale
     {

@@ -1,6 +1,5 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:local="clr-namespace:MetroHub"
                     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
 
     <!-- ========================================================================= -->
@@ -17,8 +16,8 @@
         <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
         <Setter Property="LayoutTransform">
             <Setter.Value>
-                <ScaleTransform ScaleX="{Binding Source={x:Static local:MainWindow.Current}, Path=CurrentScale, FallbackValue=1.0}"
-                                ScaleY="{Binding Source={x:Static local:MainWindow.Current}, Path=CurrentScale, FallbackValue=1.0}" />
+                <ScaleTransform ScaleX="{DynamicResource AppUiScale}"
+                                ScaleY="{DynamicResource AppUiScale}" />
             </Setter.Value>
         </Setter>
         <Setter Property="Foreground" Value="{DynamicResource ContextMenuForeground}" />
@@ -245,8 +244,8 @@
                         Margin="8,6,8,12"
                         CacheMode="BitmapCache">
                     <Border.LayoutTransform>
-                        <ScaleTransform ScaleX="{Binding Source={x:Static local:MainWindow.Current}, Path=CurrentScale, FallbackValue=1.0}"
-                                        ScaleY="{Binding Source={x:Static local:MainWindow.Current}, Path=CurrentScale, FallbackValue=1.0}" />
+                        <ScaleTransform ScaleX="{DynamicResource AppUiScale}"
+                                        ScaleY="{DynamicResource AppUiScale}" />
                     </Border.LayoutTransform>
                     <Border.RenderTransform>
                         <TranslateTransform x:Name="SubmenuTranslate" Y="0" />
