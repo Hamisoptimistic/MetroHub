@@ -5,10 +5,12 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
+using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Serialization;
 using Windows.Media.Control;
 using WindowsMediaController;
@@ -20,7 +22,7 @@ namespace MetroHub.Widgets.Catalog.Rover;
 /// Features zero-polling Windows SMTC media playback awareness, single-click trick cycling
 /// across all authentic poses, and realistic sleep/wake mechanics.
 /// </summary>
-public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler
+public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler, IWidgetContextMenuProvider
 {
     [StructLayout(LayoutKind.Sequential)]
     private struct LASTINPUTINFO
@@ -464,6 +466,82 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetA
     public void ToggleMute()
     {
         IsMuted = !IsMuted;
+    }
+
+    public IEnumerable<Control> GetContextMenuItems()
+    {
+        var petItem = new MenuItem
+        {
+            Header = "Pet Rover 🐾",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Heart24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        petItem.Click += (s, ev) => Pet();
+
+        var trickItem = new MenuItem
+        {
+            Header = "Do a Trick 🌟",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Sparkle24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        trickItem.Click += (s, ev) => DoTrick();
+
+        var sleepItem = new MenuItem
+        {
+            Header = IsSleeping ? "Wake Up ⚡" : "Take a Nap 💤",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = IsSleeping ? Wpf.Ui.Controls.SymbolRegular.WeatherSunny24 : Wpf.Ui.Controls.SymbolRegular.WeatherMoon24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        sleepItem.Click += (s, ev) =>
+        {
+            if (IsSleeping) WakeUp();
+            else TakeNap();
+        };
+
+        var muteItem = new MenuItem
+        {
+            Header = IsMuted ? "Unmute Sound 🔊" : "Mute Sound 🔇",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = IsMuted ? Wpf.Ui.Controls.SymbolRegular.Speaker224 : Wpf.Ui.Controls.SymbolRegular.SpeakerOff24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        muteItem.Click += (s, ev) => ToggleMute();
+
+        var themeItem = new MenuItem
+        {
+            Header = IsXPBliss ? "Style: Fluent Glass 🪟" : "Style: XP Bliss Hill 🌄",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Color24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        themeItem.Click += (s, ev) =>
+        {
+            BackgroundStyle = IsXPBliss ? "FluentGlass" : "XPBliss";
+        };
+
+        yield return petItem;
+        yield return trickItem;
+        yield return sleepItem;
+        yield return muteItem;
+        yield return themeItem;
     }
 
     /// <summary>

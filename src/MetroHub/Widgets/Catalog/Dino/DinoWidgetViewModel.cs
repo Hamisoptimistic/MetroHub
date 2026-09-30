@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MetroHub.Core.Models;
+using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Catalog.Dino;
 using MetroHub.Widgets.Serialization;
 
@@ -16,7 +18,7 @@ namespace MetroHub.Widgets.Catalog.Dino;
 /// Subscribes to CompositionTarget.Rendering ONLY during active gameplay (Running / Dying)
 /// to strictly maintain 0.0% CPU usage when Idle, Paused, or Game Over.
 /// </summary>
-public sealed partial class DinoWidgetViewModel : WidgetViewModelBase
+public sealed partial class DinoWidgetViewModel : WidgetViewModelBase, IWidgetContextMenuProvider
 {
     private readonly DinoGameEngine _engine;
     private readonly DinoAudioService _audioService;
@@ -173,6 +175,81 @@ public sealed partial class DinoWidgetViewModel : WidgetViewModelBase
         _engine.ResetHighScore();
         SaveSettings();
         FrameTick?.Invoke();
+    }
+
+    public IEnumerable<Control> GetContextMenuItems()
+    {
+        // 1. Mute Sound Toggle
+        var muteItem = new MenuItem
+        {
+            Header = "Mute Sound",
+            IsCheckable = true,
+            IsChecked = IsMuted,
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = IsMuted ? Wpf.Ui.Controls.SymbolRegular.SpeakerOff24 : Wpf.Ui.Controls.SymbolRegular.Speaker224,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        muteItem.Click += (s, ev) => ToggleMute();
+
+        // 2. Reduced Motion Submenu
+        var motionItem = new MenuItem
+        {
+            Header = "Reduced Motion",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Accessibility24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+
+        var autoMotionItem = new MenuItem
+        {
+            Header = "Follow Windows Setting",
+            IsCheckable = true,
+            IsChecked = ReducedMotion == null
+        };
+        autoMotionItem.Click += (s, ev) => SetReducedMotion(null);
+
+        var onMotionItem = new MenuItem
+        {
+            Header = "Enabled (Low Motion)",
+            IsCheckable = true,
+            IsChecked = ReducedMotion == true
+        };
+        onMotionItem.Click += (s, ev) => SetReducedMotion(true);
+
+        var offMotionItem = new MenuItem
+        {
+            Header = "Disabled (Full Animation)",
+            IsCheckable = true,
+            IsChecked = ReducedMotion == false
+        };
+        offMotionItem.Click += (s, ev) => SetReducedMotion(false);
+
+        motionItem.Items.Add(autoMotionItem);
+        motionItem.Items.Add(onMotionItem);
+        motionItem.Items.Add(offMotionItem);
+
+        // 3. Reset High Score
+        var resetScoreItem = new MenuItem
+        {
+            Header = "Reset High Score",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.ArrowReset24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        resetScoreItem.Click += (s, ev) => ResetHighScore();
+
+        yield return muteItem;
+        yield return motionItem;
+        yield return resetScoreItem;
     }
 
     public override void Pause()

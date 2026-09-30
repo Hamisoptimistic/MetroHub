@@ -6,11 +6,13 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
+using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Habit;
@@ -20,7 +22,7 @@ namespace MetroHub.Widgets.Catalog.Habit;
 /// Manages month navigation, 42-day grid generation, seamless polygon backplate metrics,
 /// streak calculation with grace period, and debounced persistence.
 /// </summary>
-public partial class HabitWidgetViewModel : WidgetViewModelBase
+public partial class HabitWidgetViewModel : WidgetViewModelBase, IWidgetContextMenuProvider
 {
     public override IReadOnlyList<WidgetSize> AllowedSizes => new[]
     {
@@ -639,6 +641,73 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase
         {
             SetupSelectedIcon = icon;
         }
+    }
+
+    public IEnumerable<Control> GetContextMenuItems()
+    {
+        var editHabitItem = new MenuItem
+        {
+            Header = "Edit Habit...",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Edit24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        editHabitItem.Click += (s, ev) => EditHabit();
+
+        var markTodayItem = new MenuItem
+        {
+            Header = "Toggle Today (Done / Unmarked)",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.CheckmarkCircle24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        markTodayItem.Click += (s, ev) => ToggleToday();
+
+        var jumpCurrentMonthItem = new MenuItem
+        {
+            Header = "Jump to Current Month",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.CalendarToday24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        jumpCurrentMonthItem.Click += (s, ev) => JumpToCurrentMonth();
+
+        var resetItem = new MenuItem
+        {
+            Header = "Reset All Habit Data...",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Delete24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        resetItem.Click += (s, ev) =>
+        {
+            var result = MessageBox.Show(
+                $"Are you sure you want to reset all tracking data for '{HabitName}'? This cannot be undone.",
+                "Reset Habit Data",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
+            {
+                ResetAllData();
+            }
+        };
+
+        yield return editHabitItem;
+        yield return markTodayItem;
+        yield return jumpCurrentMonthItem;
+        yield return resetItem;
     }
 
     protected override void Dispose(bool disposing)

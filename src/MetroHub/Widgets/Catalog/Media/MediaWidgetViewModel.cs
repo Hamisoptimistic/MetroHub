@@ -1,8 +1,3 @@
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using MetroHub.Core.Models;
-using MetroHub.Core.Services;
-using MetroHub.Widgets.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,8 +6,17 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using MetroHub.Core.Models;
+using MetroHub.Core.Services;
+using MetroHub.Presentation.Messaging;
+using MetroHub.Presentation.Themes;
+using MetroHub.Widgets.Serialization;
 using Windows.Media.Control;
 using Windows.Storage.Streams;
 using WindowsMediaController;
@@ -24,7 +28,7 @@ namespace MetroHub.Widgets.Catalog.Media;
 /// Directly connects to Windows SMTC (System Media Transport Controls) without polling timers or web servers.
 /// Idle CPU is 0.0%.
 /// </summary>
-public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
+public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetContextMenuProvider
 {
     private MediaManager? _mediaManager;
     private MediaManager.MediaSession? _activeSession;
@@ -164,6 +168,28 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     public bool IsSlimMode => Model.SpanY == 1;
     public bool IsZuneMode => Model.SpanX == 4 && Model.SpanY == 6;
     public bool IsStandardMode => Model.SpanY > 1 && !IsZuneMode;
+
+    public IEnumerable<Control> GetContextMenuItems()
+    {
+        var zuneActionItem = new MenuItem
+        {
+            Header = IsZuneMode ? "Switch to Standard Player (8x4)" : "Switch to Zune Player (4x6)",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.MusicNote224,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        zuneActionItem.Click += (s, ev) =>
+        {
+            int targetX = IsZuneMode ? 8 : 4;
+            int targetY = IsZuneMode ? 4 : 6;
+            WeakReferenceMessenger.Default.Send(new TileBatchResizeMessage(targetX, targetY, Model));
+        };
+
+        yield return zuneActionItem;
+    }
 
     public double AlbumArtSize => Model.SpanY switch
     {

@@ -178,6 +178,11 @@ public class WidgetLifecycleContractTests
     [InlineData(typeof(MetroHub.Widgets.Catalog.Photos.PhotosWidgetViewModel))]
     [InlineData(typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetViewModel))]
     [InlineData(typeof(MetroHub.Widgets.Catalog.Weather.WeatherWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Media.MediaWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Quotes.QuotesWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Habit.HabitWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Dino.DinoWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Rover.RoverWidgetViewModel))]
     public void ContextMenuWidgets_ImplementWidgetContextMenuProvider(Type vmType)
     {
         Assert.True(typeof(IWidgetContextMenuProvider).IsAssignableFrom(vmType),
