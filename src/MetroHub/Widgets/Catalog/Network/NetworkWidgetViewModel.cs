@@ -37,8 +37,6 @@ public partial class WifiNetworkItemViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusBadgeText))]
     [NotifyPropertyChangedFor(nameof(SubtitleText))]
-    [NotifyPropertyChangedFor(nameof(StatusBadgeColor))]
-    [NotifyPropertyChangedFor(nameof(StatusBadgeBackground))]
     private bool _isProfileKnown;
 
     [ObservableProperty]
@@ -46,9 +44,7 @@ public partial class WifiNetworkItemViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(CanConnect))]
     [NotifyPropertyChangedFor(nameof(StatusBadgeText))]
     [NotifyPropertyChangedFor(nameof(SubtitleText))]
-    [NotifyPropertyChangedFor(nameof(SubtitleColor))]
-    [NotifyPropertyChangedFor(nameof(WifiIconColor))]
-    [NotifyPropertyChangedFor(nameof(IndicatorPillColor))]
+    [NotifyPropertyChangedFor(nameof(IndicatorPillBrush))]
     private bool _isConnected;
 
     public bool IsNotConnected => !IsConnected;
@@ -80,7 +76,7 @@ public partial class WifiNetworkItemViewModel : ObservableObject
     private bool _hasConnectionError;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IndicatorPillColor))]
+    [NotifyPropertyChangedFor(nameof(IndicatorPillBrush))]
     private bool _isExpanded;
 
     // Password visibility toggle for the eye button
@@ -110,12 +106,9 @@ public partial class WifiNetworkItemViewModel : ObservableObject
     public bool CanConnect => !IsConnecting && !IsConnected;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IndicatorPillColor))]
+    [NotifyPropertyChangedFor(nameof(IndicatorPillBrush))]
     [NotifyPropertyChangedFor(nameof(SubtitleText))]
-    [NotifyPropertyChangedFor(nameof(SubtitleColor))]
     [NotifyPropertyChangedFor(nameof(StatusBadgeText))]
-    [NotifyPropertyChangedFor(nameof(StatusBadgeColor))]
-    [NotifyPropertyChangedFor(nameof(StatusBadgeBackground))]
     private bool _hasInternet = true;
 
     public string StatusBadgeText => IsConnected ? "Connected" : (IsProfileKnown ? "Saved" : (IsEnterprise ? "Enterprise" : (IsSecured ? "Secured" : "Open")));
@@ -140,11 +133,10 @@ public partial class WifiNetworkItemViewModel : ObservableObject
         _ => "\uE701"   // Wi-Fi full (4 bars)
     };
 
-    public string WifiIconColor => "#FFFFFF";
-    public string SubtitleColor => IsConnected ? "#A0FFFFFF" : "#80FFFFFF";
-    public string StatusBadgeColor => IsConnected ? "#FFFFFF" : (IsProfileKnown ? "#0091FF" : (IsEnterprise ? "#FFB703" : "#B0FFFFFF"));
-    public string StatusBadgeBackground => IsConnected ? "#1AFFFFFF" : (IsProfileKnown ? "#1A0091FF" : (IsEnterprise ? "#1AFFB703" : "#12FFFFFF"));
-    public string IndicatorPillColor => IsConnected ? (HasInternet ? "#00E676" : "#FFB703") : (IsExpanded ? "#FFFFFF" : "Transparent");
+    public Brush IndicatorPillBrush => IsConnected
+        ? (HasInternet ? ThemeTokens.StatusSuccessBrush : ThemeTokens.StatusWarningBrush)
+        : (IsExpanded ? ThemeTokens.TextPrimaryBrush : Brushes.Transparent);
+
     public string EyeGlyph => IsPasswordVisible ? "\uED1B" : "\uED1A"; // EyeOff / Eye
 }
 
@@ -241,11 +233,9 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEthernetPanel))]
     [NotifyPropertyChangedFor(nameof(IsWifiPanel))]
-    [NotifyPropertyChangedFor(nameof(IsKillNetPanel))]
     [NotifyPropertyChangedFor(nameof(IsAdaptersPanel))]
     [NotifyPropertyChangedFor(nameof(IsSpeedPanel))]
     [NotifyPropertyChangedFor(nameof(IsDataUsagePanel))]
-    [NotifyPropertyChangedFor(nameof(IsHotspotPanel))]
     private string _currentPanel = "Ethernet";
 
     partial void OnCurrentPanelChanged(string value)
@@ -255,8 +245,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             CancelSpeedTest();
         }
         if (string.Equals(value, "Usage", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(value, "DataUsage", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(value, "Hotspot", StringComparison.OrdinalIgnoreCase))
+            string.Equals(value, "DataUsage", StringComparison.OrdinalIgnoreCase))
         {
             RefreshDataUsageAsync();
         }
@@ -264,13 +253,10 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
 
     public bool IsEthernetPanel => string.Equals(CurrentPanel, "Ethernet", StringComparison.OrdinalIgnoreCase);
     public bool IsWifiPanel => string.Equals(CurrentPanel, "Wifi", StringComparison.OrdinalIgnoreCase);
-    public bool IsAdaptersPanel => string.Equals(CurrentPanel, "Adapters", StringComparison.OrdinalIgnoreCase) || string.Equals(CurrentPanel, "KillNet", StringComparison.OrdinalIgnoreCase);
-    public bool IsKillNetPanel => IsAdaptersPanel;
+    public bool IsAdaptersPanel => string.Equals(CurrentPanel, "Adapters", StringComparison.OrdinalIgnoreCase);
     public bool IsSpeedPanel => string.Equals(CurrentPanel, "Speed", StringComparison.OrdinalIgnoreCase);
     public bool IsDataUsagePanel => string.Equals(CurrentPanel, "Usage", StringComparison.OrdinalIgnoreCase) ||
-                                    string.Equals(CurrentPanel, "DataUsage", StringComparison.OrdinalIgnoreCase) ||
-                                    string.Equals(CurrentPanel, "Hotspot", StringComparison.OrdinalIgnoreCase);
-    public bool IsHotspotPanel => IsDataUsagePanel;
+                                    string.Equals(CurrentPanel, "DataUsage", StringComparison.OrdinalIgnoreCase);
 
     // --- Dynamic Status Brushes for Modular WidgetTiles ---
     private static readonly Brush GreenIndicatorBrush = ThemeTokens.StatusSuccessBrush;
@@ -323,12 +309,9 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         }
     }
 
-    public Brush KillNetStatusBrush => AdaptersStatusBrush;
-
     public Brush SpeedStatusBrush => WhiteIndicatorBrush;
 
     public Brush DataUsageStatusBrush => WhiteIndicatorBrush;
-    public Brush HotspotStatusBrush => DataUsageStatusBrush;
 
 
 
@@ -351,7 +334,6 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetPanelIcon))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelTitleColor))]
     [NotifyPropertyChangedFor(nameof(EthernetTileHeader))]
-    [NotifyPropertyChangedFor(nameof(EthernetTileIcon))]
     [NotifyPropertyChangedFor(nameof(EthernetTileSymbol))]
     [NotifyPropertyChangedFor(nameof(EthernetTileTooltip))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelName))]
@@ -421,7 +403,6 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(EthernetTileHeader))]
-    [NotifyPropertyChangedFor(nameof(EthernetTileIcon))]
     [NotifyPropertyChangedFor(nameof(EthernetTileSymbol))]
     [NotifyPropertyChangedFor(nameof(EthernetTileTooltip))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelName))]
@@ -1203,7 +1184,6 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetPanelIcon))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelTitleColor))]
     [NotifyPropertyChangedFor(nameof(EthernetTileHeader))]
-    [NotifyPropertyChangedFor(nameof(EthernetTileIcon))]
     [NotifyPropertyChangedFor(nameof(EthernetTileSymbol))]
     [NotifyPropertyChangedFor(nameof(EthernetTileTooltip))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelName))]
@@ -1235,8 +1215,6 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
 
     // --- Dynamic USB Tethering & Ethernet Properties for Tile and Panel ---
     public string EthernetTileHeader => IsActiveUsbTethering ? "USB Tether" : "Ethernet";
-
-    public string EthernetTileIcon => IsActiveUsbTethering ? "\uE8EA" : "\uE839";
 
     public SymbolRegular EthernetTileSymbol => IsActiveUsbTethering ? SymbolRegular.UsbPlug24 : SymbolRegular.Connector24;
 
@@ -1516,7 +1494,6 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                 OnPropertyChanged(nameof(EthernetPanelIcon));
                 OnPropertyChanged(nameof(EthernetPanelTitleColor));
                 OnPropertyChanged(nameof(EthernetTileHeader));
-                OnPropertyChanged(nameof(EthernetTileIcon));
                 OnPropertyChanged(nameof(EthernetTileSymbol));
                 OnPropertyChanged(nameof(EthernetTileTooltip));
                 OnPropertyChanged(nameof(EthernetPanelName));
@@ -1963,15 +1940,17 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             else
             {
                 item.HasConnectionError = true;
-                item.ConnectionErrorMessage = "Incorrect password";
-                ShowToast("Connection failed: Incorrect password");
+                string errorMsg = string.IsNullOrWhiteSpace(message) ? "Connection failed." : message;
+                item.ConnectionErrorMessage = errorMsg;
+                ShowToast($"Connection failed: {errorMsg}");
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             item.HasConnectionError = true;
-            item.ConnectionErrorMessage = "Incorrect password";
-            ShowToast("Connection failed: Incorrect password");
+            string errorMsg = string.IsNullOrWhiteSpace(ex.Message) ? "Connection failed." : ex.Message;
+            item.ConnectionErrorMessage = errorMsg;
+            ShowToast($"Connection failed: {errorMsg}");
         }
         finally
         {
@@ -2279,7 +2258,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             OnPropertyChanged(nameof(WifiActionSubtext));
             OnPropertyChanged(nameof(EthernetStatusBrush));
             OnPropertyChanged(nameof(WifiStatusBrush));
-            OnPropertyChanged(nameof(KillNetStatusBrush));
+            OnPropertyChanged(nameof(AdaptersStatusBrush));
             OnPropertyChanged(nameof(SpeedStatusBrush));
             OnPropertyChanged(nameof(IsEthernetEnabled));
             OnPropertyChanged(nameof(IsEthernetDisabled));
@@ -2287,7 +2266,6 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             OnPropertyChanged(nameof(EthernetPanelIcon));
             OnPropertyChanged(nameof(EthernetPanelTitleColor));
             OnPropertyChanged(nameof(EthernetTileHeader));
-            OnPropertyChanged(nameof(EthernetTileIcon));
             OnPropertyChanged(nameof(EthernetTileSymbol));
             OnPropertyChanged(nameof(EthernetTileTooltip));
             OnPropertyChanged(nameof(EthernetPanelName));
@@ -2792,7 +2770,6 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         OnPropertyChanged(nameof(WifiStatusBrush));
         OnPropertyChanged(nameof(WifiIndicatorDotBrush));
         OnPropertyChanged(nameof(EthernetTileHeader));
-        OnPropertyChanged(nameof(EthernetTileIcon));
         OnPropertyChanged(nameof(EthernetTileSymbol));
         OnPropertyChanged(nameof(EthernetTileTooltip));
         OnPropertyChanged(nameof(EthernetPanelName));

@@ -17,8 +17,6 @@
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
-        <conv:StringToBrushConverter x:Key="StringToBrush" />
-
         <!-- Strips default dotted focus border across all controls -->
         <Style TargetType="{x:Type Control}">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -111,10 +109,10 @@
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="StartLabel" Property="Foreground" Value="#0091FF" />
+                                <Setter TargetName="StartLabel" Property="Foreground" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="StartLabel" Property="Foreground" Value="#0078D4" />
+                                <Setter TargetName="StartLabel" Property="Foreground" Value="{DynamicResource SystemAccentColorSecondaryBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -128,7 +126,7 @@
             <Setter Property="Height" Value="7" />
             <Setter Property="CornerRadius" Value="3.5" />
             <Setter Property="Margin" Value="3.5,0" />
-            <Setter Property="Background" Value="#22FFFFFF" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceBorderBrush}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
         </Style>
 
@@ -136,10 +134,10 @@
         <Style x:Key="SpeedTestDot1Style" TargetType="Border" BasedOn="{StaticResource SpeedTestBaseDotStyle}">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsLatencyPhaseActive}" Value="True">
-                    <Setter Property="Background" Value="#FFB703" />
+                    <Setter Property="Background" Value="{DynamicResource StatusWarningBrush}" />
                     <Setter Property="Effect">
                         <Setter.Value>
-                            <DropShadowEffect Color="#FFB703" BlurRadius="7" Opacity="0.9" ShadowDepth="0" />
+                            <DropShadowEffect Color="{StaticResource StatusWarningColor}" BlurRadius="7" Opacity="0.9" ShadowDepth="0" />
                         </Setter.Value>
                     </Setter>
                     <DataTrigger.EnterActions>
@@ -156,11 +154,11 @@
                     </DataTrigger.ExitActions>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IsDownloadPhaseActive}" Value="True">
-                    <Setter Property="Background" Value="#FFB703" />
+                    <Setter Property="Background" Value="{DynamicResource StatusWarningBrush}" />
                     <Setter Property="Opacity" Value="0.75" />
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IsUploadPhaseActive}" Value="True">
-                    <Setter Property="Background" Value="#FFB703" />
+                    <Setter Property="Background" Value="{DynamicResource StatusWarningBrush}" />
                     <Setter Property="Opacity" Value="0.75" />
                 </DataTrigger>
             </Style.Triggers>
@@ -170,10 +168,10 @@
         <Style x:Key="SpeedTestDot2Style" TargetType="Border" BasedOn="{StaticResource SpeedTestBaseDotStyle}">
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsDownloadPhaseActive}" Value="True">
-                    <Setter Property="Background" Value="#0091FF" />
+                    <Setter Property="Background" Value="{DynamicResource StatusInfoBrush}" />
                     <Setter Property="Effect">
                         <Setter.Value>
-                            <DropShadowEffect Color="#0091FF" BlurRadius="7" Opacity="0.9" ShadowDepth="0" />
+                            <DropShadowEffect Color="{StaticResource StatusInfoColor}" BlurRadius="7" Opacity="0.9" ShadowDepth="0" />
                         </Setter.Value>
                     </Setter>
                     <DataTrigger.EnterActions>
@@ -190,7 +188,7 @@
                     </DataTrigger.ExitActions>
                 </DataTrigger>
                 <DataTrigger Binding="{Binding IsUploadPhaseActive}" Value="True">
-                    <Setter Property="Background" Value="#0091FF" />
+                    <Setter Property="Background" Value="{DynamicResource StatusInfoBrush}" />
                     <Setter Property="Opacity" Value="0.75" />
                 </DataTrigger>
             </Style.Triggers>
@@ -236,14 +234,13 @@
 
             <!-- ========================================================================= -->
             <!-- ROW 0: TOP 5-TILE REGION (Transparent Acrylic Backdrop)                   -->
-            <!-- [ Ethernet ] | [ WIFI ] | [ Kill Net ] | [ Speed ] | [ Hotspot ]          -->
+            <!-- [ Ethernet ] | [ Wi-Fi ] | [ Adapters ] | [ Speed ] | [ Usage ]          -->
             <!-- ========================================================================= -->
             <widgets:WidgetTiles Grid.Row="0"
                                  SelectedValue="{Binding CurrentPanel, Mode=TwoWay}"
                                  Height="76">
                 <widgets:WidgetTile Value="Ethernet"
-                                    Icon="{Binding EthernetTileIcon}"
-                                    IconSize="18"
+                                    Symbol="{Binding EthernetTileSymbol}"
                                     Header="{Binding EthernetTileHeader}"
                                     IndicatorBrush="{Binding EthernetStatusBrush}"
                                     IsEnabled="{Binding HasEthernetAdapter}"
@@ -742,23 +739,23 @@
                                                 </Border>
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="{StaticResource FluentHoverBrush}" />
+                                                        <Setter Property="Background" Value="{DynamicResource FluentHoverBrush}" />
                                                     </Trigger>
                                                     <DataTrigger Binding="{Binding IsExpanded}" Value="True">
-                                                        <Setter Property="Background" Value="#0DFFFFFF" />
-                                                        <Setter Property="BorderBrush" Value="#25FFFFFF" />
+                                                        <Setter Property="Background" Value="{DynamicResource SurfaceGlassSubtleBrush}" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
                                                     </DataTrigger>
                                                     <MultiDataTrigger>
                                                         <MultiDataTrigger.Conditions>
                                                             <Condition Binding="{Binding IsExpanded}" Value="True" />
                                                             <Condition Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsMouseOver}" Value="True" />
                                                         </MultiDataTrigger.Conditions>
-                                                        <Setter Property="Background" Value="#12FFFFFF" />
-                                                        <Setter Property="BorderBrush" Value="#32FFFFFF" />
+                                                        <Setter Property="Background" Value="{DynamicResource FluentHoverBrush}" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
                                                     </MultiDataTrigger>
                                                     <Trigger Property="IsSelected" Value="True">
-                                                        <Setter Property="Background" Value="#0DFFFFFF" />
-                                                        <Setter Property="BorderBrush" Value="#25FFFFFF" />
+                                                        <Setter Property="Background" Value="{DynamicResource SurfaceGlassSubtleBrush}" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -810,7 +807,7 @@
                                                 <Border Grid.Column="0"
                                                         Width="3"
                                                         Height="16"
-                                                        Background="{Binding IndicatorPillColor, Converter={StaticResource StringToBrush}}"
+                                                        Background="{Binding IndicatorPillBrush}"
                                                         CornerRadius="1.5"
                                                         VerticalAlignment="Center"
                                                         Margin="0,0,8,0"
@@ -821,7 +818,7 @@
                                                            Text="{Binding WifiSignalGlyph}"
                                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                                            FontSize="18"
-                                                           Foreground="{Binding WifiIconColor, Converter={StaticResource StringToBrush}}"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                                            VerticalAlignment="Center"
                                                            Margin="0,0,12,0"
                                                            />
@@ -837,7 +834,7 @@
                                                     <TextBlock Text="{Binding SubtitleText}"
                                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                                               Foreground="{Binding SubtitleColor, Converter={StaticResource StringToBrush}}"
+                                                               Foreground="{DynamicResource TextMutedBrush}"
                                                                Margin="0,2,0,0" />
                                                 </StackPanel>
                                             </Grid>
@@ -933,7 +930,7 @@
                                                                     FontWeight="{DynamicResource TypeBodyFontWeight}"
                                                                     Foreground="{DynamicResource TextPrimaryBrush}"
                                                                     Background="Transparent"
-                                                                    BorderBrush="#25FFFFFF"
+                                                                    BorderBrush="{DynamicResource SurfaceBorderBrush}"
                                                                     BorderThickness="1"
                                                                     PlaceholderText="Password..."
                                                                     ClearButtonEnabled="False"
@@ -979,8 +976,8 @@
 
                                                     <!-- Connecting spinner -->
                                                     <Border Visibility="{Binding IsConnecting, Converter={StaticResource BoolToVis}}"
-                                                            Background="#10FFFFFF"
-                                                            BorderBrush="#18FFFFFF"
+                                                            Background="{DynamicResource SurfaceGlassSubtleBrush}"
+                                                            BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}"
                                                             BorderThickness="1"
                                                             CornerRadius="{DynamicResource ControlCornerRadius}"
                                                             Width="76"

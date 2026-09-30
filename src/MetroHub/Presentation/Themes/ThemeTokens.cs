@@ -27,7 +27,8 @@ public static class ThemeTokens
     public static readonly Color AccentPrimaryColor = Color.FromRgb(0x4C, 0xC2, 0xFF);
     public static readonly Color AccentSecondaryColor = Color.FromRgb(0x60, 0xCD, 0xFF);
     public static readonly SolidColorBrush AccentPrimaryBrush = CreateFrozenBrush(AccentPrimaryColor);
-    public static readonly SolidColorBrush AccentSecondaryBrush = CreateFrozenBrush(AccentSecondaryColor);
+    // Typography Brushes
+    public static readonly SolidColorBrush TextPrimaryBrush = CreateFrozenBrush(Color.FromRgb(0xFF, 0xFF, 0xFF));
 
     public static SolidColorBrush CreateFrozenBrush(Color c)
     {
