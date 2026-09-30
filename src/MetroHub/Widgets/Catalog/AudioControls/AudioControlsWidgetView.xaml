@@ -150,9 +150,9 @@
                 </Grid.Style>
 
                 <!-- 1. Docked Output Device List Container -->
-                <Border Background="#14000000"
+                <Border Background="{DynamicResource SurfaceInsetWellBrush}"
                         BorderThickness="0"
-                        CornerRadius="0,0,2,2"
+                        CornerRadius="{DynamicResource ControlCornerRadiusBottom}"
                         Padding="14,14,14,12">
 
                 <Grid Background="Transparent">

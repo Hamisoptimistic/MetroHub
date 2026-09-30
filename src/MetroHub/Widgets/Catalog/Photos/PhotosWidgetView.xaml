@@ -28,8 +28,8 @@
             <!-- 1. EMPTY STATE (First-time add / No folder selected)           -->
             <!-- ============================================================== -->
             <Border x:Name="EmptyStatePanel"
-                    Background="#18FFFFFF"
-                    BorderBrush="#15FFFFFF"
+                    Background="{DynamicResource SurfaceGlassBrush}"
+                    BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}"
                     BorderThickness="1"
                     CornerRadius="{DynamicResource ControlCornerRadius}"
                     Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
@@ -42,8 +42,8 @@
                     <Border Width="38"
                             Height="38"
                             CornerRadius="19"
-                            Background="#18FFFFFF"
-                            BorderBrush="#25FFFFFF"
+                            Background="{DynamicResource SurfaceGlassBrush}"
+                            BorderBrush="{DynamicResource SurfaceBorderBrush}"
                             BorderThickness="1"
                             HorizontalAlignment="Center"
                             Margin="0,0,0,8"

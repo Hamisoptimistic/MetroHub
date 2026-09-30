@@ -12,9 +12,6 @@
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
-        <!-- Boolean to Visibility Converter -->
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
-
         <!-- Modern Windows 11 Fluent Rail Button Style with Widget-Style Borderless Sheen -->
         <Style x:Key="RailButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />

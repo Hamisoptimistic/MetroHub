@@ -143,9 +143,9 @@
 
                 <!-- Row 1: Bottom Docked Bar: Transport Controls + Source Readout -->
                 <Border Grid.Row="1"
-                        Background="#14000000"
+                        Background="{DynamicResource SurfaceInsetWellBrush}"
                         BorderThickness="0"
-                        CornerRadius="0,0,2,2"
+                        CornerRadius="{DynamicResource ControlCornerRadiusBottom}"
                         Padding="{Binding PlaybackBarPadding}">
                     <Grid>
                         <!-- Transport Controls (< ▷ >) Aligned with Title Name on Left -->
@@ -438,7 +438,7 @@
                 <!-- ROW 1: TRANSLUCENT ACRYLIC CHIN (PHYSICAL CONTROLS)       -->
                 <!-- ========================================================= -->
                 <Border Grid.Row="1"
-                        CornerRadius="0,0,2,2"
+                        CornerRadius="{DynamicResource ControlCornerRadiusBottom}"
                         >
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">

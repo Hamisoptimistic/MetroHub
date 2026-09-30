@@ -79,6 +79,7 @@
     <CornerRadius x:Key="ControlCornerRadius">2</CornerRadius>
     <CornerRadius x:Key="ControlCornerRadiusSmall">2</CornerRadius>
     <CornerRadius x:Key="ControlCornerRadiusLarge">4</CornerRadius>
+    <CornerRadius x:Key="ControlCornerRadiusBottom">0,0,2,2</CornerRadius>
 
     <!-- ContextMenu & Dropdown Container / Item Radius -->
     <CornerRadius x:Key="ContextMenuCornerRadius">2</CornerRadius>
@@ -91,6 +92,13 @@
     <SolidColorBrush x:Key="FluentHoverBrush" Color="#12FFFFFF" />
     <SolidColorBrush x:Key="FluentPressedBrush" Color="#1EFFFFFF" />
     <SolidColorBrush x:Key="FluentHoverBorderBrush" Color="Transparent" />
+
+    <!-- Fluent Dark-Glass Surface & Border Tokens -->
+    <SolidColorBrush x:Key="SurfaceGlassBrush" Color="#18FFFFFF" />
+    <SolidColorBrush x:Key="SurfaceGlassSubtleBrush" Color="#10FFFFFF" />
+    <SolidColorBrush x:Key="SurfaceBorderBrush" Color="#20FFFFFF" />
+    <SolidColorBrush x:Key="SurfaceBorderSubtleBrush" Color="#15FFFFFF" />
+    <SolidColorBrush x:Key="SurfaceInsetWellBrush" Color="#14000000" />
 
     <!-- ========================================================================= -->
     <!-- CENTRAL FLUENT 2 SYSTEM ACCENT COLOR TOKENS                               -->

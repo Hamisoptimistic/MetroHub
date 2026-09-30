@@ -53,7 +53,7 @@
             <Border Background="{Binding HorizonAuraBrush}"
                     Height="3"
                     VerticalAlignment="Bottom"
-                    CornerRadius="0,0,2,2"
+                    CornerRadius="{DynamicResource ControlCornerRadiusBottom}"
                     IsHitTestVisible="False" />
 
             <!-- 3. Glass Top Specular Sheen (Subtle light catch across upper half) -->

@@ -12,8 +12,6 @@
              Tag="InteractiveControl">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
-
         <!-- Tab Close Button (18x18, subtle hover red) -->
         <Style x:Key="TabCloseButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
@@ -246,7 +244,7 @@
                                     <Border x:Name="TabDivider"
                                             Width="1"
                                             Height="14"
-                                            Background="#18FFFFFF"
+                                            Background="{DynamicResource WidgetDividerBrush}"
                                             HorizontalAlignment="Right"
                                             VerticalAlignment="Center"
                                             />

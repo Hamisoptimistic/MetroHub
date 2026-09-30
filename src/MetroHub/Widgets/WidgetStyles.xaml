@@ -3,13 +3,6 @@
                     xmlns:widgets="clr-namespace:MetroHub.Widgets"
                     xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
                     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
-
-    <!-- Fallback Design Tokens for Parse-Time Safety -->
-    <CornerRadius x:Key="ControlCornerRadius">2</CornerRadius>
-    <CornerRadius x:Key="TileCornerRadius">2</CornerRadius>
-    <SolidColorBrush x:Key="FluentHoverBrush" Color="#12FFFFFF" />
-    <SolidColorBrush x:Key="FluentPressedBrush" Color="#1EFFFFFF" />
-
     <!-- Universal Converters -->
     <BooleanToVisibilityConverter x:Key="BoolToVis" />
 

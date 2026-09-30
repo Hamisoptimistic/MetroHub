@@ -230,9 +230,9 @@
 
                 <!-- Row 1: Bottom Docked Bar (Transport Controls on Left, Cycle Dots on Right) -->
                 <Border Grid.Row="1"
-                        Background="#14000000"
+                        Background="{DynamicResource SurfaceInsetWellBrush}"
                         BorderThickness="0"
-                        CornerRadius="0,0,2,2"
+                        CornerRadius="{DynamicResource ControlCornerRadiusBottom}"
                         Padding="20,0,20,0">
                     <Grid>
                         <!-- Left: Transport Controls (Reset, Play/Pause, Skip) -->

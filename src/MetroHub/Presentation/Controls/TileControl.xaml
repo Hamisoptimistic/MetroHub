@@ -36,7 +36,6 @@
     <UserControl.Resources>
         <conv:TileSpanToPixelsConverter x:Key="SpanConverter" />
         <conv:StringToBrushConverter x:Key="StringToBrushConverter" />
-        <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
         <!-- 1. App Tile DataTemplate (Exact original visual layout and ClearType hinting) -->
         <DataTemplate DataType="{x:Type models:TileModel}">
