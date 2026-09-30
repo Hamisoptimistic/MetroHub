@@ -4,12 +4,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Media;
 using System.Threading;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
+using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Messaging;
 using MetroHub.Widgets.Serialization;
 
@@ -20,7 +22,7 @@ namespace MetroHub.Widgets.Catalog.Pomodoro;
 /// Follows the exact design and architectural patterns of MediaWidgetViewModel.
 /// Supports 4x2 (ring-only), 8x3 (Banner3), and 8x4 (Mega) sizes with zero-drift timing.
 /// </summary>
-public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
+public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase, IWidgetContextMenuProvider
 {
     private sealed record PhaseTheme(Color GlowColor, Brush GlowSolidBrush, RadialGradientBrush SensualRadialBrush);
 
@@ -308,6 +310,50 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
         UpdateColorTheme();
         UpdateVisualState();
         SaveSettings();
+    }
+
+    public IEnumerable<Control> GetContextMenuItems()
+    {
+        var presetItem = new MenuItem
+        {
+            Header = "Focus Duration",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Timer24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+
+        var item25 = new MenuItem
+        {
+            Header = "25m Focus / 5m Break (Classic)",
+            IsCheckable = true,
+            IsChecked = FocusMinutes == 25
+        };
+        item25.Click += (s, ev) => SetPreset(25, 5, 15);
+
+        var item50 = new MenuItem
+        {
+            Header = "50m Focus / 10m Break (Deep Work)",
+            IsCheckable = true,
+            IsChecked = FocusMinutes == 50
+        };
+        item50.Click += (s, ev) => SetPreset(50, 10, 30);
+
+        var item15 = new MenuItem
+        {
+            Header = "15m Focus / 3m Break (Sprint)",
+            IsCheckable = true,
+            IsChecked = FocusMinutes == 15
+        };
+        item15.Click += (s, ev) => SetPreset(15, 3, 10);
+
+        presetItem.Items.Add(item25);
+        presetItem.Items.Add(item50);
+        presetItem.Items.Add(item15);
+
+        yield return presetItem;
     }
 
     private void UpdateVisualState()

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -11,12 +12,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
+using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Messaging;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Photos;
 
-public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler
+public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler, IWidgetContextMenuProvider
 {
     private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -224,6 +226,153 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
     {
         if (IsEmpty) ChooseFolder();
         else OpenCurrentPhoto();
+    }
+
+    public IEnumerable<Control> GetContextMenuItems()
+    {
+        // 1. Open in Windows Photos
+        var openPhotoItem = new MenuItem
+        {
+            Header = "Open in Windows Photos",
+            IsEnabled = !IsEmpty,
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Image24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        openPhotoItem.Click += (s, ev) => OpenCurrentPhoto();
+
+        // 2. Choose Photos Folder
+        var chooseFolderItem = new MenuItem
+        {
+            Header = "Choose Photo Stream Folder...",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.FolderOpen24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        chooseFolderItem.Click += (s, ev) => ChooseFolder();
+
+        // 3. Stream Interval Submenu
+        var intervalItem = new MenuItem
+        {
+            Header = "Photo Stream Interval",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Timer24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+
+        var item10s = new MenuItem
+        {
+            Header = "10 Seconds",
+            IsCheckable = true,
+            IsChecked = IntervalSeconds == 10
+        };
+        item10s.Click += (s, ev) => SetInterval(10);
+
+        var item30s = new MenuItem
+        {
+            Header = "30 Seconds (Default)",
+            IsCheckable = true,
+            IsChecked = IntervalSeconds == 30
+        };
+        item30s.Click += (s, ev) => SetInterval(30);
+
+        var item1m = new MenuItem
+        {
+            Header = "1 Minute",
+            IsCheckable = true,
+            IsChecked = IntervalSeconds == 60
+        };
+        item1m.Click += (s, ev) => SetInterval(60);
+
+        var item5m = new MenuItem
+        {
+            Header = "5 Minutes",
+            IsCheckable = true,
+            IsChecked = IntervalSeconds == 300
+        };
+        item5m.Click += (s, ev) => SetInterval(300);
+
+        intervalItem.Items.Add(item10s);
+        intervalItem.Items.Add(item30s);
+        intervalItem.Items.Add(item1m);
+        intervalItem.Items.Add(item5m);
+
+        // 4. Shuffle Stream Toggle
+        var shuffleItem = new MenuItem
+        {
+            Header = "Shuffle Photo Stream",
+            IsCheckable = true,
+            IsChecked = Shuffle,
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.ArrowShuffle24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        shuffleItem.Click += (s, ev) => ToggleShuffle();
+
+        // 5. Include Subfolders Toggle
+        var subfoldersItem = new MenuItem
+        {
+            Header = "Include Subfolders",
+            IsCheckable = true,
+            IsChecked = IncludeSubfolders,
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Folder24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        subfoldersItem.Click += (s, ev) => ToggleIncludeSubfolders();
+
+        // 6. Fit Mode Submenu
+        var fitModeItem = new MenuItem
+        {
+            Header = "Photo Stream Fit",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.SlideSize24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+
+        var itemSmartFit = new MenuItem
+        {
+            Header = "Smart Fit (With Backdrop)",
+            IsCheckable = true,
+            IsChecked = FitMode == "FitWithBlur"
+        };
+        itemSmartFit.Click += (s, ev) => SetFitMode("FitWithBlur");
+
+        var itemFill = new MenuItem
+        {
+            Header = "Fill Tile (Crop)",
+            IsCheckable = true,
+            IsChecked = FitMode == "Fill"
+        };
+        itemFill.Click += (s, ev) => SetFitMode("Fill");
+
+        fitModeItem.Items.Add(itemSmartFit);
+        fitModeItem.Items.Add(itemFill);
+
+        yield return openPhotoItem;
+        yield return chooseFolderItem;
+        yield return intervalItem;
+        yield return shuffleItem;
+        yield return subfoldersItem;
+        yield return fitModeItem;
     }
 
     public void SetHovered(bool hovered)

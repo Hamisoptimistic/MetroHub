@@ -7,15 +7,19 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services.Catalog.Weather;
+using MetroHub.Presentation.Messaging;
+using MetroHub.Presentation.Themes;
 
 namespace MetroHub.Widgets.Catalog.Weather;
 
-public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler
+public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler, IWidgetContextMenuProvider
 {
     private static readonly TimeSpan BackgroundPollingInterval = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan ResumeThreshold = TimeSpan.FromMinutes(15);
@@ -272,6 +276,107 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
     }
 
     public void OnPrimaryAction() => ToggleUnits();
+
+    public IEnumerable<Control> GetContextMenuItems()
+    {
+        var changeLocationItem = new MenuItem
+        {
+            Header = "Change Location...",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Location24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        changeLocationItem.Click += (s, ev) =>
+        {
+            WeakReferenceMessenger.Default.Send(new TileShowWeatherLocationDialogMessage(this));
+        };
+
+        var autoLocationItem = new MenuItem
+        {
+            Header = "Use Automatic Location (GPS / IP)",
+            IsCheckable = true,
+            IsChecked = IsAutoLocation,
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.MyLocation24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        autoLocationItem.Click += (s, ev) => _ = UseAutoLocationAsync();
+
+        var toggleUnitsItem = new MenuItem
+        {
+            Header = IsFahrenheit ? "Switch to Celsius (°C)" : "Switch to Fahrenheit (°F)",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Temperature24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        toggleUnitsItem.Click += (s, ev) => ToggleUnits();
+
+        var refreshItem = new MenuItem
+        {
+            Header = "Refresh Weather",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.ArrowSync24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        refreshItem.Click += (s, ev) => _ = RefreshAsync();
+
+        var styleItem = new MenuItem
+        {
+            Header = "Style",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Color24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+
+        var ambientGlowItem = new MenuItem
+        {
+            Header = "Ambient Glow",
+            IsCheckable = true,
+            IsChecked = BackgroundStyle == WeatherBackgroundStyle.AmbientGlow
+        };
+        ambientGlowItem.Click += (s, ev) => SetStyle(WeatherBackgroundStyle.AmbientGlow);
+
+        var horizonAuraItem = new MenuItem
+        {
+            Header = "Horizon Aura",
+            IsCheckable = true,
+            IsChecked = BackgroundStyle == WeatherBackgroundStyle.HorizonAura
+        };
+        horizonAuraItem.Click += (s, ev) => SetStyle(WeatherBackgroundStyle.HorizonAura);
+
+        var noneStyleItem = new MenuItem
+        {
+            Header = "None",
+            IsCheckable = true,
+            IsChecked = BackgroundStyle == WeatherBackgroundStyle.None
+        };
+        noneStyleItem.Click += (s, ev) => SetStyle(WeatherBackgroundStyle.None);
+
+        styleItem.Items.Add(ambientGlowItem);
+        styleItem.Items.Add(horizonAuraItem);
+        styleItem.Items.Add(noneStyleItem);
+
+        yield return changeLocationItem;
+        yield return autoLocationItem;
+        yield return toggleUnitsItem;
+        yield return styleItem;
+        yield return refreshItem;
+    }
 
     public async Task<bool> SetCustomCityAsync(string cityName, CancellationToken cancellationToken = default)
     {

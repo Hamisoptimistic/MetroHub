@@ -4,11 +4,13 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
+using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Notepad;
@@ -25,7 +27,7 @@ namespace MetroHub.Widgets.Catalog.Notepad;
 /// typing pause from re-serializing and fsync-ing the whole hub layout.
 /// </para>
 /// </summary>
-public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
+public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase, IWidgetContextMenuProvider
 {
     /// <summary>Registry id of this widget (state-file directory + tile target path).</summary>
     public const string WidgetId = "notepad";
@@ -443,6 +445,57 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
     public void SwitchToTodo()
     {
         ActiveViewMode = "Todo";
+    }
+
+    public IEnumerable<Control> GetContextMenuItems()
+    {
+        var viewModeItem = new MenuItem
+        {
+            Header = "View Mode",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Notepad24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+
+        var notesMode = new MenuItem
+        {
+            Header = "Notes",
+            IsCheckable = true,
+            IsChecked = IsNotesView
+        };
+        notesMode.Click += (s, ev) => SwitchToNotes();
+
+        var todoMode = new MenuItem
+        {
+            Header = "To-Do Tasks",
+            IsCheckable = true,
+            IsChecked = IsTodoView
+        };
+        todoMode.Click += (s, ev) => SwitchToTodo();
+
+        viewModeItem.Items.Add(notesMode);
+        viewModeItem.Items.Add(todoMode);
+
+        yield return viewModeItem;
+
+        if (HasCompletedTasks)
+        {
+            var clearCompletedItem = new MenuItem
+            {
+                Header = "Clear Completed Tasks",
+                Icon = new Wpf.Ui.Controls.SymbolIcon
+                {
+                    Symbol = Wpf.Ui.Controls.SymbolRegular.DismissCircle20,
+                    FontSize = 20,
+                    Foreground = ThemeTokens.MenuIconForegroundBrush
+                }
+            };
+            clearCompletedItem.Click += (s, ev) => ClearCompleted();
+            yield return clearCompletedItem;
+        }
     }
 
     [RelayCommand]

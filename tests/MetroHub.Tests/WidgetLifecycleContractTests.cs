@@ -170,5 +170,18 @@ public class WidgetLifecycleContractTests
             calVm.Dispose();
         });
     }
+
+    [Theory]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Calendar.CalendarWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Clock.ClockWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Pomodoro.PomodoroWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Photos.PhotosWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Weather.WeatherWidgetViewModel))]
+    public void ContextMenuWidgets_ImplementWidgetContextMenuProvider(Type vmType)
+    {
+        Assert.True(typeof(IWidgetContextMenuProvider).IsAssignableFrom(vmType),
+            $"{vmType.Name} must implement IWidgetContextMenuProvider for polymorphic context menus.");
+    }
 }
 

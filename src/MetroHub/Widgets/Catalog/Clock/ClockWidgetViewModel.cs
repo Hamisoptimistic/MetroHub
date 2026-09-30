@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
+using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Messaging;
 using MetroHub.Widgets.Serialization;
 
@@ -20,7 +22,7 @@ namespace MetroHub.Widgets.Catalog.Clock;
 /// Supports 12h/24h toggle, full date formatting ("Friday, 11 September"),
 /// responsive adaptive layouts (2x2 up to 8x4), and zero background drain when hidden.
 /// </summary>
-public sealed partial class ClockWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler
+public sealed partial class ClockWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler, IWidgetContextMenuProvider
 {
     private static readonly Uri FontBaseUri = new("pack://application:,,,/MetroHub;component/Assets/Fonts/");
 
@@ -220,6 +222,108 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase, IWidgetA
     }
 
     public void OnPrimaryAction() => Toggle24HourFormat();
+
+    public IEnumerable<Control> GetContextMenuItems()
+    {
+        var timeFormatItem = new MenuItem
+        {
+            Header = "Time Format",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Clock24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+
+        var item12Hr = new MenuItem
+        {
+            Header = "12 Hours",
+            IsCheckable = true,
+            IsChecked = !Is24HourFormat
+        };
+        item12Hr.Click += (s, ev) => SetTimeFormat(false);
+
+        var item24Hr = new MenuItem
+        {
+            Header = "24 Hours",
+            IsCheckable = true,
+            IsChecked = Is24HourFormat
+        };
+        item24Hr.Click += (s, ev) => SetTimeFormat(true);
+
+        timeFormatItem.Items.Add(item12Hr);
+        timeFormatItem.Items.Add(item24Hr);
+
+        var fontItem = new MenuItem
+        {
+            Header = "Font",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.TextFont24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+
+        var itemSegoe = new MenuItem
+        {
+            Header = "Segoe UI Variable",
+            IsCheckable = true,
+            IsChecked = FontFace == ClockFontFace.SegoeUI
+        };
+        itemSegoe.Click += (s, ev) => SetFontFace(ClockFontFace.SegoeUI);
+
+        var itemMonoton = new MenuItem
+        {
+            Header = "Monoton",
+            IsCheckable = true,
+            IsChecked = FontFace == ClockFontFace.Monoton
+        };
+        itemMonoton.Click += (s, ev) => SetFontFace(ClockFontFace.Monoton);
+
+        var itemDigital7 = new MenuItem
+        {
+            Header = "Digital-7",
+            IsCheckable = true,
+            IsChecked = FontFace == ClockFontFace.Digital7
+        };
+        itemDigital7.Click += (s, ev) => SetFontFace(ClockFontFace.Digital7);
+
+        var itemFffForward = new MenuItem
+        {
+            Header = "FFF Forward",
+            IsCheckable = true,
+            IsChecked = FontFace == ClockFontFace.FffForward
+        };
+        itemFffForward.Click += (s, ev) => SetFontFace(ClockFontFace.FffForward);
+
+        var itemKarnivore = new MenuItem
+        {
+            Header = "Karnivore Digit",
+            IsCheckable = true,
+            IsChecked = FontFace == ClockFontFace.KarnivoreDigit
+        };
+        itemKarnivore.Click += (s, ev) => SetFontFace(ClockFontFace.KarnivoreDigit);
+
+        var itemNow = new MenuItem
+        {
+            Header = "Now",
+            IsCheckable = true,
+            IsChecked = FontFace == ClockFontFace.Now
+        };
+        itemNow.Click += (s, ev) => SetFontFace(ClockFontFace.Now);
+
+        fontItem.Items.Add(itemSegoe);
+        fontItem.Items.Add(itemMonoton);
+        fontItem.Items.Add(itemDigital7);
+        fontItem.Items.Add(itemFffForward);
+        fontItem.Items.Add(itemKarnivore);
+        fontItem.Items.Add(itemNow);
+
+        yield return timeFormatItem;
+        yield return fontItem;
+    }
 
     protected override void Dispose(bool disposing)
     {
