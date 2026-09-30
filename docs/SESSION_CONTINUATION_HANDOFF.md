@@ -3,7 +3,7 @@
 > **Last Updated:** September 30, 2026  
 > **Repository:** `d:\MetroHub`  
 > **Target Desktop Release:** `C:\Users\HamB\Desktop\MetroHubApp\MetroHub.exe`  
-> **Current Test Status:** **268 / 268 Tests Passing (100%)**  
+> **Current Test Status:** **273 / 273 Tests Passing (100%)**  
 > **Compiler Status:** `0 Errors, 0 Warnings` (Release build)
 
 ---
@@ -104,10 +104,14 @@
 9. **Phase 4H: Open-Source Contributor DX — Dynamic View Resolution & Polymorphic Widget Actions [COMPLETED]**:
    - **Dynamic View Template Resolution**: Built `WidgetTemplateSelector.cs` using factory caching; wired `TileControl.xaml` `TileContentPresenter` to `WidgetTemplateSelector`; deleted 19 redundant `<DataTemplate>` declarations and 19 unused widget XML namespaces from `TileControl.xaml`.
    - **Polymorphic Primary Actions**: Created `IWidgetActionHandler.cs` (`OnPrimaryAction()`); implemented on Clock, Stub, Photos, Weather, Quotes, Rover; collapsed hardcoded 47-line type-switch in `TileControl.LaunchTile()` into a 5-line polymorphic invocation.
-   - **Polymorphic Context Menu Items**: Created `IWidgetContextMenuProvider.cs` (`GetContextMenuItems()`); implemented on `CalendarWidgetViewModel`; eliminated hardcoded Calendar branch in `TileControl.OnContextMenuOpening()`; added `ThemeTokens.MenuIconForegroundBrush`.
-   - **Automated Lifecycle & Contract Tests**: Expanded test suite to **262 tests**, asserting all widget ViewModels resolve templates dynamically and interactive widgets adhere to `IWidgetActionHandler` and `IWidgetContextMenuProvider` contracts.
+   - **Polymorphic Context Menu Migration (100% Complete)**:
+     - Created `IWidgetContextMenuProvider.cs` (`IEnumerable<Control> GetContextMenuItems()`) and `ThemeTokens.MenuIconForegroundBrush`.
+     - Migrated **11 interactive widgets**: Calendar, Clock, Pomodoro, Photos, Notepad, Weather, Media, Quotes, Habit, Dino, and Rover to implement `IWidgetContextMenuProvider`.
+     - Deleted the entire 888-line legacy `else if` ladder from `TileControl.xaml.cs`.
+     - `TileControl.xaml.cs` dropped from 1,681 lines to 792 lines with **ZERO** concrete widget references remaining.
+   - **Automated Lifecycle & Contract Tests**: Expanded test suite to **273 tests**, asserting all widget ViewModels resolve templates dynamically and all interactive widgets adhere to `IWidgetActionHandler` and `IWidgetContextMenuProvider` contracts.
    - Release build: 0 errors, 0 warnings.
-   - Automated tests: **262 / 262 unit tests passed (100%)**.
+   - Automated tests: **273 / 273 unit tests passed (100%)**.
 
 ---
 
