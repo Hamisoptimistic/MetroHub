@@ -83,4 +83,49 @@ public class WidgetLifecycleContractTests
         // Ensure at least the 20 catalog widgets are registered
         Assert.True(all.Count >= 20, $"Expected at least 20 widgets registered, but found {all.Count}");
     }
+
+    [Fact]
+    public void WidgetRegistry_ResolvesDefinitionByViewModelType()
+    {
+        foreach (var def in WidgetRegistry.GetAll())
+        {
+            bool found = WidgetRegistry.TryGetByViewModelType(def.ViewModelType, out var resolved);
+            Assert.True(found, $"Failed to resolve WidgetDefinition for ViewModelType {def.ViewModelType.Name}");
+            Assert.NotNull(resolved);
+            Assert.Equal(def.Id, resolved.Id);
+        }
+    }
+
+    [Fact]
+    public void WidgetTemplateSelector_ResolvesTemplateForWidgetsWithViewType()
+    {
+        MarkdownTestHost.RunSta(() =>
+        {
+            var selector = new WidgetTemplateSelector();
+
+            foreach (var def in WidgetRegistry.GetAll())
+            {
+                var tile = new TileModel { Id = "test_" + def.Id, TargetPath = def.Id };
+                var vm = def.CreateViewModel(tile);
+
+                var template = selector.SelectTemplate(vm, null!);
+
+                if (def.ViewType != null)
+                {
+                    Assert.NotNull(template);
+                    Assert.NotNull(template.VisualTree);
+                    Assert.Equal(def.ViewType, template.VisualTree.Type);
+                }
+                else
+                {
+                    // Stub widget has no ViewType, must return null to fall back to ambient resource template
+                    Assert.Null(template);
+                }
+            }
+
+            // Normal app tile must return null to fall back to ambient TileModel template
+            var appTile = new TileModel { Id = "app_tile", TileType = TileType.App };
+            Assert.Null(selector.SelectTemplate(appTile, null!));
+        });
+    }
 }

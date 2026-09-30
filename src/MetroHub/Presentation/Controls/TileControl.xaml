@@ -8,25 +8,6 @@
              xmlns:models="clr-namespace:MetroHub.Core.Models"
              xmlns:widgets="clr-namespace:MetroHub.Widgets"
              xmlns:stub="clr-namespace:MetroHub.Widgets.Catalog.Stub"
-             xmlns:clock="clr-namespace:MetroHub.Widgets.Catalog.Clock"
-             xmlns:calendar="clr-namespace:MetroHub.Widgets.Catalog.Calendar"
-             xmlns:media="clr-namespace:MetroHub.Widgets.Catalog.Media"
-             xmlns:pomodoro="clr-namespace:MetroHub.Widgets.Catalog.Pomodoro"
-             xmlns:photos="clr-namespace:MetroHub.Widgets.Catalog.Photos"
-             xmlns:audiocontrols="clr-namespace:MetroHub.Widgets.Catalog.AudioControls"
-             xmlns:notepad="clr-namespace:MetroHub.Widgets.Catalog.Notepad"
-             xmlns:network="clr-namespace:MetroHub.Widgets.Catalog.Network"
-             xmlns:brightnesscontrols="clr-namespace:MetroHub.Widgets.Catalog.BrightnessControls"
-             xmlns:power="clr-namespace:MetroHub.Widgets.Catalog.Power"
-             xmlns:weather="clr-namespace:MetroHub.Widgets.Catalog.Weather"
-             xmlns:quotes="clr-namespace:MetroHub.Widgets.Catalog.Quotes"
-             xmlns:habit="clr-namespace:MetroHub.Widgets.Catalog.Habit"
-             xmlns:dino="clr-namespace:MetroHub.Widgets.Catalog.Dino"
-             xmlns:caffeinesleep="clr-namespace:MetroHub.Widgets.Catalog.CaffeineSleep"
-             xmlns:quickcontrols="clr-namespace:MetroHub.Widgets.Catalog.QuickControls"
-             xmlns:rover="clr-namespace:MetroHub.Widgets.Catalog.Rover"
-             xmlns:radio="clr-namespace:MetroHub.Widgets.Catalog.Radio"
-             xmlns:markdown="clr-namespace:MetroHub.Widgets.Catalog.Markdown"
              mc:Ignorable="d"
              Margin="0"
              Focusable="False"
@@ -35,6 +16,7 @@
     <UserControl.Resources>
         <conv:TileSpanToPixelsConverter x:Key="SpanConverter" />
         <conv:StringToBrushConverter x:Key="StringToBrushConverter" />
+        <widgets:WidgetTemplateSelector x:Key="WidgetTemplateSelector" />
 
         <!-- 1. App Tile DataTemplate (Exact original visual layout and ClearType hinting) -->
         <DataTemplate DataType="{x:Type models:TileModel}">
@@ -140,101 +122,6 @@
                     </Grid>
                 </Border>
             </widgets:WidgetCard>
-        </DataTemplate>
-
-        <!-- 3. Clock Widget DataTemplate (Phase 3 Native Widget: Isolated Component) -->
-        <DataTemplate DataType="{x:Type clock:ClockWidgetViewModel}">
-            <clock:ClockWidgetView />
-        </DataTemplate>
-
-        <!-- 4. Calendar Widget DataTemplate (8x6 month grid / 4x4 today's date card) -->
-        <DataTemplate DataType="{x:Type calendar:CalendarWidgetViewModel}">
-            <calendar:CalendarWidgetView />
-        </DataTemplate>
-
-        <!-- 5. Media Player Widget DataTemplate (Groove Live Tile Style) -->
-        <DataTemplate DataType="{x:Type media:MediaWidgetViewModel}">
-            <media:MediaWidgetView />
-        </DataTemplate>
-
-        <!-- 6. Pomodoro Focus Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type pomodoro:PomodoroWidgetViewModel}">
-            <pomodoro:PomodoroWidgetView />
-        </DataTemplate>
-
-        <!-- 7. Photos / Slideshow Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type photos:PhotosWidgetViewModel}">
-            <photos:PhotosWidgetView />
-        </DataTemplate>
-
-        <!-- 8. Audio Controls Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type audiocontrols:AudioControlsWidgetViewModel}">
-            <audiocontrols:AudioControlsWidgetView />
-        </DataTemplate>
-
-        <!-- 9. Notes & Tasks (Notepad / To-Do) Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type notepad:NotepadWidgetViewModel}">
-            <notepad:NotepadWidgetView />
-        </DataTemplate>
-
-        <!-- 10. Network & Internet Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type network:NetworkWidgetViewModel}">
-            <network:NetworkWidgetView />
-        </DataTemplate>
-
-        <!-- 11. Brightness Controls Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type brightnesscontrols:BrightnessControlsWidgetViewModel}">
-            <brightnesscontrols:BrightnessControlsWidgetView />
-        </DataTemplate>
-
-        <!-- 12. Power Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type power:PowerWidgetViewModel}">
-            <power:PowerWidgetView />
-        </DataTemplate>
-
-        <!-- 13. Weather & Air Quality Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type weather:WeatherWidgetViewModel}">
-            <weather:WeatherWidgetView />
-        </DataTemplate>
-
-        <!-- 14. Quotes Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type quotes:QuotesWidgetViewModel}">
-            <quotes:QuotesWidgetView />
-        </DataTemplate>
-
-        <!-- 15. Habit Tracker Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type habit:HabitWidgetViewModel}">
-            <habit:HabitWidgetView />
-        </DataTemplate>
-
-        <!-- 16. Chrome Dino Runner Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type dino:DinoWidgetViewModel}">
-            <dino:DinoWidgetView />
-        </DataTemplate>
-
-        <!-- 17. Caffeine & Sleep Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type caffeinesleep:CaffeineSleepWidgetViewModel}">
-            <caffeinesleep:CaffeineSleepWidgetView />
-        </DataTemplate>
-
-        <!-- 18. Quick Controls Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type quickcontrols:QuickControlsWidgetViewModel}">
-            <quickcontrols:QuickControlsWidgetView />
-        </DataTemplate>
-
-        <!-- 19. Rover (Windows XP Dog Companion) Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type rover:RoverWidgetViewModel}">
-            <rover:RoverWidgetView />
-        </DataTemplate>
-
-        <!-- 20. Focus Radio & Ambient Sounds Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type radio:RadioWidgetViewModel}">
-            <radio:RadioWidgetView />
-        </DataTemplate>
-
-        <!-- 21. Markdown Notes Widget DataTemplate -->
-        <DataTemplate DataType="{x:Type markdown:MarkdownWidgetViewModel}">
-            <markdown:MarkdownWidgetView />
         </DataTemplate>
     </UserControl.Resources>
 
@@ -349,9 +236,10 @@
                 </Border.Background>
             </Border>
 
-            <!-- Content Area via ContentPresenter: resolved via DataType DataTemplates -->
+            <!-- Content Area via ContentPresenter: resolved dynamically via WidgetTemplateSelector -->
             <ContentPresenter x:Name="TileContentPresenter"
                               Content="{Binding TileContent}"
+                              ContentTemplateSelector="{StaticResource WidgetTemplateSelector}"
                               />
 
             <!-- Fluent Reveal Highlight: Edge Illumination (above ContentPresenter so it shows on top of full-bleed widget content e.g. photos) -->

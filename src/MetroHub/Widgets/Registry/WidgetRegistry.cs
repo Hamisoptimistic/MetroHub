@@ -15,6 +15,7 @@ namespace MetroHub.Widgets.Registry;
 public static class WidgetRegistry
 {
     private static readonly Dictionary<string, WidgetDefinition> _registry = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<Type, WidgetDefinition> _vmTypeRegistry = new();
     private static WidgetDefinition[] _allCached = Array.Empty<WidgetDefinition>();
 
     static WidgetRegistry()
@@ -398,6 +399,7 @@ public static class WidgetRegistry
     public static void Register(WidgetDefinition definition)
     {
         _registry[definition.Id] = definition;
+        _vmTypeRegistry[definition.ViewModelType] = definition;
         _allCached = _registry.Values.ToArray();
     }
 
@@ -410,6 +412,11 @@ public static class WidgetRegistry
     public static bool TryGet(string id, out WidgetDefinition? definition)
     {
         return _registry.TryGetValue(id, out definition);
+    }
+
+    public static bool TryGetByViewModelType(Type vmType, out WidgetDefinition? definition)
+    {
+        return _vmTypeRegistry.TryGetValue(vmType, out definition);
     }
 
     public static IReadOnlyList<WidgetDefinition> GetAll() => _allCached;
