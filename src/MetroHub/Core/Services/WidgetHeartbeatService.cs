@@ -17,6 +17,7 @@ public static class WidgetHeartbeatService
     private static bool _isHubVisible = true;
 
     public static event Action<DateTime>? SecondTick;
+    internal static int SubscriberCount => SecondTick?.GetInvocationList().Length ?? 0;
 
     static WidgetHeartbeatService()
     {
