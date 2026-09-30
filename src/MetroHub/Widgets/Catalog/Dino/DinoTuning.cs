@@ -117,12 +117,30 @@ public static class DinoTuning
     // Day Palette Colors
     public static readonly Color DayBackgroundColor = Color.FromRgb(0xF7, 0xF7, 0xF7);
     public static readonly Color DayForegroundColor = Color.FromRgb(0x53, 0x53, 0x53);
+    public static readonly Color DaySecondaryColor = Color.FromRgb(0x73, 0x73, 0x73);
     public static readonly Color DayCloudColor = Color.FromRgb(0xC8, 0xC8, 0xC8);
 
     // Night Palette Colors
     public static readonly Color NightBackgroundColor = Color.FromRgb(0x20, 0x21, 0x24);
     public static readonly Color NightForegroundColor = Color.FromRgb(0xE8, 0xEA, 0xED);
+    public static readonly Color NightSecondaryColor = Color.FromRgb(0x9A, 0xA0, 0xA6);
     public static readonly Color NightMoonColor = Color.FromRgb(0xF1, 0xF3, 0xF4);
+
+    // Day & Night Frozen Brushes
+    public static readonly SolidColorBrush DayBackgroundBrush = CreateFrozenBrush(DayBackgroundColor);
+    public static readonly SolidColorBrush DayForegroundBrush = CreateFrozenBrush(DayForegroundColor);
+    public static readonly SolidColorBrush DaySecondaryBrush = CreateFrozenBrush(DaySecondaryColor);
+
+    public static readonly SolidColorBrush NightBackgroundBrush = CreateFrozenBrush(NightBackgroundColor);
+    public static readonly SolidColorBrush NightForegroundBrush = CreateFrozenBrush(NightForegroundColor);
+    public static readonly SolidColorBrush NightSecondaryBrush = CreateFrozenBrush(NightSecondaryColor);
+
+    private static SolidColorBrush CreateFrozenBrush(Color color)
+    {
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        return brush;
+    }
 
     // --- Timings & Locks ---
     public const double DeathShakeDuration = 0.300; // 300ms damped canvas shake

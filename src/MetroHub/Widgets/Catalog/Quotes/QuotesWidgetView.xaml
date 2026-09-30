@@ -9,12 +9,6 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=local:QuotesWidgetViewModel}"
              Focusable="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
@@ -26,7 +20,7 @@
 
     <!-- Transparent WidgetCard to inherit the exact glass/acrylic tile background of other tiles -->
     <widgets:WidgetCard Padding="0" Background="Transparent">
-        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True">
+        <Grid ClipToBounds="True">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />    <!-- Row 0: Centered Scaling Quote Text -->
                 <RowDefinition Height="38" />   <!-- Row 1: Right-Aligned Author Attribution -->
@@ -74,7 +68,7 @@
                                         Background="#90FFFFFF"
                                         Margin="2,0,-3.5,0"
                                         Opacity="{Binding CursorOpacity, Mode=OneWay}"
-                                        SnapsToDevicePixels="True" /></InlineUIContainer>
+ /></InlineUIContainer>
                         <TextBlock.Effect>
                             <DropShadowEffect BlurRadius="8" ShadowDepth="1.5" Direction="270" Opacity="0.5" Color="#000000" />
                         </TextBlock.Effect>
@@ -97,7 +91,7 @@
                                         <Storyboard>
                                             <DoubleAnimation Storyboard.TargetProperty="Opacity"
                                                              To="1"
-                                                             Duration="0:0:0.35" />
+                                                             Duration="{StaticResource FluentDurationGentle}" />
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </DataTrigger.EnterActions>
@@ -112,7 +106,7 @@
                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
                            FontFamily="{DynamicResource AppFontFamily}"
                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                           Foreground="#D8D2C6"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
                            TextOptions.TextFormattingMode="Ideal"
                            TextOptions.TextRenderingMode="ClearType">
                     <TextBlock.Effect>
@@ -135,14 +129,14 @@
                                 <DataTrigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15" />
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="{StaticResource FluentDurationFast}" />
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </DataTrigger.EnterActions>
                                 <DataTrigger.ExitActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.25" />
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="{StaticResource FluentDurationNormal}" />
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </DataTrigger.ExitActions>
@@ -155,7 +149,7 @@
                 <Button Command="{Binding NextQuoteCommand}"
                         ToolTip="Next Quote"
                         Style="{StaticResource QuoteActionButtonStyle}">
-                    <ui:SymbolIcon Symbol="ArrowShuffle24" FontSize="16" Foreground="#D0FFFFFF" />
+                    <ui:SymbolIcon Symbol="ArrowShuffle24" FontSize="16" Foreground="{DynamicResource TextSecondaryBrush}" />
                 </Button>
             </StackPanel>
         </Grid>

@@ -12,12 +12,6 @@
              Focusable="False"
              FocusVisualStyle="{x:Null}"
              ClipToBounds="True"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
@@ -42,17 +36,17 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
                                               Margin="{TemplateBinding Padding}"
-                                              SnapsToDevicePixels="True" />
+                                              />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="ButtonBorder" Property="Background" Value="#30FFFFFF" />
                                 <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#48FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource WidgetDividerBrush}" />
@@ -78,12 +72,11 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                SnapsToDevicePixels="True"
-                                UseLayoutRounding="True">
+                                >
                             <Grid HorizontalAlignment="Stretch"
                                   VerticalAlignment="Center"
                                   Margin="0,0,0,4"
-                                  SnapsToDevicePixels="True">
+                                  >
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="24" />
                                     <RowDefinition Height="4" />
@@ -93,14 +86,13 @@
                                 <Grid Grid.Row="0"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Center"
-                                      SnapsToDevicePixels="True">
+                                      >
                                     <ui:SymbolIcon x:Name="PART_SymbolIcon"
                                                    Symbol="{TemplateBinding Symbol}"
                                                    FontSize="{TemplateBinding IconSize}"
                                                    Foreground="{TemplateBinding Foreground}"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
-                                                   SnapsToDevicePixels="True"
                                                    Visibility="Collapsed" />
                                     <ContentControl x:Name="PART_IconContent"
                                                     Content="{TemplateBinding Icon}"
@@ -109,7 +101,7 @@
                                                     Foreground="{TemplateBinding Foreground}"
                                                     HorizontalAlignment="Center"
                                                     VerticalAlignment="Center"
-                                                    SnapsToDevicePixels="True" />
+                                                    />
                                 </Grid>
 
                                 <TextBlock Grid.Row="2"
@@ -120,7 +112,7 @@
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
                                            TextAlignment="Center"
-                                           SnapsToDevicePixels="True" />
+                                           />
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -146,7 +138,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Background="Transparent" SnapsToDevicePixels="True">
+    <Grid Background="Transparent">
         <Grid.RowDefinitions>
             <!-- ROW 0: Reusable Modular Top Tiles Strip (Balanced 72px Height) -->
             <RowDefinition Height="72" />
@@ -328,7 +320,7 @@
                                        SnapsToDevicePixels="False">
                             <ui:SymbolIcon.Style>
                                 <Style TargetType="{x:Type ui:SymbolIcon}">
-                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsNightLightEnabled}" Value="True">
                                             <Setter Property="Foreground" Value="#FFD54F" />
@@ -345,12 +337,12 @@
         <!-- ========================================================================= -->
         <!-- ROW 1: LOWER PANEL REGION                                                 -->
         <!-- ========================================================================= -->
-        <Grid Grid.Row="1" Background="Transparent" SnapsToDevicePixels="True">
+        <Grid Grid.Row="1" Background="Transparent">
 
             <!-- ==================== 0. SCREEN OFF PANEL ==================== -->
             <Grid Visibility="{Binding IsScreenOffPanel, Converter={StaticResource BoolToVis}}"
                   Margin="20,6,20,6"
-                  SnapsToDevicePixels="True">
+                  >
                 <Grid.RowDefinitions>
                     <!-- Row 0: Master Turn Off Screens Action (2 Equal-Height Centered Rows) -->
                     <RowDefinition Height="*" />
@@ -375,7 +367,7 @@
                         <ui:SymbolIcon Grid.Column="0"
                                        Symbol="WeatherMoon24"
                                        FontSize="22"
-                                       Foreground="#E0FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        Margin="0,0,10,0"
                                        VerticalAlignment="Center" />
 
@@ -384,13 +376,13 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
                                        FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                       Foreground="#F2FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="Turns off all connected displays"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#70FFFFFF"
+                                       Foreground="{DynamicResource TextSubtleBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -427,7 +419,7 @@
                         <ui:SymbolIcon Grid.Column="0"
                                        Symbol="Sparkle24"
                                        FontSize="22"
-                                       Foreground="#E0FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        Margin="0,0,10,0"
                                        VerticalAlignment="Center" />
 
@@ -436,13 +428,13 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
                                        FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                       Foreground="#F2FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="Smoothly dims displays to black before entering standby"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#70FFFFFF"
+                                       Foreground="{DynamicResource TextSubtleBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -460,7 +452,7 @@
             <!-- ==================== 1. CAFFEINE PANEL ==================== -->
             <Grid Visibility="{Binding IsCaffeinePanel, Converter={StaticResource BoolToVis}}"
                   Margin="20,6,20,6"
-                  SnapsToDevicePixels="True">
+                  >
                 <Grid.RowDefinitions>
                     <!-- Row 0: Mode Selection (2 Equal-Height Centered Rows) -->
                     <RowDefinition Height="*" />
@@ -485,7 +477,7 @@
                         <ui:SymbolIcon Grid.Column="0"
                                        Symbol="Power24"
                                        FontSize="22"
-                                       Foreground="#E0FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        Margin="0,0,10,0"
                                        VerticalAlignment="Center" />
 
@@ -494,13 +486,13 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
                                        FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                       Foreground="#F2FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding ModeSubtitle}"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#70FFFFFF"
+                                       Foreground="{DynamicResource TextSubtleBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -521,7 +513,7 @@
                                        Margin="0,0,6,0" />
                             <ui:SymbolIcon Symbol="ChevronDown16"
                                            FontSize="11"
-                                           Foreground="#B5FFFFFF"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            VerticalAlignment="Center" />
                         </StackPanel>
 
@@ -592,7 +584,7 @@
                         <ui:SymbolIcon Grid.Column="0"
                                        Symbol="Desktop24"
                                        FontSize="22"
-                                       Foreground="#E0FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        Margin="0,0,10,0"
                                        VerticalAlignment="Center" />
 
@@ -601,13 +593,13 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
                                        FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                       Foreground="#F2FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="Requires Caffeine to be turned on"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#70FFFFFF"
+                                       Foreground="{DynamicResource TextSubtleBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -625,7 +617,7 @@
             <!-- ==================== 2. NIGHT LIGHT PANEL ==================== -->
             <Grid Visibility="{Binding IsNightLightPanel, Converter={StaticResource BoolToVis}}"
                   Margin="20,6,20,6"
-                  SnapsToDevicePixels="True">
+                  >
                 <Grid.RowDefinitions>
                     <!-- Row 0: Top Header (2 Equal-Height Centered Rows) -->
                     <RowDefinition Height="*" />
@@ -650,7 +642,7 @@
                         <ui:SymbolIcon Grid.Column="0"
                                        Symbol="Lightbulb24"
                                        FontSize="22"
-                                       Foreground="#E0FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        Margin="0,0,10,0"
                                        VerticalAlignment="Center" />
 
@@ -659,13 +651,13 @@
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
                                        FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                       Foreground="#F2FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding NightLightStatusSubtitle}"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#70FFFFFF"
+                                       Foreground="{DynamicResource TextSubtleBrush}"
                                        Margin="0,2,0,0"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -692,7 +684,7 @@
                     <ui:SymbolIcon Grid.Column="0"
                                    Symbol="WeatherSunny24"
                                    FontSize="22"
-                                   Foreground="#E0FFFFFF"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                    Margin="0,0,10,0"
                                    VerticalAlignment="Center" />
 
@@ -701,8 +693,8 @@
                                                 Minimum="0"
                                                 Maximum="100"
                                                 Value="{Binding NightLightStrength, Mode=TwoWay}"
-                                                ProgressBrush="#00B4D8"
-                                                ProgressPointerOverBrush="#33C9E8"
+                                                ProgressBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                ProgressPointerOverBrush="{DynamicResource SystemAccentColorSecondaryBrush}"
                                                 Height="20"
                                                 IsEnabled="{Binding IsNightLightSupported}"
                                                 ToolTip="{Binding NightLightSupportTooltip}"
@@ -714,7 +706,7 @@
                                FontFamily="{DynamicResource AppFontFamily}"
                                FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                               Foreground="#E0FFFFFF"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                Width="44"
                                TextAlignment="Right"
                                Typography.NumeralAlignment="Tabular"

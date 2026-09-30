@@ -13,12 +13,7 @@
              ClipToBounds="False"
              Visibility="Collapsed"
              Background="Transparent"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             RenderOptions.ClearTypeHint="Enabled"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed">
+>
 
     <UserControl.RenderTransform>
         <TranslateTransform x:Name="DrawerTranslate" X="0" />
@@ -30,7 +25,7 @@
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="CaretBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
             <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
@@ -88,7 +83,7 @@
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
                                 Padding="{TemplateBinding Padding}"
-                                SnapsToDevicePixels="True">
+                                >
                             <Grid>
                                 <Rectangle x:Name="AccentPill"
                                            Width="3"
@@ -142,7 +137,7 @@
             </MenuItem>
             <MenuItem Header="Run as administrator" Click="OnContextMenuRunAsAdminClick">
                 <MenuItem.Icon>
-                    <ui:SymbolIcon Symbol="Shield32" FontSize="18" Foreground="#D0FFFFFF" />
+                    <ui:SymbolIcon Symbol="Shield32" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
                 </MenuItem.Icon>
             </MenuItem>
             <MenuItem x:Name="PinMenuItem" Header="Pin to Start" Click="OnContextMenuPinToggleClick">
@@ -151,9 +146,9 @@
                 </MenuItem.Icon>
             </MenuItem>
             <Separator />
-            <MenuItem Header="Uninstall" Click="OnContextMenuUninstallClick" Foreground="#FF6B6B">
+            <MenuItem Header="Uninstall" Click="OnContextMenuUninstallClick" Foreground="{DynamicResource StatusErrorBrush}">
                 <MenuItem.Icon>
-                    <ui:SymbolIcon Symbol="Delete24" FontSize="18" Foreground="#FF6B6B" />
+                    <ui:SymbolIcon Symbol="Delete24" FontSize="18" Foreground="{DynamicResource StatusErrorBrush}" />
                 </MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
@@ -179,8 +174,7 @@
         <Border x:Name="DrawerContainer"
                 Background="Transparent"
                 BorderThickness="0"
-                SnapsToDevicePixels="True"
-                UseLayoutRounding="True">
+                >
 
         <Grid>
             <Grid.RowDefinitions>
@@ -194,12 +188,12 @@
 
             <Grid x:Name="DrawerHeaderGrid" Grid.Row="0" Margin="16,14,16,6">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <ui:SymbolIcon Symbol="AppsListDetail24" FontSize="18" Foreground="#EAEAEA" Margin="0,0,8,0" VerticalAlignment="Center" />
+                    <ui:SymbolIcon Symbol="AppsListDetail24" FontSize="18" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0" VerticalAlignment="Center" />
                     <TextBlock Text="All apps"
                                FontSize="{DynamicResource TypeHeaderFontSize}"
                                FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                FontFamily="{DynamicResource AppDisplayFontFamily}"
-                               Foreground="#EAEAEA"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center" />
                 </StackPanel>
                 
@@ -212,7 +206,7 @@
                         <ui:SymbolIcon x:Name="RefreshIcon"
                                        Symbol="ArrowClockwise24"
                                        FontSize="14"
-                                       Foreground="#A0FFFFFF"
+                                       Foreground="{DynamicResource TextMutedBrush}"
                                        RenderTransformOrigin="0.5,0.5">
                             <ui:SymbolIcon.RenderTransform>
                                 <RotateTransform x:Name="RefreshIconRotation" Angle="0" />
@@ -223,7 +217,7 @@
                             Style="{StaticResource MiniPinButtonStyle}"
                             ToolTip="Close"
                             Click="OnCloseClick">
-                        <ui:SymbolIcon Symbol="Dismiss20" FontSize="14" Foreground="#A0FFFFFF" />
+                        <ui:SymbolIcon Symbol="Dismiss20" FontSize="14" Foreground="{DynamicResource TextMutedBrush}" />
                     </Button>
                 </StackPanel>
             </Grid>
@@ -235,11 +229,11 @@
                     CornerRadius="{DynamicResource ControlCornerRadius}"
                     Background="{DynamicResource WidgetDividerBrush}"
                     BorderThickness="0"
-                    SnapsToDevicePixels="True">
+                    >
                 <Grid>
                     <ui:SymbolIcon Symbol="Search24"
                                    FontSize="15"
-                                   Foreground="#75FFFFFF"
+                                   Foreground="{DynamicResource TextSubtleBrush}"
                                    HorizontalAlignment="Left"
                                    VerticalAlignment="Center"
                                    Margin="10,0,0,0"
@@ -249,7 +243,7 @@
                                Text="Type here to search..."
                                FontSize="{DynamicResource TypeBodyFontSize}"
                                FontWeight="{DynamicResource TypeBodyFontWeight}"
-                               Foreground="#60FFFFFF"
+                               Foreground="{DynamicResource TextSubtleBrush}"
                                VerticalAlignment="Center"
                                Margin="34,0,28,0"
                                IsHitTestVisible="False" />
@@ -272,7 +266,7 @@
                             Height="24"
                             Visibility="Collapsed"
                             Click="OnClearSearchClick">
-                        <ui:SymbolIcon Symbol="Dismiss20" FontSize="12" Foreground="#90FFFFFF" />
+                        <ui:SymbolIcon Symbol="Dismiss20" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" />
                     </Button>
                 </Grid>
             </Border>
@@ -298,7 +292,7 @@
                                                FontSize="{DynamicResource TypeSubtitleFontSize}"
                                                FontWeight="{DynamicResource TypeSubtitleFontWeight}"
                                                FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                               Foreground="#70FFFFFF"
+                                               Foreground="{DynamicResource TextSubtleBrush}"
                                                Margin="16,12,0,2" />
 
                                     <!-- Apps in this letter group -->
@@ -330,7 +324,7 @@
                                                                    Text="{Binding Name}"
                                                                    FontSize="{DynamicResource TypeBodyFontSize}"
                                                                    FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                                                   Foreground="#E6FFFFFF"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                                                    VerticalAlignment="Center"
                                                                    Margin="8,0,8,0"
                                                                    TextTrimming="CharacterEllipsis" />
@@ -360,7 +354,7 @@
                                    Text="No apps found"
                                    FontSize="{DynamicResource TypeBodyFontSize}"
                                    FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                   Foreground="#70FFFFFF"
+                                   Foreground="{DynamicResource TextSubtleBrush}"
                                    HorizontalAlignment="Center"
                                    Margin="0,32,0,0"
                                    Visibility="Collapsed" />
@@ -403,7 +397,7 @@
                                                    Text="{Binding Name}"
                                                    FontSize="{DynamicResource TypeBodyFontSize}"
                                                    FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                                   Foreground="#E6FFFFFF"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                                    VerticalAlignment="Center"
                                                    Margin="8,0,8,0"
                                                    TextTrimming="CharacterEllipsis" />

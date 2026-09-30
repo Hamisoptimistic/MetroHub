@@ -13,12 +13,7 @@
              Focusable="False"
              FocusVisualStyle="{x:Null}"
              ClipToBounds="True"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
              TextOptions.TextFormattingMode="Display"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <!-- Keyboard shortcuts (Ctrl+S / Ctrl+Shift+S / Ctrl+O / Ctrl+T / Ctrl+W / Ctrl+E) are
@@ -94,7 +89,7 @@
                     <Style.Triggers>
                         <Trigger Property="Tag" Value="Heading1">
                             <Setter Property="Margin" Value="0,16,0,10" />
-                            <Setter Property="Foreground" Value="#FFFFFF" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             <Setter Property="FontFamily" Value="{DynamicResource AppDisplayFontFamily}" />
                             <Setter Property="FontSize" Value="{DynamicResource TypeDisplayFontSize}" />
                             <Setter Property="FontWeight" Value="Bold" />
@@ -222,7 +217,7 @@
                     <Style.Triggers>
                         <Trigger Property="Tag" Value="TableHeader">
                             <Setter Property="FontWeight" Value="SemiBold" />
-                            <Setter Property="Foreground" Value="#FFFFFF" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                         </Trigger>
                     </Style.Triggers>
                 </Style>
@@ -245,7 +240,7 @@
     </UserControl.Resources>
 
     <!-- Root Grid (Zero outer padding so hairline separator runs border-to-border like Notepad) -->
-    <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" Tag="InteractiveControl">
+    <Grid Tag="InteractiveControl">
         <Grid.RowDefinitions>
             <!-- Row 0: Top Action Bar (Tabs on left, Toggle + SplitButton on right) -->
             <RowDefinition Height="38" />
@@ -258,7 +253,7 @@
         <!-- ========================================================================= -->
         <!-- ROW 0: TOP ACTION BAR (TABS ON LEFT, TOGGLE + SPLITBUTTON ON RIGHT)       -->
         <!-- ========================================================================= -->
-        <Grid Grid.Row="0" Margin="0,0,10,0" SnapsToDevicePixels="True">
+        <Grid Grid.Row="0" Margin="0,0,10,0">
             <Grid.ColumnDefinitions>
                 <!-- Left: Scrollable Tabs with + button -->
                 <ColumnDefinition Width="*" />
@@ -291,7 +286,7 @@
                         Tag="InteractiveControl">
                     <ui:SymbolIcon Symbol="{Binding ModeToggleSymbol}"
                                    FontSize="14"
-                                   Foreground="#A5FFFFFF" />
+                                   Foreground="{DynamicResource TextMutedBrush}" />
                 </Button>
 
                 <!-- More Actions Menu Button (···) -->
@@ -304,7 +299,7 @@
                         Tag="InteractiveControl">
                     <ui:SymbolIcon Symbol="MoreHorizontal24"
                                    FontSize="15"
-                                   Foreground="#A5FFFFFF" />
+                                   Foreground="{DynamicResource TextMutedBrush}" />
                     <Button.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="Save"
@@ -399,7 +394,7 @@
 
                 <!-- Watermark Placeholder (Hidden immediately when typing) -->
                 <TextBlock Text="Write markdown here..."
-                           Foreground="#30FFFFFF"
+                           Foreground="{DynamicResource TextDisabledBrush}"
                            FontFamily="{DynamicResource AppMonoFontFamily}"
                            FontSize="{DynamicResource TypeMonoCodeFontSize}"
                            FontWeight="{DynamicResource TypeMonoCodeFontWeight}"
@@ -422,7 +417,7 @@
             <Grid Visibility="{Binding IsReadTab, Converter={StaticResource BoolToVis}}">
                 <!-- Loading state -->
                 <TextBlock Text="Rendering…"
-                           Foreground="#40FFFFFF"
+                           Foreground="{DynamicResource TextDisabledBrush}"
                            FontSize="{DynamicResource TypeBodyFontSize}"
                            FontWeight="{DynamicResource TypeBodyFontWeight}"
                            HorizontalAlignment="Center"
@@ -446,9 +441,9 @@
                 <!-- Blocked / Error state -->
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                             Visibility="{Binding IsPreviewBlocked, Converter={StaticResource BoolToVis}}">
-                    <ui:SymbolIcon Symbol="DocumentError24" FontSize="26" Foreground="#65FFFFFF" HorizontalAlignment="Center" />
+                    <ui:SymbolIcon Symbol="DocumentError24" FontSize="26" Foreground="{DynamicResource TextSubtleBrush}" HorizontalAlignment="Center" />
                     <TextBlock Text="{Binding BlockedReason}"
-                               Foreground="#80FFFFFF"
+                               Foreground="{DynamicResource TextMutedBrush}"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                TextAlignment="Center"
@@ -469,7 +464,7 @@
 
             <!-- Subtle Status Line (Notifications & warnings) -->
             <TextBlock Text="{Binding StatusMessage}"
-                       Foreground="#FFAB91"
+                       Foreground="{DynamicResource StatusErrorBrush}"
                        FontSize="{DynamicResource TypeCaptionFontSize}"
                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
                        HorizontalAlignment="Center"

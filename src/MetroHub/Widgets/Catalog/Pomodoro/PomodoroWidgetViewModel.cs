@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Media;
@@ -21,6 +22,24 @@ namespace MetroHub.Widgets.Catalog.Pomodoro;
 /// </summary>
 public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
 {
+    private sealed record PhaseTheme(Color GlowColor, Brush GlowSolidBrush, RadialGradientBrush SensualRadialBrush);
+
+    private static readonly FrozenDictionary<PomodoroPhase, PhaseTheme> PhaseThemes = new Dictionary<PomodoroPhase, PhaseTheme>
+    {
+        [PomodoroPhase.Focus] = new(
+            Color.FromRgb(0xFF, 0x4B, 0x4B),      // Electric Coral
+            CreateFrozenSolidBrush(Color.FromRgb(0xFF, 0x4B, 0x4B)),
+            CreateSensualBrush(Color.FromRgb(0xFF, 0x4B, 0x4B))),
+        [PomodoroPhase.ShortBreak] = new(
+            Color.FromRgb(0x00, 0xD0, 0x84), // Mint Emerald
+            CreateFrozenSolidBrush(Color.FromRgb(0x00, 0xD0, 0x84)),
+            CreateSensualBrush(Color.FromRgb(0x00, 0xD0, 0x84))),
+        [PomodoroPhase.LongBreak] = new(
+            Color.FromRgb(0x9B, 0x51, 0xE0),  // Amethyst
+            CreateFrozenSolidBrush(Color.FromRgb(0x9B, 0x51, 0xE0)),
+            CreateSensualBrush(Color.FromRgb(0x9B, 0x51, 0xE0)))
+    }.ToFrozenDictionary();
+
     private Timer? _dormantBackgroundTimer;
     private DateTime _targetEndTime;
     private TimeSpan _remainingTime;
@@ -74,13 +93,13 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
     private bool _cycleDot4Filled = false;
 
     [ObservableProperty]
-    private Color _glowColor = Color.FromRgb(0xFF, 0x4B, 0x4B); // Electric Coral
+    private Color _glowColor = PhaseThemes[PomodoroPhase.Focus].GlowColor;
 
     [ObservableProperty]
-    private Brush _glowSolidBrush = CreateFrozenSolidBrush(Color.FromRgb(0xFF, 0x4B, 0x4B));
+    private Brush _glowSolidBrush = PhaseThemes[PomodoroPhase.Focus].GlowSolidBrush;
 
     [ObservableProperty]
-    private RadialGradientBrush _sensualRadialBrush = CreateSensualBrush(Color.FromRgb(0xFF, 0x4B, 0x4B));
+    private RadialGradientBrush _sensualRadialBrush = PhaseThemes[PomodoroPhase.Focus].SensualRadialBrush;
 
     [ObservableProperty]
     private string _playPauseTooltip = "Start Focus";
@@ -337,19 +356,14 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase
 
     private void UpdateColorTheme()
     {
-        Color color = Phase switch
+        if (!PhaseThemes.TryGetValue(Phase, out var theme))
         {
-            PomodoroPhase.Focus => Color.FromRgb(0xFF, 0x4B, 0x4B),      // Electric Coral
-            PomodoroPhase.ShortBreak => Color.FromRgb(0x00, 0xD0, 0x84), // Mint Emerald
-            PomodoroPhase.LongBreak => Color.FromRgb(0x9B, 0x51, 0xE0),  // Amethyst
-            _ => Color.FromRgb(0xFF, 0x4B, 0x4B)
-        };
+            theme = PhaseThemes[PomodoroPhase.Focus];
+        }
 
-        GlowColor = color;
-        var solidBrush = new SolidColorBrush(color);
-        solidBrush.Freeze();
-        GlowSolidBrush = solidBrush;
-        SensualRadialBrush = CreateSensualBrush(color);
+        GlowColor = theme.GlowColor;
+        GlowSolidBrush = theme.GlowSolidBrush;
+        SensualRadialBrush = theme.SensualRadialBrush;
     }
 
     private static SolidColorBrush CreateFrozenSolidBrush(Color color)

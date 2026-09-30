@@ -3,15 +3,20 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
 using MetroHub.Presentation.Messaging;
+using MetroHub.Presentation.Themes;
 
 namespace MetroHub.Presentation.Controls;
 
 public partial class GroupHeaderControl : UserControl
 {
+    private static readonly Brush LockClosedBrush = ThemeTokens.StatusInfoBrush;
+    private static readonly Brush LockOpenBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xA0, 0xFF, 0xFF, 0xFF));
+
     private Point _dragStartPoint;
     private bool _isPotentialDrag = false;
 
@@ -289,11 +294,7 @@ public partial class GroupHeaderControl : UserControl
         LockIcon.Symbol = isLocked
             ? Wpf.Ui.Controls.SymbolRegular.LockClosed24
             : Wpf.Ui.Controls.SymbolRegular.LockOpen24;
-        LockIcon.Foreground = isLocked
-            ? new System.Windows.Media.SolidColorBrush(
-                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#60CDFF"))
-            : new System.Windows.Media.SolidColorBrush(
-                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#A0FFFFFF"));
+        LockIcon.Foreground = isLocked ? LockClosedBrush : LockOpenBrush;
 
         if (DragHintIcon != null)
         {

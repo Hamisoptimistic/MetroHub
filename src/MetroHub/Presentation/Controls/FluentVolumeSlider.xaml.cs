@@ -4,16 +4,13 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
+using MetroHub.Presentation.Themes;
+
 namespace MetroHub.Presentation.Controls;
 
 public partial class FluentVolumeSlider : UserControl
 {
-    private static readonly SolidColorBrush DefaultProgressBrush = new((Color)ColorConverter.ConvertFromString("#00B4D8"));
-
-    static FluentVolumeSlider()
-    {
-        DefaultProgressBrush.Freeze();
-    }
+    private static readonly SolidColorBrush DefaultProgressBrush = ThemeTokens.AccentPrimaryBrush;
 
     public static readonly DependencyProperty ValueProperty =
         DependencyProperty.Register(

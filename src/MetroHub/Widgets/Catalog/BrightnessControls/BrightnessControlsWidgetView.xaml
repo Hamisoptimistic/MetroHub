@@ -9,12 +9,6 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=brightnesscontrols:BrightnessControlsWidgetViewModel}"
              Focusable="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
@@ -23,7 +17,7 @@
 
     <!-- Transparent WidgetCard with Padding="0" so dividers run border-to-border (matching Volume, Focus Timer, Media Player) -->
     <widgets:WidgetCard Padding="0" Background="Transparent">
-        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True" Background="Transparent">
+        <Grid ClipToBounds="True" Background="Transparent">
             <Grid.RowDefinitions>
                 <!-- Row 0: Top Master Brightness Strip (Day/Night Toggle + Master Seekbar + Link Button) -->
                 <RowDefinition Height="50" />
@@ -78,10 +72,10 @@
                                             Value="{Binding MasterBrightness, Mode=TwoWay}"
                                             Minimum="0"
                                             Maximum="100"
-                                            ProgressBrush="#00B4D8"
-                                            ProgressPointerOverBrush="#33C9E8"
+                                            ProgressBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                            ProgressPointerOverBrush="{DynamicResource SystemAccentColorSecondaryBrush}"
                                             Tag="InteractiveControl"
-                                            SnapsToDevicePixels="True" />
+                                            />
 
                 <!-- 3. Link / Sync Button: Displays Link Glyph normally, Cross-fades to % while dragging -->
                 <Button Grid.Column="2"
@@ -108,7 +102,7 @@
                                                 <BeginStoryboard>
                                                     <Storyboard>
                                                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                         To="0.0" Duration="0:0:0.12" />
+                                                                         To="0.0" Duration="{StaticResource FluentDurationFast}" />
                                                     </Storyboard>
                                                 </BeginStoryboard>
                                             </DataTrigger.EnterActions>
@@ -116,7 +110,7 @@
                                                 <BeginStoryboard>
                                                     <Storyboard>
                                                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                         To="1.0" Duration="0:0:0.25" />
+                                                                         To="1.0" Duration="{StaticResource FluentDurationNormal}" />
                                                     </Storyboard>
                                                 </BeginStoryboard>
                                             </DataTrigger.ExitActions>
@@ -145,7 +139,7 @@
                                                 <BeginStoryboard>
                                                     <Storyboard>
                                                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                         To="1.0" Duration="0:0:0.12" />
+                                                                         To="1.0" Duration="{StaticResource FluentDurationFast}" />
                                                     </Storyboard>
                                                 </BeginStoryboard>
                                             </DataTrigger.EnterActions>
@@ -153,7 +147,7 @@
                                                 <BeginStoryboard>
                                                     <Storyboard>
                                                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                         To="0.0" Duration="0:0:0.25" />
+                                                                         To="0.0" Duration="{StaticResource FluentDurationNormal}" />
                                                     </Storyboard>
                                                 </BeginStoryboard>
                                             </DataTrigger.ExitActions>
@@ -186,7 +180,6 @@
                 <Border Background="#14000000"
                         BorderThickness="0"
                         CornerRadius="0,0,2,2"
-                        SnapsToDevicePixels="True"
                         Padding="14,14,14,12">
 
                     <Grid Background="Transparent">
@@ -204,7 +197,7 @@
                                    FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                    Margin="6,2,0,8"
-                                   SnapsToDevicePixels="True" />
+                                   />
 
                         <!-- Connected Displays List with 4px AutoHide ScrollBar -->
                         <ScrollViewer Grid.Row="1"
@@ -213,10 +206,10 @@
                             <ItemsControl ItemsSource="{Binding Monitors}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type brightnesscontrols:MonitorItemViewModel}">
-                                        <Border CornerRadius="2"
+                                        <Border CornerRadius="{DynamicResource ControlCornerRadius}"
                                                 Padding="8,7"
                                                 Margin="0,2,0,3"
-                                                SnapsToDevicePixels="True">
+                                                >
                                             <Border.Style>
                                                 <Style TargetType="Border">
                                                     <Setter Property="Background" Value="#08FFFFFF" />
@@ -271,7 +264,7 @@
                                                                TextTrimming="CharacterEllipsis" />
                                                     <TextBlock FontSize="{DynamicResource TypeCaptionFontSize}"
                                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                                               Foreground="#80FFFFFF"
+                                                               Foreground="{DynamicResource TextMutedBrush}"
                                                                Margin="0,1,0,0">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
@@ -302,10 +295,10 @@
                                                                             IsEnabled="{Binding IsSupported}"
                                                                             Minimum="0"
                                                                             Maximum="100"
-                                                                            ProgressBrush="#00B4D8"
-                                                                            ProgressPointerOverBrush="#33C9E8"
+                                                                            ProgressBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                                            ProgressPointerOverBrush="{DynamicResource SystemAccentColorSecondaryBrush}"
                                                                             Tag="InteractiveControl"
-                                                                            SnapsToDevicePixels="True" />
+                                                                            />
 
                                                 <!-- 5. Brightness Percentage Text (Optically centered to slider track across all monitor rows) -->
                                                 <TextBlock Grid.Column="4"
@@ -331,12 +324,12 @@
                       Height="14"
                       Margin="0,-7,0,0"
                       Background="Transparent"
-                      SnapsToDevicePixels="True">
+                      >
                     <Border Height="2"
                             VerticalAlignment="Center"
                             Background="{DynamicResource WidgetDividerBrush}"
                             CornerRadius="1"
-                            SnapsToDevicePixels="True" />
+                            />
                 </Grid>
             </Grid>
         </Grid>

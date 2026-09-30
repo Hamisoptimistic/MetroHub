@@ -32,7 +32,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}" SnapsToDevicePixels="True">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}">
                             <Path x:Name="Icon"
                                   Width="10" Height="10"
                                   Data="M 0.5,0.5 L 9.5,9.5 M 0.5,9.5 L 9.5,0.5"
@@ -48,7 +48,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="Icon" Property="Stroke" Value="#FFFFFF" />
+                                <Setter TargetName="Icon" Property="Stroke" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
@@ -67,7 +67,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                        <Border Background="{TemplateBinding Background}">
                             <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -88,8 +88,8 @@
             <Setter Property="Height" Value="36" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
             <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="UseLayoutRounding" Value="True" />
@@ -101,7 +101,7 @@
                                 BorderBrush="#28FFFFFF"
                                 BorderThickness="1"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <Grid Margin="10,0,10,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -110,7 +110,7 @@
                                 <ui:SymbolIcon x:Name="PrefixIcon"
                                                Symbol="Search24"
                                                FontSize="14"
-                                               Foreground="#85FFFFFF"
+                                               Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Center"
                                                Margin="0,0,8,0" />
                                 <ScrollViewer x:Name="PART_ContentHost"
@@ -130,7 +130,7 @@
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
                                 <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#65FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -150,7 +150,7 @@
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
                                 Margin="2,1,2,1"
                                 Padding="{TemplateBinding Padding}"
-                                SnapsToDevicePixels="True">
+                                >
                             <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -182,7 +182,7 @@
                            Text="{Binding DisplaySubtitle}"
                            FontSize="{DynamicResource TypeCaptionFontSize}"
                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                           Foreground="#75FFFFFF"
+                           Foreground="{DynamicResource TextSubtleBrush}"
                            VerticalAlignment="Center"
                            Margin="8,0,0,0"
                            TextTrimming="CharacterEllipsis" />
@@ -196,7 +196,7 @@
             <Setter Property="Padding" Value="14,0" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
             <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
@@ -205,7 +205,7 @@
                         <Border x:Name="BtnBorder"
                                 Background="{DynamicResource SystemAccentColorPrimaryBrush}"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -242,7 +242,7 @@
                                 BorderBrush="#25FFFFFF"
                                 BorderThickness="1"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -264,7 +264,7 @@
     <Border Background="Transparent"
             BorderThickness="0"
             CornerRadius="{DynamicResource ControlCornerRadius}"
-            SnapsToDevicePixels="True">
+            >
         <Grid RenderOptions.ClearTypeHint="Enabled">
             <Grid.ColumnDefinitions>
                 <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR -->
@@ -325,7 +325,7 @@
                             <TextBlock Text="City Name"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#95FFFFFF"
+                                       Foreground="{DynamicResource TextMutedBrush}"
                                        Margin="0,0,0,6" />
 
                             <Grid>
@@ -348,7 +348,7 @@
                                             BorderBrush="#40FFFFFF"
                                             BorderThickness="1"
                                             CornerRadius="0,0,2,2"
-                                            SnapsToDevicePixels="True">
+                                            >
                                         <ListBox x:Name="WeatherSuggestionsList"
                                                  Background="Transparent"
                                                  BorderThickness="0"
@@ -373,11 +373,11 @@
                                     Style="{StaticResource SubtleActionButtonStyle}"
                                     Click="OnWeatherAutoLocationClick">
                                 <StackPanel Orientation="Horizontal">
-                                    <ui:SymbolIcon Symbol="MyLocation24" FontSize="13" Foreground="#95FFFFFF" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                    <ui:SymbolIcon Symbol="MyLocation24" FontSize="13" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
                                     <TextBlock Text="Reset to automatic location (GPS / IP)"
                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                               Foreground="#95FFFFFF"
+                                               Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
@@ -391,7 +391,7 @@
                                 <TextBlock x:Name="WeatherStatusMessage"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#FF8080"
+                                           Foreground="{DynamicResource StatusErrorBrush}"
                                            TextWrapping="Wrap"
                                            Visibility="Collapsed" />
                             </StackPanel>

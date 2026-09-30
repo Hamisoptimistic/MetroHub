@@ -9,12 +9,6 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=audiocontrols:AudioControlsWidgetViewModel}"
              Focusable="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
@@ -24,7 +18,7 @@
         <Style x:Key="DeviceListItemButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="Height" Value="38" />
             <Setter Property="Margin" Value="0,2,0,2" />
             <Setter Property="Focusable" Value="False" />
@@ -35,7 +29,7 @@
                         <Border x:Name="CardBorder"
                                 Background="{TemplateBinding Background}"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <ContentPresenter Margin="0" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -55,7 +49,7 @@
 
     <!-- Transparent WidgetCard with Padding="0" so dividers run border-to-border (like Focus Timer & Media Player) -->
     <widgets:WidgetCard Padding="0" Background="Transparent">
-        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True" Background="Transparent">
+        <Grid ClipToBounds="True" Background="Transparent">
             <Grid.RowDefinitions>
                 <!-- Row 0: Top Master Audio Strip (Output Logo + Master Seekbar + Mute Button) -->
                 <RowDefinition Height="50" />
@@ -111,10 +105,10 @@
                                             IsMuted="{Binding IsMasterMuted}"
                                             Minimum="0"
                                             Maximum="100"
-                                            ProgressBrush="#00B4D8"
-                                            ProgressPointerOverBrush="#33C9E8"
+                                            ProgressBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                            ProgressPointerOverBrush="{DynamicResource SystemAccentColorSecondaryBrush}"
                                             Tag="InteractiveControl"
-                                            SnapsToDevicePixels="True" />
+                                            />
 
                 <!-- 3. Mute Button: Displays Speaker Glyph normally, Cross-fades to % while dragging/scrolling -->
                 <Button Grid.Column="2"
@@ -187,7 +181,6 @@
                 <Border Background="#14000000"
                         BorderThickness="0"
                         CornerRadius="0,0,2,2"
-                        SnapsToDevicePixels="True"
                         Padding="14,14,14,12">
 
                 <Grid Background="Transparent">
@@ -205,7 +198,7 @@
                                FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                Foreground="{DynamicResource TextPrimaryBrush}"
                                Margin="6,2,0,8"
-                               SnapsToDevicePixels="True" />
+                               />
 
                     <!-- Native Windows 11 Output Devices List with 4px AutoHide ScrollBar -->
                     <ScrollViewer Grid.Row="1"
@@ -221,8 +214,8 @@
                                             <ControlTemplate TargetType="Button">
                                                 <Border x:Name="ItemBorder"
                                                         Background="Transparent"
-                                                        CornerRadius="2"
-                                                        SnapsToDevicePixels="True">
+                                                        CornerRadius="{DynamicResource ControlCornerRadius}"
+                                                        >
                                                     <Grid Margin="0,0,10,0">
                                                         <Grid.ColumnDefinitions>
                                                             <!-- Col 0: Active Accent Indicator Pill (Width 12 provides 9px breathing space from 3px pill to icon) -->
@@ -303,12 +296,12 @@
                   Height="14"
                   Margin="0,-7,0,0"
                   Background="Transparent"
-                  SnapsToDevicePixels="True">
+                  >
                 <Border Height="2"
                         VerticalAlignment="Center"
                         Background="{DynamicResource WidgetDividerBrush}"
                         CornerRadius="1"
-                        SnapsToDevicePixels="True" />
+                        />
             </Grid>
         </Grid>
         </Grid>

@@ -9,12 +9,6 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=quickcontrols:QuickControlsWidgetViewModel}"
              Focusable="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
@@ -23,7 +17,7 @@
 
     <!-- Transparent unified WidgetCard without dividing lines -->
     <widgets:WidgetCard Padding="0" Background="Transparent">
-        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True" Background="Transparent">
+        <Grid ClipToBounds="True" Background="Transparent">
             <Grid.RowDefinitions>
                 <!-- Row 0: Media Player Strip (~56px) -->
                 <RowDefinition Height="*" />
@@ -81,7 +75,7 @@
                     <TextBlock Text="No media playing"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                               Foreground="#55FFFFFF"
+                               Foreground="{DynamicResource TextSubtleBrush}"
                                FontFamily="{DynamicResource AppFontFamily}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
@@ -101,7 +95,7 @@
                         <TextBlock Text="{Binding Media.Artist}"
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
                                    FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                   Foreground="#CAD7EA"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextTrimming="CharacterEllipsis"
                                    TextWrapping="NoWrap"
                                    Margin="0,1,0,0">
@@ -192,10 +186,10 @@
                                             IsMuted="{Binding Volume.IsMasterMuted}"
                                             Minimum="0"
                                             Maximum="100"
-                                            ProgressBrush="#00B4D8"
-                                            ProgressPointerOverBrush="#33C9E8"
+                                            ProgressBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                            ProgressPointerOverBrush="{DynamicResource SystemAccentColorSecondaryBrush}"
                                             Tag="InteractiveControl"
-                                            SnapsToDevicePixels="True" />
+                                            />
 
                 <!-- 3. Mute Button / % Display -->
                 <Button Grid.Column="2"
@@ -282,10 +276,10 @@
                                             Value="{Binding Brightness.MasterBrightness, Mode=TwoWay}"
                                             Minimum="0"
                                             Maximum="100"
-                                            ProgressBrush="#00B4D8"
-                                            ProgressPointerOverBrush="#33C9E8"
+                                            ProgressBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                            ProgressPointerOverBrush="{DynamicResource SystemAccentColorSecondaryBrush}"
                                             Tag="InteractiveControl"
-                                            SnapsToDevicePixels="True" />
+                                            />
 
                 <!-- 3. Link / Sync Button / % Display -->
                 <Button Grid.Column="2"

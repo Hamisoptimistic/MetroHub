@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Display;
 using MetroHub.Core.Models;
 using MetroHub.Widgets;
+using MetroHub.Presentation.Themes;
 using Wpf.Ui.Controls;
 
 namespace MetroHub.Widgets.Catalog.Power;
@@ -21,13 +22,8 @@ namespace MetroHub.Widgets.Catalog.Power;
 /// </summary>
 public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
 {
-    private static readonly SolidColorBrush RedBrush = new((Color)ColorConverter.ConvertFromString("#FF5252"));
+    private static readonly SolidColorBrush RedBrush = ThemeTokens.StatusDangerBrush;
     private static readonly SolidColorBrush WhiteBrush = Brushes.White;
-
-    static PowerWidgetViewModel()
-    {
-        if (RedBrush.CanFreeze) RedBrush.Freeze();
-    }
 
     private int _remainingSeconds = 0;
     private string? _pendingAction;

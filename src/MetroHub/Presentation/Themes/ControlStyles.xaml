@@ -26,20 +26,20 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{DynamicResource ControlCornerRadius}"
-                            SnapsToDevicePixels="True">
+                            >
                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                           Margin="{TemplateBinding Padding}"
-                                          SnapsToDevicePixels="True" />
+                                          />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="ButtonBorder" Property="Background" Value="#25FFFFFF" />
-                            <Setter Property="Foreground" Value="#FFFFFF" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
-                            <Setter Property="Foreground" Value="#FFFFFF" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.35" />
@@ -60,7 +60,7 @@
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource FluentHoverBrush}" />
-                <Setter Property="Foreground" Value="#FFFFFF" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             </Trigger>
             <Trigger Property="IsPressed" Value="True">
                 <Setter Property="Background" Value="{DynamicResource FluentPressedBrush}" />
@@ -90,21 +90,20 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             CornerRadius="{DynamicResource ControlCornerRadius}"
-                            SnapsToDevicePixels="True"
-                            UseLayoutRounding="True">
+                            >
                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
                                           Margin="{TemplateBinding Padding}"
-                                          SnapsToDevicePixels="True" />
+                                          />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
-                            <Setter Property="Foreground" Value="#FFFFFF" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
-                            <Setter Property="Foreground" Value="#FFFFFF" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="PillBorder" Property="Opacity" Value="0.35" />
@@ -149,7 +148,7 @@
                                 Margin="0,2,2,2"
                                 Background="#45FFFFFF"
                                 CornerRadius="2"
-                                SnapsToDevicePixels="True" />
+                                />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Tag" Value="Expanded">
@@ -159,7 +158,7 @@
                                         <DoubleAnimation Storyboard.TargetName="ThumbBorder"
                                                          Storyboard.TargetProperty="Width"
                                                          To="8"
-                                                         Duration="0:0:0.12">
+                                                         Duration="{StaticResource FluentDurationFast}">
                                             <DoubleAnimation.EasingFunction>
                                                 <CubicEase EasingMode="EaseOut" />
                                             </DoubleAnimation.EasingFunction>
@@ -173,7 +172,7 @@
                                         <DoubleAnimation Storyboard.TargetName="ThumbBorder"
                                                          Storyboard.TargetProperty="Width"
                                                          To="4"
-                                                         Duration="0:0:0.16">
+                                                         Duration="{StaticResource FluentDurationNormal}">
                                             <DoubleAnimation.EasingFunction>
                                                 <CubicEase EasingMode="EaseOut" />
                                             </DoubleAnimation.EasingFunction>
@@ -213,7 +212,7 @@
                                 Margin="2,0,2,2"
                                 Background="#45FFFFFF"
                                 CornerRadius="2"
-                                SnapsToDevicePixels="True" />
+                                />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <Trigger Property="Tag" Value="Expanded">
@@ -223,7 +222,7 @@
                                         <DoubleAnimation Storyboard.TargetName="ThumbBorder"
                                                          Storyboard.TargetProperty="Height"
                                                          To="8"
-                                                         Duration="0:0:0.12">
+                                                         Duration="{StaticResource FluentDurationFast}">
                                             <DoubleAnimation.EasingFunction>
                                                 <CubicEase EasingMode="EaseOut" />
                                             </DoubleAnimation.EasingFunction>
@@ -237,7 +236,7 @@
                                         <DoubleAnimation Storyboard.TargetName="ThumbBorder"
                                                          Storyboard.TargetProperty="Height"
                                                          To="4"
-                                                         Duration="0:0:0.16">
+                                                         Duration="{StaticResource FluentDurationNormal}">
                                             <DoubleAnimation.EasingFunction>
                                                 <CubicEase EasingMode="EaseOut" />
                                             </DoubleAnimation.EasingFunction>

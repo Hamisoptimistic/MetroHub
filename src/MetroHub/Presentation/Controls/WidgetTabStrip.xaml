@@ -9,8 +9,6 @@
              d:DesignHeight="38" d:DesignWidth="400"
              Focusable="False"
              FocusVisualStyle="{x:Null}"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
              Tag="InteractiveControl">
 
     <UserControl.Resources>
@@ -20,7 +18,7 @@
         <Style x:Key="TabCloseButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#70FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}" />
             <Setter Property="Width" Value="18" />
             <Setter Property="Height" Value="18" />
             <Setter Property="Margin" Value="4,0,0,0" />
@@ -33,8 +31,8 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="CloseBorder"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="3"
-                                SnapsToDevicePixels="True">
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                >
                             <ui:SymbolIcon Symbol="Dismiss16"
                                            FontSize="10"
                                            Foreground="{TemplateBinding Foreground}"
@@ -73,18 +71,18 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="ChevronBorder"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="3"
-                                SnapsToDevicePixels="True">
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                >
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="ChevronBorder" Property="Background" Value="#15FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="ChevronBorder" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -109,8 +107,8 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="BtnBorder"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="4"
-                                SnapsToDevicePixels="True">
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                >
                             <ui:SymbolIcon Symbol="Add16"
                                            FontSize="12"
                                            Foreground="{TemplateBinding Foreground}"
@@ -120,11 +118,11 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="BtnBorder" Property="Background" Value="#15FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="BtnBorder" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.3" />
@@ -136,7 +134,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid SnapsToDevicePixels="True" VerticalAlignment="Stretch">
+    <Grid VerticalAlignment="Stretch">
         <Grid.ColumnDefinitions>
             <!-- Col 0: Left Scroll Chevron (<) -->
             <ColumnDefinition Width="Auto" />
@@ -169,7 +167,7 @@
                       controls:AutoHideScrollBehavior.IsEnabled="False"
                       ScrollChanged="ScrollViewer_ScrollChanged"
                       VerticalAlignment="Stretch">
-            <Grid x:Name="PART_TabStripHost" VerticalAlignment="Stretch" SnapsToDevicePixels="True">
+            <Grid x:Name="PART_TabStripHost" VerticalAlignment="Stretch">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Stretch">
                     <ItemsControl x:Name="PART_ItemsControl"
                                   ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource AncestorType=controls:WidgetTabStrip}}"
@@ -185,14 +183,14 @@
                                 <Grid x:Name="TabRootGrid"
                                       VerticalAlignment="Stretch"
                                       Height="38"
-                                      SnapsToDevicePixels="True">
+                                      >
                                     <Grid.Triggers>
                                         <EventTrigger RoutedEvent="FrameworkElement.Loaded">
                                             <BeginStoryboard>
                                                 <Storyboard>
                                                     <DoubleAnimation Storyboard.TargetProperty="Opacity"
                                                                      From="0.0" To="1.0"
-                                                                     Duration="0:0:0.16" />
+                                                                     Duration="{StaticResource FluentDurationNormal}" />
                                                 </Storyboard>
                                             </BeginStoryboard>
                                         </EventTrigger>
@@ -204,7 +202,6 @@
                                             MouseLeftButtonDown="TabBorder_MouseLeftButtonDown"
                                             Padding="10,0,8,0"
                                             VerticalAlignment="Stretch"
-                                            SnapsToDevicePixels="True"
                                             Tag="InteractiveControl">
                                         <Grid VerticalAlignment="Center">
                                             <Grid.ColumnDefinitions>
@@ -228,7 +225,7 @@
                                                        Text="{Binding DisplayTitle}"
                                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                                       Foreground="#80FFFFFF"
+                                                       Foreground="{DynamicResource TextMutedBrush}"
                                                        FontFamily="{DynamicResource AppFontFamily}"
                                                        VerticalAlignment="Center"
                                                        MaxWidth="120"
@@ -252,7 +249,7 @@
                                             Background="#18FFFFFF"
                                             HorizontalAlignment="Right"
                                             VerticalAlignment="Center"
-                                            SnapsToDevicePixels="True" />
+                                            />
                                 </Grid>
                                 <DataTemplate.Triggers>
                                     <!-- Hover state reveals close button without resizing tab -->
@@ -265,7 +262,7 @@
                                     <!-- Active Tab State -->
                                     <DataTrigger Binding="{Binding IsActive}" Value="True">
                                         <Setter TargetName="TabBorder" Property="Background" Value="#0CFFFFFF" />
-                                        <Setter TargetName="TabTitleText" Property="Foreground" Value="#FFFFFF" />
+                                        <Setter TargetName="TabTitleText" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                         <Setter TargetName="TabTitleText" Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
                                         <Setter TargetName="CloseButton" Property="Opacity" Value="0.85" />
                                         <Setter TargetName="CloseButton" Property="IsHitTestVisible" Value="True" />
@@ -291,15 +288,15 @@
                         VerticalAlignment="Bottom"
                         HorizontalAlignment="Left"
                         Width="0"
-                        Background="#FFFFFF"
+                        Background="{DynamicResource TextPrimaryBrush}"
                         Opacity="0"
                         Panel.ZIndex="25"
-                        SnapsToDevicePixels="True">
+                        >
                     <Border.RenderTransform>
                         <TranslateTransform x:Name="PART_IndicatorTransform" X="0" />
                     </Border.RenderTransform>
                     <Border.Effect>
-                        <DropShadowEffect Color="#FFFFFF"
+                        <DropShadowEffect Color="{DynamicResource TextPrimaryColor}"
                                           BlurRadius="8"
                                           ShadowDepth="0"
                                           Opacity="0.8"

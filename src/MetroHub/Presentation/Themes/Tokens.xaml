@@ -48,12 +48,17 @@
     <sys:Double x:Key="TypeQuoteBodyCoordinateFontSize">19.5</sys:Double>
     <sys:Double x:Key="TypeCalendarDayCoordinateFontSize">112.0</sys:Double>
 
-    <!-- Harmonized Text Contrast Brushes -->
-    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFFFFF" />
-    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#D8E2EC" />
-    <SolidColorBrush x:Key="TextMutedBrush" Color="#95A8BE" />
-    <SolidColorBrush x:Key="TextSubtleBrush" Color="#70FFFFFF" />
-    <SolidColorBrush x:Key="TextDisabledBrush" Color="#45FFFFFF" />
+    <!-- Harmonized Text Contrast Colors & Brushes -->
+    <Color x:Key="TextPrimaryColor">#FFFFFF</Color>
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
+    <Color x:Key="TextSecondaryColor">#D8E2EC</Color>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
+    <Color x:Key="TextMutedColor">#95A8BE</Color>
+    <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
+    <Color x:Key="TextSubtleColor">#70FFFFFF</Color>
+    <SolidColorBrush x:Key="TextSubtleBrush" Color="{StaticResource TextSubtleColor}" />
+    <Color x:Key="TextDisabledColor">#45FFFFFF</Color>
+    <SolidColorBrush x:Key="TextDisabledBrush" Color="{StaticResource TextDisabledColor}" />
 
     <!-- ========================================================================= -->
     <!-- OBSIDIAN ACRYLIC CONTENTDIALOG THEME TOKENS (WPF-UI 3.0.4)                -->
@@ -105,6 +110,10 @@
     <SolidColorBrush x:Key="StatusWarningBrush" Color="{StaticResource StatusWarningColor}" />
     <Color x:Key="StatusDangerColor">#FF453A</Color>
     <SolidColorBrush x:Key="StatusDangerBrush" Color="{StaticResource StatusDangerColor}" />
+    <Color x:Key="StatusErrorColor">#FF6B6B</Color>
+    <SolidColorBrush x:Key="StatusErrorBrush" Color="{StaticResource StatusErrorColor}" />
+    <Color x:Key="StatusInfoColor">#60CDFF</Color>
+    <SolidColorBrush x:Key="StatusInfoBrush" Color="{StaticResource StatusInfoColor}" />
 
     <!-- Universal Hairline Divider Token -->
     <Color x:Key="WidgetDividerColor">#14FFFFFF</Color>

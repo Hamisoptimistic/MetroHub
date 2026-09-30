@@ -8,8 +8,7 @@
              MinHeight="18"
              Focusable="False"
              ClipToBounds="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True">
+>
 
     <Grid x:Name="RootContainer"
           Background="Transparent"
@@ -21,7 +20,7 @@
           MouseEnter="OnMouseEnter"
           MouseLeave="OnMouseLeave"
           SizeChanged="OnSizeChanged"
-          SnapsToDevicePixels="True">
+          >
 
         <!-- 1. Active Luminous Accent Progress Fill (Left Segment: 0 -> thumbLeft - gap) -->
         <Grid x:Name="ProgressFillContainer"
@@ -32,13 +31,13 @@
             <Border Height="3"
                     Background="#25000000"
                     CornerRadius="1.5"
-                    SnapsToDevicePixels="True" />
+                    />
             <!-- Active Accent Fill Bar -->
             <Border x:Name="ProgressFill"
                     Height="3"
-                    Background="#00B4D8"
+                    Background="{DynamicResource SystemAccentColorPrimaryBrush}"
                     CornerRadius="1.5"
-                    SnapsToDevicePixels="True" />
+                    />
         </Grid>
 
         <!-- 2. Frosted Unfilled Track (Right Segment: thumbRight + gap -> width) -->
@@ -50,13 +49,13 @@
             <Border Height="3"
                     Background="#25000000"
                     CornerRadius="1.5"
-                    SnapsToDevicePixels="True" />
+                    />
             <!-- Frosted Unfilled Track Surface -->
             <Border x:Name="TrackUnfilled"
                     Height="3"
                     Background="#38FFFFFF"
                     CornerRadius="1.5"
-                    SnapsToDevicePixels="True" />
+                    />
         </Grid>
 
         <!-- 3. Fluent Thumb Container (Hollow circular ring thumb, isolated by gaps) -->
@@ -78,7 +77,7 @@
                      Width="14"
                      Height="14"
                      Fill="Transparent"
-                     Stroke="#FFFFFF"
+                     Stroke="{DynamicResource TextPrimaryBrush}"
                      StrokeThickness="2.5"
                      HorizontalAlignment="Center"
                      VerticalAlignment="Center" />

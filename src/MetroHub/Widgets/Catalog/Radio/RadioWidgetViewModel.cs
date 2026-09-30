@@ -23,6 +23,7 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
 {
     private readonly IRadioAudioService _audioService;
     private readonly RadioCatalogService _catalogService;
+    private readonly Action<string> _setClipboardAction;
     private bool _isSyncingVolume;
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
@@ -84,11 +85,16 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
     {
     }
 
-    public RadioWidgetViewModel(TileModel model, IRadioAudioService audioService, RadioCatalogService catalogService) 
+    public RadioWidgetViewModel(
+        TileModel model, 
+        IRadioAudioService audioService, 
+        RadioCatalogService catalogService,
+        Action<string>? setClipboardAction = null) 
         : base(model)
     {
         _audioService = audioService ?? throw new ArgumentNullException(nameof(audioService));
         _catalogService = catalogService ?? throw new ArgumentNullException(nameof(catalogService));
+        _setClipboardAction = setClipboardAction ?? (text => Clipboard.SetText(text));
 
         // Subscribe to singleton audio service events
         _audioService.CurrentStationChanged += OnAudioCurrentStationChanged;
@@ -324,7 +330,7 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
 
         try
         {
-            Clipboard.SetText(item.Station.StreamUrl);
+            _setClipboardAction(item.Station.StreamUrl);
             PlaybackStatusText = $"Copied: {item.Station.Name} link";
         }
         catch (Exception ex)

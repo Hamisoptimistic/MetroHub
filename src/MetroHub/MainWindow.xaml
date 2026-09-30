@@ -26,6 +26,7 @@
         TextOptions.TextHintingMode="Fixed"
         SnapsToDevicePixels="True"
         UseLayoutRounding="True"
+        RenderOptions.ClearTypeHint="Enabled"
         PreviewKeyDown="OnWindowPreviewKeyDown"
         SourceInitialized="OnSourceInitialized"
         Deactivated="OnWindowDeactivated"
@@ -65,8 +66,6 @@
           Background="Transparent"
           Opacity="1"
           RenderTransformOrigin="0.5, 0.5"
-          UseLayoutRounding="True"
-          SnapsToDevicePixels="True"
           RenderOptions.ClearTypeHint="Enabled"
           TextOptions.TextFormattingMode="Ideal"
           TextOptions.TextRenderingMode="ClearType"
@@ -195,7 +194,7 @@
                                   Header="Apps"
                                   SubmenuOpened="OnAppsSubmenuOpened">
                             <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="AppsAddIn24" FontSize="20" Foreground="#D0FFFFFF" />
+                                <ui:SymbolIcon Symbol="AppsAddIn24" FontSize="20" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </MenuItem.Icon>
                             <MenuItem.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -222,14 +221,14 @@
                                                            HorizontalAlignment="Center"
                                                            VerticalAlignment="Center"
                                                            RenderOptions.BitmapScalingMode="HighQuality"
-                                                           SnapsToDevicePixels="True" />
+                                                           />
                                                     <TextBlock Grid.Column="1"
                                                                Text="{Binding Name}"
                                                                VerticalAlignment="Center"
                                                                Margin="10,0,8,0"
                                                                FontSize="{DynamicResource TypeBodyFontSize}"
                                                                FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                                               Foreground="#F0FFFFFF" />
+                                                               Foreground="{DynamicResource TextPrimaryBrush}" />
                                                 </Grid>
                                             </DataTemplate>
                                         </Setter.Value>
@@ -245,7 +244,7 @@
                                   Header="Widgets"
                                   SubmenuOpened="OnWidgetsSubmenuOpened">
                             <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="AppGeneric24" FontSize="20" Foreground="#D0FFFFFF" />
+                                <ui:SymbolIcon Symbol="AppGeneric24" FontSize="20" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </MenuItem.Icon>
                             <MenuItem Header="Loading widgets..." IsEnabled="False" />
                         </MenuItem>
@@ -254,7 +253,7 @@
                         <MenuItem Header="Add Web Link..."
                                   Click="OnCanvasAddWebLinkClick">
                             <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="Globe24" FontSize="20" Foreground="#D0FFFFFF" />
+                                <ui:SymbolIcon Symbol="Globe24" FontSize="20" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </MenuItem.Icon>
                         </MenuItem>
 
@@ -312,10 +311,10 @@
                                   Header="Group Tint Color"
                                   Visibility="Collapsed">
                             <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="PaintBucket24" FontSize="20" Foreground="#D0FFFFFF" />
+                                <ui:SymbolIcon Symbol="PaintBucket24" FontSize="20" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </MenuItem.Icon>
                             <MenuItem Header="None (Transparent)" Tag="None" Click="OnCanvasGroupTintColorSelectClick">
-                                <MenuItem.Icon><Border Width="12" Height="12" BorderThickness="1" BorderBrush="#80FFFFFF" Background="Transparent" CornerRadius="2"/></MenuItem.Icon>
+                                <MenuItem.Icon><Border Width="12" Height="12" BorderThickness="1" BorderBrush="#80FFFFFF" Background="Transparent" CornerRadius="{DynamicResource ControlCornerRadius}"/></MenuItem.Icon>
                             </MenuItem>
                             <MenuItem Header="Fluent Sky Blue" Tag="#60CDFF" Click="OnCanvasGroupTintColorSelectClick">
                                 <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#60CDFF"/></MenuItem.Icon>
@@ -366,11 +365,11 @@
 
                         <MenuItem x:Name="DeleteGroupCanvasMenuItem"
                                   Header="Delete Group and Tiles"
-                                  Foreground="#FF6B6B"
+                                  Foreground="{DynamicResource StatusErrorBrush}"
                                   Visibility="Collapsed"
                                   Click="OnCanvasDeleteGroupClick">
                             <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="Delete24" FontSize="20" Foreground="#FF6B6B" />
+                                <ui:SymbolIcon Symbol="Delete24" FontSize="20" Foreground="{DynamicResource StatusErrorBrush}" />
                             </MenuItem.Icon>
                         </MenuItem>
 
@@ -400,7 +399,7 @@
 
                         <MenuItem Header="Background">
                             <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="PaintBucket24" FontSize="20" Foreground="#D0FFFFFF" />
+                                <ui:SymbolIcon Symbol="PaintBucket24" FontSize="20" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </MenuItem.Icon>
                             <MenuItem x:Name="BackdropMicaItem" Header="Mica (Windows 11)" IsCheckable="True" Click="OnBackdropMicaClick" />
                             <MenuItem x:Name="BackdropAcrylicItem" Header="Acrylic Obsidian" IsCheckable="True" Click="OnBackdropAcrylicClick" />
@@ -422,7 +421,7 @@
 
                         <MenuItem Header="Tile Corners">
                             <MenuItem.Icon>
-                                <ui:SymbolIcon Symbol="Shapes24" FontSize="20" Foreground="#D0FFFFFF" />
+                                <ui:SymbolIcon Symbol="Shapes24" FontSize="20" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </MenuItem.Icon>
                             <MenuItem x:Name="TileCornerSharpItem" Header="Sharp Metro (0px)" IsCheckable="True" Click="OnTileCornerSharpClick" />
                             <MenuItem x:Name="TileCornerSubtleItem" Header="Subtle Edge (2px)" IsCheckable="True" Click="OnTileCornerSubtleClick" />
@@ -483,7 +482,7 @@
                     <Border x:Name="GapDropWarningBorder"
                             Visibility="Collapsed"
                             Width="56" Height="56"
-                            CornerRadius="2"
+                            CornerRadius="{DynamicResource TileCornerRadius}"
                             BorderThickness="1.5"
                             BorderBrush="#FF4343"
                             Background="#22FF4343"
@@ -521,7 +520,7 @@
                                        Text="Add to Section"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       Foreground="#F5FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
@@ -579,7 +578,7 @@
                         <DataTemplate>
                             <Border Width="{Binding PlateWidth}"
                                     Height="{Binding PlateHeight}"
-                                    CornerRadius="2"
+                                    CornerRadius="{DynamicResource TileCornerRadius}"
                                     Background="{Binding TintBackgroundBrush}"
                                     BorderBrush="{Binding TintBorderBrush}"
                                     BorderThickness="1"
@@ -652,8 +651,8 @@
                 IsHitTestVisible="False"
                 Panel.ZIndex="3000">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <ui:SymbolIcon x:Name="NotificationToastIcon" Symbol="Info24" FontSize="18" Foreground="#60CDFF" Margin="0,0,10,0" />
-                <TextBlock x:Name="NotificationToastText" Text="" Foreground="#F0FFFFFF" FontSize="{DynamicResource TypeBodyFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" VerticalAlignment="Center" />
+                <ui:SymbolIcon x:Name="NotificationToastIcon" Symbol="Info24" FontSize="18" Foreground="{DynamicResource StatusInfoBrush}" Margin="0,0,10,0" />
+                <TextBlock x:Name="NotificationToastText" Text="" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="{DynamicResource TypeBodyFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" VerticalAlignment="Center" />
             </StackPanel>
         </Border>
         </Grid>

@@ -12,12 +12,6 @@
              Focusable="False"
              FocusVisualStyle="{x:Null}"
              ClipToBounds="True"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
@@ -50,18 +44,16 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                SnapsToDevicePixels="True"
-                                UseLayoutRounding="True">
+                                >
                             <Grid HorizontalAlignment="Center"
                                   VerticalAlignment="Center"
-                                  SnapsToDevicePixels="True">
+                                  >
                                 <ui:SymbolIcon x:Name="PART_SymbolIcon"
                                                Symbol="{TemplateBinding Symbol}"
                                                FontSize="{TemplateBinding IconSize}"
                                                Foreground="{TemplateBinding Foreground}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
-                                               SnapsToDevicePixels="True"
                                                Visibility="Collapsed" />
                                 <ContentControl x:Name="PART_IconContent"
                                                 Content="{TemplateBinding Icon}"
@@ -70,7 +62,7 @@
                                                 Foreground="{TemplateBinding Foreground}"
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
-                                                SnapsToDevicePixels="True" />
+                                                />
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -80,15 +72,15 @@
                             </Trigger>
                             <!-- Hover state: Crisp White icon illumination -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <!-- Pressed state -->
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <!-- Selected state: Solid crisp White icon -->
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -101,9 +93,9 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type widgets:WidgetTiles}">
-                        <Grid x:Name="PART_HostGrid" Background="Transparent" SnapsToDevicePixels="True">
+                        <Grid x:Name="PART_HostGrid" Background="Transparent">
                             <!-- Tiles Host -->
-                            <ItemsPresenter SnapsToDevicePixels="True" />
+                            <ItemsPresenter />
 
                             <!-- Hardware-Accelerated Sliding Active Indicator -->
                             <Border x:Name="PART_SlidingIndicator"
@@ -114,13 +106,13 @@
                                     CornerRadius="{TemplateBinding IndicatorCornerRadius}"
                                     Opacity="0"
                                     Panel.ZIndex="25"
-                                    SnapsToDevicePixels="True">
+                                    >
                                 <Border.RenderTransform>
                                     <TranslateTransform x:Name="PART_IndicatorTransform" X="0" />
                                 </Border.RenderTransform>
                                 <Border.Effect>
                                     <DropShadowEffect x:Name="PART_IndicatorShadow"
-                                                      Color="#FFFFFF"
+                                                      Color="{DynamicResource TextPrimaryColor}"
                                                       BlurRadius="8"
                                                       ShadowDepth="0"
                                                       Opacity="0.8"
@@ -153,7 +145,7 @@
                                 BorderThickness="1.5"
                                 BorderBrush="#60FFFFFF"
                                 Background="Transparent"
-                                SnapsToDevicePixels="True">
+                                >
                             <TextBlock x:Name="CheckIcon"
                                        Text="&#xE73E;"
                                        FontFamily="{DynamicResource AppIconFontFamily}"
@@ -194,8 +186,8 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="DeleteBorder"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="4"
-                                SnapsToDevicePixels="True">
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                >
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -218,8 +210,8 @@
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="SelectionBrush" Value="#503A86FF" />
             <Setter Property="SelectionOpacity" Value="0.6" />
             <Setter Property="FontSize" Value="{DynamicResource TypeMonoCodeFontSize}" />
@@ -246,8 +238,8 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="SelectionBrush" Value="#503A86FF" />
             <Setter Property="SelectionOpacity" Value="0.6" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
@@ -262,7 +254,7 @@
                         <Border Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                SnapsToDevicePixels="True">
+                                >
                             <ScrollViewer x:Name="PART_ContentHost"
                                           Focusable="False"
                                           FocusVisualStyle="{x:Null}"
@@ -279,7 +271,7 @@
     </UserControl.Resources>
 
     <!-- Root Grid (Zero padding so separator runs border-to-border like Focus Timer & Volume) -->
-    <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" Tag="InteractiveControl">
+    <Grid Tag="InteractiveControl">
         <Grid.RowDefinitions>
             <!-- Row 0: Centered Top Menu Toolbar -->
             <RowDefinition Height="38" />
@@ -292,7 +284,7 @@
         <!-- ========================================================================= -->
         <!-- ROW 0: TOP CENTERED TILE STRIP (NETWORK WIDGET STYLE, 40x38, WHITE GLOW) -->
         <!-- ========================================================================= -->
-        <Grid Grid.Row="0" SnapsToDevicePixels="True" UseLayoutRounding="True">
+        <Grid Grid.Row="0">
             <widgets:WidgetTiles x:Name="NotesTileStrip"
                                  Style="{StaticResource NotepadTilesStripStyle}"
                                  Height="38"
@@ -307,7 +299,7 @@
                                     x:Name="BulletListTile"
                                     Value="Bullets"
                                     Symbol="TextBulletListTree24"
-                                    IndicatorBrush="#FFFFFF"
+                                    IndicatorBrush="{DynamicResource TextPrimaryBrush}"
                                     ToolTip="Bullet List"
                                     Click="BulletListTile_Click" />
 
@@ -316,7 +308,7 @@
                                     x:Name="NumberedListTile"
                                     Value="Numbered"
                                     Symbol="TextNumberListLtr16"
-                                    IndicatorBrush="#FFFFFF"
+                                    IndicatorBrush="{DynamicResource TextPrimaryBrush}"
                                     ToolTip="Numbered List"
                                     Click="NumberedListTile_Click" />
 
@@ -325,7 +317,7 @@
                                     x:Name="TodoListTile"
                                     Value="Todo"
                                     Symbol="CheckmarkCircle32"
-                                    IndicatorBrush="#FFFFFF"
+                                    IndicatorBrush="{DynamicResource TextPrimaryBrush}"
                                     ToolTip="To-Do Checklist"
                                     Click="TodoListTile_Click" />
             </widgets:WidgetTiles>
@@ -362,7 +354,7 @@
 
                     <!-- Watermark Placeholder (Hidden immediately when typing) -->
                     <TextBlock Text="Note it down, you know you'll forget"
-                               Foreground="#35FFFFFF"
+                               Foreground="{DynamicResource TextDisabledBrush}"
                                FontFamily="{DynamicResource AppMonoFontFamily}"
                                FontSize="{DynamicResource TypeMonoCodeFontSize}"
                                FontWeight="{DynamicResource TypeMonoCodeFontWeight}"
@@ -397,12 +389,12 @@
                             Background="{DynamicResource WidgetDividerBrush}"
                             BorderBrush="#18FFFFFF"
                             BorderThickness="1"
-                            CornerRadius="4"
+                            CornerRadius="{DynamicResource ControlCornerRadius}"
                             Height="38"
                             Margin="0,0,0,10"
                             Padding="10,0,10,0"
                             Tag="InteractiveControl"
-                            SnapsToDevicePixels="True">
+                            >
                         <Grid VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -419,7 +411,7 @@
                                     Background="Transparent"
                                     Margin="0,0,10,0"
                                     VerticalAlignment="Center"
-                                    SnapsToDevicePixels="True" />
+                                    />
 
                             <!-- Input TextBox & Non-Overlapping Watermark perfectly centered on horizontal axis -->
                             <Grid Grid.Column="1" VerticalAlignment="Center">
@@ -433,7 +425,7 @@
 
                                 <!-- Watermark Placeholder with clean breathing room from caret -->
                                 <TextBlock Text="Touch Grass"
-                                           Foreground="#50FFFFFF"
+                                           Foreground="{DynamicResource TextSubtleBrush}"
                                            FontSize="{DynamicResource TypeBodyFontSize}"
                                            FontWeight="{DynamicResource TypeBodyFontWeight}"
                                            VerticalAlignment="Center"
@@ -472,11 +464,11 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type notepad:TodoTaskItem}">
-                                    <Border CornerRadius="4"
+                                    <Border CornerRadius="{DynamicResource ControlCornerRadius}"
                                             Margin="0,1,0,1"
                                             Padding="10,6,10,6"
                                             Background="Transparent"
-                                            SnapsToDevicePixels="True">
+                                            >
                                         <Grid VerticalAlignment="Center">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
@@ -503,7 +495,7 @@
                                                        FontWeight="{DynamicResource TypeBodyFontWeight}">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="#FFFFFF" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsCompleted}" Value="True">
                                                                 <Setter Property="TextDecorations" Value="Strikethrough" />
@@ -543,14 +535,14 @@
 
                         <TextBlock Grid.Column="0"
                                    Text="{Binding TasksSummary}"
-                                   Foreground="#50FFFFFF"
+                                   Foreground="{DynamicResource TextSubtleBrush}"
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
                                    FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                    VerticalAlignment="Center" />
 
                         <Button Grid.Column="1"
                                 Content="Clear completed"
-                                Foreground="#70FFFFFF"
+                                Foreground="{DynamicResource TextSubtleBrush}"
                                 Background="Transparent"
                                 BorderThickness="0"
                                 FontSize="{DynamicResource TypeCaptionFontSize}"

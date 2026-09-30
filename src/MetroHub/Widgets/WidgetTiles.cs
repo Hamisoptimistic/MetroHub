@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
+using MetroHub.Presentation.Themes;
 
 namespace MetroHub.Widgets;
 
@@ -36,7 +37,7 @@ public class WidgetTiles : Selector
             nameof(AnimationDurationMs),
             typeof(int),
             typeof(WidgetTiles),
-            new PropertyMetadata(150));
+            new PropertyMetadata(200));
 
     public double IndicatorHeight
     {
@@ -279,7 +280,7 @@ public class WidgetTiles : Selector
     {
         if (_bottomRevealBorder != null)
         {
-            var anim = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(100));
+            var anim = new DoubleAnimation(1.0, MotionTokens.DurationFast);
             _bottomRevealBorder.BeginAnimation(UIElement.OpacityProperty, anim);
         }
     }
@@ -288,20 +289,13 @@ public class WidgetTiles : Selector
     {
         if (_bottomRevealBorder != null)
         {
-            var anim = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(200));
+            var anim = new DoubleAnimation(0.0, MotionTokens.DurationNormal);
             _bottomRevealBorder.BeginAnimation(UIElement.OpacityProperty, anim);
         }
     }
 
-    private static readonly Color DefaultIndicatorColor = Color.FromRgb(0x00, 0xE6, 0x76);
-    private static readonly SolidColorBrush DefaultIndicatorBrush = CreateFrozenBrush(DefaultIndicatorColor);
-
-    private static SolidColorBrush CreateFrozenBrush(Color color)
-    {
-        var b = new SolidColorBrush(color);
-        b.Freeze();
-        return b;
-    }
+    private static readonly Color DefaultIndicatorColor = ThemeTokens.StatusSuccessColor;
+    private static readonly SolidColorBrush DefaultIndicatorBrush = ThemeTokens.StatusSuccessBrush;
 
     private void UpdateIndicator(bool animate = true)
     {
@@ -313,9 +307,10 @@ public class WidgetTiles : Selector
             // Fade out indicator when no item is selected
             if (_slidingIndicator.Opacity > 0.0)
             {
-                var fadeOut = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(AnimationDurationMs))
+                var duration = !MotionTokens.AnimationsEnabled ? TimeSpan.Zero : TimeSpan.FromMilliseconds(AnimationDurationMs);
+                var fadeOut = new DoubleAnimation(0.0, duration)
                 {
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                    EasingFunction = MotionTokens.Decelerate
                 };
                 _slidingIndicator.BeginAnimation(UIElement.OpacityProperty, fadeOut);
             }
@@ -361,9 +356,10 @@ public class WidgetTiles : Selector
 
         if (animate)
         {
-            var xAnim = new DoubleAnimation(targetX, TimeSpan.FromMilliseconds(AnimationDurationMs))
+            var duration = !MotionTokens.AnimationsEnabled ? TimeSpan.Zero : TimeSpan.FromMilliseconds(AnimationDurationMs);
+            var xAnim = new DoubleAnimation(targetX, duration)
             {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                EasingFunction = MotionTokens.Decelerate
             };
             Timeline.SetDesiredFrameRate(xAnim, 120);
 
@@ -394,7 +390,7 @@ public class WidgetTiles : Selector
         _slidingIndicator.Background = brush;
         if (_indicatorShadow != null)
         {
-            Color targetColor = (brush as SolidColorBrush)?.Color ?? (Color)ColorConverter.ConvertFromString("#00E676");
+            Color targetColor = (brush as SolidColorBrush)?.Color ?? ThemeTokens.StatusSuccessColor;
             _indicatorShadow.Color = targetColor;
         }
         _slidingIndicator.InvalidateVisual();

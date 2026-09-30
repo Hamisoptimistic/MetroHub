@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
+using MetroHub.Presentation.Themes;
 
 namespace MetroHub.Presentation.Controllers;
 
@@ -18,6 +19,9 @@ namespace MetroHub.Presentation.Controllers;
 /// </summary>
 public sealed class BackdropManager
 {
+    private static readonly SolidColorBrush AcrylicTintBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0x99, 0x0D, 0x0D, 0x11));
+    private static readonly SolidColorBrush FallbackDarkBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xEE, 0x10, 0x10, 0x14));
+
     private readonly Window _window;
     private readonly Func<AppSettings> _settingsProvider;
     private readonly Panel? _rootGrid;
@@ -111,9 +115,7 @@ public sealed class BackdropManager
                 NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW);
                 if (_rootGrid != null)
                 {
-                    var acrylicBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(0x99, 0x0D, 0x0D, 0x11));
-                    acrylicBrush.Freeze();
-                    _rootGrid.Background = acrylicBrush;
+                    _rootGrid.Background = AcrylicTintBrush;
                 }
             }
             else if (string.Equals(settings.BackdropType, "MicaAlt", StringComparison.OrdinalIgnoreCase))
@@ -369,9 +371,7 @@ public sealed class BackdropManager
         }
         if (_rootGrid != null)
         {
-            var darkBrush = new SolidColorBrush(Color.FromArgb(0xEE, 0x10, 0x10, 0x14));
-            darkBrush.Freeze();
-            _rootGrid.Background = darkBrush;
+            _rootGrid.Background = FallbackDarkBrush;
         }
 
         if (!string.IsNullOrEmpty(lastError) && string.Equals(backdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase))

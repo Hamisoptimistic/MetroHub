@@ -8,8 +8,7 @@
              d:DataContext="{d:DesignInstance Type=rover:RoverWidgetViewModel}"
              Focusable="False"
              Cursor="Hand"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True">
+>
 
     <UserControl.Resources>
 

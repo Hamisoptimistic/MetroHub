@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using MetroHub.Presentation.Themes;
 
 namespace MetroHub.Presentation.Controls;
 
@@ -261,9 +262,9 @@ public partial class WidgetTabStrip : UserControl
         {
             if (PART_SlidingIndicator.Opacity > 0.0)
             {
-                var fadeOut = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(150))
+                var fadeOut = new DoubleAnimation(0.0, MotionTokens.DurationNormal)
                 {
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                    EasingFunction = MotionTokens.Decelerate
                 };
                 PART_SlidingIndicator.BeginAnimation(UIElement.OpacityProperty, fadeOut);
             }
@@ -325,9 +326,9 @@ public partial class WidgetTabStrip : UserControl
 
         if (animate && IsLoaded)
         {
-            var xAnim = new DoubleAnimation(targetX, TimeSpan.FromMilliseconds(220))
+            var xAnim = new DoubleAnimation(targetX, MotionTokens.DurationNormal)
             {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                EasingFunction = MotionTokens.Decelerate
             };
             Timeline.SetDesiredFrameRate(xAnim, 120);
             PART_IndicatorTransform.BeginAnimation(TranslateTransform.XProperty, xAnim, HandoffBehavior.SnapshotAndReplace);
@@ -393,9 +394,9 @@ public partial class WidgetTabStrip : UserControl
             var tabRoot = FindVisualParent<Grid>(element, "TabRootGrid");
             if (tabRoot != null)
             {
-                var fadeOut = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(120))
+                var fadeOut = new DoubleAnimation(0.0, MotionTokens.DurationFast)
                 {
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                    EasingFunction = MotionTokens.Decelerate
                 };
                 _pendingClose = (tab, tabRoot);
                 fadeOut.Completed += (_, _) =>

@@ -8,17 +8,12 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=clock:ClockWidgetViewModel}"
              Focusable="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
              Typography.NumeralAlignment="Tabular"
              Typography.NumeralStyle="Normal"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
              TextOptions.TextHintingMode="Animated"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppDisplayFontFamily}">
     <widgets:WidgetCard Padding="12,10,12,10">
-        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
+        <Grid>
             <!-- 1. Wide 4x2 Layout: Time Centered in Viewbox with Micro-Motion -->
             <Grid Visibility="{Binding IsWideOnly, Converter={StaticResource BoolToVis}}">
                 <Viewbox Stretch="Uniform"
@@ -115,7 +110,7 @@
                                          Text="{Binding FullDateString}"
                                          FontSize="{DynamicResource TypeHeaderFontSize}"
                                          FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                         Foreground="#E0FFFFFF"
+                                         Foreground="{DynamicResource TextPrimaryBrush}"
                                          VerticalAlignment="Center"
                                          HorizontalAlignment="Right"
                                          TextAlignment="Right"
@@ -175,7 +170,7 @@
                                          Text="{Binding FullDateString}"
                                          FontSize="{DynamicResource TypeHeaderFontSize}"
                                          FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                         Foreground="#E0FFFFFF"
+                                         Foreground="{DynamicResource TextPrimaryBrush}"
                                          HorizontalAlignment="Center"
                                          TextAlignment="Center"
                                          Margin="0,4,0,8" />

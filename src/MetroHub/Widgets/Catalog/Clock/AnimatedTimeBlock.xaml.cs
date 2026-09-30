@@ -70,14 +70,7 @@ public partial class AnimatedTimeBlock : UserControl
 
         if (EnableTextDepth)
         {
-            LayoutRoot.Effect = new System.Windows.Media.Effects.DropShadowEffect
-            {
-                BlurRadius = 26,
-                ShadowDepth = 4,
-                Direction = 270,
-                Opacity = 0.22,
-                Color = Color.FromRgb(0x08, 0x0E, 0x1A)
-            };
+            LayoutRoot.Effect = TryFindResource("StudioGlassTextShadow") as System.Windows.Media.Effects.DropShadowEffect;
         }
         else
         {

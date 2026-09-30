@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Display;
 using MetroHub.Core.Models;
 using MetroHub.Core.Power;
+using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Serialization;
 using Wpf.Ui.Controls;
 
@@ -31,8 +32,8 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
     #region Frozen Indicator Brushes (Freezable Hygiene)
 
     private static readonly Brush ActiveScreenOffBrush = CreateFrozenBrush(Color.FromRgb(0x38, 0xBD, 0xF8));   // Electric Sky Blue (#38BDF8)
-    private static readonly Brush ActiveCaffeineBrush = CreateFrozenBrush(Color.FromRgb(0x00, 0xE6, 0x76));    // Electric Green
-    private static readonly Brush ActiveNightLightBrush = CreateFrozenBrush(Color.FromRgb(0xFF, 0xB9, 0x00));  // Amber Warmth
+    private static readonly Brush ActiveCaffeineBrush = ThemeTokens.StatusSuccessBrush;                         // Pre-frozen #00E676
+    private static readonly Brush ActiveNightLightBrush = ThemeTokens.StatusWarningBrush;                       // Pre-frozen #FFB900
     private static readonly Brush InactiveTileBrush = CreateFrozenBrush(Color.FromArgb(0x38, 0xFF, 0xFF, 0xFF)); // Subtle Translucent
     private static readonly Brush WhiteIndicatorBrush = CreateFrozenBrush(Color.FromRgb(0xFF, 0xFF, 0xFF));     // Solid Crisp White
 

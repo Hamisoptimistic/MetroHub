@@ -6,6 +6,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using MetroHub.Presentation.Themes;
 
 namespace MetroHub.Widgets;
 
@@ -56,7 +57,7 @@ public class WidgetSegmentedControl : Selector
             nameof(AnimationDurationMs),
             typeof(int),
             typeof(WidgetSegmentedControl),
-            new PropertyMetadata(300));
+            new PropertyMetadata(200));
 
     public Brush IndicatorBrush
     {
@@ -398,16 +399,17 @@ public class WidgetSegmentedControl : Selector
 
         if (animate)
         {
-            var xAnim = new DoubleAnimation(targetX, TimeSpan.FromMilliseconds(AnimationDurationMs))
+            var duration = !MotionTokens.AnimationsEnabled ? TimeSpan.Zero : TimeSpan.FromMilliseconds(AnimationDurationMs);
+            var xAnim = new DoubleAnimation(targetX, duration)
             {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                EasingFunction = MotionTokens.Decelerate
             };
             Timeline.SetDesiredFrameRate(xAnim, 120);
             _indicatorTransform.BeginAnimation(TranslateTransform.XProperty, xAnim, HandoffBehavior.SnapshotAndReplace);
 
-            var wAnim = new DoubleAnimation(targetWidth, TimeSpan.FromMilliseconds(AnimationDurationMs))
+            var wAnim = new DoubleAnimation(targetWidth, duration)
             {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                EasingFunction = MotionTokens.Decelerate
             };
             Timeline.SetDesiredFrameRate(wAnim, 120);
             _slidingIndicator.BeginAnimation(FrameworkElement.WidthProperty, wAnim, HandoffBehavior.SnapshotAndReplace);

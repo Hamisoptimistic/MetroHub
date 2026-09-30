@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Wpf.Ui.Controls;
+using MetroHub.Presentation.Themes;
 
 namespace MetroHub.Widgets;
 
@@ -86,7 +87,7 @@ public class WidgetTile : ListBoxItem
             typeof(Brush),
             typeof(WidgetTile),
             new PropertyMetadata(
-                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00E676")),
+                ThemeTokens.StatusSuccessBrush,
                 OnIndicatorBrushChanged));
 
     private static void OnIndicatorBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

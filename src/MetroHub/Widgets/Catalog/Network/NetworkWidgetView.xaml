@@ -14,12 +14,6 @@
              Focusable="False"
              FocusVisualStyle="{x:Null}"
              ClipToBounds="True"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
@@ -45,22 +39,22 @@
                         <Border x:Name="Border"
                                 Background="{TemplateBinding Background}"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <ui:SymbolIcon x:Name="CopyIcon"
                                            Symbol="Copy16"
                                            FontSize="11"
-                                           Foreground="#80FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
-                                <Setter TargetName="CopyIcon" Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="CopyIcon" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
-                                <Setter TargetName="CopyIcon" Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="CopyIcon" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -92,7 +86,7 @@
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="FontFamily" Value="{DynamicResource AppDisplayFontFamily}" />
             <Setter Property="FontSize" Value="{DynamicResource TypeDisplayFontSize}" />
             <Setter Property="FontWeight" Value="{DynamicResource TypeDisplayFontWeight}" />
@@ -105,7 +99,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid Background="Transparent" SnapsToDevicePixels="True" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Grid Background="Transparent" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <TextBlock x:Name="StartLabel"
                                        Text="START"
                                        FontFamily="{TemplateBinding FontFamily}"
@@ -232,7 +226,7 @@
 
     <!-- Outer Widget Card with Padding="0" so dividing borders run border-to-border -->
     <widgets:WidgetCard Padding="0" Background="Transparent">
-        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True" Background="Transparent">
+        <Grid ClipToBounds="True" Background="Transparent">
             <Grid.RowDefinitions>
                 <!-- Row 0: Top 5-Tile Segmented Region (Height 76px, with seamless bottom separator) -->
                 <RowDefinition Height="76" />
@@ -280,12 +274,12 @@
             <!-- ========================================================================= -->
             <!-- ROW 1: LOWER PANEL REGION                                                 -->
             <!-- ========================================================================= -->
-            <Grid Grid.Row="1" Background="Transparent" SnapsToDevicePixels="True">
+            <Grid Grid.Row="1" Background="Transparent">
 
                 <!-- ==================== 1. ETHERNET PANEL ==================== -->
                 <Grid Visibility="{Binding IsEthernetPanel, Converter={StaticResource BoolToVis}}"
                       Margin="20,14,20,14"
-                      SnapsToDevicePixels="True">
+                      >
                     <Grid.RowDefinitions>
                         <!-- Row 0: Top Header: [ 🖧 ] Ethernet + Standard Windows 11 ToggleSwitch -->
                         <RowDefinition Height="Auto" />
@@ -319,12 +313,12 @@
                             Height="1"
                             Background="{DynamicResource WidgetDividerBrush}"
                             Margin="0,0,0,14"
-                            SnapsToDevicePixels="True" />
+                            />
 
                     <!-- Content Row: View 1 - Full Properties (When Ethernet is Enabled) -->
                     <Grid Grid.Row="2"
                           Visibility="{Binding IsEthernetEnabled, Converter={StaticResource BoolToVis}}"
-                          SnapsToDevicePixels="True">
+                          >
                         <Grid.Style>
                             <Style TargetType="Grid">
                                 <Style.Triggers>
@@ -334,7 +328,7 @@
                                                 <Storyboard>
                                                     <DoubleAnimation Storyboard.TargetProperty="Opacity"
                                                                      From="0.0" To="1.0"
-                                                                     Duration="0:0:0.2" />
+                                                                     Duration="{StaticResource FluentDurationNormal}" />
                                                 </Storyboard>
                                             </BeginStoryboard>
                                         </Trigger.EnterActions>
@@ -386,7 +380,7 @@
                                        Text="{Binding Ethernet.Description}"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       Foreground="#D0FFFFFF"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
                                        TextTrimming="CharacterEllipsis"
@@ -407,7 +401,7 @@
                                        Typography.NumeralAlignment="Tabular"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       Foreground="#D0FFFFFF"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
                                        TextTrimming="CharacterEllipsis"
@@ -436,7 +430,7 @@
                                        Typography.NumeralAlignment="Tabular"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       Foreground="#D0FFFFFF"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
                                        TextTrimming="CharacterEllipsis"
@@ -464,7 +458,7 @@
                                        Typography.NumeralAlignment="Tabular"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       Foreground="#D0FFFFFF"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
                                        TextTrimming="CharacterEllipsis"
@@ -484,7 +478,7 @@
                                        Typography.NumeralAlignment="Tabular"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       Foreground="#D0FFFFFF"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
                                        TextTrimming="CharacterEllipsis"
@@ -504,7 +498,7 @@
                                        Typography.NumeralAlignment="Tabular"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       Foreground="#D0FFFFFF"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
                                        TextTrimming="CharacterEllipsis"
@@ -523,7 +517,7 @@
                                        Text="{Binding Ethernet.IpAssignment}"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       Foreground="#D0FFFFFF"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
                                        TextTrimming="CharacterEllipsis"
@@ -544,7 +538,7 @@
                                        Typography.NumeralAlignment="Tabular"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       Foreground="#D0FFFFFF"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Right"
                                        TextAlignment="Right"
                                        TextTrimming="CharacterEllipsis"
@@ -559,7 +553,7 @@
                           VerticalAlignment="Center"
                           HorizontalAlignment="Center"
                           Margin="0,32,0,32"
-                          SnapsToDevicePixels="True">
+                          >
                         <Grid.Style>
                             <Style TargetType="Grid">
                                 <Style.Triggers>
@@ -569,7 +563,7 @@
                                                 <Storyboard>
                                                     <DoubleAnimation Storyboard.TargetProperty="Opacity"
                                                                      From="0.0" To="1.0"
-                                                                     Duration="0:0:0.2" />
+                                                                     Duration="{StaticResource FluentDurationNormal}" />
                                                 </Storyboard>
                                             </BeginStoryboard>
                                         </Trigger.EnterActions>
@@ -581,14 +575,14 @@
                             <TextBlock Text="&#xEB55;"
                                        FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="38"
-                                       Foreground="#45FFFFFF"
+                                       Foreground="{DynamicResource TextDisabledBrush}"
                                        HorizontalAlignment="Center"
                                        Margin="0,0,0,12" />
                             <TextBlock Text="{Binding EthernetTurnedOffBannerTitle}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
                                        FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                       Foreground="#D0FFFFFF"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Center" />
                         </StackPanel>
                     </Grid>
@@ -597,7 +591,7 @@
                 <!-- ==================== 2. WI-FI PANEL ==================== -->
                 <Grid Visibility="{Binding IsWifiPanel, Converter={StaticResource BoolToVis}}"
                       Margin="20,14,20,14"
-                      SnapsToDevicePixels="True">
+                      >
                     <Grid.RowDefinitions>
                         <!-- Row 0: Top Header: [ 📶 ] Wi-Fi + Scan/Refresh + ToggleSwitch -->
                         <RowDefinition Height="Auto" />
@@ -685,12 +679,12 @@
                             Height="1"
                             Background="{DynamicResource WidgetDividerBrush}"
                             Margin="0,0,0,14"
-                            SnapsToDevicePixels="True" />
+                            />
 
                     <!-- Content Row: View 1 - Available Networks (When Wi-Fi Radio is ON and Ready) -->
                     <Grid Grid.Row="2"
                           Visibility="{Binding IsWifiContentVisible, Converter={StaticResource BoolToVis}}"
-                          SnapsToDevicePixels="True">
+                          >
 
                         <!-- Empty State (No Networks Detected Yet) -->
                         <StackPanel Visibility="{Binding HasNoAvailableNetworks, Converter={StaticResource BoolToVis}}"
@@ -698,13 +692,13 @@
                                     VerticalAlignment="Center">
                             <ui:SymbolIcon Symbol="Wifi124"
                                            FontSize="28"
-                                           Foreground="#40FFFFFF"
+                                           Foreground="{DynamicResource TextDisabledBrush}"
                                            HorizontalAlignment="Center"
                                            Margin="0,0,0,8" />
                             <TextBlock Text="Scanning for available networks..."
                                        FontSize="{DynamicResource TypeBodyFontSize}"
                                        FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                       Foreground="#75FFFFFF"
+                                       Foreground="{DynamicResource TextSubtleBrush}"
                                        HorizontalAlignment="Center" />
                         </StackPanel>
 
@@ -742,8 +736,8 @@
                                                         Background="{TemplateBinding Background}"
                                                         BorderBrush="{TemplateBinding BorderBrush}"
                                                         BorderThickness="0"
-                                                        CornerRadius="{StaticResource ControlCornerRadius}"
-                                                        SnapsToDevicePixels="True">
+                                                        CornerRadius="{DynamicResource ControlCornerRadius}"
+                                                        >
                                                     <ContentPresenter />
                                                 </Border>
                                                 <ControlTemplate.Triggers>
@@ -774,7 +768,7 @@
                             </ui:ListView.ItemContainerStyle>
                             <ui:ListView.ItemTemplate>
                                 <DataTemplate DataType="{x:Type network:WifiNetworkItemViewModel}">
-                                    <Grid SnapsToDevicePixels="True">
+                                    <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
@@ -820,7 +814,7 @@
                                                         CornerRadius="1.5"
                                                         VerticalAlignment="Center"
                                                         Margin="0,0,8,0"
-                                                        SnapsToDevicePixels="True" />
+                                                        />
 
                                                 <!-- Segoe Fluent Icons TextBlock: uniform signal glyph, clean neutral white -->
                                                 <TextBlock Grid.Column="1"
@@ -830,14 +824,14 @@
                                                            Foreground="{Binding WifiIconColor, Converter={StaticResource StringToBrush}}"
                                                            VerticalAlignment="Center"
                                                            Margin="0,0,12,0"
-                                                           SnapsToDevicePixels="True" />
+                                                           />
 
                                                 <!-- SSID + Subtitle (neutral typography) -->
                                                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Ssid}"
                                                                FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                                                FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                                               Foreground="#F2FFFFFF"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}"
                                                                TextTrimming="CharacterEllipsis"
                                                                ToolTip="{Binding Ssid}" />
                                                     <TextBlock Text="{Binding SubtitleText}"
@@ -856,7 +850,6 @@
                                                 Background="Transparent"
                                                 BorderThickness="0"
                                                 Margin="0"
-                                                SnapsToDevicePixels="True"
                                                 IsVisibleChanged="AccordionDrawer_IsVisibleChanged"
                                                 SizeChanged="AccordionDrawer_SizeChanged">
                                             <Border.Style>
@@ -919,7 +912,7 @@
                                                 <TextBlock Text="{Binding SecurityDetailsDisplay}"
                                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                                           Foreground="#70FFFFFF"
+                                                           Foreground="{DynamicResource TextSubtleBrush}"
                                                            Margin="0,0,0,8" />
 
                                                 <!-- Password section (only for unsaved secured non-connected networks) -->
@@ -930,7 +923,7 @@
                                                                Visibility="{Binding HasConnectionError, Converter={StaticResource BoolToVis}}"
                                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                                               Foreground="#FF4D4D"
+                                                               Foreground="{DynamicResource StatusErrorBrush}"
                                                                Margin="0,0,0,4" />
 
                                                     <!-- WPF-UI ui:PasswordBox: transparent background, no orange indicator -->
@@ -989,7 +982,7 @@
                                                             Background="#10FFFFFF"
                                                             BorderBrush="#18FFFFFF"
                                                             BorderThickness="1"
-                                                            CornerRadius="2"
+                                                            CornerRadius="{DynamicResource ControlCornerRadius}"
                                                             Width="76"
                                                             Height="28">
                                                         <ui:ProgressRing IsIndeterminate="{Binding IsConnecting}"
@@ -1092,7 +1085,7 @@
                           VerticalAlignment="Center"
                           HorizontalAlignment="Center"
                           Margin="0,32,0,32"
-                          SnapsToDevicePixels="True">
+                          >
                         <Grid.Style>
                             <Style TargetType="Grid">
                                 <Style.Triggers>
@@ -1102,7 +1095,7 @@
                                                 <Storyboard>
                                                     <DoubleAnimation Storyboard.TargetProperty="Opacity"
                                                                      From="0.0" To="1.0"
-                                                                     Duration="0:0:0.2" />
+                                                                     Duration="{StaticResource FluentDurationNormal}" />
                                                 </Storyboard>
                                             </BeginStoryboard>
                                         </Trigger.EnterActions>
@@ -1113,14 +1106,14 @@
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                             <ui:SymbolIcon Symbol="WifiOff24"
                                            FontSize="38"
-                                           Foreground="#45FFFFFF"
+                                           Foreground="{DynamicResource TextDisabledBrush}"
                                            HorizontalAlignment="Center"
                                            Margin="0,0,0,12" />
                             <TextBlock Text="{Binding WifiTurnedOffBannerTitle}"
                                        FontFamily="{DynamicResource AppDisplayFontFamily}"
                                        FontSize="{DynamicResource TypeHeaderFontSize}"
                                        FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                       Foreground="#D0FFFFFF"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Center" />
                         </StackPanel>
                     </Grid>
@@ -1131,7 +1124,7 @@
                           VerticalAlignment="Center"
                           HorizontalAlignment="Center"
                           Margin="0,32,0,32"
-                          SnapsToDevicePixels="True">
+                          >
                         <Grid.Style>
                             <Style TargetType="Grid">
                                 <Style.Triggers>
@@ -1141,7 +1134,7 @@
                                                 <Storyboard>
                                                     <DoubleAnimation Storyboard.TargetProperty="Opacity"
                                                                      From="0.0" To="1.0"
-                                                                     Duration="0:0:0.15" />
+                                                                     Duration="{StaticResource FluentDurationFast}" />
                                                 </Storyboard>
                                             </BeginStoryboard>
                                         </Trigger.EnterActions>
@@ -1159,7 +1152,7 @@
                             <TextBlock Text="{Binding WifiTransitionStatusText}"
                                        FontSize="{DynamicResource TypeBodyFontSize}"
                                        FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                       Foreground="#B0FFFFFF"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Center" />
                         </StackPanel>
                     </Grid>
@@ -1168,7 +1161,7 @@
                 <!-- ==================== 3. ADAPTERS PANEL ==================== -->
                 <Grid Visibility="{Binding IsAdaptersPanel, Converter={StaticResource BoolToVis}}"
                       Margin="20,14,20,14"
-                      SnapsToDevicePixels="True">
+                      >
                     <Grid.RowDefinitions>
                         <!-- Row 0: Top Header: [ 🛠️ ] Disable network adapters (requires admin rights) + Refresh -->
                         <RowDefinition Height="Auto" />
@@ -1246,26 +1239,26 @@
                             Height="1"
                             Background="{DynamicResource WidgetDividerBrush}"
                             Margin="0,0,0,14"
-                            SnapsToDevicePixels="True" />
+                            />
 
                     <!-- Row 2: Content (List of Adapters or Empty State) -->
-                    <Grid Grid.Row="2" SnapsToDevicePixels="True">
+                    <Grid Grid.Row="2">
                         <!-- 1. Adapter List with Floating Scrollbar -->
                         <ScrollViewer Visibility="{Binding HasPhysicalAdapters, Converter={StaticResource BoolToVis}}"
                                       Style="{StaticResource WidgetFloatingScrollViewerStyle}"
                                       VerticalScrollBarVisibility="Auto"
                                       HorizontalScrollBarVisibility="Disabled"
                                       Focusable="False"
-                                      SnapsToDevicePixels="True">
+                                      >
                             <ItemsControl ItemsSource="{Binding PhysicalAdapters}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type network:PhysicalAdapterItemViewModel}">
                                         <!-- 56px Card Matching Wi-Fi UI Convention, hover-only container, 5px CornerRadius -->
                                         <Border Height="56"
-                                                CornerRadius="{StaticResource ControlCornerRadius}"
+                                                CornerRadius="{DynamicResource ControlCornerRadius}"
                                                 BorderThickness="0"
                                                 Margin="0,0,0,4"
-                                                SnapsToDevicePixels="True">
+                                                >
                                             <Border.Style>
                                                 <Style TargetType="Border">
                                                     <Setter Property="Background" Value="Transparent" />
@@ -1293,20 +1286,20 @@
                                                            Opacity="{Binding IconOpacity}"
                                                            VerticalAlignment="Center"
                                                            Margin="0,0,14,0"
-                                                           SnapsToDevicePixels="True" />
+                                                           />
 
                                                 <!-- Center: Name + Subtitle (Description • Status) -->
                                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Name}"
                                                                FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                                                FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                                               Foreground="#F2FFFFFF"
+                                                               Foreground="{DynamicResource TextPrimaryBrush}"
                                                                TextTrimming="CharacterEllipsis"
                                                                ToolTip="{Binding Name}" />
                                                     <TextBlock Text="{Binding SubtitleText}"
                                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                                               Foreground="#85FFFFFF"
+                                                               Foreground="{DynamicResource TextMutedBrush}"
                                                                TextWrapping="Wrap"
                                                                TextTrimming="CharacterEllipsis"
                                                                ToolTip="{Binding SubtitleText}"
@@ -1348,23 +1341,23 @@
                               VerticalAlignment="Center"
                               HorizontalAlignment="Center"
                               Margin="0,32,0,32"
-                              SnapsToDevicePixels="True">
+                              >
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <ui:SymbolIcon Symbol="DismissCircle24"
                                                FontSize="38"
-                                               Foreground="#45FFFFFF"
+                                               Foreground="{DynamicResource TextDisabledBrush}"
                                                HorizontalAlignment="Center"
                                                Margin="0,0,0,12" />
                                 <TextBlock Text="No Adapters Detected"
                                            FontFamily="{DynamicResource AppDisplayFontFamily}"
                                            FontSize="{DynamicResource TypeHeaderFontSize}"
                                            FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                           Foreground="#D0FFFFFF"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            HorizontalAlignment="Center" />
                                 <TextBlock Text="No physical Ethernet or Wi-Fi hardware interfaces available"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#85FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            HorizontalAlignment="Center"
                                            Margin="0,6,0,0" />
                             </StackPanel>
@@ -1375,7 +1368,7 @@
                 <!-- ==================== 4. SPEED TEST PANEL ==================== -->
                 <Grid Visibility="{Binding IsSpeedPanel, Converter={StaticResource BoolToVis}}"
                       Margin="20,10,20,14"
-                      SnapsToDevicePixels="True">
+                      >
                     <Grid.RowDefinitions>
                         <!-- Row 0: Center Stage (Gauge when running / "GO" when stopped - scaled to panel size) -->
                         <RowDefinition Height="136" />
@@ -1384,7 +1377,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- ROW 0: CENTER STAGE -->
-                    <Grid Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" SnapsToDevicePixels="True">
+                    <Grid Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center">
 
                         <!-- A. RUNNING GAUGE STAGE (Smoothly appears ONLY when running, pure gauge without speed text) -->
                         <Grid x:Name="RunningGaugeStage"
@@ -1400,7 +1393,7 @@
                                                 <BeginStoryboard>
                                                     <Storyboard>
                                                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                         To="1.0" Duration="0:0:0.35" />
+                                                                         To="1.0" Duration="{StaticResource FluentDurationGentle}" />
                                                     </Storyboard>
                                                 </BeginStoryboard>
                                             </DataTrigger.EnterActions>
@@ -1408,7 +1401,7 @@
                                                 <BeginStoryboard>
                                                     <Storyboard>
                                                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                         To="0.0" Duration="0:0:0.25" />
+                                                                         To="0.0" Duration="{StaticResource FluentDurationNormal}" />
                                                     </Storyboard>
                                                 </BeginStoryboard>
                                             </DataTrigger.ExitActions>
@@ -1441,7 +1434,7 @@
                                                 <BeginStoryboard>
                                                     <Storyboard>
                                                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                         To="0.0" Duration="0:0:0.25" />
+                                                                         To="0.0" Duration="{StaticResource FluentDurationNormal}" />
                                                     </Storyboard>
                                                 </BeginStoryboard>
                                             </DataTrigger.EnterActions>
@@ -1449,7 +1442,7 @@
                                                 <BeginStoryboard>
                                                     <Storyboard>
                                                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                         To="1.0" Duration="0:0:0.35" />
+                                                                         To="1.0" Duration="{StaticResource FluentDurationGentle}" />
                                                     </Storyboard>
                                                 </BeginStoryboard>
                                             </DataTrigger.ExitActions>
@@ -1466,7 +1459,7 @@
                                 <TextBlock Text="{Binding SpeedTestStatusMessage}"
                                            FontSize="{DynamicResource TypeBodyFontSize}"
                                            FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                           Foreground="#FF6B6B"
+                                           Foreground="{DynamicResource StatusErrorBrush}"
                                            HorizontalAlignment="Center"
                                            TextAlignment="Center"
                                            TextWrapping="Wrap"
@@ -1480,7 +1473,7 @@
                     <!-- ROW 1: METRICS REGION (Flush with panel bounds, matching Ethernet and Wi-Fi separator) -->
                     <Grid Grid.Row="1"
                           HorizontalAlignment="Stretch"
-                          SnapsToDevicePixels="True">
+                          >
                         <Grid.RowDefinitions>
                             <!-- Row 0: Top Metrics (Download on Left, Upload on Right) -->
                             <RowDefinition Height="56" />
@@ -1504,7 +1497,7 @@
                                 <TextBlock Text="Download"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#95FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            Margin="0,0,0,3" />
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{Binding SpeedTestDownloadDisplay}"
@@ -1517,7 +1510,7 @@
                                     <TextBlock Text="Mbps"
                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                               Foreground="#80FFFFFF"
+                                               Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Bottom"
                                                Margin="4,0,0,2" />
                                 </StackPanel>
@@ -1528,7 +1521,7 @@
                                 <TextBlock Text="Upload"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#95FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            HorizontalAlignment="Right"
                                            Margin="0,0,0,3" />
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -1542,7 +1535,7 @@
                                     <TextBlock Text="Mbps"
                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                               Foreground="#80FFFFFF"
+                                               Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Bottom"
                                                Margin="4,0,0,2" />
                                 </StackPanel>
@@ -1554,7 +1547,7 @@
                                 Height="1"
                                 HorizontalAlignment="Stretch"
                                 Background="{DynamicResource WidgetDividerBrush}"
-                                SnapsToDevicePixels="True" />
+                                />
 
                         <!-- ROW 2: BOTTOM STATUS BAR (Ping flush-left, 3 Dots Center, Jitter flush-right) -->
                         <Grid Grid.Row="2" Margin="0" VerticalAlignment="Center">
@@ -1572,7 +1565,7 @@
                                 <TextBlock Text="Ping"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#75FFFFFF"
+                                           Foreground="{DynamicResource TextSubtleBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding SpeedTestPingDisplay}"
@@ -1604,7 +1597,7 @@
                                 <TextBlock Text="Jitter"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#75FFFFFF"
+                                           Foreground="{DynamicResource TextSubtleBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding SpeedTestJitterDisplay}"
@@ -1623,7 +1616,7 @@
                 <Grid Visibility="{Binding IsDataUsagePanel, Converter={StaticResource BoolToVis}}"
                       Margin="20,12,20,14"
                       Background="Transparent"
-                      SnapsToDevicePixels="True">
+                      >
                     <Grid.RowDefinitions>
                         <!-- Row 0: Centered Master Timeframe Segmented Control -->
                         <RowDefinition Height="Auto" />
@@ -1656,10 +1649,10 @@
                             Height="1"
                             Background="{DynamicResource WidgetDividerBrush}"
                             Margin="0,4,0,16"
-                            SnapsToDevicePixels="True" />
+                            />
 
                     <!-- ROW 2: DUAL INTERFACES (Clean, Borderless, Monochromatic) -->
-                    <Grid Grid.Row="2" VerticalAlignment="Center" SnapsToDevicePixels="True">
+                    <Grid Grid.Row="2" VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
                             <!-- Column 0: Wired / USB Tethering -->
                             <ColumnDefinition Width="*" />
@@ -1682,7 +1675,7 @@
                                 <TextBlock Text="{Binding UsageWiredTitle}"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                           Foreground="#E0FFFFFF"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                            VerticalAlignment="Center" />
                             </StackPanel>
 
@@ -1703,26 +1696,26 @@
                                 <TextBlock Text="&#xE896;"
                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="10"
-                                           Foreground="#85FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding EthernetDataUsage.FormattedReceived}"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#90FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            VerticalAlignment="Center"
                                            Typography.NumeralAlignment="Tabular" />
                                 <TextBlock Text="   " />
                                 <TextBlock Text="&#xE898;"
                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="10"
-                                           Foreground="#85FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding EthernetDataUsage.FormattedSent}"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#90FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            VerticalAlignment="Center"
                                            Typography.NumeralAlignment="Tabular" />
                             </StackPanel>
@@ -1731,7 +1724,7 @@
                             <TextBlock Text="No adapter detected"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#60FFFFFF"
+                                       Foreground="{DynamicResource TextSubtleBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        Visibility="{Binding ShowEthernetNoAdapterText, Converter={StaticResource BoolToVis}}" />
@@ -1742,7 +1735,7 @@
                                 Width="1"
                                 Background="{DynamicResource WidgetDividerBrush}"
                                 Margin="20,2,20,2"
-                                SnapsToDevicePixels="True" />
+                                />
 
                         <!-- ================= COLUMN 2: WI-FI ================= -->
                         <StackPanel Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -1757,7 +1750,7 @@
                                 <TextBlock Text="Wi-Fi"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                           Foreground="#E0FFFFFF"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
                                            VerticalAlignment="Center" />
                             </StackPanel>
 
@@ -1778,26 +1771,26 @@
                                 <TextBlock Text="&#xE896;"
                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="10"
-                                           Foreground="#85FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding WifiDataUsage.FormattedReceived}"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#90FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            VerticalAlignment="Center"
                                            Typography.NumeralAlignment="Tabular" />
                                 <TextBlock Text="   " />
                                 <TextBlock Text="&#xE898;"
                                            FontFamily="{DynamicResource AppIconFontFamily}"
                                            FontSize="10"
-                                           Foreground="#85FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,4,0" />
                                 <TextBlock Text="{Binding WifiDataUsage.FormattedSent}"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#90FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            VerticalAlignment="Center"
                                            Typography.NumeralAlignment="Tabular" />
                             </StackPanel>
@@ -1806,7 +1799,7 @@
                             <TextBlock Text="No adapter detected"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#60FFFFFF"
+                                       Foreground="{DynamicResource TextSubtleBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        Visibility="{Binding ShowWifiNoAdapterText, Converter={StaticResource BoolToVis}}" />
@@ -1818,10 +1811,10 @@
                             Height="1"
                             Background="{DynamicResource WidgetDividerBrush}"
                             Margin="0,16,0,12"
-                            SnapsToDevicePixels="True" />
+                            />
 
                     <!-- ROW 4: TOTAL CONSUMED (BELOW ETHERNET & WI-FI) -->
-                    <Grid Grid.Row="4" Margin="4,0,4,2" SnapsToDevicePixels="True">
+                    <Grid Grid.Row="4" Margin="4,0,4,2">
                         <Grid.ColumnDefinitions>
                             <!-- Left: TOTAL CONSUMED + Big Value -->
                             <ColumnDefinition Width="Auto" />
@@ -1837,7 +1830,7 @@
                             <Run Text="TOTAL CONSUMED"
                                  FontSize="{DynamicResource TypeCaptionFontSize}"
                                  FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                 Foreground="#70FFFFFF" />
+                                 Foreground="{DynamicResource TextSubtleBrush}" />
                             <Run Text="  "
                                  FontSize="{DynamicResource TypeBodyFontSize}" />
                             <Run Text="{Binding TotalCombinedDisplay, Mode=OneWay}"
@@ -1852,26 +1845,26 @@
                             <TextBlock Text="&#xE896;"
                                        FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="10"
-                                       Foreground="#85FFFFFF"
+                                       Foreground="{DynamicResource TextMutedBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,4,0" />
                             <TextBlock Text="{Binding TotalCombinedReceivedDisplay}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#95FFFFFF"
+                                       Foreground="{DynamicResource TextMutedBrush}"
                                        VerticalAlignment="Center"
                                        Typography.NumeralAlignment="Tabular" />
                             <TextBlock Text="   " />
                             <TextBlock Text="&#xE898;"
                                        FontFamily="{DynamicResource AppIconFontFamily}"
                                        FontSize="10"
-                                       Foreground="#85FFFFFF"
+                                       Foreground="{DynamicResource TextMutedBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,4,0" />
                             <TextBlock Text="{Binding TotalCombinedSentDisplay}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#95FFFFFF"
+                                       Foreground="{DynamicResource TextMutedBrush}"
                                        VerticalAlignment="Center"
                                        Typography.NumeralAlignment="Tabular" />
                         </StackPanel>

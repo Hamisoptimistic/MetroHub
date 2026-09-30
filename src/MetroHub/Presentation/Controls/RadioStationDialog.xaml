@@ -32,7 +32,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}" SnapsToDevicePixels="True">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}">
                             <Path x:Name="Icon"
                                   Width="10" Height="10"
                                   Data="M 0.5,0.5 L 9.5,9.5 M 0.5,9.5 L 9.5,0.5"
@@ -49,7 +49,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="Icon" Property="Stroke" Value="#FFFFFF" />
+                                <Setter TargetName="Icon" Property="Stroke" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
@@ -65,8 +65,8 @@
             <Setter Property="Height" Value="36" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
             <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="SelectionBrush" Value="#40FFFFFF" />
             <Setter Property="SelectionOpacity" Value="0.6" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -80,7 +80,7 @@
                                 BorderBrush="#28FFFFFF"
                                 BorderThickness="1"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <Grid Margin="10,0,10,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -89,7 +89,7 @@
                                 <ui:SymbolIcon x:Name="PrefixIcon"
                                                Symbol="Search24"
                                                FontSize="14"
-                                               Foreground="#85FFFFFF"
+                                               Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Center"
                                                Margin="0,0,8,0" />
                                 <ScrollViewer x:Name="PART_ContentHost"
@@ -109,7 +109,7 @@
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
                                 <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#65FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -122,8 +122,8 @@
             <Setter Property="Height" Value="36" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
             <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="UseLayoutRounding" Value="True" />
@@ -135,7 +135,7 @@
                                 BorderBrush="#28FFFFFF"
                                 BorderThickness="1"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <Grid Margin="10,0,10,0">
                                 <ScrollViewer x:Name="PART_ContentHost"
                                               VerticalAlignment="Center"
@@ -164,8 +164,8 @@
             <Setter Property="Height" Value="36" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
             <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="UseLayoutRounding" Value="True" />
@@ -177,7 +177,7 @@
                                 BorderBrush="#28FFFFFF"
                                 BorderThickness="1"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <Grid Margin="10,0,80,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -186,7 +186,7 @@
                                 <ui:SymbolIcon x:Name="PrefixIcon"
                                                Symbol="Link24"
                                                FontSize="14"
-                                               Foreground="#85FFFFFF"
+                                               Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Center"
                                                Margin="0,0,8,0" />
                                 <ScrollViewer x:Name="PART_ContentHost"
@@ -206,7 +206,7 @@
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
                                 <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#65FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -231,7 +231,7 @@
                                 Background="Transparent"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
                                 Padding="14,0"
-                                SnapsToDevicePixels="True">
+                                >
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -241,7 +241,7 @@
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="TabBorder" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                 <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -310,7 +310,7 @@
             <Setter Property="Padding" Value="16,0" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
             <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
@@ -319,7 +319,7 @@
                         <Border x:Name="BtnBorder"
                                 Background="{DynamicResource SystemAccentColorPrimaryBrush}"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -357,7 +357,7 @@
                                 BorderBrush="#25FFFFFF"
                                 BorderThickness="1"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -386,7 +386,7 @@
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
                                 Margin="2,1,2,1"
                                 Padding="{TemplateBinding Padding}"
-                                SnapsToDevicePixels="True">
+                                >
                             <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -417,7 +417,7 @@
                     <TextBlock Text="{Binding Subtitle}"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                               Foreground="#75FFFFFF"
+                               Foreground="{DynamicResource TextSubtleBrush}"
                                Margin="0,2,0,0"
                                TextTrimming="CharacterEllipsis" />
                 </StackPanel>
@@ -430,7 +430,7 @@
                     <TextBlock Text="{Binding BitrateDisplay}"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                               Foreground="#85FFFFFF" />
+                               Foreground="{DynamicResource TextMutedBrush}" />
                 </Border>
             </Grid>
         </DataTemplate>
@@ -440,7 +440,7 @@
     <Border Background="Transparent"
             BorderThickness="0"
             CornerRadius="{DynamicResource ControlCornerRadius}"
-            SnapsToDevicePixels="True">
+            >
         <Grid RenderOptions.ClearTypeHint="Enabled">
             <Grid.ColumnDefinitions>
                 <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR -->
@@ -459,7 +459,7 @@
                     </Ellipse>
                     <ui:SymbolIcon Symbol="HeadphonesSoundWave24"
                                    FontSize="56"
-                                   Foreground="#D0FFFFFF"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                 </Grid>
@@ -539,7 +539,7 @@
                                            Text="Search station name, genre (e.g. lofi, jazz, ambient)..."
                                            FontSize="{DynamicResource TypeBodyFontSize}"
                                            FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                           Foreground="#50FFFFFF"
+                                           Foreground="{DynamicResource TextSubtleBrush}"
                                            IsHitTestVisible="False"
                                            VerticalAlignment="Center"
                                            Margin="34,0,10,0" />
@@ -559,7 +559,7 @@
                                     BorderThickness="1"
                                     CornerRadius="{DynamicResource ControlCornerRadius}"
                                     Margin="0,8,0,0"
-                                    SnapsToDevicePixels="True">
+                                    >
                                 <Grid>
                                     <ListBox x:Name="RadioSearchResultsList"
                                              Background="Transparent"
@@ -581,7 +581,7 @@
                                                Text="Type 2 or more characters to search 40,000+ online stations"
                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                               Foreground="#60FFFFFF"
+                                               Foreground="{DynamicResource TextSubtleBrush}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
                                                IsHitTestVisible="False"
@@ -594,7 +594,7 @@
                                        x:Name="RadioSearchStatusMessage"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#FF8080"
+                                       Foreground="{DynamicResource StatusErrorBrush}"
                                        Margin="0,6,0,0"
                                        TextWrapping="Wrap"
                                        Visibility="Collapsed" />
@@ -606,7 +606,7 @@
                                 <TextBlock Text="Audio Stream URL"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#95FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            Margin="0,0,0,6" />
 
                                 <Grid>
@@ -647,14 +647,14 @@
                                                Text="Supports MP3/AAC/OGG streams or single-station .pls/.m3u"
                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                               Foreground="#65FFFFFF"
+                                               Foreground="{DynamicResource TextSubtleBrush}"
                                                VerticalAlignment="Center" />
                                 </StackPanel>
 
                                 <TextBlock Text="Station Name"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#95FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            Margin="0,8,0,6" />
                                 <TextBox x:Name="RadioDirectNameInput"
                                          Style="{StaticResource FluentGlassInputStyle}"
@@ -664,7 +664,7 @@
                                 <TextBlock x:Name="RadioDirectStatusMessage"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#FF8080"
+                                           Foreground="{DynamicResource StatusErrorBrush}"
                                            Margin="0,6,0,0"
                                            TextWrapping="Wrap"
                                            Visibility="Collapsed" />
@@ -676,7 +676,7 @@
                             <TextBlock Text="Category:"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#80FFFFFF"
+                                       Foreground="{DynamicResource TextMutedBrush}"
                                        VerticalAlignment="Center"
                                        Margin="0,0,12,0" />
                             <RadioButton x:Name="RadioCatAmbient"
@@ -687,7 +687,7 @@
                                 <TextBlock Text="Ambient"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#95FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            VerticalAlignment="Center" />
                             </RadioButton>
                             <RadioButton x:Name="RadioCatNature"
@@ -697,7 +697,7 @@
                                 <TextBlock Text="Nature"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#95FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            VerticalAlignment="Center" />
                             </RadioButton>
                             <RadioButton x:Name="RadioCatLofi"
@@ -707,7 +707,7 @@
                                 <TextBlock Text="Lo-Fi"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#95FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            VerticalAlignment="Center" />
                             </RadioButton>
                             <RadioButton x:Name="RadioCatCoding"
@@ -716,7 +716,7 @@
                                 <TextBlock Text="Coding"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="#95FFFFFF"
+                                           Foreground="{DynamicResource TextMutedBrush}"
                                            VerticalAlignment="Center" />
                             </RadioButton>
                         </StackPanel>

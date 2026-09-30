@@ -8,12 +8,6 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=photos:PhotosWidgetViewModel}"
              Focusable="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
@@ -23,7 +17,7 @@
             <Setter Property="Background" Value="#22FFFFFF" />
             <Setter Property="BorderBrush" Value="#35FFFFFF" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="Height" Value="34" />
             <Setter Property="Focusable" Value="False" />
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
@@ -41,7 +35,7 @@
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="6"
                                 Padding="18,0"
-                                SnapsToDevicePixels="True">
+                                >
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -67,21 +61,20 @@
     </UserControl.Resources>
 
     <widgets:WidgetCard Padding="0" Background="Transparent">
-        <Grid x:Name="RootContainer" ClipToBounds="True" SnapsToDevicePixels="True">
+        <Grid x:Name="RootContainer" ClipToBounds="True">
 
             <!-- ============================================================== -->
             <!-- 1. EMPTY STATE (First-time add / No folder selected)           -->
             <!-- ============================================================== -->
             <Grid x:Name="EmptyStatePanel"
-                  SnapsToDevicePixels="True"
                   Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
                 
                 <!-- Frosted Acrylic Glass Background -->
                 <Border Background="#18FFFFFF"
                         BorderBrush="#15FFFFFF"
                         BorderThickness="1"
-                        CornerRadius="2"
-                        SnapsToDevicePixels="True" />
+                        CornerRadius="{DynamicResource ControlCornerRadius}"
+                        />
 
                 <!-- Centered Content Stack: Compact 130px height, comfortably fits 8x3 (184px), 4x4 (248px), and 8x4 (248px) -->
                 <StackPanel HorizontalAlignment="Center"
@@ -96,11 +89,11 @@
                             BorderThickness="1"
                             HorizontalAlignment="Center"
                             Margin="0,0,0,8"
-                            SnapsToDevicePixels="True">
+                            >
                         <TextBlock Text="&#xEB9F;"
                                    FontFamily="{DynamicResource AppIconFontFamily}"
                                    FontSize="18"
-                                   Foreground="#D2DCED"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                     </Border>
@@ -117,7 +110,7 @@
                     <TextBlock Text="Select a folder to start your live photo stream."
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                               Foreground="#9BA5B7"
+                               Foreground="{DynamicResource TextMutedBrush}"
                                HorizontalAlignment="Center"
                                TextAlignment="Center"
                                TextWrapping="Wrap"
@@ -164,7 +157,7 @@
                 <!-- Dual-Buffer Ping-Pong Photos with Hardware-Accelerated Ken Burns Motion and Zero-Gap Ambient Mirror Underlay -->
                 <Grid x:Name="ForegroundContainer" ClipToBounds="True">
                     <!-- Photo Layer A -->
-                    <Grid x:Name="LayerAGrid" Opacity="1.0" SnapsToDevicePixels="True">
+                    <Grid x:Name="LayerAGrid" Opacity="1.0">
                         <!-- Underlay Safety Mirror: Always fills 100% of the tile with identical photo pixels (1.25x zoom), completely preventing any background gaps -->
                         <Image Source="{Binding PhotoLayerA}"
                                Stretch="UniformToFill"
@@ -197,7 +190,6 @@
                         <Image x:Name="PhotoImageA"
                                Source="{Binding PhotoLayerA}"
                                RenderTransformOrigin="0.5,0.5"
-                               SnapsToDevicePixels="True"
                                CacheMode="BitmapCache">
                             <Image.Style>
                                 <Style TargetType="Image">
@@ -224,7 +216,7 @@
                     </Grid>
 
                     <!-- Photo Layer B -->
-                    <Grid x:Name="LayerBGrid" Opacity="0.0" SnapsToDevicePixels="True">
+                    <Grid x:Name="LayerBGrid" Opacity="0.0">
                         <!-- Underlay Safety Mirror: Always fills 100% of the tile with identical photo pixels (1.25x zoom), completely preventing any background gaps -->
                         <Image Source="{Binding PhotoLayerB}"
                                Stretch="UniformToFill"
@@ -257,7 +249,6 @@
                         <Image x:Name="PhotoImageB"
                                Source="{Binding PhotoLayerB}"
                                RenderTransformOrigin="0.5,0.5"
-                               SnapsToDevicePixels="True"
                                CacheMode="BitmapCache">
                             <Image.Style>
                                 <Style TargetType="Image">
@@ -285,7 +276,7 @@
                 </Grid>
 
                 <!-- Cinematic Bottom Vignette Gradient Scrim for Controls Readability -->
-                <Border IsHitTestVisible="False" SnapsToDevicePixels="True">
+                <Border IsHitTestVisible="False">
                     <Border.Background>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                             <GradientStop Color="#00000000" Offset="0.55" />
@@ -311,7 +302,7 @@
                                         <BeginStoryboard>
                                             <Storyboard>
                                                 <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                 To="1.0" Duration="0:0:0.18" />
+                                                                 To="1.0" Duration="{StaticResource FluentDurationFast}" />
                                             </Storyboard>
                                         </BeginStoryboard>
                                     </DataTrigger.EnterActions>
@@ -319,7 +310,7 @@
                                         <BeginStoryboard>
                                             <Storyboard>
                                                 <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                 To="0.0" Duration="0:0:0.25" />
+                                                                 To="0.0" Duration="{StaticResource FluentDurationNormal}" />
                                             </Storyboard>
                                         </BeginStoryboard>
                                     </DataTrigger.ExitActions>

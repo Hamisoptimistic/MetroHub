@@ -9,12 +9,6 @@
              mc:Ignorable="d po" 
              d:DataContext="{d:DesignInstance Type=weather:WeatherWidgetViewModel}"
              Focusable="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
@@ -43,7 +37,7 @@
     </UserControl.Resources>
 
     <widgets:WidgetCard Padding="0">
-        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
+        <Grid>
             <!-- 1. Atmospheric Ambient Condition Aura (Dynamic, 100% GPU-drawn frozen brush, 0 CPU/RAM) -->
             <Border Background="{Binding AmbientGlowBrush}"
                     CornerRadius="{DynamicResource TileCornerRadius}"
@@ -93,7 +87,6 @@
                            Source="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                            Height="110" Width="110"
                            RenderOptions.BitmapScalingMode="HighQuality"
-                           SnapsToDevicePixels="True"
                            VerticalAlignment="Center">
                         <Image.Effect>
                             <StaticResource ResourceKey="ShadowCard" />
@@ -138,7 +131,6 @@
                            Source="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                            Width="92" Height="92"
                            RenderOptions.BitmapScalingMode="HighQuality"
-                           SnapsToDevicePixels="True"
                            HorizontalAlignment="Left"
                            VerticalAlignment="Center">
                         <Image.Effect>
@@ -164,7 +156,7 @@
                                    FontSize="{DynamicResource TypeHeaderFontSize}"
                                    FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                    FontFamily="{DynamicResource AppFontFamily}"
-                                   Foreground="#D8E2EC"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                    HorizontalAlignment="Right"
                                    Margin="0,2,0,0" />
                     </StackPanel>
@@ -178,7 +170,7 @@
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
                                    FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                    FontFamily="{DynamicResource AppFontFamily}"
-                                   Foreground="#95A8BE"
+                                   Foreground="{DynamicResource TextMutedBrush}"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding AqiText}"
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
@@ -195,7 +187,7 @@
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
                                    FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                    FontFamily="{DynamicResource AppFontFamily}"
-                                   Foreground="#95A8BE"
+                                   Foreground="{DynamicResource TextMutedBrush}"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding HumidityText}"
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
@@ -212,7 +204,7 @@
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
                                    FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                    FontFamily="{DynamicResource AppFontFamily}"
-                                   Foreground="#95A8BE"
+                                   Foreground="{DynamicResource TextMutedBrush}"
                                    HorizontalAlignment="Center" />
                         <TextBlock Text="{Binding PrecipitationProbabilityText}"
                                    FontSize="{DynamicResource TypeBodyStrongFontSize}"
@@ -240,15 +232,15 @@
                 <!-- Left: Details (Labels crisp & muted, Values Bold pure white) -->
                 <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left">
                     <TextBlock FontFamily="{DynamicResource AppFontFamily}">
-                        <Run Text="AQI&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="#95A8BE" /><Run Text="{Binding AqiText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <Run Text="AQI&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="{DynamicResource TextMutedBrush}" /><Run Text="{Binding AqiText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="{DynamicResource TextPrimaryBrush}" />
                     </TextBlock>
                     <TextBlock FontFamily="{DynamicResource AppFontFamily}"
                                Margin="0,6,0,0">
-                        <Run Text="Feels like&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="#95A8BE" /><Run Text="{Binding FeelsLikeShortText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <Run Text="Feels like&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="{DynamicResource TextMutedBrush}" /><Run Text="{Binding FeelsLikeShortText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="{DynamicResource TextPrimaryBrush}" />
                     </TextBlock>
                     <TextBlock FontFamily="{DynamicResource AppFontFamily}"
                                Margin="0,6,0,0">
-                        <Run Text="Humidity&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="#95A8BE" /><Run Text="{Binding HumidityText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="{DynamicResource TextPrimaryBrush}" />
+                        <Run Text="Humidity&#x20;" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeCaptionFontWeight}" Foreground="{DynamicResource TextMutedBrush}" /><Run Text="{Binding HumidityText}" FontSize="{DynamicResource TypeBodyStrongFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="{DynamicResource TextPrimaryBrush}" />
                     </TextBlock>
                 </StackPanel>
 
@@ -257,7 +249,6 @@
                        Source="{Binding WeatherIconSource, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                        Height="88" Width="88"
                        RenderOptions.BitmapScalingMode="HighQuality"
-                       SnapsToDevicePixels="True"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center">
                     <Image.Effect>
@@ -287,7 +278,7 @@
                          Height="2"
                          VerticalAlignment="Top"
                          Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"
-                         Foreground="#60CDFF"
+                         Foreground="{DynamicResource StatusInfoBrush}"
                          Background="Transparent"
                          BorderThickness="0" />
         </Grid>

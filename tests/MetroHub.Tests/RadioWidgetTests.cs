@@ -180,14 +180,20 @@ public class RadioWidgetTests
     {
         RunInSta(() =>
         {
+            string? copiedUrl = null;
             var model = new TileModel { TileType = TileType.Widget, TargetPath = "radio", SpanX = 8, SpanY = 6 };
-            var vm = new RadioWidgetViewModel(model);
+            var vm = new RadioWidgetViewModel(
+                model, 
+                RadioAudioService.Instance, 
+                RadioCatalogService.Instance, 
+                url => copiedUrl = url);
             vm.Initialize(model);
 
             var firstItem = vm.VisibleStations.First(s => !s.IsAddPlaceholder);
             vm.CopyStreamUrlCommand.Execute(firstItem);
 
             Assert.Equal($"Copied: {firstItem.Station?.Name} link", vm.PlaybackStatusText);
+            Assert.Equal(firstItem.Station?.StreamUrl, copiedUrl);
         });
     }
 

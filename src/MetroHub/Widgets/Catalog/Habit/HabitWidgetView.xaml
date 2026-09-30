@@ -9,12 +9,6 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=local:HabitWidgetViewModel}"
              Focusable="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
@@ -33,7 +27,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}" SnapsToDevicePixels="True">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}">
                             <Path x:Name="Icon"
                                   Width="10" Height="10"
                                   Data="M 0.5,0.5 L 9.5,9.5 M 0.5,9.5 L 9.5,0.5"
@@ -50,7 +44,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="Icon" Property="Stroke" Value="#FFFFFF" />
+                                <Setter TargetName="Icon" Property="Stroke" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
@@ -67,8 +61,8 @@
             <Setter Property="Height" Value="34" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
             <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="UseLayoutRounding" Value="True" />
@@ -79,8 +73,8 @@
                                 Background="#10FFFFFF"
                                 BorderBrush="#25FFFFFF"
                                 BorderThickness="1"
-                                CornerRadius="4"
-                                SnapsToDevicePixels="True">
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                >
                             <Grid Margin="10,0,10,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -89,7 +83,7 @@
                                 <ui:SymbolIcon x:Name="PrefixIcon"
                                                Symbol="Edit20"
                                                FontSize="14"
-                                               Foreground="#85FFFFFF"
+                                               Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Center"
                                                Margin="0,0,8,0" />
                                 <ScrollViewer x:Name="PART_ContentHost"
@@ -109,7 +103,7 @@
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
                                 <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#0B9E76" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -133,8 +127,8 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="2"
-                                SnapsToDevicePixels="True">
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                >
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -168,7 +162,7 @@
                                 BorderThickness="0"
                                 HorizontalAlignment="Stretch"
                                 VerticalAlignment="Stretch"
-                                SnapsToDevicePixels="True">
+                                >
                             <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
                         </Border>
                     </ControlTemplate>
@@ -247,7 +241,7 @@
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#80FFFFFF"
+                                       Foreground="{DynamicResource TextMutedBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center" />
                         </DataTemplate>
@@ -262,7 +256,7 @@
                         DaysInMonth="{Binding DaysInMonth}"
                         FillBrush="{StaticResource MonthBackplateBrush}"
                         RenderOptions.EdgeMode="Aliased"
-                        SnapsToDevicePixels="True" />
+                        />
 
                     <ItemsControl ItemsSource="{Binding Days}">
                         <ItemsControl.ItemsPanel>
@@ -309,7 +303,7 @@
                                                 Margin="0"
                                                 BorderThickness="0"
                                                 RenderOptions.EdgeMode="Aliased"
-                                                SnapsToDevicePixels="True" />
+                                                />
 
                                         <!-- Failed Badge (100% seamless flat fill, zero gaps) -->
                                         <Border x:Name="FailedBadge"
@@ -319,7 +313,7 @@
                                                 Margin="0"
                                                 BorderThickness="0"
                                                 RenderOptions.EdgeMode="Aliased"
-                                                SnapsToDevicePixels="True" />
+                                                />
 
                                         <!-- Hover Overlay (Translucent fill, flush rectangular, zero gaps) -->
                                         <Border x:Name="HoverOverlay"
@@ -329,7 +323,7 @@
                                                 Margin="0"
                                                 Opacity="0"
                                                 RenderOptions.EdgeMode="Aliased"
-                                                SnapsToDevicePixels="True" />
+                                                />
 
                                         <!-- Day Number Label -->
                                         <TextBlock x:Name="DayLabel"
@@ -340,7 +334,7 @@
                                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
-                                                   SnapsToDevicePixels="True" />
+                                                   />
 
                                         <!-- Active Date Pill Indicator (Below the date) -->
                                         <Border x:Name="TodayPill"
@@ -378,14 +372,14 @@
                                     <!-- Done -->
                                     <DataTrigger Binding="{Binding IsDone}" Value="True">
                                         <Setter TargetName="DoneBadge" Property="Visibility" Value="Visible" />
-                                        <Setter TargetName="DayLabel" Property="Foreground" Value="#FFFFFF" />
+                                        <Setter TargetName="DayLabel" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                         <Setter TargetName="DayLabel" Property="FontWeight" Value="Bold" />
                                     </DataTrigger>
 
                                     <!-- Failed -->
                                     <DataTrigger Binding="{Binding IsFailed}" Value="True">
                                         <Setter TargetName="FailedBadge" Property="Visibility" Value="Visible" />
-                                        <Setter TargetName="DayLabel" Property="Foreground" Value="#FFFFFF" />
+                                        <Setter TargetName="DayLabel" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                         <Setter TargetName="DayLabel" Property="FontWeight" Value="Bold" />
                                     </DataTrigger>
 
@@ -422,7 +416,7 @@
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="Pill"
                                         Background="Transparent"
-                                        CornerRadius="4"
+                                        CornerRadius="{DynamicResource ControlCornerRadius}"
                                         Padding="{TemplateBinding Padding}">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <ui:SymbolIcon Symbol="{Binding IconSymbol}"
@@ -440,7 +434,7 @@
                                         <ui:SymbolIcon x:Name="EditPencil"
                                                        Symbol="Edit16"
                                                        FontSize="12"
-                                                       Foreground="#70FFFFFF"
+                                                       Foreground="{DynamicResource TextSubtleBrush}"
                                                        VerticalAlignment="Center"
                                                        Margin="6,0,0,0"
                                                        Opacity="0" />
@@ -450,7 +444,7 @@
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter TargetName="Pill" Property="Background" Value="#18FFFFFF" />
                                         <Setter TargetName="EditPencil" Property="Opacity" Value="1" />
-                                        <Setter TargetName="EditPencil" Property="Foreground" Value="#FFFFFF" />
+                                        <Setter TargetName="EditPencil" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
@@ -477,7 +471,7 @@
                                    FontSize="{DynamicResource TypeHeaderFontSize}"
                                    FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                    VerticalAlignment="Center"
-                                   SnapsToDevicePixels="True">
+                                   >
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="#80FFFFFF" />
@@ -500,7 +494,7 @@
             <!-- 2. IN-TILE SETUP VIEW (Click Habit or Right-Click 'Edit')    -->
             <!-- ============================================================ -->
             <Grid Visibility="{Binding IsSetupMode, Converter={StaticResource BoolToVis}}"
-                  SnapsToDevicePixels="True">
+                  >
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" /> <!-- 0: Header (Title + Dismiss '✕') -->
                     <RowDefinition Height="Auto" /> <!-- 1: Habit Name Input -->
@@ -528,7 +522,7 @@
                     <TextBlock Text="Habit Name"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                               Foreground="#95FFFFFF"
+                               Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,0,0,6" />
                     <TextBox x:Name="HabitNameInput"
                              Style="{StaticResource FluentDarkInputWithIconStyle}"
@@ -541,7 +535,7 @@
                     <TextBlock Text="Choose Icon"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                               Foreground="#95FFFFFF"
+                               Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,0,0,6" />
                     <WrapPanel Orientation="Horizontal">
                         <Button Command="{Binding SelectIconCommand}" CommandParameter="TargetArrow24" ToolTip="Target Arrow">
@@ -677,7 +671,7 @@
                                 FontSize="{DynamicResource TypeCaptionFontSize}"
                                 FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                 Background="#1AFFFFFF"
-                                Foreground="#D0FFFFFF"
+                                Foreground="{DynamicResource TextSecondaryBrush}"
                                 BorderThickness="1"
                                 BorderBrush="#25FFFFFF"
                                 Margin="0,0,8,0">

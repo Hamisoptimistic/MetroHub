@@ -31,12 +31,7 @@
              mc:Ignorable="d"
              Margin="0"
              Focusable="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             RenderOptions.ClearTypeHint="Enabled"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed">
+>
 
     <UserControl.Resources>
         <conv:TileSpanToPixelsConverter x:Key="SpanConverter" />
@@ -45,8 +40,7 @@
 
         <!-- 1. App Tile DataTemplate (Exact original visual layout and ClearType hinting) -->
         <DataTemplate DataType="{x:Type models:TileModel}">
-            <Grid SnapsToDevicePixels="True" 
-                  UseLayoutRounding="True"
+            <Grid 
                   RenderOptions.BitmapScalingMode="Fant">
                   
                 <!-- 1x1 Small Tile Layout (56x56) -->
@@ -55,8 +49,6 @@
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Width="28" Height="28"
-                           SnapsToDevicePixels="True"
-                           UseLayoutRounding="True"
                            RenderOptions.BitmapScalingMode="Fant" />
                 </Grid>
 
@@ -67,8 +59,6 @@
                            VerticalAlignment="Center"
                            Width="44" Height="44"
                            Margin="0,0,0,14"
-                           SnapsToDevicePixels="True"
-                           UseLayoutRounding="True"
                            RenderOptions.BitmapScalingMode="Fant" />
 
                     <!-- Label: DirectWrite Ideal typography rendering -->
@@ -80,8 +70,6 @@
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                Foreground="{DynamicResource TextPrimaryBrush}"
-                               SnapsToDevicePixels="True"
-                               UseLayoutRounding="True"
                                TextOptions.TextFormattingMode="Ideal"
                                TextOptions.TextRenderingMode="ClearType"
                                TextTrimming="CharacterEllipsis"
@@ -96,8 +84,6 @@
                            VerticalAlignment="Center"
                            Width="46" Height="46"
                            Margin="0,0,0,14"
-                           SnapsToDevicePixels="True"
-                           UseLayoutRounding="True"
                            RenderOptions.BitmapScalingMode="Fant" />
 
                     <TextBlock Text="{Binding Title}"
@@ -107,9 +93,7 @@
                                FontFamily="{DynamicResource AppFontFamily}"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                               Foreground="#F5FFFFFF"
-                               SnapsToDevicePixels="True"
-                               UseLayoutRounding="True"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                TextOptions.TextFormattingMode="Ideal"
                                TextOptions.TextRenderingMode="ClearType"
                                TextTrimming="CharacterEllipsis"
@@ -124,10 +108,10 @@
             <widgets:WidgetCard>
                 <!-- Minimal Stub Widget: Just a colored box with a label and interactive setting test -->
                 <Border Background="{Binding BoxColor, Converter={StaticResource StringToBrushConverter}}"
-                        CornerRadius="4"
+                        CornerRadius="{DynamicResource ControlCornerRadius}"
                         Margin="1"
                         Padding="8"
-                        SnapsToDevicePixels="True">
+                        >
                     <Grid>
                         <!-- Label and settings display -->
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
@@ -137,23 +121,23 @@
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       SnapsToDevicePixels="True" />
+                                       />
                             <TextBlock Text="{Binding SettingsSummary}"
                                        HorizontalAlignment="Center"
-                                       Foreground="#E0FFFFFF"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Margin="0,3,0,0"
-                                       SnapsToDevicePixels="True" />
+                                       />
                             <TextBlock Text="Click to cycle color"
                                        HorizontalAlignment="Center"
-                                       Foreground="#80FFFFFF"
+                                       Foreground="{DynamicResource TextMutedBrush}"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Margin="0,4,0,0"
-                                       SnapsToDevicePixels="True" />
+                                       />
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -264,8 +248,6 @@
             Height="{Binding SpanY, Converter={StaticResource SpanConverter}}"
             RenderTransformOrigin="0.5,0.5"
             RenderOptions.ClearTypeHint="Enabled"
-            SnapsToDevicePixels="True"
-            UseLayoutRounding="True"
             ContextMenuOpening="OnContextMenuOpening"
             PreviewMouseRightButtonDown="OnPreviewMouseRightButtonDown">
 
@@ -294,51 +276,51 @@
             <ContextMenu x:Name="TileContextMenu">
                 <MenuItem x:Name="ResizeMenuItem" Header="Resize">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="ResizeLarge16" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="ResizeLarge16" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem x:Name="StyleMenuItem" Header="Style">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="PaintBrush16" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="PaintBrush16" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
                     </MenuItem.Icon>
                     <MenuItem x:Name="StyleDefaultMenuItem" Header="Default" IsCheckable="True" Click="OnStyleDefaultClick" />
                     <MenuItem x:Name="StyleColourfulMenuItem" Header="Colourful" IsCheckable="True" Click="OnStyleColourfulClick" />
                 </MenuItem>
                 <MenuItem x:Name="GroupMenuItem" Header="Create Group from Tiles" Click="OnGroupTilesClick">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="FolderAdd24" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="FolderAdd24" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem x:Name="AddToGroupMenuItem" Header="Add to Group">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="FolderArrowRight24" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="FolderArrowRight24" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator x:Name="SingleAppSeparator" />
                 <MenuItem x:Name="RunAdminMenuItem" Header="Run as Administrator" Click="OnRunAsAdminClick">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="Shield32" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="Shield32" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem x:Name="OpenLocationMenuItem" Header="Open File Location" Click="OnOpenFileLocationClick">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="FolderOpenVertical20" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="FolderOpenVertical20" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <MenuItem x:Name="CopyUrlMenuItem" Header="Copy Web Link" Visibility="Collapsed" Click="OnCopyUrlClick">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="Copy24" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="Copy24" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
                     </MenuItem.Icon>
                 </MenuItem>
                 <Separator x:Name="UnpinSeparator" />
                 <MenuItem x:Name="PinToSidebarMenuItem" Header="Pin to Sidebar" Click="OnPinToSidebarClick">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon x:Name="PinToSidebarIcon" Symbol="Pin24" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon x:Name="PinToSidebarIcon" Symbol="Pin24" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
                     </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem x:Name="UnpinMenuItem" Header="Unpin from MetroHub" Click="OnUnpinClick" Foreground="#FF6B6B">
+                <MenuItem x:Name="UnpinMenuItem" Header="Unpin from MetroHub" Click="OnUnpinClick" Foreground="{DynamicResource StatusErrorBrush}">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="PinOff24" FontSize="18" Foreground="#FF6B6B" />
+                        <ui:SymbolIcon Symbol="PinOff24" FontSize="18" Foreground="{DynamicResource StatusErrorBrush}" />
                     </MenuItem.Icon>
                 </MenuItem>
             </ContextMenu>
@@ -372,8 +354,7 @@
             <!-- Content Area via ContentPresenter: resolved via DataType DataTemplates -->
             <ContentPresenter x:Name="TileContentPresenter"
                               Content="{Binding TileContent}"
-                              SnapsToDevicePixels="True"
-                              UseLayoutRounding="True" />
+                              />
 
             <!-- Fluent Reveal Highlight: Edge Illumination (above ContentPresenter so it shows on top of full-bleed widget content e.g. photos) -->
             <Border x:Name="RevealEdgeBorder"

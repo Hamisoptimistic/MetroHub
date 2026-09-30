@@ -9,19 +9,13 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=calendar:CalendarWidgetViewModel}"
              Focusable="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
         <!-- Windows Calendar Palette Tokens (Aligned with Habit Widget) -->
         <SolidColorBrush x:Key="MonthBlockBrush" Color="#18FFFFFF" />
         <SolidColorBrush x:Key="OutOfMonthTextBrush" Color="#40FFFFFF" />
-        <SolidColorBrush x:Key="CurrentMonthTextBrush" Color="#FFFFFF" />
+        <SolidColorBrush x:Key="CurrentMonthTextBrush" Color="{StaticResource TextPrimaryColor}" />
         <SolidColorBrush x:Key="WeekdayHeaderBrush" Color="#80FFFFFF" />
         <SolidColorBrush x:Key="CellHoverBrush" Color="#18FFFFFF" />
 
@@ -91,7 +85,7 @@
                         FirstDayOffset="{Binding FirstDayOffset}"
                         DaysInMonth="{Binding DaysInMonth}"
                         FillBrush="{StaticResource MonthBlockBrush}"
-                        SnapsToDevicePixels="True" />
+                        />
 
                     <ItemsControl ItemsSource="{Binding Days}">
                         <ItemsControl.ItemsPanel>
@@ -113,7 +107,7 @@
                                         BorderThickness="0"
                                         HorizontalAlignment="Stretch"
                                         VerticalAlignment="Stretch"
-                                        SnapsToDevicePixels="True">
+                                        >
                                     <Border.InputBindings>
                                         <MouseBinding MouseAction="LeftClick"
                                                       Command="{Binding DataContext.SelectDayCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
@@ -124,7 +118,7 @@
                                         <Border x:Name="HoverOverlay"
                                                 Opacity="0"
                                                 Background="{StaticResource CellHoverBrush}"
-                                                SnapsToDevicePixels="True" />
+                                                />
 
                                         <!-- Day Number Text -->
                                         <TextBlock x:Name="DayLabel"
@@ -135,7 +129,7 @@
                                                    FontSize="{DynamicResource TypeBodyFontSize}"
                                                    FontWeight="{DynamicResource TypeBodyFontWeight}"
                                                    Foreground="{StaticResource OutOfMonthTextBrush}"
-                                                   SnapsToDevicePixels="True" />
+                                                   />
 
                                         <!-- Active Date Pill Indicator (Below the date) -->
                                         <Border x:Name="TodayPill"
@@ -149,7 +143,7 @@
                                                 Visibility="Collapsed"
                                                 IsHitTestVisible="False"
                                                 RenderOptions.EdgeMode="Unspecified"
-                                                SnapsToDevicePixels="True">
+                                                >
                                             <Border.Effect>
                                                 <StaticResource ResourceKey="GlowDotSmall" />
                                             </Border.Effect>
@@ -160,7 +154,7 @@
                                 <DataTemplate.Triggers>
                                     <!-- Current Month: SemiBold White Text (Background is rendered seamlessly by Backplate) -->
                                     <DataTrigger Binding="{Binding IsCurrentMonth}" Value="True">
-                                        <Setter TargetName="DayLabel" Property="Foreground" Value="{StaticResource CurrentMonthTextBrush}" />
+                                        <Setter TargetName="DayLabel" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                         <Setter TargetName="DayLabel" Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
                                     </DataTrigger>
 
@@ -206,10 +200,10 @@
                            FontFamily="{DynamicResource AppDisplayFontFamily}"
                            FontSize="{DynamicResource TypeDisplayFontSize}"
                            FontWeight="{DynamicResource TypeDisplayFontWeight}"
-                           Foreground="#A0FFFFFF"
+                           Foreground="{DynamicResource TextMutedBrush}"
                            TextWrapping="NoWrap"
                            TextTrimming="CharacterEllipsis"
-                           SnapsToDevicePixels="True" />
+                           />
 
                 <!-- Day numeral: owns the whole remaining band.
                      The 13px bottom margin lifts the ink by 6.5px so the digits are optically
@@ -227,30 +221,30 @@
                            FontSize="{DynamicResource TypeCalendarDayCoordinateFontSize}"
                            FontWeight="{DynamicResource TypeDisplayFontWeight}"
                            Foreground="{DynamicResource TextPrimaryBrush}"
-                           SnapsToDevicePixels="True" />
+                           />
 
                 <!-- Month + year: flush with the bottom edge, year trailing and dimmer -->
                 <StackPanel Grid.Row="2"
                             Orientation="Horizontal"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Bottom"
-                            SnapsToDevicePixels="True">
+                            >
                     <TextBlock Text="{Binding TodayMonthName}"
                                FontFamily="{DynamicResource AppFontFamily}"
                                FontSize="{DynamicResource TypeBodyFontSize}"
                                FontWeight="{DynamicResource TypeBodyFontWeight}"
-                               Foreground="#B0FFFFFF"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
                                TextWrapping="NoWrap"
                                TextTrimming="CharacterEllipsis"
-                               SnapsToDevicePixels="True" />
+                               />
                     <TextBlock Text="{Binding TodayYear}"
                                Margin="6,0,0,0"
                                FontFamily="{DynamicResource AppFontFamily}"
                                FontSize="{DynamicResource TypeBodyFontSize}"
                                FontWeight="{DynamicResource TypeBodyFontWeight}"
-                               Foreground="#70FFFFFF"
+                               Foreground="{DynamicResource TextSubtleBrush}"
                                TextWrapping="NoWrap"
-                               SnapsToDevicePixels="True" />
+                               />
                 </StackPanel>
             </Grid>
 

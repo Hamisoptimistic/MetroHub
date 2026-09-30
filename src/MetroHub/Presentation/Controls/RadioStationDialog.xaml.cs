@@ -32,6 +32,10 @@ public partial class RadioStationDialog : FluentWindow
     private bool _isFullyActivated;
     private DateTime _shownTime;
 
+    private static readonly Brush ProbeStatusHintBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xA5, 0xFF, 0xFF, 0xFF));
+    private static readonly Brush ProbeStatusActiveBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
+    private static readonly Brush SearchStatusSelectedBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF));
+
     internal ObservableCollection<RadioSearchResultItem> RadioSearchResults { get; } = new();
 
     public RadioStation? RadioStationResult => _radioStationResult;
@@ -260,7 +264,7 @@ public partial class RadioStationDialog : FluentWindow
         RadioProbeSpinner.Visibility = Visibility.Collapsed;
         RadioProbeIcon.Visibility = Visibility.Collapsed;
         RadioProbeStatusText.Text = "Supports MP3/AAC/OGG streams or single-station .pls/.m3u";
-        RadioProbeStatusText.Foreground = new SolidColorBrush(Color.FromArgb(0xA5, 0xFF, 0xFF, 0xFF));
+        RadioProbeStatusText.Foreground = ProbeStatusHintBrush;
         RadioDirectStatusMessage.Visibility = Visibility.Collapsed;
 
         Loaded += (s, e) =>
@@ -433,7 +437,7 @@ public partial class RadioStationDialog : FluentWindow
             _selectedRadioSearchResult = item;
             PrimaryActionButton.IsEnabled = true;
             RadioSearchStatusMessage.Text = $"Selected: {item.Name}";
-            RadioSearchStatusMessage.Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF));
+            RadioSearchStatusMessage.Foreground = SearchStatusSelectedBrush;
             RadioSearchStatusMessage.Visibility = Visibility.Visible;
         }
         else
@@ -498,7 +502,7 @@ public partial class RadioStationDialog : FluentWindow
             RadioProbeSpinner.Visibility = Visibility.Collapsed;
             RadioProbeIcon.Visibility = Visibility.Collapsed;
             RadioProbeStatusText.Text = "Supports MP3/AAC/OGG streams or single-station .pls/.m3u";
-            RadioProbeStatusText.Foreground = new SolidColorBrush(Color.FromArgb(0xA5, 0xFF, 0xFF, 0xFF));
+            RadioProbeStatusText.Foreground = ProbeStatusHintBrush;
             _lastProbeResult = null;
             UpdateDirectButtonState();
             return;
@@ -507,7 +511,7 @@ public partial class RadioStationDialog : FluentWindow
         RadioProbeSpinner.Visibility = Visibility.Visible;
         RadioProbeIcon.Visibility = Visibility.Collapsed;
         RadioProbeStatusText.Text = "Validating stream...";
-        RadioProbeStatusText.Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
+        RadioProbeStatusText.Foreground = ProbeStatusActiveBrush;
 
         Task.Run(async () =>
         {

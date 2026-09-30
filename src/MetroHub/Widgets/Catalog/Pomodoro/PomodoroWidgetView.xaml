@@ -8,12 +8,6 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=pomodoro:PomodoroWidgetViewModel}"
              Focusable="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
@@ -25,12 +19,12 @@
 
     <!-- Transparent WidgetCard to inherit the exact glass/acrylic tile background of other tiles -->
     <widgets:WidgetCard Padding="0" Background="Transparent">
-        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True">
+        <Grid ClipToBounds="True">
 
             <!-- ============================================================ -->
             <!-- MODE A: 4x2 RING-ONLY MINIMALIST LAYOUT                      -->
             <!-- ============================================================ -->
-            <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
+            <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
                         <Setter Property="Visibility" Value="Collapsed" />
@@ -48,7 +42,7 @@
                         <!-- Ring Background Track -->
                         <Path Stroke="#18FFFFFF"
                               StrokeThickness="6"
-                              SnapsToDevicePixels="True">
+                              >
                             <Path.Data>
                                 <EllipseGeometry Center="48,48" RadiusX="44" RadiusY="44" />
                             </Path.Data>
@@ -60,7 +54,7 @@
                               StrokeThickness="6"
                               StrokeStartLineCap="Round"
                               StrokeEndLineCap="Round"
-                              SnapsToDevicePixels="True" />
+                              />
 
                         <!-- Phase Icon in Center of Ring -->
                         <TextBlock Text="&#xE916;"
@@ -144,7 +138,7 @@
             <!-- ============================================================ -->
             <!-- MODE B: 8x3 & 8x4 MEDIA PLAYER-CONSISTENT LAYOUT             -->
             <!-- ============================================================ -->
-            <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
+            <Grid>
                 <Grid.Style>
                     <Style TargetType="Grid">
                         <Setter Property="Visibility" Value="Visible" />
@@ -188,7 +182,7 @@
                             <TextBlock Text="{Binding StatusString}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#9DA5B4"
+                                       Foreground="{DynamicResource TextMutedBrush}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Grid>
@@ -200,16 +194,15 @@
 
                         <Border Width="{Binding RingSize}"
                                 Height="{Binding RingSize}"
-                                CornerRadius="2"
-                                SnapsToDevicePixels="True"
-                                UseLayoutRounding="True">
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                >
 
                             <!-- Inner Circular Ring Gauge -->
                             <Grid Width="{Binding RingSize}" Height="{Binding RingSize}">
                                 <!-- Background Track Ring -->
                                 <Path Stroke="#18FFFFFF"
                                       StrokeThickness="6"
-                                      SnapsToDevicePixels="True">
+                                      >
                                     <Path.Data>
                                         <EllipseGeometry x:Name="BgRingGeometry" Center="54,54" RadiusX="48" RadiusY="48" />
                                     </Path.Data>
@@ -221,7 +214,7 @@
                                       StrokeThickness="6"
                                       StrokeStartLineCap="Round"
                                       StrokeEndLineCap="Round"
-                                      SnapsToDevicePixels="True" />
+                                      />
 
                                 <!-- Center Icon / Status inside Hero Ring -->
                                 <TextBlock Text="&#xE916;"
@@ -240,7 +233,6 @@
                         Background="#14000000"
                         BorderThickness="0"
                         CornerRadius="0,0,2,2"
-                        SnapsToDevicePixels="True"
                         Padding="20,0,20,0">
                     <Grid>
                         <!-- Left: Transport Controls (Reset, Play/Pause, Skip) -->
@@ -361,30 +353,30 @@
                       Margin="0,-7,0,0"
                       Background="Transparent"
                       SizeChanged="ProgressBarContainer_SizeChanged"
-                      SnapsToDevicePixels="True">
+                      >
 
                     <!-- 1. Dark Glass Background Under-Groove (4px tall) -->
                     <Border Height="4"
                             VerticalAlignment="Center"
                             Background="#45000000"
                             CornerRadius="2"
-                            SnapsToDevicePixels="True" />
+                            />
 
                     <!-- 2. Frosted Unfilled Track Background (4px tall) -->
                     <Border Height="4"
                             VerticalAlignment="Center"
                             Background="#35FFFFFF"
                             CornerRadius="2"
-                            SnapsToDevicePixels="True" />
+                            />
 
                     <!-- 3. Elapsed Progress Fill Track: Night Light Cyan Bar (4px tall) -->
                     <Border x:Name="ProgressFill"
                             Height="4"
                             HorizontalAlignment="Stretch"
                             VerticalAlignment="Center"
-                            Background="#00B4D8"
+                            Background="{Binding GlowSolidBrush}"
                             CornerRadius="2"
-                            SnapsToDevicePixels="True">
+                            >
                         <Border.Clip>
                             <RectangleGeometry x:Name="ProgressClip" Rect="0,-5,0,24" />
                         </Border.Clip>

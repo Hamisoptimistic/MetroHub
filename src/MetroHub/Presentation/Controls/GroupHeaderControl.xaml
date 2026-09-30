@@ -6,11 +6,6 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" 
              Focusable="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             RenderOptions.ClearTypeHint="Enabled"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
              Cursor="Arrow">
 
     <Border x:Name="RootBorder"
@@ -80,10 +75,10 @@
                 </MenuItem>
                 <MenuItem x:Name="TintColorMenuItem" Header="Group Tint Color">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="PaintBucket24" FontSize="18" Foreground="#D0FFFFFF" />
+                        <ui:SymbolIcon Symbol="PaintBucket24" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
                     </MenuItem.Icon>
                     <MenuItem Header="None (Transparent)" Tag="None" Click="OnTintColorSelectClick">
-                        <MenuItem.Icon><Border Width="12" Height="12" BorderThickness="1" BorderBrush="#80FFFFFF" Background="Transparent" CornerRadius="2"/></MenuItem.Icon>
+                        <MenuItem.Icon><Border Width="12" Height="12" BorderThickness="1" BorderBrush="#80FFFFFF" Background="Transparent" CornerRadius="{DynamicResource ControlCornerRadius}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Fluent Sky Blue" Tag="#60CDFF" Click="OnTintColorSelectClick">
                         <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#60CDFF"/></MenuItem.Icon>
@@ -122,9 +117,9 @@
                     </MenuItem.Icon>
                 </MenuItem>
 
-                <MenuItem x:Name="DeleteGroupMenuItem" Header="Delete Group and Tiles" Click="OnDeleteGroupClick" Foreground="#FF6B6B">
+                <MenuItem x:Name="DeleteGroupMenuItem" Header="Delete Group and Tiles" Click="OnDeleteGroupClick" Foreground="{DynamicResource StatusErrorBrush}">
                     <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="Delete24" FontSize="18" Foreground="#FF6B6B" />
+                        <ui:SymbolIcon Symbol="Delete24" FontSize="18" Foreground="{DynamicResource StatusErrorBrush}" />
                     </MenuItem.Icon>
                 </MenuItem>
             </ContextMenu>
@@ -146,7 +141,7 @@
                                FontSize="{DynamicResource TypeSubtitleFontSize}"
                                FontWeight="{DynamicResource TypeSubtitleFontWeight}"
                                FontFamily="{DynamicResource AppDisplayFontFamily}"
-                               Foreground="{Binding HeaderColor, TargetNullValue='#E8FFFFFF', FallbackValue='#E8FFFFFF'}"
+                               Foreground="{Binding HeaderColor, TargetNullValue={StaticResource TextPrimaryBrush}, FallbackValue={StaticResource TextPrimaryBrush}}"
                                VerticalAlignment="Center"
                                TextOptions.TextFormattingMode="Ideal"
                                TextOptions.TextRenderingMode="ClearType"
@@ -158,7 +153,7 @@
                     <ui:SymbolIcon x:Name="DragHintIcon"
                                    Symbol="ReOrder24"
                                    FontSize="17"
-                                   Foreground="#70FFFFFF"
+                                   Foreground="{DynamicResource TextSubtleBrush}"
                                    Margin="6,0,4,0"
                                    VerticalAlignment="Center"
                                    Opacity="0" />
@@ -170,7 +165,7 @@
                          FontSize="{DynamicResource TypeSubtitleFontSize}"
                          FontWeight="{DynamicResource TypeSubtitleFontWeight}"
                          FontFamily="{DynamicResource AppDisplayFontFamily}"
-                         Foreground="{Binding HeaderColor, TargetNullValue='#FFFFFF', FallbackValue='#FFFFFF'}"
+                         Foreground="{Binding HeaderColor, TargetNullValue={StaticResource TextPrimaryBrush}, FallbackValue={StaticResource TextPrimaryBrush}}"
                          CaretBrush="{Binding HeaderColor, TargetNullValue='#60CDFF', FallbackValue='#60CDFF'}"
                          Background="Transparent"
                          BorderThickness="0"
@@ -218,7 +213,7 @@
                         Click="OnLockClick"
                         PreviewMouseLeftButtonDown="OnActionButtonMouseDown">
                     <ui:SymbolIcon x:Name="LockIcon" Symbol="LockOpen24" FontSize="17"
-                                   Foreground="#A0FFFFFF" />
+                                   Foreground="{DynamicResource TextMutedBrush}" />
                 </Button>
             </StackPanel>
         </Grid>

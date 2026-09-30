@@ -11,6 +11,7 @@ using System.Windows.Threading;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Controllers;
+using MetroHub.Presentation.Themes;
 using ContextMenu = System.Windows.Controls.ContextMenu;
 
 namespace MetroHub;
@@ -1509,8 +1510,8 @@ public partial class MainWindow
             bool isLocked = targetGroup.IsLocked;
 
             Color groupColor = isLocked
-                ? Color.FromRgb(0xFF, 0x43, 0x43)
-                : (Color)ColorConverter.ConvertFromString("#60CDFF");
+                ? ThemeTokens.StatusDangerColor
+                : ThemeTokens.AccentSecondaryColor;
 
             if (!isLocked)
             {
@@ -1668,16 +1669,11 @@ public partial class MainWindow
 
         GroupDropPerimeterBorder.CornerRadius = new CornerRadius(6);
 
-        var redColor = Color.FromRgb(0xFF, 0x43, 0x43);
-        var redBorderBrush = new SolidColorBrush(redColor);
-        redBorderBrush.Freeze();
-        var redBackgroundBrush = new SolidColorBrush(Color.FromArgb(45, redColor.R, redColor.G, redColor.B));
-        redBackgroundBrush.Freeze();
-        GroupDropPerimeterBorder.BorderBrush = redBorderBrush;
-        GroupDropPerimeterBorder.Background = redBackgroundBrush;
+        GroupDropPerimeterBorder.BorderBrush = ThemeTokens.StatusDangerBrush;
+        GroupDropPerimeterBorder.Background = ThemeTokens.StatusDangerSubtleBrush;
         if (GroupDropGlowEffect != null)
         {
-            GroupDropGlowEffect.Color = redColor;
+            GroupDropGlowEffect.Color = ThemeTokens.StatusDangerColor;
             GroupDropGlowEffect.Opacity = 0.95;
         }
 

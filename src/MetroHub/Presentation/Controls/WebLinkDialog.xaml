@@ -31,7 +31,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}" SnapsToDevicePixels="True">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}">
                             <Path x:Name="Icon"
                                   Width="10" Height="10"
                                   Data="M 0.5,0.5 L 9.5,9.5 M 0.5,9.5 L 9.5,0.5"
@@ -47,7 +47,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="Icon" Property="Stroke" Value="#FFFFFF" />
+                                <Setter TargetName="Icon" Property="Stroke" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
@@ -63,8 +63,8 @@
             <Setter Property="Height" Value="36" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
             <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="UseLayoutRounding" Value="True" />
@@ -76,7 +76,7 @@
                                 BorderBrush="#28FFFFFF"
                                 BorderThickness="1"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <Grid Margin="10,0,80,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -85,7 +85,7 @@
                                 <ui:SymbolIcon x:Name="PrefixIcon"
                                                Symbol="Link24"
                                                FontSize="14"
-                                               Foreground="#85FFFFFF"
+                                               Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Center"
                                                Margin="0,0,8,0" />
                                 <ScrollViewer x:Name="PART_ContentHost"
@@ -105,7 +105,7 @@
                             <Trigger Property="IsKeyboardFocused" Value="True">
                                 <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
                                 <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#65FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#FFFFFF" />
+                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -118,8 +118,8 @@
             <Setter Property="Height" Value="36" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
             <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
-            <Setter Property="CaretBrush" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="UseLayoutRounding" Value="True" />
@@ -131,7 +131,7 @@
                                 BorderBrush="#28FFFFFF"
                                 BorderThickness="1"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <Grid Margin="10,0,10,0">
                                 <ScrollViewer x:Name="PART_ContentHost"
                                               VerticalAlignment="Center"
@@ -205,7 +205,7 @@
             <Setter Property="Padding" Value="14,0" />
             <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
             <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
-            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
@@ -214,7 +214,7 @@
                         <Border x:Name="BtnBorder"
                                 Background="{DynamicResource SystemAccentColorPrimaryBrush}"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -248,7 +248,7 @@
                                 BorderBrush="#25FFFFFF"
                                 BorderThickness="1"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                                SnapsToDevicePixels="True">
+                                >
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -270,7 +270,7 @@
     <Border Background="Transparent"
             BorderThickness="0"
             CornerRadius="{DynamicResource ControlCornerRadius}"
-            SnapsToDevicePixels="True">
+            >
         <Grid RenderOptions.ClearTypeHint="Enabled">
             <Grid.ColumnDefinitions>
                 <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR -->
@@ -345,7 +345,7 @@
                             <TextBlock Text="Website URL"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#95FFFFFF"
+                                       Foreground="{DynamicResource TextMutedBrush}"
                                        Margin="0,0,0,6" />
 
                             <Grid>
@@ -374,7 +374,7 @@
                             <TextBlock Text="Shortcut Label (Optional)"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#95FFFFFF"
+                                       Foreground="{DynamicResource TextMutedBrush}"
                                        Margin="0,14,0,6" />
                             <TextBox x:Name="WebLinkTitleInput"
                                      Style="{StaticResource FluentGlassInputStyle}"
@@ -390,7 +390,7 @@
                                     <TextBlock Text="Both canvas &amp; sidebar"
                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                               Foreground="#95FFFFFF"
+                                               Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Center" />
                                 </RadioButton>
                                 <RadioButton x:Name="WebLinkDestCanvasRadio"
@@ -400,7 +400,7 @@
                                     <TextBlock Text="Canvas only"
                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                               Foreground="#95FFFFFF"
+                                               Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Center" />
                                 </RadioButton>
                                 <RadioButton x:Name="WebLinkDestSidebarRadio"
@@ -409,7 +409,7 @@
                                     <TextBlock Text="Sidebar only"
                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                               Foreground="#95FFFFFF"
+                                               Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Center" />
                                 </RadioButton>
                             </StackPanel>
@@ -417,7 +417,7 @@
                             <TextBlock x:Name="WebLinkStatusMessage"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#FF8080"
+                                       Foreground="{DynamicResource StatusErrorBrush}"
                                        Margin="0,8,0,0"
                                        TextWrapping="Wrap"
                                        Visibility="Collapsed" />

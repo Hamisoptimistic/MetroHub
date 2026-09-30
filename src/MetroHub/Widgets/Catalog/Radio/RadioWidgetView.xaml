@@ -10,12 +10,6 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=radio:RadioWidgetViewModel}"
              Focusable="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}"
              Width="504"
              Height="376">
@@ -58,7 +52,7 @@
                                 BorderBrush="{DynamicResource WidgetDividerBrush}"
                                 BorderThickness="1"
                                 Margin="0,0,-1,-1"
-                                SnapsToDevicePixels="True">
+                                >
                             <Grid ClipToBounds="True">
                                 <!-- Chromatic Multi-Orb Fluid Mesh Visualizer (Active Station Tile) -->
                                 <radio:AtmosphericAuraControl IsActive="{Binding IsPlaying}"
@@ -88,13 +82,13 @@
                                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                         <ui:SymbolIcon Symbol="Add24"
                                                        FontSize="18"
-                                                       Foreground="#60FFFFFF"
+                                                       Foreground="{DynamicResource TextSubtleBrush}"
                                                        HorizontalAlignment="Center" />
                                         <TextBlock Text="Custom Station"
                                                    FontFamily="{DynamicResource AppFontFamily}"
                                                    FontSize="{DynamicResource TypeCaptionFontSize}"
                                                    FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                                   Foreground="#60FFFFFF"
+                                                   Foreground="{DynamicResource TextSubtleBrush}"
                                                    Margin="0,3,0,0"
                                                    HorizontalAlignment="Center" />
                                     </StackPanel>
@@ -139,7 +133,7 @@
 
     <!-- Transparent WidgetCard Shell (Padding="0" for seamless border-to-border alignment) -->
     <widgets:WidgetCard Padding="0" Background="Transparent">
-        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True" ClipToBounds="True">
+        <Grid ClipToBounds="True">
             <Grid.RowDefinitions>
                 <!-- Row 0: Top Category Tabs (76px) -->
                 <RowDefinition Height="76" />
@@ -160,22 +154,22 @@
                 <widgets:WidgetTile Value="ambient"
                                     Symbol="WeatherMoon24"
                                     Header="Ambient"
-                                    IndicatorBrush="#FFFFFF"
+                                    IndicatorBrush="{DynamicResource TextPrimaryBrush}"
                                     ToolTip="Deep Ambient, Space &amp; Drone Soundscapes" />
                 <widgets:WidgetTile Value="nature"
                                     Symbol="LeafTwo24"
                                     Header="Nature"
-                                    IndicatorBrush="#FFFFFF"
+                                    IndicatorBrush="{DynamicResource TextPrimaryBrush}"
                                     ToolTip="Rain, Forests, Oceans &amp; Environmental Sounds" />
                 <widgets:WidgetTile Value="lofi"
                                     Symbol="Headphones24"
                                     Header="Lo-Fi / Chill"
-                                    IndicatorBrush="#FFFFFF"
+                                    IndicatorBrush="{DynamicResource TextPrimaryBrush}"
                                     ToolTip="Lo-Fi Hip Hop, Chillout &amp; Study Beats" />
                 <widgets:WidgetTile Value="coding"
                                     Symbol="Code24"
                                     Header="Coding"
-                                    IndicatorBrush="#FFFFFF"
+                                    IndicatorBrush="{DynamicResource TextPrimaryBrush}"
                                     ToolTip="Synthwave, Darksynth &amp; Deep Focus Electronic" />
             </widgets:WidgetTiles>
 
@@ -183,16 +177,16 @@
             <!-- ROW 1: SEAMLESS 4-COLUMN STATION GRID (234px)                             -->
             <!-- Border-to-border, 0 outer margin/padding, 126px per column                -->
             <!-- ========================================================================= -->
-            <Grid Grid.Row="1" Background="Transparent" SnapsToDevicePixels="True">
+            <Grid Grid.Row="1" Background="Transparent">
                 <ScrollViewer x:Name="StationScrollViewer"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
                               Padding="0"
                               Margin="0"
-                              SnapsToDevicePixels="True">
+                              >
                     <ItemsControl x:Name="StationItemsControl"
                                   ItemsSource="{Binding VisibleStations}"
-                                  SnapsToDevicePixels="True">
+                                  >
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <WrapPanel Width="504" Margin="0" />
@@ -212,24 +206,24 @@
                                                       Command="{Binding PlacementTarget.Tag.SelectStationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                                 <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Play24" FontSize="14" Foreground="#D0FFFFFF" />
+                                                    <ui:SymbolIcon Symbol="Play24" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" />
                                                 </MenuItem.Icon>
                                             </MenuItem>
                                             <MenuItem Header="Copy Stream URL"
                                                       Command="{Binding PlacementTarget.Tag.CopyStreamUrlCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                                 <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Copy24" FontSize="14" Foreground="#D0FFFFFF" />
+                                                    <ui:SymbolIcon Symbol="Copy24" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" />
                                                 </MenuItem.Icon>
                                             </MenuItem>
                                             <Separator Visibility="{Binding PlacementTarget.DataContext.IsCustom, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}" />
                                             <MenuItem Header="Delete Station"
-                                                      Foreground="#FF6B6B"
+                                                      Foreground="{DynamicResource StatusErrorBrush}"
                                                       Visibility="{Binding PlacementTarget.DataContext.IsCustom, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}"
                                                       Command="{Binding PlacementTarget.Tag.DeleteStationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                                 <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Delete24" FontSize="14" Foreground="#FF6B6B" />
+                                                    <ui:SymbolIcon Symbol="Delete24" FontSize="14" Foreground="{DynamicResource StatusErrorBrush}" />
                                                 </MenuItem.Icon>
                                             </MenuItem>
                                         </ContextMenu>
@@ -245,7 +239,7 @@
             <!-- ROW 2: BOTTOM FLUENT PLAYER BAR (66px)                                    -->
             <!-- Prev, Ghost Play/Pause, Next | Clean Station Title | Mute, Blue Slider    -->
             <!-- ========================================================================= -->
-            <Grid Grid.Row="2" Background="#16000000" SnapsToDevicePixels="True">
+            <Grid Grid.Row="2" Background="#16000000">
                 <!-- Hairline Top Border Divider -->
                 <Border VerticalAlignment="Top" Height="1" Background="#18FFFFFF" />
 
@@ -331,7 +325,7 @@
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="#A0B8D0"
+                                       Foreground="{DynamicResource TextMutedBrush}"
                                        TextTrimming="CharacterEllipsis"
                                        TextWrapping="NoWrap"
                                        Margin="0,1.5,0,0"
@@ -360,7 +354,7 @@
                                         </Style>
                                     </ui:SymbolIcon.Style>
                                 </ui:SymbolIcon>
-                                <ui:SymbolIcon Symbol="SpeakerOff24" FontSize="16" Foreground="#FF5252">
+                                <ui:SymbolIcon Symbol="SpeakerOff24" FontSize="16" Foreground="{DynamicResource StatusErrorBrush}">
                                     <ui:SymbolIcon.Style>
                                         <Style TargetType="ui:SymbolIcon">
                                             <Setter Property="Visibility" Value="Collapsed" />
@@ -375,7 +369,7 @@
                             </Grid>
                         </Button>
 
-                        <!-- Fluent Volume Slider (Standard Blue Accent #00B4D8) -->
+                        <!-- Fluent Volume Slider (System Accent Color) -->
                         <controls:FluentVolumeSlider Width="105"
                                                     Margin="6,0,0,0"
                                                     VerticalAlignment="Center"
@@ -383,10 +377,10 @@
                                                     IsMuted="{Binding IsMuted, Mode=TwoWay}"
                                                     Minimum="0"
                                                     Maximum="100"
-                                                    ProgressBrush="#00B4D8"
-                                                    ProgressPointerOverBrush="#33C9E8"
+                                                    ProgressBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                    ProgressPointerOverBrush="{DynamicResource SystemAccentColorSecondaryBrush}"
                                                     Tag="InteractiveControl"
-                                                    SnapsToDevicePixels="True" />
+                                                    />
                     </StackPanel>
                 </Grid>
             </Grid>

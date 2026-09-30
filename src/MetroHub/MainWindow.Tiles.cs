@@ -16,6 +16,7 @@ using MetroHub.Core.Services;
 using MetroHub.Core.Services.Catalog;
 using MetroHub.Presentation.Controllers;
 using MetroHub.Presentation.Controls;
+using MetroHub.Presentation.Themes;
 using MenuItem = System.Windows.Controls.MenuItem;
 using ContextMenu = System.Windows.Controls.ContextMenu;
 
@@ -23,6 +24,8 @@ namespace MetroHub;
 
 public partial class MainWindow
 {
+    private static readonly Brush WidgetCategoryHeaderBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0x90, 0xFF, 0xFF, 0xFF));
+    private static readonly Brush WidgetItemIconBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF));
     private Point _canvasRightClickPoint;
     private bool _isAppsLoaded = false;
     private bool _isLoadingApps = false;
@@ -575,7 +578,7 @@ public partial class MainWindow
                 IsEnabled = false,
                 FontSize = 10.5,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(Color.FromArgb(0x90, 0xFF, 0xFF, 0xFF)),
+                Foreground = WidgetCategoryHeaderBrush,
                 Padding = new Thickness(10, 4, 14, 2),
                 MinHeight = 22,
                 Focusable = false
@@ -591,7 +594,7 @@ public partial class MainWindow
                     {
                         Symbol = def.Icon,
                         FontSize = 18,
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF))
+                        Foreground = WidgetItemIconBrush
                     },
                     Tag = def,
                     Cursor = Cursors.Hand,

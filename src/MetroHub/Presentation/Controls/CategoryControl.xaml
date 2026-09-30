@@ -19,7 +19,7 @@
                      FontFamily="{DynamicResource AppDisplayFontFamily}"
                      FontSize="{DynamicResource TypeSubtitleFontSize}"
                      FontWeight="{DynamicResource TypeSubtitleFontWeight}"
-                     Foreground="#F0FFFFFF"
+                     Foreground="{DynamicResource TextPrimaryBrush}"
                      Background="Transparent"
                      BorderThickness="0"
                      VerticalAlignment="Center"
@@ -32,7 +32,7 @@
                     Width="28" Height="28"
                     FontSize="{DynamicResource TypeHeaderFontSize}"
                     FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                    Foreground="#A0FFFFFF"
+                    Foreground="{DynamicResource TextMutedBrush}"
                     Background="#1AFFFFFF"
                     BorderThickness="0"
                     ToolTip="Add shortcut to this category"
@@ -76,8 +76,8 @@
                 MouseEnter="OnGhostTileMouseEnter"
                 MouseLeave="OnGhostTileMouseLeave">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="+" FontSize="{DynamicResource TypeSubtitleFontSize}" FontWeight="{DynamicResource TypeSubtitleFontWeight}" Foreground="#80FFFFFF" Margin="0,0,6,0"/>
-                <TextBlock Text="Add Tile" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="#80FFFFFF" VerticalAlignment="Center"/>
+                <TextBlock Text="+" FontSize="{DynamicResource TypeSubtitleFontSize}" FontWeight="{DynamicResource TypeSubtitleFontWeight}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,6,0"/>
+                <TextBlock Text="Add Tile" FontSize="{DynamicResource TypeCaptionFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
     </StackPanel>

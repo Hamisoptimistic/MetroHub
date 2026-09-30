@@ -13,7 +13,7 @@
     <!-- Fluid mesh: 4 irregular blobs like the reference spheres. Brushes are STATIC
          (rasterized once, cached on GPU) — per-frame motion is transform+opacity only,
          so no re-raster banding and every color visibly pumps. -->
-    <Grid x:Name="AuraRoot" Opacity="0" SnapsToDevicePixels="True" UseLayoutRounding="True">
+    <Grid x:Name="AuraRoot" Opacity="0">
         <Grid.CacheMode>
             <BitmapCache EnableClearType="False" SnapsToDevicePixels="True" />
         </Grid.CacheMode>

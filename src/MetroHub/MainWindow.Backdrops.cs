@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Controllers;
+using MetroHub.Presentation.Themes;
 
 namespace MetroHub;
 
@@ -164,11 +165,9 @@ public partial class MainWindow
 
         NotificationToastText.Text = message;
         NotificationToastIcon.Symbol = isError ? Wpf.Ui.Controls.SymbolRegular.Warning24 : Wpf.Ui.Controls.SymbolRegular.Info24;
-        var iconBrush = isError
-            ? new SolidColorBrush(Color.FromRgb(255, 120, 120))
-            : new SolidColorBrush(Color.FromRgb(96, 205, 255));
-        iconBrush.Freeze();
-        NotificationToastIcon.Foreground = iconBrush;
+        NotificationToastIcon.Foreground = isError
+            ? ThemeTokens.StatusErrorBrush
+            : ThemeTokens.StatusInfoBrush;
 
         var fadeIn = new System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(200));
         NotificationToast.BeginAnimation(UIElement.OpacityProperty, fadeIn);

@@ -10,12 +10,8 @@
              Width="504" 
              Height="184"
              ClipToBounds="True"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
              RenderOptions.EdgeMode="Aliased"
              RenderOptions.BitmapScalingMode="NearestNeighbor"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
              FontFamily="{DynamicResource AppMonoFontFamily}">
 
     <Grid x:Name="RootGrid" Background="#F7F7F7" ClipToBounds="True">
@@ -163,7 +159,7 @@
                     <!-- Restart Button Icon -->
                     <Border x:Name="RestartButton" 
                             Width="44" Height="40" 
-                            CornerRadius="4"
+                            CornerRadius="{DynamicResource ControlCornerRadius}"
                             HorizontalAlignment="Center" 
                             Background="Transparent"
                             MouseLeftButtonDown="OnRestartButtonClicked">

@@ -17,12 +17,6 @@
              Focusable="False"
              FocusVisualStyle="{x:Null}"
              ClipToBounds="True"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
-             RenderOptions.ClearTypeHint="Enabled"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
@@ -45,12 +39,10 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                SnapsToDevicePixels="True"
-                                UseLayoutRounding="True">
+                                >
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center"
-                                              SnapsToDevicePixels="True"
-                                              UseLayoutRounding="True" />
+                                              />
                         </Border>
                         <ControlTemplate.Triggers>
                             <!-- Hover state: illuminates vertical dividing borders only, exactly like Network widget -->
@@ -71,7 +63,7 @@
     </UserControl.Resources>
 
     <widgets:WidgetCard Padding="0" Background="Transparent" VerticalAlignment="Stretch">
-        <UniformGrid Rows="1" SnapsToDevicePixels="True" UseLayoutRounding="True" VerticalAlignment="Stretch">
+        <UniformGrid Rows="1" VerticalAlignment="Stretch">
             <!-- Lock -->
             <Button Style="{StaticResource PowerActionButtonStyle}"
                     Command="{Binding ExecuteActionCommand}"
@@ -80,7 +72,7 @@
                 <Grid HorizontalAlignment="Stretch"
                       VerticalAlignment="Center"
                       Margin="0,0,0,2"
-                      SnapsToDevicePixels="True">
+                      >
                     <Grid.RowDefinitions>
                         <!-- Fixed 28px height for optical icon center (identical to Network WidgetTile) -->
                         <RowDefinition Height="28" />
@@ -93,7 +85,7 @@
                     <Grid Grid.Row="0"
                           HorizontalAlignment="Center"
                           VerticalAlignment="Center"
-                          SnapsToDevicePixels="True">
+                          >
                         <!-- Icon rendering deliberately overrides the app-wide "crisp" SymbolIcon style
                              (SnapsToDevicePixels + UseLayoutRounding + fixed hinting). At 24px — the
                              largest icon size in the hub — grid-snapping hardens the glyph curves and
@@ -117,7 +109,7 @@
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
-                               SnapsToDevicePixels="True" />
+                               />
                 </Grid>
             </Button>
 
@@ -129,7 +121,7 @@
                 <Grid HorizontalAlignment="Stretch"
                       VerticalAlignment="Center"
                       Margin="0,0,0,2"
-                      SnapsToDevicePixels="True">
+                      >
                     <Grid.RowDefinitions>
                         <!-- Fixed 28px height for optical icon center (identical to Network WidgetTile) -->
                         <RowDefinition Height="28" />
@@ -142,7 +134,7 @@
                     <Grid Grid.Row="0"
                           HorizontalAlignment="Center"
                           VerticalAlignment="Center"
-                          SnapsToDevicePixels="True">
+                          >
                         <ui:SymbolIcon Symbol="{Binding SleepSymbol}"
                                        Foreground="{Binding SleepForeground}"
                                        FontSize="24"
@@ -162,7 +154,7 @@
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
-                               SnapsToDevicePixels="True" />
+                               />
                 </Grid>
             </Button>
 
@@ -174,7 +166,7 @@
                 <Grid HorizontalAlignment="Stretch"
                       VerticalAlignment="Center"
                       Margin="0,0,0,2"
-                      SnapsToDevicePixels="True">
+                      >
                     <Grid.RowDefinitions>
                         <!-- Fixed 28px height for optical icon center (identical to Network WidgetTile) -->
                         <RowDefinition Height="28" />
@@ -187,7 +179,7 @@
                     <Grid Grid.Row="0"
                           HorizontalAlignment="Center"
                           VerticalAlignment="Center"
-                          SnapsToDevicePixels="True">
+                          >
                         <ui:SymbolIcon Symbol="{Binding RestartSymbol}"
                                        Foreground="{Binding RestartForeground}"
                                        FontSize="24"
@@ -207,7 +199,7 @@
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
-                               SnapsToDevicePixels="True" />
+                               />
                 </Grid>
             </Button>
 
@@ -219,7 +211,7 @@
                 <Grid HorizontalAlignment="Stretch"
                       VerticalAlignment="Center"
                       Margin="0,0,0,2"
-                      SnapsToDevicePixels="True">
+                      >
                     <Grid.RowDefinitions>
                         <!-- Fixed 28px height for optical icon center (identical to Network WidgetTile) -->
                         <RowDefinition Height="28" />
@@ -232,7 +224,7 @@
                     <Grid Grid.Row="0"
                           HorizontalAlignment="Center"
                           VerticalAlignment="Center"
-                          SnapsToDevicePixels="True">
+                          >
                         <ui:SymbolIcon Symbol="{Binding ShutdownSymbol}"
                                        Foreground="{Binding ShutdownForeground}"
                                        FontSize="24"
@@ -252,7 +244,7 @@
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
-                               SnapsToDevicePixels="True" />
+                               />
                 </Grid>
             </Button>
         </UniformGrid>

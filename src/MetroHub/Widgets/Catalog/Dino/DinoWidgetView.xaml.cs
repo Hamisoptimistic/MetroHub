@@ -16,11 +16,7 @@ public partial class DinoWidgetView : UserControl
 {
     private DinoWidgetViewModel? _viewModel;
     private readonly Path[] _obstaclePaths = new Path[4];
-
-    private readonly SolidColorBrush _backgroundBrush = new(Color.FromRgb(0xF7, 0xF7, 0xF7));
-    private readonly SolidColorBrush _spriteBrush = new(Color.FromRgb(0x53, 0x53, 0x53));
-    private readonly SolidColorBrush _groundBrush = new(Color.FromRgb(0x73, 0x73, 0x73));
-    private readonly SolidColorBrush _cloudBrush = new(Color.FromRgb(0xC4, 0xC4, 0xC4));
+    private bool? _isNightApplied;
 
     public DinoWidgetView()
     {
@@ -31,21 +27,34 @@ public partial class DinoWidgetView : UserControl
         _obstaclePaths[2] = Obstacle2;
         _obstaclePaths[3] = Obstacle3;
 
-        RootGrid.Background = _backgroundBrush;
-        DinoShape.Fill = _spriteBrush;
-        GroundBaseLine.Stroke = _spriteBrush;
-        CurrentScoreText.Foreground = _spriteBrush;
-        GameOverText.Foreground = _spriteBrush;
-        RestartIconPath.Fill = _spriteBrush;
-
-        for (int i = 0; i < _obstaclePaths.Length; i++)
-        {
-            _obstaclePaths[i].Fill = _spriteBrush;
-        }
+        ApplyPalette(false);
 
         DataContextChanged += OnDataContextChanged;
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+    }
+
+    private void ApplyPalette(bool isNight)
+    {
+        _isNightApplied = isNight;
+
+        var bgBrush = isNight ? DinoTuning.NightBackgroundBrush : DinoTuning.DayBackgroundBrush;
+        var fgBrush = isNight ? DinoTuning.NightForegroundBrush : DinoTuning.DayForegroundBrush;
+        var secBrush = isNight ? DinoTuning.NightSecondaryBrush : DinoTuning.DaySecondaryBrush;
+
+        RootGrid.Background = bgBrush;
+        DinoShape.Fill = fgBrush;
+        GroundBaseLine.Stroke = fgBrush;
+        CurrentScoreText.Foreground = fgBrush;
+        GameOverText.Foreground = fgBrush;
+        RestartIconPath.Fill = fgBrush;
+
+        for (int i = 0; i < _obstaclePaths.Length; i++)
+        {
+            _obstaclePaths[i].Fill = fgBrush;
+        }
+
+        HighScoreText.Foreground = secBrush;
     }
 
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -112,13 +121,20 @@ public partial class DinoWidgetView : UserControl
 
         if (_viewModel.IsHighContrast)
         {
+            _isNightApplied = null;
             RootGrid.Background = SystemColors.WindowBrush;
-            _spriteBrush.Color = SystemColors.WindowTextColor;
-            _groundBrush.Color = SystemColors.WindowTextColor;
+            DinoShape.Fill = SystemColors.WindowTextBrush;
+            GroundBaseLine.Stroke = SystemColors.WindowTextBrush;
             CurrentScoreText.Foreground = SystemColors.WindowTextBrush;
-            HighScoreText.Foreground = SystemColors.GrayTextBrush;
             GameOverText.Foreground = SystemColors.WindowTextBrush;
             RestartIconPath.Fill = SystemColors.WindowTextBrush;
+
+            for (int i = 0; i < _obstaclePaths.Length; i++)
+            {
+                _obstaclePaths[i].Fill = SystemColors.WindowTextBrush;
+            }
+
+            HighScoreText.Foreground = SystemColors.GrayTextBrush;
 
             MoonShape.Opacity = 0.0;
             Star1.Opacity = 0.0;
@@ -132,26 +148,11 @@ public partial class DinoWidgetView : UserControl
             ? (rawNightBlend >= 0.5 ? 1.0 : 0.0)
             : rawNightBlend;
 
-        // Day: #F7F7F7 -> Night: #202124
-        byte bgR = (byte)Lerp(0xF7, 0x20, blend);
-        byte bgG = (byte)Lerp(0xF7, 0x21, blend);
-        byte bgB = (byte)Lerp(0xF7, 0x24, blend);
-        _backgroundBrush.Color = Color.FromRgb(bgR, bgG, bgB);
-
-        // Day Sprite: #535353 -> Night Sprite: #E8EAED
-        byte spR = (byte)Lerp(0x53, 0xE8, blend);
-        byte spG = (byte)Lerp(0x53, 0xEA, blend);
-        byte spB = (byte)Lerp(0x53, 0xED, blend);
-        _spriteBrush.Color = Color.FromRgb(spR, spG, spB);
-
-        // Day Secondary/Ground: #737373 -> Night Secondary: #9AA0A6
-        byte gndR = (byte)Lerp(0x73, 0x9A, blend);
-        byte gndG = (byte)Lerp(0x73, 0xA0, blend);
-        byte gndB = (byte)Lerp(0x73, 0xA6, blend);
-        _groundBrush.Color = Color.FromRgb(gndR, gndG, gndB);
-
-        HighScoreText.Foreground = _groundBrush;
-        CurrentScoreText.Foreground = _spriteBrush;
+        bool isNight = blend >= 0.5;
+        if (_isNightApplied != isNight)
+        {
+            ApplyPalette(isNight);
+        }
 
         // Celestial Elements Opacity
         MoonShape.Opacity = blend;
@@ -279,10 +280,6 @@ public partial class DinoWidgetView : UserControl
             : Visibility.Collapsed;
     }
 
-    private static double Lerp(double a, double b, double t)
-    {
-        return a + (b - a) * Math.Clamp(t, 0.0, 1.0);
-    }
 
     // --- Input & Focus Management ---
 

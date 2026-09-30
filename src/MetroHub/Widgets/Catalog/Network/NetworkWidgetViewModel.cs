@@ -13,6 +13,7 @@ using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
 using MetroHub.Core.Network;
 using MetroHub.Core.Network.Interop;
+using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Serialization;
 using Wpf.Ui.Controls;
 
@@ -272,10 +273,10 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     public bool IsHotspotPanel => IsDataUsagePanel;
 
     // --- Dynamic Status Brushes for Modular WidgetTiles ---
-    private static readonly Brush GreenIndicatorBrush = CreateFrozenBrush("#00E676");
-    private static readonly Brush BlueIndicatorBrush = CreateFrozenBrush("#0091FF");
-    private static readonly Brush RedIndicatorBrush = CreateFrozenBrush("#FF3B30");
-    private static readonly Brush AmberIndicatorBrush = CreateFrozenBrush("#FFB703");
+    private static readonly Brush GreenIndicatorBrush = ThemeTokens.StatusSuccessBrush;
+    private static readonly Brush BlueIndicatorBrush = ThemeTokens.StatusInfoBrush;
+    private static readonly Brush RedIndicatorBrush = ThemeTokens.StatusDangerBrush;
+    private static readonly Brush AmberIndicatorBrush = ThemeTokens.StatusWarningBrush;
     private static readonly Brush PurpleIndicatorBrush = CreateFrozenBrush("#A855F7");
     private static readonly Brush MutedIndicatorBrush = CreateFrozenBrush("#80FFFFFF");
     private static readonly Brush WhiteIndicatorBrush = CreateFrozenBrush("#FFFFFF");

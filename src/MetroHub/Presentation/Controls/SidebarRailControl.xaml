@@ -9,12 +9,6 @@
              mc:Ignorable="d" 
              Width="48"
              Focusable="False"
-             SnapsToDevicePixels="True"
-             UseLayoutRounding="True"
-             RenderOptions.ClearTypeHint="Enabled"
-             TextOptions.TextFormattingMode="Ideal"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
@@ -45,7 +39,7 @@
                                     CornerRadius="{DynamicResource ControlCornerRadius}"
                                     Background="Transparent"
                                     BorderThickness="0"
-                                    SnapsToDevicePixels="True">
+                                    >
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
 
@@ -64,18 +58,18 @@
                             <!-- Hover state: soft brighten, subtle glass sheen, zero borders (matching widgets) -->
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <!-- Pressed state -->
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <!-- Active state (Pinned / Drawer Open) -->
                             <Trigger Property="Tag" Value="Active">
                                 <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
                                 <Setter TargetName="PillBorder" Property="Background" Value="#0EFFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <!-- Active + Hover -->
                             <MultiTrigger>
@@ -84,7 +78,7 @@
                                     <Condition Property="IsMouseOver" Value="True" />
                                 </MultiTrigger.Conditions>
                                 <Setter TargetName="PillBorder" Property="Background" Value="#18FFFFFF" />
-                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -458,8 +452,6 @@
                                 <Rectangle Height="1"
                                            Margin="10,0"
                                            Fill="#45FFFFFF"
-                                           SnapsToDevicePixels="True"
-                                           UseLayoutRounding="True"
                                            VerticalAlignment="Center" />
                             </Border>
                         </Grid>
@@ -484,7 +476,6 @@
                     HorizontalAlignment="Stretch"
                     Visibility="Collapsed"
                     IsHitTestVisible="False"
-                    SnapsToDevicePixels="True"
                     Panel.ZIndex="1000">
                 <Border.RenderTransform>
                     <TranslateTransform x:Name="DragInsertionTransform" Y="0" />
