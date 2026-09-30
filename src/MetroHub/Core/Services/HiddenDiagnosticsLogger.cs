@@ -1,46 +1,20 @@
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
+using Serilog;
 
 namespace MetroHub.Core.Services;
 
 /// <summary>
-/// Comprehensive diagnostic logger that writes to %LOCALAPPDATA%\MetroHub\logs\hidden_diagnostics.log.
-/// Tracks every aspect of memory: Managed Heap, Generations (0/1/2/LOH/POH), Fragmentation,
-/// Private Committed Bytes, Working Set, Virtual Memory, GDI handles, USER handles, and Kernel handles.
+/// Diagnostic logger that captures system, memory, and handle telemetry.
+/// Emits non-blocking structured events via Serilog into the rolling log file and Seq,
+/// eliminating synchronous disk I/O and locks from the UI thread.
 /// </summary>
 public static class HiddenDiagnosticsLogger
 {
+    private static readonly ILogger Logger = Serilog.Log.ForContext("Source", "Diagnostics");
+
     public static bool IsEnabled { get; set; } = true;
-
-    private static string _logFilePath = AppPaths.HiddenDiagnosticsLogPath;
-    private static readonly object _lock = new();
-
-
-    static HiddenDiagnosticsLogger()
-    {
-        try
-        {
-            AppPaths.EnsureDirectory(_logFilePath);
-        }
-        catch
-        {
-            try
-            {
-                _logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "hidden_diagnostics.log");
-                string? targetDir = Path.GetDirectoryName(_logFilePath);
-                if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir))
-                {
-                    Directory.CreateDirectory(targetDir);
-                }
-            }
-            catch
-            {
-                // Diagnostics must never fail
-            }
-        }
-    }
 
     public static void LogTransition(bool isVisible)
     {
@@ -59,7 +33,8 @@ public static class HiddenDiagnosticsLogger
             int handles = proc.HandleCount;
 
             string state = isVisible ? "SHOWN (Foreground Active)" : "HIDDEN (Background Dormant)";
-            WriteEntry($"[TRANSITION] MetroHub is now {state} | WS: {wsMb:0.0} MB | Private: {privMb:0.0} MB | Managed: {heapMb:0.0} MB | GDI/USER: {gdi}/{user} | Handles: {handles}");
+            Logger.Information("[TRANSITION] MetroHub is now {State} | WS: {WorkingSetMb:0.0} MB | Private: {PrivateBytesMb:0.0} MB | Managed: {ManagedMb:0.0} MB | GDI/USER: {GdiCount}/{UserCount} | Handles: {HandleCount}",
+                state, wsMb, privMb, heapMb, gdi, user, handles);
         }
         catch
         {
@@ -80,7 +55,8 @@ public static class HiddenDiagnosticsLogger
 
         double wsMb = GetWorkingSetMb();
         string detailStr = string.IsNullOrWhiteSpace(details) ? string.Empty : $" | Details: {details}";
-        WriteEntry($"[HIDDEN ACTIVITY DETECTED] [{source}] {eventName} | Working Set: {wsMb:0.0} MB{detailStr}");
+        Logger.Information("[HIDDEN ACTIVITY DETECTED] [{EventSource}] {EventName} | Working Set: {WorkingSetMb:0.0} MB{Details}",
+            source, eventName, wsMb, detailStr);
     }
 
     /// <summary>
@@ -169,7 +145,9 @@ public static class HiddenDiagnosticsLogger
             sb.AppendLine($"    Loaded Windows Count:        {windowCount}");
             sb.AppendLine($"==================================================================================");
 
-            WriteEntry(sb.ToString().TrimEnd());
+            Logger.Information(
+                "[SNAPSHOT] {Trigger} | WS: {WorkingSetMb:0.0} MB | Priv: {PrivateBytesMb:0.0} MB | Heap: {HeapSizeMb:0.0} MB | GDI/USER: {GdiCount}/{UserCount} | Handles: {HandleCount}\n{SnapshotText}",
+                trigger, wsMb, privMb, heapSizeMb, gdiCount, userCount, handles, sb.ToString().TrimEnd());
         }
         catch
         {
@@ -194,11 +172,7 @@ public static class HiddenDiagnosticsLogger
     {
         try
         {
-            string entry = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {line}{Environment.NewLine}";
-            lock (_lock)
-            {
-                File.AppendAllText(_logFilePath, entry);
-            }
+            Logger.Information("{Message}", line);
         }
         catch
         {

@@ -22,35 +22,6 @@ public partial class App : Application
     private static int _unhandledExceptionCount;
     private static DateTime _lastUnhandledExceptionTime = DateTime.MinValue;
 
-    private static void LogCrash(string source, object? exception)
-    {
-        try
-        {
-            string crashLog = AppPaths.CrashLogPath;
-            AppPaths.EnsureDirectory(crashLog);
-
-            var fi = new FileInfo(crashLog);
-            if (fi.Exists && fi.Length > 2 * 1024 * 1024)
-            {
-                string oldLog = crashLog + ".old";
-                if (File.Exists(oldLog)) File.Delete(oldLog);
-                File.Move(crashLog, oldLog);
-            }
-
-            string entry = $"[{System.DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [{source}]{System.Environment.NewLine}{exception ?? "Unknown unhandled exception"}{System.Environment.NewLine}{System.Environment.NewLine}";
-            File.AppendAllText(crashLog, entry);
-
-            if (exception is Exception ex)
-            {
-                Safe.Log(source, ex);
-            }
-        }
-        catch
-        {
-            // Crash logging must never throw
-        }
-    }
-
     private static bool ShouldHandleDispatcherException()
     {
         var now = System.DateTime.UtcNow;
@@ -72,18 +43,28 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Initialize centralized Serilog logging pipeline
+        LoggingService.Initialize();
+
         // Register native BASS audio engine dynamic library resolver
         MetroHub.Core.Radio.BassLoader.Register();
 
         // Global crash logging
         AppDomain.CurrentDomain.UnhandledException += (s, args) =>
         {
-            LogCrash("AppDomain.UnhandledException", args.ExceptionObject);
+            if (args.ExceptionObject is Exception ex)
+            {
+                Serilog.Log.Fatal(ex, "Fatal AppDomain Unhandled Exception (IsTerminating: {IsTerminating})", args.IsTerminating);
+            }
+            else
+            {
+                Serilog.Log.Fatal("Fatal AppDomain Unhandled Exception: {ExceptionObject} (IsTerminating: {IsTerminating})", args.ExceptionObject, args.IsTerminating);
+            }
         };
 
         DispatcherUnhandledException += (s, args) =>
         {
-            LogCrash("DispatcherUnhandledException", args.Exception);
+            Serilog.Log.Fatal(args.Exception, "Unhandled UI Dispatcher Exception");
 
             if (ShouldHandleDispatcherException())
             {
@@ -101,7 +82,7 @@ public partial class App : Application
 
         System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (s, args) =>
         {
-            LogCrash("TaskScheduler.UnobservedTaskException", args.Exception);
+            Serilog.Log.Error(args.Exception, "Unobserved Task Exception");
             args.SetObserved();
         };
 
@@ -216,6 +197,7 @@ public partial class App : Application
     {
         Safe.Try(() => _mainWindow?.SaveGroupsAndLayout(), "App.OnSessionEnding.SaveGroupsAndLayout");
         Safe.Try(StorageService.Flush, "App.OnSessionEnding.StorageFlush");
+        LoggingService.Shutdown();
 
         base.OnSessionEnding(e);
     }
@@ -256,6 +238,8 @@ public partial class App : Application
             _singleInstanceMutex.Dispose();
             _singleInstanceMutex = null;
         }
+
+        LoggingService.Shutdown();
 
         base.OnExit(e);
     }

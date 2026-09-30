@@ -12,7 +12,7 @@ namespace MetroHub.Core.Services;
 public static class Safe
 {
     /// <summary>
-    /// Global exception handler/logger delegate. Defaults to HiddenDiagnosticsLogger.Log and Debug.WriteLine.
+    /// Global exception handler/logger delegate. Defaults to Serilog Log.Warning and Debug.WriteLine.
     /// Can be intercepted or replaced by unit tests.
     /// </summary>
     public static Action<Exception, string> Logger { get; set; } = DefaultLog;
@@ -21,13 +21,18 @@ public static class Safe
     {
         try
         {
-            string header = string.IsNullOrWhiteSpace(context)
-                ? $"[SAFE_TRY_ERROR] {ex.GetType().Name}: {ex.Message}"
-                : $"[SAFE_TRY_ERROR] [{context}] {ex.GetType().Name}: {ex.Message}";
+            if (string.IsNullOrWhiteSpace(context))
+            {
+                Serilog.Log.Warning(ex, "Handled non-fatal error: {ExceptionType} - {Message}", ex.GetType().Name, ex.Message);
+            }
+            else
+            {
+                Serilog.Log.Warning(ex, "Handled non-fatal error in [{Context}]: {ExceptionType} - {Message}", context, ex.GetType().Name, ex.Message);
+            }
 
-            string fullDetail = $"{header}{Environment.NewLine}{ex}";
-            HiddenDiagnosticsLogger.Log(fullDetail);
-            Debug.WriteLine(fullDetail);
+            Debug.WriteLine(string.IsNullOrWhiteSpace(context)
+                ? $"[SAFE_TRY_ERROR] {ex.GetType().Name}: {ex.Message}"
+                : $"[SAFE_TRY_ERROR] [{context}] {ex.GetType().Name}: {ex.Message}");
         }
         catch
         {
