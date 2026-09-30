@@ -128,4 +128,47 @@ public class WidgetLifecycleContractTests
             Assert.Null(selector.SelectTemplate(appTile, null!));
         });
     }
+
+    [Theory]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Clock.ClockWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Stub.StubWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Photos.PhotosWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Weather.WeatherWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Quotes.QuotesWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Rover.RoverWidgetViewModel))]
+    public void InteractiveWidgets_ImplementWidgetActionHandler(Type vmType)
+    {
+        Assert.True(typeof(IWidgetActionHandler).IsAssignableFrom(vmType),
+            $"{vmType.Name} must implement IWidgetActionHandler for polymorphic tile activation.");
+    }
+
+    [Fact]
+    public void CalendarWidget_ImplementsWidgetContextMenuProvider()
+    {
+        MarkdownTestHost.RunSta(() =>
+        {
+            var tile = new TileModel { Id = "test_cal", TargetPath = "calendar", SpanX = 8, SpanY = 6 };
+            var calVm = new MetroHub.Widgets.Catalog.Calendar.CalendarWidgetViewModel(tile);
+
+            Assert.IsAssignableFrom<IWidgetContextMenuProvider>(calVm);
+
+            // Full size (8x6) provides "Go to Today" menu item
+            Assert.True(calVm.IsFullSize);
+            var fullSizeItems = calVm.GetContextMenuItems()?.ToList();
+            Assert.NotNull(fullSizeItems);
+            Assert.Single(fullSizeItems);
+            Assert.IsAssignableFrom<System.Windows.Controls.MenuItem>(fullSizeItems[0]);
+
+            // Compact 4x4 does not provide "Go to Today" menu item
+            tile.SpanX = 4;
+            tile.SpanY = 4;
+            Assert.False(calVm.IsFullSize);
+            var compactItems = calVm.GetContextMenuItems()?.ToList();
+            Assert.NotNull(compactItems);
+            Assert.Empty(compactItems);
+
+            calVm.Dispose();
+        });
+    }
 }
+

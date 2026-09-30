@@ -15,7 +15,7 @@ using MetroHub.Core.Services.Catalog.Weather;
 
 namespace MetroHub.Widgets.Catalog.Weather;
 
-public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
+public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler
 {
     private static readonly TimeSpan BackgroundPollingInterval = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan ResumeThreshold = TimeSpan.FromMinutes(15);
@@ -270,6 +270,8 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase
             ApplyWeatherToUi(_latestData);
         }
     }
+
+    public void OnPrimaryAction() => ToggleUnits();
 
     public async Task<bool> SetCustomCityAsync(string cityName, CancellationToken cancellationToken = default)
     {

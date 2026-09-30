@@ -16,7 +16,7 @@ using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Photos;
 
-public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
+public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler
 {
     private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -218,6 +218,12 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase
         {
             System.Diagnostics.Debug.WriteLine($"[PhotosWidget] Failed to open photo: {ex.Message}");
         }
+    }
+
+    public void OnPrimaryAction()
+    {
+        if (IsEmpty) ChooseFolder();
+        else OpenCurrentPhoto();
     }
 
     public void SetHovered(bool hovered)

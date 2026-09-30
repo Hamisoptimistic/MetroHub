@@ -20,7 +20,7 @@ namespace MetroHub.Widgets.Catalog.Rover;
 /// Features zero-polling Windows SMTC media playback awareness, single-click trick cycling
 /// across all authentic poses, and realistic sleep/wake mechanics.
 /// </summary>
-public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
+public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler
 {
     [StructLayout(LayoutKind.Sequential)]
     private struct LASTINPUTINFO
@@ -348,6 +348,8 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
 
 
     #region Single-Click Trick Cycling & Interactions
+
+    public void OnPrimaryAction() => Interact();
 
     /// <summary>
     /// Master tile click interaction handler.

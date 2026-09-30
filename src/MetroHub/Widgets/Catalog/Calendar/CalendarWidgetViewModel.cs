@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
+using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Messaging;
 
 namespace MetroHub.Widgets.Catalog.Calendar;
@@ -19,7 +21,7 @@ namespace MetroHub.Widgets.Catalog.Calendar;
 ///   • Huge (8x6, 504x376px)  — the Windows 10 style 42-day month grid (default size).
 /// Monthly navigation and the day matrix cost zero UI-thread work when hidden.
 /// </summary>
-public sealed partial class CalendarWidgetViewModel : WidgetViewModelBase
+public sealed partial class CalendarWidgetViewModel : WidgetViewModelBase, IWidgetContextMenuProvider
 {
     private System.Threading.Timer? _midnightTimer;
     private DateTime _lastCheckedDate = DateTime.Today;
@@ -206,6 +208,24 @@ public sealed partial class CalendarWidgetViewModel : WidgetViewModelBase
     {
         DisplayMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
         RebuildCalendar();
+    }
+
+    public IEnumerable<Control> GetContextMenuItems()
+    {
+        if (!IsFullSize) yield break;
+
+        var todayItem = new MenuItem
+        {
+            Header = "Go to Today",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.CalendarToday24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        todayItem.Click += (s, ev) => ResetToToday();
+        yield return todayItem;
     }
 
     [RelayCommand]

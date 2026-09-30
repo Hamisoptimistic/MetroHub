@@ -20,7 +20,7 @@ namespace MetroHub.Widgets.Catalog.Clock;
 /// Supports 12h/24h toggle, full date formatting ("Friday, 11 September"),
 /// responsive adaptive layouts (2x2 up to 8x4), and zero background drain when hidden.
 /// </summary>
-public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
+public sealed partial class ClockWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler
 {
     private static readonly Uri FontBaseUri = new("pack://application:,,,/MetroHub;component/Assets/Fonts/");
 
@@ -218,6 +218,8 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase
     {
         SetTimeFormat(!Is24HourFormat);
     }
+
+    public void OnPrimaryAction() => Toggle24HourFormat();
 
     protected override void Dispose(bool disposing)
     {

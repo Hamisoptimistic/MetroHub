@@ -29,6 +29,7 @@ public static class ThemeTokens
     public static readonly SolidColorBrush AccentPrimaryBrush = CreateFrozenBrush(AccentPrimaryColor);
     // Typography Brushes
     public static readonly SolidColorBrush TextPrimaryBrush = CreateFrozenBrush(Color.FromRgb(0xFF, 0xFF, 0xFF));
+    public static readonly SolidColorBrush MenuIconForegroundBrush = CreateFrozenBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF));
 
     public static SolidColorBrush CreateFrozenBrush(Color c)
     {

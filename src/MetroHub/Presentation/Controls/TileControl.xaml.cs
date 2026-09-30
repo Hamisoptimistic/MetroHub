@@ -46,7 +46,7 @@ public partial class TileControl : UserControl
 
 
 
-    private static readonly Brush MenuIconForegroundBrush = CreateFrozenBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF));
+    private static readonly Brush MenuIconForegroundBrush = ThemeTokens.MenuIconForegroundBrush;
     private static readonly Brush RedMutedBrush = ThemeTokens.StatusErrorBrush;
 
     private static Brush CreateFrozenBrush(Color c)
@@ -182,50 +182,9 @@ public partial class TileControl : UserControl
         {
             if (tile.TileType == TileType.Widget)
             {
-                if (tile.TileContent is Widgets.Catalog.Clock.ClockWidgetViewModel clockVm)
+                if (tile.TileContent is IWidgetActionHandler actionHandler)
                 {
-                    clockVm.Toggle24HourFormat();
-                    return;
-                }
-                if (tile.TileContent is Widgets.Catalog.Stub.StubWidgetViewModel stubVm)
-                {
-                    stubVm.CycleColor();
-                    return;
-                }
-                if (tile.TileContent is Widgets.Catalog.Photos.PhotosWidgetViewModel photosVm)
-                {
-                    if (photosVm.IsEmpty)
-                    {
-                        photosVm.ChooseFolder();
-                    }
-                    else
-                    {
-                        photosVm.OpenCurrentPhoto();
-                    }
-                    return;
-                }
-                if (tile.TileContent is Widgets.Catalog.Weather.WeatherWidgetViewModel weatherVm)
-                {
-                    weatherVm.ToggleUnits();
-                    return;
-                }
-                if (tile.TileContent is Widgets.Catalog.Quotes.QuotesWidgetViewModel quotesVm)
-                {
-                    quotesVm.NextQuote();
-                    return;
-                }
-                if (tile.TileContent is Widgets.Catalog.Habit.HabitWidgetViewModel)
-                {
-                    return;
-                }
-                if (tile.TileContent is Widgets.Catalog.Dino.DinoWidgetViewModel)
-                {
-                    return;
-                }
-                if (tile.TileContent is Widgets.Catalog.Rover.RoverWidgetViewModel roverVm)
-                {
-                    roverVm.Interact();
-                    return;
+                    actionHandler.OnPrimaryAction();
                 }
                 return;
             }
@@ -438,7 +397,21 @@ public partial class TileControl : UserControl
             UnpinSeparator.Visibility = Visibility.Collapsed;
             GroupMenuItem.Visibility = Visibility.Collapsed;
 
-            if (tile.TileContent is Widgets.Catalog.Clock.ClockWidgetViewModel clockVm)
+            if (tile.TileContent is IWidgetContextMenuProvider menuProvider)
+            {
+                var customItems = menuProvider.GetContextMenuItems()?.ToList();
+                if (customItems != null && customItems.Count > 0)
+                {
+                    int insertIdx = 1;
+                    foreach (var item in customItems)
+                    {
+                        item.Tag = "WidgetCustomMenu";
+                        TileContextMenu.Items.Insert(insertIdx++, item);
+                    }
+                    TileContextMenu.Items.Insert(insertIdx, new Separator { Tag = "WidgetCustomMenu" });
+                }
+            }
+            else if (tile.TileContent is Widgets.Catalog.Clock.ClockWidgetViewModel clockVm)
             {
                 // 1. Time Format Submenu
                 var timeFormatItem = new MenuItem
@@ -556,34 +529,6 @@ public partial class TileControl : UserControl
                 TileContextMenu.Items.Insert(2, fontItem);
                 TileContextMenu.Items.Insert(3, clockDivider);
             }
-            else if (tile.TileContent is Widgets.Catalog.Calendar.CalendarWidgetViewModel calVm && calVm.IsFullSize)
-            {
-                // Only the 8x6 month grid has a month to jump back to; the 4x4 date card
-                // is always showing today, so this action is omitted there.
-                var todayItem = new MenuItem
-                {
-                    Header = "Go to Today",
-                    Tag = "WidgetCustomMenu",
-                    Icon = new Wpf.Ui.Controls.SymbolIcon
-                    {
-                        Symbol = Wpf.Ui.Controls.SymbolRegular.CalendarToday24,
-                        FontSize = 20,
-                        Foreground = MenuIconForegroundBrush
-                    }
-                };
-                todayItem.Click += (s, ev) => calVm.ResetToToday();
-
-                var calDivider = new Separator { Tag = "WidgetCustomMenu" };
-
-                // Universal Widget Hierarchy:
-                // Index 0: Resize
-                // Index 1: Go to Today
-                // Index 2: Separator
-                // Then: AddToGroupMenuItem, UnpinMenuItem (GroupMenuItem & UnpinSeparator collapsed)
-                TileContextMenu.Items.Insert(1, todayItem);
-                TileContextMenu.Items.Insert(2, calDivider);
-            }
-
             else if (tile.TileContent is Widgets.Catalog.Pomodoro.PomodoroWidgetViewModel pomodoroVm)
             {
                 var presetItem = new MenuItem
