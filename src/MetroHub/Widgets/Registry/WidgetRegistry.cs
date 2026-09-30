@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MetroHub.Core.Models;
-using MetroHub.Widgets.Catalog.Stub;
+using MetroHub.Widgets.Catalog.Template;
 using Wpf.Ui.Controls;
 
 namespace MetroHub.Widgets.Registry;
@@ -20,23 +20,22 @@ public static class WidgetRegistry
 
     static WidgetRegistry()
     {
-        // Register standard Stub widget
+        // Register standard Template boilerplate widget
         Register(new WidgetDefinition(
-            Id: "stub",
-            DisplayName: "Blank Widget",
-            Description: "Generic widget card placeholder",
-            Icon: SymbolRegular.Square24,
+            Id: "template",
+            DisplayName: "Template Widget",
+            Description: "Official developer boilerplate starter template",
+            Icon: SymbolRegular.Cube24,
             AllowedSizes: new[]
             {
                 WidgetSize.Small,
                 WidgetSize.Medium,
                 WidgetSize.Wide,
-                WidgetSize.Tall,
-                WidgetSize.Large,
-                WidgetSize.Banner
+                WidgetSize.Large
             },
-            ViewModelType: typeof(StubWidgetViewModel),
-            Factory: model => new StubWidgetViewModel(model),
+            ViewModelType: typeof(TemplateWidgetViewModel),
+            ViewType: typeof(TemplateWidgetView),
+            Factory: model => new TemplateWidgetViewModel(model),
             Category: "Lifestyle"
         ));
 
@@ -444,12 +443,17 @@ public static class WidgetRegistry
             tile.TargetPath = "caffeine_sleep";
             widgetId = "caffeine_sleep";
         }
+        if (string.Equals(widgetId, "stub", StringComparison.OrdinalIgnoreCase))
+        {
+            tile.TargetPath = "template";
+            widgetId = "template";
+        }
         if (TryGet(widgetId, out var def) && def != null)
         {
             return MetroHub.Core.Services.Safe.Try<IWidgetViewModel?>(() => def.CreateViewModel(tile), fallback: null, context: $"WidgetRegistry.CreateViewModelForTile({widgetId})")
-                   ?? new StubWidgetViewModel(tile) { Label = $"Widget Error: {def.DisplayName}", BoxColor = "#DC2626" };
+                   ?? new TemplateWidgetViewModel(tile) { Label = $"Widget Error: {def.DisplayName}", BoxColor = "#DC2626" };
         }
 
-        return new StubWidgetViewModel(tile);
+        return new TemplateWidgetViewModel(tile);
     }
 }

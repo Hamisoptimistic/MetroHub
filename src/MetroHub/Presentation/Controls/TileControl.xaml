@@ -7,7 +7,6 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:models="clr-namespace:MetroHub.Core.Models"
              xmlns:widgets="clr-namespace:MetroHub.Widgets"
-             xmlns:stub="clr-namespace:MetroHub.Widgets.Catalog.Stub"
              mc:Ignorable="d"
              Margin="0"
              Focusable="False"
@@ -81,47 +80,6 @@
                                MaxWidth="232" />
                 </Grid>
             </Grid>
-        </DataTemplate>
-
-        <!-- 2. Stub Widget DataTemplate (Wraps interior in shared WidgetCard shell) -->
-        <DataTemplate DataType="{x:Type stub:StubWidgetViewModel}">
-            <widgets:WidgetCard>
-                <!-- Minimal Stub Widget: Just a colored box with a label and interactive setting test -->
-                <Border Background="{Binding BoxColor, Converter={StaticResource StringToBrushConverter}}"
-                        CornerRadius="{DynamicResource ControlCornerRadius}"
-                        Margin="1"
-                        Padding="8"
-                        >
-                    <Grid>
-                        <!-- Label and settings display -->
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <TextBlock Text="{Binding Label}"
-                                       HorizontalAlignment="Center"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                       FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       />
-                            <TextBlock Text="{Binding SettingsSummary}"
-                                       HorizontalAlignment="Center"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                       FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Margin="0,3,0,0"
-                                       />
-                            <TextBlock Text="Click to cycle color"
-                                       HorizontalAlignment="Center"
-                                       Foreground="{DynamicResource TextMutedBrush}"
-                                       FontFamily="{DynamicResource AppFontFamily}"
-                                       FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Margin="0,4,0,0"
-                                       />
-                        </StackPanel>
-                    </Grid>
-                </Border>
-            </widgets:WidgetCard>
         </DataTemplate>
     </UserControl.Resources>
 

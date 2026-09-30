@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 using MetroHub.Widgets;
-using MetroHub.Widgets.Catalog.Stub;
+using MetroHub.Widgets.Catalog.Template;
 using MetroHub.Widgets.Messaging;
 using MetroHub.Widgets.Registry;
 using Wpf.Ui.Controls;
@@ -88,7 +88,7 @@ public sealed partial class WidgetFaultIsolationTests
                 Description: "Throws during creation",
                 Icon: SymbolRegular.Warning24,
                 AllowedSizes: new[] { WidgetSize.Medium },
-                ViewModelType: typeof(StubWidgetViewModel),
+                ViewModelType: typeof(TemplateWidgetViewModel),
                 Factory: _ => throw new DllNotFoundException("Missing simulated native hardware library")
             );
 
@@ -97,10 +97,10 @@ public sealed partial class WidgetFaultIsolationTests
             var vm = def.CreateViewModel(tile);
 
             Assert.NotNull(vm);
-            Assert.IsType<StubWidgetViewModel>(vm);
-            var stub = (StubWidgetViewModel)vm;
-            Assert.Contains("Crashing Test Widget", stub.Label);
-            Assert.Equal("#DC2626", stub.BoxColor);
+            Assert.IsType<TemplateWidgetViewModel>(vm);
+            var template = (TemplateWidgetViewModel)vm;
+            Assert.Contains("Crashing Test Widget", template.Label);
+            Assert.Equal("#DC2626", template.BoxColor);
         });
     }
 

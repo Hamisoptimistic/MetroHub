@@ -116,11 +116,6 @@ public class WidgetLifecycleContractTests
                     Assert.NotNull(template.VisualTree);
                     Assert.Equal(def.ViewType, template.VisualTree.Type);
                 }
-                else
-                {
-                    // Stub widget has no ViewType, must return null to fall back to ambient resource template
-                    Assert.Null(template);
-                }
             }
 
             // Normal app tile must return null to fall back to ambient TileModel template
@@ -131,7 +126,7 @@ public class WidgetLifecycleContractTests
 
     [Theory]
     [InlineData(typeof(MetroHub.Widgets.Catalog.Clock.ClockWidgetViewModel))]
-    [InlineData(typeof(MetroHub.Widgets.Catalog.Stub.StubWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Template.TemplateWidgetViewModel))]
     [InlineData(typeof(MetroHub.Widgets.Catalog.Photos.PhotosWidgetViewModel))]
     [InlineData(typeof(MetroHub.Widgets.Catalog.Weather.WeatherWidgetViewModel))]
     [InlineData(typeof(MetroHub.Widgets.Catalog.Quotes.QuotesWidgetViewModel))]
@@ -183,6 +178,7 @@ public class WidgetLifecycleContractTests
     [InlineData(typeof(MetroHub.Widgets.Catalog.Habit.HabitWidgetViewModel))]
     [InlineData(typeof(MetroHub.Widgets.Catalog.Dino.DinoWidgetViewModel))]
     [InlineData(typeof(MetroHub.Widgets.Catalog.Rover.RoverWidgetViewModel))]
+    [InlineData(typeof(MetroHub.Widgets.Catalog.Template.TemplateWidgetViewModel))]
     public void ContextMenuWidgets_ImplementWidgetContextMenuProvider(Type vmType)
     {
         Assert.True(typeof(IWidgetContextMenuProvider).IsAssignableFrom(vmType),

@@ -55,7 +55,7 @@ public record WidgetDefinition(
                 throw;
             }
         }, fallback: null, context: $"WidgetDefinition.CreateViewModel({Id})")
-        ?? new MetroHub.Widgets.Catalog.Stub.StubWidgetViewModel(model)
+        ?? new MetroHub.Widgets.Catalog.Template.TemplateWidgetViewModel(model)
         {
             Label = $"Widget Error: {DisplayName}",
             BoxColor = "#DC2626"

@@ -3,7 +3,7 @@ using MetroHub.Widgets.Catalog.Clock;
 using MetroHub.Widgets.Catalog.Media;
 using MetroHub.Widgets.Catalog.Photos;
 using MetroHub.Widgets.Catalog.Pomodoro;
-using MetroHub.Widgets.Catalog.Stub;
+using MetroHub.Widgets.Catalog.Template;
 
 namespace MetroHub.Widgets.Serialization;
 
@@ -16,7 +16,7 @@ namespace MetroHub.Widgets.Serialization;
     WriteIndented = false,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
-[JsonSerializable(typeof(StubWidgetSettings))]
+[JsonSerializable(typeof(TemplateWidgetSettings))]
 [JsonSerializable(typeof(ClockWidgetSettings))]
 [JsonSerializable(typeof(MediaWidgetSettings))]
 [JsonSerializable(typeof(PomodoroWidgetSettings))]

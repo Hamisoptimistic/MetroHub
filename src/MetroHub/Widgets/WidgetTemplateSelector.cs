@@ -34,7 +34,7 @@ public class WidgetTemplateSelector : DataTemplateSelector
             }
         }
 
-        // Return null to fall back to ambient resource DataTemplate lookup (e.g. TileModel or StubWidgetViewModel)
+        // Return null to fall back to ambient resource DataTemplate lookup (e.g. TileModel for app shortcuts)
         return null;
     }
 }

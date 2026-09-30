@@ -11,7 +11,7 @@ using MetroHub.Widgets.Catalog.Notepad;
 using MetroHub.Widgets.Catalog.Photos;
 using MetroHub.Widgets.Catalog.Quotes;
 using MetroHub.Widgets.Catalog.Rover;
-using MetroHub.Widgets.Catalog.Stub;
+using MetroHub.Widgets.Catalog.Template;
 using MetroHub.Widgets.Messaging;
 using Xunit;
 
@@ -175,12 +175,12 @@ public class PersistenceAndDecouplingTests
                 Assert.NotNull(clockModel.SettingsJson);
             }
 
-            // 2. Stub
-            var stubModel = new TileModel { Id = "test_stub", TargetPath = "stub" };
-            using (var stub = new StubWidgetViewModel(stubModel))
+            // 2. Template
+            var templateModel = new TileModel { Id = "test_template", TargetPath = "template" };
+            using (var template = new TemplateWidgetViewModel(templateModel))
             {
-                stub.SaveSettings();
-                Assert.NotNull(stubModel.SettingsJson);
+                template.SaveSettings();
+                Assert.NotNull(templateModel.SettingsJson);
             }
 
             // 3. Quotes

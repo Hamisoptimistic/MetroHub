@@ -1,0 +1,103 @@
+<UserControl x:Class="MetroHub.Widgets.Catalog.Template.TemplateWidgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:widgets="clr-namespace:MetroHub.Widgets"
+             xmlns:template="clr-namespace:MetroHub.Widgets.Catalog.Template"
+             xmlns:conv="clr-namespace:MetroHub.Presentation.Converters"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=template:TemplateWidgetViewModel}"
+             Focusable="False">
+    
+    <!--
+      OFFICIAL BOILERPLATE TEMPLATE: Copy this file for your new widget's UI!
+      
+      Note on Styles & Tokens:
+      Tokens (TypeHeader, TextPrimaryBrush, etc.) and Styles (WidgetMicroButtonStyle, ToggleSwitch)
+      are merged globally in App.xaml. You can use them directly without importing any ResourceDictionaries!
+    -->
+    <UserControl.Resources>
+        <!-- Demonstrates declaring a local value converter for this widget -->
+        <conv:StringToBrushConverter x:Key="StringToBrushConverter" />
+    </UserControl.Resources>
+
+    <widgets:WidgetCard Padding="14,12,14,12">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- 1. Header Bar: Icon + Title with Tokenized Typography -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <ui:SymbolIcon Symbol="Cube24"
+                               FontSize="18"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0" />
+
+                <TextBlock Grid.Column="1"
+                           Text="{Binding Label}"
+                           FontSize="{DynamicResource TypeHeader}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" />
+
+                <!-- Action button using the universal micro button style -->
+                <Button Grid.Column="2"
+                        Style="{StaticResource WidgetMicroButtonStyle}"
+                        Command="{Binding CycleColorCommand}"
+                        ToolTip="Cycle Theme Color">
+                    <ui:SymbolIcon Symbol="ArrowSync24" FontSize="14" />
+                </Button>
+            </Grid>
+
+            <!-- 2. Main Body Content: Interactive colored card -->
+            <Border Grid.Row="1"
+                    Margin="0,10,0,10"
+                    CornerRadius="{DynamicResource ControlCornerRadius}"
+                    Background="{Binding BoxColor, Converter={StaticResource StringToBrushConverter}}"
+                    Padding="12">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <TextBlock Text="{Binding Counter, StringFormat='Clicks: {0}'}"
+                               HorizontalAlignment="Center"
+                               FontSize="{DynamicResource TypeSubtitle}"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Click tile to interact"
+                               HorizontalAlignment="Center"
+                               FontSize="{DynamicResource TypeCaption}"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,2,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- 3. Hairline Divider -->
+            <Border Grid.Row="2"
+                    Height="1"
+                    Background="{DynamicResource WidgetDividerBrush}"
+                    Margin="0,0,0,8" />
+
+            <!-- 4. Footer: Toggle Switch Example -->
+            <DockPanel Grid.Row="3" LastChildFill="False">
+                <TextBlock Text="Active Mode"
+                           VerticalAlignment="Center"
+                           FontSize="{DynamicResource TypeBody}"
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                <ui:ToggleSwitch DockPanel.Dock="Right"
+                                 IsChecked="{Binding IsFeatureEnabled, Mode=TwoWay}" />
+            </DockPanel>
+        </Grid>
+    </widgets:WidgetCard>
+</UserControl>
