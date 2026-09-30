@@ -16,11 +16,9 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Dubya.WindowsMediaController" Version="2.5.6" />
-    <PackageReference Include="gong-wpf-dragdrop" Version="4.0.0" />
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
     <PackageReference Include="MdXaml" Version="1.27.0" />
     <PackageReference Include="ManagedBass" Version="4.1.0-prerelease" />
-    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.158" />
     <PackageReference Include="System.Management" Version="9.0.0" />
     <PackageReference Include="WPF-UI" Version="3.1.1" />
   </ItemGroup>
@@ -40,10 +38,6 @@
     <Resource Include="Assets\Fonts\**\*.ttf" />
     <None Remove="Assets\*.png" />
     <Resource Include="Assets\*.png" />
-    <None Remove="Assets\Weather\*.png" />
-    <Resource Include="Assets\Weather\*.png" />
-    <None Remove="Assets\Weather\Meteocons\*.png" />
-    <Resource Include="Assets\Weather\Meteocons\*.png" />
     <None Remove="Assets\Weather\Glassmorphic\*.png" />
     <Resource Include="Assets\Weather\Glassmorphic\*.png" />
     <None Remove="Assets\quotes.json" />

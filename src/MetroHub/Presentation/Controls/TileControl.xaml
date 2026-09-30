@@ -27,7 +27,6 @@
              xmlns:rover="clr-namespace:MetroHub.Widgets.Catalog.Rover"
              xmlns:radio="clr-namespace:MetroHub.Widgets.Catalog.Radio"
              xmlns:markdown="clr-namespace:MetroHub.Widgets.Catalog.Markdown"
-             xmlns:behaviors="clr-namespace:MetroHub.Widgets.Behaviors"
              mc:Ignorable="d"
              Margin="0"
              Focusable="False"
