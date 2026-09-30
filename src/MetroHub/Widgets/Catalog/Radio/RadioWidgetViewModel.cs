@@ -249,7 +249,7 @@ public sealed partial class RadioWidgetViewModel : WidgetViewModelBase
             var owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
                         ?? Application.Current?.MainWindow;
 
-            var newStation = AcrylicModalWindow.ShowAddRadioStation(owner, SelectedCategoryId);
+            var newStation = MetroHub.Presentation.Controls.RadioStationDialog.Show(owner, SelectedCategoryId);
             if (newStation != null)
             {
                 await _audioService.PlayStationAsync(newStation);

@@ -428,3 +428,16 @@ public partial class WebLinkDialog : FluentWindow
         return dlg.ShowDialog() == true ? dlg.WebLinkResult : null;
     }
 }
+
+/// <summary>
+/// Event arguments capturing user choices when creating a web link shortcut.
+/// </summary>
+public sealed class WebLinkCreatedEventArgs : EventArgs
+{
+    public string Url { get; init; } = string.Empty;
+    public string Title { get; init; } = string.Empty;
+    public string? IconPath { get; init; }
+    public bool AddToCanvas { get; init; }
+    public bool AddToSidebar { get; init; }
+}
+

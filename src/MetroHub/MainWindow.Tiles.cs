@@ -235,7 +235,7 @@ public partial class MainWindow
 
         using (EnterDialogScope())
         {
-            AcrylicModalWindow.ShowWeatherLocation(this, weatherVm);
+            Presentation.Controls.WeatherLocationDialog.Show(this, weatherVm);
         }
     }
 
@@ -243,7 +243,7 @@ public partial class MainWindow
     {
         using (EnterDialogScope())
         {
-            var result = AcrylicModalWindow.ShowAddWebLink(this, initialUrl);
+            var result = Presentation.Controls.WebLinkDialog.Show(this, initialUrl);
             if (result != null)
             {
                 OnWebLinkCreated(this, result);
