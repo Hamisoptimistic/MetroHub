@@ -1081,6 +1081,7 @@ public partial class MainWindow : BorderlessFluentWindow
         {
             CleanupEventSubscriptions();
             Safe.Try(StorageService.Flush, "MainWindow.OnClosing.StorageFlush");
+            Safe.Try(InstalledAppsService.Shutdown, "MainWindow.OnClosing.InstalledAppsServiceShutdown");
             UninstallWinEventHook();
             UninstallKeyboardHook();
             _hotkeyService.Dispose();
@@ -1104,7 +1105,7 @@ public partial class MainWindow : BorderlessFluentWindow
         }, "MainWindow.ExitApplication.TeardownTiles");
 
         CleanupEventSubscriptions();
-        InstalledAppsService.PauseWatchers();
+        Safe.Try(InstalledAppsService.Shutdown, "MainWindow.ExitApplication.InstalledAppsServiceShutdown");
         UninstallWinEventHook();
         UninstallKeyboardHook();
         _hotkeyService.Dispose();

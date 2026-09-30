@@ -70,7 +70,10 @@ public static class InstalledAppsService
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log("InstalledAppsService.InitStartMenuWatchers", ex);
+        }
     }
 
     /// <summary>
@@ -86,7 +89,8 @@ public static class InstalledAppsService
 
         foreach (var w in _watchers)
         {
-            try { w.EnableRaisingEvents = false; } catch { }
+            try { w.EnableRaisingEvents = false; }
+            catch (Exception ex) { Safe.Log("InstalledAppsService.PauseWatchers", ex); }
         }
     }
 
@@ -97,8 +101,38 @@ public static class InstalledAppsService
     {
         foreach (var w in _watchers)
         {
-            try { w.EnableRaisingEvents = true; } catch { }
+            try { w.EnableRaisingEvents = true; }
+            catch (Exception ex) { Safe.Log("InstalledAppsService.ResumeWatchers", ex); }
         }
+    }
+
+    /// <summary>
+    /// Cleanly disposes all FileSystemWatcher instances and debounce timers on application shutdown.
+    /// </summary>
+    public static void Shutdown()
+    {
+        lock (_lock)
+        {
+            _debounceTimer?.Dispose();
+            _debounceTimer = null;
+        }
+
+        foreach (var w in _watchers)
+        {
+            try
+            {
+                w.EnableRaisingEvents = false;
+                w.Created -= OnStartMenuFolderChanged;
+                w.Deleted -= OnStartMenuFolderChanged;
+                w.Renamed -= OnStartMenuFolderChanged;
+                w.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Safe.Log("InstalledAppsService.Shutdown", ex);
+            }
+        }
+        _watchers.Clear();
     }
 
     private static void OnStartMenuFolderChanged(object sender, FileSystemEventArgs e)
@@ -122,6 +156,9 @@ public static class InstalledAppsService
 
     public static List<CatalogItemModel> GetInstalledApps(bool forceRefresh = false)
     {
+        List<CatalogItemModel> result;
+        List<CatalogItemModel>? appsToNotify = null;
+
         lock (_lock)
         {
             // 1. If not forcing refresh, return in-memory cache if available
@@ -162,7 +199,10 @@ public static class InstalledAppsService
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log("InstalledAppsService.IndexStartMenuShortcuts", ex);
+            }
 
             try
             {
@@ -220,14 +260,20 @@ public static class InstalledAppsService
                                         }
                                     }
                                 }
-                                catch { }
+                                catch (Exception ex)
+                                {
+                                    Safe.Log("InstalledAppsService.ProcessShellItem", ex);
+                                }
                             }
                         }
                         Marshal.FinalReleaseComObject(shell);
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log("InstalledAppsService.EnumerateAppsFolder", ex);
+            }
 
             var freshApps = appMap.Values
                 .OrderBy(a => a.Name, StringComparer.CurrentCultureIgnoreCase)
@@ -255,30 +301,39 @@ public static class InstalledAppsService
 
             if (hasChanged)
             {
-                AppsCatalogChanged?.Invoke(_cachedApps);
+                appsToNotify = _cachedApps;
             }
 
-            return _cachedApps;
+            result = _cachedApps;
         }
+
+        // Fire notification outside the lock to prevent deadlocks
+        if (appsToNotify != null)
+        {
+            AppsCatalogChanged?.Invoke(appsToNotify);
+        }
+
+        return result;
     }
 
     private static bool IsValidApplication(string name, string path)
     {
         if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(path)) return false;
 
-        string nameLower = name.ToLowerInvariant();
-        string pathLower = path.ToLowerInvariant();
-
         // Filter out junk keywords
         foreach (var keyword in ExcludedKeywords)
         {
-            if (nameLower.Contains(keyword) || pathLower.Contains(keyword)) return false;
+            if (name.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                path.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
         }
 
         // Filter out documentation and web links
         foreach (var ext in ExcludedExtensions)
         {
-            if (pathLower.EndsWith(ext, StringComparison.Ordinal)) return false;
+            if (path.EndsWith(ext, StringComparison.OrdinalIgnoreCase)) return false;
         }
 
         // Filter out folders/directories
