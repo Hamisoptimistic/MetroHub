@@ -26,6 +26,15 @@ public partial class App : Application
     {
         try
         {
+            if (exception is Exception ex)
+            {
+                Serilog.Log.Fatal(ex, "Fatal crash in [{Source}]", source);
+            }
+            else
+            {
+                Serilog.Log.Fatal("Fatal crash in [{Source}]: {Exception}", source, exception);
+            }
+
             string crashLog = AppPaths.CrashLogPath;
             AppPaths.EnsureDirectory(crashLog);
 
@@ -40,9 +49,9 @@ public partial class App : Application
             string entry = $"[{System.DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [{source}]{System.Environment.NewLine}{exception ?? "Unknown unhandled exception"}{System.Environment.NewLine}{System.Environment.NewLine}";
             File.AppendAllText(crashLog, entry);
 
-            if (exception is Exception ex)
+            if (exception is Exception exObj)
             {
-                Safe.Log(source, ex);
+                Safe.Log(source, exObj);
             }
         }
         catch
@@ -72,6 +81,9 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Initialize centralized Serilog logging pipeline
+        LoggingService.Initialize();
+
         // Register native BASS audio engine dynamic library resolver
         MetroHub.Core.Radio.BassLoader.Register();
 
@@ -216,6 +228,7 @@ public partial class App : Application
     {
         Safe.Try(() => _mainWindow?.SaveGroupsAndLayout(), "App.OnSessionEnding.SaveGroupsAndLayout");
         Safe.Try(StorageService.Flush, "App.OnSessionEnding.StorageFlush");
+        LoggingService.Shutdown();
 
         base.OnSessionEnding(e);
     }
@@ -256,6 +269,8 @@ public partial class App : Application
             _singleInstanceMutex.Dispose();
             _singleInstanceMutex = null;
         }
+
+        LoggingService.Shutdown();
 
         base.OnExit(e);
     }
