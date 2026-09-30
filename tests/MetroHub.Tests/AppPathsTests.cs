@@ -126,4 +126,11 @@ public sealed class AppPathsTests : IDisposable
         Assert.StartsWith(AppPaths.AppDataDir, AppPaths.LogsDir, StringComparison.OrdinalIgnoreCase);
         Assert.StartsWith(AppPaths.AppDataDir, AppPaths.BackupsDir, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void HiddenDiagnosticsLogPath_ResolvesUnderLogsDir_ForCleanState()
+    {
+        Assert.StartsWith(AppPaths.LogsDir, AppPaths.HiddenDiagnosticsLogPath, StringComparison.OrdinalIgnoreCase);
+        Assert.EndsWith("hidden_diagnostics.log", AppPaths.HiddenDiagnosticsLogPath, StringComparison.OrdinalIgnoreCase);
+    }
 }

@@ -6,7 +6,7 @@ using System.Text;
 namespace MetroHub.Core.Services;
 
 /// <summary>
-/// Comprehensive diagnostic logger that writes to d:\MetroHub\hidden_diagnostics.log.
+/// Comprehensive diagnostic logger that writes to %LOCALAPPDATA%\MetroHub\logs\hidden_diagnostics.log.
 /// Tracks every aspect of memory: Managed Heap, Generations (0/1/2/LOH/POH), Fragmentation,
 /// Private Committed Bytes, Working Set, Virtual Memory, GDI handles, USER handles, and Kernel handles.
 /// </summary>
@@ -14,7 +14,7 @@ public static class HiddenDiagnosticsLogger
 {
     public static bool IsEnabled { get; set; } = true;
 
-    private static string _logFilePath = @"d:\MetroHub\logs\hidden_diagnostics.log";
+    private static string _logFilePath = AppPaths.HiddenDiagnosticsLogPath;
     private static readonly object _lock = new();
     private static volatile bool _isHubHidden = false;
 
@@ -24,20 +24,23 @@ public static class HiddenDiagnosticsLogger
     {
         try
         {
-            string dir = Path.GetDirectoryName(_logFilePath) ?? string.Empty;
-            if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir))
-            {
-                _logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "hidden_diagnostics.log");
-            }
-            string? targetDir = Path.GetDirectoryName(_logFilePath);
-            if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir))
-            {
-                Directory.CreateDirectory(targetDir);
-            }
+            AppPaths.EnsureDirectory(_logFilePath);
         }
         catch
         {
-            _logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "hidden_diagnostics.log");
+            try
+            {
+                _logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs", "hidden_diagnostics.log");
+                string? targetDir = Path.GetDirectoryName(_logFilePath);
+                if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir))
+                {
+                    Directory.CreateDirectory(targetDir);
+                }
+            }
+            catch
+            {
+                // Diagnostics must never fail
+            }
         }
     }
 
