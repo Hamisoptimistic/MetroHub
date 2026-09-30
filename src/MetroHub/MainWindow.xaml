@@ -667,7 +667,9 @@
                                            HorizontalAlignment="Left"
                                            VerticalAlignment="Stretch"
                                            AppPinRequested="OnDrawerAppPinRequested"
+                                           AppUnpinRequested="OnDrawerAppUnpinRequested"
                                            AppLaunchRequested="OnDrawerAppLaunchRequested"
+                                           ShellHideRequested="OnDrawerShellHideRequested"
                                            Opened="OnDrawerOpened"
                                            Closing="OnDrawerClosing"
                                            Closed="OnDrawerClosed" />

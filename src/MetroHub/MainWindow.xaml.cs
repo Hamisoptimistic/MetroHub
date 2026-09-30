@@ -215,6 +215,7 @@ public partial class MainWindow : BorderlessFluentWindow
         if (AllAppsDrawer != null)
         {
             AllAppsDrawer.RefreshRequested += (s, e) => TriggerBackgroundAppsCatalogRefresh();
+            AllAppsDrawer.IsAppPinnedPredicate = IsCatalogItemPinned;
         }
 
         Activated += OnWindowActivated;

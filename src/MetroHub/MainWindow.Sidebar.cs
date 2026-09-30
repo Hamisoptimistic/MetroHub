@@ -306,6 +306,33 @@ public partial class MainWindow
         PinCatalogItem(item, null);
     }
 
+    private void OnDrawerAppUnpinRequested(object? sender, CatalogItemModel item)
+    {
+        if (item == null) return;
+        var matched = Tiles.Where(tile =>
+            (!string.IsNullOrEmpty(item.TargetPath) && string.Equals(tile.TargetPath, item.TargetPath, StringComparison.OrdinalIgnoreCase)) ||
+            (!string.IsNullOrEmpty(item.Name) && string.Equals(tile.Title, item.Name, StringComparison.OrdinalIgnoreCase))
+        ).ToList();
+
+        if (matched.Count > 0)
+        {
+            BatchUnpinTiles(matched);
+        }
+    }
+
+    private void OnDrawerShellHideRequested(object? sender, EventArgs e)
+    {
+        HideScreen(restorePreviousFocus: false);
+    }
+
+    private bool IsCatalogItemPinned(CatalogItemModel item)
+    {
+        if (item == null) return false;
+        return Tiles.Any(tile =>
+            (!string.IsNullOrEmpty(item.TargetPath) && string.Equals(tile.TargetPath, item.TargetPath, StringComparison.OrdinalIgnoreCase)) ||
+            (!string.IsNullOrEmpty(item.Name) && string.Equals(tile.Title, item.Name, StringComparison.OrdinalIgnoreCase)));
+    }
+
     private void OnDrawerAppLaunchRequested(object? sender, CatalogItemModel item)
     {
         try
@@ -317,7 +344,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[MainWindow] Failed to launch app: {ex.Message}");
+            Safe.Log("MainWindow.OnDrawerAppLaunchRequested", ex);
         }
     }
 

@@ -23,11 +23,15 @@ namespace MetroHub.Presentation.Controls
     public partial class AllAppsDrawerControl : UserControl
     {
         public event EventHandler<CatalogItemModel>? AppPinRequested;
+        public event EventHandler<CatalogItemModel>? AppUnpinRequested;
         public event EventHandler<CatalogItemModel>? AppLaunchRequested;
+        public event EventHandler? ShellHideRequested;
         public event EventHandler? Opened;
         public event EventHandler? Closing;
         public event EventHandler? Closed;
         public event EventHandler? RefreshRequested;
+
+        public Func<CatalogItemModel, bool>? IsAppPinnedPredicate { get; set; }
 
         public bool IsOpen { get; private set; } = false;
 
@@ -229,7 +233,7 @@ namespace MetroHub.Presentation.Controls
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[AllAppsDrawer] Error loading apps: {ex.Message}");
+                Safe.Log("AllAppsDrawer.LoadApps", ex);
             }
         }
 
@@ -680,7 +684,7 @@ namespace MetroHub.Presentation.Controls
             var pinItem = FindPinMenuItem(menu);
             if (pinItem == null) return;
 
-            bool isPinned = IsAppPinned(item, out _);
+            bool isPinned = IsAppPinned(item);
             if (isPinned)
             {
                 pinItem.Header = "Unpin from Start";
@@ -703,26 +707,10 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
-        private static bool IsAppPinned(CatalogItemModel item, out List<TileModel> matchedTiles)
+        private bool IsAppPinned(CatalogItemModel? item)
         {
-            matchedTiles = new List<TileModel>();
-            var current = MainWindow.Current;
-            if (current == null || item == null) return false;
-
-            foreach (var tile in current.Tiles)
-            {
-                bool targetMatch = !string.IsNullOrEmpty(item.TargetPath) &&
-                    string.Equals(tile.TargetPath, item.TargetPath, StringComparison.OrdinalIgnoreCase);
-                bool nameMatch = !string.IsNullOrEmpty(item.Name) &&
-                    string.Equals(tile.Title, item.Name, StringComparison.OrdinalIgnoreCase);
-
-                if (targetMatch || nameMatch)
-                {
-                    matchedTiles.Add(tile);
-                }
-            }
-
-            return matchedTiles.Count > 0;
+            if (item == null) return false;
+            return IsAppPinnedPredicate?.Invoke(item) ?? false;
         }
 
         private CatalogItemModel? GetCatalogItemFromMenu(object? sender)
@@ -754,7 +742,7 @@ namespace MetroHub.Presentation.Controls
             {
                 AppLaunchRequested?.Invoke(this, item);
                 Close();
-                MainWindow.Current?.HideScreen(restorePreviousFocus: false);
+                ShellHideRequested?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -786,11 +774,11 @@ namespace MetroHub.Presentation.Controls
 
                 // Close drawer and hide MetroHub on successful launch so elevated prompt and window come forward
                 Close();
-                MainWindow.Current?.HideScreen(restorePreviousFocus: false);
+                ShellHideRequested?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[AllAppsDrawer] Run as admin failed: {ex.Message}");
+                Safe.Log("AllAppsDrawer.RunAsAdmin", ex);
             }
         }
 
@@ -804,9 +792,9 @@ namespace MetroHub.Presentation.Controls
             var item = _activeContextMenuItem ?? GetCatalogItemFromMenu(sender);
             if (item == null) return;
 
-            if (IsAppPinned(item, out var matchedTiles))
+            if (IsAppPinned(item))
             {
-                MainWindow.Current?.BatchUnpinTiles(matchedTiles);
+                AppUnpinRequested?.Invoke(this, item);
             }
             else
             {

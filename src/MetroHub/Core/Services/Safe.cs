@@ -113,6 +113,14 @@ public static class Safe
         }
     }
 
+    /// <summary>
+    /// Explicitly logs an exception with context via the configured Safe logger.
+    /// </summary>
+    public static void Log(string context, Exception ex)
+    {
+        LogFailure(ex, context);
+    }
+
     private static void LogFailure(Exception ex, string context)
     {
         try
