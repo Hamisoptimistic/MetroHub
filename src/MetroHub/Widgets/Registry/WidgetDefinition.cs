@@ -26,15 +26,23 @@ public record WidgetDefinition(
 
     public IWidgetViewModel CreateViewModel(TileModel model)
     {
-        if (Factory != null)
+        return MetroHub.Core.Services.Safe.Try<IWidgetViewModel?>(() =>
         {
-            var vm = Factory(model);
-            vm.Initialize(model);
-            return vm;
-        }
+            if (Factory != null)
+            {
+                var vm = Factory(model);
+                vm.Initialize(model);
+                return vm;
+            }
 
-        var instance = (IWidgetViewModel)Activator.CreateInstance(ViewModelType, model)!;
-        instance.Initialize(model);
-        return instance;
+            var instance = (IWidgetViewModel)Activator.CreateInstance(ViewModelType, model)!;
+            instance.Initialize(model);
+            return instance;
+        }, fallback: null, context: $"WidgetDefinition.CreateViewModel({Id})")
+        ?? new MetroHub.Widgets.Catalog.Stub.StubWidgetViewModel(model)
+        {
+            Label = $"Widget Error: {DisplayName}",
+            BoxColor = "#DC2626"
+        };
     }
 }

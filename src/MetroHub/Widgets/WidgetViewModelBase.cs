@@ -31,7 +31,7 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
     {
         Model = model;
         IsActive = true;
-        LoadSettings(model.SettingsJson);
+        Safe.Try(() => LoadSettings(model.SettingsJson), context: $"{GetType().Name}.LoadSettings");
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
     {
         if (IsActive && !_disposed)
         {
-            OnSecondTick(utcNow);
+            Safe.Try(() => OnSecondTick(utcNow), context: $"{GetType().Name}.OnSecondTick");
         }
     }
 
@@ -86,11 +86,11 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
     {
         if (message.IsVisible)
         {
-            Resume();
+            Safe.Try(Resume, context: $"{GetType().Name}.Resume");
         }
         else
         {
-            Pause();
+            Safe.Try(Pause, context: $"{GetType().Name}.Pause");
         }
     }
 
@@ -117,7 +117,7 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
         if (disposing)
         {
             WidgetHeartbeatService.SecondTick -= OnSecondTickInternal;
-            Pause();
+            Safe.Try(Pause, context: $"{GetType().Name}.PauseOnDispose");
             IsActive = false; // Deactivates CommunityToolkit messenger subscriptions cleanly
         }
 

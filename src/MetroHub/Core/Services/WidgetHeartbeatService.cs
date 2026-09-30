@@ -50,7 +50,7 @@ public static class WidgetHeartbeatService
         {
             _timer.Start();
             // Immediate pulse on resume so widgets refresh instantly
-            SecondTick?.Invoke(DateTime.UtcNow);
+            SafeInvokeTick(DateTime.UtcNow);
         }
     }
 
@@ -80,12 +80,30 @@ public static class WidgetHeartbeatService
     /// </summary>
     public static void Pulse(DateTime? time = null)
     {
-        SecondTick?.Invoke(time ?? DateTime.UtcNow);
+        SafeInvokeTick(time ?? DateTime.UtcNow);
     }
 
     private static void OnTick(object? sender, EventArgs e)
     {
         if (!_isHubVisible) return;
-        SecondTick?.Invoke(DateTime.UtcNow);
+        SafeInvokeTick(DateTime.UtcNow);
+    }
+
+    private static void SafeInvokeTick(DateTime timestamp)
+    {
+        var handler = SecondTick;
+        if (handler == null) return;
+
+        foreach (Action<DateTime> subscriber in handler.GetInvocationList())
+        {
+            try
+            {
+                subscriber(timestamp);
+            }
+            catch (Exception ex)
+            {
+                Safe.Logger(ex, $"WidgetHeartbeatService.SubscriberFault({subscriber.Method.DeclaringType?.Name}.{subscriber.Method.Name})");
+            }
+        }
     }
 }

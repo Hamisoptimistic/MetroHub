@@ -439,7 +439,8 @@ public static class WidgetRegistry
         }
         if (TryGet(widgetId, out var def) && def != null)
         {
-            return def.CreateViewModel(tile);
+            return MetroHub.Core.Services.Safe.Try<IWidgetViewModel?>(() => def.CreateViewModel(tile), fallback: null, context: $"WidgetRegistry.CreateViewModelForTile({widgetId})")
+                   ?? new StubWidgetViewModel(tile) { Label = $"Widget Error: {def.DisplayName}", BoxColor = "#DC2626" };
         }
 
         return new StubWidgetViewModel(tile);
