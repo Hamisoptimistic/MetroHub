@@ -94,10 +94,11 @@ public sealed class WidgetStateStore : IWidgetStateStore
                         File.Replace(tmp, path, bak, ignoreMetadataErrors: true);
                         return;
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        Safe.Logger(ex, $"WidgetStateStore.Write.ReplaceFallback({path})");
                         // Non-NTFS / locked target: fall back to a manual rotate.
-                        try { File.Copy(path, bak, overwrite: true); } catch { }
+                        Safe.Try(() => File.Copy(path, bak, overwrite: true), context: $"WidgetStateStore.Write.CopyBakFallback({path})");
                     }
                 }
 
@@ -105,11 +106,12 @@ public sealed class WidgetStateStore : IWidgetStateStore
             }
             catch (Exception ex)
             {
+                Safe.Logger(ex, $"WidgetStateStore.Write({path})");
                 System.Diagnostics.Debug.WriteLine($"[WidgetStateStore] Write failed for {path}: {ex.Message}");
             }
             finally
             {
-                try { if (File.Exists(tmp)) File.Delete(tmp); } catch { }
+                Safe.Try(() => { if (File.Exists(tmp)) File.Delete(tmp); }, context: $"WidgetStateStore.Write.DeleteTmp({tmp})");
             }
         }
     }
@@ -118,13 +120,13 @@ public sealed class WidgetStateStore : IWidgetStateStore
     {
         foreach (string path in new[] { PathFor(widgetId, tileId), BakFor(widgetId, tileId), PathFor(widgetId, tileId) + ".tmp" })
         {
-            try { if (File.Exists(path)) File.Delete(path); } catch { }
+            Safe.Try(() => { if (File.Exists(path)) File.Delete(path); }, context: $"WidgetStateStore.Delete({path})");
         }
     }
 
     public void PruneExcept(string widgetId, IReadOnlyCollection<string> knownTileIds)
     {
-        try
+        Safe.Try(() =>
         {
             string dir = DirectoryFor(widgetId);
             if (!Directory.Exists(dir)) return;
@@ -135,44 +137,31 @@ public sealed class WidgetStateStore : IWidgetStateStore
                 if (knownTileIds.Contains(stem)) continue;
                 Delete(widgetId, stem);
             }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[WidgetStateStore] Prune failed for '{widgetId}': {ex.Message}");
-        }
+        }, context: $"WidgetStateStore.PruneExcept({widgetId})");
     }
 
     public void PruneAllExcept(IReadOnlyCollection<string> knownTileIds)
     {
-        try
+        Safe.Try(() =>
         {
             if (!Directory.Exists(_rootDir)) return;
             foreach (string dir in Directory.EnumerateDirectories(_rootDir))
             {
                 PruneExcept(Path.GetFileName(dir), knownTileIds);
             }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[WidgetStateStore] Prune failed: {ex.Message}");
-        }
+        }, context: "WidgetStateStore.PruneAllExcept");
     }
 
     private static string? TryReadFile(string path)
     {
-        try
+        return Safe.Try(() =>
         {
             if (!File.Exists(path)) return null;
             var info = new FileInfo(path);
             if (info.Length <= 2) return null; // "{}" or empty — not usable state.
             string text = File.ReadAllText(path, Utf8NoBom);
             return string.IsNullOrWhiteSpace(text) ? null : text;
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[WidgetStateStore] Read failed for {path}: {ex.Message}");
-            return null;
-        }
+        }, fallback: null, context: $"WidgetStateStore.TryReadFile({path})");
     }
 
     private string DirectoryFor(string widgetId)

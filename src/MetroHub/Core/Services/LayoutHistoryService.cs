@@ -54,7 +54,8 @@ public sealed class LayoutHistoryService
     public static LayoutSnapshotModel? ParseSnapshot(string snapshot)
     {
         if (string.IsNullOrWhiteSpace(snapshot)) return null;
-        try
+
+        return Safe.Try(() =>
         {
             if (snapshot.TrimStart().StartsWith('{'))
             {
@@ -63,21 +64,8 @@ public sealed class LayoutHistoryService
             }
 
             var legacy = JsonSerializer.Deserialize<List<TileModel>>(snapshot, JsonOptions);
-            if (legacy != null)
-            {
-                return new LayoutSnapshotModel { Tiles = legacy };
-            }
-        }
-        catch
-        {
-            try
-            {
-                var legacy = JsonSerializer.Deserialize<List<TileModel>>(snapshot, JsonOptions);
-                if (legacy != null) return new LayoutSnapshotModel { Tiles = legacy };
-            }
-            catch { }
-        }
-        return null;
+            return legacy != null ? new LayoutSnapshotModel { Tiles = legacy } : null;
+        }, fallback: null, context: "LayoutHistoryService.ParseSnapshot");
     }
 
     public void PushState(string snapshot)

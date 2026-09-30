@@ -46,14 +46,13 @@ public sealed class StorageService
 
     static StorageService()
     {
-        try
+        Safe.Try(() =>
         {
             if (!Directory.Exists(AppDataDir))
             {
                 Directory.CreateDirectory(AppDataDir);
             }
-        }
-        catch { }
+        }, context: "StorageService.InitDirectory");
     }
 
     // ────────────────────────────────────────────────────────
@@ -90,13 +89,11 @@ public sealed class StorageService
                 //    so a single bad save never destroys the last known-good backup.
                 if (File.Exists(targetPath))
                 {
-                    bool currentTargetIsHealthy = false;
-                    try
+                    bool currentTargetIsHealthy = Safe.Try(() =>
                     {
                         var fi = new FileInfo(targetPath);
-                        currentTargetIsHealthy = fi.Length > 2; // "[]" is 2 bytes; anything > 2 has real content
-                    }
-                    catch { }
+                        return fi.Length > 2; // "[]" is 2 bytes; anything > 2 has real content
+                    }, fallback: false, context: $"StorageService.CheckTargetHealth({targetPath})");
 
                     if (currentTargetIsHealthy)
                     {
@@ -105,10 +102,11 @@ public sealed class StorageService
                             File.Replace(tmpPath, targetPath, bakPath, ignoreMetadataErrors: true);
                             return; // Success — .tmp is consumed by File.Replace
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            Safe.Logger(ex, $"StorageService.SaveAtomic.ReplaceFallback({targetPath})");
                             // Fallback: manual copy + move if ReplaceFile fails (non-NTFS, network drives)
-                            try { File.Copy(targetPath, bakPath, overwrite: true); } catch { }
+                            Safe.Try(() => File.Copy(targetPath, bakPath, overwrite: true), context: $"StorageService.SaveAtomic.CopyBakFallback({targetPath})");
                             File.Move(tmpPath, targetPath, overwrite: true);
                             return;
                         }
@@ -128,25 +126,25 @@ public sealed class StorageService
             }
             catch (Exception ex)
             {
+                Safe.Logger(ex, $"StorageService.SaveAtomic({targetPath})");
                 System.Diagnostics.Debug.WriteLine($"[StorageService] SaveAtomic failed for {targetPath}: {ex.Message}");
                 // Last-resort: only write directly if the target doesn't exist yet.
                 // If the target already exists, it may be healthy — truncating it would destroy good data.
                 if (!File.Exists(targetPath))
                 {
-                    try { File.WriteAllText(targetPath, content, Utf8NoBom); } catch { }
+                    Safe.Try(() => File.WriteAllText(targetPath, content, Utf8NoBom), context: $"StorageService.SaveAtomic.LastResortWrite({targetPath})");
                 }
             }
             finally
             {
                 // Clean up .tmp if it still lingers
-                try
+                Safe.Try(() =>
                 {
                     if (File.Exists(tmpPath))
                     {
                         File.Delete(tmpPath);
                     }
-                }
-                catch { }
+                }, context: $"StorageService.SaveAtomic.DeleteTmp({tmpPath})");
             }
         }
     }
@@ -175,7 +173,7 @@ public sealed class StorageService
     /// </summary>
     private static T? TryDeserializeFile<T>(string filePath) where T : class
     {
-        try
+        return Safe.Try(() =>
         {
             if (File.Exists(filePath))
             {
@@ -186,12 +184,8 @@ public sealed class StorageService
                     return JsonSerializer.Deserialize<T>(json, JsonOptions);
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[StorageService] Error deserializing {filePath}: {ex.Message}");
-        }
-        return null;
+            return null;
+        }, fallback: null, context: $"StorageService.TryDeserializeFile<{typeof(T).Name}>({filePath})");
     }
 
     // ────────────────────────────────────────────────────────
@@ -343,7 +337,7 @@ public sealed class StorageService
                             if (!string.IsNullOrWhiteSpace(tile.IconPath) &&
                                 Path.GetFileName(tile.IconPath).StartsWith("v5_", StringComparison.OrdinalIgnoreCase))
                             {
-                                try { if (File.Exists(tile.IconPath)) File.Delete(tile.IconPath); } catch { }
+                                Safe.Try(() => { if (File.Exists(tile.IconPath)) File.Delete(tile.IconPath); }, context: $"StorageService.NormalizeTiles.DeleteIcon({tile.IconPath})");
                             }
 
                             tile.IconPath = cachedPath;
@@ -407,7 +401,7 @@ public sealed class StorageService
     private static void PreserveCorruptFile(string filePath)
     {
         if (!File.Exists(filePath)) return;
-        try
+        Safe.Try(() =>
         {
             string dirPath = Path.GetDirectoryName(filePath) ?? AppDataDir;
             if (filePath.Contains(AppPaths.ConfigDir, StringComparison.OrdinalIgnoreCase))
@@ -423,13 +417,13 @@ public sealed class StorageService
                               .ToArray();
             for (int i = MaxCorruptCopies - 1; i < existing.Length; i++)
             {
-                try { existing[i].Delete(); } catch { }
+                var fileToDelete = existing[i];
+                Safe.Try(() => fileToDelete.Delete(), context: $"StorageService.PreserveCorruptFile.DeleteOld({fileToDelete.FullName})");
             }
 
             string corruptCopy = Path.Combine(dirPath, $"{baseName}_corrupt_{DateTime.Now:yyyyMMdd_HHmmss}.json");
             File.Copy(filePath, corruptCopy, overwrite: true);
-        }
-        catch { }
+        }, context: $"StorageService.PreserveCorruptFile({filePath})");
     }
 
     private static void ScheduleBackgroundFlush()
@@ -498,7 +492,7 @@ public sealed class StorageService
         }
         if (task != null && !task.IsCompleted)
         {
-            try { task.Wait(1000); } catch { }
+            Safe.Try(() => task.Wait(1000), context: "StorageService.Flush.Wait");
         }
     }
 
@@ -675,21 +669,16 @@ public sealed class StorageService
 
     public static bool ExportLayout(ObservableCollection<TileModel> tiles, string targetFilePath)
     {
-        try
+        return Safe.Try(() =>
         {
             string json = JsonSerializer.Serialize(tiles, JsonOptions);
             File.WriteAllText(targetFilePath, json);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        }, context: $"StorageService.ExportLayout({targetFilePath})");
     }
 
     public static ObservableCollection<TileModel>? ImportLayout(string sourceFilePath)
     {
-        try
+        return Safe.Try(() =>
         {
             if (File.Exists(sourceFilePath))
             {
@@ -705,10 +694,8 @@ public sealed class StorageService
                     return tiles;
                 }
             }
-        }
-        catch { }
-
-        return null;
+            return null;
+        }, fallback: null, context: $"StorageService.ImportLayout({sourceFilePath})");
     }
 
     // ────────────────────────────────────────────────────────
@@ -727,11 +714,10 @@ public sealed class StorageService
 
     public static void SaveAppsCache(IEnumerable<CatalogItemModel> apps)
     {
-        try
+        Safe.Try(() =>
         {
             SerializeAndSaveAtomic(apps, AppsCachePath, AppsCacheBakPath);
-        }
-        catch { }
+        }, context: "StorageService.SaveAppsCache");
     }
 }
 
