@@ -200,6 +200,7 @@ public partial class MainWindow : BorderlessFluentWindow
     public MainWindow()
     {
         Current = this;
+        TileModel.WidgetViewModelFactory ??= MetroHub.Widgets.Registry.WidgetRegistry.CreateViewModelForTile;
         InitializeComponent();
         DataContext = this;
 

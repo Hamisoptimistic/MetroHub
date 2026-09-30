@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
@@ -146,6 +147,13 @@ public sealed class TileModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// Factory delegate injected by the shell/startup to resolve widget ViewModels.
+    /// Decouples Core.Models from the Widgets registry system.
+    /// </summary>
+    [JsonIgnore]
+    public static Func<TileModel, object?>? WidgetViewModelFactory { get; set; }
+
     [JsonIgnore]
     private object? _stubWidgetViewModel;
 
@@ -156,7 +164,7 @@ public sealed class TileModel : INotifyPropertyChanged
         {
             if (TileType == TileType.Widget)
             {
-                return _widgetViewModel ?? (_stubWidgetViewModel ??= MetroHub.Widgets.Registry.WidgetRegistry.CreateViewModelForTile(this));
+                return _widgetViewModel ?? (_stubWidgetViewModel ??= WidgetViewModelFactory?.Invoke(this));
             }
             return this;
         }

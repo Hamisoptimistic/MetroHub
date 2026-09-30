@@ -106,6 +106,8 @@ public partial class App : Application
 
         base.OnStartup(e);
 
+        MetroHub.Core.Models.TileModel.WidgetViewModelFactory = MetroHub.Widgets.Registry.WidgetRegistry.CreateViewModelForTile;
+
         try
         {
             _mainWindow = new MainWindow();
