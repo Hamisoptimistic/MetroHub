@@ -19,6 +19,57 @@ public partial class App : Application
     private TaskbarIcon? _notifyIcon;
     private MainWindow? _mainWindow;
 
+    private static int _unhandledExceptionCount;
+    private static DateTime _lastUnhandledExceptionTime = DateTime.MinValue;
+
+    private static void LogCrash(string source, object? exception)
+    {
+        try
+        {
+            string crashLog = AppPaths.CrashLogPath;
+            AppPaths.EnsureDirectory(crashLog);
+
+            var fi = new FileInfo(crashLog);
+            if (fi.Exists && fi.Length > 2 * 1024 * 1024)
+            {
+                string oldLog = crashLog + ".old";
+                if (File.Exists(oldLog)) File.Delete(oldLog);
+                File.Move(crashLog, oldLog);
+            }
+
+            string entry = $"[{System.DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [{source}]{System.Environment.NewLine}{exception ?? "Unknown unhandled exception"}{System.Environment.NewLine}{System.Environment.NewLine}";
+            File.AppendAllText(crashLog, entry);
+
+            if (exception is Exception ex)
+            {
+                Safe.Log(source, ex);
+            }
+        }
+        catch
+        {
+            // Crash logging must never throw
+        }
+    }
+
+    private static bool ShouldHandleDispatcherException()
+    {
+        var now = System.DateTime.UtcNow;
+        if ((now - _lastUnhandledExceptionTime).TotalSeconds < 2)
+        {
+            _unhandledExceptionCount++;
+            if (_unhandledExceptionCount > 4)
+            {
+                return false; // Cascading loop: allow process to terminate cleanly
+            }
+        }
+        else
+        {
+            _unhandledExceptionCount = 1;
+        }
+        _lastUnhandledExceptionTime = now;
+        return true;
+    }
+
     protected override void OnStartup(StartupEventArgs e)
     {
         // Register native BASS audio engine dynamic library resolver
@@ -27,39 +78,31 @@ public partial class App : Application
         // Global crash logging
         AppDomain.CurrentDomain.UnhandledException += (s, args) =>
         {
-            try
-            {
-                string crashLog = MetroHub.Core.Services.AppPaths.CrashLogPath;
-                MetroHub.Core.Services.AppPaths.EnsureDirectory(crashLog);
-                string entry = $"[{System.DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [AppDomain.UnhandledException]{System.Environment.NewLine}{args.ExceptionObject ?? "Unknown unhandled exception"}{System.Environment.NewLine}{System.Environment.NewLine}";
-                File.AppendAllText(crashLog, entry);
-            }
-            catch { }
+            LogCrash("AppDomain.UnhandledException", args.ExceptionObject);
         };
 
         DispatcherUnhandledException += (s, args) =>
         {
-            try
+            LogCrash("DispatcherUnhandledException", args.Exception);
+
+            if (ShouldHandleDispatcherException())
             {
-                string crashLog = MetroHub.Core.Services.AppPaths.CrashLogPath;
-                MetroHub.Core.Services.AppPaths.EnsureDirectory(crashLog);
-                string entry = $"[{System.DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [DispatcherUnhandledException]{System.Environment.NewLine}{args.Exception}{System.Environment.NewLine}{System.Environment.NewLine}";
-                File.AppendAllText(crashLog, entry);
+                args.Handled = true;
+                _mainWindow?.Dispatcher.InvokeAsync(() =>
+                {
+                    try
+                    {
+                        _mainWindow?.ShowToast($"Recovered from error: {args.Exception.Message}", isError: true);
+                    }
+                    catch { }
+                });
             }
-            catch { }
         };
 
         System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (s, args) =>
         {
-            try
-            {
-                string crashLog = MetroHub.Core.Services.AppPaths.CrashLogPath;
-                MetroHub.Core.Services.AppPaths.EnsureDirectory(crashLog);
-                string entry = $"[{System.DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [TaskScheduler.UnobservedTaskException]{System.Environment.NewLine}{args.Exception}{System.Environment.NewLine}{System.Environment.NewLine}";
-                File.AppendAllText(crashLog, entry);
-                args.SetObserved();
-            }
-            catch { }
+            LogCrash("TaskScheduler.UnobservedTaskException", args.Exception);
+            args.SetObserved();
         };
 
         ShutdownMode = ShutdownMode.OnExplicitShutdown;

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets.Serialization;
 using System;
 using System.Collections.Generic;
@@ -262,28 +263,30 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
             model.SpanY = 4;
         }
 
-        model.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
-            {
-                OnPropertyChanged(nameof(IsSlimMode));
-                OnPropertyChanged(nameof(IsZuneMode));
-                OnPropertyChanged(nameof(IsStandardMode));
-                OnPropertyChanged(nameof(AlbumArtSize));
-                OnPropertyChanged(nameof(ShowAlbumRow));
-                OnPropertyChanged(nameof(TrackInfoMargin));
-                OnPropertyChanged(nameof(AlbumArtMargin));
-                OnPropertyChanged(nameof(TrackTitleFontSize));
-                OnPropertyChanged(nameof(ArtistFontSize));
-                OnPropertyChanged(nameof(PlaybackBarPadding));
-                OnPropertyChanged(nameof(TransportControlsMargin));
-                OnPropertyChanged(nameof(FallbackWatermarkFontSize));
-            }
-        };
+        model.PropertyChanged += OnModelPropertyChanged;
 
         LoadSettings(model.SettingsJson);
 
         InitializeMediaControllerAsync();
+    }
+
+    private void OnModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
+        {
+            OnPropertyChanged(nameof(IsSlimMode));
+            OnPropertyChanged(nameof(IsZuneMode));
+            OnPropertyChanged(nameof(IsStandardMode));
+            OnPropertyChanged(nameof(AlbumArtSize));
+            OnPropertyChanged(nameof(ShowAlbumRow));
+            OnPropertyChanged(nameof(TrackInfoMargin));
+            OnPropertyChanged(nameof(AlbumArtMargin));
+            OnPropertyChanged(nameof(TrackTitleFontSize));
+            OnPropertyChanged(nameof(ArtistFontSize));
+            OnPropertyChanged(nameof(PlaybackBarPadding));
+            OnPropertyChanged(nameof(TransportControlsMargin));
+            OnPropertyChanged(nameof(FallbackWatermarkFontSize));
+        }
     }
 
     private async void InitializeMediaControllerAsync()
@@ -1513,6 +1516,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
     {
         if (disposing)
         {
+            Model.PropertyChanged -= OnModelPropertyChanged;
             _isMediaManagerStarted = false;
 
             if (_mediaManager != null)
@@ -1526,7 +1530,10 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase
                     _mediaManager.OnAnyMediaPropertyChanged -= Manager_OnAnyMediaPropertyChanged;
                     _mediaManager.Dispose();
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Safe.Log("MediaWidgetViewModel.DisposeMediaManager", ex);
+                }
                 _mediaManager = null;
             }
 

@@ -24,7 +24,19 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
     {
         Model = model ?? throw new ArgumentNullException(nameof(model));
         IsActive = true;
+    }
+
+    protected override void OnActivated()
+    {
+        base.OnActivated();
+        WidgetHeartbeatService.SecondTick -= OnSecondTickInternal;
         WidgetHeartbeatService.SecondTick += OnSecondTickInternal;
+    }
+
+    protected override void OnDeactivated()
+    {
+        base.OnDeactivated();
+        WidgetHeartbeatService.SecondTick -= OnSecondTickInternal;
     }
 
     public virtual void Initialize(TileModel model)

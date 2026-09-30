@@ -1,8 +1,6 @@
 using System;
 using System.Windows;
 using System.Windows.Threading;
-using CommunityToolkit.Mvvm.Messaging;
-using MetroHub.Widgets.Messaging;
 
 namespace MetroHub.Core.Services;
 
@@ -19,13 +17,6 @@ public static class WidgetHeartbeatService
     public static event Action<DateTime>? SecondTick;
     internal static int SubscriberCount => SecondTick?.GetInvocationList().Length ?? 0;
 
-    static WidgetHeartbeatService()
-    {
-        // Auto-pause when hub is hidden, resume when shown
-        WidgetMessenger.Default.Register<HubVisibilityChangedMessage>(
-            WeakReferenceMessenger.Default,
-            (r, msg) => SetHubVisibility(msg.IsVisible));
-    }
 
     private static void EnsureTimerInitialized()
     {

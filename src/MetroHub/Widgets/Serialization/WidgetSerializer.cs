@@ -1,6 +1,7 @@
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Widgets.Serialization;
 
@@ -32,8 +33,9 @@ public static class WidgetSerializer
             }
             return (T?)JsonSerializer.Deserialize(json, typeof(T), WidgetJsonContext.Default);
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log($"WidgetSerializer.Deserialize<{typeof(T).Name}>", ex);
             return null;
         }
     }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -13,7 +14,7 @@ using MetroHub.Core.Services;
 
 namespace MetroHub.Presentation.Controls;
 
-public partial class SidebarRailControl : UserControl
+public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
 {
     public event EventHandler? AppsToggleRequested;
     public event EventHandler? PinToggled;
@@ -23,6 +24,9 @@ public partial class SidebarRailControl : UserControl
     public bool IsPinned { get; private set; } = false;
 
     public ObservableCollection<SidebarShortcutItem> Shortcuts { get; } = new();
+
+    // Explicit ISidebarShortcutStore implementation (ObservableCollection<T> implements IReadOnlyList<T>)
+    IReadOnlyList<SidebarShortcutItem> ISidebarShortcutStore.Shortcuts => Shortcuts;
 
     private AppSettings? _settings;
     private Point _dragStartPoint;

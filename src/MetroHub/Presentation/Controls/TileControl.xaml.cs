@@ -1387,7 +1387,33 @@ public partial class TileControl : UserControl
         PopulateResizeSubmenu(tile);
         PopulateAddToGroupSubmenu();
         var rail = CanvasMessenger.GetSidebarRail();
-        SidebarPinningService.ConfigureTileContextMenu(PinToSidebarMenuItem, PinToSidebarIcon, tile, rail, selectedTiles);
+        ConfigureSidebarPinMenuItem(tile, rail, selectedTiles);
+    }
+
+    private void ConfigureSidebarPinMenuItem(TileModel tile, ISidebarShortcutStore? store, IReadOnlyList<TileModel> selectedTiles)
+    {
+        if (PinToSidebarMenuItem == null) return;
+
+        var (isVisible, isPinned, eligibleCount) = SidebarPinningService.GetPinState(store, tile, selectedTiles);
+
+        if (!isVisible)
+        {
+            PinToSidebarMenuItem.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        PinToSidebarMenuItem.Visibility = Visibility.Visible;
+
+        if (isPinned)
+        {
+            PinToSidebarMenuItem.Header = eligibleCount > 1 ? "Unpin Selected Tiles from Sidebar" : "Unpin from Sidebar";
+            if (PinToSidebarIcon != null) PinToSidebarIcon.Symbol = Wpf.Ui.Controls.SymbolRegular.PinOff24;
+        }
+        else
+        {
+            PinToSidebarMenuItem.Header = eligibleCount > 1 ? $"Pin {eligibleCount} Tiles to Sidebar" : "Pin to Sidebar";
+            if (PinToSidebarIcon != null) PinToSidebarIcon.Symbol = Wpf.Ui.Controls.SymbolRegular.Pin24;
+        }
     }
 
     private void PopulateResizeSubmenu(TileModel tile)

@@ -80,7 +80,10 @@ public static partial class WebFaviconService
             }
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) MetroHub/1.0");
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "Failed to initialize WebFaviconService cache directory or user agent");
+        }
     }
 
     /// <summary>
@@ -269,7 +272,10 @@ public static partial class WebFaviconService
                     return cachedPath;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, $"Failed to inspect cached favicon '{cachedPath}'");
+            }
         }
 
         // Tier 1: Google High-Resolution Favicon Service (128x128 crisp transparent PNG)
@@ -334,7 +340,7 @@ public static partial class WebFaviconService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[WebFaviconService] Failed download from {requestUrl}: {ex.Message}");
+            Safe.Log(ex, $"[WebFaviconService] Failed download from {requestUrl}");
             return false;
         }
     }

@@ -634,11 +634,16 @@ public partial class MainWindow
                     System.Windows.MessageBox.Show(this, "Layout exported successfully!", "MetroHub",
                         System.Windows.MessageBoxButton.OK, MessageBoxImage.Information);
                 }
+                else
+                {
+                    ShowToast("Failed to export layout.", isError: true);
+                }
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow] Failed to export layout: {ex.Message}");
+            Safe.Log("MainWindow.ExportLayout", ex);
+            ShowToast($"Failed to export layout: {ex.Message}", isError: true);
         }
         finally
         {

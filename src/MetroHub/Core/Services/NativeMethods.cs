@@ -236,6 +236,12 @@ public static class NativeMethods
     private static string? _lastLaunchKey;
     private static DateTime _lastLaunchTime = DateTime.MinValue;
 
+    /// <summary>
+    /// Raised when an asynchronous target launch fails, providing the display title and exception.
+    /// Handled by the presentation layer (e.g. MainWindow) to display notifications.
+    /// </summary>
+    public static event Action<string, Exception>? TargetLaunchFailed;
+
     public static bool LaunchTarget(string path, string? args = null, bool runAsAdmin = false)
     {
         if (string.IsNullOrWhiteSpace(path)) return false;
@@ -300,17 +306,8 @@ public static class NativeMethods
                     : Path.GetFileNameWithoutExtension(path);
                 if (string.IsNullOrWhiteSpace(title)) title = path;
 
-                System.Windows.Application.Current?.Dispatcher.InvokeAsync(() =>
-                {
-                    if (MainWindow.Current != null)
-                    {
-                        if (!MainWindow.Current.IsVisible)
-                        {
-                            MainWindow.Current.ShowScreen();
-                        }
-                        MainWindow.Current.ShowToast($"Could not launch {title}: {ex.Message}", isError: true);
-                    }
-                });
+                Safe.Log(ex, $"Failed to launch target '{title}' ({path})");
+                TargetLaunchFailed?.Invoke(title, ex);
             }
         });
     }

@@ -4,19 +4,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
 using MetroHub.Core.Models;
-using MetroHub.Presentation.Controls;
-using Wpf.Ui.Controls;
-using MenuItem = System.Windows.Controls.MenuItem;
 
 namespace MetroHub.Core.Services;
 
 /// <summary>
 /// Dedicated service handling all tile-to-sidebar pinning workflows,
-/// deduplication, dynamic context menu configuration, and drag-and-drop ingestion.
-/// Keeps MainWindow, TileControl, and SidebarRailControl lean and unbloated.
+/// deduplication, shortcut creation, and drag-and-drop ingestion.
+/// Works against <see cref="ISidebarShortcutStore"/> so Core never imports Presentation.
 /// </summary>
 public static class SidebarPinningService
 {
@@ -50,8 +45,9 @@ public static class SidebarPinningService
             {
                 return WebFaviconService.NormalizeUrl(trimmed).TrimEnd('/');
             }
-            catch
+            catch (Exception ex)
             {
+                Safe.Log("SidebarPinningService.NormalizeTarget.WebUrl", ex);
                 return trimmed.TrimEnd('/');
             }
         }
@@ -64,26 +60,26 @@ public static class SidebarPinningService
                 return Path.GetFullPath(trimmed).TrimEnd('\\', '/');
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Fall back to trimmed string if path contains special characters or uri schemes
+            Safe.Log("SidebarPinningService.NormalizeTarget.Path", ex);
         }
 
         return trimmed.TrimEnd('\\', '/');
     }
 
     /// <summary>
-    /// Finds any shortcut in the sidebar rail matching the target of the specified tile.
+    /// Finds any shortcut in the store matching the target of the specified tile.
     /// Performs normalized target comparison and .lnk shortcut resolution.
     /// </summary>
-    public static SidebarShortcutItem? FindMatchingShortcut(SidebarRailControl? rail, TileModel? tile)
+    public static SidebarShortcutItem? FindMatchingShortcut(ISidebarShortcutStore? store, TileModel? tile)
     {
-        if (rail == null || rail.Shortcuts == null || tile == null || string.IsNullOrWhiteSpace(tile.TargetPath))
+        if (store?.Shortcuts == null || tile == null || string.IsNullOrWhiteSpace(tile.TargetPath))
             return null;
 
         string normalizedTileTarget = NormalizeTarget(tile.TargetPath);
 
-        foreach (var shortcut in rail.Shortcuts)
+        foreach (var shortcut in store.Shortcuts)
         {
             if (shortcut.IsSeparator) continue;
 
@@ -106,9 +102,9 @@ public static class SidebarPinningService
                         return shortcut;
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Ignore resolution errors
+                    Safe.Log("SidebarPinningService.FindMatchingShortcut.ResolveLink", ex);
                 }
             }
         }
@@ -117,12 +113,12 @@ public static class SidebarPinningService
     }
 
     /// <summary>
-    /// Checks whether the specified tile is already pinned to the sidebar rail.
+    /// Checks whether the specified tile is already pinned to the sidebar.
     /// </summary>
-    public static bool IsTilePinned(SidebarRailControl? rail, TileModel? tile)
+    public static bool IsTilePinned(ISidebarShortcutStore? store, TileModel? tile)
     {
-        if (rail == null || tile == null || !CanPinTile(tile)) return false;
-        return FindMatchingShortcut(rail, tile) != null;
+        if (store == null || tile == null || !CanPinTile(tile)) return false;
+        return FindMatchingShortcut(store, tile) != null;
     }
 
     /// <summary>
@@ -196,7 +192,7 @@ public static class SidebarPinningService
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[SidebarPinningService] Icon extraction failed for '{target}': {ex.Message}");
+                Safe.Log("SidebarPinningService.CreateShortcut.IconExtract", ex);
             }
         }
 
@@ -213,17 +209,17 @@ public static class SidebarPinningService
     }
 
     /// <summary>
-    /// Pins an eligible tile to the sidebar rail (deduplicated).
+    /// Pins an eligible tile to the sidebar (deduplicated).
     /// </summary>
-    public static bool PinTile(SidebarRailControl? rail, TileModel? tile, int? insertIndex = null)
+    public static bool PinTile(ISidebarShortcutStore? store, TileModel? tile, int? insertIndex = null)
     {
-        if (rail == null || tile == null || !CanPinTile(tile)) return false;
-        if (IsTilePinned(rail, tile)) return false;
+        if (store == null || tile == null || !CanPinTile(tile)) return false;
+        if (IsTilePinned(store, tile)) return false;
 
-        int index = insertIndex ?? rail.Shortcuts.Count;
+        int index = insertIndex ?? store.Shortcuts.Count;
         var shortcutItem = CreateShortcutFromTile(tile, index);
 
-        rail.AddShortcutItem(shortcutItem, insertIndex);
+        store.AddShortcutItem(shortcutItem, insertIndex);
 
         // If WebUrl with missing custom icon, trigger asynchronous background favicon fetch
         if (shortcutItem.TargetType == SidebarShortcutType.WebUrl && string.IsNullOrWhiteSpace(shortcutItem.CustomIconPath))
@@ -233,11 +229,8 @@ public static class SidebarPinningService
                 string? fetched = await WebFaviconService.GetFaviconPathAsync(shortcutItem.Target);
                 if (!string.IsNullOrWhiteSpace(fetched))
                 {
-                    await rail.Dispatcher.InvokeAsync(() =>
-                    {
-                        shortcutItem.CustomIconPath = fetched;
-                        rail.SaveShortcutsState();
-                    });
+                    shortcutItem.CustomIconPath = fetched;
+                    store.SaveShortcutsState();
                 }
             });
         }
@@ -246,49 +239,49 @@ public static class SidebarPinningService
     }
 
     /// <summary>
-    /// Unpins a tile from the sidebar rail if it exists.
+    /// Unpins a tile from the sidebar if it exists.
     /// </summary>
-    public static bool UnpinTile(SidebarRailControl? rail, TileModel? tile)
+    public static bool UnpinTile(ISidebarShortcutStore? store, TileModel? tile)
     {
-        if (rail == null || tile == null) return false;
-        var matching = FindMatchingShortcut(rail, tile);
+        if (store == null || tile == null) return false;
+        var matching = FindMatchingShortcut(store, tile);
         if (matching != null)
         {
-            return rail.RemoveShortcutItem(matching);
+            return store.RemoveShortcutItem(matching);
         }
         return false;
     }
 
     /// <summary>
-    /// Toggles the pinned status of a tile on the sidebar rail.
+    /// Toggles the pinned status of a tile on the sidebar.
     /// </summary>
-    public static bool TogglePinTile(SidebarRailControl? rail, TileModel? tile)
+    public static bool TogglePinTile(ISidebarShortcutStore? store, TileModel? tile)
     {
-        if (rail == null || tile == null || !CanPinTile(tile)) return false;
+        if (store == null || tile == null || !CanPinTile(tile)) return false;
 
-        if (IsTilePinned(rail, tile))
+        if (IsTilePinned(store, tile))
         {
-            return UnpinTile(rail, tile);
+            return UnpinTile(store, tile);
         }
         else
         {
-            return PinTile(rail, tile);
+            return PinTile(store, tile);
         }
     }
 
     /// <summary>
-    /// Batch pins multiple tiles to the sidebar rail, deduplicating each.
+    /// Batch pins multiple tiles to the sidebar, deduplicating each.
     /// </summary>
-    public static int BatchPinTiles(SidebarRailControl? rail, IEnumerable<TileModel>? tiles)
+    public static int BatchPinTiles(ISidebarShortcutStore? store, IEnumerable<TileModel>? tiles)
     {
-        if (rail == null || tiles == null) return 0;
+        if (store == null || tiles == null) return 0;
 
         int added = 0;
         foreach (var tile in tiles)
         {
-            if (CanPinTile(tile) && !IsTilePinned(rail, tile))
+            if (CanPinTile(tile) && !IsTilePinned(store, tile))
             {
-                if (PinTile(rail, tile))
+                if (PinTile(store, tile))
                 {
                     added++;
                 }
@@ -298,16 +291,16 @@ public static class SidebarPinningService
     }
 
     /// <summary>
-    /// Batch unpins multiple tiles from the sidebar rail.
+    /// Batch unpins multiple tiles from the sidebar.
     /// </summary>
-    public static int BatchUnpinTiles(SidebarRailControl? rail, IEnumerable<TileModel>? tiles)
+    public static int BatchUnpinTiles(ISidebarShortcutStore? store, IEnumerable<TileModel>? tiles)
     {
-        if (rail == null || tiles == null) return 0;
+        if (store == null || tiles == null) return 0;
 
         int removed = 0;
         foreach (var tile in tiles)
         {
-            if (UnpinTile(rail, tile))
+            if (UnpinTile(store, tile))
             {
                 removed++;
             }
@@ -316,117 +309,11 @@ public static class SidebarPinningService
     }
 
     /// <summary>
-    /// Configures the Pin/Unpin context menu item and icon based on current tile eligibility,
-    /// pinned state, and multi-selection count.
+    /// Handles drag-and-drop of one or more tiles from the canvas onto the sidebar.
     /// </summary>
-    public static void ConfigureTileContextMenu(
-        MenuItem? menuItem,
-        SymbolIcon? icon,
-        TileModel? tile,
-        SidebarRailControl? rail,
-        IReadOnlyList<TileModel>? selectedTiles)
+    public static bool TryHandleTileDropOnSidebar(ISidebarShortcutStore? store, IEnumerable<TileModel>? tiles)
     {
-        if (menuItem == null) return;
-
-        if (tile == null || !CanPinTile(tile))
-        {
-            menuItem.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        menuItem.Visibility = Visibility.Visible;
-
-        if (tile.IsSelected && selectedTiles != null && selectedTiles.Count > 1)
-        {
-            var eligible = selectedTiles.Where(CanPinTile).ToList();
-            if (eligible.Count == 0)
-            {
-                menuItem.Visibility = Visibility.Collapsed;
-                return;
-            }
-
-            bool allPinned = eligible.All(t => IsTilePinned(rail, t));
-            if (allPinned)
-            {
-                menuItem.Header = "Unpin Selected Tiles from Sidebar";
-                if (icon != null)
-                {
-                    icon.Symbol = SymbolRegular.PinOff24;
-                }
-            }
-            else
-            {
-                menuItem.Header = eligible.Count > 1 
-                    ? $"Pin {eligible.Count} Tiles to Sidebar" 
-                    : "Pin to Sidebar";
-
-                if (icon != null)
-                {
-                    icon.Symbol = SymbolRegular.Pin24;
-                }
-            }
-        }
-        else
-        {
-            bool pinned = IsTilePinned(rail, tile);
-            menuItem.Header = pinned ? "Unpin from Sidebar" : "Pin to Sidebar";
-            if (icon != null)
-            {
-                icon.Symbol = pinned ? SymbolRegular.PinOff24 : SymbolRegular.Pin24;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Configures the tile context menu's Pin/Unpin sidebar item based on current tile eligibility,
-    /// pinned state, and multi-selection count.
-    /// </summary>
-    public static void ConfigureTileContextMenu(
-        MenuItem? menuItem,
-        SymbolIcon? icon,
-        TileModel? tile,
-        MainWindow? mainWindow)
-    {
-        ConfigureTileContextMenu(menuItem, icon, tile, mainWindow?.SidebarRail, mainWindow?.SelectedTiles);
-    }
-
-    /// <summary>
-    /// Handles clicking the Pin/Unpin context menu item for single or multi-selected tiles.
-    /// </summary>
-    public static void HandleContextMenuClick(TileModel? tile, MainWindow? mainWindow)
-    {
-        if (tile == null || mainWindow == null) return;
-        var rail = mainWindow.SidebarRail;
-        if (rail == null) return;
-
-        var selectedTiles = mainWindow.SelectedTiles;
-        if (tile.IsSelected && selectedTiles != null && selectedTiles.Count > 1)
-        {
-            var eligible = selectedTiles.Where(CanPinTile).ToList();
-            if (eligible.Count == 0) return;
-
-            bool allPinned = eligible.All(t => IsTilePinned(rail, t));
-            if (allPinned)
-            {
-                BatchUnpinTiles(rail, eligible);
-            }
-            else
-            {
-                BatchPinTiles(rail, eligible);
-            }
-        }
-        else
-        {
-            TogglePinTile(rail, tile);
-        }
-    }
-
-    /// <summary>
-    /// Handles drag-and-drop of one or more tiles from the canvas onto the sidebar rail.
-    /// </summary>
-    public static bool TryHandleTileDropOnSidebar(SidebarRailControl? rail, IEnumerable<TileModel>? tiles)
-    {
-        if (rail == null || tiles == null) return false;
+        if (store == null || tiles == null) return false;
 
         var eligible = tiles.Where(CanPinTile).ToList();
         if (eligible.Count == 0) return false;
@@ -434,9 +321,9 @@ public static class SidebarPinningService
         bool anyPinned = false;
         foreach (var tile in eligible)
         {
-            if (!IsTilePinned(rail, tile))
+            if (!IsTilePinned(store, tile))
             {
-                if (PinTile(rail, tile))
+                if (PinTile(store, tile))
                 {
                     anyPinned = true;
                 }
@@ -446,7 +333,60 @@ public static class SidebarPinningService
         return anyPinned;
     }
 
-    private static string GetDefaultFileSymbol(string ext) => ext switch
+    /// <summary>
+    /// Handles a sidebar pin toggle for a single tile or multi-selection.
+    /// Pure logic; callers provide the store and selection list.
+    /// </summary>
+    public static void HandleTogglePin(ISidebarShortcutStore? store, TileModel? tile, IReadOnlyList<TileModel>? selectedTiles)
+    {
+        if (store == null || tile == null) return;
+
+        if (tile.IsSelected && selectedTiles != null && selectedTiles.Count > 1)
+        {
+            var eligible = selectedTiles.Where(CanPinTile).ToList();
+            if (eligible.Count == 0) return;
+
+            bool allPinned = eligible.All(t => IsTilePinned(store, t));
+            if (allPinned)
+            {
+                BatchUnpinTiles(store, eligible);
+            }
+            else
+            {
+                BatchPinTiles(store, eligible);
+            }
+        }
+        else
+        {
+            TogglePinTile(store, tile);
+        }
+    }
+
+    /// <summary>
+    /// Returns the pin state description for a tile or multi-selection.
+    /// The caller uses this to configure their context menu in the Presentation layer.
+    /// </summary>
+    public static (bool IsVisible, bool IsPinned, int EligibleCount) GetPinState(
+        ISidebarShortcutStore? store, TileModel? tile, IReadOnlyList<TileModel>? selectedTiles)
+    {
+        if (tile == null || !CanPinTile(tile))
+            return (false, false, 0);
+
+        if (tile.IsSelected && selectedTiles != null && selectedTiles.Count > 1)
+        {
+            var eligible = selectedTiles.Where(CanPinTile).ToList();
+            if (eligible.Count == 0)
+                return (false, false, 0);
+
+            bool allPinned = eligible.All(t => IsTilePinned(store, t));
+            return (true, allPinned, eligible.Count);
+        }
+
+        bool pinned = IsTilePinned(store, tile);
+        return (true, pinned, 1);
+    }
+
+    internal static string GetDefaultFileSymbol(string ext) => ext switch
     {
         ".exe" or ".lnk" => "AppGeneric24",
         ".pdf" or ".doc" or ".docx" or ".txt" or ".rtf" or ".md" => "Document24",
@@ -457,7 +397,7 @@ public static class SidebarPinningService
         _ => "AppGeneric24"
     };
 
-    private static string? GetCustomFolderIcon(string folderPath)
+    internal static string? GetCustomFolderIcon(string folderPath)
     {
         try
         {
@@ -479,9 +419,9 @@ public static class SidebarPinningService
                 return IconExtractorService.ExtractAndCacheIcon(iconIco);
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore icon extraction failure
+            Safe.Log("SidebarPinningService.GetCustomFolderIcon", ex);
         }
         return null;
     }

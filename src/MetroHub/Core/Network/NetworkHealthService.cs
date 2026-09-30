@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using Windows.Networking.Connectivity;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Network;
 
@@ -199,7 +200,10 @@ public sealed class NetworkHealthService
                 return true;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log("NetworkHealthService.HasActiveGateway.FallbackSocket", ex);
+        }
 
         return false;
     }
@@ -207,7 +211,14 @@ public sealed class NetworkHealthService
     private async void OnNetworkStatusChanged(object sender)
     {
         if (!IsHubVisible) return;
-        await EvaluateHealthAsync();
+        try
+        {
+            await EvaluateHealthAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Safe.Log("NetworkHealthService.OnNetworkStatusChanged", ex);
+        }
     }
 
     public async Task<NetworkHealthStatus> EvaluateHealthAsync(System.Threading.CancellationToken cancellationToken = default)

@@ -104,7 +104,10 @@ public partial class MainWindow : BorderlessFluentWindow
                             win.Activate();
                             win.Focus();
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Safe.Log("MainWindow.Activate", ex);
+                        }
                     }
                 });
             }
@@ -136,7 +139,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 }
                 else
                 {
-                    try { win.Activate(); win.Focus(); } catch { }
+                    try { win.Activate(); win.Focus(); } catch (Exception ex) { Safe.Log("MainWindow.Activate", ex); }
                 }
             }
         };
@@ -245,7 +248,21 @@ public partial class MainWindow : BorderlessFluentWindow
             this,
             (r, msg) => StorageService.SaveLayout(r.Tiles));
 
+        NativeMethods.TargetLaunchFailed += OnTargetLaunchFailed;
+
         RegisterCanvasMessageHandlers();
+    }
+
+    private void OnTargetLaunchFailed(string title, Exception ex)
+    {
+        Dispatcher.InvokeAsync(() =>
+        {
+            if (!IsVisible)
+            {
+                ShowScreen();
+            }
+            ShowToast($"Could not launch {title}: {ex.Message}", isError: true);
+        });
     }
 
     private void RegisterCanvasMessageHandlers()
@@ -260,7 +277,7 @@ public partial class MainWindow : BorderlessFluentWindow
         WeakReferenceMessenger.Default.Register<MainWindow, TileCreateGroupMessage>(this, (r, m) => r.CreateGroupFromSelectedTiles(m.SourceTile));
         WeakReferenceMessenger.Default.Register<MainWindow, TileAddToGroupMessage>(this, (r, m) => r.AddTilesToExistingGroup(m.Targets as IList<TileModel> ?? m.Targets.ToList(), m.TargetGroup));
         WeakReferenceMessenger.Default.Register<MainWindow, TileBatchUnpinMessage>(this, (r, m) => r.BatchUnpinSelectedTiles(m.SourceTile));
-        WeakReferenceMessenger.Default.Register<MainWindow, TileToggleSidebarPinMessage>(this, (r, m) => SidebarPinningService.HandleContextMenuClick(m.Tile, r));
+        WeakReferenceMessenger.Default.Register<MainWindow, TileToggleSidebarPinMessage>(this, (r, m) => SidebarPinningService.HandleTogglePin(r.SidebarRail, m.Tile, r.SelectedTiles));
         WeakReferenceMessenger.Default.Register<MainWindow, TileShowWeatherLocationDialogMessage>(this, (r, m) => r.ShowSetWeatherLocationDialog(m.WeatherVm));
 
         WeakReferenceMessenger.Default.Register<MainWindow, GroupFlashLockedMessage>(this, (r, m) => r.FlashLockedGroupPerimeter(m.Group));
@@ -668,12 +685,19 @@ public partial class MainWindow : BorderlessFluentWindow
         {
             Dispatcher.InvokeAsync(async () =>
             {
-                if (IsVisible)
+                try
                 {
-                    SnapToWorkArea();
-                    ApplyConfiguredBackdrop();
-                    await Task.Delay(200);
-                    SnapToWorkArea();
+                    if (IsVisible)
+                    {
+                        SnapToWorkArea();
+                        ApplyConfiguredBackdrop();
+                        await Task.Delay(200);
+                        SnapToWorkArea();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Safe.Log("MainWindow.WndProc.WM_DISPLAYCHANGE", ex);
                 }
             });
         }
@@ -681,9 +705,16 @@ public partial class MainWindow : BorderlessFluentWindow
         {
             Dispatcher.InvokeAsync(async () =>
             {
-                ApplyConfiguredBackdrop();
-                await Task.Delay(400);
-                ApplyConfiguredBackdrop();
+                try
+                {
+                    ApplyConfiguredBackdrop();
+                    await Task.Delay(400);
+                    ApplyConfiguredBackdrop();
+                }
+                catch (Exception ex)
+                {
+                    Safe.Log("MainWindow.WndProc.WM_SETTINGCHANGE", ex);
+                }
             });
         }
 
@@ -797,7 +828,7 @@ public partial class MainWindow : BorderlessFluentWindow
         bool isVideoActive = WallpaperVideo != null && WallpaperVideo.Visibility == Visibility.Visible && WallpaperVideo.Source != null;
         if (isVideoActive)
         {
-            try { WallpaperVideo!.Play(); } catch { }
+            try { WallpaperVideo!.Play(); } catch (Exception ex) { Safe.Log("MainWindow.WallpaperPlay", ex); }
         }
 
         IntPtr hwnd = myHwnd != IntPtr.Zero ? myHwnd : new WindowInteropHelper(this).Handle;
@@ -822,6 +853,7 @@ public partial class MainWindow : BorderlessFluentWindow
         Dispatcher.InvokeAsync(() =>
         {
             MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(true));
+            WidgetHeartbeatService.SetHubVisibility(true);
             InstalledAppsService.ResumeWatchers();
             ReinstallWinEventHook();
         }, DispatcherPriority.Background);
@@ -876,7 +908,8 @@ public partial class MainWindow : BorderlessFluentWindow
         Keyboard.ClearFocus();
         FocusManager.SetFocusedElement(this, this);
         MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(false));
-        try { SaveGroupsAndLayout(); } catch { }
+        WidgetHeartbeatService.SetHubVisibility(false);
+        Safe.Try(SaveGroupsAndLayout, "MainWindow.HideScreen.SaveGroupsAndLayout");
         if (!Settings.SidebarPinned)
         {
             HideSidebarRail(immediate: true);
@@ -887,7 +920,7 @@ public partial class MainWindow : BorderlessFluentWindow
         UninstallWinEventHook();
 
         // Auto-pause video wallpaper when hidden to ensure 0.0% CPU and 0.0% GPU decode
-        try { WallpaperVideo?.Pause(); } catch { }
+        try { WallpaperVideo?.Pause(); } catch (Exception ex) { Safe.Log("MainWindow.WallpaperPause", ex); }
 
         // Dismiss immediately without UI freeze (GC cleanup is deferred to ApplicationIdle in DismissWithAnimation)
         DismissWithAnimation();
