@@ -27,15 +27,12 @@
             <!-- ============================================================== -->
             <!-- 1. EMPTY STATE (First-time add / No folder selected)           -->
             <!-- ============================================================== -->
-            <Grid x:Name="EmptyStatePanel"
-                  Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
-                
-                <!-- Frosted Acrylic Glass Background -->
-                <Border Background="#18FFFFFF"
-                        BorderBrush="#15FFFFFF"
-                        BorderThickness="1"
-                        CornerRadius="{DynamicResource ControlCornerRadius}"
-                        />
+            <Border x:Name="EmptyStatePanel"
+                    Background="#18FFFFFF"
+                    BorderBrush="#15FFFFFF"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource ControlCornerRadius}"
+                    Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
 
                 <!-- Centered Content Stack: Compact 130px height, comfortably fits 8x3 (184px), 4x4 (248px), and 8x4 (248px) -->
                 <StackPanel HorizontalAlignment="Center"
@@ -98,7 +95,7 @@
                         </StackPanel>
                     </Button>
                 </StackPanel>
-            </Grid>
+            </Border>
 
             <!-- ============================================================== -->
             <!-- 2. ACTIVE SLIDESHOW STATE                                      -->

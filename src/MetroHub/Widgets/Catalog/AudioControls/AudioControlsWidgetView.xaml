@@ -187,8 +187,8 @@
                                                 <Border x:Name="ItemBorder"
                                                         Background="Transparent"
                                                         CornerRadius="{DynamicResource ControlCornerRadius}"
-                                                        >
-                                                    <Grid Margin="0,0,10,0">
+                                                        Padding="0,0,10,0">
+                                                    <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <!-- Col 0: Active Accent Indicator Pill (Width 12 provides 9px breathing space from 3px pill to icon) -->
                                                             <ColumnDefinition Width="12" />
