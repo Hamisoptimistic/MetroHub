@@ -144,7 +144,7 @@ public sealed class ThroughputService : IDisposable
     {
         if (_isPaused || !_isRunning)
         {
-            if (MetroHub.Core.Services.HiddenDiagnosticsLogger.IsHubHidden)
+            if (MetroHub.Core.Services.HubState.IsHidden)
             {
                 MetroHub.Core.Services.HiddenDiagnosticsLogger.LogHiddenEvent("ThroughputService", "OnThroughputTick", "Skipped tick (properly paused)");
             }
@@ -260,7 +260,7 @@ public sealed class ThroughputService : IDisposable
         {
             if (_isPaused || !_isRunning)
             {
-                if (MetroHub.Core.Services.HiddenDiagnosticsLogger.IsHubHidden)
+                if (MetroHub.Core.Services.HubState.IsHidden)
                 {
                     MetroHub.Core.Services.HiddenDiagnosticsLogger.LogHiddenEvent("ThroughputService", "OnLatencyTick", "Skipped tick (properly paused)");
                 }

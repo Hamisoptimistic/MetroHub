@@ -815,6 +815,7 @@ public partial class MainWindow : BorderlessFluentWindow
             ReinstallWinEventHook();
         }, DispatcherPriority.Background);
 
+        MetroHub.Core.Services.HubState.SetVisibility(true);
         MetroHub.Core.Services.HiddenDiagnosticsLogger.LogTransition(true);
     }
 
@@ -847,6 +848,7 @@ public partial class MainWindow : BorderlessFluentWindow
             _previousForegroundWindow = IntPtr.Zero;
         }
 
+        MetroHub.Core.Services.HubState.SetVisibility(false);
         MetroHub.Core.Services.HiddenDiagnosticsLogger.LogTransition(false);
         if (AllAppsDrawer != null && AllAppsDrawer.IsOpen)
         {

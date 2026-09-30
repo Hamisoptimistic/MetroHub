@@ -16,9 +16,9 @@ public static class HiddenDiagnosticsLogger
 
     private static string _logFilePath = AppPaths.HiddenDiagnosticsLogPath;
     private static readonly object _lock = new();
-    private static volatile bool _isHubHidden = false;
 
-    public static bool IsHubHidden => _isHubHidden;
+    // TEMP-SHIM(T-22): Forwarder for legacy callers to HubState.IsHidden
+    public static bool IsHubHidden => HubState.IsHidden;
 
     static HiddenDiagnosticsLogger()
     {
@@ -46,7 +46,6 @@ public static class HiddenDiagnosticsLogger
 
     public static void LogTransition(bool isVisible)
     {
-        _isHubHidden = !isVisible;
         if (!IsEnabled) return;
 
         try
@@ -79,7 +78,7 @@ public static class HiddenDiagnosticsLogger
     public static void LogHiddenEvent(string source, string eventName, string? details = null)
     {
         if (!IsEnabled) return;
-        if (!_isHubHidden) return;
+        if (!HubState.IsHidden) return;
 
         double wsMb = GetWorkingSetMb();
         string detailStr = string.IsNullOrWhiteSpace(details) ? string.Empty : $" | Details: {details}";
