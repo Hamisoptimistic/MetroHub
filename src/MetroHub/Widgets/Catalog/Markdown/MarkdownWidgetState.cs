@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
-using MetroHub.Widgets.Common;
+using MetroHub.Widgets.Models;
 
 namespace MetroHub.Widgets.Catalog.Markdown;
 

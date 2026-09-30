@@ -3,7 +3,7 @@ using System.IO;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 using MetroHub.Widgets.Catalog.Markdown;
-using MetroHub.Widgets.Common;
+using MetroHub.Widgets.Models;
 using MetroHub.Widgets.Serialization;
 using Xunit;
 

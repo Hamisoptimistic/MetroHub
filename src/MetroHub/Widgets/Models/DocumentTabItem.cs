@@ -3,7 +3,7 @@ using System.IO;
 using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace MetroHub.Widgets.Common;
+namespace MetroHub.Widgets.Models;
 
 /// <summary>
 /// Observable model representing a document/note tab.
