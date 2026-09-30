@@ -1059,7 +1059,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
-        try { SaveGroupsAndLayout(); } catch { }
+        Safe.Try(SaveGroupsAndLayout, "MainWindow.OnClosing.SaveGroupsAndLayout");
 
         if (!_isClosingToExit)
         {
@@ -1069,7 +1069,7 @@ public partial class MainWindow : BorderlessFluentWindow
         else
         {
             CleanupEventSubscriptions();
-            try { StorageService.Flush(); } catch { }
+            Safe.Try(StorageService.Flush, "MainWindow.OnClosing.StorageFlush");
             UninstallWinEventHook();
             UninstallKeyboardHook();
             _hotkeyService.Dispose();
@@ -1080,22 +1080,17 @@ public partial class MainWindow : BorderlessFluentWindow
     public void ExitApplication()
     {
         _isClosingToExit = true;
-        try
-        {
-            SaveGroupsAndLayout();
-            StorageService.Flush();
-        }
-        catch { }
+        Safe.Try(SaveGroupsAndLayout, "MainWindow.ExitApplication.SaveGroupsAndLayout");
+        Safe.Try(StorageService.Flush, "MainWindow.ExitApplication.StorageFlush");
 
         // Cleanly dispose and tear down all active widget models (audio endpoints, media sessions, timers)
-        try
+        Safe.Try(() =>
         {
             foreach (var tile in Tiles)
             {
                 tile.Teardown();
             }
-        }
-        catch { }
+        }, "MainWindow.ExitApplication.TeardownTiles");
 
         CleanupEventSubscriptions();
         InstalledAppsService.PauseWatchers();

@@ -104,6 +104,11 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
         Dispose();
     }
 
+    ~WidgetViewModelBase()
+    {
+        Dispose(disposing: false);
+    }
+
     public void Dispose()
     {
         Dispose(disposing: true);
@@ -114,9 +119,10 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
     {
         if (_disposed) return;
 
+        WidgetHeartbeatService.SecondTick -= OnSecondTickInternal;
+
         if (disposing)
         {
-            WidgetHeartbeatService.SecondTick -= OnSecondTickInternal;
             Safe.Try(Pause, context: $"{GetType().Name}.PauseOnDispose");
             IsActive = false; // Deactivates CommunityToolkit messenger subscriptions cleanly
         }

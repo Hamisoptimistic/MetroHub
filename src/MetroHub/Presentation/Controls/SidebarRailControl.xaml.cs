@@ -530,17 +530,17 @@ public partial class SidebarRailControl : UserControl
             {
                 try
                 {
-                    Process.Start(new ProcessStartInfo("wt.exe", $"-d \"{folder}\"") { UseShellExecute = true });
+                    Process.Start(new ProcessStartInfo("wt.exe") { WorkingDirectory = folder, UseShellExecute = true });
                 }
                 catch
                 {
                     try
                     {
-                        Process.Start(new ProcessStartInfo("powershell.exe", $"-NoExit -Command \"Set-Location '{folder}'\"") { UseShellExecute = true });
+                        Process.Start(new ProcessStartInfo("powershell.exe", "-NoExit") { WorkingDirectory = folder, UseShellExecute = true });
                     }
                     catch
                     {
-                        Process.Start(new ProcessStartInfo("cmd.exe", $"/K cd /d \"{folder}\"") { UseShellExecute = true });
+                        Process.Start(new ProcessStartInfo("cmd.exe", "/K") { WorkingDirectory = folder, UseShellExecute = true });
                     }
                 }
             }

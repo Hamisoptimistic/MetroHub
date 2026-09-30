@@ -182,7 +182,7 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase
     {
         _engine.SoundTriggered += OnSoundTriggered;
 
-        LoadSettings(model.SettingsJson);
+        MetroHub.Core.Services.Safe.Try(() => LoadSettings(model.SettingsJson), "RoverWidgetViewModel.LoadSettings");
 
         // Start in resting pose with 0% CPU
         _engine.SetStaticPose("RestPose");

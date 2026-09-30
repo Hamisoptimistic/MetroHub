@@ -31,13 +31,29 @@ public record WidgetDefinition(
             if (Factory != null)
             {
                 var vm = Factory(model);
-                vm.Initialize(model);
-                return vm;
+                try
+                {
+                    vm.Initialize(model);
+                    return vm;
+                }
+                catch
+                {
+                    (vm as IDisposable)?.Dispose();
+                    throw;
+                }
             }
 
             var instance = (IWidgetViewModel)Activator.CreateInstance(ViewModelType, model)!;
-            instance.Initialize(model);
-            return instance;
+            try
+            {
+                instance.Initialize(model);
+                return instance;
+            }
+            catch
+            {
+                (instance as IDisposable)?.Dispose();
+                throw;
+            }
         }, fallback: null, context: $"WidgetDefinition.CreateViewModel({Id})")
         ?? new MetroHub.Widgets.Catalog.Stub.StubWidgetViewModel(model)
         {

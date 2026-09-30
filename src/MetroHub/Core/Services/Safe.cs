@@ -21,12 +21,13 @@ public static class Safe
     {
         try
         {
-            string message = string.IsNullOrWhiteSpace(context)
+            string header = string.IsNullOrWhiteSpace(context)
                 ? $"[SAFE_TRY_ERROR] {ex.GetType().Name}: {ex.Message}"
                 : $"[SAFE_TRY_ERROR] [{context}] {ex.GetType().Name}: {ex.Message}";
 
-            HiddenDiagnosticsLogger.Log(message);
-            Debug.WriteLine($"{message}{Environment.NewLine}{ex}");
+            string fullDetail = $"{header}{Environment.NewLine}{ex}";
+            HiddenDiagnosticsLogger.Log(fullDetail);
+            Debug.WriteLine(fullDetail);
         }
         catch
         {

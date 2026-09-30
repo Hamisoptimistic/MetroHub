@@ -31,7 +31,8 @@ public partial class App : Application
             {
                 string crashLog = MetroHub.Core.Services.AppPaths.CrashLogPath;
                 MetroHub.Core.Services.AppPaths.EnsureDirectory(crashLog);
-                File.WriteAllText(crashLog, args.ExceptionObject?.ToString() ?? "Unknown unhandled exception");
+                string entry = $"[{System.DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [AppDomain.UnhandledException]{System.Environment.NewLine}{args.ExceptionObject ?? "Unknown unhandled exception"}{System.Environment.NewLine}{System.Environment.NewLine}";
+                File.AppendAllText(crashLog, entry);
             }
             catch { }
         };
@@ -42,7 +43,21 @@ public partial class App : Application
             {
                 string crashLog = MetroHub.Core.Services.AppPaths.CrashLogPath;
                 MetroHub.Core.Services.AppPaths.EnsureDirectory(crashLog);
-                File.WriteAllText(crashLog, args.Exception.ToString());
+                string entry = $"[{System.DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [DispatcherUnhandledException]{System.Environment.NewLine}{args.Exception}{System.Environment.NewLine}{System.Environment.NewLine}";
+                File.AppendAllText(crashLog, entry);
+            }
+            catch { }
+        };
+
+        System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (s, args) =>
+        {
+            try
+            {
+                string crashLog = MetroHub.Core.Services.AppPaths.CrashLogPath;
+                MetroHub.Core.Services.AppPaths.EnsureDirectory(crashLog);
+                string entry = $"[{System.DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [TaskScheduler.UnobservedTaskException]{System.Environment.NewLine}{args.Exception}{System.Environment.NewLine}{System.Environment.NewLine}";
+                File.AppendAllText(crashLog, entry);
+                args.SetObserved();
             }
             catch { }
         };
@@ -154,24 +169,16 @@ public partial class App : Application
 
     protected override void OnSessionEnding(SessionEndingCancelEventArgs e)
     {
-        try
-        {
-            _mainWindow?.SaveGroupsAndLayout();
-            StorageService.Flush();
-        }
-        catch { }
+        Safe.Try(() => _mainWindow?.SaveGroupsAndLayout(), "App.OnSessionEnding.SaveGroupsAndLayout");
+        Safe.Try(StorageService.Flush, "App.OnSessionEnding.StorageFlush");
 
         base.OnSessionEnding(e);
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
-        try
-        {
-            _mainWindow?.SaveGroupsAndLayout();
-            StorageService.Flush();
-        }
-        catch { }
+        Safe.Try(() => _mainWindow?.SaveGroupsAndLayout(), "App.OnExit.SaveGroupsAndLayout");
+        Safe.Try(StorageService.Flush, "App.OnExit.StorageFlush");
 
         if (_notifyIcon != null)
         {
