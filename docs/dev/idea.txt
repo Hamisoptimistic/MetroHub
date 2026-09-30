@@ -1,0 +1,43 @@
+METROHUB WIDGET IDEAS
+=====================
+
+1. Live Hardware Pulse (CPU / GPU / RAM)
+- Shows a glowing heartbeat/wave line that moves with your CPU, GPU, and RAM usage.
+- Click or hover to see which apps are using the most memory.
+- Quick button to close heavy apps or clean up RAM with one click.
+
+2. Ambient Sounds & Lo-Fi Noise
+- Play relax and focus sounds right from the widget without opening a browser.
+- Pick and mix sounds: Rain, Thunder, Campfire, White/Brown noise.
+- Sliders for volume.
+- Automatically pauses when you play music on your media player.
+
+3. Desktop Pixel Pet / Companion
+- A cute pixel art pet (cat, mini robot, or ghost) that lives on your desktop tile.
+- Dances with headphones on when music is playing.
+- Sleeps when you are away from your PC.
+- Types on a tiny laptop when you are busy typing.
+- Click to pet or interact with it.
+
+4. Smart Clipboard & Color Stash
+- Shows your recent copied text, links, and photos.
+- If you copy a color code (like #FF0055), it shows the actual color box on the tile.
+- Lets you pin important text or links so you can copy them again with one click.
+
+5. World Clock & Sun Tracker
+- Shows a small world map with a live daylight/night shadow moving across the earth.
+- Add cities like Tokyo, London, New York.
+- Shows if it is day, night, sunrise, or sunset in those cities.
+
+6. Quick Command & Shortcut Buttons
+- One-click buttons on your desktop to do fast tasks:
+  * Flush DNS
+  * Restart Windows Explorer
+  * Switch Windows Dark / Light mode
+  * Safely remove USB drives
+  * Open favorite folders or apps
+
+7. Flip News Ticker (Hacker News / Reddit)
+- A tile that flips over every few seconds like classic Windows Phone tiles.
+- Shows top news headlines from tech sites, gaming, or Reddit.
+- Click any headline to open it in your browser.
