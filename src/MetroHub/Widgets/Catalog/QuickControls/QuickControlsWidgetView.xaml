@@ -178,7 +178,7 @@
                 </Button>
 
                 <!-- 2. Master Volume Seekbar -->
-                <controls:FluentVolumeSlider x:Name="MasterVolumeSlider"
+                <controls:WidgetVolumeSlider x:Name="MasterVolumeSlider"
                                             Grid.Column="1"
                                             Margin="12,0"
                                             VerticalAlignment="Center"
@@ -269,7 +269,7 @@
                 </Button>
 
                 <!-- 2. Master Brightness Seekbar -->
-                <controls:FluentVolumeSlider x:Name="MasterBrightnessSlider"
+                <controls:WidgetVolumeSlider x:Name="MasterBrightnessSlider"
                                             Grid.Column="1"
                                             Margin="12,0"
                                             VerticalAlignment="Center"

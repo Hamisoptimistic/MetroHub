@@ -8,7 +8,7 @@ using MetroHub.Presentation.Themes;
 
 namespace MetroHub.Presentation.Controls;
 
-public partial class FluentVolumeSlider : UserControl
+public partial class WidgetVolumeSlider : UserControl
 {
     private static readonly SolidColorBrush DefaultProgressBrush = ThemeTokens.AccentPrimaryBrush;
 
@@ -16,28 +16,28 @@ public partial class FluentVolumeSlider : UserControl
         DependencyProperty.Register(
             nameof(Value),
             typeof(double),
-            typeof(FluentVolumeSlider),
+            typeof(WidgetVolumeSlider),
             new FrameworkPropertyMetadata(50.0, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnValueChanged));
 
     public static readonly DependencyProperty MinimumProperty =
         DependencyProperty.Register(
             nameof(Minimum),
             typeof(double),
-            typeof(FluentVolumeSlider),
+            typeof(WidgetVolumeSlider),
             new PropertyMetadata(0.0, OnMinMaxChanged));
 
     public static readonly DependencyProperty MaximumProperty =
         DependencyProperty.Register(
             nameof(Maximum),
             typeof(double),
-            typeof(FluentVolumeSlider),
+            typeof(WidgetVolumeSlider),
             new PropertyMetadata(100.0, OnMinMaxChanged));
 
     public static readonly DependencyProperty IsMutedProperty =
         DependencyProperty.Register(
             nameof(IsMuted),
             typeof(bool),
-            typeof(FluentVolumeSlider),
+            typeof(WidgetVolumeSlider),
             new PropertyMetadata(false, OnIsMutedChanged));
 
     public double Value
@@ -68,7 +68,7 @@ public partial class FluentVolumeSlider : UserControl
         DependencyProperty.Register(
             nameof(ProgressBrush),
             typeof(Brush),
-            typeof(FluentVolumeSlider),
+            typeof(WidgetVolumeSlider),
             new PropertyMetadata(null, OnProgressBrushChanged));
 
     public Brush? ProgressBrush
@@ -81,7 +81,7 @@ public partial class FluentVolumeSlider : UserControl
         DependencyProperty.Register(
             nameof(ProgressPointerOverBrush),
             typeof(Brush),
-            typeof(FluentVolumeSlider),
+            typeof(WidgetVolumeSlider),
             new PropertyMetadata(null));
 
     public Brush? ProgressPointerOverBrush
@@ -94,7 +94,7 @@ public partial class FluentVolumeSlider : UserControl
         DependencyProperty.Register(
             nameof(IsDragging),
             typeof(bool),
-            typeof(FluentVolumeSlider),
+            typeof(WidgetVolumeSlider),
             new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
     public bool IsDragging
@@ -106,7 +106,7 @@ public partial class FluentVolumeSlider : UserControl
     private bool _isDragging;
     private System.Windows.Threading.DispatcherTimer? _dragReleaseTimer;
 
-    public FluentVolumeSlider()
+    public WidgetVolumeSlider()
     {
         InitializeComponent();
         Loaded += (s, e) =>
@@ -123,7 +123,7 @@ public partial class FluentVolumeSlider : UserControl
 
     private static void OnValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is FluentVolumeSlider slider)
+        if (d is WidgetVolumeSlider slider)
         {
             slider.UpdateVisuals();
         }
@@ -131,7 +131,7 @@ public partial class FluentVolumeSlider : UserControl
 
     private static void OnMinMaxChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is FluentVolumeSlider slider)
+        if (d is WidgetVolumeSlider slider)
         {
             slider.UpdateVisuals();
         }
@@ -139,7 +139,7 @@ public partial class FluentVolumeSlider : UserControl
 
     private static void OnIsMutedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is FluentVolumeSlider slider)
+        if (d is WidgetVolumeSlider slider)
         {
             slider.UpdateMutedVisuals();
         }
@@ -147,7 +147,7 @@ public partial class FluentVolumeSlider : UserControl
 
     private static void OnProgressBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is FluentVolumeSlider slider)
+        if (d is WidgetVolumeSlider slider)
         {
             slider.ApplyProgressBrush();
         }

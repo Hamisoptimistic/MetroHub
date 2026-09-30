@@ -366,8 +366,8 @@
                             </Grid>
                         </Button>
 
-                        <!-- Fluent Volume Slider (System Accent Color) -->
-                        <controls:FluentVolumeSlider Width="105"
+                        <!-- Widget Volume Slider (System Accent Color) -->
+                        <controls:WidgetVolumeSlider Width="105"
                                                     Margin="6,0,0,0"
                                                     VerticalAlignment="Center"
                                                     Value="{Binding Volume, Mode=TwoWay}"

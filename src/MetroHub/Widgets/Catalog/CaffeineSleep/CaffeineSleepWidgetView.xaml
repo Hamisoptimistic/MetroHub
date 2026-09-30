@@ -645,8 +645,8 @@
                                    Margin="0,0,10,0"
                                    VerticalAlignment="Center" />
 
-                    <!-- Fluent Volume/Progress Slider with WPF-UI Circular Thumb & Active Track Fill -->
-                    <controls:FluentVolumeSlider Grid.Column="1"
+                    <!-- Widget Volume/Progress Slider with WPF-UI Circular Thumb & Active Track Fill -->
+                    <controls:WidgetVolumeSlider Grid.Column="1"
                                                 Minimum="0"
                                                 Maximum="100"
                                                 Value="{Binding NightLightStrength, Mode=TwoWay}"

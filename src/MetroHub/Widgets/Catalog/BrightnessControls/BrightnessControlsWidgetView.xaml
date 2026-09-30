@@ -65,7 +65,7 @@
                 </Button>
 
                 <!-- 2. Master Brightness Seekbar -->
-                <controls:FluentVolumeSlider x:Name="MasterBrightnessSlider"
+                <controls:WidgetVolumeSlider x:Name="MasterBrightnessSlider"
                                             Grid.Column="1"
                                             Margin="12,0"
                                             VerticalAlignment="Center"
@@ -288,7 +288,7 @@
                                                 </StackPanel>
 
                                                 <!-- 4. Individual Monitor Slider -->
-                                                <controls:FluentVolumeSlider Grid.Column="3"
+                                                <controls:WidgetVolumeSlider Grid.Column="3"
                                                                             Margin="6,0"
                                                                             VerticalAlignment="Center"
                                                                             Value="{Binding Brightness, Mode=TwoWay}"

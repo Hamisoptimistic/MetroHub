@@ -1311,7 +1311,7 @@ public partial class MainWindow
                 current is System.Windows.Controls.ListBoxItem ||
                 current is System.Windows.Controls.Primitives.Selector ||
                 current is ContextMenu ||
-                current is Presentation.Controls.FluentVolumeSlider ||
+                current is Presentation.Controls.WidgetVolumeSlider ||
                 current is Widgets.WidgetSegmentedControl ||
                 current is Widgets.WidgetSegmentedItem ||
                 current is Widgets.WidgetTiles ||
