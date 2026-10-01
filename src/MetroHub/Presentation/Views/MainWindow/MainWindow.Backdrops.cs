@@ -119,7 +119,7 @@ public partial class MainWindow
         UpdateWallpaperParallax();
     }
 
-    public void ApplyConfiguredBackdrop() => BackdropManager.ApplyConfiguredBackdrop();
+    public void ApplyConfiguredBackdrop(bool force = true) => BackdropManager.ApplyConfiguredBackdrop(force);
 
     public static bool IsWallpaperBackdrop(string? backdropType) => BackdropManager.IsWallpaperBackdrop(backdropType);
 

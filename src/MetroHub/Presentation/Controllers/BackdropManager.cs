@@ -69,8 +69,17 @@ public sealed class BackdropManager
         _updateMenuChecksAction = updateMenuChecksAction;
     }
 
-    public void ApplyConfiguredBackdrop()
+    private bool _isBackdropConfigured = false;
+
+    public void InvalidateBackdrop()
     {
+        _isBackdropConfigured = false;
+    }
+
+    public void ApplyConfiguredBackdrop(bool force = true)
+    {
+        if (!force && _isBackdropConfigured) return;
+
         IntPtr hwnd = new WindowInteropHelper(_window).Handle;
         if (hwnd == IntPtr.Zero) return;
 
@@ -137,6 +146,7 @@ public sealed class BackdropManager
         }
 
         _updateMenuChecksAction?.Invoke();
+        _isBackdropConfigured = true;
     }
 
     public void UpdateWallpaperParallax()

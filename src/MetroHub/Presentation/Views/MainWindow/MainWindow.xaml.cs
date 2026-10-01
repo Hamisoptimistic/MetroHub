@@ -200,6 +200,7 @@ public partial class MainWindow : BorderlessFluentWindow
     private IntPtr _keyboardHook = IntPtr.Zero;
     private NativeMethods.LowLevelKeyboardProc? _keyboardHookProc;
     private volatile bool _suppressNextAltKeyUp = false;
+    private System.Threading.Timer? _keepWarmTimer;
 
     public MainWindow()
     {
@@ -239,6 +240,7 @@ public partial class MainWindow : BorderlessFluentWindow
 
         InstalledAppsService.AppsCatalogChanged += OnAppsCatalogChanged;
         StartBackgroundAppWarmup();
+        InitializeKeepWarmTimer();
 
         PreviewTextInput += OnWindowPreviewTextInput;
         PreviewMouseDown += OnWindowPreviewMouseDown;
@@ -562,107 +564,47 @@ public partial class MainWindow : BorderlessFluentWindow
 
         if (RootTranslate != null)
         {
+            RootTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+            RootTranslate.BeginAnimation(TranslateTransform.YProperty, null);
             RootTranslate.X = 0.0;
             RootTranslate.Y = 0.0;
         }
 
-        if (TryFindResource("OpenStoryboard") is Storyboard openStoryboard)
+        if (RootGrid != null)
         {
-            var sb = openStoryboard.Clone();
-            Timeline.SetDesiredFrameRate(sb, NativeMethods.GetScreenRefreshRate());
-            sb.Completed += (s, e) =>
-            {
-                if (RootGrid != null)
-                {
-                    RootGrid.BeginAnimation(UIElement.OpacityProperty, null);
-                    RootGrid.Opacity = 1.0;
-                }
-            };
-            sb.Begin(this, isControllable: true);
-        }
-        else
-        {
-            if (RootGrid != null) RootGrid.Opacity = 1.0;
-            if (RootTranslate != null) { RootTranslate.X = 0.0; RootTranslate.Y = 0.0; }
+            RootGrid.IsHitTestVisible = true;
         }
     }
 
     public void DismissWithAnimation()
     {
         if (!IsVisible) return;
-        _isDismissing = true;
-
-        // Immediately disable hit-testing so tiles/widgets cannot be clicked during exit fade
-        if (RootGrid != null) RootGrid.IsHitTestVisible = false;
+        _isDismissing = false;
 
         if (_isDragging || _isPotentialDrag || _isRubberBanding)
         {
             CancelActiveDrag();
         }
 
+        Hide();
+        _isFullyActivated = false;
+        Topmost = false;
+
+        if (RootGrid != null) RootGrid.IsHitTestVisible = true;
         if (RootTranslate != null)
         {
+            RootTranslate.BeginAnimation(TranslateTransform.XProperty, null);
+            RootTranslate.BeginAnimation(TranslateTransform.YProperty, null);
             RootTranslate.X = 0.0;
             RootTranslate.Y = 0.0;
         }
 
-        if (TryFindResource("ExitStoryboard") is Storyboard exitStoryboard)
+        // Log diagnostic snapshot at idle priority after window is hidden (without forced GC or WorkingSet flush)
+        Dispatcher.InvokeAsync(() =>
         {
-            var sb = exitStoryboard.Clone();
-            Timeline.SetDesiredFrameRate(sb, NativeMethods.GetScreenRefreshRate());
-
-            bool completedHandled = false;
-            EventHandler? completedHandler = null;
-            completedHandler = (s, e) =>
-            {
-                if (completedHandled) return;
-                completedHandled = true;
-                if (completedHandler != null) sb.Completed -= completedHandler;
-
-                Hide();
-                _isDismissing = false;
-                _isFullyActivated = false;
-                Topmost = false;
-
-                // Reset back cleanly
-                if (RootGrid != null)
-                {
-                    RootGrid.Opacity = 0.0;
-                    RootGrid.IsHitTestVisible = true;
-                }
-                if (RootTranslate != null)
-                {
-                    RootTranslate.X = 0.0;
-                    RootTranslate.Y = 0.0;
-                }
-
-                try { sb.Remove(this); } catch { }
-
-                // Log diagnostic snapshot at idle priority after window is hidden (without forced GC or WorkingSet flush)
-                Dispatcher.InvokeAsync(() =>
-                {
-                    var currentMB = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
-                    MetroHub.Core.Services.HiddenDiagnosticsLogger.LogMemorySnapshot("HUB HIDE", currentMB);
-                }, DispatcherPriority.ApplicationIdle);
-            };
-
-            sb.Completed += completedHandler;
-            sb.Begin(this, isControllable: true);
-        }
-        else
-        {
-            Hide();
-            _isDismissing = false;
-            _isFullyActivated = false;
-            Topmost = false;
-            if (RootGrid != null) RootGrid.IsHitTestVisible = true;
-
-            Dispatcher.InvokeAsync(() =>
-            {
-                var currentMB = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
-                MetroHub.Core.Services.HiddenDiagnosticsLogger.LogMemorySnapshot("HUB HIDE", currentMB);
-            }, DispatcherPriority.ApplicationIdle);
-        }
+            var currentMB = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
+            MetroHub.Core.Services.HiddenDiagnosticsLogger.LogMemorySnapshot("HUB HIDE", currentMB);
+        }, DispatcherPriority.ApplicationIdle);
     }
 
     private const int WM_SETTINGCHANGE = 0x001A;
@@ -688,12 +630,15 @@ public partial class MainWindow : BorderlessFluentWindow
             {
                 try
                 {
+                    _cachedWorkArea = Rect.Empty;
+                    _cachedDpiX = 0;
+                    _cachedDpiY = 0;
                     if (IsVisible)
                     {
-                        SnapToWorkArea();
-                        ApplyConfiguredBackdrop();
+                        SnapToWorkArea(force: true);
+                        ApplyConfiguredBackdrop(force: true);
                         await Task.Delay(200);
-                        SnapToWorkArea();
+                        SnapToWorkArea(force: true);
                     }
                 }
                 catch (Exception ex)
@@ -722,7 +667,11 @@ public partial class MainWindow : BorderlessFluentWindow
         return IntPtr.Zero;
     }
 
-    public void SnapToWorkArea()
+    private Rect _cachedWorkArea = Rect.Empty;
+    private double _cachedDpiX = 0.0;
+    private double _cachedDpiY = 0.0;
+
+    public void SnapToWorkArea(bool force = false)
     {
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd == IntPtr.Zero) return;
@@ -735,6 +684,19 @@ public partial class MainWindow : BorderlessFluentWindow
         double dpiX = dpi.DpiScaleX > 0 ? dpi.DpiScaleX : 1.0;
         double dpiY = dpi.DpiScaleY > 0 ? dpi.DpiScaleY : 1.0;
 
+        // If bounds and DPI have not changed, skip redundant layout invalidations and Win32 frame resets
+        if (!force &&
+            _cachedWorkArea == workAreaPixels &&
+            Math.Abs(_cachedDpiX - dpiX) < 0.001 &&
+            Math.Abs(_cachedDpiY - dpiY) < 0.001)
+        {
+            return;
+        }
+
+        _cachedWorkArea = workAreaPixels;
+        _cachedDpiX = dpiX;
+        _cachedDpiY = dpiY;
+
         // 3. Convert physical pixels to WPF Device-Independent Units (DIPs)
         Left = workAreaPixels.Left / dpiX;
         Top = workAreaPixels.Top / dpiY;
@@ -742,6 +704,7 @@ public partial class MainWindow : BorderlessFluentWindow
         Height = workAreaPixels.Height / dpiY;
 
         // 4. Force Win32 window bounds in physical pixels so the OS shell aligns exactly
+        // NOTE: Dropped SWP_FRAMECHANGED to prevent WM_NCCALCSIZE frame buffer destruction
         NativeMethods.SetWindowPos(
             hwnd, 
             IntPtr.Zero,
@@ -749,7 +712,7 @@ public partial class MainWindow : BorderlessFluentWindow
             (int)workAreaPixels.Top,
             (int)workAreaPixels.Width, 
             (int)workAreaPixels.Height,
-            NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_FRAMECHANGED);
+            NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE);
 
         UpdateLayoutMetrics();
         UpdateCanvasHeight();
@@ -758,14 +721,36 @@ public partial class MainWindow : BorderlessFluentWindow
     protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     {
         base.OnDpiChanged(oldDpi, newDpi);
-        SnapToWorkArea();
+        SnapToWorkArea(force: true);
     }
 
     protected override void OnClosed(EventArgs e)
     {
+        _keepWarmTimer?.Dispose();
+        _keepWarmTimer = null;
         CancelPendingWallpaperLoad();
         TeardownWallpaperVideo();
         base.OnClosed(e);
+    }
+
+    private void InitializeKeepWarmTimer()
+    {
+        // Gentle 10-minute idle pulse to keep the 40-50 MB core WPF/.NET runtime resident in physical RAM
+        _keepWarmTimer = new System.Threading.Timer(_ =>
+        {
+            try
+            {
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    if (!IsVisible)
+                    {
+                        // Microscopic read to touch the framework page tables without doing heavy work
+                        _ = this.IsLoaded;
+                    }
+                }), DispatcherPriority.SystemIdle);
+            }
+            catch { }
+        }, null, TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(10));
     }
 
     private void OnHotkeyPressed()
@@ -810,20 +795,13 @@ public partial class MainWindow : BorderlessFluentWindow
         _lastShownTime = DateTime.UtcNow;
         _isFullyActivated = false;
 
-        // Phase 1 (Invisible Layout Pre-computation): Keep RootGrid invisible while HWND, DWM backdrop, and layouts initialize
-        if (RootGrid != null)
-        {
-            RootGrid.Opacity = 0.0;
-            RootGrid.IsHitTestVisible = true;
-        }
-
-        SnapToWorkArea();
+        SnapToWorkArea(force: false);
         Show();
         WindowState = WindowState.Normal;
         Topmost = true;
         InstallKeyboardHook();
 
-        ApplyConfiguredBackdrop();
+        ApplyConfiguredBackdrop(force: false);
 
         // Resume video wallpaper playback if active
         bool isVideoActive = WallpaperVideo != null && WallpaperVideo.Visibility == Visibility.Visible && WallpaperVideo.Source != null;
@@ -841,14 +819,10 @@ public partial class MainWindow : BorderlessFluentWindow
         Activate();
         Focus();
         Keyboard.Focus(this);
-        UpdateLayoutMetrics();
         UpdateExposedAddSlots();
 
-        // Phase 2 (Cohesive Fluent Entrance): Dispatch once WPF completes Measure, Arrange, and initial GPU render
-        Dispatcher.InvokeAsync(() =>
-        {
-            PlayOpenAnimation();
-        }, DispatcherPriority.Render);
+        // Immediate cohesive entrance animation without artificial Render-delay gating
+        PlayOpenAnimation();
 
         // Defer widget wake-up and service resumption to background priority so UI opens instantly without frame drops
         Dispatcher.InvokeAsync(() =>
