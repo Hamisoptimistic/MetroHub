@@ -51,9 +51,6 @@
           PreviewMouseMove="OnCanvasPreviewMouseMove"
           PreviewMouseLeftButtonUp="OnCanvasPreviewMouseUp"
           MouseLeave="OnCanvasMouseLeave">
-       <Grid.RenderTransform>
-           <TranslateTransform x:Name="RootTranslate" X="0" Y="0" />
-       </Grid.RenderTransform>
         <Grid.ColumnDefinitions>
             <!-- Left Navigation Sidebar Rail (Fixed 48px, Full Height) -->
             <ColumnDefinition Width="48" />

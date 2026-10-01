@@ -57,7 +57,6 @@ public partial class MainWindow : BorderlessFluentWindow
         }
     }
 
-    /// <summary>
     private static int _dialogScopeDepth;
 
     /// <summary>
@@ -562,14 +561,6 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         _isDismissing = false;
 
-        if (RootTranslate != null)
-        {
-            RootTranslate.BeginAnimation(TranslateTransform.XProperty, null);
-            RootTranslate.BeginAnimation(TranslateTransform.YProperty, null);
-            RootTranslate.X = 0.0;
-            RootTranslate.Y = 0.0;
-        }
-
         if (RootGrid != null)
         {
             RootGrid.IsHitTestVisible = true;
@@ -591,13 +582,6 @@ public partial class MainWindow : BorderlessFluentWindow
         Topmost = false;
 
         if (RootGrid != null) RootGrid.IsHitTestVisible = true;
-        if (RootTranslate != null)
-        {
-            RootTranslate.BeginAnimation(TranslateTransform.XProperty, null);
-            RootTranslate.BeginAnimation(TranslateTransform.YProperty, null);
-            RootTranslate.X = 0.0;
-            RootTranslate.Y = 0.0;
-        }
 
         // Log diagnostic snapshot at idle priority after window is hidden (without forced GC or WorkingSet flush)
         Dispatcher.InvokeAsync(() =>
@@ -810,10 +794,9 @@ public partial class MainWindow : BorderlessFluentWindow
             try { WallpaperVideo!.Play(); } catch (Exception ex) { Safe.Log("MainWindow.WallpaperPlay", ex); }
         }
 
-        IntPtr hwnd = myHwnd != IntPtr.Zero ? myHwnd : new WindowInteropHelper(this).Handle;
-        if (hwnd != IntPtr.Zero)
+        if (myHwnd != IntPtr.Zero)
         {
-            NativeMethods.ForceForeground(hwnd);
+            NativeMethods.ForceForeground(myHwnd);
         }
 
         Activate();
@@ -1056,7 +1039,6 @@ public partial class MainWindow : BorderlessFluentWindow
             }
         }
     }
-
 
     private void CleanupEventSubscriptions()
     {
