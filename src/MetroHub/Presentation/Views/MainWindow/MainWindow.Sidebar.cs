@@ -339,7 +339,7 @@ public partial class MainWindow
         {
             if (!string.IsNullOrWhiteSpace(item.TargetPath))
             {
-                NativeMethods.LaunchTargetAsync(item.TargetPath, item.Arguments, displayName: item.Name);
+                ProcessLauncherService.LaunchTargetAsync(item.TargetPath, item.Arguments, displayName: item.Name);
             }
         }
         catch (Exception ex)
