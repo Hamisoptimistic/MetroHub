@@ -39,9 +39,11 @@ public partial class MainWindow : BorderlessFluentWindow
     public static MainWindow? Current { get; private set; }
     
     private int _dialogOpenCount = 0;
+    private static int _dialogScopeDepth;
+
     public bool IsDialogOpen
     {
-        get => _dialogOpenCount > 0;
+        get => _dialogOpenCount > 0 || _dialogScopeDepth > 0;
         set
         {
             if (value)
@@ -58,11 +60,10 @@ public partial class MainWindow : BorderlessFluentWindow
         }
     }
 
-    private static int _dialogScopeDepth;
-
     /// <summary>
     /// Universally keeps MetroHub open and suppresses auto-dismiss when an external modal,
     /// file picker, or UAC elevation prompt is active, then automatically restores foreground focus.
+    /// Supports re-entrant/nested dialog scopes safely.
     /// </summary>
     public static IDisposable EnterDialogScope()
     {
@@ -70,14 +71,6 @@ public partial class MainWindow : BorderlessFluentWindow
         if (win == null) return ActionDisposable.Empty;
 
         Interlocked.Increment(ref _dialogScopeDepth);
-        if (win.Dispatcher.CheckAccess())
-        {
-            win.IsDialogOpen = true;
-        }
-        else
-        {
-            win.Dispatcher.Invoke(() => win.IsDialogOpen = true);
-        }
 
         return new ActionDisposable(() =>
         {
@@ -87,15 +80,19 @@ public partial class MainWindow : BorderlessFluentWindow
                 Interlocked.Exchange(ref _dialogScopeDepth, 0);
                 win.Dispatcher.InvokeAsync(() =>
                 {
-                    win.IsDialogOpen = false;
                     IntPtr foreHwnd = NativeMethods.GetForegroundWindow();
                     IntPtr winHwnd = new WindowInteropHelper(win).Handle;
 
                     if (foreHwnd != IntPtr.Zero && foreHwnd != winHwnd)
                     {
-                        if (win.IsVisible && !win._isDismissing)
+                        uint ourPid = (uint)Environment.ProcessId;
+                        NativeMethods.GetWindowThreadProcessId(foreHwnd, out uint forePid);
+                        if (forePid != 0 && forePid != ourPid)
                         {
-                            win.HideScreen();
+                            if (win.IsVisible && !win._isDismissing)
+                            {
+                                win.HideScreen();
+                            }
                         }
                     }
                     else
@@ -104,6 +101,7 @@ public partial class MainWindow : BorderlessFluentWindow
                         {
                             win.Activate();
                             win.Focus();
+                            Keyboard.Focus(win);
                         }
                         catch (Exception ex)
                         {
@@ -133,14 +131,19 @@ public partial class MainWindow : BorderlessFluentWindow
 
                 if (foreHwnd != IntPtr.Zero && foreHwnd != winHwnd)
                 {
-                    if (win.IsVisible && !win._isDismissing)
+                    uint ourPid = (uint)Environment.ProcessId;
+                    NativeMethods.GetWindowThreadProcessId(foreHwnd, out uint forePid);
+                    if (forePid != 0 && forePid != ourPid)
                     {
-                        win.HideScreen();
+                        if (win.IsVisible && !win._isDismissing)
+                        {
+                            win.HideScreen();
+                        }
                     }
                 }
                 else
                 {
-                    try { win.Activate(); win.Focus(); } catch (Exception ex) { Safe.Log("MainWindow.Activate", ex); }
+                    try { win.Activate(); win.Focus(); Keyboard.Focus(win); } catch (Exception ex) { Safe.Log("MainWindow.Activate", ex); }
                 }
             }
         };
@@ -852,6 +855,8 @@ public partial class MainWindow : BorderlessFluentWindow
 
         MetroHub.Core.Services.HubState.SetVisibility(false);
         MetroHub.Core.Services.HiddenDiagnosticsLogger.LogTransition(false);
+        Interlocked.Exchange(ref _dialogScopeDepth, 0);
+        Interlocked.Exchange(ref _dialogOpenCount, 0);
         if (AllAppsDrawer != null && AllAppsDrawer.IsOpen)
         {
             AllAppsDrawer.Close();

@@ -58,11 +58,13 @@ public partial class WebLinkDialog : MetroDialog
                 {
                     WebLinkTitleInput.Focus();
                     WebLinkTitleInput.SelectAll();
+                    Keyboard.Focus(WebLinkTitleInput);
                 }
                 else
                 {
                     WebLinkUrlInput.Focus();
                     WebLinkUrlInput.SelectAll();
+                    Keyboard.Focus(WebLinkUrlInput);
                 }
             }, System.Windows.Threading.DispatcherPriority.Input);
         };

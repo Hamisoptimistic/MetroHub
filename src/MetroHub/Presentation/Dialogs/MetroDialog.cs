@@ -14,7 +14,8 @@ namespace MetroHub.Presentation.Dialogs;
 /// Encapsulates the standard two-column Metro layout:
 /// - Left Column (155px): Frosted DWM Acrylic sidebar with hero icon or custom sidebar content.
 /// - Right Column (*): Dark Obsidian form panel with Title, Subtitle, Close [X] button, and content slot.
-/// Automatically provides DWM Acrylic blur, window dragging, Escape-key dismissal, and monitor work-area centering.
+/// Inherits from BorderlessFluentWindow to provide immediate DWM Acrylic blur composition (via WM_NCACTIVATE),
+/// borderless chrome, window dragging, Escape-key dismissal, and monitor work-area centering.
 /// </summary>
 public class MetroDialog : BorderlessFluentWindow
 {
@@ -24,6 +25,12 @@ public class MetroDialog : BorderlessFluentWindow
             typeof(MetroDialog),
             new FrameworkPropertyMetadata(typeof(MetroDialog)));
     }
+
+    /// <summary>
+    /// Dialogs are owned top-level modal windows, not shell overlays, so tool-window style is disabled.
+    /// This preserves standard Win32 dialog focus routing and input processing.
+    /// </summary>
+    protected override bool EnableToolWindowStyle => false;
 
     public static readonly DependencyProperty SubtitleProperty =
         DependencyProperty.Register(
@@ -110,11 +117,14 @@ public class MetroDialog : BorderlessFluentWindow
         }
     }
 
+    private IDisposable? _dialogScope;
+
     public MetroDialog()
     {
         Width = 620;
         Height = 360;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        SetResourceReference(StyleProperty, typeof(MetroDialog));
     }
 
     public override void OnApplyTemplate()
@@ -130,17 +140,34 @@ public class MetroDialog : BorderlessFluentWindow
 
     private void OnCloseButtonClicked(object sender, RoutedEventArgs e)
     {
+        if (DialogResult == null)
+        {
+            try { DialogResult = false; } catch (InvalidOperationException) { }
+        }
         Close();
     }
 
-    protected override void OnKeyDown(KeyEventArgs e)
+    protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
-        base.OnKeyDown(e);
         if (e.Key == Key.Escape)
         {
+            if (DialogResult == null)
+            {
+                try { DialogResult = false; } catch (InvalidOperationException) { }
+            }
             Close();
             e.Handled = true;
+            return;
         }
+
+        base.OnPreviewKeyDown(e);
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        base.OnClosed(e);
+        _dialogScope?.Dispose();
+        _dialogScope = null;
     }
 
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
@@ -161,6 +188,7 @@ public class MetroDialog : BorderlessFluentWindow
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
+        _dialogScope = MainWindow.EnterDialogScope();
 
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd != IntPtr.Zero)

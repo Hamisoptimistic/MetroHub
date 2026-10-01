@@ -91,6 +91,13 @@ public class XamlViewSanityTests
             var dialog = Activator.CreateInstance(dialogType);
             Assert.NotNull(dialog);
             Assert.IsAssignableFrom<Window>(dialog);
+            var win = (Window)dialog;
+            Assert.NotNull(win.Style);
+            Assert.Equal(typeof(MetroDialog), win.Style.TargetType);
+            win.ApplyTemplate();
+            Assert.NotNull(win.Template);
+            var closeBtn = win.Template.FindName("PART_CloseButton", win);
+            Assert.NotNull(closeBtn);
         });
     }
 

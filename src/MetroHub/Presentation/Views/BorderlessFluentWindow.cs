@@ -34,6 +34,12 @@ public class BorderlessFluentWindow : FluentWindow
         ShowInTaskbar = false;
     }
 
+    /// <summary>
+    /// When true, applies WS_EX_TOOLWINDOW to exclude from Alt+Tab and shell task lists.
+    /// Defaults to true for shell overlay windows. Dialogs override this to false.
+    /// </summary>
+    protected virtual bool EnableToolWindowStyle => true;
+
     protected override void OnBackdropTypeChanged(WindowBackdropType oldValue, WindowBackdropType newValue)
     {
         // Suppress WPF-UI's built-in backdrop manager which resets Background to solid #202020
@@ -71,10 +77,13 @@ public class BorderlessFluentWindow : FluentWindow
             }
             source?.AddHook(HwndMessageHook);
 
-            // Ensure window has WS_EX_TOOLWINDOW and no WS_EX_APPWINDOW so Windows DWM treats it as an overlay
-            // and excludes it from the Alt+Tab MRU stack (just like Windows Start menu or Game bar)
-            int exStyle = NativeMethods.GetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE);
-            NativeMethods.SetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE, (exStyle | NativeMethods.WS_EX_TOOLWINDOW) & ~NativeMethods.WS_EX_APPWINDOW);
+            if (EnableToolWindowStyle)
+            {
+                // Ensure window has WS_EX_TOOLWINDOW and no WS_EX_APPWINDOW so Windows DWM treats it as an overlay
+                // and excludes it from the Alt+Tab MRU stack (just like Windows Start menu or Game bar)
+                int exStyle = NativeMethods.GetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE);
+                NativeMethods.SetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE, (exStyle | NativeMethods.WS_EX_TOOLWINDOW) & ~NativeMethods.WS_EX_APPWINDOW);
+            }
         }
 
         ApplyBorderlessAttributes();

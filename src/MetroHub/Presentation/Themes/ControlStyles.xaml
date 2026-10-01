@@ -6,15 +6,22 @@
     <!-- ========================================================================= -->
     <!-- COHESIVE FLUENT ACTION BUTTON STYLES                                      -->
     <!-- ========================================================================= -->
-    <Style x:Key="FluentCohesiveActionButtonStyle" TargetType="Button">
+    <!-- UNIVERSAL FLUENT COHESIVE BUTTON (Master Button DNA)                      -->
+    <!-- Unified Frosted Glass Button: Connect, Cancel, Turn Off, Paste, Options   -->
+    <!-- ========================================================================= -->
+    <Style x:Key="FluentCohesiveButtonStyle" TargetType="Button">
+        <Setter Property="Height" Value="32" />
+        <Setter Property="MinWidth" Value="85" />
+        <Setter Property="Padding" Value="14,0" />
         <Setter Property="Background" Value="#1CFFFFFF" />
-        <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="BorderBrush" Value="#20FFFFFF" />
+        <Setter Property="BorderThickness" Value="1" />
         <Setter Property="Foreground" Value="#F5FFFFFF" />
         <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
         <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
         <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Cursor" Value="Hand" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -26,24 +33,25 @@
                             Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="{DynamicResource ControlCornerRadius}"
-                            >
+                            CornerRadius="{DynamicResource ControlCornerRadius}">
                         <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
-                                          Margin="{TemplateBinding Padding}"
-                                          />
+                                          Margin="{TemplateBinding Padding}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="ButtonBorder" Property="Background" Value="#25FFFFFF" />
+                            <Setter TargetName="ButtonBorder" Property="Background" Value="#28FFFFFF" />
+                            <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#38FFFFFF" />
                             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
+                            <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#25FFFFFF" />
                             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.35" />
+                            <Setter Property="Cursor" Value="Arrow" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -51,26 +59,9 @@
         </Setter>
     </Style>
 
-    <Style x:Key="FluentCohesiveSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentCohesiveActionButtonStyle}">
-        <Setter Property="Background" Value="#10FFFFFF" />
-        <Setter Property="BorderBrush" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Foreground" Value="#B5FFFFFF" />
-        <Setter Property="FontSize" Value="{DynamicResource TypeCaptionFontSize}" />
-        <Setter Property="FontWeight" Value="{DynamicResource TypeCaptionFontWeight}" />
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="{DynamicResource FluentHoverBrush}" />
-                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-            </Trigger>
-            <Trigger Property="IsPressed" Value="True">
-                <Setter Property="Background" Value="{DynamicResource FluentPressedBrush}" />
-            </Trigger>
-            <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Opacity" Value="0.35" />
-            </Trigger>
-        </Style.Triggers>
-    </Style>
+    <!-- Compatibility aliases: seamlessly route legacy keys to the single master style -->
+    <Style x:Key="FluentCohesiveActionButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentCohesiveButtonStyle}" />
+    <Style x:Key="FluentCohesiveSecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentCohesiveButtonStyle}" />
 
     <!-- Universal Fluent Ghost Button Style (Icon / Toolbar / Header Buttons) -->
     <Style x:Key="FluentGhostButtonStyle" TargetType="Button">
@@ -119,33 +110,40 @@
     <Style TargetType="Button" BasedOn="{StaticResource FluentGhostButtonStyle}" />
 
     <!-- Universal Fluent Primary Accent Button Style (Dialog Confirm / Save / Add) -->
+    <!-- Frosted Glass with Subtle Accent Tint & Border, matching Connect DNA -->
     <Style x:Key="FluentCohesivePrimaryButtonStyle" TargetType="Button">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Height" Value="32" />
         <Setter Property="MinWidth" Value="100" />
-        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Padding" Value="16,0" />
         <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
         <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="BtnBorder"
-                            Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                            Background="#264CC2FF"
+                            BorderBrush="#604CC2FF"
+                            BorderThickness="1"
                             CornerRadius="{DynamicResource ControlCornerRadius}">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource SystemAccentColorSecondaryBrush}" />
+                            <Setter TargetName="BtnBorder" Property="Background" Value="#384CC2FF" />
+                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#854CC2FF" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource SystemAccentColorTertiaryBrush}" />
+                            <Setter TargetName="BtnBorder" Property="Background" Value="#1E4CC2FF" />
+                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#504CC2FF" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="BtnBorder" Property="Opacity" Value="0.4" />
+                            <Setter TargetName="BtnBorder" Property="Opacity" Value="0.35" />
                             <Setter Property="Cursor" Value="Arrow" />
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -352,6 +350,7 @@
     <Style x:Key="FluentGlassRadioButtonStyle" TargetType="RadioButton">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Cursor" Value="Hand" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Template">
             <Setter.Value>
@@ -383,7 +382,7 @@
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="OuterRing" Property="Stroke" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
-                            <Setter TargetName="OuterRing" Property="Fill" Value="{DynamicResource SystemAccentColorTertiaryBrush}" />
+                            <Setter TargetName="OuterRing" Property="Fill" Value="Transparent" />
                             <Setter TargetName="InnerDot" Property="Opacity" Value="1.0" />
                         </Trigger>
                     </ControlTemplate.Triggers>
@@ -424,14 +423,13 @@
     <!-- METRO DIALOG WINDOW BASE STYLE & TEMPLATE                                -->
     <!-- Encapsulates the 155px frosted acrylic sidebar and dark form panel        -->
     <!-- ========================================================================= -->
-    <Style TargetType="{x:Type dialogs:MetroDialog}">
+    <Style TargetType="{x:Type dialogs:MetroDialog}" x:Key="{x:Type dialogs:MetroDialog}">
         <Setter Property="WindowBackdropType" Value="Acrylic" />
         <Setter Property="WindowCornerPreference" Value="DoNotRound" />
         <Setter Property="ExtendsContentIntoTitleBar" Value="True" />
         <Setter Property="WindowStyle" Value="None" />
         <Setter Property="ResizeMode" Value="NoResize" />
         <Setter Property="ShowInTaskbar" Value="False" />
-        <Setter Property="WindowStartupLocation" Value="CenterOwner" />
         <Setter Property="Width" Value="620" />
         <Setter Property="Height" Value="360" />
         <Setter Property="Background" Value="Transparent" />

@@ -581,4 +581,10 @@ public partial class RadioStationDialog : MetroDialog
     {
         ApplyRadioStation();
     }
+
+    private void OnCloseButtonClick(object sender, RoutedEventArgs e)
+    {
+        DialogResult = false;
+        Close();
+    }
 }

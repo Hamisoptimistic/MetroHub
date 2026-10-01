@@ -15,9 +15,6 @@
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
-        <!-- Cohesive Fluent Action Button Style (Inherits central WidgetActionButtonStyle) -->
-        <Style x:Key="FluentModeButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetActionButtonStyle}" />
-
         <!-- Caffeine WidgetTile Style: balanced optical spacing that clears the separator line without over-expanding -->
         <Style TargetType="{x:Type widgets:WidgetTile}" BasedOn="{StaticResource WidgetTileStyle}">
             <Setter Property="Height" Value="72" />
@@ -350,7 +347,8 @@
                             Style="{StaticResource FluentCohesiveSecondaryButtonStyle}"
                             Command="{Binding TurnOffDisplaysCommand}"
                             VerticalAlignment="Center"
-                            Padding="14,6,14,6"
+                            Height="28"
+                            Padding="12,0"
                             ToolTip="Instantly powers down all displays into sleep">
                         <TextBlock Text="Turn Off"
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -460,7 +458,8 @@
                             Style="{StaticResource FluentCohesiveSecondaryButtonStyle}"
                             Click="ModeButton_Click"
                             VerticalAlignment="Center"
-                            Padding="12,6,10,6"
+                            Height="28"
+                            Padding="12,0,10,0"
                             ToolTip="Select awake mode">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="{Binding ModeButtonText}"
