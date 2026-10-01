@@ -1,0 +1,139 @@
+<dialogs:MetroDialog x:Class="MetroHub.Presentation.Dialogs.WebLinkDialog"
+                     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                     xmlns:dialogs="clr-namespace:MetroHub.Presentation.Dialogs"
+                     Title="Add Web Shortcut">
+
+    <!-- Frosted Acrylic Left Sidebar Content Slot -->
+    <dialogs:MetroDialog.SidebarContent>
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Image x:Name="WebLinkFaviconImage"
+                   Width="42" Height="42"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Visibility="Collapsed"
+                   RenderOptions.BitmapScalingMode="HighQuality" />
+
+            <Image x:Name="WebLinkFallbackIcon"
+                   Source="/Assets/link.png"
+                   Width="72"
+                   Height="72"
+                   Stretch="Uniform"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   RenderOptions.BitmapScalingMode="HighQuality" />
+
+            <ui:ProgressRing x:Name="WebLinkSidebarSpinner"
+                             Width="24" Height="24"
+                             IsIndeterminate="True"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             Visibility="Collapsed" />
+        </Grid>
+    </dialogs:MetroDialog.SidebarContent>
+
+    <!-- Dark Obsidian Form Content Slot -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Body Inputs -->
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="Website URL"
+                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       Margin="0,0,0,6" />
+
+            <Grid>
+                <TextBox x:Name="WebLinkUrlInput"
+                         Style="{DynamicResource FluentGlassUrlWithPasteInputStyle}"
+                         KeyDown="OnWebLinkInputKeyDown"
+                         TextChanged="OnWebLinkUrlTextChanged" />
+
+                <Button HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Style="{DynamicResource FluentCohesiveSecondaryButtonStyle}"
+                        Height="26"
+                        Margin="0,0,5,0"
+                        Padding="8,2"
+                        Click="OnWebLinkPasteClick">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <ui:SymbolIcon Symbol="ClipboardPaste24" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center" />
+                        <TextBlock Text="Paste"
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <TextBlock Text="Shortcut Label (Optional)"
+                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       Margin="0,14,0,6" />
+            <TextBox x:Name="WebLinkTitleInput"
+                     Style="{DynamicResource FluentGlassInputStyle}"
+                     KeyDown="OnWebLinkInputKeyDown"
+                     TextChanged="OnWebLinkTitleTextChanged" />
+
+            <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                <RadioButton x:Name="WebLinkDestBothRadio"
+                             Style="{DynamicResource FluentGlassRadioButtonStyle}"
+                             GroupName="ShortcutDest"
+                             IsChecked="True"
+                             Margin="0,0,18,0">
+                    <TextBlock Text="Both canvas &amp; sidebar"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               VerticalAlignment="Center" />
+                </RadioButton>
+                <RadioButton x:Name="WebLinkDestCanvasRadio"
+                             Style="{DynamicResource FluentGlassRadioButtonStyle}"
+                             GroupName="ShortcutDest"
+                             Margin="0,0,18,0">
+                    <TextBlock Text="Canvas only"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               VerticalAlignment="Center" />
+                </RadioButton>
+                <RadioButton x:Name="WebLinkDestSidebarRadio"
+                             Style="{DynamicResource FluentGlassRadioButtonStyle}"
+                             GroupName="ShortcutDest">
+                    <TextBlock Text="Sidebar only"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               VerticalAlignment="Center" />
+                </RadioButton>
+            </StackPanel>
+
+            <TextBlock x:Name="WebLinkStatusMessage"
+                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                       Foreground="{DynamicResource StatusErrorBrush}"
+                       Margin="0,8,0,0"
+                       TextWrapping="Wrap"
+                       Visibility="Collapsed" />
+        </StackPanel>
+
+        <!-- Footer Action Buttons -->
+        <Grid Grid.Row="1" Margin="0,16,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Add Shortcut"
+                        Style="{DynamicResource FluentCohesivePrimaryButtonStyle}"
+                        Margin="0,0,8,0"
+                        Click="OnAddWebLinkClick" />
+                <Button Content="Cancel"
+                        Style="{DynamicResource FluentCohesiveSecondaryButtonStyle}"
+                        Click="OnCloseButtonClick" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</dialogs:MetroDialog>

@@ -17,6 +17,7 @@ using MetroHub.Core.Messaging;
 using MetroHub.Core.Services;
 using MetroHub.Core.Services.Catalog;
 using MetroHub.Presentation.Controls;
+using MetroHub.Presentation.Views;
 using MetroHub.Presentation.Messaging;
 using MetroHub.Widgets.Messaging;
 using CommunityToolkit.Mvvm.Messaging;

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -36,6 +38,11 @@ public sealed partial class TemplateWidgetViewModel : WidgetViewModelBase, IWidg
 
     [ObservableProperty]
     private bool _isFeatureEnabled = true;
+
+    [ObservableProperty]
+    private string _liveStatus = "Ready";
+
+    private CancellationTokenSource? _asyncCts;
 
     public string SettingsSummary => $"Color: {BoxColor} | Clicks: {Counter}";
 
@@ -111,12 +118,42 @@ public sealed partial class TemplateWidgetViewModel : WidgetViewModelBase, IWidg
         SaveSettings();
     }
 
+    [RelayCommand]
+    public void Configure()
+    {
+        var dialog = new TemplateDialog
+        {
+            Owner = System.Windows.Application.Current?.MainWindow
+        };
+        dialog.Populate(Label, IsFeatureEnabled);
+
+        if (dialog.ShowDialog() == true)
+        {
+            Label = string.IsNullOrWhiteSpace(dialog.ResultLabel) ? "Template Widget" : dialog.ResultLabel;
+            IsFeatureEnabled = dialog.ResultIsFeatureEnabled;
+            SaveSettings();
+        }
+    }
+
     /// <summary>
     /// Context Menu (IWidgetContextMenuProvider): Yields custom menu items to inject into the right-click menu.
     /// MetroHub automatically styles icons, sets menu tags, and adds separators.
     /// </summary>
     public IEnumerable<Control> GetContextMenuItems()
     {
+        var configItem = new MenuItem
+        {
+            Header = "Configure Widget...",
+            Icon = new Wpf.Ui.Controls.SymbolIcon
+            {
+                Symbol = Wpf.Ui.Controls.SymbolRegular.Settings24,
+                FontSize = 20,
+                Foreground = ThemeTokens.MenuIconForegroundBrush
+            }
+        };
+        configItem.Click += (s, ev) => Configure();
+        yield return configItem;
+
         var resetItem = new MenuItem
         {
             Header = "Reset Template Counter",
@@ -128,7 +165,80 @@ public sealed partial class TemplateWidgetViewModel : WidgetViewModelBase, IWidg
             }
         };
         resetItem.Click += (s, ev) => ResetCounter();
-
         yield return resetItem;
+    }
+
+    /// <summary>
+    /// Lifecycle Hook 1: Centralized Heartbeat (OnSecondTick)
+    /// Called automatically once every second while MetroHub is visible.
+    /// Overriding this avoids creating separate DispatcherTimers that leak memory!
+    /// </summary>
+    public override void OnSecondTick(DateTime utcNow)
+    {
+        if (IsFeatureEnabled)
+        {
+            // Example: Update a lightweight live status without allocations
+            LiveStatus = $"Active ({utcNow:T})";
+        }
+    }
+
+    /// <summary>
+    /// Lifecycle Hook 2: Hub Visibility (Pause / Resume)
+    /// MetroHub automatically calls Pause() when the window is hidden, and Resume() when shown.
+    /// Use these to pause network polling, heavy canvas rendering, or animations.
+    /// </summary>
+    public override void Pause()
+    {
+        base.Pause();
+        LiveStatus = "Paused (Hub Hidden)";
+    }
+
+    public override void Resume()
+    {
+        base.Resume();
+        LiveStatus = "Resumed";
+    }
+
+    /// <summary>
+    /// Async Polling Pattern: How to fetch data or call external APIs safely with cancellation.
+    /// </summary>
+    [RelayCommand]
+    public async Task RefreshDataAsync()
+    {
+        _asyncCts?.Cancel();
+        _asyncCts = new CancellationTokenSource();
+        var token = _asyncCts.Token;
+
+        try
+        {
+            LiveStatus = "Fetching data...";
+            // Simulate an async network or system API call:
+            await Task.Delay(200, token);
+            LiveStatus = $"Updated at {DateTime.Now:T}";
+        }
+        catch (OperationCanceledException)
+        {
+            // Clean cancellation, ignore
+        }
+        catch (Exception ex)
+        {
+            LiveStatus = $"Error: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Teardown & Resource Disposal: Called when the tile is unpinned/deleted.
+    /// Always cancel tokens and unhook event listeners here to prevent memory leaks!
+    /// </summary>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _asyncCts?.Cancel();
+            _asyncCts?.Dispose();
+            _asyncCts = null;
+        }
+
+        base.Dispose(disposing);
     }
 }

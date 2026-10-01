@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using MetroHub.Presentation.Controls;
+using MetroHub.Presentation.Dialogs;
 using MetroHub.Widgets.Catalog.AudioControls;
 using MetroHub.Widgets.Catalog.BrightnessControls;
 using MetroHub.Widgets.Catalog.CaffeineSleep;
@@ -82,6 +83,7 @@ public class XamlViewSanityTests
     [InlineData(typeof(WebLinkDialog))]
     [InlineData(typeof(WeatherLocationDialog))]
     [InlineData(typeof(RadioStationDialog))]
+    [InlineData(typeof(TemplateDialog))]
     public void ModalDialog_InitializesWithoutMissingResources(Type dialogType)
     {
         WpfTestHost.RunSta(() =>

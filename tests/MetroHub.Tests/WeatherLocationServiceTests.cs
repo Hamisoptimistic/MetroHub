@@ -143,7 +143,7 @@ public class WeatherLocationServiceTests
     {
         MarkdownTestHost.RunSta(() =>
         {
-            var dlg = new MetroHub.Presentation.Controls.WebLinkDialog();
+            var dlg = new MetroHub.Presentation.Dialogs.WebLinkDialog();
             Assert.NotNull(dlg);
             dlg.Close();
         });

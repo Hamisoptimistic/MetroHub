@@ -11,7 +11,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
-using MetroHub.Widgets.Models;
 using MetroHub.Widgets.Serialization;
 using Microsoft.Win32;
 

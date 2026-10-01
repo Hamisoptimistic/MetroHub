@@ -1,26 +1,27 @@
-<ui:FluentWindow x:Class="MetroHub.Presentation.Controls.RadioStationDialog"
-                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-                    xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
-                    WindowBackdropType="Acrylic"
-                    WindowCornerPreference="DoNotRound"
-                    ExtendsContentIntoTitleBar="True"
-                    WindowStyle="None"
-                    ResizeMode="NoResize"
-                    ShowInTaskbar="False"
-                    WindowStartupLocation="CenterOwner"
-                    Width="620"
-                    Height="420"
-                    Background="Transparent"
-                    Foreground="{DynamicResource TextPrimaryBrush}"
-                    FontFamily="{DynamicResource AppFontFamily}"
-                    RenderOptions.ClearTypeHint="Enabled"
-                    TextOptions.TextFormattingMode="Ideal"
-                    TextOptions.TextRenderingMode="ClearType"
-                    TextOptions.TextHintingMode="Auto"
-                    SnapsToDevicePixels="True"
-                    UseLayoutRounding="True">
+<dialogs:MetroDialog x:Class="MetroHub.Presentation.Controls.RadioStationDialog"
+                     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                     xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+                     xmlns:dialogs="clr-namespace:MetroHub.Presentation.Dialogs"
+                     Title="Add Radio Station"
+                     Width="620"
+                     Height="420">
+
+    <dialogs:MetroDialog.SidebarContent>
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Ellipse Width="80" Height="80" Fill="#184A90E2">
+                <Ellipse.Effect>
+                    <BlurEffect Radius="20" />
+                </Ellipse.Effect>
+            </Ellipse>
+            <ui:SymbolIcon Symbol="HeadphonesSoundWave24"
+                           FontSize="56"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+        </Grid>
+    </dialogs:MetroDialog.SidebarContent>
 
     <Window.Resources>
 
@@ -122,63 +123,15 @@
         </DataTemplate>
     </Window.Resources>
 
-    <!-- Borderless Window Wrapper -->
-    <Border Background="Transparent"
-            BorderThickness="0"
-            CornerRadius="{DynamicResource ControlCornerRadius}"
-            >
-        <Grid RenderOptions.ClearTypeHint="Enabled">
-            <Grid.ColumnDefinitions>
-                <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR -->
-                <ColumnDefinition Width="155" />
-                <!-- COLUMN 1: OBSIDIAN DARK CONTENT PANEL -->
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+    <!-- Dark Obsidian Form Content Slot -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
-            <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR -->
-            <Grid Grid.Column="0" Background="Transparent">
-                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Ellipse Width="80" Height="80" Fill="#184A90E2">
-                        <Ellipse.Effect>
-                            <BlurEffect Radius="20" />
-                        </Ellipse.Effect>
-                    </Ellipse>
-                    <ui:SymbolIcon Symbol="HeadphonesSoundWave24"
-                                   FontSize="56"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                   HorizontalAlignment="Center"
-                                   VerticalAlignment="Center" />
-                </Grid>
-            </Grid>
-
-            <!-- COLUMN 1: OBSIDIAN DARK CONTENT PANEL -->
-            <Border Grid.Column="1"
-                    Background="{DynamicResource DialogPanelBackground}"
-                    CornerRadius="0,2,2,0"
-                    RenderOptions.ClearTypeHint="Enabled">
-                <Grid Margin="24,20,24,20">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-
-                    <!-- Header -->
-                    <Grid Grid.Row="0" Margin="0,0,0,18">
-                        <TextBlock x:Name="HeaderTitleText"
-                                   Text="Add Radio Station"
-                                   FontSize="{DynamicResource TypeHeaderFontSize}"
-                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                   VerticalAlignment="Center" />
-
-                        <Button HorizontalAlignment="Right"
-                                Style="{DynamicResource ModalDismissButtonStyle}"
-                                Click="OnCloseButtonClick" />
-                    </Grid>
-
-                    <!-- Body: Radio Station Form -->
-                    <Grid Grid.Row="1">
+        <!-- Body: Radio Station Form -->
+        <Grid Grid.Row="0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
@@ -409,7 +362,7 @@
                     </Grid>
 
                     <!-- Footer: Action Button -->
-                    <Grid Grid.Row="2" Margin="0,14,0,0">
+                    <Grid Grid.Row="1" Margin="0,14,0,0">
                         <Button x:Name="PrimaryActionButton"
                                 Style="{DynamicResource FluentCohesivePrimaryButtonStyle}"
                                 Content="Add Station"
@@ -420,8 +373,5 @@
                                 HorizontalAlignment="Right"
                                 Click="OnPrimaryActionButtonClick" />
                     </Grid>
-                </Grid>
-            </Border>
-        </Grid>
-    </Border>
-</ui:FluentWindow>
+    </Grid>
+</dialogs:MetroDialog>

@@ -16,6 +16,7 @@ using MetroHub.Core.Services;
 using MetroHub.Core.Services.Catalog;
 using MetroHub.Presentation.Controllers;
 using MetroHub.Presentation.Controls;
+using MetroHub.Presentation.Dialogs;
 using MetroHub.Presentation.Themes;
 using MenuItem = System.Windows.Controls.MenuItem;
 using ContextMenu = System.Windows.Controls.ContextMenu;
@@ -243,7 +244,7 @@ public partial class MainWindow
     {
         using (EnterDialogScope())
         {
-            var result = Presentation.Controls.WebLinkDialog.Show(this, initialUrl);
+            var result = WebLinkDialog.Show(this, initialUrl);
             if (result != null)
             {
                 OnWebLinkCreated(this, result);

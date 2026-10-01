@@ -54,13 +54,20 @@
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" />
 
-                <!-- Action button using the universal micro button style -->
-                <Button Grid.Column="2"
-                        Style="{StaticResource WidgetMicroButtonStyle}"
-                        Command="{Binding CycleColorCommand}"
-                        ToolTip="Cycle Theme Color">
-                    <ui:SymbolIcon Symbol="ArrowSync24" FontSize="14" />
-                </Button>
+                <!-- Action buttons using the universal micro button style -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Style="{StaticResource WidgetMicroButtonStyle}"
+                            Command="{Binding CycleColorCommand}"
+                            ToolTip="Cycle Theme Color"
+                            Margin="0,0,4,0">
+                        <ui:SymbolIcon Symbol="ArrowSync24" FontSize="14" />
+                    </Button>
+                    <Button Style="{StaticResource WidgetMicroButtonStyle}"
+                            Command="{Binding ConfigureCommand}"
+                            ToolTip="Configure Widget">
+                        <ui:SymbolIcon Symbol="Settings24" FontSize="14" />
+                    </Button>
+                </StackPanel>
             </Grid>
 
             <!-- 2. Main Body Content: Interactive colored card -->
@@ -88,12 +95,17 @@
                     Style="{StaticResource WidgetHairlineDividerStyle}"
                     Margin="0,0,0,8" />
 
-            <!-- 4. Footer: Toggle Switch Example -->
+            <!-- 4. Footer: Live Status & Toggle Switch Example -->
             <DockPanel Grid.Row="3" LastChildFill="False">
-                <TextBlock Text="Active Mode"
-                           VerticalAlignment="Center"
-                           FontSize="{DynamicResource TypeBodyFontSize}"
-                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Active Mode"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding LiveStatus}"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Foreground="{DynamicResource TextSubtleBrush}"
+                               Margin="0,1,0,0" />
+                </StackPanel>
                 <ui:ToggleSwitch DockPanel.Dock="Right"
                                  IsChecked="{Binding IsFeatureEnabled, Mode=TwoWay}" />
             </DockPanel>

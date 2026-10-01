@@ -1,29 +1,22 @@
-<ui:FluentWindow x:Class="MetroHub.Presentation.Controls.WeatherLocationDialog"
-                   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                   xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-                   xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
-                   WindowBackdropType="Acrylic"
-                   WindowCornerPreference="DoNotRound"
-                   ExtendsContentIntoTitleBar="True"
-                   WindowStyle="None"
-                   ResizeMode="NoResize"
-                   ShowInTaskbar="False"
-                   WindowStartupLocation="CenterOwner"
-                   Width="620"
-                   Height="360"
-                   Background="Transparent"
-                   Foreground="{DynamicResource TextPrimaryBrush}"
-                   FontFamily="{DynamicResource AppFontFamily}"
-                   RenderOptions.ClearTypeHint="Enabled"
-                   TextOptions.TextFormattingMode="Ideal"
-                   TextOptions.TextRenderingMode="ClearType"
-                   TextOptions.TextHintingMode="Auto"
-                   SnapsToDevicePixels="True"
-                   UseLayoutRounding="True">
+<dialogs:MetroDialog x:Class="MetroHub.Presentation.Controls.WeatherLocationDialog"
+                     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                     xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+                     xmlns:dialogs="clr-namespace:MetroHub.Presentation.Dialogs"
+                     Title="Change Location">
+
+    <dialogs:MetroDialog.SidebarContent>
+        <Image Source="/Assets/Weather/Glassmorphic/cloudy-and-rainny.png"
+               Width="72"
+               Height="72"
+               Stretch="Uniform"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               RenderOptions.BitmapScalingMode="HighQuality" />
+    </dialogs:MetroDialog.SidebarContent>
 
     <Window.Resources>
-
         <Style x:Key="SubtleActionButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -48,7 +41,6 @@
             </Setter>
         </Style>
 
-
         <Style x:Key="SuggestionListBoxItemStyle" TargetType="ListBoxItem">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -60,8 +52,7 @@
                                 Background="Transparent"
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
                                 Margin="2,1,2,1"
-                                Padding="{TemplateBinding Padding}"
-                                >
+                                Padding="{TemplateBinding Padding}">
                             <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -99,161 +90,102 @@
                            TextTrimming="CharacterEllipsis" />
             </Grid>
         </DataTemplate>
-
     </Window.Resources>
 
-    <!-- Borderless Window Wrapper -->
-    <Border Background="Transparent"
-            BorderThickness="0"
-            CornerRadius="{DynamicResource ControlCornerRadius}"
-            >
-        <Grid RenderOptions.ClearTypeHint="Enabled">
-            <Grid.ColumnDefinitions>
-                <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR -->
-                <ColumnDefinition Width="155" />
-                <!-- COLUMN 1: OBSIDIAN DARK CONTENT PANEL -->
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+    <!-- Dark Obsidian Form Content Slot -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
-            <!-- ========================================================= -->
-            <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR                        -->
-            <!-- ========================================================= -->
-            <Grid Grid.Column="0"
-                  Background="Transparent">
-                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Border Background="Transparent"
-                            BorderThickness="0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center">
-                        <Image Source="/Assets/Weather/Glassmorphic/cloudy-and-rainny.png"
-                               Width="72"
-                               Height="72"
-                               Stretch="Uniform"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
-                               RenderOptions.BitmapScalingMode="HighQuality" />
+        <!-- Body Inputs -->
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="City Name"
+                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       Margin="0,0,0,6" />
+
+            <Grid>
+                <TextBox x:Name="WeatherCityInput"
+                         Style="{DynamicResource FluentGlassSearchInputStyle}"
+                         PreviewKeyDown="OnWeatherInputPreviewKeyDown"
+                         TextChanged="OnWeatherInputTextChanged" />
+
+                <Popup x:Name="WeatherSuggestionsPopup"
+                       PlacementTarget="{Binding ElementName=WeatherCityInput}"
+                       Placement="Bottom"
+                       VerticalOffset="-1"
+                       HorizontalOffset="0"
+                       StaysOpen="False"
+                       IsOpen="False"
+                       AllowsTransparency="True"
+                       PopupAnimation="Fade">
+                    <Border Width="{Binding ActualWidth, ElementName=WeatherCityInput}"
+                            Background="#232323"
+                            BorderBrush="#40FFFFFF"
+                            BorderThickness="1"
+                            CornerRadius="0,0,2,2">
+                        <ListBox x:Name="WeatherSuggestionsList"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 Padding="0,2,0,2"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 controls:AutoHideScrollBehavior.IsEnabled="True"
+                                 MaxHeight="172"
+                                 ItemContainerStyle="{StaticResource SuggestionListBoxItemStyle}"
+                                 ItemTemplate="{StaticResource SuggestionItemTemplate}"
+                                 PreviewMouseLeftButtonUp="OnSuggestionListMouseUp"
+                                 PreviewKeyDown="OnSuggestionsListPreviewKeyDown">
+                            <ListBox.Resources>
+                                <Style TargetType="{x:Type ScrollBar}" BasedOn="{DynamicResource WidgetFloatingScrollBarStyle}" />
+                            </ListBox.Resources>
+                        </ListBox>
                     </Border>
-                </Grid>
+                </Popup>
             </Grid>
 
-            <!-- COLUMN 1: Content Panel -->
-            <Border Grid.Column="1"
-                    Background="{DynamicResource DialogPanelBackground}"
-                    CornerRadius="0,2,2,0"
-                    RenderOptions.ClearTypeHint="Enabled">
-                <Grid Margin="24,20,24,20">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+            <Button Margin="0,12,0,0"
+                    Style="{StaticResource SubtleActionButtonStyle}"
+                    Click="OnWeatherAutoLocationClick">
+                <StackPanel Orientation="Horizontal">
+                    <ui:SymbolIcon Symbol="MyLocation24" FontSize="13" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
+                    <TextBlock Text="Reset to automatic location (GPS / IP)"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
 
-                    <!-- Header -->
-                    <Grid Grid.Row="0" Margin="0,0,0,18">
-                        <TextBlock Text="Change Location"
-                                   FontSize="{DynamicResource TypeHeaderFontSize}"
-                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                   VerticalAlignment="Center" />
+            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                <ui:ProgressRing x:Name="WeatherActionSpinner"
+                                 Width="14" Height="14"
+                                 IsIndeterminate="True"
+                                 Visibility="Collapsed"
+                                 Margin="0,0,6,0" />
+                <TextBlock x:Name="WeatherStatusMessage"
+                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                           Foreground="{DynamicResource StatusErrorBrush}"
+                           TextWrapping="Wrap"
+                           Visibility="Collapsed" />
+            </StackPanel>
+        </StackPanel>
 
-                        <Button HorizontalAlignment="Right"
-                                Style="{DynamicResource ModalDismissButtonStyle}"
-                                Click="OnCloseButtonClick" />
-                    </Grid>
-
-                    <!-- Body -->
-                    <Grid Grid.Row="1">
-                        <StackPanel>
-                            <TextBlock Text="City Name"
-                                       FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                       Foreground="{DynamicResource TextMutedBrush}"
-                                       Margin="0,0,0,6" />
-
-                            <Grid>
-                                <TextBox x:Name="WeatherCityInput"
-                                         Style="{DynamicResource FluentGlassSearchInputStyle}"
-                                         PreviewKeyDown="OnWeatherInputPreviewKeyDown"
-                                         TextChanged="OnWeatherInputTextChanged" />
-
-                                <Popup x:Name="WeatherSuggestionsPopup"
-                                       PlacementTarget="{Binding ElementName=WeatherCityInput}"
-                                       Placement="Bottom"
-                                       VerticalOffset="-1"
-                                       HorizontalOffset="0"
-                                       StaysOpen="False"
-                                       IsOpen="False"
-                                       AllowsTransparency="True"
-                                       PopupAnimation="Fade">
-                                    <Border Width="{Binding ActualWidth, ElementName=WeatherCityInput}"
-                                            Background="#232323"
-                                            BorderBrush="#40FFFFFF"
-                                            BorderThickness="1"
-                                            CornerRadius="0,0,2,2"
-                                            >
-                                        <ListBox x:Name="WeatherSuggestionsList"
-                                                 Background="Transparent"
-                                                 BorderThickness="0"
-                                                 Padding="0,2,0,2"
-                                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                                 controls:AutoHideScrollBehavior.IsEnabled="True"
-                                                 MaxHeight="172"
-                                                 ItemContainerStyle="{StaticResource SuggestionListBoxItemStyle}"
-                                                 ItemTemplate="{StaticResource SuggestionItemTemplate}"
-                                                 PreviewMouseLeftButtonUp="OnSuggestionListMouseUp"
-                                                 PreviewKeyDown="OnSuggestionsListPreviewKeyDown">
-                                            <ListBox.Resources>
-                                                <Style TargetType="{x:Type ScrollBar}" BasedOn="{DynamicResource WidgetFloatingScrollBarStyle}" />
-                                            </ListBox.Resources>
-                                        </ListBox>
-                                    </Border>
-                                </Popup>
-                            </Grid>
-
-                            <Button Margin="0,12,0,0"
-                                    Style="{StaticResource SubtleActionButtonStyle}"
-                                    Click="OnWeatherAutoLocationClick">
-                                <StackPanel Orientation="Horizontal">
-                                    <ui:SymbolIcon Symbol="MyLocation24" FontSize="13" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,6,0" VerticalAlignment="Center" />
-                                    <TextBlock Text="Reset to automatic location (GPS / IP)"
-                                               FontSize="{DynamicResource TypeCaptionFontSize}"
-                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                               Foreground="{DynamicResource TextMutedBrush}"
-                                               VerticalAlignment="Center" />
-                                </StackPanel>
-                            </Button>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                                <ui:ProgressRing x:Name="WeatherActionSpinner"
-                                                 Width="14" Height="14"
-                                                 IsIndeterminate="True"
-                                                 Visibility="Collapsed"
-                                                 Margin="0,0,6,0" />
-                                <TextBlock x:Name="WeatherStatusMessage"
-                                           FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="{DynamicResource StatusErrorBrush}"
-                                           TextWrapping="Wrap"
-                                           Visibility="Collapsed" />
-                            </StackPanel>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Footer -->
-                    <Grid Grid.Row="2" Margin="0,16,0,0">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button Content="Save Location"
-                                    Style="{DynamicResource FluentCohesivePrimaryButtonStyle}"
-                                    Margin="0,0,8,0"
-                                    Click="OnSaveLocationClick" />
-                            <Button Content="Cancel"
-                                    Style="{DynamicResource FluentCohesiveSecondaryButtonStyle}"
-                                    Click="OnCloseButtonClick" />
-                        </StackPanel>
-                    </Grid>
-                </Grid>
-            </Border>
+        <!-- Footer Action Buttons -->
+        <Grid Grid.Row="1" Margin="0,16,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Save Location"
+                        Style="{DynamicResource FluentCohesivePrimaryButtonStyle}"
+                        Margin="0,0,8,0"
+                        Click="OnSaveLocationClick" />
+                <Button Content="Cancel"
+                        Style="{DynamicResource FluentCohesiveSecondaryButtonStyle}"
+                        Click="OnCloseButtonClick" />
+            </StackPanel>
         </Grid>
-    </Border>
-</ui:FluentWindow>
+    </Grid>
+</dialogs:MetroDialog>

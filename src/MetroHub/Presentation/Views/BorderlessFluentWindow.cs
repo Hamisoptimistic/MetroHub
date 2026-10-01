@@ -5,7 +5,7 @@ using System.Windows.Shell;
 using MetroHub.Core.Services;
 using Wpf.Ui.Controls;
 
-namespace MetroHub.Presentation.Controls;
+namespace MetroHub.Presentation.Views;
 
 /// <summary>
 /// A specialized FluentWindow that suppresses Windows 11 DWM non-client accent borders,

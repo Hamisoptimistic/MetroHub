@@ -3,11 +3,11 @@ using System.IO;
 using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace MetroHub.Widgets.Models;
+namespace MetroHub.Widgets.Catalog.Markdown;
 
 /// <summary>
 /// Observable model representing a document/note tab.
-/// Reusable across Markdown and Notepad widgets.
+/// Used by the Markdown widget for multi-tab document tracking.
 /// </summary>
 public class DocumentTabItem : ObservableObject
 {
