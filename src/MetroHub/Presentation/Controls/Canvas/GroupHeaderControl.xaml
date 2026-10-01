@@ -43,34 +43,34 @@
                         <ui:SymbolIcon Symbol="Color24" FontSize="18" />
                     </MenuItem.Icon>
                     <MenuItem Header="Default White" Tag="#F0FFFFFF" Click="OnColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#F0FFFFFF"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushDefault}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Fluent Sky Blue" Tag="#60CDFF" Click="OnColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#60CDFF"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushSkyBlue}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Electric Azure" Tag="#0078D7" Click="OnColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#0078D7"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushAzure}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Emerald Green" Tag="#107C10" Click="OnColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#107C10"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushEmerald}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Mint Cyan" Tag="#00B7C3" Click="OnColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#00B7C3"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushCyan}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Neon Orange" Tag="#FF8C00" Click="OnColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FF8C00"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushOrange}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Electric Amber" Tag="#FFD700" Click="OnColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FFD700"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushAmber}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Crimson Red" Tag="#FF4343" Click="OnColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FF4343"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushCrimson}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Royal Purple" Tag="#881798" Click="OnColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#881798"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushPurple}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Hot Pink" Tag="#E3008C" Click="OnColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#E3008C"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushHotPink}"/></MenuItem.Icon>
                     </MenuItem>
                 </MenuItem>
                 <MenuItem x:Name="TintColorMenuItem" Header="Group Tint Color">
@@ -81,31 +81,31 @@
                         <MenuItem.Icon><Border Width="12" Height="12" BorderThickness="1" BorderBrush="#80FFFFFF" Background="Transparent" CornerRadius="{DynamicResource ControlCornerRadius}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Fluent Sky Blue" Tag="#60CDFF" Click="OnTintColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#60CDFF"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushSkyBlue}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Electric Azure" Tag="#0078D7" Click="OnTintColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#0078D7"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushAzure}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Emerald Green" Tag="#107C10" Click="OnTintColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#107C10"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushEmerald}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Mint Cyan" Tag="#00B7C3" Click="OnTintColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#00B7C3"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushCyan}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Neon Orange" Tag="#FF8C00" Click="OnTintColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FF8C00"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushOrange}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Electric Amber" Tag="#FFD700" Click="OnTintColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FFD700"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushAmber}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Crimson Red" Tag="#FF4343" Click="OnTintColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#FF4343"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushCrimson}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Royal Purple" Tag="#881798" Click="OnTintColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#881798"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushPurple}"/></MenuItem.Icon>
                     </MenuItem>
                     <MenuItem Header="Hot Pink" Tag="#E3008C" Click="OnTintColorSelectClick">
-                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="#E3008C"/></MenuItem.Icon>
+                        <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushHotPink}"/></MenuItem.Icon>
                     </MenuItem>
                 </MenuItem>
 

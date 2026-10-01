@@ -11,13 +11,7 @@
              Focusable="False"
              FontFamily="{DynamicResource AppFontFamily}">
 
-    <UserControl.Resources>
-        <!-- Media & Pomodoro-Consistent Transport Button Style: Inherits WidgetMicroButtonStyle -->
 
-        <!-- Windows 11 Sound Output Device List Item Button Style (Inherits central WidgetListItemButtonStyle) -->
-        <Style x:Key="DeviceListItemButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetListItemButtonStyle}" />
-
-    </UserControl.Resources>
 
     <!-- Transparent WidgetCard with Padding="0" so dividers run border-to-border (like Focus Timer & Media Player) -->
     <widgets:WidgetCard Padding="0" Background="Transparent">
@@ -179,7 +173,7 @@
                         <ItemsControl ItemsSource="{Binding Devices}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type audiocontrols:AudioDeviceItemViewModel}">
-                                    <Button Style="{StaticResource DeviceListItemButtonStyle}"
+                                    <Button Style="{StaticResource WidgetListItemButtonStyle}"
                                             Command="{Binding DataContext.SelectDeviceCommand, RelativeSource={RelativeSource AncestorType={x:Type audiocontrols:AudioControlsWidgetView}}}"
                                             CommandParameter="{Binding}">
                                         <Button.Template>

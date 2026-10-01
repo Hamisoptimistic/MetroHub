@@ -74,6 +74,49 @@
     <SolidColorBrush x:Key="ContentDialogTopOverlay" Color="#08FFFFFF" />
     <CornerRadius x:Key="DialogOverlayCornerRadius">10,10,0,0</CornerRadius>
     <CornerRadius x:Key="DialogFooterCornerRadius">0,0,10,10</CornerRadius>
+    <SolidColorBrush x:Key="DialogPanelBackground" Color="#232323" />
+    <SolidColorBrush x:Key="DialogShellBackground" Color="#202020" />
+    <SolidColorBrush x:Key="DialogShellBorderBrush" Color="#33FFFFFF" />
+
+    <!-- ========================================================================= -->
+    <!-- SHELL & CANVAS CHROME OVERLAY TOKENS                                      -->
+    <!-- ========================================================================= -->
+    <SolidColorBrush x:Key="ShellBadgeBackground" Color="#F0202022" />
+    <SolidColorBrush x:Key="ShellToastBackground" Color="#EE18181C" />
+    <CornerRadius x:Key="ToastCornerRadius">8</CornerRadius>
+
+    <!-- ========================================================================= -->
+    <!-- CANVAS GROUP COLOR PALETTE (10 Standard Metro/Fluent Accents)             -->
+    <!-- ========================================================================= -->
+    <Color x:Key="GroupColorDefault">#F0FFFFFF</Color>
+    <SolidColorBrush x:Key="GroupBrushDefault" Color="{StaticResource GroupColorDefault}" />
+
+    <Color x:Key="GroupColorSkyBlue">#60CDFF</Color>
+    <SolidColorBrush x:Key="GroupBrushSkyBlue" Color="{StaticResource GroupColorSkyBlue}" />
+
+    <Color x:Key="GroupColorAzure">#0078D7</Color>
+    <SolidColorBrush x:Key="GroupBrushAzure" Color="{StaticResource GroupColorAzure}" />
+
+    <Color x:Key="GroupColorEmerald">#107C10</Color>
+    <SolidColorBrush x:Key="GroupBrushEmerald" Color="{StaticResource GroupColorEmerald}" />
+
+    <Color x:Key="GroupColorCyan">#00B7C3</Color>
+    <SolidColorBrush x:Key="GroupBrushCyan" Color="{StaticResource GroupColorCyan}" />
+
+    <Color x:Key="GroupColorOrange">#FF8C00</Color>
+    <SolidColorBrush x:Key="GroupBrushOrange" Color="{StaticResource GroupColorOrange}" />
+
+    <Color x:Key="GroupColorAmber">#FFD700</Color>
+    <SolidColorBrush x:Key="GroupBrushAmber" Color="{StaticResource GroupColorAmber}" />
+
+    <Color x:Key="GroupColorCrimson">#FF4343</Color>
+    <SolidColorBrush x:Key="GroupBrushCrimson" Color="{StaticResource GroupColorCrimson}" />
+
+    <Color x:Key="GroupColorPurple">#881798</Color>
+    <SolidColorBrush x:Key="GroupBrushPurple" Color="{StaticResource GroupColorPurple}" />
+
+    <Color x:Key="GroupColorHotPink">#E3008C</Color>
+    <SolidColorBrush x:Key="GroupBrushHotPink" Color="{StaticResource GroupColorHotPink}" />
 
     <!-- ========================================================================= -->
     <!-- UNIVERSAL FLUENT GEOMETRY & INTERACTION TOKENS                            -->
@@ -128,8 +171,14 @@
     <SolidColorBrush x:Key="StatusErrorBrush" Color="{StaticResource StatusErrorColor}" />
     <Color x:Key="StatusInfoColor">#60CDFF</Color>
     <SolidColorBrush x:Key="StatusInfoBrush" Color="{StaticResource StatusInfoColor}" />
+    <Color x:Key="StatusDangerGlowColor">#FF4343</Color>
+    <SolidColorBrush x:Key="StatusDangerGlowBrush" Color="{StaticResource StatusDangerGlowColor}" />
+    <SolidColorBrush x:Key="StatusDangerSubtleBrush" Color="#22FF4343" />
+    <SolidColorBrush x:Key="StatusDangerHoverBrush" Color="#25FF453A" />
+    <SolidColorBrush x:Key="StatusDangerPressedBrush" Color="#45FF453A" />
 
-    <!-- Universal Hairline Divider Token -->
+    <!-- Universal Indicator Dot & Hairline Divider Tokens -->
+    <SolidColorBrush x:Key="IndicatorDotInactiveBrush" Color="#25FFFFFF" />
     <Color x:Key="WidgetDividerColor">#14FFFFFF</Color>
     <SolidColorBrush x:Key="WidgetDividerBrush" Color="{StaticResource WidgetDividerColor}" />
 

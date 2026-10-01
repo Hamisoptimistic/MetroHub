@@ -38,13 +38,13 @@ All design tokens are **automatically available globally** from `Tokens.xaml`. N
 ### 1. Typography Tokens
 | Token Resource | Size / Weight | Usage |
 | :--- | :--- | :--- |
-| `FontSize="{DynamicResource TypeHeader}"` | 16px SemiBold | Widget card titles and section headers |
-| `FontSize="{DynamicResource TypeSubtitle}"` | 18px Bold | Important metrics and sub-headers |
-| `FontSize="{DynamicResource TypeBody}"` | 14px Regular | Default readable body text |
-| `FontSize="{DynamicResource TypeBodyStrong}"`| 14px SemiBold | Emphasized buttons or labels |
-| `FontSize="{DynamicResource TypeCaption}"` | 12px Regular | Timestamps, status text, subtitles |
-| `FontSize="{DynamicResource TypeDisplay}"` | 28px SemiBold | Big numeric metrics (e.g. Pomodoro timer) |
-| `FontSize="{DynamicResource TypeHero}"` | 72px Bold | Giant display digits (e.g. Clock widget) |
+| `FontSize="{DynamicResource TypeHeaderFontSize}"` | 16px SemiBold | Widget card titles and section headers |
+| `FontSize="{DynamicResource TypeSubtitleFontSize}"` | 18px Bold | Important metrics and sub-headers |
+| `FontSize="{DynamicResource TypeBodyFontSize}"` | 14px Regular | Default readable body text |
+| `FontSize="{DynamicResource TypeBodyStrongFontSize}"`| 14px SemiBold | Emphasized buttons or labels |
+| `FontSize="{DynamicResource TypeCaptionFontSize}"` | 12px Regular | Timestamps, status text, subtitles |
+| `FontSize="{DynamicResource TypeDisplayFontSize}"` | 28px SemiBold | Big numeric metrics (e.g. Pomodoro timer) |
+| `FontSize="{DynamicResource TypeHeroFontSize}"` | 72px Bold | Giant display digits (e.g. Clock widget) |
 
 ### 2. Color & Brush Tokens
 | Token Resource | Appearance | Usage |
@@ -82,7 +82,7 @@ Ideal for play/pause, refresh, or mini navigation:
 ```xml
 <Button Style="{StaticResource WidgetMediumButtonStyle}"
         Command="{Binding SaveCommand}">
-    <TextBlock Text="Save" FontSize="{DynamicResource TypeBody}" />
+    <TextBlock Text="Save" FontSize="{DynamicResource TypeBodyFontSize}" />
 </Button>
 ```
 
@@ -99,8 +99,7 @@ Ideal for play/pause, refresh, or mini navigation:
 
 ### E. Hairline Section Divider
 ```xml
-<Border Height="1" 
-        Background="{DynamicResource WidgetDividerBrush}" 
+<Border Style="{StaticResource WidgetHairlineDividerStyle}" 
         Margin="0,8" />
 ```
 

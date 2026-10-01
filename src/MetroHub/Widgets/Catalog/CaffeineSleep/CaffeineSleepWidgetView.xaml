@@ -239,7 +239,7 @@
                         <!-- Warm Sun Breathing Aura (Only active when Night Light is on + Hub visible) -->
                         <Border Width="18" Height="18"
                                 CornerRadius="9"
-                                Background="#FFB900"
+                                Background="{DynamicResource StatusWarningBrush}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Opacity="0">
@@ -280,7 +280,7 @@
                                     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsNightLightEnabled}" Value="True">
-                                            <Setter Property="Foreground" Value="#FFD54F" />
+                                            <Setter Property="Foreground" Value="{DynamicResource StatusWarningBrush}" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>

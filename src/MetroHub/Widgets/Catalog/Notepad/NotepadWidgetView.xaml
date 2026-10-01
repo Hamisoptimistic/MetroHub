@@ -28,7 +28,7 @@
             <Setter Property="Margin" Value="0" />
             <Setter Property="Width" Value="40" />
             <Setter Property="Height" Value="38" />
-            <Setter Property="Foreground" Value="#90FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}" />
             <Setter Property="IconSize" Value="16" />
             <Setter Property="Focusable" Value="False" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -175,7 +175,7 @@
         <Style x:Key="TodoDeleteButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#50FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextDisabledBrush}" />
             <Setter Property="Width" Value="24" />
             <Setter Property="Height" Value="24" />
             <Setter Property="Focusable" Value="False" />
@@ -193,11 +193,11 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Opacity" Value="1.0" />
-                                <Setter TargetName="DeleteBorder" Property="Background" Value="#25FF453A" />
-                                <Setter Property="Foreground" Value="#FF6B6B" />
+                                <Setter TargetName="DeleteBorder" Property="Background" Value="{DynamicResource StatusDangerHoverBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource StatusErrorBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="DeleteBorder" Property="Background" Value="#45FF453A" />
+                                <Setter TargetName="DeleteBorder" Property="Background" Value="{DynamicResource StatusDangerPressedBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -387,7 +387,7 @@
                     <!-- Microsoft To-Do Style Acrylic Input Bar -->
                     <Border Grid.Row="0"
                             Background="{DynamicResource WidgetDividerBrush}"
-                            BorderBrush="#18FFFFFF"
+                            BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}"
                             BorderThickness="1"
                             CornerRadius="{DynamicResource ControlCornerRadius}"
                             Height="38"
@@ -499,7 +499,7 @@
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsCompleted}" Value="True">
                                                                 <Setter Property="TextDecorations" Value="Strikethrough" />
-                                                                <Setter Property="Foreground" Value="#50FFFFFF" />
+                                                                <Setter Property="Foreground" Value="{DynamicResource TextDisabledBrush}" />
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
@@ -561,7 +561,7 @@
                                                 </Border>
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Foreground" Value="#FF6B6B" />
+                                                        <Setter Property="Foreground" Value="{DynamicResource StatusErrorBrush}" />
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>

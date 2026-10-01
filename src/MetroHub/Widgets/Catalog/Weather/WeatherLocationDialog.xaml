@@ -23,41 +23,6 @@
                    UseLayoutRounding="True">
 
     <Window.Resources>
-        <Style x:Key="ModalDismissButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="32" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}">
-                            <Path x:Name="Icon"
-                                  Width="10" Height="10"
-                                  Data="M 0.5,0.5 L 9.5,9.5 M 0.5,9.5 L 9.5,0.5"
-                                  Stroke="#85FFFFFF"
-                                  StrokeThickness="1.2"
-                                  StrokeStartLineCap="Round"
-                                  StrokeEndLineCap="Round"
-                                  SnapsToDevicePixels="False"
-                                  UseLayoutRounding="False"
-                                  HorizontalAlignment="Center"
-                                  VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="Icon" Property="Stroke" Value="{DynamicResource TextPrimaryBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
 
         <Style x:Key="SubtleActionButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
@@ -83,60 +48,6 @@
             </Setter>
         </Style>
 
-        <Style x:Key="FluentGlassSearchInputStyle" TargetType="TextBox">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="Height" Value="36" />
-            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-            <Setter Property="UseLayoutRounding" Value="True" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="BoxBorder"
-                                Background="{DynamicResource WidgetDividerBrush}"
-                                BorderBrush="#28FFFFFF"
-                                BorderThickness="1"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                >
-                            <Grid Margin="10,0,10,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <ui:SymbolIcon x:Name="PrefixIcon"
-                                               Symbol="Search24"
-                                               FontSize="14"
-                                               Foreground="{DynamicResource TextMutedBrush}"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,8,0" />
-                                <ScrollViewer x:Name="PART_ContentHost"
-                                              Grid.Column="1"
-                                              VerticalAlignment="Center"
-                                              Focusable="False"
-                                              HorizontalScrollBarVisibility="Hidden"
-                                              VerticalScrollBarVisibility="Hidden" />
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#1CFFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#45FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#B0FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#65FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
 
         <Style x:Key="SuggestionListBoxItemStyle" TargetType="ListBoxItem">
             <Setter Property="OverridesDefaultStyle" Value="True" />
@@ -189,75 +100,6 @@
             </Grid>
         </DataTemplate>
 
-        <Style x:Key="FluentCohesivePrimaryButtonStyle" TargetType="Button">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="Height" Value="32" />
-            <Setter Property="MinWidth" Value="110" />
-            <Setter Property="Padding" Value="14,0" />
-            <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder"
-                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                >
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource SystemAccentColorSecondaryBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource SystemAccentColorTertiaryBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.4" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="FluentCohesiveSecondaryButtonStyle" TargetType="Button">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="Height" Value="32" />
-            <Setter Property="MinWidth" Value="80" />
-            <Setter Property="Padding" Value="14,0" />
-            <Setter Property="FontSize" Value="{DynamicResource TypeCaptionFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeCaptionFontWeight}" />
-            <Setter Property="Foreground" Value="#E0FFFFFF" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder"
-                                Background="#1AFFFFFF"
-                                BorderBrush="#25FFFFFF"
-                                BorderThickness="1"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                >
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#28FFFFFF" />
-                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#40FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#35FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </Window.Resources>
 
     <!-- Borderless Window Wrapper -->
@@ -296,7 +138,7 @@
 
             <!-- COLUMN 1: Content Panel -->
             <Border Grid.Column="1"
-                    Background="#232323"
+                    Background="{DynamicResource DialogPanelBackground}"
                     CornerRadius="0,2,2,0"
                     RenderOptions.ClearTypeHint="Enabled">
                 <Grid Margin="24,20,24,20">
@@ -315,7 +157,7 @@
                                    VerticalAlignment="Center" />
 
                         <Button HorizontalAlignment="Right"
-                                Style="{StaticResource ModalDismissButtonStyle}"
+                                Style="{DynamicResource ModalDismissButtonStyle}"
                                 Click="OnCloseButtonClick" />
                     </Grid>
 
@@ -330,7 +172,7 @@
 
                             <Grid>
                                 <TextBox x:Name="WeatherCityInput"
-                                         Style="{StaticResource FluentGlassSearchInputStyle}"
+                                         Style="{DynamicResource FluentGlassSearchInputStyle}"
                                          PreviewKeyDown="OnWeatherInputPreviewKeyDown"
                                          TextChanged="OnWeatherInputTextChanged" />
 
@@ -362,7 +204,7 @@
                                                  PreviewMouseLeftButtonUp="OnSuggestionListMouseUp"
                                                  PreviewKeyDown="OnSuggestionsListPreviewKeyDown">
                                             <ListBox.Resources>
-                                                <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
+                                                <Style TargetType="{x:Type ScrollBar}" BasedOn="{DynamicResource WidgetFloatingScrollBarStyle}" />
                                             </ListBox.Resources>
                                         </ListBox>
                                     </Border>
@@ -402,11 +244,11 @@
                     <Grid Grid.Row="2" Margin="0,16,0,0">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Content="Save Location"
-                                    Style="{StaticResource FluentCohesivePrimaryButtonStyle}"
+                                    Style="{DynamicResource FluentCohesivePrimaryButtonStyle}"
                                     Margin="0,0,8,0"
                                     Click="OnSaveLocationClick" />
                             <Button Content="Cancel"
-                                    Style="{StaticResource FluentCohesiveSecondaryButtonStyle}"
+                                    Style="{DynamicResource FluentCohesiveSecondaryButtonStyle}"
                                     Click="OnCloseButtonClick" />
                         </StackPanel>
                     </Grid>

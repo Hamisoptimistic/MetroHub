@@ -46,33 +46,6 @@
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Style.Resources>
-            <!-- ON state: Active Green #00E676 track with Solid Black #000000 knob -->
-            <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#00E676" />
-            <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#00FF85" />
-            <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#00CC6A" />
-            <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="#8000E676" />
-            <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="#00E676" />
-            <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="#00FF85" />
-            <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="#00CC6A" />
-            <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#000000" />
-            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#1A1A1A" />
-            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#000000" />
-            <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#000000" />
-
-            <!-- OFF state: Transparent track, subtle fluent outline (#70FFFFFF), silver knob (#CECECE) -->
-            <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="Transparent" />
-            <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#0DFFFFFF" />
-            <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#18FFFFFF" />
-            <SolidColorBrush x:Key="ToggleSwitchFillOffDisabled" Color="Transparent" />
-            <SolidColorBrush x:Key="ToggleSwitchStrokeOff" Color="#70FFFFFF" />
-            <SolidColorBrush x:Key="ToggleSwitchStrokeOffPointerOver" Color="#90FFFFFF" />
-            <SolidColorBrush x:Key="ToggleSwitchStrokeOffPressed" Color="#55FFFFFF" />
-            <SolidColorBrush x:Key="ToggleSwitchStrokeOffDisabled" Color="#35FFFFFF" />
-            <SolidColorBrush x:Key="ToggleSwitchKnobFillOff" Color="#CECECE" />
-            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPointerOver" Color="{StaticResource TextPrimaryColor}" />
-            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffPressed" Color="#B0B0B0" />
-            <SolidColorBrush x:Key="ToggleSwitchKnobFillOffDisabled" Color="#60FFFFFF" />
-
             <!-- Accent overrides for ToggleSwitch -->
             <SolidColorBrush x:Key="SystemAccentColorBrush" Color="#00E676" />
             <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#00E676" />
@@ -239,7 +212,7 @@
                         <!-- Hover state: soft text brighten, subtle glass sheen, zero borders -->
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="ButtonBackground" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
-                            <Setter Property="Foreground" Value="#E0FFFFFF" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                         </Trigger>
                         <!-- Pressed state -->
                         <Trigger Property="IsPressed" Value="True">
@@ -459,7 +432,7 @@
 
                         <!-- Continuous 1px bottom border across all tiles with Fluent Reveal mouse tracking -->
                         <Grid VerticalAlignment="Bottom" Height="1">
-                            <Border Background="#22FFFFFF" />
+                            <Border Background="{DynamicResource WidgetDividerBrush}" />
                             <Border x:Name="PART_BottomRevealBorder" Opacity="0">
                                 <Border.Background>
                                     <RadialGradientBrush x:Name="PART_BottomRevealBrush" MappingMode="Absolute" RadiusX="160" RadiusY="160">
@@ -486,7 +459,7 @@
                             </Border.RenderTransform>
                             <Border.Effect>
                                 <DropShadowEffect x:Name="PART_IndicatorShadow"
-                                                  Color="#00E676"
+                                                  Color="{DynamicResource StatusSuccessColor}"
                                                   BlurRadius="8"
                                                   ShadowDepth="0"
                                                   Opacity="0.8"
@@ -767,7 +740,7 @@
         <Setter Property="Width" Value="28" />
         <Setter Property="Height" Value="28" />
         <Setter Property="Padding" Value="0" />
-        <Setter Property="Foreground" Value="#C0FFFFFF" />
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
         <Setter Property="Focusable" Value="False" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Tag" Value="InteractiveControl" />
@@ -856,7 +829,7 @@
         <Setter Property="Height" Value="7" />
         <Setter Property="CornerRadius" Value="3.5" />
         <Setter Property="Margin" Value="2.5,0" />
-        <Setter Property="Background" Value="#25FFFFFF" />
+        <Setter Property="Background" Value="{DynamicResource IndicatorDotInactiveBrush}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="UseLayoutRounding" Value="True" />
     </Style>

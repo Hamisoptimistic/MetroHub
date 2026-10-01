@@ -11,18 +11,7 @@
              Focusable="False"
              FontFamily="{DynamicResource AppFontFamily}">
 
-    <UserControl.Resources>
-        <!-- Windows Calendar Palette Tokens (Aligned with Habit Widget) -->
-        <SolidColorBrush x:Key="MonthBlockBrush" Color="#18FFFFFF" />
-        <SolidColorBrush x:Key="OutOfMonthTextBrush" Color="#40FFFFFF" />
-        <SolidColorBrush x:Key="CurrentMonthTextBrush" Color="{StaticResource TextPrimaryColor}" />
-        <SolidColorBrush x:Key="WeekdayHeaderBrush" Color="#80FFFFFF" />
-        <SolidColorBrush x:Key="CellHoverBrush" Color="#18FFFFFF" />
 
-        <!-- 28x28 Month Stepper Navigation Button Style: Inherits Universal WidgetNavButtonStyle -->
-        <Style x:Key="CalendarNavButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetNavButtonStyle}" />
-
-    </UserControl.Resources>
 
     <widgets:WidgetCard Padding="{Binding CardPadding}">
         <Grid>
@@ -44,7 +33,7 @@
                             VerticalAlignment="Center"
                             Command="{Binding PreviousMonthCommand}"
                             ToolTip="Previous Month"
-                            Style="{StaticResource CalendarNavButtonStyle}">
+                            Style="{StaticResource WidgetNavButtonStyle}">
                         <ui:SymbolIcon Symbol="ChevronLeft24" FontSize="16" />
                     </Button>
 
@@ -62,20 +51,20 @@
                             VerticalAlignment="Center"
                             Command="{Binding NextMonthCommand}"
                             ToolTip="Next Month"
-                            Style="{StaticResource CalendarNavButtonStyle}">
+                            Style="{StaticResource WidgetNavButtonStyle}">
                         <ui:SymbolIcon Symbol="ChevronRight24" FontSize="16" />
                     </Button>
                 </Grid>
 
                 <!-- 2. Weekday Header (Su, Mo, Tu, We, Th, Fr, Sa) -->
                 <UniformGrid Grid.Row="1" Columns="7" Margin="0,0,0,6">
-                    <TextBlock Text="Su" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Mo" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Tu" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="We" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Th" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Fr" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{StaticResource WeekdayHeaderBrush}" />
-                    <TextBlock Text="Sa" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{StaticResource WeekdayHeaderBrush}" />
+                    <TextBlock Text="Su" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
+                    <TextBlock Text="Mo" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
+                    <TextBlock Text="Tu" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
+                    <TextBlock Text="We" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
+                    <TextBlock Text="Th" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
+                    <TextBlock Text="Fr" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
+                    <TextBlock Text="Sa" HorizontalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}" FontWeight="{DynamicResource TypeCaptionFontWeight}" FontSize="{DynamicResource TypeCaptionFontSize}" Foreground="{DynamicResource TextSubtleBrush}" />
                 </UniformGrid>
 
                 <!-- 3. 42-Day Grid Area (Seamless Single-Polygon Month Backplate + Number Grid) -->
@@ -84,7 +73,7 @@
                     <calendar:CalendarMonthBackplate
                         FirstDayOffset="{Binding FirstDayOffset}"
                         DaysInMonth="{Binding DaysInMonth}"
-                        FillBrush="{StaticResource MonthBlockBrush}"
+                        FillBrush="{DynamicResource SurfaceGlassBrush}"
                         />
 
                     <ItemsControl ItemsSource="{Binding Days}">
@@ -117,7 +106,7 @@
                                         <!-- Hover Overlay -->
                                         <Border x:Name="HoverOverlay"
                                                 Opacity="0"
-                                                Background="{StaticResource CellHoverBrush}"
+                                                Background="{DynamicResource FluentHoverBrush}"
                                                 />
 
                                         <!-- Day Number Text -->
@@ -128,7 +117,7 @@
                                                    FontFamily="{DynamicResource AppFontFamily}"
                                                    FontSize="{DynamicResource TypeBodyFontSize}"
                                                    FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                                   Foreground="{StaticResource OutOfMonthTextBrush}"
+                                                   Foreground="{DynamicResource TextDisabledBrush}"
                                                    />
 
                                         <!-- Active Date Pill Indicator (Below the date) -->

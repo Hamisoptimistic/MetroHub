@@ -39,12 +39,12 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CloseBorder" Property="Background" Value="#25FF453A" />
-                                <Setter Property="Foreground" Value="#FF6B6B" />
+                                <Setter TargetName="CloseBorder" Property="Background" Value="{DynamicResource StatusDangerHoverBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource StatusErrorBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="CloseBorder" Property="Background" Value="#45FF453A" />
-                                <Setter Property="Foreground" Value="#FF6B6B" />
+                                <Setter TargetName="CloseBorder" Property="Background" Value="{DynamicResource StatusDangerPressedBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource StatusErrorBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -56,7 +56,7 @@
         <Style x:Key="TabScrollChevronButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#85FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}" />
             <Setter Property="Width" Value="18" />
             <Setter Property="Height" Value="26" />
             <Setter Property="Padding" Value="0" />
@@ -75,11 +75,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ChevronBorder" Property="Background" Value="#15FFFFFF" />
+                                <Setter TargetName="ChevronBorder" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="ChevronBorder" Property="Background" Value="#25FFFFFF" />
+                                <Setter TargetName="ChevronBorder" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -92,7 +92,7 @@
         <Style x:Key="AddTabButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Foreground" Value="#80FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSubtleBrush}" />
             <Setter Property="Width" Value="26" />
             <Setter Property="Height" Value="26" />
             <Setter Property="Margin" Value="2,0,4,0" />
@@ -115,11 +115,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#15FFFFFF" />
+                                <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#25FFFFFF" />
+                                <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
@@ -212,7 +212,7 @@
                                             <Ellipse Grid.Column="0"
                                                      Width="5"
                                                      Height="5"
-                                                     Fill="#4CC2FF"
+                                                     Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
                                                      Margin="0,0,6,0"
                                                      VerticalAlignment="Center"
                                                      Visibility="{Binding IsDirty, Converter={StaticResource BoolToVis}}" />

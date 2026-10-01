@@ -11,9 +11,7 @@
              Focusable="False"
              FontFamily="{DynamicResource AppFontFamily}">
 
-    <UserControl.Resources>
-        <!-- Volume & Media-Consistent Transport Button Style: Inherits WidgetMicroButtonStyle -->
-    </UserControl.Resources>
+
 
     <!-- Transparent WidgetCard with Padding="0" so dividers run border-to-border (matching Volume, Focus Timer, Media Player) -->
     <widgets:WidgetCard Padding="0" Background="Transparent">
@@ -215,7 +213,7 @@
                                                     <Setter Property="Background" Value="#08FFFFFF" />
                                                     <Style.Triggers>
                                                         <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Background" Value="#1AFFFFFF" />
+                                                            <Setter Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
                                                         </Trigger>
                                                         <DataTrigger Binding="{Binding IsCurrentCursorMonitor}" Value="True">
                                                             <Setter Property="Background" Value="{DynamicResource WidgetDividerBrush}" />
@@ -278,7 +276,7 @@
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding IsSupported}" Value="False">
                                                                         <Setter Property="Text" Value="DDC/CI Disabled" />
-                                                                        <Setter Property="Foreground" Value="#FFAA44" />
+                                                                        <Setter Property="Foreground" Value="{DynamicResource StatusWarningBrush}" />
                                                                         <Setter Property="ToolTip" Value="DDC/CI hardware control is disabled. Please enable DDC/CI in your monitor's on-screen display (OSD) menu." />
                                                                     </DataTrigger>
                                                                 </Style.Triggers>

@@ -15,7 +15,7 @@
       OFFICIAL BOILERPLATE TEMPLATE: Copy this file for your new widget's UI!
       
       Note on Styles & Tokens:
-      Tokens (TypeHeader, TextPrimaryBrush, etc.) and Styles (WidgetMicroButtonStyle, ToggleSwitch)
+      Tokens (TypeHeaderFontSize, TextPrimaryBrush, etc.) and Styles (WidgetMicroButtonStyle, ToggleSwitch)
       are merged globally in App.xaml. You can use them directly without importing any ResourceDictionaries!
     -->
     <UserControl.Resources>
@@ -48,8 +48,8 @@
 
                 <TextBlock Grid.Column="1"
                            Text="{Binding Label}"
-                           FontSize="{DynamicResource TypeHeader}"
-                           FontWeight="SemiBold"
+                           FontSize="{DynamicResource TypeHeaderFontSize}"
+                           FontWeight="{DynamicResource TypeHeaderFontWeight}"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" />
@@ -72,12 +72,12 @@
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock Text="{Binding Counter, StringFormat='Clicks: {0}'}"
                                HorizontalAlignment="Center"
-                               FontSize="{DynamicResource TypeSubtitle}"
-                               FontWeight="Bold"
+                               FontSize="{DynamicResource TypeSubtitleFontSize}"
+                               FontWeight="{DynamicResource TypeSubtitleFontWeight}"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                     <TextBlock Text="Click tile to interact"
                                HorizontalAlignment="Center"
-                               FontSize="{DynamicResource TypeCaption}"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,2,0,0" />
                 </StackPanel>
@@ -85,15 +85,14 @@
 
             <!-- 3. Hairline Divider -->
             <Border Grid.Row="2"
-                    Height="1"
-                    Background="{DynamicResource WidgetDividerBrush}"
+                    Style="{StaticResource WidgetHairlineDividerStyle}"
                     Margin="0,0,0,8" />
 
             <!-- 4. Footer: Toggle Switch Example -->
             <DockPanel Grid.Row="3" LastChildFill="False">
                 <TextBlock Text="Active Mode"
                            VerticalAlignment="Center"
-                           FontSize="{DynamicResource TypeBody}"
+                           FontSize="{DynamicResource TypeBodyFontSize}"
                            Foreground="{DynamicResource TextSecondaryBrush}" />
                 <ui:ToggleSwitch DockPanel.Dock="Right"
                                  IsChecked="{Binding IsFeatureEnabled, Mode=TwoWay}" />

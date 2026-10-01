@@ -28,7 +28,7 @@
                 Visibility="{Binding IsXPBliss, Converter={StaticResource BoolToVis}}" />
 
         <!-- Subtle Top Specular Edge -->
-        <Border BorderBrush="#20FFFFFF" BorderThickness="0,1,0,0" IsHitTestVisible="False" />
+        <Border BorderBrush="{DynamicResource SurfaceBorderBrush}" BorderThickness="0,1,0,0" IsHitTestVisible="False" />
 
         <!-- Centered Rover Sprite (Pure 4x2 Desktop Companion) -->
         <Viewbox Width="96" Height="96"

@@ -23,196 +23,6 @@
                     UseLayoutRounding="True">
 
     <Window.Resources>
-        <Style x:Key="ModalDismissButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Width" Value="32" />
-            <Setter Property="Height" Value="32" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource ControlCornerRadius}">
-                            <Path x:Name="Icon"
-                                  Width="10" Height="10"
-                                  Data="M 0.5,0.5 L 9.5,9.5 M 0.5,9.5 L 9.5,0.5"
-                                  Stroke="#85FFFFFF"
-                                  StrokeThickness="1.2"
-                                  StrokeStartLineCap="Round"
-                                  StrokeEndLineCap="Round"
-                                  SnapsToDevicePixels="False"
-                                  UseLayoutRounding="False"
-                                  RenderOptions.EdgeMode="Unspecified"
-                                  HorizontalAlignment="Center"
-                                  VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="Icon" Property="Stroke" Value="{DynamicResource TextPrimaryBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="FluentGlassSearchInputStyle" TargetType="TextBox">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="Height" Value="36" />
-            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="SelectionBrush" Value="#40FFFFFF" />
-            <Setter Property="SelectionOpacity" Value="0.6" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-            <Setter Property="UseLayoutRounding" Value="True" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="BoxBorder"
-                                Background="{DynamicResource WidgetDividerBrush}"
-                                BorderBrush="#28FFFFFF"
-                                BorderThickness="1"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                >
-                            <Grid Margin="10,0,10,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <ui:SymbolIcon x:Name="PrefixIcon"
-                                               Symbol="Search24"
-                                               FontSize="14"
-                                               Foreground="{DynamicResource TextMutedBrush}"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,8,0" />
-                                <ScrollViewer x:Name="PART_ContentHost"
-                                              Grid.Column="1"
-                                              VerticalAlignment="Center"
-                                              Focusable="False"
-                                              HorizontalScrollBarVisibility="Hidden"
-                                              VerticalScrollBarVisibility="Hidden" />
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#1CFFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#45FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#B0FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#65FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="FluentGlassInputStyle" TargetType="TextBox">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="Height" Value="36" />
-            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-            <Setter Property="UseLayoutRounding" Value="True" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="BoxBorder"
-                                Background="{DynamicResource WidgetDividerBrush}"
-                                BorderBrush="#28FFFFFF"
-                                BorderThickness="1"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                >
-                            <Grid Margin="10,0,10,0">
-                                <ScrollViewer x:Name="PART_ContentHost"
-                                              VerticalAlignment="Center"
-                                              Focusable="False"
-                                              HorizontalScrollBarVisibility="Hidden"
-                                              VerticalScrollBarVisibility="Hidden" />
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#1CFFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#45FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#65FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="FluentGlassUrlWithPasteInputStyle" TargetType="TextBox">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="Height" Value="36" />
-            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-            <Setter Property="UseLayoutRounding" Value="True" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="BoxBorder"
-                                Background="{DynamicResource WidgetDividerBrush}"
-                                BorderBrush="#28FFFFFF"
-                                BorderThickness="1"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                >
-                            <Grid Margin="10,0,80,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <ui:SymbolIcon x:Name="PrefixIcon"
-                                               Symbol="Link24"
-                                               FontSize="14"
-                                               Foreground="{DynamicResource TextMutedBrush}"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,8,0" />
-                                <ScrollViewer x:Name="PART_ContentHost"
-                                              Grid.Column="1"
-                                              VerticalAlignment="Center"
-                                              Focusable="False"
-                                              HorizontalScrollBarVisibility="Hidden"
-                                              VerticalScrollBarVisibility="Hidden" />
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#1CFFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#45FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#B0FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#65FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
 
         <Style x:Key="FluentSegmentedTabRadioButtonStyle" TargetType="RadioButton">
             <Setter Property="OverridesDefaultStyle" Value="True" />
@@ -243,130 +53,6 @@
                                 <Setter TargetName="TabBorder" Property="Background" Value="#25FFFFFF" />
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                 <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="FluentGlassRadioButtonStyle" TargetType="RadioButton">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="RadioButton">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Grid Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center">
-                                <Ellipse x:Name="OuterRing"
-                                         Width="16" Height="16"
-                                         Stroke="#45FFFFFF"
-                                         StrokeThickness="1.2"
-                                         Fill="#10FFFFFF"
-                                         SnapsToDevicePixels="False"
-                                         UseLayoutRounding="False"
-                                         RenderOptions.EdgeMode="Unspecified" />
-                                <Ellipse x:Name="InnerDot"
-                                         Width="8" Height="8"
-                                         Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                         Opacity="0"
-                                         SnapsToDevicePixels="False"
-                                         UseLayoutRounding="False"
-                                         RenderOptions.EdgeMode="Unspecified"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center" />
-                            </Grid>
-                            <ContentPresenter VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-                        </StackPanel>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="OuterRing" Property="Stroke" Value="#80FFFFFF" />
-                                <Setter TargetName="OuterRing" Property="Fill" Value="#1CFFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="OuterRing" Property="Stroke" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
-                                <Setter TargetName="OuterRing" Property="Fill" Value="{DynamicResource SystemAccentColorTertiaryBrush}" />
-                                <Setter TargetName="InnerDot" Property="Opacity" Value="1.0" />
-                            </Trigger>
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="IsChecked" Value="True" />
-                                    <Condition Property="IsMouseOver" Value="True" />
-                                </MultiTrigger.Conditions>
-                                <Setter TargetName="OuterRing" Property="Stroke" Value="{DynamicResource SystemAccentColorSecondaryBrush}" />
-                                <Setter TargetName="InnerDot" Property="Fill" Value="{DynamicResource SystemAccentColorSecondaryBrush}" />
-                            </MultiTrigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="FluentCohesiveActionButtonStyle" TargetType="Button">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="Height" Value="30" />
-            <Setter Property="MinWidth" Value="100" />
-            <Setter Property="Padding" Value="16,0" />
-            <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder"
-                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                >
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource SystemAccentColorSecondaryBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource SystemAccentColorTertiaryBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="#50FFFFFF" />
-                                <Setter Property="Cursor" Value="Arrow" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="FluentCohesiveSecondaryButtonStyle" TargetType="Button">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="Height" Value="26" />
-            <Setter Property="Padding" Value="8,2" />
-            <Setter Property="FontSize" Value="{DynamicResource TypeCaptionFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeCaptionFontWeight}" />
-            <Setter Property="Foreground" Value="#E0FFFFFF" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="BtnBorder"
-                                Background="#1AFFFFFF"
-                                BorderBrush="#25FFFFFF"
-                                BorderThickness="1"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                >
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#40FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="BtnBorder" Property="Background" Value="#30FFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -467,7 +153,7 @@
 
             <!-- COLUMN 1: OBSIDIAN DARK CONTENT PANEL -->
             <Border Grid.Column="1"
-                    Background="#232323"
+                    Background="{DynamicResource DialogPanelBackground}"
                     CornerRadius="0,2,2,0"
                     RenderOptions.ClearTypeHint="Enabled">
                 <Grid Margin="24,20,24,20">
@@ -487,7 +173,7 @@
                                    VerticalAlignment="Center" />
 
                         <Button HorizontalAlignment="Right"
-                                Style="{StaticResource ModalDismissButtonStyle}"
+                                Style="{DynamicResource ModalDismissButtonStyle}"
                                 Click="OnCloseButtonClick" />
                     </Grid>
 
@@ -532,7 +218,7 @@
                             <!-- Search Input Box with Overlay Watermark & Spinner -->
                             <Grid Grid.Row="0">
                                 <TextBox x:Name="RadioSearchInput"
-                                         Style="{StaticResource FluentGlassSearchInputStyle}"
+                                         Style="{DynamicResource FluentGlassSearchInputStyle}"
                                          TextChanged="OnRadioSearchInputTextChanged"
                                          PreviewKeyDown="OnRadioSearchInputKeyDown" />
                                 <TextBlock x:Name="RadioSearchWatermark"
@@ -611,12 +297,12 @@
 
                                 <Grid>
                                     <TextBox x:Name="RadioDirectUrlInput"
-                                             Style="{StaticResource FluentGlassUrlWithPasteInputStyle}"
+                                             Style="{DynamicResource FluentGlassUrlWithPasteInputStyle}"
                                              TextChanged="OnRadioDirectUrlTextChanged"
                                              KeyDown="OnRadioDirectInputKeyDown" />
                                     <Button HorizontalAlignment="Right"
                                             VerticalAlignment="Center"
-                                            Style="{StaticResource FluentCohesiveSecondaryButtonStyle}"
+                                            Style="{DynamicResource FluentCohesiveSecondaryButtonStyle}"
                                             Height="26"
                                             Margin="0,0,5,0"
                                             Padding="8,2"
@@ -657,7 +343,7 @@
                                            Foreground="{DynamicResource TextMutedBrush}"
                                            Margin="0,8,0,6" />
                                 <TextBox x:Name="RadioDirectNameInput"
-                                         Style="{StaticResource FluentGlassInputStyle}"
+                                         Style="{DynamicResource FluentGlassInputStyle}"
                                          TextChanged="OnRadioDirectNameTextChanged"
                                          KeyDown="OnRadioDirectInputKeyDown" />
 
@@ -680,7 +366,7 @@
                                        VerticalAlignment="Center"
                                        Margin="0,0,12,0" />
                             <RadioButton x:Name="RadioCatAmbient"
-                                         Style="{StaticResource FluentGlassRadioButtonStyle}"
+                                         Style="{DynamicResource FluentGlassRadioButtonStyle}"
                                          GroupName="RadioCategoryTarget"
                                          IsChecked="True"
                                          Margin="0,0,14,0">
@@ -691,7 +377,7 @@
                                            VerticalAlignment="Center" />
                             </RadioButton>
                             <RadioButton x:Name="RadioCatNature"
-                                         Style="{StaticResource FluentGlassRadioButtonStyle}"
+                                         Style="{DynamicResource FluentGlassRadioButtonStyle}"
                                          GroupName="RadioCategoryTarget"
                                          Margin="0,0,14,0">
                                 <TextBlock Text="Nature"
@@ -701,7 +387,7 @@
                                            VerticalAlignment="Center" />
                             </RadioButton>
                             <RadioButton x:Name="RadioCatLofi"
-                                         Style="{StaticResource FluentGlassRadioButtonStyle}"
+                                         Style="{DynamicResource FluentGlassRadioButtonStyle}"
                                          GroupName="RadioCategoryTarget"
                                          Margin="0,0,14,0">
                                 <TextBlock Text="Lo-Fi"
@@ -711,7 +397,7 @@
                                            VerticalAlignment="Center" />
                             </RadioButton>
                             <RadioButton x:Name="RadioCatCoding"
-                                         Style="{StaticResource FluentGlassRadioButtonStyle}"
+                                         Style="{DynamicResource FluentGlassRadioButtonStyle}"
                                          GroupName="RadioCategoryTarget">
                                 <TextBlock Text="Coding"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -725,7 +411,7 @@
                     <!-- Footer: Action Button -->
                     <Grid Grid.Row="2" Margin="0,14,0,0">
                         <Button x:Name="PrimaryActionButton"
-                                Style="{StaticResource FluentCohesiveActionButtonStyle}"
+                                Style="{DynamicResource FluentCohesivePrimaryButtonStyle}"
                                 Content="Add Station"
                                 Height="30"
                                 MinWidth="100"
