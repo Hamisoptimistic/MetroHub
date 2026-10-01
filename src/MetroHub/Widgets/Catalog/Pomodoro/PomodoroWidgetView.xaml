@@ -11,8 +11,8 @@
              FontFamily="{DynamicResource AppFontFamily}">
 
     <UserControl.Resources>
-        <!-- Media-Consistent Transport Button Style: Inherits WidgetMediumButtonStyle -->
-
+        <!-- Round Indicator Dot Style: Inherits WidgetIndicatorDotStyle -->
+        <Style x:Key="CycleDotStyle" TargetType="Border" BasedOn="{StaticResource WidgetIndicatorDotStyle}" />
     </UserControl.Resources>
 
     <!-- Transparent WidgetCard to inherit the exact glass/acrylic tile background of other tiles -->
@@ -291,7 +291,7 @@
                             <!-- Dot 1 -->
                             <Border>
                                 <Border.Style>
-                                    <Style TargetType="Border" BasedOn="{StaticResource CycleDotStyle}">
+                                    <Style TargetType="Border" BasedOn="{StaticResource WidgetIndicatorDotStyle}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding CycleDot1Filled}" Value="True">
                                                 <Setter Property="Background" Value="{Binding GlowSolidBrush}" />
@@ -304,7 +304,7 @@
                             <!-- Dot 2 -->
                             <Border>
                                 <Border.Style>
-                                    <Style TargetType="Border" BasedOn="{StaticResource CycleDotStyle}">
+                                    <Style TargetType="Border" BasedOn="{StaticResource WidgetIndicatorDotStyle}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding CycleDot2Filled}" Value="True">
                                                 <Setter Property="Background" Value="{Binding GlowSolidBrush}" />
@@ -317,7 +317,7 @@
                             <!-- Dot 3 -->
                             <Border>
                                 <Border.Style>
-                                    <Style TargetType="Border" BasedOn="{StaticResource CycleDotStyle}">
+                                    <Style TargetType="Border" BasedOn="{StaticResource WidgetIndicatorDotStyle}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding CycleDot3Filled}" Value="True">
                                                 <Setter Property="Background" Value="{Binding GlowSolidBrush}" />
@@ -330,7 +330,7 @@
                             <!-- Dot 4 (Long Break) -->
                             <Border>
                                 <Border.Style>
-                                    <Style TargetType="Border" BasedOn="{StaticResource CycleDotStyle}">
+                                    <Style TargetType="Border" BasedOn="{StaticResource WidgetIndicatorDotStyle}">
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding CycleDot4Filled}" Value="True">
                                                 <Setter Property="Background" Value="{Binding GlowSolidBrush}" />

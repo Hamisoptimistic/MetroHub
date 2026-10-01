@@ -213,7 +213,7 @@
                     <local:HabitMonthBackplate
                         FirstDayOffset="{Binding FirstDayOffset}"
                         DaysInMonth="{Binding DaysInMonth}"
-                        FillBrush="{StaticResource MonthBackplateBrush}"
+                        FillBrush="{DynamicResource SurfaceGlassBrush}"
                         RenderOptions.EdgeMode="Aliased"
                         />
 
@@ -471,7 +471,7 @@
                                VerticalAlignment="Center" />
 
                     <Button HorizontalAlignment="Right"
-                            Style="{StaticResource HabitDismissButtonStyle}"
+                            Style="{DynamicResource ModalDismissButtonStyle}"
                             Command="{Binding CancelEditHabitCommand}"
                             ToolTip="Close" />
                 </Grid>

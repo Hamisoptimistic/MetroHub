@@ -191,6 +191,9 @@
         </Setter>
     </Style>
 
+    <!-- Compatibility alias for Habit widget edit modal -->
+    <Style x:Key="HabitDismissButtonStyle" TargetType="Button" BasedOn="{StaticResource ModalDismissButtonStyle}" />
+
     <!-- ========================================================================= -->
     <!-- UNIVERSAL FLUENT GLASS INPUT STYLES (Dialogs, Flyouts & Forms)             -->
     <!-- ========================================================================= -->

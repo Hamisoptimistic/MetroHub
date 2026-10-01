@@ -21,7 +21,7 @@
             <Setter Property="Margin" Value="0,1" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Foreground" Value="#95FFFFFF" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
             <Setter Property="ToolTipService.Placement" Value="Right" />
             <Setter Property="ToolTipService.HorizontalOffset" Value="8" />
             <Setter Property="ToolTipService.InitialShowDelay" Value="350" />
@@ -65,7 +65,7 @@
                             <!-- Active state (Pinned / Drawer Open) -->
                             <Trigger Property="Tag" Value="Active">
                                 <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
-                                <Setter TargetName="PillBorder" Property="Background" Value="#0EFFFFFF" />
+                                <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource SurfaceGlassSubtleBrush}" />
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
                             <!-- Active + Hover -->
@@ -74,7 +74,7 @@
                                     <Condition Property="Tag" Value="Active" />
                                     <Condition Property="IsMouseOver" Value="True" />
                                 </MultiTrigger.Conditions>
-                                <Setter TargetName="PillBorder" Property="Background" Value="#18FFFFFF" />
+                                <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </MultiTrigger>
                         </ControlTemplate.Triggers>
@@ -448,7 +448,7 @@
                                 </Border.ContextMenu>
                                 <Rectangle Height="1"
                                            Margin="10,0"
-                                           Fill="#45FFFFFF"
+                                           Fill="{DynamicResource TextDisabledBrush}"
                                            VerticalAlignment="Center" />
                             </Border>
                         </Grid>

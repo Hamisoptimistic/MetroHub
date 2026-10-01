@@ -16,8 +16,7 @@
         <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
         <Setter Property="LayoutTransform">
             <Setter.Value>
-                <ScaleTransform ScaleX="{DynamicResource AppUiScale}"
-                                ScaleY="{DynamicResource AppUiScale}" />
+                <ScaleTransform ScaleX="1.0" ScaleY="1.0" />
             </Setter.Value>
         </Setter>
         <Setter Property="Foreground" Value="{DynamicResource ContextMenuForeground}" />
