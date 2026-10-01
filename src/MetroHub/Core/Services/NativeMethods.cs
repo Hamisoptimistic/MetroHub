@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -6,6 +7,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
+using CommunityToolkit.Mvvm.Messaging;
+using MetroHub.Core.Messaging;
 
 namespace MetroHub.Core.Services;
 
@@ -85,17 +88,15 @@ public static class NativeMethods
             SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
                 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NativeMethods.ApplyMica");
+        }
     }
 
     #endregion
 
-    #region Memory Management
-
-    public static void FlushMemory()
-    {
-        // Banned GC.Collect / EmptyWorkingSet removed per WPF_PERFORMANCE_Deepseek.md Rule 8
-    }
+    #region Resource Tracking
 
     [DllImport("user32.dll")]
     public static extern uint GetGuiResources(IntPtr hProcess, uint uiFlags);
@@ -193,7 +194,10 @@ public static class NativeMethods
                 return new Rect(mi.rcWork.Left, mi.rcWork.Top, mi.rcWork.Width, mi.rcWork.Height);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NativeMethods.GetActiveMonitorWorkArea");
+        }
 
         return SystemParameters.WorkArea;
     }
@@ -223,7 +227,10 @@ public static class NativeMethods
                 if (mi.rcWork.Right < mi.rcMonitor.Right) return TaskbarEdge.Right;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NativeMethods.GetActiveMonitorTaskbarEdge");
+        }
 
         return TaskbarEdge.Bottom;
     }
@@ -235,12 +242,6 @@ public static class NativeMethods
     private static readonly object _launchLock = new();
     private static string? _lastLaunchKey;
     private static DateTime _lastLaunchTime = DateTime.MinValue;
-
-    /// <summary>
-    /// Raised when an asynchronous target launch fails, providing the display title and exception.
-    /// Handled by the presentation layer (e.g. MainWindow) to display notifications.
-    /// </summary>
-    public static event Action<string, Exception>? TargetLaunchFailed;
 
     public static bool LaunchTarget(string path, string? args = null, bool runAsAdmin = false)
     {
@@ -265,8 +266,9 @@ public static class NativeMethods
             LaunchTargetCore(path, args, runAsAdmin);
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, $"NativeMethods.LaunchTarget({path})");
             return false;
         }
     }
@@ -307,7 +309,7 @@ public static class NativeMethods
                 if (string.IsNullOrWhiteSpace(title)) title = path;
 
                 Safe.Log(ex, $"Failed to launch target '{title}' ({path})");
-                TargetLaunchFailed?.Invoke(title, ex);
+                WeakReferenceMessenger.Default.Send(new TargetLaunchFailedMessage(title, ex));
             }
         });
     }
@@ -424,7 +426,10 @@ public static class NativeMethods
                 return path;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, $"NativeMethods.ResolveWorkingDirectory({path})");
+        }
 
         return null;
     }
@@ -508,7 +513,10 @@ public static class NativeMethods
                 SetForegroundWindow(hWnd);
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NativeMethods.ForceSetForegroundWindow");
+        }
     }
 
     [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
@@ -642,8 +650,9 @@ public static class NativeMethods
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Safe.Log(ex, "NativeMethods.GetScreenRefreshRate");
         }
         return 60; // Safe fallback
     }

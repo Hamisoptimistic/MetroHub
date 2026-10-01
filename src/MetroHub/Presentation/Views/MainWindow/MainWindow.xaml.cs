@@ -13,6 +13,7 @@ using System.Windows.Data;
 using System.Windows.Controls.Primitives;
 using Microsoft.Win32;
 using MetroHub.Core.Models;
+using MetroHub.Core.Messaging;
 using MetroHub.Core.Services;
 using MetroHub.Core.Services.Catalog;
 using MetroHub.Presentation.Controls;
@@ -248,21 +249,21 @@ public partial class MainWindow : BorderlessFluentWindow
             this,
             (r, msg) => StorageService.SaveLayout(r.Tiles));
 
-        NativeMethods.TargetLaunchFailed += OnTargetLaunchFailed;
+        WeakReferenceMessenger.Default.Register<MainWindow, TargetLaunchFailedMessage>(
+            this,
+            (r, msg) =>
+            {
+                r.Dispatcher.InvokeAsync(() =>
+                {
+                    if (!r.IsVisible)
+                    {
+                        r.ShowScreen();
+                    }
+                    r.ShowToast($"Could not launch {msg.Title}: {msg.Exception.Message}", isError: true);
+                });
+            });
 
         RegisterCanvasMessageHandlers();
-    }
-
-    private void OnTargetLaunchFailed(string title, Exception ex)
-    {
-        Dispatcher.InvokeAsync(() =>
-        {
-            if (!IsVisible)
-            {
-                ShowScreen();
-            }
-            ShowToast($"Could not launch {title}: {ex.Message}", isError: true);
-        });
     }
 
     private void RegisterCanvasMessageHandlers()
