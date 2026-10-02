@@ -129,19 +129,23 @@ public static class SystemAccentColorService
         res["SystemAccentColorPrimaryBrush"] = CreateFrozenBrush(accent);
         res["SystemAccentColorSecondaryBrush"] = CreateFrozenBrush(secondary);
         res["SystemAccentColorTertiaryBrush"] = CreateFrozenBrush(tertiary);
+        res["SystemAccentColorForegroundBrush"] = CreateFrozenBrush(GetContrastingForeground(accent));
 
         // Selection & Drag/Drop Fills
         res["SystemAccentColorSelectionFill"] = CreateFrozenBrush(accent, 0.15);
         res["SystemAccentColorDropSlotFill"] = CreateFrozenBrush(accent, 0.20);
         res["SystemAccentColorGroupDropFill"] = CreateFrozenBrush(accent, 0.08);
 
-        // Fluent Primary Accent Button Interaction Brushes
-        res["FluentPrimaryButtonBackgroundBrush"] = CreateFrozenBrush(accent, 0.15);
-        res["FluentPrimaryButtonBorderBrush"] = CreateFrozenBrush(accent, 0.38);
-        res["FluentPrimaryButtonHoverBackgroundBrush"] = CreateFrozenBrush(secondary, 0.22);
-        res["FluentPrimaryButtonHoverBorderBrush"] = CreateFrozenBrush(secondary, 0.52);
-        res["FluentPrimaryButtonPressedBackgroundBrush"] = CreateFrozenBrush(tertiary, 0.12);
-        res["FluentPrimaryButtonPressedBorderBrush"] = CreateFrozenBrush(tertiary, 0.31);
+        // Universal Fluent ToggleSwitch Active Track Brushes
+        // NOTE: The third-party WPF-UI library (Wpf.Ui.dll) specifically looks up these exact string keys
+        // in its internal ToggleSwitch control template. Setting them here dynamically repaints the toggle switch track.
+        res["ToggleSwitchFillOn"] = CreateFrozenBrush(accent);
+        res["ToggleSwitchFillOnPointerOver"] = CreateFrozenBrush(secondary);
+        res["ToggleSwitchFillOnPressed"] = CreateFrozenBrush(tertiary);
+        res["ToggleSwitchFillOnDisabled"] = CreateFrozenBrush(accent, 0.5);
+        res["ToggleSwitchStrokeOn"] = CreateFrozenBrush(accent);
+        res["ToggleSwitchStrokeOnPointerOver"] = CreateFrozenBrush(secondary);
+        res["ToggleSwitchStrokeOnPressed"] = CreateFrozenBrush(tertiary);
 
         // Synchronize ThemeTokens C# cache
         ThemeTokens.AccentPrimaryColor = accent;
@@ -154,6 +158,13 @@ public static class SystemAccentColorService
         var brush = new SolidColorBrush(c) { Opacity = opacity };
         brush.Freeze();
         return brush;
+    }
+
+    private static Color GetContrastingForeground(Color c)
+    {
+        // WCAG standard relative luminance calculation for high-contrast legible text
+        double luminance = (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) / 255.0;
+        return luminance > 0.65 ? Colors.Black : Colors.White;
     }
 
     private static Color Lighten(Color color, float fraction)

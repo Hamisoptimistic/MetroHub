@@ -118,7 +118,7 @@
         <Setter Property="Padding" Value="16,0" />
         <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
         <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
-        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource SystemAccentColorForegroundBrush}" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -127,20 +127,20 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="BtnBorder"
-                            Background="{DynamicResource FluentPrimaryButtonBackgroundBrush}"
-                            BorderBrush="{DynamicResource FluentPrimaryButtonBorderBrush}"
+                            Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                            BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
                             BorderThickness="1"
                             CornerRadius="{DynamicResource ControlCornerRadius}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource FluentPrimaryButtonHoverBackgroundBrush}" />
-                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource FluentPrimaryButtonHoverBorderBrush}" />
+                            <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource SystemAccentColorSecondaryBrush}" />
+                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource SystemAccentColorSecondaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource FluentPrimaryButtonPressedBackgroundBrush}" />
-                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource FluentPrimaryButtonPressedBorderBrush}" />
+                            <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource SystemAccentColorTertiaryBrush}" />
+                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource SystemAccentColorTertiaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="BtnBorder" Property="Opacity" Value="0.35" />

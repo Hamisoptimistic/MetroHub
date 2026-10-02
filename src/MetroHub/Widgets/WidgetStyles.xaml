@@ -7,21 +7,21 @@
     <BooleanToVisibilityConverter x:Key="BoolToVis" />
 
     <!-- ========================================================================= -->
-    <!-- UNIVERSAL FLUENT GREEN TOGGLESWITCH — Brush Overrides                     -->
-    <!-- These MUST live at the ResourceDictionary top-level (not in Style.Resources)
+    <!-- UNIVERSAL FLUENT SYSTEM ACCENT TOGGLESWITCH — Brush Overrides              -->
+    <!-- Dynamically synchronized to the active Windows accent color via SystemAccentColorService.
+         These MUST live at the ResourceDictionary top-level (not in Style.Resources)
          because WPF-UI's ControlTemplate resolves them via DynamicResource through
-         the visual-tree resource chain.  Style.Resources only reliably reach
-         Setters/Triggers, not template internals in merged dictionaries.           -->
+         the visual-tree resource chain.                                           -->
     <!-- ========================================================================= -->
 
-    <!-- ON state: Active Green track with Solid Black knob -->
-    <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="{StaticResource StatusSuccessColor}" />
-    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="{StaticResource StatusSuccessHoverColor}" />
-    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="{StaticResource StatusSuccessPressedColor}" />
-    <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="{StaticResource StatusSuccessColor}" Opacity="0.5" />
-    <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="{StaticResource StatusSuccessColor}" />
-    <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="{StaticResource StatusSuccessHoverColor}" />
-    <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="{StaticResource StatusSuccessPressedColor}" />
+    <!-- ON state: Active track (System Accent) with Solid Black knob -->
+    <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="{StaticResource SystemAccentColor}" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="{StaticResource SystemAccentColor}" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="{StaticResource SystemAccentColor}" />
+    <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="{StaticResource SystemAccentColor}" Opacity="0.5" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="{StaticResource SystemAccentColor}" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="{StaticResource SystemAccentColor}" />
+    <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="{StaticResource SystemAccentColor}" />
     <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#000000" />
     <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#1A1A1A" />
     <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#000000" />
@@ -47,13 +47,16 @@
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Style.Resources>
             <!-- Accent overrides for ToggleSwitch -->
-            <SolidColorBrush x:Key="SystemAccentColorBrush" Color="{StaticResource StatusSuccessColor}" />
-            <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="{StaticResource StatusSuccessColor}" />
-            <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="{StaticResource StatusSuccessPressedColor}" />
+            <SolidColorBrush x:Key="SystemAccentColorBrush" Color="{StaticResource SystemAccentColor}" />
+            <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="{StaticResource SystemAccentColor}" />
+            <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="{StaticResource SystemAccentColor}" />
         </Style.Resources>
     </Style>
+ 
+    <!-- Canonical alias for FluentGreenToggleSwitchStyle pointing to dynamic Windows accent -->
+    <Style x:Key="FluentAccentToggleSwitchStyle" TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource FluentGreenToggleSwitchStyle}" />
 
-    <!-- Implicit default: every ui:ToggleSwitch automatically receives the Fluent Green styling -->
+    <!-- Implicit default: every ui:ToggleSwitch automatically receives the dynamic System Accent styling -->
     <Style TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource FluentGreenToggleSwitchStyle}" />
 
     <!-- Named style: Amber ToggleSwitch (Caffeine, Night Light, Awake) -->

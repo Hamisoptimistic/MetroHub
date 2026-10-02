@@ -116,9 +116,9 @@ public class XamlViewSanityTests
     [InlineData("FluentGreenToggleSwitchStyle")]
     [InlineData("FluentAmberToggleSwitchStyle")]
     [InlineData("FluentRedToggleSwitchStyle")]
-    [InlineData("DialogShellBackground")]
-    [InlineData("FluentPrimaryButtonBackgroundBrush")]
-    [InlineData("FluentPrimaryButtonBorderBrush")]
+    [InlineData("SystemAccentColorSecondaryBrush")]
+    [InlineData("SystemAccentColorTertiaryBrush")]
+    [InlineData("SystemAccentColorForegroundBrush")]
     public void CoreThemeTokens_ExistInMergedResources(string resourceKey)
     {
         WpfTestHost.RunSta(() =>
