@@ -231,6 +231,48 @@ protected override void Dispose(bool disposing)
 
 ---
 
+## 🌐 Making HTTP / API Calls with `HttpHelper`
+
+When your widget needs to query remote REST APIs, fetch weather data, or download icons/images, **never instantiate an unpooled `HttpClient`**. Doing so causes socket exhaustion on Windows and degrades performance.
+
+Instead, use MetroHub's centralized, high-performance, Native AOT-safe **`HttpHelper`** (`MetroHub.Core.Services`):
+
+### 1. High-Performance AOT-Safe JSON Fetching (Recommended)
+Register your DTO model in your widget's `JsonSerializerContext`, then fetch in one line:
+```csharp
+// In your ViewModel or Service:
+var data = await HttpHelper.GetJsonAsync(
+    "https://api.example.com/v1/data",
+    MyWidgetJsonContext.Default.MyWidgetDto,
+    _cts.Token);
+```
+
+### 2. General JSON Fetching with Serializer Options
+```csharp
+var data = await HttpHelper.GetJsonAsync<MyWidgetDto>(
+    "https://api.example.com/v1/data",
+    ct: _cts.Token);
+```
+
+### 3. Atomic File / Image Downloads
+Downloads directly to disk with atomic temporary staging, preventing incomplete or corrupt cached files:
+```csharp
+string cachedPath = Path.Combine(AppPaths.AppDataDir, "cache", "image.png");
+bool success = await HttpHelper.DownloadFileAsync(
+    "https://example.com/image.png",
+    cachedPath,
+    ct: _cts.Token,
+    minimumBytes: 100);
+```
+
+### 4. Direct Client Access
+If you need custom request headers or streaming:
+```csharp
+using var response = await HttpHelper.Client.GetAsync(url, ct);
+```
+
+---
+
 ## 🧪 Testing Your Widget
 Whenever you submit a PR, GitHub Actions runs `dotnet test`.
 Copy `tests/MetroHub.Tests/TemplateWidgetTests.cs` to test your:

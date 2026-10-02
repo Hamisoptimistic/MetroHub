@@ -4,7 +4,6 @@ using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,15 +20,6 @@ public static partial class WebFaviconService
     private static string IconCacheDir => AppPaths.IconCacheDir;
 
     private static readonly ConcurrentDictionary<string, string> _memoryCache = new(StringComparer.OrdinalIgnoreCase);
-
-    private static readonly HttpClient _httpClient = new(new SocketsHttpHandler
-    {
-        PooledConnectionLifetime = TimeSpan.FromMinutes(10),
-        ConnectTimeout = TimeSpan.FromSeconds(5)
-    })
-    {
-        Timeout = TimeSpan.FromSeconds(8)
-    };
 
     private static readonly FrozenDictionary<string, string> KnownBrands = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -78,11 +68,10 @@ public static partial class WebFaviconService
             {
                 Directory.CreateDirectory(IconCacheDir);
             }
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) MetroHub/1.0");
         }
         catch (Exception ex)
         {
-            Safe.Log(ex, "Failed to initialize WebFaviconService cache directory or user agent");
+            Safe.Log(ex, "Failed to initialize WebFaviconService cache directory");
         }
     }
 
@@ -280,7 +269,7 @@ public static partial class WebFaviconService
 
         // Tier 1: Google High-Resolution Favicon Service (128x128 crisp transparent PNG)
         string googleUrl = $"https://www.google.com/s2/favicons?domain={Uri.EscapeDataString(domain)}&sz=128";
-        if (await TryDownloadAndSaveAsync(googleUrl, cachedPath, ct).ConfigureAwait(false))
+        if (await HttpHelper.DownloadFileAsync(googleUrl, cachedPath, ct, minimumBytes: 200).ConfigureAwait(false))
         {
             _memoryCache[domain] = cachedPath;
             return cachedPath;
@@ -288,7 +277,7 @@ public static partial class WebFaviconService
 
         // Tier 2: DuckDuckGo Icons Service
         string ddgUrl = $"https://icons.duckduckgo.com/ip3/{Uri.EscapeDataString(domain)}.ico";
-        if (await TryDownloadAndSaveAsync(ddgUrl, cachedPath, ct).ConfigureAwait(false))
+        if (await HttpHelper.DownloadFileAsync(ddgUrl, cachedPath, ct, minimumBytes: 200).ConfigureAwait(false))
         {
             _memoryCache[domain] = cachedPath;
             return cachedPath;
@@ -296,52 +285,12 @@ public static partial class WebFaviconService
 
         // Tier 3: Direct website root favicon
         string directUrl = $"https://{domain}/favicon.ico";
-        if (await TryDownloadAndSaveAsync(directUrl, cachedPath, ct).ConfigureAwait(false))
+        if (await HttpHelper.DownloadFileAsync(directUrl, cachedPath, ct, minimumBytes: 200).ConfigureAwait(false))
         {
             _memoryCache[domain] = cachedPath;
             return cachedPath;
         }
 
         return null;
-    }
-
-    private static async Task<bool> TryDownloadAndSaveAsync(string requestUrl, string destinationPath, CancellationToken ct)
-    {
-        try
-        {
-            using var response = await _httpClient.GetAsync(requestUrl, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode) return false;
-
-            string tempFile = $"{destinationPath}.{Guid.NewGuid():N}.tmp";
-            try
-            {
-                await using (var responseStream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
-                await using (var fileStream = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true))
-                {
-                    await responseStream.CopyToAsync(fileStream, ct).ConfigureAwait(false);
-                }
-
-                var fi = new FileInfo(tempFile);
-                if (fi.Length < 200)
-                {
-                    return false;
-                }
-
-                File.Move(tempFile, destinationPath, overwrite: true);
-                return true;
-            }
-            finally
-            {
-                if (File.Exists(tempFile))
-                {
-                    try { File.Delete(tempFile); } catch { }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Safe.Log(ex, $"[WebFaviconService] Failed download from {requestUrl}");
-            return false;
-        }
     }
 }

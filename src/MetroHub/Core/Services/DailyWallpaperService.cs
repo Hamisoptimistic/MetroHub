@@ -23,26 +23,7 @@ public sealed class DailyWallpaperService
     private static readonly Lazy<DailyWallpaperService> _instance = new(() => new DailyWallpaperService());
     public static DailyWallpaperService Instance => _instance.Value;
 
-    private static readonly HttpClient _httpClient = new(new SocketsHttpHandler
-    {
-        PooledConnectionLifetime = TimeSpan.FromMinutes(10),
-        ConnectTimeout = TimeSpan.FromSeconds(10)
-    })
-    {
-        Timeout = TimeSpan.FromSeconds(25)
-    };
-
     private static string CacheDirectory => AppPaths.WallpapersCacheDir;
-
-    static DailyWallpaperService()
-    {
-        try
-        {
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 MetroHub/2.0");
-        }
-        catch { }
-    }
 
     private DailyWallpaperService()
     {
@@ -140,7 +121,7 @@ public sealed class DailyWallpaperService
             // 3. Download high-resolution image
             if (!string.IsNullOrEmpty(uhdUrl))
             {
-                bool downloaded = await DownloadImageFileAsync(uhdUrl, cachePath, ct);
+                bool downloaded = await HttpHelper.DownloadFileAsync(uhdUrl, cachePath, ct, minimumBytes: 20_000);
                 if (downloaded)
                 {
                     PruneOldCacheFiles();
@@ -155,7 +136,7 @@ public sealed class DailyWallpaperService
 
     private static async Task<string?> FetchBingImageUrlAsync(string apiUrl, CancellationToken ct)
     {
-        using var response = await _httpClient.GetAsync(apiUrl, HttpCompletionOption.ResponseContentRead, ct);
+        using var response = await HttpHelper.Client.GetAsync(apiUrl, HttpCompletionOption.ResponseContentRead, ct);
         if (!response.IsSuccessStatusCode) return null;
 
         string json = await response.Content.ReadAsStringAsync(ct);
@@ -231,7 +212,7 @@ public sealed class DailyWallpaperService
             // 3. Download high-resolution master image
             if (!string.IsNullOrEmpty(imageUrl))
             {
-                bool downloaded = await DownloadImageFileAsync(imageUrl, cachePath, ct);
+                bool downloaded = await HttpHelper.DownloadFileAsync(imageUrl, cachePath, ct, minimumBytes: 20_000);
                 if (downloaded)
                 {
                     PruneOldCacheFiles();
@@ -246,7 +227,7 @@ public sealed class DailyWallpaperService
 
     private static async Task<string?> FetchPeapixImageUrlAsync(string apiUrl, CancellationToken ct)
     {
-        using var response = await _httpClient.GetAsync(apiUrl, HttpCompletionOption.ResponseContentRead, ct);
+        using var response = await HttpHelper.Client.GetAsync(apiUrl, HttpCompletionOption.ResponseContentRead, ct);
         if (!response.IsSuccessStatusCode) return null;
 
         string json = await response.Content.ReadAsStringAsync(ct);
@@ -272,39 +253,6 @@ public sealed class DailyWallpaperService
         }
 
         return null;
-    }
-
-    private static async Task<bool> DownloadImageFileAsync(string url, string destinationPath, CancellationToken ct)
-    {
-        string tempPath = destinationPath + $".{Guid.NewGuid():N}.tmp";
-        try
-        {
-            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
-            if (!response.IsSuccessStatusCode) return false;
-
-            await using (var netStream = await response.Content.ReadAsStreamAsync(ct))
-            await using (var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true))
-            {
-                await netStream.CopyToAsync(fileStream, ct);
-            }
-
-            if (File.Exists(destinationPath))
-            {
-                File.Delete(destinationPath);
-            }
-
-            File.Move(tempPath, destinationPath);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[DailyWallpaperService] Failed to download image from {url}: {ex.Message}");
-            if (File.Exists(tempPath))
-            {
-                try { File.Delete(tempPath); } catch { }
-            }
-            return false;
-        }
     }
 
     private static readonly Lazy<bool> _isWebpSupported = new(() =>

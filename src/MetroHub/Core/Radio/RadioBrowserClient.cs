@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Radio;
 
@@ -79,24 +79,7 @@ public sealed class RadioBrowserClient
     public RadioBrowserClient(HttpClient? httpClient = null, IReadOnlyList<string>? mirrors = null)
     {
         _mirrors = mirrors is { Count: > 0 } ? mirrors : DefaultMirrors;
-
-        if (httpClient != null)
-        {
-            _httpClient = httpClient;
-        }
-        else
-        {
-            var handler = new SocketsHttpHandler
-            {
-                PooledConnectionLifetime = TimeSpan.FromMinutes(15),
-                AutomaticDecompression = System.Net.DecompressionMethods.All,
-                ConnectTimeout = TimeSpan.FromSeconds(3)
-            };
-
-            _httpClient = new HttpClient(handler, disposeHandler: true);
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) MetroHub/1.0");
-            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        }
+        _httpClient = httpClient ?? HttpHelper.Client;
     }
 
     /// <summary>

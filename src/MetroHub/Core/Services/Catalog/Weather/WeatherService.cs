@@ -11,16 +11,7 @@ public sealed class WeatherService
 {
     private static string WeatherCachePath => AppPaths.WeatherCachePath;
 
-    private static readonly SocketsHttpHandler SharedHandler = new()
-    {
-        PooledConnectionLifetime = TimeSpan.FromMinutes(15),
-        ConnectTimeout = TimeSpan.FromSeconds(5)
-    };
-
-    internal static readonly HttpClient SharedHttpClient = new(SharedHandler)
-    {
-        Timeout = TimeSpan.FromSeconds(10)
-    };
+    internal static HttpClient SharedHttpClient => HttpHelper.Client;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
