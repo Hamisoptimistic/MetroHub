@@ -16,6 +16,7 @@ using MetroHub.Core.Models;
 using MetroHub.Core.Services.Catalog.Weather;
 using MetroHub.Presentation.Messaging;
 using MetroHub.Presentation.Themes;
+using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Weather;
 
@@ -185,7 +186,7 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
         if (string.IsNullOrWhiteSpace(settingsJson)) return;
         try
         {
-            var parsed = JsonSerializer.Deserialize<WeatherWidgetSettings>(settingsJson);
+            var parsed = WidgetSerializer.Deserialize<WeatherWidgetSettings>(settingsJson);
             if (parsed != null)
             {
                 _settings = parsed;
@@ -248,7 +249,7 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
     {
         try
         {
-            Model.SettingsJson = JsonSerializer.Serialize(_settings);
+            Model.SettingsJson = WidgetSerializer.Serialize(_settings);
             NotifySettingsChanged();
         }
         catch { }

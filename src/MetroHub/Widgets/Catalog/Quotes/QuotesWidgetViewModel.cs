@@ -12,6 +12,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
 using MetroHub.Presentation.Themes;
+using MetroHub.Widgets.Serialization;
 using Wpf.Ui.Controls;
 using MenuItem = System.Windows.Controls.MenuItem;
 using Separator = System.Windows.Controls.Separator;
@@ -163,18 +164,7 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidgetActionH
 
     private void InitializeQuoteSelection(string? settingsJson)
     {
-        QuotesWidgetSettings? settings = null;
-        if (!string.IsNullOrWhiteSpace(settingsJson))
-        {
-            try
-            {
-                settings = JsonSerializer.Deserialize<QuotesWidgetSettings>(settingsJson);
-            }
-            catch
-            {
-                // Fallback to default
-            }
-        }
+        QuotesWidgetSettings? settings = WidgetSerializer.Deserialize<QuotesWidgetSettings>(settingsJson);
 
         if (settings != null)
         {
@@ -537,7 +527,7 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidgetActionH
             Style = SelectedStyle
         };
 
-        Model.SettingsJson = JsonSerializer.Serialize(settings);
+        Model.SettingsJson = WidgetSerializer.Serialize(settings);
         NotifySettingsChanged();
     }
 
