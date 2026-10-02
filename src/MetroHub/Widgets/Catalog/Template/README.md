@@ -59,7 +59,7 @@ Use `<dialogs:MetroDialog>` as the root tag. The frosted acrylic sidebar, dark o
     <!-- Right Obsidian Form Content -->
     <Grid>
         <TextBox x:Name="MyInput" Style="{DynamicResource FluentGlassInputStyle}" />
-        <Button Content="Save" Style="{DynamicResource FluentCohesivePrimaryButtonStyle}" Click="OnSaveClick" />
+        <Button Content="Save" Style="{DynamicResource AccentButtonStyle}" Click="OnSaveClick" />
     </Grid>
 </dialogs:MetroDialog>
 ```
@@ -122,8 +122,8 @@ All design tokens are **automatically available globally** from `Tokens.xaml`. N
 ### 3. Corner Radius Tokens
 | Token Resource | Typical Value | Usage |
 | :--- | :--- | :--- |
-| `CornerRadius="{DynamicResource TileCornerRadius}"` | 12px | Outer tile boundaries |
-| `CornerRadius="{DynamicResource ControlCornerRadius}"` | 6px | Inner cards, buttons, input boxes |
+| `CornerRadius="{DynamicResource TileCornerRadius}"` | 2px | Outer tile boundaries (Subtle Fluent/Metro edge) |
+| `CornerRadius="{DynamicResource ControlCornerRadius}"` | 2px | Inner cards, buttons, input boxes |
 
 ---
 

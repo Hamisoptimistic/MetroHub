@@ -174,25 +174,6 @@ public static class WidgetRegistry
             Category: "Sound"
         ));
 
-        // Register Notes & Tasks (Notepad / Todo) widget
-        Register(new WidgetDefinition(
-            Id: "notepad",
-            DisplayName: "Notes & Tasks",
-            Description: "Quick text notepad with bullet lists, numbered lists, and interactive to-do checklists",
-            Icon: SymbolRegular.Notepad24,
-            AllowedSizes: new[]
-            {
-                WidgetSize.Mega,   // 8x4
-                WidgetSize.Huge,   // 8x6
-                WidgetSize.Canvas, // 8x8
-                WidgetSize.Full    // 8x10
-            },
-            ViewModelType: typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetViewModel),
-            ViewType: typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetView),
-            DefaultSize: WidgetSize.Mega,
-            Factory: model => new MetroHub.Widgets.Catalog.Notepad.NotepadWidgetViewModel(model),
-            Category: "Productivity"
-        ));
 
         // Register Network & Internet widget
         Register(new WidgetDefinition(
@@ -374,25 +355,6 @@ public static class WidgetRegistry
             Category: "Lifestyle"
         ));
 
-        // Register Markdown Notes widget
-        Register(new WidgetDefinition(
-            Id: "markdown",
-            DisplayName: "Markdown Notes",
-            Description: "Write markdown and flip to a rendered preview — open .md files, local images, offline",
-            Icon: SymbolRegular.DocumentEdit24,
-            AllowedSizes: new[]
-            {
-                WidgetSize.Mega,   // 8x4
-                WidgetSize.Huge,   // 8x6
-                WidgetSize.Canvas, // 8x8
-                WidgetSize.Full    // 8x10
-            },
-            ViewModelType: typeof(MetroHub.Widgets.Catalog.Markdown.MarkdownWidgetViewModel),
-            ViewType: typeof(MetroHub.Widgets.Catalog.Markdown.MarkdownWidgetView),
-            DefaultSize: WidgetSize.Mega,
-            Factory: model => new MetroHub.Widgets.Catalog.Markdown.MarkdownWidgetViewModel(model),
-            Category: "Productivity"
-        ));
     }
 
     public static void Register(WidgetDefinition definition)

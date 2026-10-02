@@ -21,7 +21,7 @@ public class WidgetLifecycleContractTests
     [MemberData(nameof(GetWidgetDefinitionIds))]
     public void Widget_ObeysLifecycleContract(string widgetId)
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var def = WidgetRegistry.Get(widgetId);
             Assert.NotNull(def);
@@ -80,8 +80,8 @@ public class WidgetLifecycleContractTests
     {
         var all = WidgetRegistry.GetAll();
         Assert.NotNull(all);
-        // Ensure at least the 20 catalog widgets are registered
-        Assert.True(all.Count >= 20, $"Expected at least 20 widgets registered, but found {all.Count}");
+        // Ensure at least the 18 catalog widgets are registered
+        Assert.True(all.Count >= 18, $"Expected at least 18 widgets registered, but found {all.Count}");
     }
 
     [Fact]
@@ -99,7 +99,7 @@ public class WidgetLifecycleContractTests
     [Fact]
     public void WidgetTemplateSelector_ResolvesTemplateForWidgetsWithViewType()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var selector = new WidgetTemplateSelector();
 
@@ -140,7 +140,7 @@ public class WidgetLifecycleContractTests
     [Fact]
     public void CalendarWidget_ImplementsWidgetContextMenuProvider()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var tile = new TileModel { Id = "test_cal", TargetPath = "calendar", SpanX = 8, SpanY = 6 };
             var calVm = new MetroHub.Widgets.Catalog.Calendar.CalendarWidgetViewModel(tile);
@@ -171,7 +171,6 @@ public class WidgetLifecycleContractTests
     [InlineData(typeof(MetroHub.Widgets.Catalog.Clock.ClockWidgetViewModel))]
     [InlineData(typeof(MetroHub.Widgets.Catalog.Pomodoro.PomodoroWidgetViewModel))]
     [InlineData(typeof(MetroHub.Widgets.Catalog.Photos.PhotosWidgetViewModel))]
-    [InlineData(typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetViewModel))]
     [InlineData(typeof(MetroHub.Widgets.Catalog.Weather.WeatherWidgetViewModel))]
     [InlineData(typeof(MetroHub.Widgets.Catalog.Media.MediaWidgetViewModel))]
     [InlineData(typeof(MetroHub.Widgets.Catalog.Quotes.QuotesWidgetViewModel))]

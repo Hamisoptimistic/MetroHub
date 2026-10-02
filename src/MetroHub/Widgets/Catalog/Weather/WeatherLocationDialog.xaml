@@ -138,11 +138,7 @@
                                  ItemContainerStyle="{StaticResource SuggestionListBoxItemStyle}"
                                  ItemTemplate="{StaticResource SuggestionItemTemplate}"
                                  PreviewMouseLeftButtonUp="OnSuggestionListMouseUp"
-                                 PreviewKeyDown="OnSuggestionsListPreviewKeyDown">
-                            <ListBox.Resources>
-                                <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
-                            </ListBox.Resources>
-                        </ListBox>
+                                 PreviewKeyDown="OnSuggestionsListPreviewKeyDown" />
                     </Border>
                 </Popup>
             </Grid>
@@ -178,7 +174,7 @@
         <!-- Footer Action Buttons -->
         <Grid Grid.Row="1" Margin="0,16,0,0">
             <Button Content="Save Location"
-                    Style="{DynamicResource FluentCohesivePrimaryButtonStyle}"
+                    Style="{DynamicResource AccentButtonStyle}"
                     HorizontalAlignment="Right"
                     Click="OnSaveLocationClick" />
         </Grid>

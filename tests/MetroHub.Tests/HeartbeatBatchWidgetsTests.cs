@@ -24,7 +24,7 @@ public class HeartbeatBatchWidgetsTests
     [Fact]
     public void PowerWidget_HeartbeatTicksCountdownToZero()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var model = CreateTile("power", 8, 2);
             using var vm = new PowerWidgetViewModel(model);
@@ -50,7 +50,7 @@ public class HeartbeatBatchWidgetsTests
     [Fact]
     public void PowerWidget_CancelCountdownStopsHeartbeatConsumption()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var model = CreateTile("power", 8, 2);
             using var vm = new PowerWidgetViewModel(model);
@@ -73,7 +73,7 @@ public class HeartbeatBatchWidgetsTests
     [Fact]
     public void CaffeineSleepWidget_HeartbeatHandlesIdleAndDisposalCleanly()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var model = CreateTile("caffeine_sleep", 8, 3);
             var vm = new CaffeineSleepWidgetViewModel(model);
@@ -91,7 +91,7 @@ public class HeartbeatBatchWidgetsTests
     [Fact]
     public void RoverWidget_HeartbeatTicksAndDisposalCleanly()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var model = CreateTile("rover", 4, 2);
             var vm = new RoverWidgetViewModel(model);

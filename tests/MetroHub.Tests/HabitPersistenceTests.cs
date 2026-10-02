@@ -35,9 +35,9 @@ public class HabitPersistenceTests
     [Fact]
     public void TogglingADay_WritesOnlyTheStateFile_AndLeavesTheLayoutPayloadAlone()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
-            using var sandbox = new MarkdownSandbox();
+            using var sandbox = new WidgetTestSandbox();
             var store = new WidgetStateStore(sandbox.StateDir, sandbox.BakDir);
             var model = NewTile(id: "habit1");
             var vm = new HabitWidgetViewModel(model, store);
@@ -64,9 +64,9 @@ public class HabitPersistenceTests
     [Fact]
     public void HabitGrid_RoundTripsThroughTheStateFile()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
-            using var sandbox = new MarkdownSandbox();
+            using var sandbox = new WidgetTestSandbox();
             var store = new WidgetStateStore(sandbox.StateDir, sandbox.BakDir);
             var model = NewTile(id: "habit2");
             var vm = new HabitWidgetViewModel(model, store);
@@ -89,9 +89,9 @@ public class HabitPersistenceTests
     [Fact]
     public void LegacyPascalCasePayload_MigratesIntoTheStateFile_AndLeavesTheLayout()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
-            using var sandbox = new MarkdownSandbox();
+            using var sandbox = new WidgetTestSandbox();
             var store = new WidgetStateStore(sandbox.StateDir, sandbox.BakDir);
 
             int todayKey = DateTime.Today.Year * 10000 + DateTime.Today.Month * 100 + DateTime.Today.Day;
@@ -122,9 +122,9 @@ public class HabitPersistenceTests
     [Fact]
     public void StateFileWinsOverALegacyLayoutPayload()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
-            using var sandbox = new MarkdownSandbox();
+            using var sandbox = new WidgetTestSandbox();
             var store = new WidgetStateStore(sandbox.StateDir, sandbox.BakDir);
             var model = NewTile(id: "habit4");
 
@@ -143,9 +143,9 @@ public class HabitPersistenceTests
     [Fact]
     public void RepeatedLifecycleSaves_DoNotRewriteTheLayoutPayload()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
-            using var sandbox = new MarkdownSandbox();
+            using var sandbox = new WidgetTestSandbox();
             var store = new WidgetStateStore(sandbox.StateDir, sandbox.BakDir);
             var model = NewTile(id: "habit5");
             var vm = new HabitWidgetViewModel(model, store);
@@ -166,9 +166,9 @@ public class HabitPersistenceTests
     [Fact]
     public void UnchangedState_IsNotRewritten()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
-            using var sandbox = new MarkdownSandbox();
+            using var sandbox = new WidgetTestSandbox();
             var store = new WidgetStateStore(sandbox.StateDir, sandbox.BakDir);
             var model = NewTile(id: "habit6");
             var vm = new HabitWidgetViewModel(model, store);

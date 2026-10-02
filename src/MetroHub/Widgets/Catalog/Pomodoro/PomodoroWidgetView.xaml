@@ -10,11 +10,6 @@
              Focusable="False"
              FontFamily="{DynamicResource AppFontFamily}">
 
-    <UserControl.Resources>
-        <!-- Round Indicator Dot Style: Inherits WidgetIndicatorDotStyle -->
-        <Style x:Key="CycleDotStyle" TargetType="Border" BasedOn="{StaticResource WidgetIndicatorDotStyle}" />
-    </UserControl.Resources>
-
     <!-- Transparent WidgetCard to inherit the exact glass/acrylic tile background of other tiles -->
     <widgets:WidgetCard Padding="0" Background="Transparent">
         <Grid ClipToBounds="True">

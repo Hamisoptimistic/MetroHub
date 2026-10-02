@@ -55,7 +55,7 @@
         <!-- Footer Action Buttons -->
         <Grid Grid.Row="1" Margin="0,16,0,0">
             <Button Content="Save"
-                    Style="{DynamicResource FluentCohesivePrimaryButtonStyle}"
+                    Style="{DynamicResource AccentButtonStyle}"
                     HorizontalAlignment="Right"
                     Click="OnSaveClick" />
         </Grid>

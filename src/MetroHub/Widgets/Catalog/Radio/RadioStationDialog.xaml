@@ -209,11 +209,7 @@
                                              controls:AutoHideScrollBehavior.IsEnabled="True"
                                              ItemContainerStyle="{StaticResource SuggestionListBoxItemStyle}"
                                              ItemTemplate="{StaticResource RadioSearchResultItemTemplate}"
-                                             SelectionChanged="OnRadioSearchResultsSelectionChanged">
-                                        <ListBox.Resources>
-                                            <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
-                                        </ListBox.Resources>
-                                    </ListBox>
+                                             SelectionChanged="OnRadioSearchResultsSelectionChanged" />
 
                                     <!-- Search Initial Hint / Empty Text -->
                                     <TextBlock x:Name="RadioSearchPlaceholderText"
@@ -255,7 +251,7 @@
                                              KeyDown="OnRadioDirectInputKeyDown" />
                                     <Button HorizontalAlignment="Right"
                                             VerticalAlignment="Center"
-                                            Style="{DynamicResource FluentCohesiveSecondaryButtonStyle}"
+                                            Style="{DynamicResource DefaultButtonStyle}"
                                             Height="26"
                                             Margin="0,0,5,0"
                                             Padding="8,2"
@@ -364,7 +360,7 @@
                     <!-- Footer: Action Button -->
                     <Grid Grid.Row="1" Margin="0,14,0,0">
                         <Button x:Name="PrimaryActionButton"
-                                Style="{DynamicResource FluentCohesivePrimaryButtonStyle}"
+                                Style="{DynamicResource AccentButtonStyle}"
                                 Content="Add Station"
                                 IsDefault="True"
                                 HorizontalAlignment="Right"

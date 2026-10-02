@@ -64,14 +64,14 @@
         <Style x:Key="MicroIconButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetMediumButtonStyle}" />
 
         <!-- Wi-Fi Connect Action Button (Matching App.xaml Cohesive Action Button Style) -->
-        <Style x:Key="FluentWifiActionButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentCohesiveActionButtonStyle}">
+        <Style x:Key="FluentWifiActionButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
             <Setter Property="Width" Value="76" />
             <Setter Property="Height" Value="28" />
             <Setter Property="Focusable" Value="False" />
         </Style>
 
         <!-- Wi-Fi Secondary Action Button (Forget / Disconnect / Cancel) -->
-        <Style x:Key="FluentWifiDisconnectButtonStyle" TargetType="Button" BasedOn="{StaticResource FluentCohesiveSecondaryButtonStyle}">
+        <Style x:Key="FluentWifiDisconnectButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
             <Setter Property="Width" Value="76" />
             <Setter Property="Height" Value="28" />
             <Setter Property="Focusable" Value="False" />
@@ -662,7 +662,7 @@
                             </Button>
 
                             <ui:ToggleSwitch x:Name="WifiRadioToggleSwitch"
-                                             Style="{StaticResource FluentGreenToggleSwitchStyle}"
+                                             Style="{StaticResource FluentAccentToggleSwitchStyle}"
                                              IsChecked="{Binding IsWifiRadioEnabled, Mode=TwoWay}"
                                              IsEnabled="{Binding CanToggleWifiRadio}"
                                              VerticalAlignment="Center"
@@ -1316,7 +1316,7 @@
                                                                      Margin="4,0,0,0" />
 
                                                     <!-- Fluent Green ToggleSwitch (Anchored to right, locked in position, never collapses) -->
-                                                    <ui:ToggleSwitch Style="{StaticResource FluentGreenToggleSwitchStyle}"
+                                                    <ui:ToggleSwitch Style="{StaticResource FluentAccentToggleSwitchStyle}"
                                                                      IsChecked="{Binding IsAdminEnabled, Mode=TwoWay}"
                                                                      IsEnabled="{Binding CanToggle}"
                                                                      PreviewMouseLeftButtonDown="AdapterToggleSwitch_PreviewMouseLeftButtonDown"

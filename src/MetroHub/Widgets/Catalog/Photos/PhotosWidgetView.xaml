@@ -12,8 +12,8 @@
 
     <UserControl.Resources>
 
-        <!-- Empty State Select Folder Button Style: Inherits WidgetActionButtonStyle -->
-        <Style x:Key="SelectFolderButtonStyle" TargetType="Button" BasedOn="{StaticResource WidgetActionButtonStyle}">
+        <!-- Empty State Select Folder Button Style: Inherits DefaultButtonStyle -->
+        <Style x:Key="SelectFolderButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
             <Setter Property="Height" Value="34" />
             <Setter Property="Padding" Value="18,0" />
         </Style>

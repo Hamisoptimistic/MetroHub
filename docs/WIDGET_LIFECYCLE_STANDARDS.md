@@ -111,7 +111,7 @@ MetroHub rests quietly in the Windows system tray when closed.
     - Background Track: `Height="2"`, `CornerRadius="1"`, `Background="#14FFFFFF"`, `VerticalAlignment="Center"`.
     - Elapsed Fill: `Border` `Height="2"`, `CornerRadius="1"`, `Background="{Binding AccentBrush}"`, dynamically clipped via `RectangleGeometry`.
     - Scrubbing Pill Thumb: `Width="4"`, `Height="12"`, `CornerRadius="2"`, `Background="#FFFFFF"`, `BorderThickness="1"`, fades in to `Opacity="1"` on hover/drag.
-  - **Dedicated Grid Row Separators (Top Toolbars, e.g. Notepad):**
+  - **Dedicated Grid Row Separators (Top Toolbars):**
     - `Border Grid.Row="1"` with `Height="2"`, `CornerRadius="1"`, `Background="#14FFFFFF"`, `HorizontalAlignment="Stretch"`, `Margin="0"`.
   - **Vertical Toolbar Dividers:** `Border Width="1"`, `Height="16"`, `Background="#1FFFFFFF"`, `Margin="6,0"`.
   - **Context Menu Separators:** Handled globally by `App.xaml` template (`Height="1"`, `Margin="8,3,8,3"`, `Background="#1FFFFFFF"`).

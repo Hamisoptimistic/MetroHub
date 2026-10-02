@@ -22,7 +22,7 @@ public class ClockHeartbeatTests
     [Fact]
     public void ClockInitializes_WithCurrentTimeDigits()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var model = CreateClockTile();
             using var vm = new ClockWidgetViewModel(model);
@@ -37,7 +37,7 @@ public class ClockHeartbeatTests
     [Fact]
     public void HeartbeatPulse_UpdatesTimeAcrossMinuteBoundary()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var model = CreateClockTile();
             using var vm = new ClockWidgetViewModel(model);
@@ -62,7 +62,7 @@ public class ClockHeartbeatTests
     [Fact]
     public void TwelveHourFormat_FormatsCorrectlyViaHeartbeat()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var model = CreateClockTile();
             using var vm = new ClockWidgetViewModel(model);
@@ -83,7 +83,7 @@ public class ClockHeartbeatTests
     [Fact]
     public void DisposedClock_DetachesFromHeartbeatCleanly()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var model = CreateClockTile();
             var vm = new ClockWidgetViewModel(model);

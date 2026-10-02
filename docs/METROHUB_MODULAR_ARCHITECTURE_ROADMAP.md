@@ -17,7 +17,7 @@ Historically, two distinct forms of technical debt accumulated in the project:
 This master roadmap unifies both tracks into an ironclad, phase-by-phase execution plan.
 
 ### Core Architectural Principles:
-1. **"Centralize the Primitives, Isolate the Domain"**: Shared interactive components (micro-buttons, steppers, scrollbars, inputs, tokens) live in universal dictionaries. Unique visuals (Radio atmospheric aura, Weather horizon gradients, Markdown FlowDocument typography, Dino canvas) stay strictly in their widgets.
+1. **"Centralize the Primitives, Isolate the Domain"**: Shared interactive components (micro-buttons, steppers, scrollbars, inputs, tokens) live in universal dictionaries. Unique visuals (Radio atmospheric aura, Weather horizon gradients, Dino canvas) stay strictly in their widgets.
 2. **"Deconstruct God Objects, Invert Dependencies"**: Break monolithic classes into single-responsibility managers. Adopt standard Dependency Injection (`Microsoft.Extensions.DependencyInjection`). Eliminate static `.Instance` hardware dependencies so ViewModels are 100% unit-testable.
 3. **"Personal Accent vs. Semantic Status Colors"**: User personal accents (Blue, Emerald, Purple) adapt dynamically in Settings. Semantic status colors (Amber for Night Light/Awake, Red for Disconnected/Errors, Green for Online) remain fixed and universal.
 4. **"Zero-Leak Event Lifecycles"**: Every event subscription (`+=`) must have a deterministic cleanup path (`-=`) or utilize weak event subscriptions (`WeakEventManager` / `WeakReferenceMessenger`) to eliminate memory growth over long uptime.
@@ -107,9 +107,8 @@ graph TD
    - Converted button and container corner radii across widgets to `{DynamicResource ControlCornerRadius}` while preserving handcrafted pill/circle geometries (9px checkboxes, 19px sliders, 3.5px indicator dots).
    - Bound Weather aura and text depth overlays to `{DynamicResource TileCornerRadius}`.
 4. **Boilerplate & Resource Purge**:
-   - Purged redundant local `ScrollBar` styles from `AudioControls`, `Radio`, `BrightnessControls`, `Notepad`, `Markdown`, and `Network` (2×).
+   - Purged redundant local `ScrollBar` styles from `AudioControls`, `Radio`, `BrightnessControls`, and `Network` (2×).
    - Purged redundant `BoolToVis` declarations across all widget catalog views (retained local converter on Rover for standalone STA test harness compatibility).
-   - Bound horizontal hairline dividers in `Notepad` and `Markdown` to `WidgetHairlineDividerStyle`.
    - Replaced duplicate 35-line `FluentAmberToggleSwitchStyle` in `CaffeineSleep` with universal token in `WidgetStyles.xaml`.
 5. **Build & Test Verification**:
    - `dotnet build -c Debug`: 0 Errors, 0 Warnings.
@@ -234,7 +233,7 @@ graph TD
    ├── TypeSubtitle    (18px / Bold     / 26px LineHeight) --> Group headers, drawer alphabet letters, categories
    ├── TypeDisplay     (28px / SemiBold / 36px LineHeight) --> Card metrics, Pomodoro timer, speed test readout
    ├── TypeHero        (72px / Bold     / 92px LineHeight) --> Ambient giant readouts (Clock, Weather 24°, Calendar day)
-   ├── TypeMonoCode    (13px / Regular  / Cascadia Code)   --> Dino arcade HUD, Notepad editor, Markdown code
+   ├── TypeMonoCode    (13px / Regular  / Cascadia Code)   --> Dino arcade HUD, system monospaced text
    └── Coordinate Tokens (100.0, 19.5, 112.0)              --> Internal Viewbox coordinate grids (Geometry invariant)
 ```
 
@@ -393,11 +392,6 @@ Every text element across all 19 widgets mapped to the unified Fluent 2 type ram
 | **Habit** | 42-Day Streak Cells | `13` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextPrimaryBrush` | Replaced by single streak count |
 | **Habit** | Current Streak Hero ("14 Days") | `16` | `TypeDisplay` | `AppDisplayFontFamily` | `28` | Bold | `#00FF85` (Accent) | Preserved in compact mode |
 | **Habit** | Setup Card Inputs & Watermarks | `12`, `14.5` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextPrimaryBrush` | Modal dialog only |
-| **Markdown** | Raw Editor Text | `13.5` | `TypeMonoCode` | `AppMonoFontFamily` | `13` | Regular | `TextSecondaryBrush`| Hidden during markdown preview |
-| **Markdown** | Viewer Base Paragraph | `13.5` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextPrimaryBrush` | Truncated with ellipsis if no scroll |
-| **Markdown** | Headings H1 / H2 / H3 | `21`, `17`, `15`| `TypeMarkdownH` (Ex) | `AppDisplayFontFamily` | `24, 20, 16` | Bold | `TextPrimaryBrush` | Retained in FlowDocument builder |
-| **Markdown** | Inline Code & Code Block | `12` | `TypeMonoCode` | `AppMonoFontFamily` | `13` | Regular | `#60CDFF` | Scrollable horizontally |
-| **Markdown** | Status Bar Word / Char Count | `11` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextSubtleBrush` | Hidden when card H < 140 |
 | **Media** | Track Title (Default card) | `15` | `TypeHeader` | `AppDisplayFontFamily` | `16` | SemiBold | `TextPrimaryBrush` | Always visible; `CharacterEllipsis` |
 | **Media** | Artist Name | `13` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextSecondaryBrush`| Hidden in minimal 4x1 if crowded |
 | **Media** | Album Name | `13` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | 1st to hide when tile shrinks |
@@ -414,12 +408,6 @@ Every text element across all 19 widgets mapped to the unified Fluent 2 type ram
 | **Network** | Speed Test START Hero Button | `36` | `TypeDisplay` | `AppDisplayFontFamily` | `28` | Bold | `#00FF85` | Centered trigger |
 | **Network** | Speed Readout Hero ("342.8") | `28` / `36` / `44` | `TypeDisplay` | `AppDisplayFontFamily` | `28` | Bold | `TextPrimaryBrush` | Main metric in speed test |
 | **Network** | Speed Gauge Unit ("Mbps", "ms") | `12` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Below big speed number |
-| **Notepad** | Tab Strip Item Labels | `11.5` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextPrimaryBrush` | Always visible top bar |
-| **Notepad** | Editor Body Content | `13.5` | `TypeMonoCode` | `AppMonoFontFamily` | `13` | Regular | `TextSecondaryBrush`| Vertical scroll active |
-| **Notepad** | Watermark ("Type here...") | `13.5` | `TypeMonoCode` | `AppMonoFontFamily` | `13` | Regular | `TextDisabledBrush` | Cleared on input focus |
-| **Notepad** | Checklist Task Item | `14` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextPrimaryBrush` | Scrolled inside list |
-| **Notepad** | Completed Task Item | `14` | `TypeBody` | `AppFontFamily` | `14` | Regular | `TextSubtleBrush` (Strike)| Strikethrough style preserved |
-| **Notepad** | Task Count Summary & "Clear Done"| `12` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Footer bar; hidden if H < 120 |
 | **Photos** | Empty State Title | `15` | `TypeHeader` | `AppDisplayFontFamily` | `16` | SemiBold | `TextPrimaryBrush` | Centered in placeholder |
 | **Photos** | Empty State Caption ("Add a folder")| `11.5` | `TypeCaption` | `AppFontFamily` | `12` | Regular | `TextMutedBrush` | Hidden on small tile |
 | **Photos** | Action Button ("Browse...") | `12.5` | `TypeBodyStrong` | `AppFontFamily` | `14` | SemiBold | `TextPrimaryBrush` | Centered action |
@@ -485,7 +473,7 @@ Small tiles must maintain high readability and touch targets. Instead of scaling
 4. **Widgets Batch 1 (System & Control Widgets) [COMPLETED]**: Updated `AudioControls`, `BrightnessControls`, `QuickControls`, `Power`, `CaffeineSleep`.
 5. **Widgets Batch 2 (Media & Audio Widgets) [COMPLETED]**: Updated `Media`, `Radio`, `AtmosphericAuraControl`, `Quotes`.
 6. **Widgets Batch 3 (Information & Time Widgets) [COMPLETED]**: Updated `Clock`, `AnimatedTimeBlock`, `Calendar`, `Weather`, `Network`.
-7. **Widgets Batch 4 (Productivity & Interactive Widgets) [COMPLETED]**: Updated `Notepad`, `Habit`, `Photos`, `Pomodoro`, `Markdown`, `Dino`, `Rover`.
+7. **Widgets Batch 4 (Productivity & Interactive Widgets) [COMPLETED]**: Updated `Habit`, `Photos`, `Pomodoro`, `Dino`, `Rover`.
 8. **Automated Verification [COMPLETED]**:
    - `dotnet build -c Debug`: 0 Errors, 0 Warnings.
    - `dotnet build -c Release`: 0 Errors, 0 Warnings.
@@ -527,7 +515,7 @@ Small tiles must maintain high readability and touch targets. Instead of scaling
    - Stripped redundant copy-pasted 6 attached rendering properties from 26 child controls and catalog widgets, leveraging WPF visual tree inheritance.
 
 2. **Secondary Text Tint Tokenization**:
-   - Replaced all 15 raw `#70FFFFFF` occurrences across shell controls (`GroupHeaderControl`, `AllAppsDrawerControl`, `WidgetTabStrip`, `WidgetStyles`) and catalog widgets (`Network`, `Notepad`, `Habit`, `Calendar`, `CaffeineSleep`) with `{DynamicResource TextSubtleBrush}`.
+   - Replaced all 15 raw `#70FFFFFF` occurrences across shell controls (`GroupHeaderControl`, `AllAppsDrawerControl`, `WidgetTabStrip`, `WidgetStyles`) and catalog widgets (`Network`, `Habit`, `Calendar`, `CaffeineSleep`) with `{DynamicResource TextSubtleBrush}`.
    - Replaced all 6 raw `#95A8BE` metric headers in `WeatherWidgetView.xaml` with `{DynamicResource TextMutedBrush}`.
    - Replaced raw `#D8E2EC` sky condition text in `WeatherWidgetView.xaml` with `{DynamicResource TextSecondaryBrush}`.
 

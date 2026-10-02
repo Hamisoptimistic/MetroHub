@@ -7,9 +7,9 @@ using System.Text;
 namespace MetroHub.Core.Services;
 
 /// <summary>
-/// Contract for per-widget state files. Document-carrying widgets (Markdown today) keep their
-/// bulk payload here instead of inside <c>layout.json</c>, so a keystroke-triggered autosave
-/// never rewrites the whole hub layout.
+/// Contract for per-widget state files. State-carrying widgets (e.g. Habit) keep their
+/// bulk payload here instead of inside <c>layout.json</c>, so frequent updates
+/// never rewrite the whole hub layout.
 /// </summary>
 public interface IWidgetStateStore
 {

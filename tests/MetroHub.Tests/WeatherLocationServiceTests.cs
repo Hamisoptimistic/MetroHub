@@ -130,7 +130,7 @@ public class WeatherLocationServiceTests
     [Fact]
     public void WeatherLocationDialog_InitializesWithoutXamlExceptions()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var dlg = new MetroHub.Presentation.Controls.WeatherLocationDialog();
             Assert.NotNull(dlg);
@@ -141,7 +141,7 @@ public class WeatherLocationServiceTests
     [Fact]
     public void WebLinkDialog_InitializesWithoutXamlExceptions()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var dlg = new MetroHub.Presentation.Dialogs.WebLinkDialog();
             Assert.NotNull(dlg);
@@ -152,7 +152,7 @@ public class WeatherLocationServiceTests
     [Fact]
     public void RadioStationDialog_InitializesWithoutXamlExceptions()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var dlg = new MetroHub.Presentation.Controls.RadioStationDialog();
             Assert.NotNull(dlg);

@@ -39,7 +39,7 @@
     <sys:Double x:Key="TypeHeroFontSize">72</sys:Double>
     <x:Static Member="FontWeights.Bold" x:Key="TypeHeroFontWeight" />
 
-    <!-- Monospace & Code Tokens (Dino, Notepad editor, Markdown code) (13px Regular) -->
+    <!-- Monospace & Code Tokens (Dino, System Code) (13px Regular) -->
     <sys:Double x:Key="TypeMonoCodeFontSize">13</sys:Double>
     <x:Static Member="FontWeights.Normal" x:Key="TypeMonoCodeFontWeight" />
 
@@ -68,7 +68,6 @@
     <!-- ========================================================================= -->
     <SolidColorBrush x:Key="ContentDialogBackground" Color="#F214161A" />
     <SolidColorBrush x:Key="ContentDialogBorderBrush" Color="#35FFFFFF" />
-    <SolidColorBrush x:Key="ContentDialogSmokeFill" Color="#8A08080C" />
     <SolidColorBrush x:Key="SmokeFillColorDefaultBrush" Color="#8A08080C" />
     <SolidColorBrush x:Key="ContentDialogSeparatorBorderBrush" Color="#18FFFFFF" />
     <SolidColorBrush x:Key="ContentDialogTopOverlay" Color="#08FFFFFF" />
@@ -152,7 +151,7 @@
     <!-- ========================================================================= -->
     <Color x:Key="SystemAccentColor">#4CC2FF</Color>
     <SolidColorBrush x:Key="SystemAccentColorBrush" Color="{StaticResource SystemAccentColor}" />
-    <SolidColorBrush x:Key="SystemAccentColorPrimaryBrush" Color="#4CC2FF" />
+    <SolidColorBrush x:Key="SystemAccentColorPrimaryBrush" Color="{StaticResource SystemAccentColor}" />
     <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#60CDFF" />
     <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="#2886C8" />
     <SolidColorBrush x:Key="SystemAccentColorForegroundBrush" Color="#FFFFFF" />

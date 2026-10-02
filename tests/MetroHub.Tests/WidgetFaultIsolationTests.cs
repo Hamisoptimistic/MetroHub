@@ -45,7 +45,7 @@ public sealed partial class WidgetFaultIsolationTests
     [Fact]
     public void HeartbeatPulse_WhenOneWidgetThrows_OtherWidgetsKeepTickingAndHostSurvives()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var tile1 = new TileModel { Id = "tile_bad", TargetPath = "stub" };
             var tile2 = new TileModel { Id = "tile_good", TargetPath = "stub" };
@@ -80,7 +80,7 @@ public sealed partial class WidgetFaultIsolationTests
     [Fact]
     public void WidgetDefinition_CreateViewModel_WhenFactoryThrows_ReturnsErrorStubInsteadOfCrashing()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var def = new WidgetDefinition(
                 Id: "crashing_widget",
@@ -107,7 +107,7 @@ public sealed partial class WidgetFaultIsolationTests
     [Fact]
     public void WidgetViewModelBase_ReceiveVisibility_WhenResumeOrPauseThrows_DoesNotCrash()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var tile = new TileModel { Id = "test_tile", TargetPath = "stub" };
             using var widget = new ThrowingLifecycleWidget(tile);

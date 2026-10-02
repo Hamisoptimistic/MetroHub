@@ -558,7 +558,7 @@
                 <Grid Grid.Row="3" VerticalAlignment="Bottom">
                     <Button Content="Add"
                             Command="{Binding StartHabitCommand}"
-                            Style="{DynamicResource FluentCohesivePrimaryButtonStyle}"
+                            Style="{DynamicResource AccentButtonStyle}"
                             Height="30"
                             MinWidth="80"
                             HorizontalAlignment="Right" />

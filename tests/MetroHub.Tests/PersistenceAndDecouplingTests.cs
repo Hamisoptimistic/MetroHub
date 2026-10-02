@@ -6,8 +6,6 @@ using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 using MetroHub.Widgets.Catalog.Clock;
 using MetroHub.Widgets.Catalog.Habit;
-using MetroHub.Widgets.Catalog.Markdown;
-using MetroHub.Widgets.Catalog.Notepad;
 using MetroHub.Widgets.Catalog.Photos;
 using MetroHub.Widgets.Catalog.Quotes;
 using MetroHub.Widgets.Catalog.Rover;
@@ -120,7 +118,7 @@ public class PersistenceAndDecouplingTests
     [Fact]
     public void ClockWidget_SaveSettings_DispatchesWidgetSettingsChangedMessage()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var model = new TileModel
             {
@@ -162,7 +160,7 @@ public class PersistenceAndDecouplingTests
     [Fact]
     public void Widgets_SaveSettings_HeadlessExecutionDoesNotThrowNullReference()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             // Verify widgets execute SaveSettings in a headless environment without MainWindow.Current
             Assert.Null(MainWindow.Current);
@@ -199,23 +197,7 @@ public class PersistenceAndDecouplingTests
                 Assert.NotNull(photosModel.SettingsJson);
             }
 
-            // 5. Notepad
-            var notepadModel = new TileModel { Id = "test_notepad", TargetPath = "notepad" };
-            using (var notepad = new NotepadWidgetViewModel(notepadModel))
-            {
-                notepad.SaveSettings();
-                Assert.NotNull(notepadModel.SettingsJson);
-            }
-
-            // 6. Markdown
-            var markdownModel = new TileModel { Id = "test_md", TargetPath = "markdown" };
-            using (var markdown = new MarkdownWidgetViewModel(markdownModel))
-            {
-                markdown.SaveSettings();
-                Assert.NotNull(markdownModel.SettingsJson);
-            }
-
-            // 7. Habit
+            // 5. Habit
             var habitModel = new TileModel { Id = "test_habit", TargetPath = "habit" };
             using (var habit = new HabitWidgetViewModel(habitModel))
             {

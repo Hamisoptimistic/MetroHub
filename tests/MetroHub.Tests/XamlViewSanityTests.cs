@@ -9,10 +9,8 @@ using MetroHub.Widgets.Catalog.Calendar;
 using MetroHub.Widgets.Catalog.Clock;
 using MetroHub.Widgets.Catalog.Dino;
 using MetroHub.Widgets.Catalog.Habit;
-using MetroHub.Widgets.Catalog.Markdown;
 using MetroHub.Widgets.Catalog.Media;
 using MetroHub.Widgets.Catalog.Network;
-using MetroHub.Widgets.Catalog.Notepad;
 using MetroHub.Widgets.Catalog.Photos;
 using MetroHub.Widgets.Catalog.Pomodoro;
 using MetroHub.Widgets.Catalog.Power;
@@ -41,10 +39,8 @@ public class XamlViewSanityTests
     [InlineData(typeof(ClockWidgetView))]
     [InlineData(typeof(DinoWidgetView))]
     [InlineData(typeof(HabitWidgetView))]
-    [InlineData(typeof(MarkdownWidgetView))]
     [InlineData(typeof(MediaWidgetView))]
     [InlineData(typeof(NetworkWidgetView))]
-    [InlineData(typeof(NotepadWidgetView))]
     [InlineData(typeof(PhotosWidgetView))]
     [InlineData(typeof(PomodoroWidgetView))]
     [InlineData(typeof(PowerWidgetView))]
@@ -112,8 +108,10 @@ public class XamlViewSanityTests
     [InlineData("StatusWarningBrush")]
     [InlineData("StatusDangerBrush")]
     [InlineData("WidgetIndicatorDotStyle")]
-    [InlineData("CycleDotStyle")]
-    [InlineData("FluentGreenToggleSwitchStyle")]
+    [InlineData("DefaultButtonStyle")]
+    [InlineData("AccentButtonStyle")]
+    [InlineData("SubtleButtonStyle")]
+    [InlineData("FluentAccentToggleSwitchStyle")]
     [InlineData("FluentAmberToggleSwitchStyle")]
     [InlineData("FluentRedToggleSwitchStyle")]
     [InlineData("SystemAccentColorSecondaryBrush")]

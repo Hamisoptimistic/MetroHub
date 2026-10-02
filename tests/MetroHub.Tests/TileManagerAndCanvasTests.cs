@@ -42,7 +42,7 @@ public class TileManagerAndCanvasTests
     [Fact]
     public void TileManager_ClearSelection_UnselectsAllTiles()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var tiles = new ObservableCollection<TileModel>
             {
@@ -62,7 +62,7 @@ public class TileManagerAndCanvasTests
     [Fact]
     public void TileManager_GetSelectedTiles_ReturnsOnlySelected()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var tiles = new ObservableCollection<TileModel>
             {
@@ -84,7 +84,7 @@ public class TileManagerAndCanvasTests
     [Fact]
     public void TileManager_BatchStyleSelectedTiles_AppliesStyleToAllSelected()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var tiles = new ObservableCollection<TileModel>
             {
@@ -110,7 +110,7 @@ public class TileManagerAndCanvasTests
     [Fact]
     public void TileManager_BatchUnpinTiles_RemovesUnlockedTiles()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var tiles = new ObservableCollection<TileModel>
             {
@@ -133,7 +133,7 @@ public class TileManagerAndCanvasTests
     [Fact]
     public void TileManager_BatchUnpinTiles_PreservesLockedTilesAndLockedGroups()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var lockedGroup = new TileGroupModel { Id = "g_locked", Title = "Locked Group", IsLocked = true };
             var openGroup = new TileGroupModel { Id = "g_open", Title = "Open Group", IsLocked = false };
@@ -162,7 +162,7 @@ public class TileManagerAndCanvasTests
     [Fact]
     public void TileManager_BatchUnpinTiles_WhenAllLocked_TriggersFlashLockedGroup()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var lockedGroup = new TileGroupModel { Id = "g_locked", Title = "Locked Group", IsLocked = true };
             var tiles = new ObservableCollection<TileModel>
@@ -187,7 +187,7 @@ public class TileManagerAndCanvasTests
     [Fact]
     public void TileManager_RestoreLayoutFromSnapshot_RestoresPreviousCoordinates()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var tiles = new ObservableCollection<TileModel>
             {
@@ -246,7 +246,7 @@ public class TileManagerAndCanvasTests
     [Fact]
     public void IsInteractiveElement_TileSurfaceAndLabels_ReturnsFalse()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var tileControl = new Presentation.Controls.TileControl();
             var grid = new System.Windows.Controls.Grid();
@@ -262,7 +262,7 @@ public class TileManagerAndCanvasTests
     [Fact]
     public void IsInteractiveElement_ButtonInsideTile_ReturnsTrue()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var tileControl = new Presentation.Controls.TileControl();
             var grid = new System.Windows.Controls.Grid();

@@ -321,14 +321,9 @@ public partial class MainWindow : BorderlessFluentWindow
                 var clicked = e.OriginalSource as DependencyObject;
                 if (clicked == null || !IsDescendantOf(clicked, textInput))
                 {
-                    // If the user clicked inside the same text widget (e.g. formatting buttons or todo switches),
-                    // allow that widget to manage its own focus.
-                    var notepadView = FindParent<MetroHub.Widgets.Catalog.Notepad.NotepadWidgetView>(textInput);
-                    var markdownView = notepadView == null
-                        ? FindParent<MetroHub.Widgets.Catalog.Markdown.MarkdownWidgetView>(textInput)
-                        : null;
-                    if (clicked != null && ((notepadView != null && IsDescendantOf(clicked, notepadView)) ||
-                        (markdownView != null && IsDescendantOf(clicked, markdownView))))
+                    // If the user clicked inside the same widget card, allow that widget to manage its own focus.
+                    var parentCard = FindParent<MetroHub.Widgets.WidgetCard>(textInput);
+                    if (clicked != null && parentCard != null && IsDescendantOf(clicked, parentCard))
                     {
                         return;
                     }

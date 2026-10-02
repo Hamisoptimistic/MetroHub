@@ -64,7 +64,7 @@ Nothing here suggests the patterns are unknown — several were deliberately des
 
 - `StorageService.SaveAtomic` / `WidgetStateStore`: `.tmp → File.Replace → .bak` with a health check before rotation (`StorageService.cs:90-119`) and a fallback chain.
 - Corrupt-primary recovery: `.bak` → `.tmp` → `PreserveCorruptFile` → starter template (`StorageService.cs:203-232`).
-- **Tested for real.** `MarkdownPersistenceTests.cs:41-47` runs genuine `File.Replace`/`.bak` rotation against `%TEMP%\MetroHub_MarkdownTests_<guid>` sandbox directories — not mocked.
+- **Tested for real.** `HabitPersistenceTests.cs` runs genuine `File.Replace`/`.bak` rotation against `%TEMP%\MetroHub_HabitTests_<guid>` sandbox directories — not mocked.
 
 ### 3.3 Concurrency has no deadlock topology
 
@@ -183,7 +183,7 @@ Breakdown of the 316 bare catches: **200** are single-line `catch { }`; of the 1
 **Most consequential instances:**
 
 - 🔴 **Silent layout/data loss on exit** — `MainWindow.xaml.cs:1062,1072,1088,1098` and `App.xaml.cs:162,174` swallow `SaveGroupsAndLayout()` / `StorageService.Flush()` failures with bare `catch { }`. The user loses layout with no warning and no trace.
-- 🔴 **Central serializer swallows every JSON error** — `WidgetSerializer.cs:35` `catch { return null; }`, then each consumer silently resets config: `NotepadWidgetViewModel.cs:323`, `HabitWidgetViewModel.cs:181`, `MarkdownWidgetViewModel.cs:761`, `QuotesWidgetViewModel.cs:169`, `MarkdownWidgetSettings.cs:135`.
+- 🔴 **Central serializer swallows every JSON error** — `WidgetSerializer.cs:35` `catch { return null; }`, then each consumer silently resets config: `HabitWidgetViewModel.cs:181`, `QuotesWidgetViewModel.cs:169`.
 - 🟠 **Export failure invisible** — `MainWindow.Tiles.cs:632-639`: `ExportLayout` returns `bool`; on `false` nothing is shown, and the `catch` is Debug-only.
 - 🟠 **19 of 27 `Safe.Try` sites discard the bool result** with no retry, fallback, or feedback (`WidgetViewModelBase.cs:34,77,89,93,120`; `WidgetStateStore.cs:101,114,123,129,145`; `StorageService.cs:49,109,135,141,397,414,488,710`; `HubState.cs:35`).
 - 🟡 **Speed-test failures report as "no data"** — `SpeedTestService.cs:353,541,579,625`: `try { await Task.WhenAll(...); } catch { }` drops aggregated worker failures wholesale.
@@ -224,7 +224,7 @@ WidgetHeartbeatService.SecondTick += OnSecondTickInternal;
 - `RoverWidgetViewModel.cs:183-185` calls `LoadSettings(model.SettingsJson)` directly in its constructor, outside any `Safe.Try`. Malformed JSON is sufficient.
 - `QuickControlsWidgetViewModel.cs:57-59` constructs three more `WidgetViewModelBase` descendants in its constructor — one failure roots four.
 
-**Empirical proof of the mechanism:** tests construct widget VMs and never dispose them — `MarkdownPersistenceTests` (10×), `HabitPersistenceTests` (7×), `NotepadPersistenceTests` (7×), `RadioWidgetTests` (8×), `MediaWidgetSanityTests` (5×), `ClockFontTests` (1×). Each is permanently rooted in `SecondTick`; the delegate grows monotonically for the whole test process.
+**Empirical proof of the mechanism:** tests construct widget VMs and never dispose them — `HabitPersistenceTests` (7×), `RadioWidgetTests` (8×), `MediaWidgetSanityTests` (5×), `ClockFontTests` (1×). Each is permanently rooted in `SecondTick`; the delegate grows monotonically for the whole test process.
 
 ---
 
@@ -245,11 +245,7 @@ Combined with W1 (`Handled` never set, no `UnobservedTaskException`), every one 
 ### 🟡 W6 — Synchronous disk I/O on the UI thread in the show/hide hot path
 
 - **Show/hide logging:** `MainWindow.xaml.cs:819` (show), `:852` (hide) → `HiddenDiagnosticsLogger.cs:193-207` → `Process.Refresh()`, two `GetGuiResources` P/Invokes, then `File.AppendAllText` under `lock(_lock)` — all on the UI thread, before the dispatcher pumps the storyboard.
-- **Hide writes widget state inline:** `MainWindow.xaml.cs:867` sends `HubVisibilityChangedMessage(false)` *synchronously*, so widget `Pause()` runs inline:
-  - `NotepadWidgetViewModel.cs:394` → `WidgetStateStore.cs:75-117` (`File.WriteAllText` + `File.Replace` under lock)
-  - `MarkdownWidgetViewModel.cs:832` → `:617 FlushDirtyTabs()` → `:722 File.WriteAllText` for **every dirty file-backed tab**
-
-Both are diff-guarded (`MarkdownWidgetViewModel.cs:625`, `NotepadWidgetViewModel.cs:264`), so the common cost is a JSON serialize only — but an unsaved Markdown document pays a real disk write on the frame the hide animation is meant to start. No measurement, no watchdog.
+- **Hide writes widget state inline:** `MainWindow.xaml.cs:867` sends `HubVisibilityChangedMessage(false)` *synchronously*, so widget `Pause()` runs inline on widgets with persistence, triggering state serialization and disk persistence. No measurement, no watchdog.
 
 **Related:** the heartbeat (`WidgetHeartbeatService.cs:37`, `:92-108`) isolates subscribers by exception but has **no time budget and no slow-tick telemetry**. One widget doing slow work in `OnSecondTick` stalls the dispatcher for its full duration — silently. Worse, a widget that throws *every second* costs a synchronous UI-thread `File.AppendAllText` every second.
 
@@ -263,13 +259,12 @@ Both are diff-guarded (`MarkdownWidgetViewModel.cs:625`, `NotepadWidgetViewModel
 - `ClockFontTests.cs:26-151` and `RoverWidgetTests.cs:198-263` — **zero assertions**, and they write PNGs to a hardcoded developer path: `C:\Users\HamB\.gemini\antigravity-ide\brain\a6e02d95-…\scratch\renders`.
 - `AppSettingsTests.cs:137-141` — sets `TileCornerRadius`, then asserts it equals what it just set.
 - `AppSettingsTests.cs:122-128` — re-implements the production guard instead of calling it.
-- `MarkdownRegressionTests.cs:106` — `Assert.True(replaced >= 0)`.
 - `WeatherLocationServiceTests.cs:124-127,136,147,158` — assert only `Assert.NotNull(dlg)`.
 
 **Non-determinism in the default run:**
 - Live internet + real audio: `RadioAudioServiceTests.cs:63,89,126,156` (ice1.somafm.com, radio.co) and `RadioBrowserAndProbeTests.cs:422-436`, with wall-clock `Task.Delay(1000)` waits and no `[Trait]` gate.
 - Hard wall-clock perf assertion: `AudioSpectrumProcessorTests.cs:217` asserts `msPerFrame < 0.05`; `:190` asserts exactly 0 bytes allocated over 1,000 frames.
-- Raw STA threads that swallow assertion failures by crashing the host: `RoverWidgetTests.cs:60-62`, `ClockFontTests.cs:148-150` do `thread.Start(); thread.Join();` with no exception capture (unlike the correct pattern in `MarkdownTestHost.cs:39-51`).
+- Raw STA threads that swallow assertion failures by crashing the host: `RoverWidgetTests.cs:60-62`, `ClockFontTests.cs:148-150` do `thread.Start(); thread.Join();` with no exception capture (unlike the correct pattern in `WpfTestHost.cs:39-51`).
 
 **Test inventory:** 28 files (26 with tests), **194 test methods** (187 `[Fact]` + 7 `[Theory]`) → ~253+ executed cases.
 
@@ -297,7 +292,7 @@ Process.Start(new ProcessStartInfo("powershell.exe",
 | 1 | **`MediaWidgetViewModel` uses an un-removable `this`-capturing lambda** on `Model.PropertyChanged`; `Dispose` never detaches it. Every other widget uses a named handler with matching `-=` (10 verified). | `MediaWidgetViewModel.cs:265-282`, `:1512-1539` |
 | 2 | **Dead-code tile-removal path skips `Teardown()`** — currently unreachable (`CategoryControl` is never instantiated), but a landmine if wired up. | `CategoryControl.xaml.cs:176-183` |
 | 3 | **`CinematicFadeService` overlay leak** — if `BeginAnimation` throws after `overlay.Show()`, the catch doesn't call `DismissOverlay`, so the window and two `SystemEvents` subscriptions survive to exit. | `CinematicFadeService.cs:195`, `:197-200` |
-| 4 | **Diagnostics log has no rotation or size cap** — unbounded `File.AppendAllText`. Only two logs in the app are capped (`MarkdownLog.cs:14` 512 KB, `MediaWidgetViewModel.cs:820-823` 256 KB). | `HiddenDiagnosticsLogger.cs:193-207` |
+| 4 | **Diagnostics log has no rotation or size cap** — unbounded `File.AppendAllText`. Only one log in the app is capped (`MediaWidgetViewModel.cs:820-823` 256 KB). | `HiddenDiagnosticsLogger.cs:193-207` |
 | 5 | **Core layering violations** — `TileModel.cs:159` (a *model* constructs its own ViewModel and caches it), `SidebarPinningService.cs:10` (Core → `Presentation.Controls`), `WidgetHeartbeatService.cs:5` (Core → Widgets). | — |
 | 6 | **`IWidgetViewModel.Teardown()` has zero call sites** — disposal goes exclusively through `TileModel.Teardown()`. Dead contract surface. | `IWidgetViewModel.cs:20` |
 | 7 | **`SaveLayoutSync`/`SaveGroupsSync`/`SaveSettingsSync` are dead code** (no callers), and take `lock(WriteLock)` then re-enter it via `SaveAtomic` — safe only because `Monitor` is reentrant. | `StorageService.cs:507,577,642`, `:64` |
@@ -340,7 +335,7 @@ Ordered by bug-catch-per-hour. None of these require architectural change.
 8. **CI gates:** `-c Release`, `TreatWarningsAsErrors`, an `.editorconfig`, dependency caching.
 9. **Trait-gate the live-network tests** — `[Trait("Category","Online")]` + `dotnet test --filter` so CI is deterministic while keeping live-stream tests opt-in.
 10. **Delete or fix the assertion-free tests** (`ClockFontTests.cs:26`, `RoverWidgetTests.cs:198`) — remove the hardcoded developer path.
-11. **Add a heartbeat tick-duration watchdog** with slow-tick telemetry; move hide-time `SaveContent`/`FlushDirtyTabs` off the show/hide frame.
+11. **Add a heartbeat tick-duration watchdog** with slow-tick telemetry; move hide-time state persistence off the show/hide frame.
 12. **Fix `SidebarRailControl.xaml.cs:539`** — validate against an allowlist of path characters, or pass the folder via `-WorkingDirectory`/an environment variable instead of interpolating into `-Command`.
 
 ---

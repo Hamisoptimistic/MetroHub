@@ -344,7 +344,7 @@
 
                     <!-- Right: Cohesive Fluent Action Button [ Turn Off Now ] -->
                     <Button Grid.Column="1"
-                            Style="{StaticResource FluentCohesiveSecondaryButtonStyle}"
+                            Style="{StaticResource DefaultButtonStyle}"
                             Command="{Binding TurnOffDisplaysCommand}"
                             VerticalAlignment="Center"
                             Height="28"
@@ -397,7 +397,7 @@
 
                     <!-- Right: Fluent ToggleSwitch -->
                     <ui:ToggleSwitch Grid.Column="1"
-                                     Style="{StaticResource FluentGreenToggleSwitchStyle}"
+                                     Style="{StaticResource FluentAccentToggleSwitchStyle}"
                                      IsChecked="{Binding CinematicFade, Mode=TwoWay}"
                                      VerticalAlignment="Center"
                                      ToolTip="When enabled, displays smoothly fade to pitch black (macOS style) before turning off" />
@@ -455,7 +455,7 @@
 
                     <!-- Right: Cohesive Fluent Button with Dynamic State Content & Flyout Menu -->
                     <Button Grid.Column="1"
-                            Style="{StaticResource FluentCohesiveSecondaryButtonStyle}"
+                            Style="{StaticResource DefaultButtonStyle}"
                             Click="ModeButton_Click"
                             VerticalAlignment="Center"
                             Height="28"
@@ -563,7 +563,7 @@
 
                     <!-- Right: Fluent ToggleSwitch -->
                     <ui:ToggleSwitch Grid.Column="1"
-                                     Style="{StaticResource FluentGreenToggleSwitchStyle}"
+                                     Style="{StaticResource FluentAccentToggleSwitchStyle}"
                                      IsChecked="{Binding KeepScreenOn, Mode=TwoWay}"
                                      IsEnabled="{Binding CanToggleKeepScreenOn}"
                                      VerticalAlignment="Center" />
@@ -621,7 +621,7 @@
 
                     <!-- Right: Green ToggleSwitch (Unified across widget) -->
                     <ui:ToggleSwitch Grid.Column="1"
-                                     Style="{StaticResource FluentGreenToggleSwitchStyle}"
+                                     Style="{StaticResource FluentAccentToggleSwitchStyle}"
                                      IsChecked="{Binding IsNightLightEnabled, Mode=TwoWay}"
                                      IsEnabled="{Binding IsNightLightSupported}"
                                      ToolTip="{Binding NightLightSupportTooltip}"

@@ -22,7 +22,7 @@ public class PomodoroHeartbeatTests
     [Fact]
     public void WhenStopped_HeartbeatPulseDoesNotChangeRemainingTime()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var model = CreatePomodoroTile();
             using var vm = new PomodoroWidgetViewModel(model);
@@ -47,7 +47,7 @@ public class PomodoroHeartbeatTests
     [Fact]
     public void WhenRunning_HeartbeatPulseCountsDownAccurately()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var model = CreatePomodoroTile();
             using var vm = new PomodoroWidgetViewModel(model);
@@ -75,7 +75,7 @@ public class PomodoroHeartbeatTests
     [Fact]
     public void WhenTimerReachesZero_PhaseCompletesAndAdvances()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var model = CreatePomodoroTile();
             using var vm = new PomodoroWidgetViewModel(model);
@@ -101,7 +101,7 @@ public class PomodoroHeartbeatTests
     [Fact]
     public void DisposedWidget_DetachesFromHeartbeatCleanly()
     {
-        MarkdownTestHost.RunSta(() =>
+        WpfTestHost.RunSta(() =>
         {
             var model = CreatePomodoroTile();
             var vm = new PomodoroWidgetViewModel(model);

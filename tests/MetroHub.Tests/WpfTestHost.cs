@@ -74,3 +74,35 @@ internal static class WpfTestHost
         }
     }
 }
+
+/// <summary>Throwaway directory layout for state files so tests never touch real app data.</summary>
+internal sealed class WidgetTestSandbox : IDisposable
+{
+    public WidgetTestSandbox()
+    {
+        Root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "MetroHub_Tests_" + Guid.NewGuid().ToString("N"));
+        StateDir = System.IO.Path.Combine(Root, "config", "widgets");
+        BakDir = System.IO.Path.Combine(Root, "backups", "widgets");
+        System.IO.Directory.CreateDirectory(StateDir);
+        System.IO.Directory.CreateDirectory(BakDir);
+    }
+
+    public string Root { get; }
+    public string StateDir { get; }
+    public string BakDir { get; }
+
+    public void Dispose()
+    {
+        try
+        {
+            if (System.IO.Directory.Exists(Root))
+            {
+                System.IO.Directory.Delete(Root, recursive: true);
+            }
+        }
+        catch
+        {
+            // Temp cleanup is best effort.
+        }
+    }
+}

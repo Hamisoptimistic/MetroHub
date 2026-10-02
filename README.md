@@ -10,7 +10,7 @@ MetroHub is a Windows desktop launcher: a full-screen, Windows 8/10-style live-t
 * **Architecture:** MVVM using [CommunityToolkit.Mvvm](https://learn.microsoft.com/dotnet/communitytoolkit/mvvm/)
 
 ## Widgets
-MetroHub includes 20 catalog widgets located in `src/MetroHub/Widgets/Catalog/`:
+MetroHub includes 18 catalog widgets located in `src/MetroHub/Widgets/Catalog/`:
 * `AudioControls`
 * `BrightnessControls`
 * `CaffeineSleep`
@@ -18,10 +18,8 @@ MetroHub includes 20 catalog widgets located in `src/MetroHub/Widgets/Catalog/`:
 * `Clock`
 * `Dino`
 * `Habit`
-* `Markdown`
 * `Media`
 * `Network`
-* `Notepad`
 * `Photos`
 * `Pomodoro`
 * `Power`
