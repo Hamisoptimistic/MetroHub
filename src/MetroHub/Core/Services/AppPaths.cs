@@ -11,34 +11,46 @@ namespace MetroHub.Core.Services;
 /// </summary>
 public static class AppPaths
 {
+    private static string? _customAppDataDir;
+
+    /// <summary>
+    /// Optional override for isolated unit testing or portable runs.
+    /// When null, defaults to %LocalAppData%\MetroHub.
+    /// </summary>
+    public static string? CustomAppDataDir
+    {
+        get => _customAppDataDir;
+        set => _customAppDataDir = value;
+    }
+
     /// <summary>
     /// Base application directory: %LocalAppData%\MetroHub.
     /// </summary>
-    public static readonly string AppDataDir = Path.Combine(
+    public static string AppDataDir => _customAppDataDir ?? Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "MetroHub");
 
     // ── Categorized subdirectories ───────────────────────────
-    public static readonly string ConfigDir = Path.Combine(AppDataDir, "config");
-    public static readonly string CacheDir = Path.Combine(AppDataDir, "cache");
-    public static readonly string LogsDir = Path.Combine(AppDataDir, "logs");
-    public static readonly string BackupsDir = Path.Combine(AppDataDir, "backups");
+    public static string ConfigDir => Path.Combine(AppDataDir, "config");
+    public static string CacheDir => Path.Combine(AppDataDir, "cache");
+    public static string LogsDir => Path.Combine(AppDataDir, "logs");
+    public static string BackupsDir => Path.Combine(AppDataDir, "backups");
 
     // ── Widget state (per-tile autosave mirrors) ─────────────
     /// <summary>Root for widget-owned state files: config\widgets\{widgetId}\{tileId}.json.</summary>
-    public static readonly string WidgetStateDir = Path.Combine(ConfigDir, "widgets");
+    public static string WidgetStateDir => Path.Combine(ConfigDir, "widgets");
     /// <summary>Rollover copies for widget state files: backups\widgets\{widgetId}\{tileId}.json.bak.</summary>
-    public static readonly string WidgetStateBakDir = Path.Combine(BackupsDir, "widgets");
+    public static string WidgetStateBakDir => Path.Combine(BackupsDir, "widgets");
 
     // ── Sub-caches ───────────────────────────────────────────
-    public static readonly string PrimaryIconsDir = Path.Combine(CacheDir, "icons");
-    public static readonly string LegacyIconsDir = Path.Combine(AppDataDir, "icons");
+    public static string PrimaryIconsDir => Path.Combine(CacheDir, "icons");
+    public static string LegacyIconsDir => Path.Combine(AppDataDir, "icons");
 
-    public static readonly string PrimaryWallpapersDir = Path.Combine(CacheDir, "WallpapersCache");
-    public static readonly string LegacyWallpapersDir = Path.Combine(AppDataDir, "WallpapersCache");
+    public static string PrimaryWallpapersDir => Path.Combine(CacheDir, "WallpapersCache");
+    public static string LegacyWallpapersDir => Path.Combine(AppDataDir, "WallpapersCache");
 
-    public static readonly string PrimaryRoverSoundsDir = Path.Combine(CacheDir, "RoverSounds");
-    public static readonly string LegacyRoverSoundsDir = Path.Combine(AppDataDir, "RoverSounds");
+    public static string PrimaryRoverSoundsDir => Path.Combine(CacheDir, "RoverSounds");
+    public static string LegacyRoverSoundsDir => Path.Combine(AppDataDir, "RoverSounds");
 
     // ── Path resolution properties ───────────────────────────
 
@@ -120,6 +132,10 @@ public static class AppPaths
     public static string HiddenDiagnosticsLogPath => ResolveFilePath(
         Path.Combine(LogsDir, "hidden_diagnostics.log"),
         Path.Combine(AppDataDir, "hidden_diagnostics.log"));
+
+    public static string ScrollDiagnosticsLogPath => ResolveFilePath(
+        Path.Combine(LogsDir, "scroll_diagnostics.log"),
+        Path.Combine(AppDataDir, "scroll_diagnostics.log"));
 
     // ── Resolution Helpers ───────────────────────────────────
 

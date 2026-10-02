@@ -666,6 +666,7 @@
         <Setter Property="Focusable" Value="False" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="controls:AutoHideScrollBehavior.IsEnabled" Value="True" />
+        <Setter Property="controls:SmoothScrollBehavior.IsEnabled" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ScrollViewer}">
@@ -674,7 +675,8 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <ScrollContentPresenter Grid.Column="0"
+                        <ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
+                                               Grid.Column="0"
                                                Margin="{TemplateBinding Padding}"
                                                CanContentScroll="{TemplateBinding CanContentScroll}" />
                         <ScrollBar Grid.Column="1"

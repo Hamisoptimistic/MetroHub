@@ -15,104 +15,90 @@ using Xunit;
 
 namespace MetroHub.Tests;
 
-public class PersistenceAndDecouplingTests
+public class PersistenceAndDecouplingTests : IDisposable
 {
+    private readonly string _sandboxDir;
+
+    public PersistenceAndDecouplingTests()
+    {
+        _sandboxDir = Path.Combine(Path.GetTempPath(), "MetroHub_TestSandbox_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_sandboxDir);
+        AppPaths.CustomAppDataDir = _sandboxDir;
+    }
+
+    public void Dispose()
+    {
+        AppPaths.CustomAppDataDir = null;
+        try
+        {
+            if (Directory.Exists(_sandboxDir))
+            {
+                Directory.Delete(_sandboxDir, recursive: true);
+            }
+        }
+        catch { }
+    }
+
     [Fact]
     public void StorageService_Flush_SynchronouslyWritesPendingLayout()
     {
-        var original = StorageService.LoadLayout();
-        try
+        var testTiles = new ObservableCollection<TileModel>
         {
-            var testTiles = new ObservableCollection<TileModel>
+            new()
             {
-                new()
-                {
-                    Id = "test_persistence_tile_1",
-                    Title = "Flush Test Tile",
-                    TileType = TileType.App,
-                    TargetPath = "C:\\Windows\\notepad.exe",
-                    Col = 0,
-                    Row = 1,
-                    X = 0,
-                    Y = 48
-                }
-            };
-
-            StorageService.SaveLayout(testTiles);
-            StorageService.Flush();
-
-            var loaded = StorageService.LoadLayout();
-            Assert.NotNull(loaded);
-            Assert.Contains(loaded, t => t.Id == "test_persistence_tile_1");
-        }
-        finally
-        {
-            if (original != null)
-            {
-                StorageService.SaveLayout(original);
-                StorageService.Flush();
+                Id = "test_persistence_tile_1",
+                Title = "Flush Test Tile",
+                TileType = TileType.App,
+                TargetPath = "C:\\Windows\\notepad.exe",
+                Col = 0,
+                Row = 1,
+                X = 0,
+                Y = 48
             }
-        }
+        };
+
+        StorageService.SaveLayout(testTiles);
+        StorageService.Flush();
+
+        var loaded = StorageService.LoadLayout();
+        Assert.NotNull(loaded);
+        Assert.Contains(loaded, t => t.Id == "test_persistence_tile_1");
     }
 
     [Fact]
     public void StorageService_Flush_SynchronouslyWritesPendingGroups()
     {
-        var original = StorageService.LoadGroups();
-        try
+        var testGroups = new ObservableCollection<TileGroupModel>
         {
-            var testGroups = new ObservableCollection<TileGroupModel>
+            new()
             {
-                new()
-                {
-                    Id = "test_group_flush_1",
-                    Title = "Flush Group",
-                    Col = 0,
-                    Row = 0
-                }
-            };
-
-            StorageService.SaveGroups(testGroups);
-            StorageService.Flush();
-
-            var loaded = StorageService.LoadGroups();
-            Assert.NotNull(loaded);
-            Assert.Contains(loaded, g => g.Id == "test_group_flush_1");
-        }
-        finally
-        {
-            if (original != null)
-            {
-                StorageService.SaveGroups(original);
-                StorageService.Flush();
+                Id = "test_group_flush_1",
+                Title = "Flush Group",
+                Col = 0,
+                Row = 0
             }
-        }
+        };
+
+        StorageService.SaveGroups(testGroups);
+        StorageService.Flush();
+
+        var loaded = StorageService.LoadGroups();
+        Assert.NotNull(loaded);
+        Assert.Contains(loaded, g => g.Id == "test_group_flush_1");
     }
 
     [Fact]
     public void StorageService_Flush_SynchronouslyWritesPendingSettings()
     {
-        var original = StorageService.LoadSettings();
-        try
-        {
-            var settings = StorageService.LoadSettings();
-            settings.GridBaseSize = 72;
+        var settings = StorageService.LoadSettings();
+        settings.GridBaseSize = 72;
 
-            StorageService.SaveSettings(settings);
-            StorageService.Flush();
+        StorageService.SaveSettings(settings);
+        StorageService.Flush();
 
-            var loaded = StorageService.LoadSettings();
-            Assert.NotNull(loaded);
-            Assert.Equal(72, loaded.GridBaseSize);
-        }
-        finally
-        {
-            if (original != null)
-            {
-                StorageService.SaveSettings(original);
-                StorageService.Flush();
-            }
-        }
+        var loaded = StorageService.LoadSettings();
+        Assert.NotNull(loaded);
+        Assert.Equal(72, loaded.GridBaseSize);
     }
 
     [Fact]

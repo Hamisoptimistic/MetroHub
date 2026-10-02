@@ -82,4 +82,10 @@ public class WindowManagementTests
         });
         Assert.Null(exception);
     }
+
+    [Fact]
+    public void NativeMethods_DwmTransitionsForceDisabled_HasExpectedValue()
+    {
+        Assert.Equal(3, NativeMethods.DWMWA_TRANSITIONS_FORCEDISABLED);
+    }
 }

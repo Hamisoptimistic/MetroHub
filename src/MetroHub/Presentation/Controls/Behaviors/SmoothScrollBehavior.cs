@@ -2,30 +2,25 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Threading;
 
 namespace MetroHub.Presentation.Controls
 {
     /// <summary>
-    /// High-performance smooth inertia scrolling using analytical exponential velocity decay
-    /// synchronized with WPF's CompositionTarget.Rendering pass.
+    /// Frame-rate-independent continuous exponential smooth scrolling behavior.
+    /// Provides silky, natural inertia matching modern Chromium and macOS physics,
+    /// with integer pixel-snapping to preserve DirectWrite text texture caching and strict nested container containment.
     /// </summary>
     public static class SmoothScrollBehavior
     {
         // ── Physics Tuning ────────────────────────────────────────────────────────
-        // Impulse multiplier per mouse-wheel notch. Higher = longer travel per notch.
-        private const double VelocityMultiplier = 8.5;
+        // Pixels traveled per standard 120-unit wheel notch in pixel-scrolling mode (matches 1 grid tile unit).
+        private const double ScrollStep = 72.0;
 
-        // Exponential decay coefficient (1/sec). Higher = stops faster.
-        private const double Friction = 8.5;
-
-        // Velocity floor (px/sec) to terminate the animation loop.
-        private const double StopVelocity = 2.0;
-
-        // Caps maximum speed from rapid free-spinning wheels.
-        private const double MaxVelocity = 3500.0;
+        // Items traveled per wheel notch in item-based (logical) scrolling mode.
+        private const double ItemStep = 1.0;
 
         // ── Public Attached Property ──────────────────────────────────────────────
         public static readonly DependencyProperty IsEnabledProperty =
@@ -38,13 +33,19 @@ namespace MetroHub.Presentation.Controls
         public static bool GetIsEnabled(DependencyObject obj) => (bool)obj.GetValue(IsEnabledProperty);
         public static void SetIsEnabled(DependencyObject obj, bool value) => obj.SetValue(IsEnabledProperty, value);
 
+        // ── Hooked Viewer Storage (for container elements like ListView/ListBox) ──
+        private static readonly DependencyProperty HookedViewerProperty =
+            DependencyProperty.RegisterAttached(
+                "HookedViewer",
+                typeof(ScrollViewer),
+                typeof(SmoothScrollBehavior),
+                new PropertyMetadata(null));
+
         // ── Per-ScrollViewer State ────────────────────────────────────────────────
         private sealed class ScrollState
         {
-            public double Velocity;
+            public double Target;
             public double Current;
-            public UIElement? Content;
-            public DispatcherTimer? HoverTimer;
         }
 
         private static readonly Dictionary<ScrollViewer, ScrollState> _states = new();
@@ -55,13 +56,108 @@ namespace MetroHub.Presentation.Controls
         // ── Lifecycle & Attachment ────────────────────────────────────────────────
         private static void OnIsEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is not ScrollViewer sv) return;
+            bool isEnabled = (bool)e.NewValue;
 
-            if ((bool)e.NewValue)
+            if (d is ScrollViewer sv)
             {
+                ApplyToScrollViewer(sv, isEnabled);
+            }
+            else if (d is FrameworkElement fe)
+            {
+                if (isEnabled)
+                {
+                    fe.PreviewMouseWheel -= OnParentPreviewMouseWheel;
+                    fe.PreviewMouseWheel += OnParentPreviewMouseWheel;
+
+                    if (fe.IsLoaded)
+                    {
+                        AttachToChild(fe);
+                    }
+                    else
+                    {
+                        RoutedEventHandler? loaded = null;
+                        loaded = (s, args) =>
+                        {
+                            fe.Loaded -= loaded;
+                            AttachToChild(fe);
+                        };
+                        fe.Loaded += loaded;
+                    }
+                }
+                else
+                {
+                    fe.PreviewMouseWheel -= OnParentPreviewMouseWheel;
+
+                    if (fe.GetValue(HookedViewerProperty) is ScrollViewer hooked)
+                    {
+                        ApplyToScrollViewer(hooked, false);
+                        fe.ClearValue(HookedViewerProperty);
+                    }
+                    else
+                    {
+                        var childSv = FindChild<ScrollViewer>(fe);
+                        if (childSv != null)
+                        {
+                            ApplyToScrollViewer(childSv, false);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void OnParentPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (sender is not FrameworkElement fe) return;
+            var sv = fe.GetValue(HookedViewerProperty) as ScrollViewer ?? FindChild<ScrollViewer>(fe);
+            if (sv != null)
+            {
+                if (fe.GetValue(HookedViewerProperty) == null)
+                {
+                    fe.SetValue(HookedViewerProperty, sv);
+                    ApplyToScrollViewer(sv, true);
+                }
+
+                if (!e.Handled)
+                {
+                    OnWheel(sv, e);
+                }
+            }
+        }
+
+        private static void AttachToChild(FrameworkElement parent)
+        {
+            var sv = FindChild<ScrollViewer>(parent);
+            if (sv != null)
+            {
+                parent.SetValue(HookedViewerProperty, sv);
+                ApplyToScrollViewer(sv, true);
+            }
+            else
+            {
+                parent.Dispatcher.InvokeAsync(() =>
+                {
+                    var delayedSv = FindChild<ScrollViewer>(parent);
+                    if (delayedSv != null)
+                    {
+                        parent.SetValue(HookedViewerProperty, delayedSv);
+                        ApplyToScrollViewer(delayedSv, true);
+                    }
+                }, System.Windows.Threading.DispatcherPriority.Loaded);
+            }
+        }
+
+        private static void ApplyToScrollViewer(ScrollViewer sv, bool enable)
+        {
+            if (enable)
+            {
+                sv.PreviewMouseWheel -= OnWheel;
                 sv.PreviewMouseWheel += OnWheel;
+                sv.Loaded -= OnLoaded;
                 sv.Loaded += OnLoaded;
+                sv.Unloaded -= OnUnloaded;
                 sv.Unloaded += OnUnloaded;
+                sv.ScrollChanged -= OnScrollChanged;
+                sv.ScrollChanged += OnScrollChanged;
 
                 if (sv.IsLoaded)
                 {
@@ -73,15 +169,7 @@ namespace MetroHub.Presentation.Controls
                 sv.PreviewMouseWheel -= OnWheel;
                 sv.Loaded -= OnLoaded;
                 sv.Unloaded -= OnUnloaded;
-
-                if (_states.TryGetValue(sv, out var s))
-                {
-                    s.HoverTimer?.Stop();
-                    if (s.Content != null)
-                    {
-                        s.Content.IsHitTestVisible = true;
-                    }
-                }
+                sv.ScrollChanged -= OnScrollChanged;
 
                 _states.Remove(sv);
                 _active.Remove(sv);
@@ -105,26 +193,18 @@ namespace MetroHub.Presentation.Controls
         private static void ConfigureScrollViewer(ScrollViewer sv)
         {
             var s = GetOrCreate(sv);
-            s.Content = sv.Content as UIElement;
             s.Current = sv.VerticalOffset;
+            s.Target = sv.VerticalOffset;
 
-            // Force pixel-accurate scrolling and pre-virtualization cache on parent ItemsControl
-            if (sv.TemplatedParent is ItemsControl itemsControl)
+            if (sv.TemplatedParent is ItemsControl itemsControl && !sv.CanContentScroll)
             {
                 VirtualizingPanel.SetScrollUnit(itemsControl, ScrollUnit.Pixel);
-                VirtualizingPanel.SetCacheLengthUnit(itemsControl, VirtualizationCacheLengthUnit.Page);
-                VirtualizingPanel.SetCacheLength(itemsControl, new VirtualizationCacheLength(1.0, 1.0));
             }
         }
 
         private static void OnUnloaded(object sender, RoutedEventArgs e)
         {
             if (sender is not ScrollViewer sv) return;
-
-            if (_states.TryGetValue(sv, out var s))
-            {
-                s.HoverTimer?.Stop();
-            }
 
             _states.Remove(sv);
             _active.Remove(sv);
@@ -136,45 +216,75 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
+        private static void OnScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (sender is not ScrollViewer sv) return;
+
+            if (_states.TryGetValue(sv, out var s))
+            {
+                // If user dragged the thumb or track clicked while animating, snap immediately
+                if (Math.Abs(sv.VerticalOffset - s.Current) > 2.0)
+                {
+                    s.Current = sv.VerticalOffset;
+                    s.Target = sv.VerticalOffset;
+
+                    if (_active.Contains(sv))
+                    {
+                        _active.Remove(sv);
+                    }
+                }
+            }
+        }
+
         private static ScrollState GetOrCreate(ScrollViewer sv)
         {
             if (!_states.TryGetValue(sv, out var s))
             {
-                s = new ScrollState { Current = sv.VerticalOffset };
+                s = new ScrollState
+                {
+                    Current = sv.VerticalOffset,
+                    Target = sv.VerticalOffset
+                };
                 _states[sv] = s;
             }
             return s;
         }
 
-        // ── Input Handling ────────────────────────────────────────────────────────
+        // ── Input Handling & Containment ──────────────────────────────────────────
         private static void OnWheel(object sender, MouseWheelEventArgs e)
         {
             if (sender is not ScrollViewer sv) return;
+
+            // Check if user is hovering over an interactive child control (e.g. Volume slider, or a nested ScrollViewer/ListView)
+            if (IsInteractiveChild(e.OriginalSource as DependencyObject, sv))
+            {
+                return;
+            }
+
+            // Strict containment: mark handled so wheel never bubbles up to ancestor containers
             e.Handled = true;
+
+            // Immediately mute tile reveal effects so moving tiles under the cursor don't spawn animations
+            TileControl.SuppressRevealForScrolling();
 
             var s = GetOrCreate(sv);
 
-            // Re-sync position if thumb was dragged or page keys were pressed
-            if (Math.Abs(sv.VerticalOffset - s.Current) > 1.0 && Math.Abs(s.Velocity) < StopVelocity)
+            // Re-sync if external offset change occurred while idle
+            if (Math.Abs(sv.VerticalOffset - s.Current) > 2.0 && !_active.Contains(sv))
             {
                 s.Current = sv.VerticalOffset;
-                s.Velocity = 0;
+                s.Target = sv.VerticalOffset;
             }
 
-            // Delta > 0 is scroll up (decreases vertical offset)
-            double impulse = -(e.Delta / 120.0) * (120.0 * VelocityMultiplier);
+            double step = sv.CanContentScroll ? ItemStep : ScrollStep;
+            double delta = -(e.Delta / 120.0) * step;
 
-            // Accumulate velocity if scrolling in the same direction, else reset direction instantly
-            if (Math.Sign(impulse) == Math.Sign(s.Velocity))
-            {
-                s.Velocity = Math.Clamp(s.Velocity + impulse, -MaxVelocity, MaxVelocity);
-            }
-            else
-            {
-                s.Velocity = impulse;
-            }
-
-            SuppressHover(sv, s);
+            // Continuous target accumulation: successive wheel ticks seamlessly build momentum
+            // without resetting velocity, jumping, or causing frame hitches.
+            // Clamped with lead bound to prevent runaway speed on high-frequency wheel ticks
+            double maxLead = sv.CanContentScroll ? 10.0 : 360.0;
+            double rawTarget = s.Target + delta;
+            s.Target = Math.Clamp(rawTarget, Math.Max(0, s.Current - maxLead), Math.Min(sv.ScrollableHeight, s.Current + maxLead));
 
             if (!_active.Contains(sv))
             {
@@ -189,6 +299,22 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
+        private static bool IsInteractiveChild(DependencyObject? source, ScrollViewer owner)
+        {
+            var current = source;
+            while (current != null && current != owner)
+            {
+                if (current is RangeBase) return true; // Slider, ScrollBar thumb/track
+                if (current is WidgetVolumeSlider) return true; // Volume, Brightness, Night Light, Sleep sliders
+                if (current is TextBoxBase) return true;
+                if (current is PasswordBox) return true;
+                if (current is ScrollViewer nestedSv && nestedSv != owner) return true; // Nested ScrollViewer handles its own scrolling
+                if (current is ListBox) return true; // ListView, ListBox, etc.
+                current = VisualTreeHelper.GetParent(current);
+            }
+            return false;
+        }
+
         // ── Render Loop ───────────────────────────────────────────────────────────
         private static void OnRendering(object? sender, EventArgs e)
         {
@@ -198,8 +324,8 @@ namespace MetroHub.Presentation.Controls
             double dt = _lastTime == TimeSpan.Zero ? 0.016 : (args.RenderingTime - _lastTime).TotalSeconds;
             _lastTime = args.RenderingTime;
 
-            // Clamp delta time to avoid large jumps on first frame or system pauses
-            dt = Math.Clamp(dt, 0.001, 0.04);
+            // Guard against large frame hitches (e.g. window move or system pause)
+            dt = Math.Clamp(dt, 0.001, 0.05);
 
             for (int i = _active.Count - 1; i >= 0; i--)
             {
@@ -210,39 +336,36 @@ namespace MetroHub.Presentation.Controls
                     continue;
                 }
 
-                // Stop condition: velocity fell below threshold
-                if (Math.Abs(s.Velocity) < StopVelocity)
+                double diff = s.Target - s.Current;
+                if (Math.Abs(diff) < 0.25)
                 {
-                    s.Velocity = 0;
-                    _active.RemoveAt(i);
-
-                    if (s.Content != null)
+                    s.Current = s.Target;
+                    double finalOffset = sv.CanContentScroll ? s.Current : Math.Round(s.Current);
+                    if (Math.Abs(sv.VerticalOffset - finalOffset) >= 0.5)
                     {
-                        s.Content.IsHitTestVisible = true;
+                        sv.ScrollToVerticalOffset(finalOffset);
                     }
-                    s.HoverTimer?.Stop();
+                    _active.RemoveAt(i);
                     continue;
                 }
 
-                // Analytical integration: Δx = v0 * (1 - e^(-f * dt)) / f
-                double decay = Math.Exp(-Friction * dt);
-                double deltaOffset = s.Velocity * (1.0 - decay) / Friction;
-                s.Velocity *= decay;
+                // Continuous frame-rate independent exponential smoothing: factor = 1 - e^(-lambda * dt)
+                // Yields identical physical glide velocity on 60Hz, 120Hz, and 144Hz monitors,
+                // zero velocity discontinuity, and silky organic deceleration.
+                double lambda = sv.CanContentScroll ? 26.0 : 16.0;
+                double factor = 1.0 - Math.Exp(-lambda * dt);
 
-                double nextOffset = Math.Clamp(s.Current + deltaOffset, 0, sv.ScrollableHeight);
+                s.Current += diff * factor;
 
-                // Stop momentum immediately when hitting scroll boundaries
-                if ((nextOffset <= 0 && s.Velocity < 0) || (nextOffset >= sv.ScrollableHeight && s.Velocity > 0))
+                // Physical integer pixel-snapping preserves DirectWrite ClearType text cache
+                double renderOffset = sv.CanContentScroll ? s.Current : Math.Round(s.Current);
+                if (Math.Abs(sv.VerticalOffset - renderOffset) >= 0.5)
                 {
-                    s.Velocity = 0;
+                    sv.ScrollToVerticalOffset(renderOffset);
                 }
-
-                s.Current = nextOffset;
-
-                // Sub-pixel offsets applied directly without rounding
-                sv.ScrollToVerticalOffset(s.Current);
             }
 
+            // Unhook render loop when idle - exactly 0% idle CPU overhead
             if (_active.Count == 0)
             {
                 CompositionTarget.Rendering -= OnRendering;
@@ -250,30 +373,25 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
-        // ── Hover Suppression ─────────────────────────────────────────────────────
-        private static void SuppressHover(ScrollViewer sv, ScrollState s)
+        // ── Visual Tree Helper ────────────────────────────────────────────────────
+        internal static T? FindChild<T>(DependencyObject parent) where T : DependencyObject
         {
-            s.Content ??= sv.Content as UIElement;
-            if (s.Content == null) return;
+            if (parent == null) return null;
 
-            s.Content.IsHitTestVisible = false;
-
-            if (s.HoverTimer == null)
+            int count = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
             {
-                s.HoverTimer = new DispatcherTimer(DispatcherPriority.Input)
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typed)
                 {
-                    Interval = TimeSpan.FromMilliseconds(200)
-                };
-                var content = s.Content;
-                s.HoverTimer.Tick += (_, _) =>
-                {
-                    s.HoverTimer!.Stop();
-                    content.IsHitTestVisible = true;
-                };
+                    return typed;
+                }
+
+                var found = FindChild<T>(child);
+                if (found != null) return found;
             }
 
-            s.HoverTimer.Stop();
-            s.HoverTimer.Start();
+            return null;
         }
     }
 }

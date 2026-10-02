@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
@@ -58,6 +59,106 @@ public partial class TileControl : UserControl
 
     public static readonly List<TileControl> ActiveTiles = new();
 
+    private static DispatcherTimer? _revealSettleTimer;
+
+    /// <summary>
+    /// When true, ambient and hover reveal radial gradient animations/updates are suppressed
+    /// during scrolling to eliminate animation allocation and GPU state churn.
+    /// </summary>
+    public static bool IsRevealSuppressed { get; private set; }
+
+    /// <summary>
+    /// Notifies TileControl that a scroll gesture or offset update is occurring.
+    /// Immediately mutes all active reveals and schedules an un-suppress when scrolling settles.
+    /// </summary>
+    public static void SuppressRevealForScrolling()
+    {
+        if (_revealSettleTimer == null)
+        {
+            _revealSettleTimer = new DispatcherTimer(DispatcherPriority.Normal)
+            {
+                Interval = TimeSpan.FromMilliseconds(130)
+            };
+            _revealSettleTimer.Tick += OnRevealSettleTimerTick;
+        }
+
+        _revealSettleTimer.Stop();
+        _revealSettleTimer.Start();
+
+        if (!IsRevealSuppressed)
+        {
+            SetRevealSuppressed(true);
+        }
+    }
+
+    private static void OnRevealSettleTimerTick(object? sender, EventArgs e)
+    {
+        _revealSettleTimer?.Stop();
+        SetRevealSuppressed(false);
+    }
+
+    public static void SetRevealSuppressed(bool suppressed)
+    {
+        if (IsRevealSuppressed == suppressed) return;
+        IsRevealSuppressed = suppressed;
+
+        if (suppressed)
+        {
+            for (int i = ActiveTiles.Count - 1; i >= 0; i--)
+            {
+                if (i < ActiveTiles.Count)
+                {
+                    ActiveTiles[i].SilenceReveals();
+                }
+            }
+        }
+        else
+        {
+            for (int i = ActiveTiles.Count - 1; i >= 0; i--)
+            {
+                if (i < ActiveTiles.Count && ActiveTiles[i].IsMouseOver)
+                {
+                    ActiveTiles[i].RestoreHoverReveal();
+                    break;
+                }
+            }
+        }
+    }
+
+    public void SilenceReveals()
+    {
+        if (RevealFillBorder != null && RevealFillBorder.Opacity > 0)
+        {
+            RevealFillBorder.BeginAnimation(UIElement.OpacityProperty, null);
+            RevealFillBorder.Opacity = 0.0;
+        }
+
+        if (RevealEdgeBorder != null && RevealEdgeBorder.Opacity > 0)
+        {
+            RevealEdgeBorder.BeginAnimation(UIElement.OpacityProperty, null);
+            RevealEdgeBorder.Opacity = 0.0;
+        }
+    }
+
+    private void RestoreHoverReveal()
+    {
+        if (!IsLoaded || RootBorder == null) return;
+
+        Point pos = Mouse.GetPosition(RootBorder);
+        UpdateRevealPositions(pos);
+
+        if (DataContext is not TileModel { TileType: TileType.Widget })
+        {
+            AnimateRevealFill(1.0, 150);
+        }
+
+        if (RevealEdgeBorder != null)
+        {
+            RevealEdgeBorder.BeginAnimation(UIElement.OpacityProperty, null);
+            RevealEdgeBorder.Opacity = 1.0;
+        }
+    }
+
     public TileControl()
     {
         InitializeComponent();
@@ -81,12 +182,16 @@ public partial class TileControl : UserControl
 
     private void OnMouseMove(object sender, MouseEventArgs e)
     {
+        if (IsRevealSuppressed) return;
+
         Point pos = e.GetPosition(RootBorder);
         UpdateRevealPositions(pos);
     }
 
     private void OnMouseEnter(object sender, MouseEventArgs e)
     {
+        if (IsRevealSuppressed) return;
+
         Point pos = e.GetPosition(RootBorder);
         UpdateRevealPositions(pos);
 
@@ -101,6 +206,15 @@ public partial class TileControl : UserControl
 
     private void OnMouseLeave(object sender, MouseEventArgs e)
     {
+        if (IsRevealSuppressed)
+        {
+            RevealFillBorder?.BeginAnimation(UIElement.OpacityProperty, null);
+            if (RevealFillBorder != null) RevealFillBorder.Opacity = 0.0;
+            RevealEdgeBorder?.BeginAnimation(UIElement.OpacityProperty, null);
+            if (RevealEdgeBorder != null) RevealEdgeBorder.Opacity = 0.0;
+            return;
+        }
+
         if (DataContext is not TileModel { TileType: TileType.Widget })
         {
             AnimateRevealFill(0.0, 200);
@@ -143,6 +257,8 @@ public partial class TileControl : UserControl
 
     public void UpdateAmbientReveal(Point mouseOnTile, double distance)
     {
+        if (IsRevealSuppressed) return;
+
         if (IsMouseOver)
         {
             RevealEdgeBorder.Opacity = 1.0;
@@ -165,7 +281,7 @@ public partial class TileControl : UserControl
 
     public void ClearAmbientReveal()
     {
-        if (!IsMouseOver && RevealEdgeBorder.Opacity > 0)
+        if (RevealEdgeBorder != null && RevealEdgeBorder.Opacity > 0 && (IsRevealSuppressed || !IsMouseOver))
         {
             RevealEdgeBorder.BeginAnimation(UIElement.OpacityProperty, null);
             RevealEdgeBorder.Opacity = 0.0;

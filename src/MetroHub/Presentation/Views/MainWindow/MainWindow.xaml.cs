@@ -245,6 +245,7 @@ public partial class MainWindow : BorderlessFluentWindow
         PreviewTextInput += OnWindowPreviewTextInput;
         PreviewMouseDown += OnWindowPreviewMouseDown;
         ContentScrollViewer.ScrollChanged += OnContentScrollViewerScrollChanged;
+        ScrollDiagnosticsLogger.AttachMainWindow(this, ContentScrollViewer);
 
         // Auto-persist layout in background when any widget notifies of settings changes
         WeakReferenceMessenger.Default.Register<MainWindow, WidgetSettingsChangedMessage>(
@@ -605,7 +606,6 @@ public partial class MainWindow : BorderlessFluentWindow
     public void DismissWithAnimation()
     {
         if (!IsVisible) return;
-        _isDismissing = false;
 
         if (_isDragging || _isPotentialDrag || _isRubberBanding)
         {
@@ -613,6 +613,7 @@ public partial class MainWindow : BorderlessFluentWindow
         }
 
         Hide();
+        _isDismissing = false;
         _isFullyActivated = false;
         Topmost = false;
 
@@ -819,12 +820,13 @@ public partial class MainWindow : BorderlessFluentWindow
         _isFullyActivated = false;
 
         SnapToWorkArea(force: false);
+        ApplyBorderlessAttributes();
+        ApplyConfiguredBackdrop(force: false);
+
         Show();
         WindowState = WindowState.Normal;
         Topmost = true;
         ReinstallWinEventHook();
-
-        ApplyConfiguredBackdrop(force: false);
 
         // Resume video wallpaper playback if active
         bool isVideoActive = WallpaperVideo != null && WallpaperVideo.Visibility == Visibility.Visible && WallpaperVideo.Source != null;
@@ -916,6 +918,18 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private void OnWindowPreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.F12)
+        {
+            if (ScrollDiagnosticHud != null)
+            {
+                ScrollDiagnosticHud.Visibility = ScrollDiagnosticHud.Visibility == Visibility.Visible
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+            }
+            e.Handled = true;
+            return;
+        }
+
         bool isCtrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
         bool isShift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
 

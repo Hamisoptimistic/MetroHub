@@ -179,7 +179,8 @@
             <!-- ========================================================================= -->
             <ScrollViewer Grid.Row="1"
                           x:Name="StationScrollViewer"
-                          VerticalScrollBarVisibility="Auto"
+                          controls:SmoothScrollBehavior.IsEnabled="True"
+                          VerticalScrollBarVisibility="Hidden"
                           HorizontalScrollBarVisibility="Disabled"
                           Padding="0"
                           Margin="0">

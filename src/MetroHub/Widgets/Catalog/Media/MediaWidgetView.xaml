@@ -43,12 +43,12 @@
                                 CornerRadius="{DynamicResource ControlCornerRadius}"
                                 BorderBrush="#38FFFFFF"
                                 BorderThickness="1"
-                                RenderOptions.BitmapScalingMode="Fant"
+                                RenderOptions.BitmapScalingMode="HighQuality"
                                 Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}">
                             <Border.Background>
                                 <ImageBrush ImageSource="{Binding Thumbnail, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                                             Stretch="UniformToFill"
-                                            RenderOptions.BitmapScalingMode="Fant" />
+                                            RenderOptions.BitmapScalingMode="HighQuality" />
                             </Border.Background>
                         </Border>
 
@@ -397,7 +397,7 @@
                                    Stretch="UniformToFill"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
-                                   RenderOptions.BitmapScalingMode="Fant"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
                                    Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVis}}" />
                         </Border>
 

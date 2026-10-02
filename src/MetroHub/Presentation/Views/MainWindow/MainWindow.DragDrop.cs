@@ -1237,6 +1237,7 @@ public partial class MainWindow
 
     private void UpdateAmbientReveal(Point mouseOnCanvas)
     {
+        if (Presentation.Controls.TileControl.IsRevealSuppressed) return;
         if (Presentation.Controls.TileControl.ActiveTiles.Count == 0) return;
 
         // Skip calculations if mouse moved less than 3 pixels to prevent flooding UI thread at high polling rates

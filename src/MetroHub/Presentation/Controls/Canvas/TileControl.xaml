@@ -20,7 +20,7 @@
         <!-- 1. App Tile DataTemplate (Exact original visual layout and ClearType hinting) -->
         <DataTemplate DataType="{x:Type models:TileModel}">
             <Grid 
-                  RenderOptions.BitmapScalingMode="Fant">
+                  RenderOptions.BitmapScalingMode="HighQuality">
                   
                 <!-- 1x1 Small Tile Layout (56x56) -->
                 <Grid Visibility="{Binding IsSmall, Converter={StaticResource BoolToVis}}">
@@ -28,7 +28,7 @@
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Width="28" Height="28"
-                           RenderOptions.BitmapScalingMode="Fant" />
+                           RenderOptions.BitmapScalingMode="HighQuality" />
                 </Grid>
 
                 <!-- 2x2 Medium Tile Layout (120x120) -->
@@ -38,7 +38,7 @@
                            VerticalAlignment="Center"
                            Width="44" Height="44"
                            Margin="0,0,0,14"
-                           RenderOptions.BitmapScalingMode="Fant" />
+                           RenderOptions.BitmapScalingMode="HighQuality" />
 
                     <!-- Label: DirectWrite Ideal typography rendering -->
                     <TextBlock Text="{Binding Title}"
@@ -63,7 +63,7 @@
                            VerticalAlignment="Center"
                            Width="46" Height="46"
                            Margin="0,0,0,14"
-                           RenderOptions.BitmapScalingMode="Fant" />
+                           RenderOptions.BitmapScalingMode="HighQuality" />
 
                     <TextBlock Text="{Binding Title}"
                                VerticalAlignment="Bottom"

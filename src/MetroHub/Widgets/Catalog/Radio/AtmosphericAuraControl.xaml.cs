@@ -123,10 +123,22 @@ public partial class AtmosphericAuraControl : UserControl
     {
         if (!IsLoaded) return;
 
-        bool shouldRender = IsActive || IsBuffering || AuraRoot.Opacity > 0.001;
-        if (shouldRender && !_isHooked)
+        bool shouldRender = IsActive || IsBuffering || (AuraRoot != null && AuraRoot.Opacity > 0.001);
+        if (shouldRender)
         {
-            HookRendering();
+            if (AuraRoot != null && AuraRoot.Visibility != Visibility.Visible)
+            {
+                AuraRoot.Visibility = Visibility.Visible;
+            }
+            if (!_isHooked) HookRendering();
+        }
+        else
+        {
+            if (AuraRoot != null)
+            {
+                AuraRoot.Visibility = Visibility.Collapsed;
+            }
+            UnhookRendering();
         }
     }
 
@@ -165,6 +177,10 @@ public partial class AtmosphericAuraControl : UserControl
         // 1. Smooth Fade-In and Fade-Out of the Aura Layer
         if (active || buffering)
         {
+            if (AuraRoot.Visibility != Visibility.Visible)
+            {
+                AuraRoot.Visibility = Visibility.Visible;
+            }
             if (AuraRoot.Opacity < 1.0)
             {
                 AuraRoot.Opacity = Math.Min(1.0, AuraRoot.Opacity + 0.08);
@@ -177,10 +193,11 @@ public partial class AtmosphericAuraControl : UserControl
                 AuraRoot.Opacity = Math.Max(0.0, AuraRoot.Opacity - 0.06);
             }
 
-            // Complete Quiescence: Unhook when fully faded to 0 opacity
+            // Complete Quiescence: Unhook and collapse when fully faded to 0 opacity
             if (AuraRoot.Opacity <= 0.001)
             {
                 AuraRoot.Opacity = 0.0;
+                AuraRoot.Visibility = Visibility.Collapsed;
                 UnhookRendering();
                 return;
             }

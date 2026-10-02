@@ -13,9 +13,9 @@
     <!-- Fluid mesh: 4 irregular blobs like the reference spheres. Brushes are STATIC
          (rasterized once, cached on GPU) — per-frame motion is transform+opacity only,
          so no re-raster banding and every color visibly pumps. -->
-    <Grid x:Name="AuraRoot" Opacity="0">
+    <Grid x:Name="AuraRoot" Opacity="0" Visibility="Collapsed">
         <Grid.CacheMode>
-            <BitmapCache EnableClearType="False" SnapsToDevicePixels="True" />
+            <BitmapCache EnableClearType="False" RenderAtScale="1" />
         </Grid.CacheMode>
 
         <!-- Cohesion wash: deep plum unifies the blobs so overlaps read purple, not brown -->

@@ -186,6 +186,10 @@ public partial class MainWindow
     private void OnContentScrollViewerScrollChanged(object sender, ScrollChangedEventArgs e)
     {
         UpdateWallpaperParallax();
+        if (Math.Abs(e.VerticalChange) > 0.05 || Math.Abs(e.HorizontalChange) > 0.05)
+        {
+            Presentation.Controls.TileControl.SuppressRevealForScrolling();
+        }
     }
 
     public void UpdateWallpaperParallax() => BackdropManager.UpdateWallpaperParallax();

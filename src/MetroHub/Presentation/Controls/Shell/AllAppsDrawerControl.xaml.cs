@@ -55,11 +55,19 @@ namespace MetroHub.Presentation.Controls
             return b;
         }
 
+        public ScrollViewer? GroupedScrollViewerControl => GroupedScrollViewer;
+        public ScrollViewer? SearchResultsScrollViewerControl => SearchResultsScrollViewer;
+
         public AllAppsDrawerControl()
         {
             InitializeComponent();
             Visibility = Visibility.Collapsed;
             DrawerTranslate.X = 0;
+
+            Loaded += (s, e) =>
+            {
+                ScrollDiagnosticsLogger.AttachAllAppsDrawer(this, GroupedScrollViewer, SearchResultsScrollViewer);
+            };
         }
 
         public void Open()

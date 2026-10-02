@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:views="clr-namespace:MetroHub.Presentation.Views"
         xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+        xmlns:diag="clr-namespace:MetroHub.Presentation.Controls.Diagnostics"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
         Title="MetroHub"
@@ -71,7 +72,7 @@
                    HorizontalAlignment="Center"
                    VerticalAlignment="Top"
                    Margin="0,0,0,-90"
-                   RenderOptions.BitmapScalingMode="HighQuality">
+                   RenderOptions.BitmapScalingMode="Linear">
                 <Image.RenderTransform>
                     <TranslateTransform x:Name="WallpaperTranslateTransform" />
                 </Image.RenderTransform>
@@ -135,11 +136,12 @@
 
             <!-- Main Open Tile Canvas: Free placement drag and drop anywhere -->
             <ScrollViewer x:Name="ContentScrollViewer"
-                      controls:AutoHideScrollBehavior.IsEnabled="True"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Background="Transparent"
-                      Focusable="False">
+                          controls:AutoHideScrollBehavior.IsEnabled="True"
+                          controls:SmoothScrollBehavior.IsEnabled="True"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Background="Transparent"
+                          Focusable="False">
 
             <Grid x:Name="MainCanvasGrid"
                   Background="Transparent"
@@ -150,13 +152,7 @@
                                  Closed="OnCanvasContextMenuClosed">
                         <ContextMenu.Resources>
                             <!-- Cap submenu flyouts to exactly ~15 visible items (460px) with smooth scrolling -->
-                            <Style TargetType="{x:Type ui:PassiveScrollViewer}">
-                                <Setter Property="MaxHeight" Value="460" />
-                                <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
-                                <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
-                                <Setter Property="CanContentScroll" Value="True" />
-                            </Style>
-                            <Style TargetType="{x:Type ScrollViewer}">
+                            <Style TargetType="{x:Type ScrollViewer}" BasedOn="{StaticResource FloatingScrollViewerStyle}">
                                 <Setter Property="MaxHeight" Value="460" />
                                 <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
                                 <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
@@ -657,5 +653,11 @@
                           HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch"
                           Panel.ZIndex="9999" />
+
+        <!-- Real-time Scroll & Render Diagnostics HUD Overlay (Toggle with F12) -->
+        <diag:DiagnosticHudControl x:Name="ScrollDiagnosticHud"
+                                   Grid.Column="0"
+                                   Grid.ColumnSpan="2"
+                                   Panel.ZIndex="9998" />
     </Grid>
 </views:BorderlessFluentWindow>

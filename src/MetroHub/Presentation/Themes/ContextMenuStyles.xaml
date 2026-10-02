@@ -252,13 +252,14 @@
                     <Border.Effect>
                         <DropShadowEffect ShadowDepth="4" Direction="270" Opacity="0.35" BlurRadius="16" />
                     </Border.Effect>
-                    <ui:PassiveScrollViewer CanContentScroll="True"
-                                            HorizontalScrollBarVisibility="Disabled"
-                                            VerticalScrollBarVisibility="Auto"
-                                            MaxHeight="460">
+                    <ScrollViewer Style="{StaticResource FloatingScrollViewerStyle}"
+                                  CanContentScroll="False"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto"
+                                  MaxHeight="460">
                         <StackPanel IsItemsHost="True"
                                     KeyboardNavigation.DirectionalNavigation="Cycle" />
-                    </ui:PassiveScrollViewer>
+                    </ScrollViewer>
                 </Border>
             </Popup>
         </Grid>
