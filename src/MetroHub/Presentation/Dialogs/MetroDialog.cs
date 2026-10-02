@@ -137,6 +137,7 @@ public class MetroDialog : BorderlessFluentWindow
         Width = 620;
         Height = 360;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        ShowInTaskbar = false;
         SetResourceReference(StyleProperty, typeof(MetroDialog));
         Loaded += OnMetroDialogLoaded;
     }

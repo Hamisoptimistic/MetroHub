@@ -81,18 +81,18 @@ public partial class MainWindow : BorderlessFluentWindow
                 win.Dispatcher.InvokeAsync(() =>
                 {
                     IntPtr foreHwnd = NativeMethods.GetForegroundWindow();
-                    IntPtr winHwnd = new WindowInteropHelper(win).Handle;
-
-                    if (foreHwnd != IntPtr.Zero && foreHwnd != winHwnd)
+                    uint ourPid = (uint)Environment.ProcessId;
+                    uint forePid = 0;
+                    if (foreHwnd != IntPtr.Zero)
                     {
-                        uint ourPid = (uint)Environment.ProcessId;
-                        NativeMethods.GetWindowThreadProcessId(foreHwnd, out uint forePid);
-                        if (forePid != 0 && forePid != ourPid)
+                        NativeMethods.GetWindowThreadProcessId(foreHwnd, out forePid);
+                    }
+
+                    if (forePid != 0 && forePid != ourPid)
+                    {
+                        if (win.IsVisible && !win._isDismissing)
                         {
-                            if (win.IsVisible && !win._isDismissing)
-                            {
-                                win.HideScreen();
-                            }
+                            win.HideScreen(restorePreviousFocus: false);
                         }
                     }
                     else
@@ -127,18 +127,18 @@ public partial class MainWindow : BorderlessFluentWindow
             if (!isOpen)
             {
                 IntPtr foreHwnd = NativeMethods.GetForegroundWindow();
-                IntPtr winHwnd = new WindowInteropHelper(win).Handle;
-
-                if (foreHwnd != IntPtr.Zero && foreHwnd != winHwnd)
+                uint ourPid = (uint)Environment.ProcessId;
+                uint forePid = 0;
+                if (foreHwnd != IntPtr.Zero)
                 {
-                    uint ourPid = (uint)Environment.ProcessId;
-                    NativeMethods.GetWindowThreadProcessId(foreHwnd, out uint forePid);
-                    if (forePid != 0 && forePid != ourPid)
+                    NativeMethods.GetWindowThreadProcessId(foreHwnd, out forePid);
+                }
+
+                if (forePid != 0 && forePid != ourPid)
+                {
+                    if (win.IsVisible && !win._isDismissing)
                     {
-                        if (win.IsVisible && !win._isDismissing)
-                        {
-                            win.HideScreen();
-                        }
+                        win.HideScreen(restorePreviousFocus: false);
                     }
                 }
                 else
@@ -200,9 +200,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private IntPtr _winEventHook = IntPtr.Zero;
     private NativeMethods.WinEventDelegate? _winEventDelegate;
-    private IntPtr _keyboardHook = IntPtr.Zero;
-    private NativeMethods.LowLevelKeyboardProc? _keyboardHookProc;
-    private volatile bool _suppressNextAltKeyUp = false;
     private System.Threading.Timer? _keepWarmTimer;
 
     public MainWindow()
@@ -446,8 +443,29 @@ public partial class MainWindow : BorderlessFluentWindow
             return;
         }
 
-        if (!IsDialogOpen && IsVisible && !_isDismissing)
+        IntPtr foreHwnd = NativeMethods.GetForegroundWindow();
+        uint currentProcessId = (uint)Environment.ProcessId;
+        uint foreProcessId = 0;
+        if (foreHwnd != IntPtr.Zero)
         {
+            NativeMethods.GetWindowThreadProcessId(foreHwnd, out foreProcessId);
+        }
+
+        // If focus shifted internally to one of our own windows (like a MetroDialog), do not dismiss
+        if (foreProcessId == currentProcessId)
+        {
+            return;
+        }
+
+        // If a dialog is open or opening and foreground window is transitioning (0), do not dismiss prematurely
+        if (IsDialogOpen && foreProcessId == 0)
+        {
+            return;
+        }
+
+        if (IsVisible && !_isDismissing)
+        {
+            DismissOpenDialogs();
             HideScreen(restorePreviousFocus: false);
         }
     }
@@ -532,7 +550,7 @@ public partial class MainWindow : BorderlessFluentWindow
     private void OnSystemForegroundChanged(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
     {
         if (hwnd == IntPtr.Zero) return;
-        if (!IsVisible || _isDismissing || IsDialogOpen) return;
+        if (!IsVisible || _isDismissing) return;
 
         // Prevent premature dismissal in first 150ms of opening
         if ((DateTime.UtcNow - _lastShownTime).TotalMilliseconds < 150) return;
@@ -548,11 +566,29 @@ public partial class MainWindow : BorderlessFluentWindow
         {
             Dispatcher.InvokeAsync(() =>
             {
-                if (IsVisible && !_isDismissing && !IsDialogOpen)
+                if (IsVisible && !_isDismissing)
                 {
+                    DismissOpenDialogs();
                     HideScreen(restorePreviousFocus: false);
                 }
             });
+        }
+    }
+
+    private void DismissOpenDialogs()
+    {
+        if (Application.Current == null) return;
+        var openWindows = Application.Current.Windows.OfType<Window>().ToList();
+        foreach (Window window in openWindows)
+        {
+            if (window is MetroHub.Presentation.Dialogs.MetroDialog dialog)
+            {
+                dialog.DismissDialog();
+            }
+            else if (window != this)
+            {
+                try { window.Close(); } catch { }
+            }
         }
     }
 
@@ -771,7 +807,11 @@ public partial class MainWindow : BorderlessFluentWindow
         IntPtr myHwnd = new WindowInteropHelper(this).Handle;
         if (foreHwnd != IntPtr.Zero && foreHwnd != myHwnd)
         {
-            _previousForegroundWindow = foreHwnd;
+            NativeMethods.GetWindowThreadProcessId(foreHwnd, out uint forePid);
+            if (forePid != (uint)Environment.ProcessId)
+            {
+                _previousForegroundWindow = foreHwnd;
+            }
         }
 
         _isDismissing = false;
@@ -782,7 +822,7 @@ public partial class MainWindow : BorderlessFluentWindow
         Show();
         WindowState = WindowState.Normal;
         Topmost = true;
-        InstallKeyboardHook();
+        ReinstallWinEventHook();
 
         ApplyConfiguredBackdrop(force: false);
 
@@ -812,7 +852,6 @@ public partial class MainWindow : BorderlessFluentWindow
             MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(true));
             WidgetHeartbeatService.SetHubVisibility(true);
             InstalledAppsService.ResumeWatchers();
-            ReinstallWinEventHook();
         }, DispatcherPriority.Background);
 
         MetroHub.Core.Services.HubState.SetVisibility(true);
@@ -823,7 +862,6 @@ public partial class MainWindow : BorderlessFluentWindow
     {
         if (_isDismissing || !IsVisible) return;
         _isDismissing = true;
-        UninstallKeyboardHook();
 
         if (restorePreviousFocus && _previousForegroundWindow != IntPtr.Zero)
         {
@@ -831,16 +869,7 @@ public partial class MainWindow : BorderlessFluentWindow
             _previousForegroundWindow = IntPtr.Zero;
             if (NativeMethods.IsWindow(targetHwnd))
             {
-                if (NativeMethods.IsIconic(targetHwnd))
-                {
-                    NativeMethods.ShowWindow(targetHwnd, NativeMethods.SW_RESTORE);
-                }
-
-                // Synthetically release the Alt key so the incoming restored window
-                // does not receive a lingering Alt modifier or activate its menu bar.
-                NativeMethods.keybd_event(NativeMethods.VK_MENU, 0, NativeMethods.KEYEVENTF_KEYUP, UIntPtr.Zero);
-
-                NativeMethods.ForceForeground(targetHwnd);
+                NativeMethods.SetForegroundWindow(targetHwnd);
             }
         }
         else
@@ -949,23 +978,6 @@ public partial class MainWindow : BorderlessFluentWindow
             return;
         }
 
-        bool isAltPressed = (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt || e.KeyboardDevice.Modifiers.HasFlag(ModifierKeys.Alt);
-        bool isTabOrEsc = e.Key == Key.Tab || e.SystemKey == Key.Tab || e.Key == Key.Escape || e.SystemKey == Key.Escape;
-
-        if (isAltPressed && isTabOrEsc)
-        {
-            if (_isDragging || _isPotentialDrag || _isRubberBanding)
-            {
-                CancelActiveDrag();
-            }
-
-            // Synthetically release the Alt key in Windows so the incoming restored window
-            // does not receive a lingering Alt+Tab gesture and double-switch to a second app.
-            NativeMethods.keybd_event(NativeMethods.VK_MENU, 0, NativeMethods.KEYEVENTF_KEYUP, UIntPtr.Zero);
-
-            HideScreen(restorePreviousFocus: true);
-            e.Handled = true;
-        }
     }
 
     private static T? FindParent<T>(DependencyObject? child) where T : DependencyObject
@@ -1074,7 +1086,6 @@ public partial class MainWindow : BorderlessFluentWindow
             Safe.Try(StorageService.Flush, "MainWindow.OnClosing.StorageFlush");
             Safe.Try(InstalledAppsService.Shutdown, "MainWindow.OnClosing.InstalledAppsServiceShutdown");
             UninstallWinEventHook();
-            UninstallKeyboardHook();
             _hotkeyService.Dispose();
             base.OnClosing(e);
         }
@@ -1098,7 +1109,6 @@ public partial class MainWindow : BorderlessFluentWindow
         CleanupEventSubscriptions();
         Safe.Try(InstalledAppsService.Shutdown, "MainWindow.ExitApplication.InstalledAppsServiceShutdown");
         UninstallWinEventHook();
-        UninstallKeyboardHook();
         _hotkeyService.Dispose();
         Close();
         Application.Current?.Shutdown();
@@ -1126,76 +1136,5 @@ public partial class MainWindow : BorderlessFluentWindow
             0,
             0,
             NativeMethods.WINEVENT_OUTOFCONTEXT);
-    }
-
-    private void InstallKeyboardHook()
-    {
-        if (_keyboardHook != IntPtr.Zero) return;
-        _keyboardHookProc = LowLevelKeyboardHookCallback;
-        _keyboardHook = NativeMethods.SetWindowsHookEx(
-            NativeMethods.WH_KEYBOARD_LL,
-            _keyboardHookProc,
-            IntPtr.Zero,
-            0);
-    }
-
-    private void UninstallKeyboardHook()
-    {
-        _suppressNextAltKeyUp = false;
-        if (_keyboardHook != IntPtr.Zero)
-        {
-            NativeMethods.UnhookWindowsHookEx(_keyboardHook);
-            _keyboardHook = IntPtr.Zero;
-            _keyboardHookProc = null;
-        }
-    }
-
-    private IntPtr LowLevelKeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-    {
-        if (nCode >= 0)
-        {
-            int msg = wParam.ToInt32();
-            if (msg == NativeMethods.WM_KEYDOWN || msg == NativeMethods.WM_SYSKEYDOWN)
-            {
-                var kbd = System.Runtime.InteropServices.Marshal.PtrToStructure<NativeMethods.KBDLLHOOKSTRUCT>(lParam);
-                bool isAltDown = (kbd.flags & NativeMethods.LLKHF_ALTDOWN) != 0 ||
-                                 (NativeMethods.GetAsyncKeyState((int)NativeMethods.VK_MENU) & 0x8000) != 0;
-                bool isTab = kbd.vkCode == NativeMethods.VK_TAB;
-                bool isEsc = kbd.vkCode == NativeMethods.VK_ESCAPE;
-
-                if (isAltDown && (isTab || isEsc))
-                {
-                    if (IsVisible)
-                    {
-                        _suppressNextAltKeyUp = true;
-
-                        if (!_isDismissing)
-                        {
-                            Dispatcher.InvokeAsync(() =>
-                            {
-                                HideScreen(restorePreviousFocus: true);
-                            });
-                        }
-
-                        // Swallows the Alt+Tab / Alt+Esc keystroke at the OS level so Windows Shell
-                        // never receives it and never executes the second jump to another app!
-                        return (IntPtr)1;
-                    }
-                }
-            }
-            else if (msg == NativeMethods.WM_KEYUP || msg == NativeMethods.WM_SYSKEYUP)
-            {
-                var kbd = System.Runtime.InteropServices.Marshal.PtrToStructure<NativeMethods.KBDLLHOOKSTRUCT>(lParam);
-                if (kbd.vkCode == NativeMethods.VK_MENU && _suppressNextAltKeyUp)
-                {
-                    _suppressNextAltKeyUp = false;
-                    // Swallow the Alt keyup so the restored target application does not
-                    // receive an orphaned Alt press that activates its menu bar or ribbon.
-                    return (IntPtr)1;
-                }
-            }
-        }
-
-        return NativeMethods.CallNextHookEx(_keyboardHook, nCode, wParam, lParam);
     }
 }
