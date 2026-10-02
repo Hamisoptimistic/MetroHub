@@ -11,6 +11,7 @@
                 <ResourceDictionary Source="pack://application:,,,/MetroHub;component/Presentation/Themes/Tokens.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MetroHub;component/Presentation/Themes/ControlStyles.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MetroHub;component/Presentation/Themes/ContextMenuStyles.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MetroHub;component/Presentation/Dialogs/MetroDialog.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MetroHub;component/Widgets/WidgetStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
