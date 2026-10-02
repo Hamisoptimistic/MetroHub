@@ -128,6 +128,12 @@ public class MetroDialog : BorderlessFluentWindow
     protected virtual bool EnableLightDismiss => true;
 
     /// <summary>
+    /// Modal dialogs use WS_EX_TOOLWINDOW to prevent DWM composition flash on open
+    /// and keep the dialog out of the Alt+Tab switcher and taskbar.
+    /// </summary>
+    protected override bool EnableToolWindowStyle => true;
+
+    /// <summary>
     /// Optional element to focus when dialog loads. If null, the first focusable, editable TextBox in the visual tree is focused.
     /// </summary>
     protected virtual IInputElement? InitialFocusedElement => null;

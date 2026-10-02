@@ -34,6 +34,13 @@ public class BorderlessFluentWindow : FluentWindow
         ShowInTaskbar = false;
     }
 
+    /// <summary>
+    /// When true, applies WS_EX_TOOLWINDOW to bypass DWM frame initialization lag
+    /// and exclude secondary/modal dialogs from the Alt+Tab task list.
+    /// Defaults to false so MainWindow participates in the Alt+Tab MRU stack.
+    /// </summary>
+    protected virtual bool EnableToolWindowStyle => false;
+
     protected override void OnBackdropTypeChanged(WindowBackdropType oldValue, WindowBackdropType newValue)
     {
         // Suppress WPF-UI's built-in backdrop manager which resets Background to solid #202020
@@ -70,6 +77,12 @@ public class BorderlessFluentWindow : FluentWindow
                 source.CompositionTarget.BackgroundColor = System.Windows.Media.Colors.Transparent;
             }
             source?.AddHook(HwndMessageHook);
+
+            if (EnableToolWindowStyle)
+            {
+                int exStyle = NativeMethods.GetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE);
+                NativeMethods.SetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE, (exStyle | NativeMethods.WS_EX_TOOLWINDOW) & ~NativeMethods.WS_EX_APPWINDOW);
+            }
         }
 
         ApplyBorderlessAttributes();
@@ -104,7 +117,23 @@ public class BorderlessFluentWindow : FluentWindow
 
     private IntPtr HwndMessageHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg == WM_NCACTIVATE || msg == WM_ACTIVATE)
+        if (msg == WM_NCACTIVATE)
+        {
+            ApplyBorderlessAttributes();
+
+            // When the window is visible and NOT dismissing, force DWM to treat the non-client
+            // frame as ACTIVE (wParam = 1). This ensures Windows 11 DWM renders Mica/Acrylic
+            // immediately on the very first launch, prevents heavy GPU recomposition during scroll,
+            // and keeps Mica active when internal modal dialogs open.
+            // When dismissing, allow default handling so the OS/WPF deactivation processes normally.
+            if (!IsDismissing && IsVisible)
+            {
+                handled = true;
+                return NativeMethods.DefWindowProc(hwnd, (uint)msg, new IntPtr(1), lParam);
+            }
+        }
+
+        if (msg == WM_ACTIVATE)
         {
             ApplyBorderlessAttributes();
         }
