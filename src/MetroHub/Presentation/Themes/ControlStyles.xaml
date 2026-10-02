@@ -127,20 +127,20 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="BtnBorder"
-                            Background="#264CC2FF"
-                            BorderBrush="#604CC2FF"
+                            Background="{DynamicResource FluentPrimaryButtonBackgroundBrush}"
+                            BorderBrush="{DynamicResource FluentPrimaryButtonBorderBrush}"
                             BorderThickness="1"
                             CornerRadius="{DynamicResource ControlCornerRadius}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="BtnBorder" Property="Background" Value="#384CC2FF" />
-                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#854CC2FF" />
+                            <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource FluentPrimaryButtonHoverBackgroundBrush}" />
+                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource FluentPrimaryButtonHoverBorderBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="BtnBorder" Property="Background" Value="#1E4CC2FF" />
-                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#504CC2FF" />
+                            <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource FluentPrimaryButtonPressedBackgroundBrush}" />
+                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource FluentPrimaryButtonPressedBorderBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="BtnBorder" Property="Opacity" Value="0.35" />

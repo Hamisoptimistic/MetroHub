@@ -23,10 +23,10 @@ public static class ThemeTokens
     // Pre-frozen subtle tinted background for drop targets and overlays
     public static readonly SolidColorBrush StatusDangerSubtleBrush = CreateFrozenBrush(Color.FromArgb(45, StatusDangerColor.R, StatusDangerColor.G, StatusDangerColor.B));
 
-    // Fluent 2 Central Accent Tokens
-    public static readonly Color AccentPrimaryColor = Color.FromRgb(0x4C, 0xC2, 0xFF);
-    public static readonly Color AccentSecondaryColor = Color.FromRgb(0x60, 0xCD, 0xFF);
-    public static readonly SolidColorBrush AccentPrimaryBrush = CreateFrozenBrush(AccentPrimaryColor);
+    // Fluent 2 Central Accent Tokens (dynamically updated by SystemAccentColorService)
+    public static Color AccentPrimaryColor { get; internal set; } = Color.FromRgb(0x4C, 0xC2, 0xFF);
+    public static Color AccentSecondaryColor { get; internal set; } = Color.FromRgb(0x60, 0xCD, 0xFF);
+    public static SolidColorBrush AccentPrimaryBrush { get; internal set; } = CreateFrozenBrush(Color.FromRgb(0x4C, 0xC2, 0xFF));
     // Typography Brushes
     public static readonly SolidColorBrush TextPrimaryBrush = CreateFrozenBrush(Color.FromRgb(0xFF, 0xFF, 0xFF));
     public static readonly SolidColorBrush MenuIconForegroundBrush = CreateFrozenBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF));

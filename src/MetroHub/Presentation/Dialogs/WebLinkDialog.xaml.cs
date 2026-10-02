@@ -49,26 +49,12 @@ public partial class WebLinkDialog : MetroDialog
             WebLinkUrlInput.Text = string.Empty;
             WebLinkTitleInput.Text = string.Empty;
         }
-
-        Loaded += (s, e) =>
-        {
-            Dispatcher.InvokeAsync(() =>
-            {
-                if (!string.IsNullOrWhiteSpace(initialUrl))
-                {
-                    WebLinkTitleInput.Focus();
-                    WebLinkTitleInput.SelectAll();
-                    Keyboard.Focus(WebLinkTitleInput);
-                }
-                else
-                {
-                    WebLinkUrlInput.Focus();
-                    WebLinkUrlInput.SelectAll();
-                    Keyboard.Focus(WebLinkUrlInput);
-                }
-            }, System.Windows.Threading.DispatcherPriority.Input);
-        };
     }
+
+    protected override IInputElement? InitialFocusedElement =>
+        !string.IsNullOrWhiteSpace(WebLinkUrlInput?.Text)
+            ? WebLinkTitleInput
+            : WebLinkUrlInput;
 
     private void OnWebLinkUrlTextChanged(object sender, TextChangedEventArgs e)
     {

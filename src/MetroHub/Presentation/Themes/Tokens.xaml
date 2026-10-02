@@ -159,6 +159,14 @@
     <SolidColorBrush x:Key="SystemAccentColorDropSlotFill" Color="{StaticResource SystemAccentColor}" Opacity="0.20" />
     <SolidColorBrush x:Key="SystemAccentColorGroupDropFill" Color="{StaticResource SystemAccentColor}" Opacity="0.08" />
 
+    <!-- Fluent Primary Accent Button Interaction Brushes (dynamically synced to Windows Accent) -->
+    <SolidColorBrush x:Key="FluentPrimaryButtonBackgroundBrush" Color="{StaticResource SystemAccentColor}" Opacity="0.15" />
+    <SolidColorBrush x:Key="FluentPrimaryButtonBorderBrush" Color="{StaticResource SystemAccentColor}" Opacity="0.38" />
+    <SolidColorBrush x:Key="FluentPrimaryButtonHoverBackgroundBrush" Color="{StaticResource SystemAccentColor}" Opacity="0.22" />
+    <SolidColorBrush x:Key="FluentPrimaryButtonHoverBorderBrush" Color="{StaticResource SystemAccentColor}" Opacity="0.52" />
+    <SolidColorBrush x:Key="FluentPrimaryButtonPressedBackgroundBrush" Color="{StaticResource SystemAccentColor}" Opacity="0.12" />
+    <SolidColorBrush x:Key="FluentPrimaryButtonPressedBorderBrush" Color="{StaticResource SystemAccentColor}" Opacity="0.31" />
+
     <!-- ========================================================================= -->
     <!-- UNIVERSAL SEMANTIC STATUS COLORS (Constant across all themes)             -->
     <!-- ========================================================================= -->

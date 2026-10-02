@@ -361,19 +361,14 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- Footer: Action Buttons -->
+                    <!-- Footer: Action Button -->
                     <Grid Grid.Row="1" Margin="0,14,0,0">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button x:Name="PrimaryActionButton"
-                                    Style="{DynamicResource FluentCohesivePrimaryButtonStyle}"
-                                    Content="Add Station"
-                                    Margin="0,0,8,0"
-                                    IsDefault="True"
-                                    Click="OnPrimaryActionButtonClick" />
-                            <Button Content="Cancel"
-                                    Style="{DynamicResource FluentCohesiveSecondaryButtonStyle}"
-                                    Click="OnCloseButtonClick" />
-                        </StackPanel>
+                        <Button x:Name="PrimaryActionButton"
+                                Style="{DynamicResource FluentCohesivePrimaryButtonStyle}"
+                                Content="Add Station"
+                                IsDefault="True"
+                                HorizontalAlignment="Right"
+                                Click="OnPrimaryActionButtonClick" />
                     </Grid>
     </Grid>
 </dialogs:MetroDialog>

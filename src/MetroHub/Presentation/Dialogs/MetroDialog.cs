@@ -1,4 +1,6 @@
 using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -6,16 +8,18 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Views;
+using Wpf.Ui.Controls;
+using Button = System.Windows.Controls.Button;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace MetroHub.Presentation.Dialogs;
 
 /// <summary>
 /// Unified base window for MetroHub modal dialogs (Add Web Link, Weather Location, Radio Station, Settings).
 /// Encapsulates the standard two-column Metro layout:
-/// - Left Column (155px): Frosted DWM Acrylic sidebar with hero icon or custom sidebar content.
+/// - Left Column (155px): Frosted DWM Mica sidebar with hero icon or custom sidebar content.
 /// - Right Column (*): Dark Obsidian form panel with Title, Subtitle, Close [X] button, and content slot.
-/// Inherits from BorderlessFluentWindow to provide immediate DWM Acrylic blur composition (via WM_NCACTIVATE),
-/// borderless chrome, window dragging, Escape-key dismissal, and monitor work-area centering.
+/// Inherits directly from BorderlessFluentWindow to leverage native Windows 11 DWM Mica composition without frame disruption.
 /// </summary>
 public class MetroDialog : BorderlessFluentWindow
 {
@@ -25,12 +29,6 @@ public class MetroDialog : BorderlessFluentWindow
             typeof(MetroDialog),
             new FrameworkPropertyMetadata(typeof(MetroDialog)));
     }
-
-    /// <summary>
-    /// Dialogs are owned top-level modal windows, not shell overlays, so tool-window style is disabled.
-    /// This preserves standard Win32 dialog focus routing and input processing.
-    /// </summary>
-    protected override bool EnableToolWindowStyle => false;
 
     public static readonly DependencyProperty SubtitleProperty =
         DependencyProperty.Register(
@@ -118,6 +116,21 @@ public class MetroDialog : BorderlessFluentWindow
     }
 
     private IDisposable? _dialogScope;
+    private NativeMethods.LowLevelMouseProc? _mouseHookProc;
+    private IntPtr _mouseHook = IntPtr.Zero;
+    private long _shownTimestamp;
+    private bool _isClosing;
+
+    /// <summary>
+    /// When enabled, clicking outside the dialog or switching away automatically dismisses the dialog.
+    /// Defaults to true for all standard MetroDialog modals.
+    /// </summary>
+    protected virtual bool EnableLightDismiss => true;
+
+    /// <summary>
+    /// Optional element to focus when dialog loads. If null, the first focusable, editable TextBox in the visual tree is focused.
+    /// </summary>
+    protected virtual IInputElement? InitialFocusedElement => null;
 
     public MetroDialog()
     {
@@ -125,6 +138,41 @@ public class MetroDialog : BorderlessFluentWindow
         Height = 360;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         SetResourceReference(StyleProperty, typeof(MetroDialog));
+        Loaded += OnMetroDialogLoaded;
+    }
+
+    private void OnMetroDialogLoaded(object sender, RoutedEventArgs e)
+    {
+        Dispatcher.InvokeAsync(() =>
+        {
+            if (IsDismissing) return;
+            var target = InitialFocusedElement ?? FindFirstFocusableInput(this);
+            if (target is UIElement element && element.Focusable && element.IsEnabled)
+            {
+                element.Focus();
+                Keyboard.Focus(element);
+                if (element is TextBox tb)
+                {
+                    tb.SelectAll();
+                }
+            }
+        }, System.Windows.Threading.DispatcherPriority.Input);
+    }
+
+    private static UIElement? FindFirstFocusableInput(DependencyObject parent)
+    {
+        int count = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is TextBox tb && tb.IsVisible && tb.Focusable && tb.IsEnabled && !tb.IsReadOnly)
+            {
+                return tb;
+            }
+            var nested = FindFirstFocusableInput(child);
+            if (nested != null) return nested;
+        }
+        return null;
     }
 
     public override void OnApplyTemplate()
@@ -140,22 +188,14 @@ public class MetroDialog : BorderlessFluentWindow
 
     private void OnCloseButtonClicked(object sender, RoutedEventArgs e)
     {
-        if (DialogResult == null)
-        {
-            try { DialogResult = false; } catch (InvalidOperationException) { }
-        }
-        Close();
+        DismissDialog();
     }
 
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
         if (e.Key == Key.Escape)
         {
-            if (DialogResult == null)
-            {
-                try { DialogResult = false; } catch (InvalidOperationException) { }
-            }
-            Close();
+            DismissDialog();
             e.Handled = true;
             return;
         }
@@ -163,39 +203,79 @@ public class MetroDialog : BorderlessFluentWindow
         base.OnPreviewKeyDown(e);
     }
 
+    public void DismissDialog()
+    {
+        if (IsDismissing || _isClosing) return;
+        _isClosing = true;
+        IsDismissing = true;
+        UninstallMouseHook();
+        try
+        {
+            if (DialogResult == null)
+            {
+                try { DialogResult = false; } catch (InvalidOperationException) { }
+            }
+            Close();
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        _isClosing = true;
+        IsDismissing = true;
+        UninstallMouseHook();
+        base.OnClosing(e);
+    }
+
+    protected override void OnActivated(EventArgs e)
+    {
+        base.OnActivated(e);
+        _shownTimestamp = Environment.TickCount64;
+    }
+
+    protected override void OnDeactivated(EventArgs e)
+    {
+        base.OnDeactivated(e);
+        if (EnableLightDismiss && Environment.TickCount64 - _shownTimestamp >= 200 && !IsDismissing && !_isClosing && IsLoaded)
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                if (!IsDismissing && !_isClosing && IsLoaded)
+                {
+                    DismissDialog();
+                }
+            });
+        }
+    }
+
     protected override void OnClosed(EventArgs e)
     {
+        _isClosing = true;
+        IsDismissing = true;
+        UninstallMouseHook();
         base.OnClosed(e);
         _dialogScope?.Dispose();
         _dialogScope = null;
-    }
-
-    protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
-    {
-        base.OnMouseLeftButtonDown(e);
-        if (e.ButtonState == MouseButtonState.Pressed)
-        {
-            try
-            {
-                DragMove();
-            }
-            catch
-            {
-            }
-        }
     }
 
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
         _dialogScope = MainWindow.EnterDialogScope();
+        _shownTimestamp = Environment.TickCount64;
+
+        if (EnableLightDismiss)
+        {
+            InstallMouseHook();
+        }
 
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd != IntPtr.Zero)
         {
-            ApplyAcrylicBackdrop(hwnd);
-
-            // Responsive sizing: clamp to fit comfortably on smaller displays or high DPI
+            // Responsive sizing: clamp to fit comfortably on smaller displays or high DPI before applying backdrop
             var workArea = SystemParameters.WorkArea;
             if (workArea.Width > 0 && workArea.Height > 0)
             {
@@ -213,38 +293,58 @@ public class MetroDialog : BorderlessFluentWindow
                 Left = workArea.Left + (workArea.Width - Width) / 2;
                 Top = workArea.Top + (workArea.Height - Height) / 2;
             }
+
+            // Apply native DWM Acrylic immediately on final window metrics.
+            // Samples and blurs background windows into a frosted glass effect.
+            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW);
         }
     }
 
-    private static void ApplyAcrylicBackdrop(IntPtr hwnd)
+    private void InstallMouseHook()
     {
-        try
+        if (_mouseHook != IntPtr.Zero) return;
+        _mouseHookProc = LowLevelMouseHookCallback;
+        _mouseHook = NativeMethods.SetWindowsHookEx(
+            NativeMethods.WH_MOUSE_LL,
+            _mouseHookProc,
+            IntPtr.Zero,
+            0);
+    }
+
+    private void UninstallMouseHook()
+    {
+        if (_mouseHook != IntPtr.Zero)
         {
-            int darkVal = 1;
-            NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkVal, sizeof(int));
+            NativeMethods.UnhookWindowsHookEx(_mouseHook);
+            _mouseHook = IntPtr.Zero;
+            _mouseHookProc = null;
+        }
+    }
 
-            int cornerVal = NativeMethods.DWMWCP_DONOTROUND;
-            NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerVal, sizeof(int));
-
-            int borderVal = NativeMethods.DWMWA_COLOR_NONE;
-            NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_BORDER_COLOR, ref borderVal, sizeof(int));
-
-            NativeMethods.MARGINS margins = new(-1, -1, -1, -1);
-            NativeMethods.DwmExtendFrameIntoClientArea(hwnd, ref margins);
-
-            int backdropVal = NativeMethods.DWMSBT_TRANSIENTWINDOW; // 3 = Acrylic
-            int res = NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_SYSTEMBACKDROP_TYPE, ref backdropVal, sizeof(int));
-            if (res != 0)
+    private IntPtr LowLevelMouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+    {
+        if (nCode >= 0 && (wParam == (IntPtr)NativeMethods.WM_LBUTTONDOWN ||
+                           wParam == (IntPtr)NativeMethods.WM_NCLBUTTONDOWN ||
+                           wParam == (IntPtr)NativeMethods.WM_RBUTTONDOWN ||
+                           wParam == (IntPtr)NativeMethods.WM_NCRBUTTONDOWN))
+        {
+            if (Environment.TickCount64 - _shownTimestamp >= 200 && !IsDismissing && !_isClosing && IsLoaded)
             {
-                int trueVal = 1;
-                NativeMethods.DwmSetWindowAttribute(hwnd, 1029, ref trueVal, sizeof(int));
+                var hookStruct = Marshal.PtrToStructure<NativeMethods.MSLLHOOKSTRUCT>(lParam);
+                IntPtr hwnd = new WindowInteropHelper(this).Handle;
+                if (hwnd != IntPtr.Zero && NativeMethods.GetWindowRect(hwnd, out NativeMethods.RECT rect))
+                {
+                    int x = hookStruct.pt.X;
+                    int y = hookStruct.pt.Y;
+                    bool isInside = x >= rect.Left && x <= rect.Right && y >= rect.Top && y <= rect.Bottom;
+                    if (!isInside)
+                    {
+                        Dispatcher.InvokeAsync(DismissDialog);
+                    }
+                }
             }
+        }
 
-            NativeMethods.SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
-                NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOZORDER | NativeMethods.SWP_FRAMECHANGED);
-        }
-        catch
-        {
-        }
+        return NativeMethods.CallNextHookEx(_mouseHook, nCode, wParam, lParam);
     }
 }

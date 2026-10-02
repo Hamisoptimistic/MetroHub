@@ -57,12 +57,6 @@ public partial class WeatherLocationDialog : MetroDialog
 
         WeatherStatusMessage.Visibility = Visibility.Collapsed;
         WeatherActionSpinner.Visibility = Visibility.Collapsed;
-
-        Dispatcher.InvokeAsync(() =>
-        {
-            WeatherCityInput.Focus();
-            WeatherCityInput.SelectAll();
-        }, System.Windows.Threading.DispatcherPriority.Input);
     }
 
     private async void OnWeatherInputTextChanged(object sender, TextChangedEventArgs e)

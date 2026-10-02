@@ -36,7 +36,7 @@ public class BorderlessFluentWindow : FluentWindow
 
     /// <summary>
     /// When true, applies WS_EX_TOOLWINDOW to exclude from Alt+Tab and shell task lists.
-    /// Defaults to true for shell overlay windows. Dialogs override this to false.
+    /// Defaults to true for shell overlay windows and modal dialogs (required by DWM for instant acrylic composition).
     /// </summary>
     protected virtual bool EnableToolWindowStyle => true;
 

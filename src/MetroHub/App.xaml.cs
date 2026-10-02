@@ -161,6 +161,9 @@ public partial class App : Application
 
         base.OnStartup(e);
 
+        // Dynamically detect and synchronize Windows accent color with application theme
+        SystemAccentColorService.Initialize();
+
         MetroHub.Core.Models.TileModel.WidgetViewModelFactory = MetroHub.Widgets.Registry.WidgetRegistry.CreateViewModelForTile;
 
         try

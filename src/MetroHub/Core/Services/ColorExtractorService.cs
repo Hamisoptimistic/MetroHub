@@ -150,21 +150,11 @@ public static class ColorExtractorService
     }
 
     /// <summary>
-    /// Returns Windows system accent color as #RRGGBB, or Fluent Blue (#60CDFF) fallback.
+    /// Returns Windows system accent color as #RRGGBB, dynamically sourced from SystemAccentColorService.
     /// </summary>
     public static string GetFallbackSystemAccentHex()
     {
-        try
-        {
-            Color glass = SystemParameters.WindowGlassColor;
-            if (glass.A > 0 && (glass.R > 20 || glass.G > 20 || glass.B > 20))
-            {
-                return $"#{glass.R:X2}{glass.G:X2}{glass.B:X2}";
-            }
-        }
-        catch { }
-
-        return "#60CDFF";
+        return SystemAccentColorService.CurrentAccentHex;
     }
 
     /// <summary>

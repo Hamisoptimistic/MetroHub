@@ -54,15 +54,10 @@
 
         <!-- Footer Action Buttons -->
         <Grid Grid.Row="1" Margin="0,16,0,0">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Save"
-                        Style="{DynamicResource FluentCohesivePrimaryButtonStyle}"
-                        Margin="0,0,8,0"
-                        Click="OnSaveClick" />
-                <Button Content="Cancel"
-                        Style="{DynamicResource FluentCohesiveSecondaryButtonStyle}"
-                        Click="OnCancelClick" />
-            </StackPanel>
+            <Button Content="Save"
+                    Style="{DynamicResource FluentCohesivePrimaryButtonStyle}"
+                    HorizontalAlignment="Right"
+                    Click="OnSaveClick" />
         </Grid>
     </Grid>
 </dialogs:MetroDialog>

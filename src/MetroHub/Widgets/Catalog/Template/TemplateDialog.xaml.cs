@@ -33,10 +33,4 @@ public partial class TemplateDialog : MetroDialog
         DialogResult = true;
         Close();
     }
-
-    private void OnCancelClick(object sender, RoutedEventArgs e)
-    {
-        DialogResult = false;
-        Close();
-    }
 }

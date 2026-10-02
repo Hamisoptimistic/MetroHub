@@ -115,15 +115,6 @@ public partial class RadioStationDialog : MetroDialog
         RadioProbeStatusText.Text = "Supports MP3/AAC/OGG streams or single-station .pls/.m3u";
         RadioProbeStatusText.Foreground = ProbeStatusHintBrush;
         RadioDirectStatusMessage.Visibility = Visibility.Collapsed;
-
-        Loaded += (s, e) =>
-        {
-            Dispatcher.InvokeAsync(() =>
-            {
-                RadioSearchInput.Focus();
-                RadioSearchInput.SelectAll();
-            }, System.Windows.Threading.DispatcherPriority.Input);
-        };
     }
 
     private void OnRadioTabChanged(object sender, RoutedEventArgs e)
