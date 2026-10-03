@@ -135,7 +135,6 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <!-- Two-Tab Segmented Selector -->
@@ -306,65 +305,30 @@
                             </StackPanel>
                         </Grid>
 
-                        <!-- Target Category Selector -->
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,8,0,0">
+                    </Grid>
+
+                    <!-- Footer: Target Category Selector & Action Button -->
+                    <Grid Grid.Row="1" Margin="0,14,0,0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                             <TextBlock Text="Category:"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                        Foreground="{DynamicResource TextMutedBrush}"
                                        VerticalAlignment="Center"
-                                       Margin="0,0,12,0" />
-                            <RadioButton x:Name="RadioCatAmbient"
-                                         Style="{DynamicResource FluentGlassRadioButtonStyle}"
-                                         GroupName="RadioCategoryTarget"
-                                         IsChecked="True"
-                                         Margin="0,0,14,0">
-                                <TextBlock Text="Ambient"
-                                           FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           VerticalAlignment="Center" />
-                            </RadioButton>
-                            <RadioButton x:Name="RadioCatNature"
-                                         Style="{DynamicResource FluentGlassRadioButtonStyle}"
-                                         GroupName="RadioCategoryTarget"
-                                         Margin="0,0,14,0">
-                                <TextBlock Text="Nature"
-                                           FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           VerticalAlignment="Center" />
-                            </RadioButton>
-                            <RadioButton x:Name="RadioCatLofi"
-                                         Style="{DynamicResource FluentGlassRadioButtonStyle}"
-                                         GroupName="RadioCategoryTarget"
-                                         Margin="0,0,14,0">
-                                <TextBlock Text="Lo-Fi"
-                                           FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           VerticalAlignment="Center" />
-                            </RadioButton>
-                            <RadioButton x:Name="RadioCatCoding"
-                                         Style="{DynamicResource FluentGlassRadioButtonStyle}"
-                                         GroupName="RadioCategoryTarget">
-                                <TextBlock Text="Coding"
-                                           FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           VerticalAlignment="Center" />
-                            </RadioButton>
+                                       Margin="0,0,8,0" />
+                            <ComboBox x:Name="RadioCategoryComboBox"
+                                      Height="32"
+                                      DisplayMemberPath="DisplayName"
+                                      SelectedValuePath="Id"
+                                      FocusVisualStyle="{x:Null}"
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,12,0" />
+                            <Button x:Name="PrimaryActionButton"
+                                    Style="{DynamicResource AccentButtonStyle}"
+                                    Content="Add Station"
+                                    IsDefault="True"
+                                    Click="OnPrimaryActionButtonClick" />
                         </StackPanel>
-                    </Grid>
-
-                    <!-- Footer: Action Button -->
-                    <Grid Grid.Row="1" Margin="0,14,0,0">
-                        <Button x:Name="PrimaryActionButton"
-                                Style="{DynamicResource AccentButtonStyle}"
-                                Content="Add Station"
-                                IsDefault="True"
-                                HorizontalAlignment="Right"
-                                Click="OnPrimaryActionButtonClick" />
                     </Grid>
     </Grid>
 </dialogs:MetroDialog>

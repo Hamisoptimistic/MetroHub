@@ -36,6 +36,7 @@ public partial class RadioStationDialog : MetroDialog
     private static readonly Brush SearchStatusSelectedBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF));
 
     internal ObservableCollection<RadioSearchResultItem> RadioSearchResults { get; } = new();
+    internal ObservableCollection<RadioCategory> RadioCategories { get; } = new();
 
     public RadioStation? RadioStationResult => _radioStationResult;
 
@@ -44,7 +45,15 @@ public partial class RadioStationDialog : MetroDialog
         InitializeComponent();
         Background = Brushes.Transparent;
         RadioSearchResultsList.ItemsSource = RadioSearchResults;
+        RadioCategoryComboBox.ItemsSource = RadioCategories;
+        RadioCatalogService.Instance.CatalogChanged += OnCatalogChanged;
+        Closed += OnDialogClosed;
         IsVisibleChanged += OnWindowIsVisibleChanged;
+    }
+
+    private void OnDialogClosed(object? sender, EventArgs e)
+    {
+        RadioCatalogService.Instance.CatalogChanged -= OnCatalogChanged;
     }
 
     private void OnWindowIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -56,7 +65,41 @@ public partial class RadioStationDialog : MetroDialog
         }
     }
 
+    private void OnCatalogChanged(object? sender, EventArgs e)
+    {
+        Dispatcher.InvokeAsync(() =>
+        {
+            string currentSelectedId = GetSelectedCategoryId();
+            LoadCategories();
+            var match = RadioCategories.FirstOrDefault(c => string.Equals(c.Id, currentSelectedId, StringComparison.OrdinalIgnoreCase))
+                        ?? RadioCategories.FirstOrDefault();
+            if (match != null)
+            {
+                RadioCategoryComboBox.SelectedItem = match;
+            }
+        });
+    }
 
+    private void LoadCategories()
+    {
+        RadioCategories.Clear();
+        var catalog = RadioCatalogService.Instance.GetCatalog();
+        if (catalog?.Categories != null)
+        {
+            foreach (var cat in catalog.Categories)
+            {
+                RadioCategories.Add(cat);
+            }
+        }
+
+        var match = RadioCategories.FirstOrDefault(c => string.Equals(c.Id, _initialRadioCategoryId, StringComparison.OrdinalIgnoreCase))
+                    ?? RadioCategories.FirstOrDefault();
+
+        if (match != null)
+        {
+            RadioCategoryComboBox.SelectedItem = match;
+        }
+    }
 
     public static RadioStation? Show(Window? owner, string activeCategoryId = "ambient")
     {
@@ -81,21 +124,7 @@ public partial class RadioStationDialog : MetroDialog
         PrimaryActionButton.Content = "Add Station";
         PrimaryActionButton.IsEnabled = false;
 
-        switch (_initialRadioCategoryId)
-        {
-            case "nature":
-                RadioCatNature.IsChecked = true;
-                break;
-            case "lofi":
-                RadioCatLofi.IsChecked = true;
-                break;
-            case "coding":
-                RadioCatCoding.IsChecked = true;
-                break;
-            default:
-                RadioCatAmbient.IsChecked = true;
-                break;
-        }
+        LoadCategories();
 
         RadioSearchTabRadio.IsChecked = true;
         RadioSearchPanel.Visibility = Visibility.Visible;
@@ -445,10 +474,16 @@ public partial class RadioStationDialog : MetroDialog
 
     private string GetSelectedCategoryId()
     {
-        if (RadioCatAmbient.IsChecked == true) return "ambient";
-        if (RadioCatNature.IsChecked == true) return "nature";
-        if (RadioCatLofi.IsChecked == true) return "lofi";
-        if (RadioCatCoding.IsChecked == true) return "coding";
+        if (RadioCategoryComboBox.SelectedItem is RadioCategory cat && !string.IsNullOrWhiteSpace(cat.Id))
+        {
+            return cat.Id;
+        }
+
+        if (RadioCategoryComboBox.SelectedValue is string val && !string.IsNullOrWhiteSpace(val))
+        {
+            return val;
+        }
+
         return _initialRadioCategoryId ?? "ambient";
     }
 

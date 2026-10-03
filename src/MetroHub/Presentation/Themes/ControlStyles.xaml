@@ -476,6 +476,241 @@
 
 
     <!-- ========================================================================= -->
+    <!-- 3.5 UNIVERSAL FLUENT GLASS COMBOBOX SYSTEM                                -->
+    <!-- Authentic 2px corners, obsidian dark glass frame, and system accent       -->
+    <!-- selection indicator matching MetroHub design language without clipping.   -->
+    <!-- ========================================================================= -->
+
+    <!-- Sub-template: ComboBox ToggleButton (Frosted Button + Vector Chevron) -->
+    <ControlTemplate x:Key="FluentGlassComboBoxToggleButtonTemplate" TargetType="{x:Type ToggleButton}">
+        <Border x:Name="BtnBorder"
+                Height="32"
+                MinHeight="32"
+                MinWidth="{TemplateBinding MinWidth}"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{DynamicResource ControlCornerRadius}"
+                SnapsToDevicePixels="True"
+                UseLayoutRounding="True">
+            <Grid Height="32">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ContentPresenter Grid.Column="0"
+                                  Content="{TemplateBinding Content}"
+                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
+                                  Margin="14,0,8,0"
+                                  VerticalAlignment="Center"
+                                  HorizontalAlignment="Left"
+                                  TextOptions.TextFormattingMode="Ideal"
+                                  TextOptions.TextRenderingMode="ClearType" />
+                <Path x:Name="ChevronArrow"
+                      Grid.Column="1"
+                      Margin="0,0,12,0"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Stroke="{DynamicResource TextMutedBrush}"
+                      StrokeThickness="1.2"
+                      StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round"
+                      Data="M 0 0 L 4 4 L 8 0"
+                      RenderTransformOrigin="0.5,0.5">
+                    <Path.RenderTransform>
+                        <RotateTransform x:Name="ChevronRotate" Angle="0" />
+                    </Path.RenderTransform>
+                </Path>
+            </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="BtnBorder" Property="Background" Value="#25FFFFFF" />
+                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#40FFFFFF" />
+                <Setter TargetName="ChevronArrow" Property="Stroke" Value="{DynamicResource TextPrimaryBrush}" />
+            </Trigger>
+            <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="BtnBorder" Property="Background" Value="#25FFFFFF" />
+                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#55FFFFFF" />
+                <Setter TargetName="ChevronArrow" Property="Stroke" Value="{DynamicResource TextPrimaryBrush}" />
+                <Setter TargetName="ChevronArrow" Property="RenderTransform">
+                    <Setter.Value>
+                        <RotateTransform Angle="180" />
+                    </Setter.Value>
+                </Setter>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="BtnBorder" Property="Opacity" Value="0.35" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!-- DropDown ComboBoxItem Style (1:1 match of ContextMenu UniversalFluentSubmenuItemTemplate) -->
+    <Style x:Key="FluentGlassComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
+        <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="MinHeight" Value="28" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ComboBoxItem}">
+                    <Border x:Name="Border"
+                            Background="Transparent"
+                            CornerRadius="{DynamicResource ContextMenuCornerRadius}"
+                            Margin="4,1,4,1"
+                            SnapsToDevicePixels="True"
+                            UseLayoutRounding="True">
+                        <Grid Height="{TemplateBinding MinHeight}">
+                            <!-- Windows 11 Fluent Active Selection Indicator: Sleek vertical accent pill docked to far-left -->
+                            <Border x:Name="ActiveIndicator"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Width="3"
+                                    Height="16"
+                                    CornerRadius="1.5"
+                                    Margin="2,0,0,0"
+                                    Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                    Visibility="Collapsed" />
+
+                            <!-- Content Grid: Fixed 14px left margin aligns text between selected & unselected items -->
+                            <Grid Margin="14,3,10,3" VerticalAlignment="Center">
+                                <ContentPresenter VerticalAlignment="Center"
+                                                  HorizontalAlignment="Left"
+                                                  TextElement.Foreground="{TemplateBinding Foreground}"
+                                                  TextOptions.TextFormattingMode="Ideal"
+                                                  TextOptions.TextRenderingMode="ClearType" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <!-- Active/Selected Pill Indicator: Triggers automatically when IsSelected is True -->
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
+                        </Trigger>
+                        <!-- Highlighted / Hover State: Identical to ContextMenu MenuBarItemBackgroundSelected -->
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Border" Property="Background" Value="{DynamicResource MenuBarItemBackgroundSelected}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="ActiveIndicator" Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Main ComboBox Template (ToggleButton Frame + Shadowed DropDown Popup) -->
+    <ControlTemplate x:Key="FluentGlassComboBoxTemplate" TargetType="{x:Type ComboBox}">
+        <Grid x:Name="MainGrid" SnapsToDevicePixels="True" UseLayoutRounding="True">
+            <!-- ToggleButton (Seamless frosted frame wrapping text and vector chevron together) -->
+            <ToggleButton x:Name="ToggleButton"
+                          OverridesDefaultStyle="True"
+                          Template="{StaticResource FluentGlassComboBoxToggleButtonTemplate}"
+                          Background="{TemplateBinding Background}"
+                          BorderBrush="{TemplateBinding BorderBrush}"
+                          BorderThickness="{TemplateBinding BorderThickness}"
+                          Height="{TemplateBinding Height}"
+                          MinHeight="{TemplateBinding MinHeight}"
+                          MinWidth="{TemplateBinding MinWidth}"
+                          VerticalAlignment="Stretch"
+                          HorizontalAlignment="Stretch"
+                          FocusVisualStyle="{x:Null}"
+                          Focusable="False"
+                          ClickMode="Press"
+                          Content="{TemplateBinding SelectionBoxItem}"
+                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                          ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" />
+
+            <!-- Dropdown Popup (Exact ContextMenu Chrome & Drop Shadow) -->
+            <Popup x:Name="PART_Popup"
+                   AllowsTransparency="True"
+                   Focusable="False"
+                   IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                   PlacementTarget="{Binding ElementName=ToggleButton}"
+                   Placement="Bottom"
+                   PopupAnimation="Fade"
+                   VerticalOffset="0"
+                   HorizontalOffset="-8">
+                <Border x:Name="DropDownBorder"
+                        BorderThickness="1"
+                        Padding="0,3,0,3"
+                        CornerRadius="{DynamicResource ContextMenuCornerRadius}"
+                        BorderBrush="{DynamicResource ContextMenuBorderBrush}"
+                        Background="{DynamicResource ContextMenuBackground}"
+                        Margin="8,3,8,12"
+                        MinWidth="{Binding ActualWidth, ElementName=MainGrid}"
+                        MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                        CacheMode="BitmapCache"
+                        SnapsToDevicePixels="True"
+                        UseLayoutRounding="True">
+                    <Border.Effect>
+                        <DropShadowEffect ShadowDepth="4" Direction="270" Opacity="0.35" BlurRadius="16" />
+                    </Border.Effect>
+                    <ScrollViewer x:Name="DropDownScrollViewer"
+                                  CanContentScroll="False"
+                                  Focusable="False"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto">
+                        <StackPanel IsItemsHost="True"
+                                    KeyboardNavigation.DirectionalNavigation="Cycle" />
+                    </ScrollViewer>
+                </Border>
+            </Popup>
+        </Grid>
+        <ControlTemplate.Triggers>
+            <Trigger Property="HasItems" Value="False">
+                <Setter TargetName="DropDownBorder" Property="MinHeight" Value="32" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="ToggleButton" Property="Opacity" Value="0.35" />
+            </Trigger>
+            <Trigger Property="IsGrouping" Value="True">
+                <Setter Property="ScrollViewer.CanContentScroll" Value="False" />
+            </Trigger>
+        </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!-- Universal Fluent Glass ComboBox Style -->
+    <Style x:Key="FluentGlassComboBoxStyle" TargetType="{x:Type ComboBox}">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
+        <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Background" Value="#1CFFFFFF" />
+        <Setter Property="BorderBrush" Value="#25FFFFFF" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="MinWidth" Value="100" />
+        <Setter Property="MaxDropDownHeight" Value="240" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="ItemContainerStyle" Value="{StaticResource FluentGlassComboBoxItemStyle}" />
+        <Setter Property="Template" Value="{StaticResource FluentGlassComboBoxTemplate}" />
+    </Style>
+
+    <!-- Global Default ComboBox Styles (Inherits FluentGlass) -->
+    <Style TargetType="{x:Type ComboBox}" BasedOn="{StaticResource FluentGlassComboBoxStyle}" />
+    <Style TargetType="{x:Type ComboBoxItem}" BasedOn="{StaticResource FluentGlassComboBoxItemStyle}" />
+
+
+    <!-- ========================================================================= -->
     <!-- 4. UNIVERSAL FLUENT FLOATING SCROLLBAR SYSTEM                             -->
     <!-- 4px ultra-slim floating scrollbar with auto-hiding and expand-on-hover    -->
     <!-- ========================================================================= -->

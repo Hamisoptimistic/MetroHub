@@ -294,6 +294,12 @@ public static class NativeMethods
     [DllImport("user32.dll", ExactSpelling = true)]
     public static extern IntPtr GetAncestor(IntPtr hwnd, uint gaFlags);
 
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetActiveWindow();
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr WindowFromPoint(POINT Point);
+
     public const uint GA_PARENT = 1;
     public const uint GA_ROOT = 2;
     public const uint GA_ROOTOWNER = 3;

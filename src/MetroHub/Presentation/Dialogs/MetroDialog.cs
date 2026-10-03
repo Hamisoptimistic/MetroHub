@@ -252,6 +252,16 @@ public class MetroDialog : BorderlessFluentWindow
             {
                 if (!IsDismissing && !_isClosing && IsLoaded)
                 {
+                    IntPtr hwnd = new WindowInteropHelper(this).Handle;
+                    if (hwnd != IntPtr.Zero)
+                    {
+                        IntPtr activeWnd = NativeMethods.GetActiveWindow();
+                        if (activeWnd != IntPtr.Zero && (activeWnd == hwnd || NativeMethods.GetAncestor(activeWnd, NativeMethods.GA_ROOTOWNER) == hwnd))
+                        {
+                            return;
+                        }
+                    }
+
                     DismissDialog();
                 }
             });
@@ -339,14 +349,26 @@ public class MetroDialog : BorderlessFluentWindow
             {
                 var hookStruct = Marshal.PtrToStructure<NativeMethods.MSLLHOOKSTRUCT>(lParam);
                 IntPtr hwnd = new WindowInteropHelper(this).Handle;
-                if (hwnd != IntPtr.Zero && NativeMethods.GetWindowRect(hwnd, out NativeMethods.RECT rect))
+                if (hwnd != IntPtr.Zero)
                 {
-                    int x = hookStruct.pt.X;
-                    int y = hookStruct.pt.Y;
-                    bool isInside = x >= rect.Left && x <= rect.Right && y >= rect.Top && y <= rect.Bottom;
-                    if (!isInside)
+                    IntPtr clickedWnd = NativeMethods.WindowFromPoint(hookStruct.pt);
+                    if (clickedWnd != IntPtr.Zero)
                     {
-                        Dispatcher.InvokeAsync(DismissDialog);
+                        if (clickedWnd == hwnd || NativeMethods.GetAncestor(clickedWnd, NativeMethods.GA_ROOTOWNER) == hwnd)
+                        {
+                            return NativeMethods.CallNextHookEx(_mouseHook, nCode, wParam, lParam);
+                        }
+                    }
+
+                    if (NativeMethods.GetWindowRect(hwnd, out NativeMethods.RECT rect))
+                    {
+                        int x = hookStruct.pt.X;
+                        int y = hookStruct.pt.Y;
+                        bool isInside = x >= rect.Left && x <= rect.Right && y >= rect.Top && y <= rect.Bottom;
+                        if (!isInside)
+                        {
+                            Dispatcher.InvokeAsync(DismissDialog);
+                        }
                     }
                 }
             }
