@@ -666,7 +666,6 @@
         <Setter Property="Focusable" Value="False" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="controls:AutoHideScrollBehavior.IsEnabled" Value="True" />
-        <Setter Property="controls:SmoothScrollBehavior.IsEnabled" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ScrollViewer}">
@@ -698,6 +697,39 @@
 
     <!-- Implicit Default for ScrollBar: Auto-inherits 4px floating scrollbar -->
     <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource WidgetFloatingScrollBarStyle}" />
+
+    <!-- ========================================================================= -->
+    <!-- 5. NATIVE HIGH-FPS VIRTUALIZING LIST SCROLLING (Zero-Glide Per-Pixel)     -->
+    <!-- ========================================================================= -->
+    <Style TargetType="{x:Type ListBox}" BasedOn="{StaticResource {x:Type ListBox}}">
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />
+        <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Page" />
+        <Setter Property="VirtualizingPanel.CacheLength" Value="1,1" />
+        <Setter Property="ScrollViewer.PanningMode" Value="VerticalOnly" />
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+    </Style>
+
+    <Style TargetType="{x:Type ListView}" BasedOn="{StaticResource {x:Type ListBox}}">
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />
+        <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Page" />
+        <Setter Property="VirtualizingPanel.CacheLength" Value="1,1" />
+        <Setter Property="ScrollViewer.PanningMode" Value="VerticalOnly" />
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+    </Style>
+
+    <Style TargetType="{x:Type ui:ListView}" BasedOn="{StaticResource {x:Type ui:ListView}}">
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />
+        <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Page" />
+        <Setter Property="VirtualizingPanel.CacheLength" Value="1,1" />
+        <Setter Property="ScrollViewer.PanningMode" Value="VerticalOnly" />
+        <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+    </Style>
 
     <!-- ========================================================================= -->
     <!-- DIRECTWRITE TYPOGRAPHY & ICON DEFAULTS                                    -->

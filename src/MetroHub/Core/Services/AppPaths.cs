@@ -133,10 +133,6 @@ public static class AppPaths
         Path.Combine(LogsDir, "hidden_diagnostics.log"),
         Path.Combine(AppDataDir, "hidden_diagnostics.log"));
 
-    public static string ScrollDiagnosticsLogPath => ResolveFilePath(
-        Path.Combine(LogsDir, "scroll_diagnostics.log"),
-        Path.Combine(AppDataDir, "scroll_diagnostics.log"));
-
     // ── Resolution Helpers ───────────────────────────────────
 
     /// <summary>

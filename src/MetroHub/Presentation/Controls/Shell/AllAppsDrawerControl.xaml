@@ -277,7 +277,6 @@
                 <!-- Mode 1: Alphabetical Grouped Apps List with Breathing Room -->
                 <ScrollViewer x:Name="GroupedScrollViewer"
                               controls:AutoHideScrollBehavior.IsEnabled="True"
-                              controls:SmoothScrollBehavior.IsEnabled="True"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
                               Focusable="False"
@@ -342,7 +341,6 @@
                 <!-- Mode 2: Search Results Flat List with Breathing Room -->
                 <ScrollViewer x:Name="SearchResultsScrollViewer"
                               controls:AutoHideScrollBehavior.IsEnabled="True"
-                              controls:SmoothScrollBehavior.IsEnabled="True"
                               Visibility="Collapsed"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"

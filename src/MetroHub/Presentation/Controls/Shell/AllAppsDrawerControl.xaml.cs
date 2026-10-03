@@ -63,11 +63,6 @@ namespace MetroHub.Presentation.Controls
             InitializeComponent();
             Visibility = Visibility.Collapsed;
             DrawerTranslate.X = 0;
-
-            Loaded += (s, e) =>
-            {
-                ScrollDiagnosticsLogger.AttachAllAppsDrawer(this, GroupedScrollViewer, SearchResultsScrollViewer);
-            };
         }
 
         public void Open()

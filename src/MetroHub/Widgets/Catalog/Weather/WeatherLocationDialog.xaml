@@ -134,7 +134,6 @@
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                                  controls:AutoHideScrollBehavior.IsEnabled="True"
-                                 controls:SmoothScrollBehavior.IsEnabled="True"
                                  MaxHeight="172"
                                  ItemContainerStyle="{StaticResource SuggestionListBoxItemStyle}"
                                  ItemTemplate="{StaticResource SuggestionItemTemplate}"

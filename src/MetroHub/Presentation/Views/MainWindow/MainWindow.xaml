@@ -5,7 +5,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:views="clr-namespace:MetroHub.Presentation.Views"
         xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
-        xmlns:diag="clr-namespace:MetroHub.Presentation.Controls.Diagnostics"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         mc:Ignorable="d"
         Title="MetroHub"
@@ -137,7 +136,6 @@
             <!-- Main Open Tile Canvas: Free placement drag and drop anywhere -->
             <ScrollViewer x:Name="ContentScrollViewer"
                           controls:AutoHideScrollBehavior.IsEnabled="True"
-                          controls:SmoothScrollBehavior.IsEnabled="True"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
                           Background="Transparent"
@@ -653,11 +651,5 @@
                           HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch"
                           Panel.ZIndex="9999" />
-
-        <!-- Real-time Scroll & Render Diagnostics HUD Overlay (Toggle with F12) -->
-        <diag:DiagnosticHudControl x:Name="ScrollDiagnosticHud"
-                                   Grid.Column="0"
-                                   Grid.ColumnSpan="2"
-                                   Panel.ZIndex="9998" />
     </Grid>
 </views:BorderlessFluentWindow>

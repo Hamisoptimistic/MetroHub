@@ -175,30 +175,41 @@ public sealed class NetworkHealthService
         // Bypasses Windows DNS client cache completely — requires real WAN packet routing.
         try
         {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(timeoutMs);
             using var client = new System.Net.Sockets.TcpClient();
-            using var reg = cancellationToken.Register(() => { try { client.Dispose(); } catch { } });
-            var connectTask = client.ConnectAsync("1.1.1.1", 53);
-            var completed = await Task.WhenAny(connectTask, Task.Delay(timeoutMs, cancellationToken));
-            if (completed == connectTask && client.Connected)
+            await client.ConnectAsync(IPAddress.Parse("1.1.1.1"), 53, cts.Token).ConfigureAwait(false);
+            if (client.Connected)
             {
                 return true;
             }
         }
-        catch { }
+        catch (OperationCanceledException)
+        {
+            // Timed out or cancelled normally
+        }
+        catch
+        {
+            // Socket or network error
+        }
 
         if (cancellationToken.IsCancellationRequested) return false;
 
         // 2. Secondary Fallback: Direct TCP socket handshake to Google Anycast DNS (8.8.8.8:53)
         try
         {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(timeoutMs);
             using var client = new System.Net.Sockets.TcpClient();
-            using var reg = cancellationToken.Register(() => { try { client.Dispose(); } catch { } });
-            var connectTask = client.ConnectAsync("8.8.8.8", 53);
-            var completed = await Task.WhenAny(connectTask, Task.Delay(timeoutMs, cancellationToken));
-            if (completed == connectTask && client.Connected)
+            await client.ConnectAsync(IPAddress.Parse("8.8.8.8"), 53, cts.Token).ConfigureAwait(false);
+            if (client.Connected)
             {
                 return true;
             }
+        }
+        catch (OperationCanceledException)
+        {
+            // Timed out or cancelled normally
         }
         catch (Exception ex)
         {

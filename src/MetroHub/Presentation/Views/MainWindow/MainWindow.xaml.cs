@@ -245,7 +245,6 @@ public partial class MainWindow : BorderlessFluentWindow
         PreviewTextInput += OnWindowPreviewTextInput;
         PreviewMouseDown += OnWindowPreviewMouseDown;
         ContentScrollViewer.ScrollChanged += OnContentScrollViewerScrollChanged;
-        ScrollDiagnosticsLogger.AttachMainWindow(this, ContentScrollViewer);
 
         // Auto-persist layout in background when any widget notifies of settings changes
         WeakReferenceMessenger.Default.Register<MainWindow, WidgetSettingsChangedMessage>(
@@ -918,18 +917,6 @@ public partial class MainWindow : BorderlessFluentWindow
 
     private void OnWindowPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.F12)
-        {
-            if (ScrollDiagnosticHud != null)
-            {
-                ScrollDiagnosticHud.Visibility = ScrollDiagnosticHud.Visibility == Visibility.Visible
-                    ? Visibility.Collapsed
-                    : Visibility.Visible;
-            }
-            e.Handled = true;
-            return;
-        }
-
         bool isCtrl = (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control;
         bool isShift = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
 

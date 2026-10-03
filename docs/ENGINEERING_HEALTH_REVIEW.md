@@ -105,7 +105,7 @@ Supporting evidence: all **16** `new DispatcherTimer` sites checked — none are
 
 ### 3.5 Animation is done on the right thread
 
-Continuous animation rides `CompositionTarget.Rendering` with explicit attach/detach (`DinoWidgetViewModel.cs:195-234`, `SpeedometerArcControl.cs:210-257`, `AtmosphericAuraControl.cs:122-146`, `SmoothScrollBehavior.cs:187/248`) — **not** 60 fps `DispatcherTimer`s. The only sub-100 ms timer in the codebase is drag auto-scroll (`MainWindow.DragDrop.cs:64-67`, 16 ms), which self-stops when the drag ends. Frozen pens, cached `FormattedText`, `Stopwatch.GetTimestamp()`, and early-return-on-minute-equality in the clock.
+Continuous animation rides `CompositionTarget.Rendering` with explicit attach/detach (`DinoWidgetViewModel.cs:195-234`, `SpeedometerArcControl.cs:210-257`, `AtmosphericAuraControl.cs:122-146`) — **not** 60 fps `DispatcherTimer`s. The only sub-100 ms timer in the codebase is drag auto-scroll (`MainWindow.DragDrop.cs:64-67`, 16 ms), which self-stops when the drag ends. Frozen pens, cached `FormattedText`, `Stopwatch.GetTimestamp()`, and early-return-on-minute-equality in the clock.
 
 ### 3.6 Memory: no guaranteed production leak in the normal lifecycle
 

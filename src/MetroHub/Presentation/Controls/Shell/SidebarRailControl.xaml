@@ -201,7 +201,6 @@
         <!-- 2. Center Dynamic Shortcuts Area -->
         <ScrollViewer x:Name="ShortcutsScrollViewer"
                       Grid.Row="1"
-                      controls:SmoothScrollBehavior.IsEnabled="True"
                       VerticalScrollBarVisibility="Hidden"
                       HorizontalScrollBarVisibility="Disabled"
                       Focusable="False"

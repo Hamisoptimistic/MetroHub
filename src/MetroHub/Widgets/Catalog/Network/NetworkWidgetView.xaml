@@ -702,7 +702,6 @@
                         <!-- Available Networks ListView (using ui:ListView with AutoHide ScrollBar) -->
                         <ui:ListView x:Name="AvailableNetworksListView"
                                      controls:AutoHideScrollBehavior.IsEnabled="True"
-                                     controls:SmoothScrollBehavior.IsEnabled="True"
                                      Visibility="{Binding HasAvailableNetworks, Converter={StaticResource BoolToVis}}"
                                      ItemsSource="{Binding AvailableNetworks}"
                                      Background="Transparent"
