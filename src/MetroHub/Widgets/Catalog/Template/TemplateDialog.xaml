@@ -38,7 +38,6 @@
                        Foreground="{DynamicResource TextMutedBrush}"
                        Margin="0,0,0,6" />
             <TextBox x:Name="LabelInput"
-                     Style="{DynamicResource FluentGlassInputStyle}"
                      Margin="0,0,0,16" />
 
             <TextBlock Text="Options"

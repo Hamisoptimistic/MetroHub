@@ -166,7 +166,7 @@
                          FontWeight="{DynamicResource TypeSubtitleFontWeight}"
                          FontFamily="{DynamicResource AppDisplayFontFamily}"
                          Foreground="{Binding HeaderColor, TargetNullValue={StaticResource TextPrimaryBrush}, FallbackValue={StaticResource TextPrimaryBrush}}"
-                         CaretBrush="{Binding HeaderColor, TargetNullValue='#60CDFF', FallbackValue='#60CDFF'}"
+                         CaretBrush="{Binding HeaderColor, TargetNullValue={StaticResource TextPrimaryBrush}, FallbackValue={StaticResource TextPrimaryBrush}}"
                          Background="Transparent"
                          BorderThickness="0"
                          BorderBrush="Transparent"

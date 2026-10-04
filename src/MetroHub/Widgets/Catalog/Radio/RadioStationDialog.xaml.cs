@@ -319,25 +319,6 @@ public partial class RadioStationDialog : MetroDialog
         }
     }
 
-    private void OnRadioDirectPasteClick(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            if (Clipboard.ContainsText())
-            {
-                string text = Clipboard.GetText().Trim();
-                if (!string.IsNullOrWhiteSpace(text))
-                {
-                    RadioDirectUrlInput.Text = text;
-                    if (string.IsNullOrWhiteSpace(RadioDirectNameInput.Text))
-                    {
-                        RadioDirectNameInput.Focus();
-                    }
-                }
-            }
-        }
-        catch { }
-    }
 
     private void OnRadioDirectInputKeyDown(object sender, KeyEventArgs e)
     {

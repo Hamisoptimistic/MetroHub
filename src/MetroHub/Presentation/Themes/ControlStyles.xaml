@@ -277,50 +277,12 @@
     </Style>
 
     <!-- ========================================================================= -->
-    <!-- UNIVERSAL FLUENT GLASS INPUT STYLES (Dialogs, Flyouts & Forms)             -->
     <!-- ========================================================================= -->
-    <Style x:Key="FluentGlassInputStyle" TargetType="TextBox">
-        <Setter Property="OverridesDefaultStyle" Value="True" />
-        <Setter Property="Height" Value="36" />
-        <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
-        <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
-        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-        <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="UseLayoutRounding" Value="True" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="TextBox">
-                    <Border x:Name="BoxBorder"
-                            Background="{DynamicResource WidgetDividerBrush}"
-                            BorderBrush="#28FFFFFF"
-                            BorderThickness="1"
-                            CornerRadius="{DynamicResource ControlCornerRadius}">
-                        <Grid Margin="10,0,10,0">
-                            <ScrollViewer x:Name="PART_ContentHost"
-                                          VerticalAlignment="Center"
-                                          Focusable="False"
-                                          HorizontalScrollBarVisibility="Hidden"
-                                          VerticalScrollBarVisibility="Hidden" />
-                        </Grid>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="BoxBorder" Property="Background" Value="#1CFFFFFF" />
-                            <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#45FFFFFF" />
-                        </Trigger>
-                        <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
-                            <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#65FFFFFF" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="FluentGlassSearchInputStyle" TargetType="TextBox">
+    <!-- UNIVERSAL METRO INPUT STYLE (Frosted Glass DNA)                            -->
+    <!-- One style for all text inputs. Optional icon via controls:InputHelper.Icon-->
+    <!-- Pure neutral blinker (CaretBrush = TextPrimaryBrush, zero color).         -->
+    <!-- ========================================================================= -->
+    <Style x:Key="MetroInputStyle" TargetType="TextBox">
         <Setter Property="OverridesDefaultStyle" Value="True" />
         <Setter Property="Height" Value="36" />
         <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
@@ -346,11 +308,13 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <ui:SymbolIcon x:Name="PrefixIcon"
-                                           Symbol="Search24"
+                                           Grid.Column="0"
+                                           Symbol="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=(controls:InputHelper.Icon)}"
                                            FontSize="14"
                                            Foreground="{DynamicResource TextMutedBrush}"
                                            VerticalAlignment="Center"
-                                           Margin="0,0,8,0" />
+                                           Margin="0,0,8,0"
+                                           Visibility="Collapsed" />
                             <ScrollViewer x:Name="PART_ContentHost"
                                           Grid.Column="1"
                                           VerticalAlignment="Center"
@@ -360,6 +324,9 @@
                         </Grid>
                     </Border>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="controls:InputHelper.HasIcon" Value="True">
+                            <Setter TargetName="PrefixIcon" Property="Visibility" Value="Visible" />
+                        </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="BoxBorder" Property="Background" Value="#1CFFFFFF" />
                             <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#45FFFFFF" />
@@ -369,6 +336,9 @@
                             <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
                             <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#65FFFFFF" />
                             <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="BoxBorder" Property="Opacity" Value="0.35" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -376,59 +346,8 @@
         </Setter>
     </Style>
 
-    <Style x:Key="FluentGlassUrlWithPasteInputStyle" TargetType="TextBox">
-        <Setter Property="OverridesDefaultStyle" Value="True" />
-        <Setter Property="Height" Value="36" />
-        <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
-        <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
-        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-        <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="UseLayoutRounding" Value="True" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="TextBox">
-                    <Border x:Name="BoxBorder"
-                            Background="{DynamicResource WidgetDividerBrush}"
-                            BorderBrush="#28FFFFFF"
-                            BorderThickness="1"
-                            CornerRadius="{DynamicResource ControlCornerRadius}">
-                        <Grid Margin="10,0,80,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <ui:SymbolIcon x:Name="PrefixIcon"
-                                           Symbol="Link24"
-                                           FontSize="14"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,8,0" />
-                            <ScrollViewer x:Name="PART_ContentHost"
-                                          Grid.Column="1"
-                                          VerticalAlignment="Center"
-                                          Focusable="False"
-                                          HorizontalScrollBarVisibility="Hidden"
-                                          VerticalScrollBarVisibility="Hidden" />
-                        </Grid>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="BoxBorder" Property="Background" Value="#1CFFFFFF" />
-                            <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#45FFFFFF" />
-                            <Setter TargetName="PrefixIcon" Property="Foreground" Value="#B0FFFFFF" />
-                        </Trigger>
-                        <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
-                            <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#65FFFFFF" />
-                            <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
+    <!-- Implicit Default TextBox Style: Bare <TextBox> elements default to MetroInputStyle -->
+    <Style TargetType="TextBox" BasedOn="{StaticResource MetroInputStyle}" />
 
     <Style x:Key="FluentGlassRadioButtonStyle" TargetType="RadioButton">
         <Setter Property="OverridesDefaultStyle" Value="True" />

@@ -58,7 +58,7 @@ Use `<dialogs:MetroDialog>` as the root tag. The frosted acrylic sidebar, dark o
 
     <!-- Right Obsidian Form Content -->
     <Grid>
-        <TextBox x:Name="MyInput" Style="{DynamicResource FluentGlassInputStyle}" />
+        <TextBox x:Name="MyInput" Style="{DynamicResource MetroInputStyle}" />
         <Button Content="Save" Style="{DynamicResource AccentButtonStyle}" Click="OnSaveClick" />
     </Grid>
 </dialogs:MetroDialog>

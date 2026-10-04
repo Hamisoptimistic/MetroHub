@@ -6,6 +6,7 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:widgets="clr-namespace:MetroHub.Widgets"
              xmlns:local="clr-namespace:MetroHub.Widgets.Catalog.Habit"
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
              xmlns:converters="clr-namespace:MetroHub.Presentation.Converters"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=local:HabitWidgetViewModel}"
@@ -16,61 +17,7 @@
         <converters:EqualityConverter x:Key="EqualityConverter" />
 
 
-        <!-- Fluent Acrylic Glass Input Box Style (Matches Wifi password box: translucent acrylic, 1px border, 4px CornerRadius) -->
-        <Style x:Key="FluentDarkInputWithIconStyle" TargetType="TextBox">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="Height" Value="34" />
-            <Setter Property="FontSize" Value="{DynamicResource TypeBodyFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyFontWeight}" />
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="SnapsToDevicePixels" Value="True" />
-            <Setter Property="UseLayoutRounding" Value="True" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Border x:Name="BoxBorder"
-                                Background="#10FFFFFF"
-                                BorderBrush="#25FFFFFF"
-                                BorderThickness="1"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                >
-                            <Grid Margin="10,0,10,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <ui:SymbolIcon x:Name="PrefixIcon"
-                                               Symbol="Edit20"
-                                               FontSize="14"
-                                               Foreground="{DynamicResource TextMutedBrush}"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,8,0" />
-                                <ScrollViewer x:Name="PART_ContentHost"
-                                              Grid.Column="1"
-                                              VerticalAlignment="Center"
-                                              Focusable="False"
-                                              HorizontalScrollBarVisibility="Hidden"
-                                              VerticalScrollBarVisibility="Hidden" />
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#18FFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="#40FFFFFF" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="#B0FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="BoxBorder" Property="Background" Value="#22FFFFFF" />
-                                <Setter TargetName="BoxBorder" Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
-                                <Setter TargetName="PrefixIcon" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+
 
         <!-- 34x34 Fluent Icon Choice Button Style (CornerRadius: 2px) -->
         <Style x:Key="HabitIconChoiceButtonStyle" TargetType="Button">
@@ -499,7 +446,7 @@
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,0,0,6" />
                     <TextBox x:Name="HabitNameInput"
-                             Style="{StaticResource FluentDarkInputWithIconStyle}"
+                             controls:InputHelper.Icon="Edit20"
                              Text="{Binding SetupInputName, UpdateSourceTrigger=PropertyChanged}"
                              KeyDown="HabitNameInput_KeyDown" />
                 </StackPanel>

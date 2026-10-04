@@ -85,9 +85,8 @@ When a developer asks *"Where do I look to do X?"*, here is the exact architectu
 | **9** | Red / Danger Toggle Switch | `<ui:ToggleSwitch Style="{StaticResource FluentRedToggleSwitchStyle}" />` | `ControlStyles.xaml` |
 | **10** | Standard Slider | `<Slider Minimum="0" Maximum="100" Value="{Binding Level}" />` | Built-in WPF |
 | **11** | Colored Fill Volume Slider | `<controls:WidgetVolumeSlider Value="{Binding Vol}" ... />` | `Controls/WidgetVolumeSlider.xaml` |
-| **12** | Glass Text Input Box | `<TextBox Style="{DynamicResource FluentGlassInputStyle}" />` | `ControlStyles.xaml` |
-| **13** | Search Box with Search Icon | `<TextBox Style="{DynamicResource FluentGlassSearchInputStyle}" />` | `ControlStyles.xaml` |
-| **14** | URL Box with Paste Button | `<TextBox Style="{DynamicResource FluentGlassUrlWithPasteInputStyle}" />` | `ControlStyles.xaml` |
+| **12** | Universal Glass Text Input | `<TextBox Style="{DynamicResource MetroInputStyle}" />` (or bare `<TextBox />`) | `ControlStyles.xaml` |
+| **13** | Input with Icon (Search, Link, etc.) | `<TextBox controls:InputHelper.Icon="Search24" />` | `ControlStyles.xaml` |
 | **15** | Segmented Toggle / Tab Strip | `<widgets:WidgetSegmentedControl>` + `<widgets:WidgetSegmentedItem>` | `WidgetStyles.xaml` |
 | **16** | Header Action Tiles Strip | `<widgets:WidgetTiles>` + `<widgets:WidgetTile>` | `WidgetStyles.xaml` |
 | **17** | Hairline Horizontal Divider | `<Border Style="{StaticResource WidgetHairlineDividerStyle}" />` | `WidgetStyles.xaml` |

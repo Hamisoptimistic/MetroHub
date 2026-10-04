@@ -109,7 +109,7 @@
 
             <Grid>
                 <TextBox x:Name="WeatherCityInput"
-                         Style="{DynamicResource FluentGlassSearchInputStyle}"
+                         controls:InputHelper.Icon="Search24"
                          PreviewKeyDown="OnWeatherInputPreviewKeyDown"
                          TextChanged="OnWeatherInputTextChanged" />
 

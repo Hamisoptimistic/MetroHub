@@ -176,22 +176,6 @@ public partial class WebLinkDialog : MetroDialog
         }
     }
 
-    private void OnWebLinkPasteClick(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            if (Clipboard.ContainsText())
-            {
-                string text = Clipboard.GetText().Trim();
-                if (!string.IsNullOrWhiteSpace(text))
-                {
-                    WebLinkUrlInput.Text = text;
-                    WebLinkTitleInput.Focus();
-                }
-            }
-        }
-        catch { }
-    }
 
     private void OnAddWebLinkClick(object sender, RoutedEventArgs e)
     {

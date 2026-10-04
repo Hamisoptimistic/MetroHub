@@ -170,7 +170,7 @@
                             <!-- Search Input Box with Overlay Watermark & Spinner -->
                             <Grid Grid.Row="0">
                                 <TextBox x:Name="RadioSearchInput"
-                                         Style="{DynamicResource FluentGlassSearchInputStyle}"
+                                         controls:InputHelper.Icon="Search24"
                                          TextChanged="OnRadioSearchInputTextChanged"
                                          PreviewKeyDown="OnRadioSearchInputKeyDown" />
                                 <TextBlock x:Name="RadioSearchWatermark"
@@ -243,27 +243,10 @@
                                            Foreground="{DynamicResource TextMutedBrush}"
                                            Margin="0,0,0,6" />
 
-                                <Grid>
-                                    <TextBox x:Name="RadioDirectUrlInput"
-                                             Style="{DynamicResource FluentGlassUrlWithPasteInputStyle}"
-                                             TextChanged="OnRadioDirectUrlTextChanged"
-                                             KeyDown="OnRadioDirectInputKeyDown" />
-                                    <Button HorizontalAlignment="Right"
-                                            VerticalAlignment="Center"
-                                            Style="{DynamicResource DefaultButtonStyle}"
-                                            Height="26"
-                                            Margin="0,0,5,0"
-                                            Padding="8,2"
-                                            Click="OnRadioDirectPasteClick">
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <ui:SymbolIcon Symbol="ClipboardPaste24" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center" />
-                                            <TextBlock Text="Paste"
-                                                       FontSize="{DynamicResource TypeCaptionFontSize}"
-                                                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                                       VerticalAlignment="Center" />
-                                        </StackPanel>
-                                    </Button>
-                                </Grid>
+                                <TextBox x:Name="RadioDirectUrlInput"
+                                         controls:InputHelper.Icon="Link24"
+                                         TextChanged="OnRadioDirectUrlTextChanged"
+                                         KeyDown="OnRadioDirectInputKeyDown" />
 
                                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0" MinHeight="18">
                                     <ui:ProgressRing x:Name="RadioProbeSpinner"
@@ -291,7 +274,6 @@
                                            Foreground="{DynamicResource TextMutedBrush}"
                                            Margin="0,8,0,6" />
                                 <TextBox x:Name="RadioDirectNameInput"
-                                         Style="{DynamicResource FluentGlassInputStyle}"
                                          TextChanged="OnRadioDirectNameTextChanged"
                                          KeyDown="OnRadioDirectInputKeyDown" />
 
