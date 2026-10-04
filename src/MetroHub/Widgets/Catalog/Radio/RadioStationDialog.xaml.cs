@@ -126,7 +126,7 @@ public partial class RadioStationDialog : MetroDialog
 
         LoadCategories();
 
-        RadioSearchTabRadio.IsChecked = true;
+        RadioModeTabSelector.SelectedIndex = 0;
         RadioSearchPanel.Visibility = Visibility.Visible;
         RadioDirectPanel.Visibility = Visibility.Collapsed;
 
@@ -146,11 +146,11 @@ public partial class RadioStationDialog : MetroDialog
         RadioDirectStatusMessage.Visibility = Visibility.Collapsed;
     }
 
-    private void OnRadioTabChanged(object sender, RoutedEventArgs e)
+    private void OnRadioTabSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (RadioSearchTabRadio == null || RadioDirectTabRadio == null || RadioSearchPanel == null || RadioDirectPanel == null) return;
+        if (RadioModeTabSelector == null || RadioSearchPanel == null || RadioDirectPanel == null) return;
 
-        if (RadioSearchTabRadio.IsChecked == true)
+        if (RadioModeTabSelector.SelectedIndex == 0)
         {
             RadioSearchPanel.Visibility = Visibility.Visible;
             RadioDirectPanel.Visibility = Visibility.Collapsed;
@@ -474,7 +474,7 @@ public partial class RadioStationDialog : MetroDialog
         RadioStation? stationToAdd = null;
         string categoryId = GetSelectedCategoryId();
 
-        if (RadioSearchTabRadio.IsChecked == true)
+        if (RadioModeTabSelector.SelectedIndex == 0)
         {
             if (_selectedRadioSearchResult is not { } selected)
             {
@@ -551,7 +551,7 @@ public partial class RadioStationDialog : MetroDialog
             catch (Exception ex)
             {
                 PrimaryActionButton.IsEnabled = true;
-                var targetStatus = RadioSearchTabRadio.IsChecked == true ? RadioSearchStatusMessage : RadioDirectStatusMessage;
+                var targetStatus = RadioModeTabSelector.SelectedIndex == 0 ? RadioSearchStatusMessage : RadioDirectStatusMessage;
                 targetStatus.Text = $"Failed to save station: {ex.Message}";
                 targetStatus.Foreground = ThemeTokens.StatusErrorBrush;
                 targetStatus.Visibility = Visibility.Visible;

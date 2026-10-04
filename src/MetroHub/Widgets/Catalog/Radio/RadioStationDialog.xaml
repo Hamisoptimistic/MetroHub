@@ -103,22 +103,16 @@
                         </Grid.RowDefinitions>
 
                         <!-- Two-Tab Segmented Selector -->
-                        <StackPanel Grid.Row="0"
-                                    Orientation="Horizontal"
-                                    HorizontalAlignment="Left"
-                                    Margin="0,0,0,12">
-                            <RadioButton x:Name="RadioSearchTabRadio"
-                                         Style="{StaticResource MetroTabItemStyle}"
-                                         GroupName="RadioAddTabs"
-                                         Content="Search Stations"
-                                         IsChecked="True"
-                                         Checked="OnRadioTabChanged" />
-                            <RadioButton x:Name="RadioDirectTabRadio"
-                                         Style="{StaticResource MetroTabItemStyle}"
-                                         GroupName="RadioAddTabs"
-                                         Content="Direct Stream URL"
-                                         Checked="OnRadioTabChanged" />
-                        </StackPanel>
+                        <ListBox x:Name="RadioModeTabSelector"
+                                 Grid.Row="0"
+                                 Style="{StaticResource MetroSegmentedTabStyle}"
+                                 SelectedIndex="0"
+                                 SelectionChanged="OnRadioTabSelectionChanged"
+                                 Margin="0,0,0,12"
+                                 HorizontalAlignment="Left">
+                            <ListBoxItem Content="Search" />
+                            <ListBoxItem Content="Custom URL" />
+                        </ListBox>
 
                         <!-- TAB 1: Search Stations Panel -->
                         <Grid Grid.Row="1" x:Name="RadioSearchPanel" Visibility="Visible">

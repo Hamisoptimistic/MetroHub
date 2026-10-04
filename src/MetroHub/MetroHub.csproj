@@ -7,7 +7,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
-    <NoWarn>$(NoWarn);NU1701</NoWarn>
     <!-- Performance & Footprint Flags -->
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <TieredPGO>true</TieredPGO>
@@ -44,30 +43,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Assets\**" />
     <Resource Include="Assets\Fonts\**\*.ttf" />
-    <None Remove="Assets\*.png" />
-    <Resource Include="Assets\*.png" />
-    <None Remove="Assets\Weather\Glassmorphic\*.png" />
     <Resource Include="Assets\Weather\Glassmorphic\*.png" />
-    <None Remove="Assets\quotes.json" />
-    <Resource Include="Assets\quotes.json" />
-    <None Remove="Assets\Radio\*.json" />
     <Resource Include="Assets\Radio\*.json" />
-    <Content Include="Assets\Radio\*.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <None Remove="Assets\Rover\*.png" />
-    <Resource Include="Assets\Rover\*.png" />
-    <None Remove="Assets\Rover\*.json" />
-    <Resource Include="Assets\Rover\*.json" />
-    <None Remove="Assets\Rover\Sounds\*.mp3" />
-    <Resource Include="Assets\Rover\Sounds\*.mp3" />
-    <Content Include="Assets\Rover\Sounds\*.mp3">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <None Update="Assets\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <Resource Include="Assets\Rover\**\*" />
+    <Resource Include="Assets\quotes.json" />
+    <Resource Include="Assets\*.png" />
   </ItemGroup>
 
 </Project>

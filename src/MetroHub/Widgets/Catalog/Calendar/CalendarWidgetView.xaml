@@ -120,23 +120,16 @@
                                                    Foreground="{DynamicResource TextDisabledBrush}"
                                                    />
 
-                                        <!-- Active Date Pill Indicator (Below the date) -->
-                                        <Border x:Name="TodayPill"
-                                                Width="14"
-                                                Height="3.5"
+                                        <!-- Today: Universal 2px Accent Border -->
+                                        <Border x:Name="TodayFrame"
+                                                BorderThickness="2"
+                                                BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
                                                 CornerRadius="2"
-                                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Bottom"
-                                                Margin="1.5,0,0,3"
+                                                Margin="1"
                                                 Visibility="Collapsed"
                                                 IsHitTestVisible="False"
-                                                RenderOptions.EdgeMode="Unspecified"
-                                                >
-                                            <Border.Effect>
-                                                <StaticResource ResourceKey="GlowDotSmall" />
-                                            </Border.Effect>
-                                        </Border>
+                                                RenderOptions.EdgeMode="Aliased"
+                                                />
                                     </Grid>
                                 </Border>
 
@@ -147,9 +140,10 @@
                                         <Setter TargetName="DayLabel" Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
                                     </DataTrigger>
 
-                                    <!-- Today: Bright Blue Accent Pill Below Date -->
+                                    <!-- Today: Universal 2px Accent Border -->
                                     <DataTrigger Binding="{Binding IsToday}" Value="True">
-                                        <Setter TargetName="TodayPill" Property="Visibility" Value="Visible" />
+                                        <Setter TargetName="TodayFrame" Property="Visibility" Value="Visible" />
+                                        <Setter TargetName="DayLabel" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                         <Setter TargetName="DayLabel" Property="FontWeight" Value="Bold" />
                                     </DataTrigger>
 

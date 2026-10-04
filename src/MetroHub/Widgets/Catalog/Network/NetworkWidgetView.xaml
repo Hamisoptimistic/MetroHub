@@ -1633,28 +1633,16 @@
                     </Grid.RowDefinitions>
 
                     <!-- ROW 0: CENTERED MASTER TIMEFRAME SELECTOR -->
-                    <StackPanel Grid.Row="0"
-                                Orientation="Horizontal"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Margin="0,0,0,8">
-                        <RadioButton Style="{StaticResource MetroTabItemStyle}"
-                                     GroupName="NetworkDataUsageTimeframe"
-                                     Content="Session"
-                                     IsChecked="{Binding IsSessionTimeframe, Mode=TwoWay}" />
-                        <RadioButton Style="{StaticResource MetroTabItemStyle}"
-                                     GroupName="NetworkDataUsageTimeframe"
-                                     Content="24h"
-                                     IsChecked="{Binding Is24HoursTimeframe, Mode=TwoWay}" />
-                        <RadioButton Style="{StaticResource MetroTabItemStyle}"
-                                     GroupName="NetworkDataUsageTimeframe"
-                                     Content="7d"
-                                     IsChecked="{Binding Is7DaysTimeframe, Mode=TwoWay}" />
-                        <RadioButton Style="{StaticResource MetroTabItemStyle}"
-                                     GroupName="NetworkDataUsageTimeframe"
-                                     Content="30d"
-                                     IsChecked="{Binding Is30DaysTimeframe, Mode=TwoWay}" />
-                    </StackPanel>
+                    <ListBox Grid.Row="0"
+                             Style="{StaticResource MetroSegmentedTabStyle}"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"
+                             Margin="0,0,0,8">
+                        <ListBoxItem Content="Session" IsSelected="{Binding IsSessionTimeframe, Mode=TwoWay}" />
+                        <ListBoxItem Content="24h" IsSelected="{Binding Is24HoursTimeframe, Mode=TwoWay}" />
+                        <ListBoxItem Content="7d" IsSelected="{Binding Is7DaysTimeframe, Mode=TwoWay}" />
+                        <ListBoxItem Content="30d" IsSelected="{Binding Is30DaysTimeframe, Mode=TwoWay}" />
+                    </ListBox>
 
                     <!-- ROW 1: TOP HAIRLINE DIVIDER -->
                     <Border Grid.Row="1"

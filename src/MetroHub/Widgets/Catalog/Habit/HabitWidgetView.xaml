@@ -246,6 +246,17 @@
                                                 RenderOptions.EdgeMode="Aliased"
                                                 />
 
+                                        <!-- Today: Universal 2px Accent Border (Flush Margin 0, Adaptive Color) -->
+                                        <Border x:Name="TodayFrame"
+                                                BorderThickness="2"
+                                                BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                CornerRadius="0"
+                                                Margin="0"
+                                                Visibility="Collapsed"
+                                                IsHitTestVisible="False"
+                                                RenderOptions.EdgeMode="Aliased"
+                                                />
+
                                         <!-- Day Number Label -->
                                         <TextBlock x:Name="DayLabel"
                                                    Text="{Binding DayNumber}"
@@ -256,24 +267,6 @@
                                                    HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
                                                    />
-
-                                        <!-- Active Date Pill Indicator (Below the date) -->
-                                        <Border x:Name="TodayPill"
-                                                Width="14"
-                                                Height="3.5"
-                                                CornerRadius="2"
-                                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Bottom"
-                                                Margin="0,0,0,3"
-                                                Visibility="Collapsed"
-                                                IsHitTestVisible="False"
-                                                RenderOptions.EdgeMode="Unspecified"
-                                                SnapsToDevicePixels="False">
-                                            <Border.Effect>
-                                                <StaticResource ResourceKey="GlowDotSmall" />
-                                            </Border.Effect>
-                                        </Border>
                                     </Grid>
                                 </Button>
 
@@ -284,9 +277,9 @@
                                         <Setter TargetName="DayLabel" Property="FontWeight" Value="Normal" />
                                     </DataTrigger>
 
-                                    <!-- Today (Active Date Indicator) -->
+                                    <!-- Today (Universal 2px Accent Border) -->
                                     <DataTrigger Binding="{Binding IsToday}" Value="True">
-                                        <Setter TargetName="TodayPill" Property="Visibility" Value="Visible" />
+                                        <Setter TargetName="TodayFrame" Property="Visibility" Value="Visible" />
                                         <Setter TargetName="DayLabel" Property="FontWeight" Value="Bold" />
                                     </DataTrigger>
 
@@ -303,6 +296,24 @@
                                         <Setter TargetName="DayLabel" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                                         <Setter TargetName="DayLabel" Property="FontWeight" Value="Bold" />
                                     </DataTrigger>
+
+                                    <!-- Today & Done: Adaptive Crisp White Frame over Emerald Green -->
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsToday}" Value="True" />
+                                            <Condition Binding="{Binding IsDone}" Value="True" />
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter TargetName="TodayFrame" Property="BorderBrush" Value="#FFFFFF" />
+                                    </MultiDataTrigger>
+
+                                    <!-- Today & Failed: Adaptive Crisp White Frame over Ruby Red -->
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsToday}" Value="True" />
+                                            <Condition Binding="{Binding IsFailed}" Value="True" />
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter TargetName="TodayFrame" Property="BorderBrush" Value="#FFFFFF" />
+                                    </MultiDataTrigger>
 
                                     <!-- Mouse Hover -->
                                     <Trigger Property="IsMouseOver" Value="True">

@@ -1,13 +1,14 @@
 using System;
 using System.Windows;
 using System.Windows.Media;
+using MetroHub.Core.Models;
 using MetroHub.Presentation.Themes;
 
 namespace MetroHub.Core.Services;
 
 /// <summary>
 /// Service that dynamically detects and synchronizes the application's accent colors with the Windows system accent color.
-/// Automatically updates Application.Current.Resources and listens for OS theme/accent changes in real-time.
+/// Supports artistic style transformations (such as Studio Glass luminous gradients) and listens for OS changes in real-time.
 /// </summary>
 public static class SystemAccentColorService
 {
@@ -17,6 +18,24 @@ public static class SystemAccentColorService
 
     public static Color CurrentAccentColor { get; private set; } = Color.FromRgb(0x4C, 0xC2, 0xFF);
     public static string CurrentAccentHex { get; private set; } = "#4CC2FF";
+
+    /// <summary>
+    /// Current artistic accent rendering style (e.g. StudioGlass vs Flat). Defaults to StudioGlass.
+    /// </summary>
+    public static AccentStyleMode CurrentStyleMode { get; private set; } = AccentStyleMode.StudioGlass;
+
+    /// <summary>
+    /// Updates the active accent rendering style mode and dynamically repaints application resources.
+    /// </summary>
+    public static void SetStyleMode(AccentStyleMode mode)
+    {
+        if (CurrentStyleMode == mode && _initialized) return;
+        CurrentStyleMode = mode;
+        if (_initialized)
+        {
+            UpdateSystemAccentColors();
+        }
+    }
 
     /// <summary>
     /// Initializes system accent detection and registers dynamic change listeners.
@@ -116,6 +135,64 @@ public static class SystemAccentColorService
         return Color.FromRgb(0x4C, 0xC2, 0xFF);
     }
 
+    /// <summary>
+    /// Creates the primary accent brush based on the active artistic style mode.
+    /// </summary>
+    public static Brush CreatePrimaryAccentBrush(Color accent, AccentStyleMode mode)
+    {
+        if (mode == AccentStyleMode.StudioGlass)
+        {
+            Color specularTop = Lighten(accent, 0.20f);
+            var brush = new LinearGradientBrush(specularTop, accent, new Point(0, 0), new Point(0, 1));
+            brush.Freeze();
+            return brush;
+        }
+
+        return CreateFrozenBrush(accent);
+    }
+
+    /// <summary>
+    /// Creates the secondary (hover) accent brush based on the active artistic style mode.
+    /// </summary>
+    public static Brush CreateSecondaryAccentBrush(Color secondary, AccentStyleMode mode)
+    {
+        if (mode == AccentStyleMode.StudioGlass)
+        {
+            Color specularTop = Lighten(secondary, 0.22f);
+            var brush = new LinearGradientBrush(specularTop, secondary, new Point(0, 0), new Point(0, 1));
+            brush.Freeze();
+            return brush;
+        }
+
+        return CreateFrozenBrush(secondary);
+    }
+
+    /// <summary>
+    /// Creates the tertiary (pressed/active) accent brush based on the active artistic style mode.
+    /// </summary>
+    public static Brush CreateTertiaryAccentBrush(Color accent, Color tertiary, AccentStyleMode mode)
+    {
+        if (mode == AccentStyleMode.StudioGlass)
+        {
+            var brush = new LinearGradientBrush(accent, tertiary, new Point(0, 0), new Point(0, 1));
+            brush.Freeze();
+            return brush;
+        }
+
+        return CreateFrozenBrush(tertiary);
+    }
+
+    /// <summary>
+    /// Creates a specular top-lit glass edge border brush.
+    /// </summary>
+    public static Brush CreateGlassBorderBrush(Color accent)
+    {
+        Color topEdge = Lighten(accent, 0.35f);
+        var brush = new LinearGradientBrush(topEdge, accent, new Point(0, 0), new Point(0, 1));
+        brush.Freeze();
+        return brush;
+    }
+
     private static void ApplyToResources(Color accent, Color secondary, Color tertiary)
     {
         var app = Application.Current;
@@ -123,12 +200,18 @@ public static class SystemAccentColorService
 
         var res = app.Resources;
 
+        var primaryBrush = CreatePrimaryAccentBrush(accent, CurrentStyleMode);
+        var secondaryBrush = CreateSecondaryAccentBrush(secondary, CurrentStyleMode);
+        var tertiaryBrush = CreateTertiaryAccentBrush(accent, tertiary, CurrentStyleMode);
+        var glassBorderBrush = CreateGlassBorderBrush(accent);
+
         // Core Accent Color & Brushes
         res["SystemAccentColor"] = accent;
-        res["SystemAccentColorBrush"] = CreateFrozenBrush(accent);
-        res["SystemAccentColorPrimaryBrush"] = CreateFrozenBrush(accent);
-        res["SystemAccentColorSecondaryBrush"] = CreateFrozenBrush(secondary);
-        res["SystemAccentColorTertiaryBrush"] = CreateFrozenBrush(tertiary);
+        res["SystemAccentColorBrush"] = primaryBrush;
+        res["SystemAccentColorPrimaryBrush"] = primaryBrush;
+        res["SystemAccentColorSecondaryBrush"] = secondaryBrush;
+        res["SystemAccentColorTertiaryBrush"] = tertiaryBrush;
+        res["SystemAccentGlassBorderBrush"] = glassBorderBrush;
         res["SystemAccentColorForegroundBrush"] = CreateFrozenBrush(GetContrastingForeground(accent));
 
         // Selection & Drag/Drop Fills
@@ -139,13 +222,13 @@ public static class SystemAccentColorService
         // Universal Fluent ToggleSwitch Active Track Brushes
         // NOTE: The third-party WPF-UI library (Wpf.Ui.dll) specifically looks up these exact string keys
         // in its internal ToggleSwitch control template. Setting them here dynamically repaints the toggle switch track.
-        res["ToggleSwitchFillOn"] = CreateFrozenBrush(accent);
-        res["ToggleSwitchFillOnPointerOver"] = CreateFrozenBrush(secondary);
-        res["ToggleSwitchFillOnPressed"] = CreateFrozenBrush(tertiary);
+        res["ToggleSwitchFillOn"] = primaryBrush;
+        res["ToggleSwitchFillOnPointerOver"] = secondaryBrush;
+        res["ToggleSwitchFillOnPressed"] = tertiaryBrush;
         res["ToggleSwitchFillOnDisabled"] = CreateFrozenBrush(accent, 0.5);
-        res["ToggleSwitchStrokeOn"] = CreateFrozenBrush(accent);
-        res["ToggleSwitchStrokeOnPointerOver"] = CreateFrozenBrush(secondary);
-        res["ToggleSwitchStrokeOnPressed"] = CreateFrozenBrush(tertiary);
+        res["ToggleSwitchStrokeOn"] = primaryBrush;
+        res["ToggleSwitchStrokeOnPointerOver"] = secondaryBrush;
+        res["ToggleSwitchStrokeOnPressed"] = tertiaryBrush;
 
         // Synchronize ThemeTokens C# cache
         ThemeTokens.AccentPrimaryColor = accent;

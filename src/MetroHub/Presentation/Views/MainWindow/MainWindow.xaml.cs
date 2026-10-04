@@ -473,6 +473,7 @@ public partial class MainWindow : BorderlessFluentWindow
     private void LoadData()
     {
         Settings = StorageService.LoadSettings();
+        SystemAccentColorService.SetStyleMode(Settings.AccentStyle);
         Application.Current.Resources["TileCornerRadius"] = new CornerRadius(Settings.TileCornerRadius);
         Tiles = StorageService.LoadLayout();
         Groups = StorageService.LoadGroups();
