@@ -291,6 +291,7 @@
         <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="SelectionBrush" Value="#40FFFFFF" />
         <Setter Property="SelectionOpacity" Value="0.6" />
+        <Setter Property="Padding" Value="0" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="UseLayoutRounding" Value="True" />
@@ -319,6 +320,7 @@
                                           Grid.Column="1"
                                           VerticalAlignment="Center"
                                           Focusable="False"
+                                          Margin="{TemplateBinding Padding}"
                                           HorizontalScrollBarVisibility="Hidden"
                                           VerticalScrollBarVisibility="Hidden" />
                         </Grid>

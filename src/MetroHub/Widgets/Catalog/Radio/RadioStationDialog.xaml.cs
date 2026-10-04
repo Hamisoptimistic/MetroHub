@@ -252,7 +252,8 @@ public partial class RadioStationDialog : MetroDialog
 
                     if (results.Count == 0)
                     {
-                        RadioSearchPlaceholderText.Text = $"No stations found matching \"{trimmed}\".";
+                        string displayQuery = trimmed.Length > 36 ? trimmed[..36] + "..." : trimmed;
+                        RadioSearchPlaceholderText.Text = $"No stations found matching \"{displayQuery}\".";
                         RadioSearchPlaceholderText.Visibility = Visibility.Visible;
                         PrimaryActionButton.IsEnabled = false;
                         return;

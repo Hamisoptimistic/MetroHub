@@ -171,6 +171,7 @@
                             <Grid Grid.Row="0">
                                 <TextBox x:Name="RadioSearchInput"
                                          controls:InputHelper.Icon="Search24"
+                                         Padding="0,0,28,0"
                                          TextChanged="OnRadioSearchInputTextChanged"
                                          PreviewKeyDown="OnRadioSearchInputKeyDown" />
                                 <TextBlock x:Name="RadioSearchWatermark"
@@ -180,7 +181,7 @@
                                            Foreground="{DynamicResource TextSubtleBrush}"
                                            IsHitTestVisible="False"
                                            VerticalAlignment="Center"
-                                           Margin="34,0,10,0" />
+                                           Margin="34,0,28,0" />
                                 <ui:ProgressRing x:Name="RadioSearchSpinner"
                                                  Width="14" Height="14"
                                                  IsIndeterminate="True"
@@ -216,6 +217,11 @@
                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                Foreground="{DynamicResource TextSubtleBrush}"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxWidth="420"
+                                               Margin="20"
+                                               TextAlignment="Center"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
                                                IsHitTestVisible="False"
