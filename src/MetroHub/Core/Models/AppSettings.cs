@@ -7,7 +7,7 @@ public sealed class AppSettings
     public string HotkeyDisplayString { get; set; } = "Ctrl + `";
 
     public string ThemeMode { get; set; } = "System"; // System, Dark, Light
-    public AccentStyleMode AccentStyle { get; set; } = AccentStyleMode.StudioGlass; // StudioGlass, Flat
+    public AccentStyleMode AccentStyle { get; set; } = AccentStyleMode.Flat; // Flat, StudioGlass
     public string BackdropType { get; set; } = "Mica"; // Mica, MicaAlt, Acrylic, DesktopWallpaper, Wallpaper, BingDaily, SpotlightDaily
     public string? CustomWallpaperPath { get; set; }
     public double WallpaperDimOpacity { get; set; } = 0.50; // 0.35, 0.50, 0.65

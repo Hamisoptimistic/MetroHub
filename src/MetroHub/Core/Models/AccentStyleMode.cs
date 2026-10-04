@@ -8,10 +8,10 @@ public enum AccentStyleMode
     /// <summary>
     /// Classic flat solid color matching standard Windows 11 presentation.
     /// </summary>
-    Flat,
+    Flat = 0,
 
     /// <summary>
     /// Apple Studio Glass / Fluent luminous gradient with a specular top catch and rich accent base.
     /// </summary>
-    StudioGlass
+    StudioGlass = 1
 }

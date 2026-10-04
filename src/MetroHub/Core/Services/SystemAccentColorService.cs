@@ -20,9 +20,9 @@ public static class SystemAccentColorService
     public static string CurrentAccentHex { get; private set; } = "#4CC2FF";
 
     /// <summary>
-    /// Current artistic accent rendering style (e.g. StudioGlass vs Flat). Defaults to StudioGlass.
+    /// Current artistic accent rendering style (e.g. StudioGlass vs Flat). Defaults to Flat.
     /// </summary>
-    public static AccentStyleMode CurrentStyleMode { get; private set; } = AccentStyleMode.StudioGlass;
+    public static AccentStyleMode CurrentStyleMode { get; private set; } = AccentStyleMode.Flat;
 
     /// <summary>
     /// Updates the active accent rendering style mode and dynamically repaints application resources.
@@ -183,14 +183,19 @@ public static class SystemAccentColorService
     }
 
     /// <summary>
-    /// Creates a specular top-lit glass edge border brush.
+    /// Creates a specular top-lit glass edge border brush (or solid accent in Flat mode).
     /// </summary>
-    public static Brush CreateGlassBorderBrush(Color accent)
+    public static Brush CreateGlassBorderBrush(Color accent, AccentStyleMode mode = AccentStyleMode.Flat)
     {
-        Color topEdge = Lighten(accent, 0.35f);
-        var brush = new LinearGradientBrush(topEdge, accent, new Point(0, 0), new Point(0, 1));
-        brush.Freeze();
-        return brush;
+        if (mode == AccentStyleMode.StudioGlass)
+        {
+            Color topEdge = Lighten(accent, 0.35f);
+            var brush = new LinearGradientBrush(topEdge, accent, new Point(0, 0), new Point(0, 1));
+            brush.Freeze();
+            return brush;
+        }
+
+        return CreateFrozenBrush(accent);
     }
 
     private static void ApplyToResources(Color accent, Color secondary, Color tertiary)
@@ -203,7 +208,7 @@ public static class SystemAccentColorService
         var primaryBrush = CreatePrimaryAccentBrush(accent, CurrentStyleMode);
         var secondaryBrush = CreateSecondaryAccentBrush(secondary, CurrentStyleMode);
         var tertiaryBrush = CreateTertiaryAccentBrush(accent, tertiary, CurrentStyleMode);
-        var glassBorderBrush = CreateGlassBorderBrush(accent);
+        var glassBorderBrush = CreateGlassBorderBrush(accent, CurrentStyleMode);
 
         // Core Accent Color & Brushes
         res["SystemAccentColor"] = accent;

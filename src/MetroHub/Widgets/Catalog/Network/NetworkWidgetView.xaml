@@ -98,8 +98,8 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
             <Setter Property="FontFamily" Value="{DynamicResource AppDisplayFontFamily}" />
-            <Setter Property="FontSize" Value="{DynamicResource TypeDisplayFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeDisplayFontWeight}" />
+            <Setter Property="FontSize" Value="36" />
+            <Setter Property="FontWeight" Value="Bold" />
             <Setter Property="Focusable" Value="False" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -299,7 +299,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Top Header: [ 🖧 ] Ethernet -->
-                    <Grid Grid.Row="0" Height="26" Margin="0,0,0,10">
+                    <Grid Grid.Row="0" Height="28" Margin="0,0,0,10">
                         <!-- Left: Icon + Title (Alters to Connected / No Internet / Disconnected dynamically) -->
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="{Binding EthernetPanelIcon}"
@@ -611,7 +611,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Top Header: [ 📶 ] Wi-Fi  [ RefreshButton ] [ ToggleSwitch ] -->
-                    <Grid Grid.Row="0" MinHeight="28" Margin="0,0,0,10">
+                    <Grid Grid.Row="0" Height="28" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -1174,7 +1174,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Top Header: [ 🛡️ ] Disable Network Adapters   [ Refresh Button ] -->
-                    <Grid Grid.Row="0" Height="26" Margin="0,0,0,10">
+                    <Grid Grid.Row="0" Height="28" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -1497,9 +1497,9 @@
                             <!-- Left: Download (Flush with left end of separator) -->
                             <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center">
                                 <TextBlock Text="Download"
-                                           FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           FontSize="{DynamicResource TypeBodyFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            Margin="0,0,0,3" />
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="{Binding SpeedTestDownloadDisplay}"
@@ -1510,7 +1510,7 @@
                                                TextOptions.TextFormattingMode="Ideal"
                                                Typography.NumeralAlignment="Tabular" />
                                     <TextBlock Text="Mbps"
-                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                               FontSize="{DynamicResource TypeBodyFontSize}"
                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Bottom"
@@ -1521,9 +1521,9 @@
                             <!-- Right: Upload (Flush with right end of separator) -->
                             <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
                                 <TextBlock Text="Upload"
-                                           FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           FontSize="{DynamicResource TypeBodyFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            HorizontalAlignment="Right"
                                            Margin="0,0,0,3" />
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -1535,7 +1535,7 @@
                                                TextOptions.TextFormattingMode="Ideal"
                                                Typography.NumeralAlignment="Tabular" />
                                     <TextBlock Text="Mbps"
-                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                               FontSize="{DynamicResource TypeBodyFontSize}"
                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                Foreground="{DynamicResource TextMutedBrush}"
                                                VerticalAlignment="Bottom"
@@ -1565,11 +1565,11 @@
                             <!-- Left: Ping (Flush with left end of separator) -->
                             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
                                 <TextBlock Text="Ping"
-                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontSize="{DynamicResource TypeBodyFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="{DynamicResource TextSubtleBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            VerticalAlignment="Center"
-                                           Margin="0,0,4,0" />
+                                           Margin="0,0,5,0" />
                                 <TextBlock Text="{Binding SpeedTestPingDisplay}"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
@@ -1597,11 +1597,11 @@
                             <!-- Right: Jitter (Flush with right end of separator) -->
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                                 <TextBlock Text="Jitter"
-                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontSize="{DynamicResource TypeBodyFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="{DynamicResource TextSubtleBrush}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
                                            VerticalAlignment="Center"
-                                           Margin="0,0,4,0" />
+                                           Margin="0,0,5,0" />
                                 <TextBlock Text="{Binding SpeedTestJitterDisplay}"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
