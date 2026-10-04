@@ -15,12 +15,14 @@ using Xunit;
 
 namespace MetroHub.Tests;
 
+[Collection("StorageTests")]
 public class PersistenceAndDecouplingTests : IDisposable
 {
     private readonly string _sandboxDir;
 
     public PersistenceAndDecouplingTests()
     {
+        StorageService.ResetPending();
         _sandboxDir = Path.Combine(Path.GetTempPath(), "MetroHub_TestSandbox_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_sandboxDir);
         AppPaths.CustomAppDataDir = _sandboxDir;
@@ -28,15 +30,24 @@ public class PersistenceAndDecouplingTests : IDisposable
 
     public void Dispose()
     {
-        AppPaths.CustomAppDataDir = null;
         try
         {
-            if (Directory.Exists(_sandboxDir))
-            {
-                Directory.Delete(_sandboxDir, recursive: true);
-            }
+            StorageService.Flush();
+            StorageService.ResetPending();
         }
         catch { }
+        finally
+        {
+            AppPaths.CustomAppDataDir = null;
+            try
+            {
+                if (Directory.Exists(_sandboxDir))
+                {
+                    Directory.Delete(_sandboxDir, recursive: true);
+                }
+            }
+            catch { }
+        }
     }
 
     [Fact]
@@ -63,6 +74,7 @@ public class PersistenceAndDecouplingTests : IDisposable
         var loaded = StorageService.LoadLayout();
         Assert.NotNull(loaded);
         Assert.Contains(loaded, t => t.Id == "test_persistence_tile_1");
+        StorageService.Flush();
     }
 
     [Fact]
@@ -75,7 +87,9 @@ public class PersistenceAndDecouplingTests : IDisposable
                 Id = "test_group_flush_1",
                 Title = "Flush Group",
                 Col = 0,
-                Row = 0
+                Row = 0,
+                X = 10,
+                Y = 74
             }
         };
 
@@ -85,6 +99,7 @@ public class PersistenceAndDecouplingTests : IDisposable
         var loaded = StorageService.LoadGroups();
         Assert.NotNull(loaded);
         Assert.Contains(loaded, g => g.Id == "test_group_flush_1");
+        StorageService.Flush();
     }
 
     [Fact]
@@ -99,6 +114,7 @@ public class PersistenceAndDecouplingTests : IDisposable
         var loaded = StorageService.LoadSettings();
         Assert.NotNull(loaded);
         Assert.Equal(72, loaded.GridBaseSize);
+        StorageService.Flush();
     }
 
     [Fact]

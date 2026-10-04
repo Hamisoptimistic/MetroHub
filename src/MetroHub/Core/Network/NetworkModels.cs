@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CommunityToolkit.Mvvm.ComponentModel;
 using MetroHub.Core.Network.Interop;
 
 namespace MetroHub.Core.Network;
@@ -21,7 +22,7 @@ public enum WifiStandard
     Wifi7   // 802.11be (EHT)
 }
 
-public sealed class EthernetInfo
+public sealed class EthernetInfo : ObservableObject
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -76,7 +77,7 @@ public sealed class EthernetInfo
     }
 }
 
-public sealed class WifiNetworkItem
+public sealed class WifiNetworkItem : ObservableObject
 {
     public string Ssid { get; set; } = string.Empty;
     public int SignalQuality { get; set; } // 0 - 100
@@ -118,7 +119,7 @@ public sealed class WifiNetworkItem
     public int Channel { get; set; }
 }
 
-public sealed class WifiConnectionDetails
+public sealed class WifiConnectionDetails : ObservableObject
 {
     public string Ssid { get; set; } = string.Empty;
     public string AdapterDescription { get; set; } = string.Empty;
@@ -156,7 +157,7 @@ public sealed class WifiConnectionDetails
     public string LinkSpeedString { get; set; } = "--";
 }
 
-public sealed class ThroughputMetrics
+public sealed class ThroughputMetrics : ObservableObject
 {
     public double DownloadBytesPerSec { get; set; }
     public double UploadBytesPerSec { get; set; }
@@ -198,7 +199,7 @@ public sealed class ThroughputSample
     public DateTime Timestamp { get; init; } = DateTime.UtcNow;
 }
 
-public sealed class LatencyMetrics
+public sealed class LatencyMetrics : ObservableObject
 {
     public long PingMs { get; set; } = -1;
     public string TargetHost { get; set; } = "1.1.1.1";
@@ -230,7 +231,7 @@ public enum ConnectivityLevel
     InternetAccess
 }
 
-public sealed class NetworkHealthStatus
+public sealed class NetworkHealthStatus : ObservableObject
 {
     public ConnectivityLevel Connectivity { get; set; } = ConnectivityLevel.None;
     public string ConnectivityLabel => Connectivity switch
@@ -264,7 +265,7 @@ public enum PhysicalAdapterType
     UsbTethering
 }
 
-public sealed class PhysicalAdapterInfo
+public sealed class PhysicalAdapterInfo : ObservableObject
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;

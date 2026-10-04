@@ -31,9 +31,9 @@ public partial class RadioStationDialog : MetroDialog
     private StreamProbeResult? _lastProbeResult;
     private bool _userManuallyEditedRadioName;
 
-    private static readonly Brush ProbeStatusHintBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xA5, 0xFF, 0xFF, 0xFF));
-    private static readonly Brush ProbeStatusActiveBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
-    private static readonly Brush SearchStatusSelectedBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF));
+    private static readonly Brush ProbeStatusHintBrush = ThemeTokens.TextSecondaryBrush;
+    private static readonly Brush ProbeStatusActiveBrush = ThemeTokens.TextPrimaryBrush;
+    private static readonly Brush SearchStatusSelectedBrush = ThemeTokens.TextPrimaryBrush;
 
     internal ObservableCollection<RadioSearchResultItem> RadioSearchResults { get; } = new();
     internal ObservableCollection<RadioCategory> RadioCategories { get; } = new();

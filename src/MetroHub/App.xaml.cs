@@ -12,10 +12,10 @@ public partial class App : Application
 {
     private const string EventName = "MetroHub_App_Wake_Event";
     private const string MutexName = "MetroHub_App_SingleInstance_Mutex";
-    private static Mutex? _singleInstanceMutex;
-    private static bool _ownsMutex;
-    private static EventWaitHandle? _wakeEvent;
-    private static RegisteredWaitHandle? _registeredWakeHandle;
+    private Mutex? _singleInstanceMutex;
+    private bool _ownsMutex;
+    private EventWaitHandle? _wakeEvent;
+    private RegisteredWaitHandle? _registeredWakeHandle;
     private TaskbarIcon? _notifyIcon;
     private MainWindow? _mainWindow;
 
@@ -106,7 +106,11 @@ public partial class App : Application
                     {
                         _mainWindow?.ShowToast($"Recovered from error: {args.Exception.Message}", isError: true);
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        // Suppress toast failure during crash recovery so it does not trigger a secondary crash
+                        Serilog.Log.Debug(ex, "Failed to display unhandled exception toast notification");
+                    }
                 });
             }
         };
@@ -132,7 +136,11 @@ public partial class App : Application
                 using var wakeEvent = EventWaitHandle.OpenExisting(EventName);
                 wakeEvent.Set();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // First instance may be shutting down; proceed with shutdown cleanly
+                Serilog.Log.Debug(ex, "Could not signal existing instance wake event");
+            }
 
             Shutdown();
             return;
@@ -157,7 +165,11 @@ public partial class App : Application
                 -1,
                 false);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            // If named wait handle registration fails, continue booting without cross-process wake activation
+            Serilog.Log.Warning(ex, "Failed to register single-instance wake event listener");
+        }
 
         base.OnStartup(e);
 
@@ -267,7 +279,11 @@ public partial class App : Application
                 {
                     _singleInstanceMutex.ReleaseMutex();
                 }
-                catch { }
+                catch (ApplicationException ex)
+                {
+                    // Mutex was already released or not owned on this thread
+                    Serilog.Log.Debug(ex, "Mutex was not owned or already released on exit");
+                }
             }
             _singleInstanceMutex.Dispose();
             _singleInstanceMutex = null;

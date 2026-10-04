@@ -12,7 +12,7 @@ namespace MetroHub.Core.Services;
 
 public sealed class StorageService
 {
-    private static readonly string AppDataDir = AppPaths.AppDataDir;
+    private static string AppDataDir => AppPaths.AppDataDir;
 
     private static string LayoutPath => AppPaths.LayoutPath;
     private static string LayoutBakPath => AppPaths.LayoutBakPath;
@@ -486,6 +486,20 @@ public sealed class StorageService
         if (task != null && !task.IsCompleted)
         {
             Safe.Try(() => task.Wait(1000), context: "StorageService.Flush.Wait");
+        }
+    }
+
+    /// <summary>
+    /// Discards any pending in-memory write buffers without writing them to disk.
+    /// Used during test cleanup or teardown to prevent delayed asynchronous flushes from leaking.
+    /// </summary>
+    public static void ResetPending()
+    {
+        lock (WriteLock)
+        {
+            _pendingLayoutJson = null;
+            _pendingGroupsJson = null;
+            _pendingSettingsJson = null;
         }
     }
 

@@ -72,7 +72,7 @@
                     <TextBlock Text="Both canvas &amp; sidebar"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                               Foreground="{DynamicResource TextMutedBrush}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center" />
                 </RadioButton>
                 <RadioButton x:Name="WebLinkDestCanvasRadio"
@@ -82,7 +82,7 @@
                     <TextBlock Text="Canvas only"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                               Foreground="{DynamicResource TextMutedBrush}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center" />
                 </RadioButton>
                 <RadioButton x:Name="WebLinkDestSidebarRadio"
@@ -91,7 +91,7 @@
                     <TextBlock Text="Sidebar only"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                               Foreground="{DynamicResource TextMutedBrush}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center" />
                 </RadioButton>
             </StackPanel>

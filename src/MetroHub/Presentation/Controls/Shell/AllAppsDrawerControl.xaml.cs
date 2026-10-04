@@ -11,10 +11,11 @@ using System.Windows.Media.Animation;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Themes;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MetroHub.Presentation.Controls
 {
-    public class AlphabeticalAppGroup
+    public class AlphabeticalAppGroup : ObservableObject
     {
         public string Header { get; set; } = string.Empty;
         public List<CatalogItemModel> Items { get; set; } = new();

@@ -27,8 +27,11 @@ public static class ThemeTokens
     public static Color AccentPrimaryColor { get; internal set; } = Color.FromRgb(0x4C, 0xC2, 0xFF);
     public static Color AccentSecondaryColor { get; internal set; } = Color.FromRgb(0x60, 0xCD, 0xFF);
     public static SolidColorBrush AccentPrimaryBrush { get; internal set; } = CreateFrozenBrush(Color.FromRgb(0x4C, 0xC2, 0xFF));
-    // Typography Brushes
+    // Typography Brushes (2-Tier System: Pure White + Luminous Icy Off-White)
     public static readonly SolidColorBrush TextPrimaryBrush = CreateFrozenBrush(Color.FromRgb(0xFF, 0xFF, 0xFF));
+    public static readonly SolidColorBrush TextSecondaryBrush = CreateFrozenBrush(Color.FromRgb(0xD8, 0xE2, 0xEC));
+    public static readonly SolidColorBrush TextMutedBrush = TextSecondaryBrush;
+    public static readonly SolidColorBrush TextSubtleBrush = TextSecondaryBrush;
     public static readonly SolidColorBrush MenuIconForegroundBrush = CreateFrozenBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF));
 
     public static SolidColorBrush CreateFrozenBrush(Color c)

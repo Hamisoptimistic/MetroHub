@@ -25,41 +25,6 @@
 
     <Window.Resources>
 
-        <Style x:Key="FluentSegmentedTabRadioButtonStyle" TargetType="RadioButton">
-            <Setter Property="OverridesDefaultStyle" Value="True" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Height" Value="28" />
-            <Setter Property="FontSize" Value="{DynamicResource TypeCaptionFontSize}" />
-            <Setter Property="FontWeight" Value="{DynamicResource TypeCaptionFontWeight}" />
-            <Setter Property="Foreground" Value="#80FFFFFF" />
-            <Setter Property="Cursor" Value="Hand" />
-            <Setter Property="HorizontalContentAlignment" Value="Center" />
-            <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="TabBorder"
-                                Background="Transparent"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                Padding="14,0"
-                                >
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="TabBorder" Property="Background" Value="#15FFFFFF" />
-                                <Setter Property="Foreground" Value="#B0FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="TabBorder" Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
-                                <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
 
         <Style x:Key="SuggestionListBoxItemStyle" TargetType="ListBoxItem">
             <Setter Property="OverridesDefaultStyle" Value="True" />
@@ -138,26 +103,22 @@
                         </Grid.RowDefinitions>
 
                         <!-- Two-Tab Segmented Selector -->
-                        <Border Grid.Row="0"
-                                Background="#12FFFFFF"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                Padding="2"
-                                HorizontalAlignment="Left"
-                                Margin="0,0,0,10">
-                            <StackPanel Orientation="Horizontal">
-                                <RadioButton x:Name="RadioSearchTabRadio"
-                                             Style="{StaticResource FluentSegmentedTabRadioButtonStyle}"
-                                             GroupName="RadioAddTabs"
-                                             Content="Search Stations"
-                                             IsChecked="True"
-                                             Checked="OnRadioTabChanged" />
-                                <RadioButton x:Name="RadioDirectTabRadio"
-                                             Style="{StaticResource FluentSegmentedTabRadioButtonStyle}"
-                                             GroupName="RadioAddTabs"
-                                             Content="Direct Stream URL"
-                                             Checked="OnRadioTabChanged" />
-                            </StackPanel>
-                        </Border>
+                        <StackPanel Grid.Row="0"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Left"
+                                    Margin="0,0,0,12">
+                            <RadioButton x:Name="RadioSearchTabRadio"
+                                         Style="{StaticResource MetroTabItemStyle}"
+                                         GroupName="RadioAddTabs"
+                                         Content="Search Stations"
+                                         IsChecked="True"
+                                         Checked="OnRadioTabChanged" />
+                            <RadioButton x:Name="RadioDirectTabRadio"
+                                         Style="{StaticResource MetroTabItemStyle}"
+                                         GroupName="RadioAddTabs"
+                                         Content="Direct Stream URL"
+                                         Checked="OnRadioTabChanged" />
+                        </StackPanel>
 
                         <!-- TAB 1: Search Stations Panel -->
                         <Grid Grid.Row="1" x:Name="RadioSearchPanel" Visibility="Visible">

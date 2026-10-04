@@ -5,6 +5,7 @@ using Xunit;
 
 namespace MetroHub.Tests;
 
+[Collection("StorageTests")]
 public sealed class AppPathsTests : IDisposable
 {
     private readonly string _testRoot;

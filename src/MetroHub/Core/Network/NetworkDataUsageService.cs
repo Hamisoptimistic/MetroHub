@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using Windows.Networking.Connectivity;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MetroHub.Core.Network;
 
@@ -15,7 +16,7 @@ public enum DataUsageTimeframe
     Last30Days
 }
 
-public sealed class DataUsageResult
+public sealed partial class DataUsageResult : ObservableObject
 {
     public ulong BytesReceived { get; set; }
     public ulong BytesSent { get; set; }

@@ -492,10 +492,29 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         RefreshDataUsageAsync();
     }
 
-    public bool IsSessionTimeframe => SelectedDataUsageTimeframe == DataUsageTimeframe.Session;
-    public bool Is24HoursTimeframe => SelectedDataUsageTimeframe == DataUsageTimeframe.Last24Hours;
-    public bool Is7DaysTimeframe => SelectedDataUsageTimeframe == DataUsageTimeframe.Last7Days;
-    public bool Is30DaysTimeframe => SelectedDataUsageTimeframe == DataUsageTimeframe.Last30Days;
+    public bool IsSessionTimeframe
+    {
+        get => SelectedDataUsageTimeframe == DataUsageTimeframe.Session;
+        set { if (value) SelectedDataUsageTimeframe = DataUsageTimeframe.Session; }
+    }
+
+    public bool Is24HoursTimeframe
+    {
+        get => SelectedDataUsageTimeframe == DataUsageTimeframe.Last24Hours;
+        set { if (value) SelectedDataUsageTimeframe = DataUsageTimeframe.Last24Hours; }
+    }
+
+    public bool Is7DaysTimeframe
+    {
+        get => SelectedDataUsageTimeframe == DataUsageTimeframe.Last7Days;
+        set { if (value) SelectedDataUsageTimeframe = DataUsageTimeframe.Last7Days; }
+    }
+
+    public bool Is30DaysTimeframe
+    {
+        get => SelectedDataUsageTimeframe == DataUsageTimeframe.Last30Days;
+        set { if (value) SelectedDataUsageTimeframe = DataUsageTimeframe.Last30Days; }
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TotalCombinedBytes))]

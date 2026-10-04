@@ -51,15 +51,19 @@
     <!-- Responsive Hub UI Scale Factor Token (Default 1.0 = 100%) -->
     <sys:Double x:Key="AppUiScale">1.0</sys:Double>
 
-    <!-- Harmonized Text Contrast Colors & Brushes -->
+    <!-- Harmonized 2-Tier Text System (Pure White + Luminous Icy Off-White) -->
     <Color x:Key="TextPrimaryColor">#FFFFFF</Color>
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}" />
     <Color x:Key="TextSecondaryColor">#D8E2EC</Color>
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}" />
-    <Color x:Key="TextMutedColor">#95A8BE</Color>
-    <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}" />
-    <Color x:Key="TextSubtleColor">#70FFFFFF</Color>
-    <SolidColorBrush x:Key="TextSubtleBrush" Color="{StaticResource TextSubtleColor}" />
+
+    <!-- Unified Aliases: All subtitles, descriptions, and labels inherit the single luminous off-white -->
+    <Color x:Key="TextMutedColor">#D8E2EC</Color>
+    <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextSecondaryColor}" />
+    <Color x:Key="TextSubtleColor">#D8E2EC</Color>
+    <SolidColorBrush x:Key="TextSubtleBrush" Color="{StaticResource TextSecondaryColor}" />
+
+    <!-- Utility: Truly Disabled Controls Only -->
     <Color x:Key="TextDisabledColor">#45FFFFFF</Color>
     <SolidColorBrush x:Key="TextDisabledBrush" Color="{StaticResource TextDisabledColor}" />
 
