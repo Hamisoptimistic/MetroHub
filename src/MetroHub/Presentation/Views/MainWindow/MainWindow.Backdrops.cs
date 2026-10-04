@@ -30,8 +30,6 @@ public partial class MainWindow
         ShowToast,
         UpdateBackdropMenuChecks);
 
-    private CancellationTokenSource? _toastCts;
-
     private void OnBackdropMicaClick(object sender, RoutedEventArgs e)
     {
         Settings.BackdropType = "Mica";
@@ -156,31 +154,7 @@ public partial class MainWindow
 
     public void ShowToast(string message, bool isError = false)
     {
-        if (NotificationToast == null || NotificationToastText == null || NotificationToastIcon == null) return;
-
-        _toastCts?.Cancel();
-        _toastCts?.Dispose();
-        _toastCts = new CancellationTokenSource();
-        var token = _toastCts.Token;
-
-        NotificationToastText.Text = message;
-        NotificationToastIcon.Symbol = isError ? Wpf.Ui.Controls.SymbolRegular.Warning24 : Wpf.Ui.Controls.SymbolRegular.Info24;
-        NotificationToastIcon.Foreground = isError
-            ? ThemeTokens.StatusErrorBrush
-            : ThemeTokens.StatusInfoBrush;
-
-        var fadeIn = new System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(200));
-        NotificationToast.BeginAnimation(UIElement.OpacityProperty, fadeIn);
-
-        Task.Delay(4000, token).ContinueWith(t =>
-        {
-            if (t.IsCanceled) return;
-            Dispatcher.InvokeAsync(() =>
-            {
-                var fadeOut = new System.Windows.Media.Animation.DoubleAnimation(1.0, 0.0, TimeSpan.FromMilliseconds(250));
-                NotificationToast.BeginAnimation(UIElement.OpacityProperty, fadeOut);
-            });
-        }, token);
+        // Notification toast UI has been removed from MainWindow. Preserving signature for callers.
     }
 
     private void OnContentScrollViewerScrollChanged(object sender, ScrollChangedEventArgs e)

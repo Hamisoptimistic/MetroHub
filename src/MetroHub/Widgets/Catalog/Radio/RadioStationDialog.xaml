@@ -254,25 +254,33 @@
                                          TextChanged="OnRadioDirectUrlTextChanged"
                                          KeyDown="OnRadioDirectInputKeyDown" />
 
-                                <StackPanel Orientation="Horizontal" Margin="0,6,0,0" MinHeight="18">
-                                    <ui:ProgressRing x:Name="RadioProbeSpinner"
-                                                     Width="12" Height="12"
-                                                     IsIndeterminate="True"
-                                                     Visibility="Collapsed"
-                                                     Margin="0,0,6,0" />
-                                    <ui:SymbolIcon x:Name="RadioProbeIcon"
-                                                   Symbol="Checkmark24"
-                                                   FontSize="13"
-                                                   Visibility="Collapsed"
-                                                   Margin="0,0,6,0"
-                                                   VerticalAlignment="Center" />
-                                    <TextBlock x:Name="RadioProbeStatusText"
+                                <Grid Margin="0,6,0,0" MinHeight="18">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:ProgressRing x:Name="RadioProbeSpinner"
+                                                         Width="12" Height="12"
+                                                         IsIndeterminate="True"
+                                                         Visibility="Collapsed"
+                                                         Margin="0,0,6,0" />
+                                        <ui:SymbolIcon x:Name="RadioProbeIcon"
+                                                       Symbol="Checkmark24"
+                                                       FontSize="13"
+                                                       Visibility="Collapsed"
+                                                       Margin="0,0,6,0"
+                                                       VerticalAlignment="Center" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1"
+                                               x:Name="RadioProbeStatusText"
                                                Text="Supports MP3/AAC/OGG streams or single-station .pls/.m3u"
                                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                                Foreground="{DynamicResource TextSubtleBrush}"
+                                               TextWrapping="Wrap"
                                                VerticalAlignment="Center" />
-                                </StackPanel>
+                                </Grid>
 
                                 <TextBlock Text="Station Name"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"

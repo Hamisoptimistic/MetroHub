@@ -351,7 +351,8 @@
                                                    FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                                    Foreground="{DynamicResource TextPrimaryBrush}"
                                                    VerticalAlignment="Center"
-                                                   TextTrimming="CharacterEllipsis" />
+                                                   TextTrimming="CharacterEllipsis"
+                                                   MaxWidth="180" />
                                         <ui:SymbolIcon x:Name="EditPencil"
                                                        Symbol="Edit16"
                                                        FontSize="12"

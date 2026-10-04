@@ -606,24 +606,6 @@
             </Grid>
         </ScrollViewer>
 
-        <!-- Notification Toast Overlay -->
-        <Border x:Name="NotificationToast"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Bottom"
-                Margin="0,0,0,50"
-                Background="{DynamicResource ShellToastBackground}"
-                BorderBrush="{DynamicResource DialogShellBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="{DynamicResource ToastCornerRadius}"
-                Padding="16,10"
-                Opacity="0"
-                IsHitTestVisible="False"
-                Panel.ZIndex="3000">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <ui:SymbolIcon x:Name="NotificationToastIcon" Symbol="Info24" FontSize="18" Foreground="{DynamicResource StatusInfoBrush}" Margin="0,0,10,0" />
-                <TextBlock x:Name="NotificationToastText" Text="" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="{DynamicResource TypeBodyFontSize}" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" VerticalAlignment="Center" />
-            </StackPanel>
-        </Border>
         </Grid>
 
         <!-- All Apps Slide-out Drawer Host (Clipped to Column 1 so it cannot bleed over Sidebar Rail) -->

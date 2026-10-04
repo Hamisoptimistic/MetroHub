@@ -156,19 +156,27 @@
                 </StackPanel>
             </Button>
 
-            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+            <Grid Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
                 <ui:ProgressRing x:Name="WeatherActionSpinner"
+                                 Grid.Column="0"
                                  Width="14" Height="14"
                                  IsIndeterminate="True"
                                  Visibility="Collapsed"
-                                 Margin="0,0,6,0" />
+                                 Margin="0,0,6,0"
+                                 VerticalAlignment="Center" />
                 <TextBlock x:Name="WeatherStatusMessage"
+                           Grid.Column="1"
                            FontSize="{DynamicResource TypeCaptionFontSize}"
                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
                            Foreground="{DynamicResource StatusErrorBrush}"
                            TextWrapping="Wrap"
+                           VerticalAlignment="Center"
                            Visibility="Collapsed" />
-            </StackPanel>
+            </Grid>
         </StackPanel>
 
         <!-- Footer Action Buttons -->
