@@ -46,55 +46,64 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <!-- Seamless border-to-border card container -->
-                        <Border x:Name="TileBorder"
-                                Background="Transparent"
-                                BorderBrush="{DynamicResource WidgetDividerBrush}"
-                                BorderThickness="1"
-                                Margin="0,0,-1,-1"
-                                >
-                            <Grid ClipToBounds="True">
-                                <!-- Chromatic Multi-Orb Fluid Mesh Visualizer (Active Station Tile) -->
-                                <radio:AtmosphericAuraControl IsActive="{Binding IsPlaying}"
-                                                              IsBuffering="{Binding IsBuffering}"
-                                                              Category="{Binding Category}"
-                                                              HorizontalAlignment="Stretch"
-                                                              VerticalAlignment="Stretch" />
+                        <Grid>
+                            <!-- Seamless border-to-border card container (structural dividers: Right & Bottom only) -->
+                            <Border x:Name="TileBorder"
+                                    Background="Transparent"
+                                    BorderBrush="{DynamicResource WidgetDividerBrush}"
+                                    BorderThickness="0,0,1,1"
+                                    Margin="0,0,-1,-1">
+                                <Grid ClipToBounds="True">
+                                    <!-- Chromatic Multi-Orb Fluid Mesh Visualizer (Active Station Tile) -->
+                                    <radio:AtmosphericAuraControl IsActive="{Binding IsPlaying}"
+                                                                  IsBuffering="{Binding IsBuffering}"
+                                                                  Category="{Binding Category}"
+                                                                  HorizontalAlignment="Stretch"
+                                                                  VerticalAlignment="Stretch" />
 
-                                <!-- Standard Station Card Content: Clean, Centered Station Title -->
-                                <TextBlock x:Name="StationContent"
-                                           Text="{Binding Name}"
-                                           FontFamily="{DynamicResource AppFontFamily}"
-                                           FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                           Foreground="{DynamicResource TextPrimaryBrush}"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           TextAlignment="Center"
-                                           TextWrapping="Wrap"
-                                           TextTrimming="CharacterEllipsis"
-                                           MaxHeight="42"
-                                           Margin="10,6" />
-
-                                <!-- Trailing '+' Add Custom Station Placeholder Card Content -->
-                                <StackPanel x:Name="PlaceholderContent"
-                                            Visibility="Collapsed"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center">
-                                    <ui:SymbolIcon Symbol="Add24"
-                                                   FontSize="18"
-                                                   Foreground="{DynamicResource TextSubtleBrush}"
-                                                   HorizontalAlignment="Center" />
-                                    <TextBlock Text="Custom Station"
+                                    <!-- Standard Station Card Content: Clean, Centered Station Title -->
+                                    <TextBlock x:Name="StationContent"
+                                               Text="{Binding Name}"
                                                FontFamily="{DynamicResource AppFontFamily}"
-                                               FontSize="{DynamicResource TypeCaptionFontSize}"
-                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                               Foreground="{DynamicResource TextSubtleBrush}"
-                                               Margin="0,3,0,0"
-                                               HorizontalAlignment="Center" />
-                                </StackPanel>
-                            </Grid>
-                        </Border>
+                                               FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxHeight="42"
+                                               Margin="10,6" />
+
+                                    <!-- Trailing '+' Add Custom Station Placeholder Card Content -->
+                                    <StackPanel x:Name="PlaceholderContent"
+                                                Visibility="Collapsed"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center">
+                                        <ui:SymbolIcon Symbol="Add24"
+                                                       FontSize="18"
+                                                       Foreground="{DynamicResource TextSubtleBrush}"
+                                                       HorizontalAlignment="Center" />
+                                        <TextBlock Text="Custom Station"
+                                                   FontFamily="{DynamicResource AppFontFamily}"
+                                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                                   Foreground="{DynamicResource TextSubtleBrush}"
+                                                   Margin="0,3,0,0"
+                                                   HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Hover / Pressed illumination overlay (4-sided hairline glow without layout shifting) -->
+                            <Border x:Name="HoverOverlay"
+                                    BorderThickness="1"
+                                    BorderBrush="Transparent"
+                                    Background="Transparent"
+                                    IsHitTestVisible="False"
+                                    Margin="0,0,-1,-1" />
+                        </Grid>
 
                         <ControlTemplate.Triggers>
                             <!-- Active Playing Station Trigger: Elevates ZIndex without harsh colored border box -->
@@ -109,13 +118,13 @@
 
                             <!-- Hover Reveal Trigger: Illuminates border without shifting layout or adding background -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#55FFFFFF" />
+                                <Setter TargetName="HoverOverlay" Property="BorderBrush" Value="#55FFFFFF" />
                                 <Setter Property="Panel.ZIndex" Value="10" />
                             </Trigger>
 
                             <!-- Pressed State Trigger -->
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#75FFFFFF" />
+                                <Setter TargetName="HoverOverlay" Property="BorderBrush" Value="#75FFFFFF" />
                                 <Setter Property="Panel.ZIndex" Value="10" />
                             </Trigger>
 
