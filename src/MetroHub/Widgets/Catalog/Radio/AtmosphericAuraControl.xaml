@@ -10,94 +10,66 @@
              Background="Transparent"
              ClipToBounds="True">
 
-    <!-- Fluid mesh: 4 irregular blobs like the reference spheres. Brushes are STATIC
-         (rasterized once, cached on GPU) — per-frame motion is transform+opacity only,
-         so no re-raster banding and every color visibly pumps. -->
-    <Grid x:Name="AuraRoot" Opacity="0" Visibility="Collapsed">
-        <Grid.CacheMode>
-            <BitmapCache EnableClearType="False" RenderAtScale="1" />
-        </Grid.CacheMode>
-
-        <!-- Cohesion wash: deep plum unifies the blobs so overlaps read purple, not brown -->
-        <Border HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#3A1544" Opacity="0.85" />
-
-        <!-- Blob PINK (kept red/pink): bottom-center mass, kick-driven -->
-        <Rectangle x:Name="BlobPink" Width="190" Height="140"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,30,0,0"
-                   RenderTransformOrigin="0.5,0.5" RenderOptions.BitmapScalingMode="HighQuality">
-            <Rectangle.RenderTransform>
-                <TransformGroup>
-                    <ScaleTransform x:Name="PinkScale" />
-                    <TranslateTransform x:Name="PinkShift" />
-                </TransformGroup>
-            </Rectangle.RenderTransform>
+    <!-- 2D Fluid Mesh Reactive Aura:
+         Combines a continuous multi-color base spectrum (balanced Cyan, Violet, Pink, Orange)
+         with soft floating radial accent blooms that flare on bass kick transients.
+         Zero geometry transforms (zero border gaps), unified flow breathing. -->
+    <Grid x:Name="AuraRoot" Opacity="0" Visibility="Collapsed" ClipToBounds="True">
+        <!-- Layer 0: Continuous 2D Spectrum Base (Balanced proportions, wide Cyan top-left) -->
+        <Rectangle HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <Rectangle.Fill>
-                <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-                    <GradientStop Offset="0.0" Color="#E8FF2D5E" />
-                    <GradientStop Offset="0.55" Color="#B4C724B1" />
-                    <GradientStop Offset="1.0" Color="#00000000" />
+                <LinearGradientBrush x:Name="BaseGradient" StartPoint="-0.15,-0.15" EndPoint="1.10,1.10">
+                    <GradientStop Offset="0.0" Color="#FF00A3FF" />
+                    <GradientStop Offset="0.28" Color="#FF00B4D8" />
+                    <GradientStop Offset="0.52" Color="#FF9D4EDD" />
+                    <GradientStop Offset="0.76" Color="#FFFF1493" />
+                    <GradientStop Offset="1.0" Color="#FFFF7A00" />
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <!-- Layer 1: Floating CYAN / SKY BLUE Accent (Top-Left) -->
+        <Rectangle x:Name="RectCyan" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.50">
+            <Rectangle.Fill>
+                <RadialGradientBrush x:Name="BrushCyan" Center="0.25,0.22" GradientOrigin="0.25,0.22" RadiusX="0.80" RadiusY="0.80">
+                    <GradientStop Offset="0.0" Color="#FF00D4FF" />
+                    <GradientStop Offset="0.55" Color="#8000A3FF" />
+                    <GradientStop Offset="1.0" Color="#0000A3FF" />
                 </RadialGradientBrush>
             </Rectangle.Fill>
         </Rectangle>
 
-        <!-- Blob CYAN: upper-left mass, snare-driven — overlaps pink at center -->
-        <Rectangle x:Name="BlobCyan" Width="170" Height="130"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-45,-35,0,0"
-                   RenderTransformOrigin="0.5,0.5" RenderOptions.BitmapScalingMode="HighQuality">
-            <Rectangle.RenderTransform>
-                <TransformGroup>
-                    <ScaleTransform x:Name="CyanScale" />
-                    <TranslateTransform x:Name="CyanShift" />
-                </TransformGroup>
-            </Rectangle.RenderTransform>
+        <!-- Layer 2: Floating LILAC / VIOLET Accent (Mid-Upper) -->
+        <Rectangle x:Name="RectViolet" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.45">
             <Rectangle.Fill>
-                <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-                    <GradientStop Offset="0.0" Color="#D600E5FF" />
-                    <GradientStop Offset="0.55" Color="#8C06B6D4" />
-                    <GradientStop Offset="1.0" Color="#00000000" />
+                <RadialGradientBrush x:Name="BrushViolet" Center="0.45,0.35" GradientOrigin="0.45,0.35" RadiusX="0.75" RadiusY="0.75">
+                    <GradientStop Offset="0.0" Color="#FFD8B4FE" />
+                    <GradientStop Offset="0.55" Color="#809D4EDD" />
+                    <GradientStop Offset="1.0" Color="#009D4EDD" />
                 </RadialGradientBrush>
             </Rectangle.Fill>
         </Rectangle>
 
-        <!-- Blob VIOLET: upper-right mass, slow morph drift — overlaps both at center -->
-        <Rectangle x:Name="BlobViolet" Width="175" Height="135"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="45,-35,0,0"
-                   RenderTransformOrigin="0.5,0.5" RenderOptions.BitmapScalingMode="HighQuality">
-            <Rectangle.RenderTransform>
-                <TransformGroup>
-                    <ScaleTransform x:Name="VioletScale" />
-                    <TranslateTransform x:Name="VioletShift" />
-                </TransformGroup>
-            </Rectangle.RenderTransform>
+        <!-- Layer 3: Floating NEON MAGENTA / HOT PINK Accent (Bottom-Center) -->
+        <Rectangle x:Name="RectPink" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.50">
             <Rectangle.Fill>
-                <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-                    <GradientStop Offset="0.0" Color="#D67C3AED" />
-                    <GradientStop Offset="0.55" Color="#7E4A1DB5" />
-                    <GradientStop Offset="1.0" Color="#00000000" />
+                <RadialGradientBrush x:Name="BrushPink" Center="0.52,0.72" GradientOrigin="0.52,0.72" RadiusX="0.80" RadiusY="0.80">
+                    <GradientStop Offset="0.0" Color="#FFFF2A85" />
+                    <GradientStop Offset="0.55" Color="#80FF1493" />
+                    <GradientStop Offset="1.0" Color="#00FF1493" />
                 </RadialGradientBrush>
             </Rectangle.Fill>
         </Rectangle>
 
-        <!-- Blob AMBER: center fleck, treble shimmer — small, sits in the melt zone -->
-        <Rectangle x:Name="BlobAmber" Width="120" Height="90"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="15,0,0,0"
-                   RenderTransformOrigin="0.5,0.5" RenderOptions.BitmapScalingMode="HighQuality">
-            <Rectangle.RenderTransform>
-                <TransformGroup>
-                    <ScaleTransform x:Name="AmberScale" />
-                    <TranslateTransform x:Name="AmberShift" />
-                </TransformGroup>
-            </Rectangle.RenderTransform>
+        <!-- Layer 4: Floating RADIANT SUNSET ORANGE Accent (Bottom-Right, balanced opacity) -->
+        <Rectangle x:Name="RectOrange" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.48">
             <Rectangle.Fill>
-                <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
-                    <GradientStop Offset="0.0" Color="#C6FF9E00" />
-                    <GradientStop Offset="0.55" Color="#6EFFD60A" />
-                    <GradientStop Offset="1.0" Color="#00000000" />
+                <RadialGradientBrush x:Name="BrushOrange" Center="0.80,0.75" GradientOrigin="0.80,0.75" RadiusX="0.75" RadiusY="0.75">
+                    <GradientStop Offset="0.0" Color="#FFFFA200" />
+                    <GradientStop Offset="0.55" Color="#80FF7A00" />
+                    <GradientStop Offset="1.0" Color="#00FF7A00" />
                 </RadialGradientBrush>
             </Rectangle.Fill>
         </Rectangle>
-
-        <!-- Whisper vignette so text stays readable -->
-        <Border HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#0A000000" />
     </Grid>
 </UserControl>

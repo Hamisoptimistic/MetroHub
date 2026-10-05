@@ -23,6 +23,17 @@
             <Setter Property="Margin" Value="0,0,-1,0" />
         </Style>
 
+        <!-- Active Station Luminous Aura Visualizer DataTemplate:
+             Instantiated dynamically ONLY for the active playing/buffering station.
+             Idle stations consume 0 controls, 0 textures, and 0 animation hooks in RAM. -->
+        <DataTemplate x:Key="ActiveStationVisualizerTemplate">
+            <radio:AtmosphericAuraControl IsActive="{Binding IsPlaying}"
+                                          IsBuffering="{Binding IsBuffering}"
+                                          Category="{Binding Category}"
+                                          HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch" />
+        </DataTemplate>
+
         <!-- Transport Button Style: Based on WidgetMicroButtonStyle -->
 
         <!-- Transport Play/Pause Button Style: Fluent Ghost Button matching Prev/Next -->
@@ -54,12 +65,12 @@
                                     BorderThickness="0,0,1,1"
                                     Margin="0,0,-1,-1">
                                 <Grid ClipToBounds="True">
-                                    <!-- Chromatic Multi-Orb Fluid Mesh Visualizer (Active Station Tile) -->
-                                    <radio:AtmosphericAuraControl IsActive="{Binding IsPlaying}"
-                                                                  IsBuffering="{Binding IsBuffering}"
-                                                                  Category="{Binding Category}"
-                                                                  HorizontalAlignment="Stretch"
-                                                                  VerticalAlignment="Stretch" />
+                                    <!-- Lazy Visualizer Host (Instantiated dynamically ONLY when station is playing/buffering) -->
+                                    <ContentControl x:Name="VisualizerHost"
+                                                    Focusable="False"
+                                                    IsHitTestVisible="False"
+                                                    HorizontalContentAlignment="Stretch"
+                                                    VerticalContentAlignment="Stretch" />
 
                                     <!-- Standard Station Card Content: Clean, Centered Station Title -->
                                     <TextBlock x:Name="StationContent"
@@ -106,13 +117,19 @@
                         </Grid>
 
                         <ControlTemplate.Triggers>
-                            <!-- Active Playing Station Trigger: Elevates ZIndex without harsh colored border box -->
+                            <!-- Active Playing Station Trigger: Dynamically Mounts Visualizer & Elevates ZIndex -->
                             <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                <Setter TargetName="VisualizerHost" Property="ContentTemplate" Value="{StaticResource ActiveStationVisualizerTemplate}" />
+                                <Setter TargetName="VisualizerHost" Property="Content" Value="{Binding}" />
+                                <Setter TargetName="StationContent" Property="Effect" Value="{DynamicResource StudioGlassTextShadow}" />
                                 <Setter Property="Panel.ZIndex" Value="5" />
                             </DataTrigger>
 
-                            <!-- Buffering Station Trigger: Elevates ZIndex without harsh colored border box -->
+                            <!-- Buffering Station Trigger: Dynamically Mounts Visualizer & Elevates ZIndex -->
                             <DataTrigger Binding="{Binding IsBuffering}" Value="True">
+                                <Setter TargetName="VisualizerHost" Property="ContentTemplate" Value="{StaticResource ActiveStationVisualizerTemplate}" />
+                                <Setter TargetName="VisualizerHost" Property="Content" Value="{Binding}" />
+                                <Setter TargetName="StationContent" Property="Effect" Value="{DynamicResource StudioGlassTextShadow}" />
                                 <Setter Property="Panel.ZIndex" Value="5" />
                             </DataTrigger>
 
