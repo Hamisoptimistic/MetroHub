@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -192,6 +193,22 @@ public static class NativeMethods
     public const uint SWP_FRAMECHANGED = 0x0020;
     public const uint SWP_SHOWWINDOW = 0x0040;
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct MINMAXINFO
+    {
+        public POINT ptReserved;
+        public POINT ptMaxSize;
+        public POINT ptMaxPosition;
+        public POINT ptMinTrackSize;
+        public POINT ptMaxTrackSize;
+    }
+
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern IntPtr FindWindow(string? lpClassName, string? lpWindowName);
+
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string? lpszClass, string? lpszWindow);
+
     public static Rect GetActiveMonitorWorkArea()
     {
         try
@@ -203,6 +220,56 @@ public static class NativeMethods
 
             if (GetMonitorInfo(hMonitor, ref mi))
             {
+                // When an exclusive fullscreen game closes, Explorer may not have finished restoring the
+                // taskbar AppBar yet, causing rcWork to equal rcMonitor (full screen covering taskbar).
+                // If rcWork equals rcMonitor, verify if Shell_TrayWnd or secondary taskbars are visible on this monitor.
+                if (mi.rcWork.Height == mi.rcMonitor.Height && mi.rcWork.Width == mi.rcMonitor.Width)
+                {
+                    List<IntPtr> trayHwnds = new();
+                    IntPtr primaryTray = FindWindow("Shell_TrayWnd", null);
+                    if (primaryTray != IntPtr.Zero) trayHwnds.Add(primaryTray);
+
+                    IntPtr secTray = IntPtr.Zero;
+                    while ((secTray = FindWindowEx(IntPtr.Zero, secTray, "Shell_SecondaryTrayWnd", null)) != IntPtr.Zero)
+                    {
+                        trayHwnds.Add(secTray);
+                    }
+
+                    foreach (var trayHwnd in trayHwnds)
+                    {
+                        if (!IsWindowVisible(trayHwnd)) continue;
+                        if (GetWindowRect(trayHwnd, out RECT trayRect))
+                        {
+                            // Check if this taskbar intersects the active monitor
+                            if (trayRect.Left < mi.rcMonitor.Right && trayRect.Right > mi.rcMonitor.Left &&
+                                trayRect.Top < mi.rcMonitor.Bottom && trayRect.Bottom > mi.rcMonitor.Top)
+                            {
+                                // 1. Bottom taskbar (default)
+                                if (trayRect.Top > mi.rcMonitor.Top && trayRect.Bottom >= mi.rcMonitor.Bottom)
+                                {
+                                    mi.rcWork.Bottom = Math.Min(mi.rcWork.Bottom, trayRect.Top);
+                                }
+                                // 2. Top taskbar
+                                else if (trayRect.Top <= mi.rcMonitor.Top && trayRect.Bottom < mi.rcMonitor.Bottom)
+                                {
+                                    mi.rcWork.Top = Math.Max(mi.rcWork.Top, trayRect.Bottom);
+                                }
+                                // 3. Left taskbar
+                                else if (trayRect.Left <= mi.rcMonitor.Left && trayRect.Right < mi.rcMonitor.Right)
+                                {
+                                    mi.rcWork.Left = Math.Max(mi.rcWork.Left, trayRect.Right);
+                                }
+                                // 4. Right taskbar
+                                else if (trayRect.Left > mi.rcMonitor.Left && trayRect.Right >= mi.rcMonitor.Right)
+                                {
+                                    mi.rcWork.Right = Math.Min(mi.rcWork.Right, trayRect.Left);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+
                 return new Rect(mi.rcWork.Left, mi.rcWork.Top, mi.rcWork.Width, mi.rcWork.Height);
             }
         }

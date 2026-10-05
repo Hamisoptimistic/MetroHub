@@ -819,7 +819,7 @@ public partial class MainWindow : BorderlessFluentWindow
         _lastShownTime = DateTime.UtcNow;
         _isFullyActivated = false;
 
-        SnapToWorkArea(force: false);
+        SnapToWorkArea(force: true);
         ApplyBorderlessAttributes();
         ApplyConfiguredBackdrop(force: false);
 

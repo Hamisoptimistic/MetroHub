@@ -15,6 +15,7 @@ public class BorderlessFluentWindow : FluentWindow
 {
     private const int WM_ACTIVATE = 0x0006;
     private const int WM_NCACTIVATE = 0x0086;
+    private const int WM_GETMINMAXINFO = 0x0024;
 
     static BorderlessFluentWindow()
     {
@@ -132,6 +133,19 @@ public class BorderlessFluentWindow : FluentWindow
         if (msg == WM_ACTIVATE)
         {
             ApplyBorderlessAttributes();
+        }
+        if (msg == WM_GETMINMAXINFO && lParam != IntPtr.Zero)
+        {
+            // Let DefWindowProc populate the monitor bounds first
+            NativeMethods.DefWindowProc(hwnd, (uint)msg, wParam, lParam);
+
+            // Suppress the OS/DWM negative border inflation and offset (SM_CXFRAME) on borderless windows
+            var mmi = System.Runtime.InteropServices.Marshal.PtrToStructure<NativeMethods.MINMAXINFO>(lParam);
+            if (mmi.ptMaxPosition.X < 0) mmi.ptMaxPosition.X = 0;
+            if (mmi.ptMaxPosition.Y < 0) mmi.ptMaxPosition.Y = 0;
+            System.Runtime.InteropServices.Marshal.StructureToPtr(mmi, lParam, true);
+            handled = true;
+            return IntPtr.Zero;
         }
         return IntPtr.Zero;
     }
