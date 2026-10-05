@@ -42,8 +42,8 @@ public partial class AtmosphericAuraControl : UserControl
     private const float KickRefractoryTime = 0.12f;  // 120ms minimum between pump attacks
     private const float ColorSwitchInterval = 0.25f; // 250ms minimum between color switches
     private const float PumpReleaseDecay = 0.16f;    // 160ms decay for kick envelope
-    private const float PumpRadiusBoost = 0.35f;     // Up to +35% radius on maximum velocity kick
-    private const float PumpOpacityBoost = 0.35f;    // Up to +35% opacity on maximum velocity kick
+    private const float PumpRadiusBoost = 0.48f;     // Up to +48% radius on maximum velocity kick
+    private const float PumpOpacityBoost = 0.40f;    // Up to +40% opacity on maximum velocity kick
 
     // ==========================================
     // Dependency Properties
@@ -241,49 +241,43 @@ public partial class AtmosphericAuraControl : UserControl
         float dt = Math.Clamp((float)(now - _lastFrameTime).TotalSeconds, 0.001f, 0.05f);
         _lastFrameTime = now;
 
-        // 2. Continuous Ambient Wave (~4.2s cycle)
         double phase = elapsed * (Math.PI * 2.0 / CyclePeriod);
         float flowX = (float)(Math.Sin(phase * 0.9) * 0.10);
         float flowY = (float)(Math.Cos(phase * 0.7) * 0.08);
-        float breathe = (float)(Math.Sin(phase) * AmbientBreatheAmp);
 
-        // Fluid Lissajous drift for individual accent blobs
-        float driftCyanX = (float)(CyanBaseX + Math.Sin(phase * 0.8) * DriftAmpX);
-        float driftCyanY = (float)(CyanBaseY + Math.Cos(phase * 0.7) * DriftAmpY);
-
-        float driftVioletX = (float)(VioletBaseX + Math.Cos(phase * 0.85 + 1.2) * DriftAmpX);
-        float driftVioletY = (float)(VioletBaseY + Math.Sin(phase * 0.75 + 0.8) * DriftAmpY);
-
-        float driftPinkX = (float)(PinkBaseX + Math.Sin(phase * 0.8 + 2.1) * DriftAmpX);
-        float driftPinkY = (float)(PinkBaseY + Math.Cos(phase * 0.9 + 1.7) * DriftAmpY);
-
-        float driftOrangeX = (float)(OrangeBaseX + Math.Cos(phase * 0.75 + 3.4) * DriftAmpX);
-        float driftOrangeY = (float)(OrangeBaseY + Math.Sin(phase * 0.85 + 2.9) * DriftAmpY);
-
-        // 3. Render Buffering State: Gentle soothing wave
+        // 2. Render Buffering State: Gentle soothing wave
         if (buffering)
         {
+            float bBreathe = (float)(Math.Sin(phase) * AmbientBreatheAmp);
             float p0 = (float)(Math.Sin(phase) * 0.5 + 0.5);
             float p1 = (float)(Math.Sin(phase + 1.57) * 0.5 + 0.5);
             float p2 = (float)(Math.Sin(phase + 3.14) * 0.5 + 0.5);
             float p3 = (float)(Math.Sin(phase + 4.71) * 0.5 + 0.5);
 
-            BaseGradient.StartPoint = new Point(-0.15 + flowX - breathe, -0.15 + flowY - breathe);
-            BaseGradient.EndPoint = new Point(1.10 + flowX + breathe, 1.10 + flowY + breathe);
+            BaseGradient.StartPoint = new Point(-0.15 + flowX - bBreathe, -0.15 + flowY - bBreathe);
+            BaseGradient.EndPoint = new Point(1.10 + flowX + bBreathe, 1.10 + flowY + bBreathe);
 
-            BrushCyan.Center = BrushCyan.GradientOrigin = new Point(driftCyanX, driftCyanY);
+            BrushCyan.Center = BrushCyan.GradientOrigin = new Point(
+                (float)(CyanBaseX + Math.Sin(phase * 0.8) * DriftAmpX),
+                (float)(CyanBaseY + Math.Cos(phase * 0.7) * DriftAmpY));
             BrushCyan.RadiusX = BrushCyan.RadiusY = CyanBaseRadius + p0 * 0.10;
             RectCyan.Opacity = 0.40 + p0 * 0.20;
 
-            BrushViolet.Center = BrushViolet.GradientOrigin = new Point(driftVioletX, driftVioletY);
+            BrushViolet.Center = BrushViolet.GradientOrigin = new Point(
+                (float)(VioletBaseX + Math.Cos(phase * 0.85 + 1.2) * DriftAmpX),
+                (float)(VioletBaseY + Math.Sin(phase * 0.75 + 0.8) * DriftAmpY));
             BrushViolet.RadiusX = BrushViolet.RadiusY = VioletBaseRadius + p1 * 0.10;
             RectViolet.Opacity = 0.38 + p1 * 0.20;
 
-            BrushPink.Center = BrushPink.GradientOrigin = new Point(driftPinkX, driftPinkY);
+            BrushPink.Center = BrushPink.GradientOrigin = new Point(
+                (float)(PinkBaseX + Math.Sin(phase * 0.8 + 2.1) * DriftAmpX),
+                (float)(PinkBaseY + Math.Cos(phase * 0.9 + 1.7) * DriftAmpY));
             BrushPink.RadiusX = BrushPink.RadiusY = PinkBaseRadius + p2 * 0.10;
             RectPink.Opacity = 0.40 + p2 * 0.20;
 
-            BrushOrange.Center = BrushOrange.GradientOrigin = new Point(driftOrangeX, driftOrangeY);
+            BrushOrange.Center = BrushOrange.GradientOrigin = new Point(
+                (float)(OrangeBaseX + Math.Cos(phase * 0.75 + 3.4) * DriftAmpX),
+                (float)(OrangeBaseY + Math.Sin(phase * 0.85 + 2.9) * DriftAmpY));
             BrushOrange.RadiusX = BrushOrange.RadiusY = OrangeBaseRadius + p3 * 0.10;
             RectOrange.Opacity = 0.38 + p3 * 0.20;
 
@@ -291,7 +285,7 @@ public partial class AtmosphericAuraControl : UserControl
             return;
         }
 
-        // 4. Sample Audio Levels
+        // 3. Sample Audio Levels
         var audioService = RadioAudioService.Instance;
         bool hasData = audioService.GetSpectrumLevels(out float rawBass, out _, out _);
         if (!hasData && !active) rawBass = 0f;
@@ -334,8 +328,8 @@ public partial class AtmosphericAuraControl : UserControl
 
         if (isHit)
         {
-            // Velocity scaling: hit strength proportional to overshoot above average (down to 0.10)
-            float velocity = Math.Clamp((normBass - _bassAvg) / Math.Max(0.15f, 1.0f - _bassAvg), 0.10f, 1.0f);
+            // Velocity scaling: hit strength proportional to overshoot above average (down to 0.28)
+            float velocity = Math.Clamp((normBass - _bassAvg) / Math.Max(0.15f, 1.0f - _bassAvg), 0.28f, 1.0f);
 
             _kickEnv = Math.Max(_kickEnv, velocity);
             _kickCooldown = KickRefractoryTime;
@@ -360,6 +354,25 @@ public partial class AtmosphericAuraControl : UserControl
         _kickEnv *= pumpDecay;
         if (_kickEnv < 0.005f) _kickEnv = 0f;
 
+        // 4. Continuous Ambient Wave (~4.2s cycle) & Idle Calming
+        float breathe = (float)(Math.Sin(phase) * AmbientBreatheAmp);
+
+        float calm = 1f - 0.6f * _kickEnv;
+        breathe *= calm;
+
+        // Fluid Lissajous drift for individual accent blobs (calmed during a kick pump)
+        float driftCyanX = (float)(CyanBaseX + Math.Sin(phase * 0.8) * DriftAmpX * calm);
+        float driftCyanY = (float)(CyanBaseY + Math.Cos(phase * 0.7) * DriftAmpY * calm);
+
+        float driftVioletX = (float)(VioletBaseX + Math.Cos(phase * 0.85 + 1.2) * DriftAmpX * calm);
+        float driftVioletY = (float)(VioletBaseY + Math.Sin(phase * 0.75 + 0.8) * DriftAmpY * calm);
+
+        float driftPinkX = (float)(PinkBaseX + Math.Sin(phase * 0.8 + 2.1) * DriftAmpX * calm);
+        float driftPinkY = (float)(PinkBaseY + Math.Cos(phase * 0.9 + 1.7) * DriftAmpY * calm);
+
+        float driftOrangeX = (float)(OrangeBaseX + Math.Cos(phase * 0.75 + 3.4) * DriftAmpX * calm);
+        float driftOrangeY = (float)(OrangeBaseY + Math.Sin(phase * 0.85 + 2.9) * DriftAmpY * calm);
+
         // Determine pump intensity for each individual color
         float pumpCyan = (_pumpingColorIndex == 0) ? _kickEnv : 0f;
         float pumpViolet = (_pumpingColorIndex == 1) ? _kickEnv : 0f;
@@ -377,21 +390,21 @@ public partial class AtmosphericAuraControl : UserControl
         // 1. Cyan (Top-Left)
         BrushCyan.Center = BrushCyan.GradientOrigin = new Point(driftCyanX, driftCyanY);
         BrushCyan.RadiusX = BrushCyan.RadiusY = CyanBaseRadius + breathe + noteSwell + (pumpCyan * PumpRadiusBoost);
-        RectCyan.Opacity = Math.Clamp(0.50f + (breathe * 0.3f) + (noteSwell * 0.15f) + (pumpCyan * PumpOpacityBoost), 0.20f, 0.98f);
+        RectCyan.Opacity = Math.Clamp(0.50f + (breathe * 0.3f) + (noteSwell * 0.15f) + (pumpCyan * PumpOpacityBoost), 0.20f, 1.0f);
 
         // 2. Violet (Mid-Upper)
         BrushViolet.Center = BrushViolet.GradientOrigin = new Point(driftVioletX, driftVioletY);
         BrushViolet.RadiusX = BrushViolet.RadiusY = VioletBaseRadius - breathe + noteSwell + (pumpViolet * PumpRadiusBoost);
-        RectViolet.Opacity = Math.Clamp(0.45f - (breathe * 0.3f) + (noteSwell * 0.15f) + (pumpViolet * PumpOpacityBoost), 0.20f, 0.98f);
+        RectViolet.Opacity = Math.Clamp(0.45f - (breathe * 0.3f) + (noteSwell * 0.15f) + (pumpViolet * PumpOpacityBoost), 0.20f, 1.0f);
 
         // 3. Hot Pink / Magenta (Bottom-Center)
         BrushPink.Center = BrushPink.GradientOrigin = new Point(driftPinkX, driftPinkY);
         BrushPink.RadiusX = BrushPink.RadiusY = PinkBaseRadius + breathe + noteSwell + (pumpPink * PumpRadiusBoost);
-        RectPink.Opacity = Math.Clamp(0.50f + (breathe * 0.3f) + (noteSwell * 0.15f) + (pumpPink * PumpOpacityBoost), 0.20f, 0.98f);
+        RectPink.Opacity = Math.Clamp(0.50f + (breathe * 0.3f) + (noteSwell * 0.15f) + (pumpPink * PumpOpacityBoost), 0.20f, 1.0f);
 
         // 4. Radiant Orange (Bottom-Right)
         BrushOrange.Center = BrushOrange.GradientOrigin = new Point(driftOrangeX, driftOrangeY);
         BrushOrange.RadiusX = BrushOrange.RadiusY = OrangeBaseRadius - breathe + noteSwell + (pumpOrange * PumpRadiusBoost);
-        RectOrange.Opacity = Math.Clamp(0.48f - (breathe * 0.3f) + (noteSwell * 0.15f) + (pumpOrange * PumpOpacityBoost), 0.20f, 0.98f);
+        RectOrange.Opacity = Math.Clamp(0.48f - (breathe * 0.3f) + (noteSwell * 0.15f) + (pumpOrange * PumpOpacityBoost), 0.20f, 1.0f);
     }
 }
