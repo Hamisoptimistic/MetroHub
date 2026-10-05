@@ -37,9 +37,13 @@ public partial class AtmosphericAuraControl : UserControl
     private const float ContinuousAttack = 0.04f;    // ~40ms fast attack
     private const float ContinuousRelease = 0.22f;   // ~220ms smooth release
 
-    // Tier 2: Velocity-Scaled Beat Pump & Hysteresis
-    private const float HitRatio = 1.28f;            // 1.28x above moving average
-    private const float KickRefractoryTime = 0.12f;  // 120ms minimum between pump attacks
+    // Tier 2: Drone-Stripped Transient Beat Pump
+    private const float FastAttack = 0.012f;         // ~12ms instant transient snap
+    private const float FastRelease = 0.045f;        // ~45ms rapid decay
+    private const float SlowBaselineAttack = 0.14f;  // ~140ms drone follower attack
+    private const float SlowBaselineRelease = 0.35f; // ~350ms drone follower release
+    private const float OnsetThreshold = 0.048f;     // Minimum transient flux to trigger a kick
+    private const float KickRefractoryTime = 0.11f;  // 110ms refractory window between kicks
     private const float ColorSwitchInterval = 0.25f; // 250ms minimum between color switches
     private const float PumpReleaseDecay = 0.16f;    // 160ms decay for kick envelope
     private const float PumpRadiusBoost = 0.48f;     // Up to +48% radius on maximum velocity kick
@@ -92,12 +96,16 @@ public partial class AtmosphericAuraControl : UserControl
 
     // Audio DSP State
     private float _bassPeak = 0.20f;         // Running peak for auto-gain normalization
-    private float _bassAvg = 0.10f;          // Moving average baseline
+    private float _midPeak = 0.15f;          // Running peak for mid auto-gain normalization
     private float _smoothedBass;             // Tier 1 smoothed bass envelope
+    private float _fastBassEnv;              // Snappy attack bass envelope (~12ms)
+    private float _slowBassBaseline;         // Drone tracking baseline (~140ms)
+    private float _fastMidEnv;               // Snappy attack mid envelope (~10ms)
+    private float _slowMidBaseline;          // Drone tracking mid baseline (~120ms)
     private float _kickEnv;                  // Tier 2 velocity-scaled kick envelope
-    private float _kickCooldown;             // Refractory timer (120ms)
+    private float _kickCooldown;             // Refractory timer (110ms)
     private float _colorCooldown;            // Color switch timer (250ms)
-    private bool _waitingForDropBelowAvg;    // Hysteresis flag
+    private float _lastTransientFlux;        // Previous frame flux for rising-edge detection
     private int _pumpingColorIndex = 2;      // 0=Cyan, 1=Violet, 2=Pink, 3=Orange
     private static bool _isBatterySaver;
 
@@ -282,20 +290,32 @@ public partial class AtmosphericAuraControl : UserControl
             RectOrange.Opacity = 0.38 + p3 * 0.20;
 
             _kickEnv = 0f;
+            _fastBassEnv = 0f;
+            _slowBassBaseline = 0f;
+            _fastMidEnv = 0f;
+            _slowMidBaseline = 0f;
+            _lastTransientFlux = 0f;
             return;
         }
 
         // 3. Sample Audio Levels
         var audioService = RadioAudioService.Instance;
-        bool hasData = audioService.GetSpectrumLevels(out float rawBass, out _, out _);
-        if (!hasData && !active) rawBass = 0f;
+        bool hasData = audioService.GetSpectrumLevels(out float rawBass, out float rawMid, out _);
+        if (!hasData && !active)
+        {
+            rawBass = 0f;
+            rawMid = 0f;
+        }
 
         // Auto Gain Normalization: Decaying running peak over ~3.5s
         float peakDecay = MathF.Exp(-dt / 3.5f);
         _bassPeak = Math.Max(rawBass, _bassPeak * peakDecay);
         if (_bassPeak < 0.08f) _bassPeak = 0.08f;
-
         float normBass = Math.Clamp(rawBass / _bassPeak, 0f, 1f);
+
+        _midPeak = Math.Max(rawMid, _midPeak * peakDecay);
+        if (_midPeak < 0.06f) _midPeak = 0.06f;
+        float normMid = Math.Clamp(rawMid / _midPeak, 0f, 1f);
 
         // Tier 1: Continuous Note Envelope (Fast attack ~40ms, smooth release ~220ms)
         float attackCoeff = 1f - MathF.Exp(-dt / ContinuousAttack);
@@ -309,31 +329,51 @@ public partial class AtmosphericAuraControl : UserControl
             _smoothedBass += releaseCoeff * (normBass - _smoothedBass);
         }
 
-        // Running Average baseline for transient detection (~1.8s time constant)
-        float avgCoeff = 1f - MathF.Exp(-dt / 1.8f);
-        _bassAvg += avgCoeff * (normBass - _bassAvg);
-        if (_bassAvg < 0.06f) _bassAvg = 0.06f;
+        // Tier 2: Dual Fast/Slow Envelopes for Continuous Drone Cancellation
+        float fastAttackCoeff = 1f - MathF.Exp(-dt / FastAttack);
+        float fastReleaseCoeff = 1f - MathF.Exp(-dt / FastRelease);
+        float slowAttackCoeff = 1f - MathF.Exp(-dt / SlowBaselineAttack);
+        float slowReleaseCoeff = 1f - MathF.Exp(-dt / SlowBaselineRelease);
 
-        // Tier 2: Velocity-Scaled Hit Detection with Hysteresis
+        // Bass fast snap and slow drone baseline tracking
+        if (normBass > _fastBassEnv)
+            _fastBassEnv += fastAttackCoeff * (normBass - _fastBassEnv);
+        else
+            _fastBassEnv += fastReleaseCoeff * (normBass - _fastBassEnv);
+
+        if (normBass > _slowBassBaseline)
+            _slowBassBaseline += slowAttackCoeff * (normBass - _slowBassBaseline);
+        else
+            _slowBassBaseline += slowReleaseCoeff * (normBass - _slowBassBaseline);
+
+        // Mid fast snap and slow baseline tracking (kick beater slap & transient click)
+        if (normMid > _fastMidEnv)
+            _fastMidEnv += fastAttackCoeff * (normMid - _fastMidEnv);
+        else
+            _fastMidEnv += fastReleaseCoeff * (normMid - _fastMidEnv);
+
+        if (normMid > _slowMidBaseline)
+            _slowMidBaseline += slowAttackCoeff * (normMid - _slowMidBaseline);
+        else
+            _slowMidBaseline += slowReleaseCoeff * (normMid - _slowMidBaseline);
+
+        // Drone-subtracted transient onset energy
+        float bassOnset = Math.Max(0f, _fastBassEnv - _slowBassBaseline);
+        float midOnset = Math.Max(0f, _fastMidEnv - _slowMidBaseline);
+        float transientFlux = bassOnset + (midOnset * 0.45f);
+
         _kickCooldown -= dt;
         _colorCooldown -= dt;
 
-        // Hysteresis reset: requires signal to drop below average before re-triggering
-        if (normBass < _bassAvg)
-        {
-            _waitingForDropBelowAvg = false;
-        }
-
-        bool isHit = !_waitingForDropBelowAvg && (_kickCooldown <= 0f) && (normBass > 0.12f) && (normBass > _bassAvg * HitRatio);
+        bool isHit = (_kickCooldown <= 0f) && (transientFlux >= OnsetThreshold) && (transientFlux >= _lastTransientFlux);
 
         if (isHit)
         {
-            // Velocity scaling: hit strength proportional to overshoot above average (down to 0.28)
-            float velocity = Math.Clamp((normBass - _bassAvg) / Math.Max(0.15f, 1.0f - _bassAvg), 0.28f, 1.0f);
+            // Velocity scaling: hit strength proportional to onset overshoot above threshold
+            float velocity = Math.Clamp(transientFlux / 0.32f, 0.30f, 1.0f);
 
             _kickEnv = Math.Max(_kickEnv, velocity);
             _kickCooldown = KickRefractoryTime;
-            _waitingForDropBelowAvg = true;
 
             // Color switch with dedicated 250ms gap
             if (_colorCooldown <= 0f)
@@ -348,6 +388,8 @@ public partial class AtmosphericAuraControl : UserControl
                 _colorCooldown = ColorSwitchInterval;
             }
         }
+
+        _lastTransientFlux = transientFlux;
 
         // Exponential Release Decay for Kick Envelope (~160ms)
         float pumpDecay = MathF.Exp(-dt / PumpReleaseDecay);
