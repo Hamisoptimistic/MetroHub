@@ -18,7 +18,7 @@ public sealed class AudioSpectrumProcessor
     // Nominal 44.1 kHz frequency bin boundaries for reference and unit tests:
     // At 44.1 kHz, bin bandwidth is ~21.533 Hz (bin 0 = DC offset)
     public const int KickStartBin = 2;    // ~43 Hz
-    public const int KickEndBin = 6;      // ~129 Hz
+    public const int KickEndBin = 4;      // ~86 Hz
 
     public const int BassStartBin = 2;    // ~43 Hz
     public const int BassEndBin = 12;     // ~258 Hz
@@ -102,7 +102,7 @@ public sealed class AudioSpectrumProcessor
     public void ProcessFft(ReadOnlySpan<float> fftBins, out float kick, out float bass, out float mid, out float treble)
     {
         int kickStart = Bin(35f);
-        int kickEnd = Bin(120f);
+        int kickEnd = Bin(85f);
         int bassStart = Bin(35f);
         int bassEnd = Bin(250f);
         int midStart = bassEnd + 1;
