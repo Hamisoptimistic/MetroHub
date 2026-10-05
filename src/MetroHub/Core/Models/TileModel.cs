@@ -169,6 +169,17 @@ public sealed class TileModel : INotifyPropertyChanged
             return this;
         }
     }
+    /// <summary>
+    /// Eagerly instantiates the widget ViewModel if not already instantiated.
+    /// Ensures background services (e.g. timers, monitors) run across all workspaces.
+    /// </summary>
+    public void EnsureViewModelCreated()
+    {
+        if (TileType == TileType.Widget && _widgetViewModel == null && _stubWidgetViewModel == null)
+        {
+            _stubWidgetViewModel = WidgetViewModelFactory?.Invoke(this);
+        }
+    }
 
     /// <summary>
     /// Cascades resource disposal down to any active widget ViewModel when the tile is unpinned or removed.

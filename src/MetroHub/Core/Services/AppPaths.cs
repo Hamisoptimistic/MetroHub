@@ -83,6 +83,25 @@ public static class AppPaths
         Path.Combine(ConfigDir, "quotes.json"),
         Path.Combine(AppDataDir, "quotes.json"));
 
+    // Workspaces
+    /// <summary>Directory storing per-workspace layouts and metadata: %LocalAppData%\MetroHub\workspaces.</summary>
+    public static string WorkspacesDir => Path.Combine(AppDataDir, "workspaces");
+
+    /// <summary>Workspaces manifest tracking order and active workspace: %LocalAppData%\MetroHub\workspaces\workspaces.json.</summary>
+    public static string WorkspacesManifestPath => Path.Combine(WorkspacesDir, "workspaces.json");
+
+    /// <summary>Backup path for workspaces manifest: %LocalAppData%\MetroHub\backups\workspaces.json.bak.</summary>
+    public static string WorkspacesManifestBakPath => Path.Combine(BackupsDir, "workspaces.json.bak");
+
+    /// <summary>Preservation directory for deleted workspaces: %LocalAppData%\MetroHub\workspaces_trash.</summary>
+    public static string WorkspacesTrashDir => Path.Combine(AppDataDir, "workspaces_trash");
+
+    public static string GetWorkspaceDir(string workspaceId) => Path.Combine(WorkspacesDir, workspaceId);
+    public static string GetWorkspaceLayoutPath(string workspaceId) => Path.Combine(GetWorkspaceDir(workspaceId), "layout.json");
+    public static string GetWorkspaceLayoutBakPath(string workspaceId) => Path.Combine(GetWorkspaceDir(workspaceId), "layout.json.bak");
+    public static string GetWorkspaceGroupsPath(string workspaceId) => Path.Combine(GetWorkspaceDir(workspaceId), "groups.json");
+    public static string GetWorkspaceGroupsBakPath(string workspaceId) => Path.Combine(GetWorkspaceDir(workspaceId), "groups.json.bak");
+
     // Cache
     public static string AppsCachePath => ResolveFilePath(
         Path.Combine(CacheDir, "apps_cache.json"),

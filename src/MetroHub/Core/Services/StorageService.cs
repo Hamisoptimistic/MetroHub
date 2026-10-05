@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
@@ -29,6 +30,9 @@ public sealed class StorageService
     private static volatile string? _pendingLayoutJson;
     private static volatile string? _pendingGroupsJson;
     private static volatile string? _pendingSettingsJson;
+    private static volatile string? _pendingWorkspacesManifestJson;
+    private static readonly ConcurrentDictionary<string, string> _pendingWorkspaceLayouts = new();
+    private static readonly ConcurrentDictionary<string, string> _pendingWorkspaceGroups = new();
     private static readonly object _flushGate = new();
     private static Task? _backgroundFlushTask;
 
@@ -435,7 +439,8 @@ public sealed class StorageService
 
                         lock (_flushGate)
                         {
-                            if (_pendingLayoutJson == null && _pendingGroupsJson == null && _pendingSettingsJson == null)
+                            if (_pendingLayoutJson == null && _pendingGroupsJson == null && _pendingSettingsJson == null &&
+                                _pendingWorkspacesManifestJson == null && _pendingWorkspaceLayouts.IsEmpty && _pendingWorkspaceGroups.IsEmpty)
                             {
                                 _backgroundFlushTask = null;
                                 break;
@@ -467,6 +472,34 @@ public sealed class StorageService
             if (settings != null)
             {
                 SaveAtomic(SettingsPath, SettingsBakPath, settings);
+            }
+
+            var manifestJson = Interlocked.Exchange(ref _pendingWorkspacesManifestJson, null);
+            if (manifestJson != null)
+            {
+                SaveAtomic(AppPaths.WorkspacesManifestPath, AppPaths.WorkspacesManifestBakPath, manifestJson);
+            }
+
+            if (!_pendingWorkspaceLayouts.IsEmpty)
+            {
+                foreach (var kvp in _pendingWorkspaceLayouts)
+                {
+                    if (_pendingWorkspaceLayouts.TryRemove(kvp.Key, out var wsLayoutJson))
+                    {
+                        SaveAtomic(AppPaths.GetWorkspaceLayoutPath(kvp.Key), AppPaths.GetWorkspaceLayoutBakPath(kvp.Key), wsLayoutJson);
+                    }
+                }
+            }
+
+            if (!_pendingWorkspaceGroups.IsEmpty)
+            {
+                foreach (var kvp in _pendingWorkspaceGroups)
+                {
+                    if (_pendingWorkspaceGroups.TryRemove(kvp.Key, out var wsGroupsJson))
+                    {
+                        SaveAtomic(AppPaths.GetWorkspaceGroupsPath(kvp.Key), AppPaths.GetWorkspaceGroupsBakPath(kvp.Key), wsGroupsJson);
+                    }
+                }
             }
         }
     }
@@ -500,6 +533,9 @@ public sealed class StorageService
             _pendingLayoutJson = null;
             _pendingGroupsJson = null;
             _pendingSettingsJson = null;
+            _pendingWorkspacesManifestJson = null;
+            _pendingWorkspaceLayouts.Clear();
+            _pendingWorkspaceGroups.Clear();
         }
     }
 
@@ -725,6 +761,344 @@ public sealed class StorageService
         {
             SerializeAndSaveAtomic(apps, AppsCachePath, AppsCacheBakPath);
         }, context: "StorageService.SaveAppsCache");
+    }
+
+    // ────────────────────────────────────────────────────────
+    // Workspaces
+    // ────────────────────────────────────────────────────────
+
+    public static WorkspacesManifest LoadWorkspaces()
+    {
+        WorkspacesManifest? manifest = TryDeserializeFile<WorkspacesManifest>(AppPaths.WorkspacesManifestPath);
+
+        if (manifest == null)
+        {
+            manifest = TryDeserializeFile<WorkspacesManifest>(AppPaths.WorkspacesManifestBakPath);
+            if (manifest != null)
+            {
+                System.Diagnostics.Debug.WriteLine("[StorageService] Workspaces manifest recovered from .bak");
+            }
+        }
+
+        // If manifest doesn't exist or is empty, perform non-destructive copy migration
+        if (manifest == null || manifest.Workspaces.Count == 0)
+        {
+            manifest = MigrateLegacyToWorkspaces();
+        }
+
+        // Defensive: ensure at least one workspace exists
+        if (manifest.Workspaces.Count == 0)
+        {
+            var fallback = new WorkspaceModel
+            {
+                Id = "default",
+                Name = "Main",
+                Order = 0,
+                IconSymbol = "Desktop24"
+            };
+            manifest.Workspaces.Add(fallback);
+            manifest.ActiveWorkspaceId = fallback.Id;
+            SaveWorkspacesSync(manifest);
+        }
+
+        // If ActiveWorkspaceId does not match any workspace, fallback to first
+        if (!manifest.Workspaces.Any(w => w.Id == manifest.ActiveWorkspaceId))
+        {
+            manifest.ActiveWorkspaceId = manifest.Workspaces[0].Id;
+        }
+
+        // Populate tiles and groups for each workspace in-memory
+        foreach (var ws in manifest.Workspaces)
+        {
+            ws.Tiles.Clear();
+            var tiles = LoadWorkspaceLayout(ws.Id);
+            foreach (var t in tiles)
+            {
+                ws.Tiles.Add(t);
+            }
+
+            ws.Groups.Clear();
+            var groups = LoadWorkspaceGroups(ws.Id);
+            foreach (var g in groups)
+            {
+                ws.Groups.Add(g);
+            }
+
+            ws.IsActive = (ws.Id == manifest.ActiveWorkspaceId);
+            ws.IsDirty = false;
+        }
+
+        return manifest;
+    }
+
+    /// <summary>
+    /// Non-destructive migration: copies legacy layout.json and groups.json into workspaces\default\
+    /// without deleting or renaming the root files. Guarantees safe rollbacks.
+    /// </summary>
+    private static WorkspacesManifest MigrateLegacyToWorkspaces()
+    {
+        string defaultDir = AppPaths.GetWorkspaceDir("default");
+        AppPaths.EnsureDirectory(Path.Combine(defaultDir, "dummy.txt"));
+
+        string targetLayout = AppPaths.GetWorkspaceLayoutPath("default");
+        string targetGroups = AppPaths.GetWorkspaceGroupsPath("default");
+
+        // 1. Copy layout.json -> workspaces\default\layout.json if legacy exists and non-empty
+        if (File.Exists(LayoutPath) && new FileInfo(LayoutPath).Length > 2)
+        {
+            if (!File.Exists(targetLayout))
+            {
+                Safe.Try(() => File.Copy(LayoutPath, targetLayout, overwrite: false), context: "StorageService.MigrateLegacy.CopyLayout");
+            }
+        }
+
+        // 2. Copy groups.json -> workspaces\default\groups.json if legacy exists and non-empty
+        if (File.Exists(GroupsPath) && new FileInfo(GroupsPath).Length > 2)
+        {
+            if (!File.Exists(targetGroups))
+            {
+                Safe.Try(() => File.Copy(GroupsPath, targetGroups, overwrite: false), context: "StorageService.MigrateLegacy.CopyGroups");
+            }
+        }
+
+        // If layout copy does not exist or failed, generate starter template
+        if (!File.Exists(targetLayout) || new FileInfo(targetLayout).Length <= 2)
+        {
+            var starter = AppScannerService.GenerateStarterTemplate();
+            SaveWorkspaceLayoutSync("default", starter);
+        }
+
+        var defaultWs = new WorkspaceModel
+        {
+            Id = "default",
+            Name = "Main",
+            Order = 0,
+            IconSymbol = "Desktop24",
+            IsActive = true
+        };
+
+        var manifest = new WorkspacesManifest
+        {
+            ActiveWorkspaceId = "default",
+            Workspaces = new List<WorkspaceModel> { defaultWs }
+        };
+
+        SaveWorkspacesSync(manifest);
+        return manifest;
+    }
+
+    public static void SaveWorkspaces(WorkspacesManifest manifest)
+    {
+        try
+        {
+            string json = JsonSerializer.Serialize(manifest, JsonOptions);
+            _pendingWorkspacesManifestJson = json;
+            ScheduleBackgroundFlush();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspaces failed: {ex.Message}");
+        }
+    }
+
+    public static void SaveWorkspacesSync(WorkspacesManifest manifest)
+    {
+        try
+        {
+            string json = JsonSerializer.Serialize(manifest, JsonOptions);
+            lock (WriteLock)
+            {
+                _pendingWorkspacesManifestJson = null;
+                SaveAtomic(AppPaths.WorkspacesManifestPath, AppPaths.WorkspacesManifestBakPath, json);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspacesSync failed: {ex.Message}");
+        }
+    }
+
+    public static ObservableCollection<TileModel> LoadWorkspaceLayout(string workspaceId)
+    {
+        string layoutPath = AppPaths.GetWorkspaceLayoutPath(workspaceId);
+        string layoutBakPath = AppPaths.GetWorkspaceLayoutBakPath(workspaceId);
+
+        ObservableCollection<TileModel>? tiles = TryDeserializeFile<ObservableCollection<TileModel>>(layoutPath);
+        bool recoveredFromBackup = false;
+
+        if (tiles == null)
+        {
+            tiles = TryDeserializeFile<ObservableCollection<TileModel>>(layoutBakPath);
+            if (tiles != null)
+            {
+                recoveredFromBackup = true;
+                System.Diagnostics.Debug.WriteLine($"[StorageService] Workspace '{workspaceId}' layout recovered from .bak");
+            }
+        }
+
+        if (tiles == null)
+        {
+            tiles = TryDeserializeFile<ObservableCollection<TileModel>>(layoutPath + ".tmp");
+            if (tiles != null)
+            {
+                recoveredFromBackup = true;
+                System.Diagnostics.Debug.WriteLine($"[StorageService] Workspace '{workspaceId}' layout recovered from .tmp");
+            }
+        }
+
+        if (tiles == null)
+        {
+            PreserveCorruptFile(layoutPath);
+            var defaultLayout = AppScannerService.GenerateStarterTemplate();
+            SaveWorkspaceLayoutSync(workspaceId, defaultLayout);
+            return defaultLayout;
+        }
+
+        if (tiles.Count == 0)
+        {
+            if (recoveredFromBackup) SaveWorkspaceLayoutSync(workspaceId, tiles);
+            return tiles;
+        }
+
+        bool dirty = recoveredFromBackup;
+        dirty |= NormalizeTiles(tiles);
+
+        if (dirty)
+        {
+            SaveWorkspaceLayout(workspaceId, tiles);
+        }
+
+        return tiles;
+    }
+
+    public static void SaveWorkspaceLayout(string workspaceId, ObservableCollection<TileModel> tiles)
+    {
+        try
+        {
+            string json = JsonSerializer.Serialize(tiles, JsonOptions);
+            _pendingWorkspaceLayouts[workspaceId] = json;
+            ScheduleBackgroundFlush();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspaceLayout failed for '{workspaceId}': {ex.Message}");
+        }
+    }
+
+    public static void SaveWorkspaceLayoutSync(string workspaceId, ObservableCollection<TileModel> tiles)
+    {
+        try
+        {
+            string json = JsonSerializer.Serialize(tiles, JsonOptions);
+            lock (WriteLock)
+            {
+                _pendingWorkspaceLayouts.TryRemove(workspaceId, out _);
+                SaveAtomic(AppPaths.GetWorkspaceLayoutPath(workspaceId), AppPaths.GetWorkspaceLayoutBakPath(workspaceId), json);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspaceLayoutSync failed for '{workspaceId}': {ex.Message}");
+        }
+    }
+
+    public static ObservableCollection<TileGroupModel> LoadWorkspaceGroups(string workspaceId)
+    {
+        string groupsPath = AppPaths.GetWorkspaceGroupsPath(workspaceId);
+        string groupsBakPath = AppPaths.GetWorkspaceGroupsBakPath(workspaceId);
+
+        ObservableCollection<TileGroupModel>? groups = TryDeserializeFile<ObservableCollection<TileGroupModel>>(groupsPath);
+
+        if (groups == null)
+        {
+            groups = TryDeserializeFile<ObservableCollection<TileGroupModel>>(groupsBakPath);
+            if (groups != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[StorageService] Workspace '{workspaceId}' groups recovered from .bak");
+            }
+        }
+
+        if (groups == null)
+        {
+            return new ObservableCollection<TileGroupModel>();
+        }
+
+        bool sanitized = false;
+        foreach (var g in groups)
+        {
+            if (g.Col < 0 || g.Row < 0 || g.Y < GridPlacementService.OriginY + 8)
+            {
+                g.Col = Math.Max(0, g.Col);
+                g.Row = Math.Max(0, g.Row);
+                g.X = GridPlacementService.PixelXFromCol(g.Col);
+                g.Y = GridPlacementService.PixelYFromRow(g.Row) + 8;
+                sanitized = true;
+            }
+        }
+        if (sanitized) SaveWorkspaceGroups(workspaceId, groups);
+        return groups;
+    }
+
+    public static void SaveWorkspaceGroups(string workspaceId, ObservableCollection<TileGroupModel> groups)
+    {
+        try
+        {
+            string json = JsonSerializer.Serialize(groups, JsonOptions);
+            _pendingWorkspaceGroups[workspaceId] = json;
+            ScheduleBackgroundFlush();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspaceGroups failed for '{workspaceId}': {ex.Message}");
+        }
+    }
+
+    public static void SaveWorkspaceGroupsSync(string workspaceId, ObservableCollection<TileGroupModel> groups)
+    {
+        try
+        {
+            string json = JsonSerializer.Serialize(groups, JsonOptions);
+            lock (WriteLock)
+            {
+                _pendingWorkspaceGroups.TryRemove(workspaceId, out _);
+                SaveAtomic(AppPaths.GetWorkspaceGroupsPath(workspaceId), AppPaths.GetWorkspaceGroupsBakPath(workspaceId), json);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[StorageService] SaveWorkspaceGroupsSync failed for '{workspaceId}': {ex.Message}");
+        }
+    }
+
+    public static void SaveWorkspaceSync(WorkspaceModel workspace)
+    {
+        SaveWorkspaceLayoutSync(workspace.Id, workspace.Tiles);
+        SaveWorkspaceGroupsSync(workspace.Id, workspace.Groups);
+    }
+
+    /// <summary>
+    /// Moves a deleted workspace directory to %LocalAppData%\MetroHub\workspaces_trash\ with a timestamp.
+    /// Non-destructive: preserves all data for potential manual recovery.
+    /// </summary>
+    public static void DeleteWorkspaceStorage(string workspaceId)
+    {
+        lock (WriteLock)
+        {
+            _pendingWorkspaceLayouts.TryRemove(workspaceId, out _);
+            _pendingWorkspaceGroups.TryRemove(workspaceId, out _);
+
+            string srcDir = AppPaths.GetWorkspaceDir(workspaceId);
+            if (Directory.Exists(srcDir))
+            {
+                Safe.Try(() =>
+                {
+                    string trashDir = AppPaths.WorkspacesTrashDir;
+                    AppPaths.EnsureDirectory(Path.Combine(trashDir, "dummy.txt"));
+                    string destDir = Path.Combine(trashDir, $"{workspaceId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}");
+                    Directory.Move(srcDir, destDir);
+                }, context: $"StorageService.DeleteWorkspaceStorage({workspaceId})");
+            }
+        }
     }
 }
 
