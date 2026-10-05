@@ -335,6 +335,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetPanelTitleColor))]
     [NotifyPropertyChangedFor(nameof(EthernetTileHeader))]
     [NotifyPropertyChangedFor(nameof(EthernetTileSymbol))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileGlyph))]
     [NotifyPropertyChangedFor(nameof(EthernetTileTooltip))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelName))]
     [NotifyPropertyChangedFor(nameof(EthernetTurnedOffBannerTitle))]
@@ -404,6 +405,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(EthernetTileHeader))]
     [NotifyPropertyChangedFor(nameof(EthernetTileSymbol))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileGlyph))]
     [NotifyPropertyChangedFor(nameof(EthernetTileTooltip))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelName))]
     [NotifyPropertyChangedFor(nameof(EthernetTurnedOffBannerTitle))]
@@ -1204,6 +1206,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(EthernetPanelTitleColor))]
     [NotifyPropertyChangedFor(nameof(EthernetTileHeader))]
     [NotifyPropertyChangedFor(nameof(EthernetTileSymbol))]
+    [NotifyPropertyChangedFor(nameof(EthernetTileGlyph))]
     [NotifyPropertyChangedFor(nameof(EthernetTileTooltip))]
     [NotifyPropertyChangedFor(nameof(EthernetPanelName))]
     [NotifyPropertyChangedFor(nameof(EthernetTurnedOffBannerTitle))]
@@ -1236,6 +1239,8 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     public string EthernetTileHeader => IsActiveUsbTethering ? "USB Tether" : "Ethernet";
 
     public SymbolRegular EthernetTileSymbol => IsActiveUsbTethering ? SymbolRegular.UsbPlug24 : SymbolRegular.Connector24;
+
+    public string EthernetTileGlyph => IsActiveUsbTethering ? "\uE8EA" : "\uE839";
 
     public string EthernetTileTooltip => IsActiveUsbTethering
         ? "USB Tethering Settings & Telemetry"
@@ -1514,6 +1519,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                 OnPropertyChanged(nameof(EthernetPanelTitleColor));
                 OnPropertyChanged(nameof(EthernetTileHeader));
                 OnPropertyChanged(nameof(EthernetTileSymbol));
+                OnPropertyChanged(nameof(EthernetTileGlyph));
                 OnPropertyChanged(nameof(EthernetTileTooltip));
                 OnPropertyChanged(nameof(EthernetPanelName));
                 OnPropertyChanged(nameof(EthernetTurnedOffBannerTitle));
@@ -2286,6 +2292,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             OnPropertyChanged(nameof(EthernetPanelTitleColor));
             OnPropertyChanged(nameof(EthernetTileHeader));
             OnPropertyChanged(nameof(EthernetTileSymbol));
+            OnPropertyChanged(nameof(EthernetTileGlyph));
             OnPropertyChanged(nameof(EthernetTileTooltip));
             OnPropertyChanged(nameof(EthernetPanelName));
             OnPropertyChanged(nameof(EthernetTurnedOffBannerTitle));
@@ -2790,6 +2797,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         OnPropertyChanged(nameof(WifiIndicatorDotBrush));
         OnPropertyChanged(nameof(EthernetTileHeader));
         OnPropertyChanged(nameof(EthernetTileSymbol));
+        OnPropertyChanged(nameof(EthernetTileGlyph));
         OnPropertyChanged(nameof(EthernetTileTooltip));
         OnPropertyChanged(nameof(EthernetPanelName));
         OnPropertyChanged(nameof(EthernetTurnedOffBannerTitle));
