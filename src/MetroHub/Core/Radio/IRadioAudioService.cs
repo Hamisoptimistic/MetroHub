@@ -49,7 +49,13 @@ public interface IRadioAudioService : IDisposable
     void SetMuted(bool isMuted);
 
     /// <summary>
-    /// Samples real-time audio spectrum levels (Bass, Mid, Treble) normalized from 0.0 to 1.0.
+    /// Samples real-time audio spectrum levels (instantaneous Kick, and smoothed Bass, Mid, Treble) normalized from 0.0 to 1.0.
+    /// Returns true if audio data was actively read; false if idle, muted, or stopped.
+    /// </summary>
+    bool GetSpectrumLevels(out float kick, out float bass, out float mid, out float treble);
+
+    /// <summary>
+    /// Samples real-time audio spectrum levels (smoothed Bass, Mid, Treble) normalized from 0.0 to 1.0.
     /// Returns true if audio data was actively read; false if idle, muted, or stopped.
     /// </summary>
     bool GetSpectrumLevels(out float bass, out float mid, out float treble);

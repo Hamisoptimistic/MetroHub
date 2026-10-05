@@ -628,7 +628,7 @@ public sealed class RadioAudioService : IRadioAudioService
         MuteStateChanged?.Invoke(this, isMuted);
     }
 
-    public bool GetSpectrumLevels(out float bass, out float mid, out float treble)
+    public bool GetSpectrumLevels(out float kick, out float bass, out float mid, out float treble)
     {
         int stream = Volatile.Read(ref _currentStream);
         bool isPlaying = Volatile.Read(ref _isPlaying);
@@ -636,11 +636,16 @@ public sealed class RadioAudioService : IRadioAudioService
 
         if (!isPlaying || isMuted || stream == 0)
         {
-            _spectrumProcessor.DecayToZero(out bass, out mid, out treble);
+            _spectrumProcessor.DecayToZero(out kick, out bass, out mid, out treble);
             return false;
         }
 
-        return _spectrumProcessor.ProcessChannel(stream, out bass, out mid, out treble);
+        return _spectrumProcessor.ProcessChannel(stream, out kick, out bass, out mid, out treble);
+    }
+
+    public bool GetSpectrumLevels(out float bass, out float mid, out float treble)
+    {
+        return GetSpectrumLevels(out _, out bass, out mid, out treble);
     }
 
     private void OnStallSync(int handle, int channel, int data, IntPtr user)

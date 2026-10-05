@@ -400,6 +400,7 @@ public class RadioWidgetTests
         public void Stop() { CurrentStation = null; IsPlaying = false; }
         public void SetVolume(double volume) => Volume = volume;
         public void SetMuted(bool isMuted) => IsMuted = isMuted;
+        public bool GetSpectrumLevels(out float kick, out float bass, out float mid, out float treble) { kick = 0; bass = 0; mid = 0; treble = 0; return false; }
         public bool GetSpectrumLevels(out float bass, out float mid, out float treble) { bass = 0; mid = 0; treble = 0; return false; }
         public void Dispose() { }
     }

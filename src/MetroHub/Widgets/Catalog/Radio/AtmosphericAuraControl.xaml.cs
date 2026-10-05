@@ -21,10 +21,12 @@ public partial class AtmosphericAuraControl : UserControl
     // Visual & Audio Physics Tuning Constants
     // ==========================================
     // Blob Base Focal Centers & Radii (Normalized 0.0 - 1.0)
-    private const float CyanBaseX = 0.25f, CyanBaseY = 0.22f, CyanBaseRadius = 0.46f;
-    private const float VioletBaseX = 0.45f, VioletBaseY = 0.35f, VioletBaseRadius = 0.42f;
-    private const float PinkBaseX = 0.52f, PinkBaseY = 0.72f, PinkBaseRadius = 0.48f;
-    private const float OrangeBaseX = 0.80f, OrangeBaseY = 0.75f, OrangeBaseRadius = 0.44f;
+    // Wide seamless radii (0.75 - 0.80) ensure the gradient falloff extends beyond tile borders,
+    // completely eliminating harsh spotlight circles and visible radial boundaries.
+    private const float CyanBaseX = 0.25f, CyanBaseY = 0.22f, CyanBaseRadius = 0.78f;
+    private const float VioletBaseX = 0.45f, VioletBaseY = 0.35f, VioletBaseRadius = 0.75f;
+    private const float PinkBaseX = 0.52f, PinkBaseY = 0.72f, PinkBaseRadius = 0.80f;
+    private const float OrangeBaseX = 0.80f, OrangeBaseY = 0.75f, OrangeBaseRadius = 0.76f;
 
     // Drift Motion Amplitudes (Normalized 0.0 - 1.0)
     private const float DriftAmpX = 0.07f;
@@ -37,17 +39,17 @@ public partial class AtmosphericAuraControl : UserControl
     private const float ContinuousAttack = 0.04f;    // ~40ms fast attack
     private const float ContinuousRelease = 0.22f;   // ~220ms smooth release
 
-    // Tier 2: Drone-Stripped Transient Beat Pump & Harmonic Pulse
-    private const float FastAttack = 0.012f;         // ~12ms instant transient snap
-    private const float FastRelease = 0.045f;        // ~45ms rapid decay
-    private const float SlowBaselineAttack = 0.14f;  // ~140ms drone follower attack
-    private const float SlowBaselineRelease = 0.35f; // ~350ms drone follower release
-    private const float MinOnsetFloor = 0.024f;      // Absolute floor to reject silence/hiss
-    private const float KickRefractoryTime = 0.11f;  // 110ms refractory window between kicks
-    private const float ColorSwitchInterval = 0.25f; // 250ms minimum between color switches
-    private const float PumpReleaseDecay = 0.16f;    // 160ms decay for kick envelope
-    private const float PumpRadiusBoost = 0.24f;     // Up to +24% radius on maximum velocity kick (clean localized bloom)
-    private const float PumpOpacityBoost = 0.45f;    // Up to +45% opacity on maximum velocity kick
+    // Tier 2: 3-Frame Spectral Flux Beat Pump
+    private const float MinOnsetFloor = 0.012f;      // Absolute floor to reject silence/hiss
+    private const float KickRefractoryTime = 0.11f;   // 110ms refractory window between kicks
+    private const float ColorSwitchInterval = 0.25f;  // 250ms minimum between color switches
+    private const float PumpReleaseDecay = 0.22f;     // 220ms decay for kick envelope (longer flash)
+    private const float PumpRadiusBoost = 0.25f;      // +25% radius expansion on kick
+    private const float PumpOpacityBoost = 0.55f;     // Up to +55% luminescence flare on kick
+    private const float FluxSigmaMultiplier = 1.5f;   // Threshold = mean + 1.5σ
+
+    // 3-frame kick history ring buffer (handles FFT2048 overlap: ~46ms window, ~16ms step)
+    private const int KickHistoryLen = 4;
 
     // ==========================================
     // Dependency Properties
@@ -95,15 +97,16 @@ public partial class AtmosphericAuraControl : UserControl
     private static readonly long Throttled30FpsTicks = TimeSpan.FromMilliseconds(33).Ticks;
 
     // Audio DSP State
-    private float _bassPeak = 0.20f;         // Running peak for auto-gain normalization
-    private float _midPeak = 0.15f;          // Running peak for mid auto-gain normalization
+    private float _bassPeak = 0.30f;         // Running peak for bass auto-gain normalization
+    private float _midPeak = 0.25f;          // Running peak for mid auto-gain normalization
     private float _smoothedBass;             // Tier 1 smoothed bass envelope
-    private float _fastBassEnv;              // Snappy attack bass envelope (~12ms)
-    private float _slowBassBaseline;         // Drone tracking baseline (~140ms)
-    private float _fastMidEnv;               // Snappy attack mid envelope (~10ms)
-    private float _slowMidBaseline;          // Drone tracking mid baseline (~120ms)
-    private float _fluxAvg = 0.025f;         // Moving average of transient flux for adaptive threshold
-    private float _kickEnv;                  // Tier 2 velocity-scaled kick envelope
+
+    // 3-frame spectral flux state
+    private readonly float[] _kickHistory = new float[KickHistoryLen]; // Ring buffer of raw kick values
+    private int _kickHistoryIdx;             // Current write index into ring buffer
+    private float _fluxMean = 0.010f;        // Running mean of flux (EMA, ~2s)
+    private float _fluxVar = 0.0001f;        // Running variance of flux (EMA, ~2s)
+    private float _kickEnv;                  // Velocity-scaled kick envelope
     private float _kickCooldown;             // Refractory timer (110ms)
     private float _colorCooldown;            // Color switch timer (250ms)
     private int _pumpingColorIndex = 2;      // 0=Cyan, 1=Violet, 2=Pink, 3=Orange
@@ -290,31 +293,32 @@ public partial class AtmosphericAuraControl : UserControl
             RectOrange.Opacity = 0.38 + p3 * 0.20;
 
             _kickEnv = 0f;
-            _fastBassEnv = 0f;
-            _slowBassBaseline = 0f;
-            _fastMidEnv = 0f;
-            _slowMidBaseline = 0f;
-            _fluxAvg = 0.025f;
+            _fluxMean = 0.010f;
+            _fluxVar = 0.0001f;
+            Array.Clear(_kickHistory);
+            _kickHistoryIdx = 0;
             return;
         }
 
         // 3. Sample Audio Levels
         var audioService = RadioAudioService.Instance;
-        bool hasData = audioService.GetSpectrumLevels(out float rawBass, out float rawMid, out _);
+        bool hasData = audioService.GetSpectrumLevels(out float rawKick, out float rawBass, out float rawMid, out _);
         if (!hasData && !active)
         {
+            rawKick = 0f;
             rawBass = 0f;
             rawMid = 0f;
         }
 
-        // Auto Gain Normalization: Decaying running peak over ~3.5s
+        // Bass and Mid use auto-gain normalization; Kick does NOT (already dB-mapped 0-1)
         float peakDecay = MathF.Exp(-dt / 3.5f);
+
         _bassPeak = Math.Max(rawBass, _bassPeak * peakDecay);
-        if (_bassPeak < 0.08f) _bassPeak = 0.08f;
+        if (_bassPeak < 0.25f) _bassPeak = 0.25f;
         float normBass = Math.Clamp(rawBass / _bassPeak, 0f, 1f);
 
         _midPeak = Math.Max(rawMid, _midPeak * peakDecay);
-        if (_midPeak < 0.06f) _midPeak = 0.06f;
+        if (_midPeak < 0.20f) _midPeak = 0.20f;
         float normMid = Math.Clamp(rawMid / _midPeak, 0f, 1f);
 
         // Tier 1: Continuous Note Envelope (Fast attack ~40ms, smooth release ~220ms)
@@ -329,68 +333,64 @@ public partial class AtmosphericAuraControl : UserControl
             _smoothedBass += releaseCoeff * (normBass - _smoothedBass);
         }
 
-        // Tier 2: Dual Fast/Slow Envelopes for Continuous Drone Cancellation
-        float fastAttackCoeff = 1f - MathF.Exp(-dt / FastAttack);
-        float fastReleaseCoeff = 1f - MathF.Exp(-dt / FastRelease);
-        float slowAttackCoeff = 1f - MathF.Exp(-dt / SlowBaselineAttack);
-        float slowReleaseCoeff = 1f - MathF.Exp(-dt / SlowBaselineRelease);
+        // =====================================================================
+        // Tier 2: 3-Frame Spectral Flux Beat Detection (mean + 1.5σ threshold)
+        // =====================================================================
+        // With FFT2048 at 44.1 kHz the window is ~46ms but frames arrive every ~16ms,
+        // so consecutive reads overlap by ~2/3. A kick's rise spreads across 2-3 frames.
+        // We compare the current kick level to the minimum of the last 3 frames
+        // to capture the full rising edge regardless of which frame catches the onset.
 
-        // Bass fast snap and slow drone baseline tracking
-        if (normBass > _fastBassEnv)
-            _fastBassEnv += fastAttackCoeff * (normBass - _fastBassEnv);
-        else
-            _fastBassEnv += fastReleaseCoeff * (normBass - _fastBassEnv);
+        // Store current raw kick in the ring buffer
+        _kickHistory[_kickHistoryIdx] = rawKick;
+        _kickHistoryIdx = (_kickHistoryIdx + 1) % KickHistoryLen;
 
-        if (normBass > _slowBassBaseline)
-            _slowBassBaseline += slowAttackCoeff * (normBass - _slowBassBaseline);
-        else
-            _slowBassBaseline += slowReleaseCoeff * (normBass - _slowBassBaseline);
+        // Find the minimum of the oldest 3 values in the ring buffer (the "floor" before the onset)
+        float histMin = float.MaxValue;
+        for (int i = 1; i <= 3; i++)
+        {
+            int idx = (_kickHistoryIdx - 1 - i + KickHistoryLen * 2) % KickHistoryLen;
+            histMin = Math.Min(histMin, _kickHistory[idx]);
+        }
+        if (histMin == float.MaxValue) histMin = 0f;
 
-        // Mid fast snap and slow baseline tracking (kick beater slap & pop handclap/snare)
-        if (normMid > _fastMidEnv)
-            _fastMidEnv += fastAttackCoeff * (normMid - _fastMidEnv);
-        else
-            _fastMidEnv += fastReleaseCoeff * (normMid - _fastMidEnv);
+        // Spectral flux: how much did kick rise above its recent floor?
+        float flux = Math.Max(0f, rawKick - histMin);
 
-        if (normMid > _slowMidBaseline)
-            _slowMidBaseline += slowAttackCoeff * (normMid - _slowMidBaseline);
-        else
-            _slowMidBaseline += slowReleaseCoeff * (normMid - _slowMidBaseline);
+        // Adaptive threshold: running mean + 1.5σ of flux with ~2s time constant
+        float fluxAlpha = 1f - MathF.Exp(-dt / 4.0f);
+        float prevMean = _fluxMean;
+        _fluxMean += fluxAlpha * (flux - _fluxMean);
+        float diff = flux - prevMean;
+        _fluxVar += fluxAlpha * (diff * diff - _fluxVar);
+        float fluxSigma = MathF.Sqrt(Math.Max(0f, _fluxVar));
 
-        // Drone-subtracted transient onset energy (combines bass thump + pop clap/snare snap)
-        float bassOnset = Math.Max(0f, _fastBassEnv - _slowBassBaseline);
-        float midOnset = Math.Max(0f, _fastMidEnv - _slowMidBaseline);
-        float transientFlux = bassOnset + (midOnset * 0.50f);
+        // Threshold: mean + 1.5σ, but never below absolute floor
+        float dynamicThreshold = Math.Max(MinOnsetFloor, _fluxMean + FluxSigmaMultiplier * fluxSigma);
 
-        // Calculate bass dominance: distinguishes real low-end bass kicks from claps/snares
-        float bassRatio = Math.Clamp(bassOnset / Math.Max(0.01f, bassOnset + midOnset), 0f, 1f);
-
-        // Adaptive sensitivity: auto-calibrates to song dynamic range (~1.8s time constant)
-        float fluxAvgCoeff = 1f - MathF.Exp(-dt / 1.8f);
-        _fluxAvg += fluxAvgCoeff * (transientFlux - _fluxAvg);
-        if (_fluxAvg < 0.015f) _fluxAvg = 0.015f;
-
-        float dynamicThreshold = Math.Max(MinOnsetFloor, _fluxAvg * 1.35f);
+        // Kick dominance: ratio of low-end vs mid-range onset energy for bass priority scaling
+        float midFlux = Math.Max(0f, rawMid - normMid * 0.85f); // rough mid transient
+        float kickRatio = Math.Clamp(flux / Math.Max(0.01f, flux + midFlux), 0f, 1f);
 
         _kickCooldown -= dt;
         _colorCooldown -= dt;
 
-        bool isHit = (_kickCooldown <= 0f) && (transientFlux >= dynamicThreshold);
+        bool isHit = (_kickCooldown <= 0f) && (flux >= dynamicThreshold);
 
         if (isHit)
         {
             // Dynamic velocity scaling with Bass Priority:
-            // Heavy bass thumps get full 100% explosive power (hitScale ~ 1.0).
-            // Claps/snares without bass are scaled down to a subtle ~35% rhythmic bounce.
-            float rawVelocity = Math.Clamp((transientFlux - dynamicThreshold * 0.5f) / Math.Max(0.08f, dynamicThreshold * 1.5f), 0.30f, 1.0f);
-            float hitScale = 0.32f + (0.68f * bassRatio);
+            // True kick drums get full 100% explosive power (hitScale ~ 1.0).
+            // Claps/snares without low-end are scaled down to a subtle ~30% rhythmic bounce.
+            float rawVelocity = Math.Clamp((flux - dynamicThreshold * 0.4f) / Math.Max(0.03f, dynamicThreshold * 0.9f), 0.55f, 1.0f);
+            float hitScale = 0.40f + (0.60f * kickRatio);
             float scaledVelocity = rawVelocity * hitScale;
 
             _kickEnv = Math.Max(_kickEnv, scaledVelocity);
             _kickCooldown = KickRefractoryTime;
 
-            // Color switches are tied to bass kicks for clean, musical transitions
-            if (_colorCooldown <= 0f && bassRatio > 0.30f)
+            // Color switches are tied to kick hits for clean, musical transitions
+            if (_colorCooldown <= 0f && kickRatio > 0.30f)
             {
                 int next;
                 do
