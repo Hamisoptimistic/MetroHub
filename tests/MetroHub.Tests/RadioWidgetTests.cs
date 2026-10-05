@@ -387,6 +387,7 @@ public class RadioWidgetTests
         public event EventHandler<bool>? MuteStateChanged;
         public event EventHandler<string>? ErrorOccurred;
         public event EventHandler? EndOfStreamReached;
+        public event EventHandler? BassBeatTriggered;
 #pragma warning restore CS0067
 
         public void TriggerCurrentStation(RadioStation? s) { CurrentStation = s; CurrentStationChanged?.Invoke(this, s); }
@@ -402,6 +403,7 @@ public class RadioWidgetTests
         public void SetMuted(bool isMuted) => IsMuted = isMuted;
         public bool GetSpectrumLevels(out float kick, out float bass, out float mid, out float treble) { kick = 0; bass = 0; mid = 0; treble = 0; return false; }
         public bool GetSpectrumLevels(out float bass, out float mid, out float treble) { bass = 0; mid = 0; treble = 0; return false; }
+        public bool HasRecentBassBeat(double windowSeconds = 0.09) => false;
         public void Dispose() { }
     }
 }

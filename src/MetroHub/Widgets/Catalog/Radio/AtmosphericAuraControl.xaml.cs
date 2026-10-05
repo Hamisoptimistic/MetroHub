@@ -8,12 +8,13 @@ namespace MetroHub.Widgets.Catalog.Radio;
 
 /// <summary>
 /// GPU-accelerated 2D Fluid Mesh Reactive Aura for MetroHub radio station cards.
-/// Combines a continuous full-bleed multi-color base spectrum with 4 floating radial color blooms
-/// (Azure Blue, Lilac Violet, Neon Magenta, Radiant Orange).
-/// Features a two-tier acoustic engine:
-///   Tier 1: Continuous smoothed bass note coupling (+12% unified swell with fast attack & ~220ms release).
-///   Tier 2: Velocity-scaled kick pump with hysteresis, auto-gain normalization, and 250ms color switch intervals.
-/// Uses zero geometry transforms to ensure zero border gaps and zero bounding box seams.
+/// Pure Kick & Snare Precision Engine:
+///   1. Exclusive Triggering: ONLY authentic Kick drums and Snare backbeats trigger bloom and surge.
+///      Zero shimmer, zero wobble, zero idle breathing, zero continuous bass drone swelling.
+///   2. Kick Thump: Punchy bass thump with 5% base vector expansion, +25% bloom surge, and 220ms release.
+///      Randomizes the focal color across the spectrum strictly on bass kick beats.
+///   3. Snare Crack: Crisp, snappy luminescence pop (+22% opacity, 100ms fast release, zero color shift).
+///   4. Zero White Blobs: 100% saturated pigments across all layers (no milky pastel stops).
 /// </summary>
 public partial class AtmosphericAuraControl : UserControl
 {
@@ -28,28 +29,23 @@ public partial class AtmosphericAuraControl : UserControl
     private const float PinkBaseX = 0.52f, PinkBaseY = 0.72f, PinkBaseRadius = 0.80f;
     private const float OrangeBaseX = 0.80f, OrangeBaseY = 0.75f, OrangeBaseRadius = 0.76f;
 
-    // Drift Motion Amplitudes (Normalized 0.0 - 1.0)
-    private const float DriftAmpX = 0.07f;
-    private const float DriftAmpY = 0.06f;
-    private const float CyclePeriod = 4.2f;
-    private const float AmbientBreatheAmp = 0.04f;
+    // Kick Transient Detection Constants
+    private const float MinOnsetFloor = 0.010f;       // Absolute floor to reject silence/hiss
+    private const float KickRefractoryTime = 0.11f;    // 110ms refractory window between kicks
+    private const float ColorSwitchInterval = 0.22f;   // 220ms minimum between color switches
+    private const float KickReleaseDecay = 0.22f;      // ~220ms deep visceral kick release
+    private const float FluxSigmaMultiplier = 1.4f;    // Threshold = mean + 1.4σ
+    private const float KickRadiusBoost = 0.25f;       // +25% radius expansion on kick
+    private const float KickOpacityBoost = 0.52f;      // Up to +52% luminescence flare on kick
+    private const float BaseKickSwellAmp = 0.05f;      // +5% base gradient punch on kick
 
-    // Tier 1: Continuous Bass Groove Swell (Whole-tile musical breathing)
-    private const float ContinuousSwellAmp = 0.08f;  // +8% size on continuous bass notes
-    private const float ContinuousAttack = 0.04f;    // ~40ms fast attack
-    private const float ContinuousRelease = 0.22f;   // ~220ms smooth release
+    // Snare Transient Detection Constants
+    private const float SnareRefractoryTime = 0.12f;   // 120ms refractory window between snares
+    private const float SnareReleaseDecay = 0.10f;     // ~100ms crisp, snappy crack release
+    private const float SnareOpacityBoost = 0.45f;     // Crisp snappy luminescence pop on active bloom
 
-    // Tier 2: 3-Frame Spectral Flux Beat Pump
-    private const float MinOnsetFloor = 0.012f;      // Absolute floor to reject silence/hiss
-    private const float KickRefractoryTime = 0.11f;   // 110ms refractory window between kicks
-    private const float ColorSwitchInterval = 0.25f;  // 250ms minimum between color switches
-    private const float PumpReleaseDecay = 0.22f;     // 220ms decay for kick envelope (longer flash)
-    private const float PumpRadiusBoost = 0.25f;      // +25% radius expansion on kick
-    private const float PumpOpacityBoost = 0.55f;     // Up to +55% luminescence flare on kick
-    private const float FluxSigmaMultiplier = 1.5f;   // Threshold = mean + 1.5σ
-
-    // 3-frame kick history ring buffer (handles FFT2048 overlap: ~46ms window, ~16ms step)
-    private const int KickHistoryLen = 4;
+    // 4-frame ring buffer for transient edge detection
+    private const int HistoryLen = 4;
 
     // ==========================================
     // Dependency Properties
@@ -97,19 +93,24 @@ public partial class AtmosphericAuraControl : UserControl
     private static readonly long Throttled30FpsTicks = TimeSpan.FromMilliseconds(33).Ticks;
 
     // Audio DSP State
-    private float _bassPeak = 0.30f;         // Running peak for bass auto-gain normalization
     private float _midPeak = 0.25f;          // Running peak for mid auto-gain normalization
-    private float _smoothedBass;             // Tier 1 smoothed bass envelope
 
-    // 3-frame spectral flux state
-    private readonly float[] _kickHistory = new float[KickHistoryLen]; // Ring buffer of raw kick values
-    private int _kickHistoryIdx;             // Current write index into ring buffer
-    private float _fluxMean = 0.010f;        // Running mean of flux (EMA, ~2s)
-    private float _fluxVar = 0.0001f;        // Running variance of flux (EMA, ~2s)
-    private float _kickEnv;                  // Velocity-scaled kick envelope
-    private float _kickCooldown;             // Refractory timer (110ms)
-    private float _colorCooldown;            // Color switch timer (250ms)
+    // Kick 3-frame spectral flux state
+    private readonly float[] _kickHistory = new float[HistoryLen];
+    private int _kickHistoryIdx;
+    private float _fluxMean = 0.010f;
+    private float _fluxVar = 0.0001f;
+    private float _kickEnv;
+    private float _kickCooldown;
+    private float _colorCooldown;
     private int _pumpingColorIndex = 2;      // 0=Cyan, 1=Violet, 2=Pink, 3=Orange
+
+    // Snare transient state
+    private readonly float[] _midHistory = new float[HistoryLen];
+    private int _midHistoryIdx;
+    private float _snareEnv;
+    private float _snareCooldown;
+
     private static bool _isBatterySaver;
 
     static AtmosphericAuraControl()
@@ -252,145 +253,105 @@ public partial class AtmosphericAuraControl : UserControl
         float dt = Math.Clamp((float)(now - _lastFrameTime).TotalSeconds, 0.001f, 0.05f);
         _lastFrameTime = now;
 
-        double phase = elapsed * (Math.PI * 2.0 / CyclePeriod);
-        float flowX = (float)(Math.Sin(phase * 0.9) * 0.10);
-        float flowY = (float)(Math.Cos(phase * 0.7) * 0.08);
-
-        // 2. Render Buffering State: Gentle soothing wave
+        // 2. Render Buffering State: Gentle soothing wave (zero audio required)
         if (buffering)
         {
-            float bBreathe = (float)(Math.Sin(phase) * AmbientBreatheAmp);
-            float p0 = (float)(Math.Sin(phase) * 0.5 + 0.5);
-            float p1 = (float)(Math.Sin(phase + 1.57) * 0.5 + 0.5);
-            float p2 = (float)(Math.Sin(phase + 3.14) * 0.5 + 0.5);
-            float p3 = (float)(Math.Sin(phase + 4.71) * 0.5 + 0.5);
+            double bPhase = elapsed * (Math.PI * 2.0 / 4.0);
+            float p0 = (float)(Math.Sin(bPhase) * 0.5 + 0.5);
+            float p1 = (float)(Math.Sin(bPhase + 1.57) * 0.5 + 0.5);
+            float p2 = (float)(Math.Sin(bPhase + 3.14) * 0.5 + 0.5);
+            float p3 = (float)(Math.Sin(bPhase + 4.71) * 0.5 + 0.5);
 
-            BaseGradient.StartPoint = new Point(-0.15 + flowX - bBreathe, -0.15 + flowY - bBreathe);
-            BaseGradient.EndPoint = new Point(1.10 + flowX + bBreathe, 1.10 + flowY + bBreathe);
+            BaseGradient.StartPoint = new Point(-0.15, -0.15);
+            BaseGradient.EndPoint = new Point(1.10, 1.10);
 
-            BrushCyan.Center = BrushCyan.GradientOrigin = new Point(
-                (float)(CyanBaseX + Math.Sin(phase * 0.8) * DriftAmpX),
-                (float)(CyanBaseY + Math.Cos(phase * 0.7) * DriftAmpY));
-            BrushCyan.RadiusX = BrushCyan.RadiusY = CyanBaseRadius + p0 * 0.05;
-            RectCyan.Opacity = 0.40 + p0 * 0.20;
+            BrushCyan.Center = BrushCyan.GradientOrigin = new Point(CyanBaseX, CyanBaseY);
+            BrushCyan.RadiusX = BrushCyan.RadiusY = CyanBaseRadius + p0 * 0.04;
+            RectCyan.Opacity = 0.40 + p0 * 0.15;
 
-            BrushViolet.Center = BrushViolet.GradientOrigin = new Point(
-                (float)(VioletBaseX + Math.Cos(phase * 0.85 + 1.2) * DriftAmpX),
-                (float)(VioletBaseY + Math.Sin(phase * 0.75 + 0.8) * DriftAmpY));
-            BrushViolet.RadiusX = BrushViolet.RadiusY = VioletBaseRadius + p1 * 0.05;
-            RectViolet.Opacity = 0.38 + p1 * 0.20;
+            BrushViolet.Center = BrushViolet.GradientOrigin = new Point(VioletBaseX, VioletBaseY);
+            BrushViolet.RadiusX = BrushViolet.RadiusY = VioletBaseRadius + p1 * 0.04;
+            RectViolet.Opacity = 0.38 + p1 * 0.15;
 
-            BrushPink.Center = BrushPink.GradientOrigin = new Point(
-                (float)(PinkBaseX + Math.Sin(phase * 0.8 + 2.1) * DriftAmpX),
-                (float)(PinkBaseY + Math.Cos(phase * 0.9 + 1.7) * DriftAmpY));
-            BrushPink.RadiusX = BrushPink.RadiusY = PinkBaseRadius + p2 * 0.05;
-            RectPink.Opacity = 0.40 + p2 * 0.20;
+            BrushPink.Center = BrushPink.GradientOrigin = new Point(PinkBaseX, PinkBaseY);
+            BrushPink.RadiusX = BrushPink.RadiusY = PinkBaseRadius + p2 * 0.04;
+            RectPink.Opacity = 0.40 + p2 * 0.15;
 
-            BrushOrange.Center = BrushOrange.GradientOrigin = new Point(
-                (float)(OrangeBaseX + Math.Cos(phase * 0.75 + 3.4) * DriftAmpX),
-                (float)(OrangeBaseY + Math.Sin(phase * 0.85 + 2.9) * DriftAmpY));
-            BrushOrange.RadiusX = BrushOrange.RadiusY = OrangeBaseRadius + p3 * 0.05;
-            RectOrange.Opacity = 0.38 + p3 * 0.20;
+            BrushOrange.Center = BrushOrange.GradientOrigin = new Point(OrangeBaseX, OrangeBaseY);
+            BrushOrange.RadiusX = BrushOrange.RadiusY = OrangeBaseRadius + p3 * 0.04;
+            RectOrange.Opacity = 0.38 + p3 * 0.15;
 
             _kickEnv = 0f;
-            _fluxMean = 0.010f;
-            _fluxVar = 0.0001f;
+            _snareEnv = 0f;
             Array.Clear(_kickHistory);
+            Array.Clear(_midHistory);
             _kickHistoryIdx = 0;
+            _midHistoryIdx = 0;
             return;
         }
 
         // 3. Sample Audio Levels
         var audioService = RadioAudioService.Instance;
-        bool hasData = audioService.GetSpectrumLevels(out float rawKick, out float rawBass, out float rawMid, out _);
+        bool hasData = audioService.GetSpectrumLevels(out float rawKick, out _, out float rawMid, out float rawTreble);
+
         if (!hasData && !active)
         {
             rawKick = 0f;
-            rawBass = 0f;
             rawMid = 0f;
+            rawTreble = 0f;
         }
 
-        // Bass and Mid use auto-gain normalization; Kick does NOT (already dB-mapped 0-1)
         float peakDecay = MathF.Exp(-dt / 3.5f);
-
-        _bassPeak = Math.Max(rawBass, _bassPeak * peakDecay);
-        if (_bassPeak < 0.25f) _bassPeak = 0.25f;
-        float normBass = Math.Clamp(rawBass / _bassPeak, 0f, 1f);
-
         _midPeak = Math.Max(rawMid, _midPeak * peakDecay);
         if (_midPeak < 0.20f) _midPeak = 0.20f;
         float normMid = Math.Clamp(rawMid / _midPeak, 0f, 1f);
 
-        // Tier 1: Continuous Note Envelope (Fast attack ~40ms, smooth release ~220ms)
-        float attackCoeff = 1f - MathF.Exp(-dt / ContinuousAttack);
-        float releaseCoeff = 1f - MathF.Exp(-dt / ContinuousRelease);
-        if (normBass > _smoothedBass)
-        {
-            _smoothedBass += attackCoeff * (normBass - _smoothedBass);
-        }
-        else
-        {
-            _smoothedBass += releaseCoeff * (normBass - _smoothedBass);
-        }
-
         // =====================================================================
-        // Tier 2: 3-Frame Spectral Flux Beat Detection (mean + 1.5σ threshold)
+        // 4. KICK DRUM DETECTION (35 - 120 Hz)
         // =====================================================================
-        // With FFT2048 at 44.1 kHz the window is ~46ms but frames arrive every ~16ms,
-        // so consecutive reads overlap by ~2/3. A kick's rise spreads across 2-3 frames.
-        // We compare the current kick level to the minimum of the last 3 frames
-        // to capture the full rising edge regardless of which frame catches the onset.
-
-        // Store current raw kick in the ring buffer
         _kickHistory[_kickHistoryIdx] = rawKick;
-        _kickHistoryIdx = (_kickHistoryIdx + 1) % KickHistoryLen;
+        _kickHistoryIdx = (_kickHistoryIdx + 1) % HistoryLen;
 
-        // Find the minimum of the oldest 3 values in the ring buffer (the "floor" before the onset)
-        float histMin = float.MaxValue;
+        float kickFloor = float.MaxValue;
         for (int i = 1; i <= 3; i++)
         {
-            int idx = (_kickHistoryIdx - 1 - i + KickHistoryLen * 2) % KickHistoryLen;
-            histMin = Math.Min(histMin, _kickHistory[idx]);
+            int idx = (_kickHistoryIdx - 1 - i + HistoryLen * 2) % HistoryLen;
+            kickFloor = Math.Min(kickFloor, _kickHistory[idx]);
         }
-        if (histMin == float.MaxValue) histMin = 0f;
+        if (kickFloor == float.MaxValue) kickFloor = 0f;
 
-        // Spectral flux: how much did kick rise above its recent floor?
-        float flux = Math.Max(0f, rawKick - histMin);
+        float kickFlux = Math.Max(0f, rawKick - kickFloor);
 
-        // Adaptive threshold: running mean + 1.5σ of flux with ~2s time constant
+        // Adaptive statistical threshold for kick
         float fluxAlpha = 1f - MathF.Exp(-dt / 4.0f);
         float prevMean = _fluxMean;
-        _fluxMean += fluxAlpha * (flux - _fluxMean);
-        float diff = flux - prevMean;
+        _fluxMean += fluxAlpha * (kickFlux - _fluxMean);
+        float diff = kickFlux - prevMean;
         _fluxVar += fluxAlpha * (diff * diff - _fluxVar);
         float fluxSigma = MathF.Sqrt(Math.Max(0f, _fluxVar));
+        float dynamicKickThreshold = Math.Max(MinOnsetFloor, _fluxMean + FluxSigmaMultiplier * fluxSigma);
 
-        // Threshold: mean + 1.5σ, but never below absolute floor
-        float dynamicThreshold = Math.Max(MinOnsetFloor, _fluxMean + FluxSigmaMultiplier * fluxSigma);
-
-        // Kick dominance: ratio of low-end vs mid-range onset energy for bass priority scaling
-        float midFlux = Math.Max(0f, rawMid - normMid * 0.85f); // rough mid transient
-        float kickRatio = Math.Clamp(flux / Math.Max(0.01f, flux + midFlux), 0f, 1f);
+        float midTransient = Math.Max(0f, rawMid - normMid * 0.85f);
+        float kickRatio = Math.Clamp(kickFlux / Math.Max(0.01f, kickFlux + midTransient), 0f, 1f);
 
         _kickCooldown -= dt;
         _colorCooldown -= dt;
 
-        bool isHit = (_kickCooldown <= 0f) && (flux >= dynamicThreshold);
+        bool isFluxKick = (_kickCooldown <= 0f) && (kickFlux >= dynamicKickThreshold);
+        bool isDirectKick = (_kickCooldown <= 0f) && (rawKick > 0.26f && rawKick > kickFloor + 0.035f);
+        bool isKick = (isFluxKick || isDirectKick) && (kickRatio > 0.28f);
 
-        if (isHit)
+        if (isKick)
         {
-            // Dynamic velocity scaling with Bass Priority:
-            // True kick drums get full 100% explosive power (hitScale ~ 1.0).
-            // Claps/snares without low-end are scaled down to a subtle ~30% rhythmic bounce.
-            float rawVelocity = Math.Clamp((flux - dynamicThreshold * 0.4f) / Math.Max(0.03f, dynamicThreshold * 0.9f), 0.55f, 1.0f);
-            float hitScale = 0.40f + (0.60f * kickRatio);
-            float scaledVelocity = rawVelocity * hitScale;
+            float hitDelta = Math.Max(kickFlux, rawKick - kickFloor);
+            float rawVelocity = Math.Clamp((hitDelta - dynamicKickThreshold * 0.35f) / Math.Max(0.025f, dynamicKickThreshold * 0.85f), 0.65f, 1.0f);
+            float scaledVelocity = rawVelocity * (0.45f + 0.55f * kickRatio);
 
             _kickEnv = Math.Max(_kickEnv, scaledVelocity);
             _kickCooldown = KickRefractoryTime;
 
-            // Color switches are tied to kick hits for clean, musical transitions
-            if (_colorCooldown <= 0f && kickRatio > 0.30f)
+            // ONLY BASS KICKS SWITCH COLOR
+            if (_colorCooldown <= 0f)
             {
                 int next;
                 do
@@ -403,67 +364,83 @@ public partial class AtmosphericAuraControl : UserControl
             }
         }
 
-        // Exponential Release Decay for Kick Envelope (~160ms)
-        float pumpDecay = MathF.Exp(-dt / PumpReleaseDecay);
-        _kickEnv *= pumpDecay;
+        // =====================================================================
+        // 5. SNARE / CLAP DETECTION (1.5 kHz - 8 kHz Upper Mid & Treble Crack)
+        // =====================================================================
+        _midHistory[_midHistoryIdx] = rawMid;
+        _midHistoryIdx = (_midHistoryIdx + 1) % HistoryLen;
+
+        float midFloor = float.MaxValue;
+        for (int i = 1; i <= 3; i++)
+        {
+            int idx = (_midHistoryIdx - 1 - i + HistoryLen * 2) % HistoryLen;
+            midFloor = Math.Min(midFloor, _midHistory[idx]);
+        }
+        if (midFloor == float.MaxValue) midFloor = 0f;
+
+        float midFlux = Math.Max(0f, rawMid - midFloor);
+
+        _snareCooldown -= dt;
+        // Snare requires crisp mid rising edge + high frequency crack + low bass dominance
+        bool isSnare = (_snareCooldown <= 0f) && !isKick &&
+                       (midFlux > 0.030f && rawMid > 0.20f && rawTreble > 0.12f && kickRatio < 0.50f);
+
+        if (isSnare)
+        {
+            float snareVelocity = Math.Clamp((midFlux - 0.02f) / 0.05f, 0.55f, 1.0f);
+            _snareEnv = Math.Max(_snareEnv, snareVelocity);
+            _snareCooldown = SnareRefractoryTime;
+            // SNARES NEVER SWITCH COLOR
+        }
+
+        // =====================================================================
+        // 6. ENVELOPE DECAYS (Zero Shimmer: Zero continuous note swell)
+        // =====================================================================
+        _kickEnv *= MathF.Exp(-dt / KickReleaseDecay);
         if (_kickEnv < 0.005f) _kickEnv = 0f;
 
-        // 4. Continuous Ambient Wave (~4.2s cycle) & Idle Calming
-        float breathe = (float)(Math.Sin(phase) * AmbientBreatheAmp);
+        _snareEnv *= MathF.Exp(-dt / SnareReleaseDecay);
+        if (_snareEnv < 0.005f) _snareEnv = 0f;
 
-        float calm = 1f - 0.6f * _kickEnv;
-        breathe *= calm;
+        // =====================================================================
+        // 7. SURGE & BLOOM CALCULATION (Exclusively Kick & Snare)
+        // =====================================================================
+        // Kick delivers full visceral bloom expansion (+85%) and tight grounding (+15%)
+        float kickShared = _kickEnv * 0.15f;
+        float kickFocal  = _kickEnv * 0.85f;
 
-        // Fluid Lissajous drift for individual accent blobs (calmed during a kick pump)
-        float driftCyanX = (float)(CyanBaseX + Math.Sin(phase * 0.8) * DriftAmpX * calm);
-        float driftCyanY = (float)(CyanBaseY + Math.Cos(phase * 0.7) * DriftAmpY * calm);
+        // Snare delivers snappy high-frequency luminescence pop on the active bloom (+45%)
+        float snareFocal = _snareEnv * SnareOpacityBoost;
 
-        float driftVioletX = (float)(VioletBaseX + Math.Cos(phase * 0.85 + 1.2) * DriftAmpX * calm);
-        float driftVioletY = (float)(VioletBaseY + Math.Sin(phase * 0.75 + 0.8) * DriftAmpY * calm);
+        float pumpCyan   = kickShared + ((_pumpingColorIndex == 0) ? (kickFocal + snareFocal) : 0f);
+        float pumpViolet = kickShared + ((_pumpingColorIndex == 1) ? (kickFocal + snareFocal) : 0f);
+        float pumpPink   = kickShared + ((_pumpingColorIndex == 2) ? (kickFocal + snareFocal) : 0f);
+        float pumpOrange = kickShared + ((_pumpingColorIndex == 3) ? (kickFocal + snareFocal) : 0f);
 
-        float driftPinkX = (float)(PinkBaseX + Math.Sin(phase * 0.8 + 2.1) * DriftAmpX * calm);
-        float driftPinkY = (float)(PinkBaseY + Math.Cos(phase * 0.9 + 1.7) * DriftAmpY * calm);
+        // Base gradient expands ONLY on Kick thump (zero wobble, zero shimmer)
+        float baseKickSwell = _kickEnv * BaseKickSwellAmp;
+        BaseGradient.StartPoint = new Point(-0.15 - baseKickSwell, -0.15 - baseKickSwell);
+        BaseGradient.EndPoint = new Point(1.10 + baseKickSwell, 1.10 + baseKickSwell);
 
-        float driftOrangeX = (float)(OrangeBaseX + Math.Cos(phase * 0.75 + 3.4) * DriftAmpX * calm);
-        float driftOrangeY = (float)(OrangeBaseY + Math.Sin(phase * 0.85 + 2.9) * DriftAmpY * calm);
+        // 8. Apply Pure Bloomed States (Rock-solid idle baseline; swells ONLY on kick/snare)
+        // 1. Cyan (Top-Left quadrant)
+        BrushCyan.Center = BrushCyan.GradientOrigin = new Point(CyanBaseX, CyanBaseY);
+        BrushCyan.RadiusX = BrushCyan.RadiusY = CyanBaseRadius + (pumpCyan * KickRadiusBoost);
+        RectCyan.Opacity = Math.Clamp(0.48f + (pumpCyan * KickOpacityBoost), 0.20f, 1.0f);
 
-        // Determine pump intensity: Unified Harmonic Surge with High Contrast
-        // The chosen color gets 100% full kick power, while the remaining 3 colors get a tight 20% supporting pulse.
-        // This gives high dramatic contrast while preventing any layer from being masked.
-        float sharedPump = _kickEnv * 0.20f;
-        float focalBoost = _kickEnv * 0.80f;
-        float pumpCyan   = sharedPump + ((_pumpingColorIndex == 0) ? focalBoost : 0f);
-        float pumpViolet = sharedPump + ((_pumpingColorIndex == 1) ? focalBoost : 0f);
-        float pumpPink   = sharedPump + ((_pumpingColorIndex == 2) ? focalBoost : 0f);
-        float pumpOrange = sharedPump + ((_pumpingColorIndex == 3) ? focalBoost : 0f);
+        // 2. Violet (Mid-Upper quadrant) - Saturated Royal Violet, Zero White Blob
+        BrushViolet.Center = BrushViolet.GradientOrigin = new Point(VioletBaseX, VioletBaseY);
+        BrushViolet.RadiusX = BrushViolet.RadiusY = VioletBaseRadius + (pumpViolet * KickRadiusBoost);
+        RectViolet.Opacity = Math.Clamp(0.42f + (pumpViolet * KickOpacityBoost), 0.20f, 1.0f);
 
-        // Tier 1 continuous note swell: applied to ALL blobs equally (+10 to +15% radius)
-        float noteSwell = _smoothedBass * ContinuousSwellAmp;
+        // 3. Hot Pink / Magenta (Bottom-Center quadrant)
+        BrushPink.Center = BrushPink.GradientOrigin = new Point(PinkBaseX, PinkBaseY);
+        BrushPink.RadiusX = BrushPink.RadiusY = PinkBaseRadius + (pumpPink * KickRadiusBoost);
+        RectPink.Opacity = Math.Clamp(0.48f + (pumpPink * KickOpacityBoost), 0.20f, 1.0f);
 
-        // Base gradient vector expands with continuous note swell + ambient wave + kick pulse
-        float baseKickSwell = _kickEnv * 0.08f;
-        BaseGradient.StartPoint = new Point(-0.15 + flowX - breathe - noteSwell * 0.5 - baseKickSwell, -0.15 + flowY - breathe - noteSwell * 0.5 - baseKickSwell);
-        BaseGradient.EndPoint = new Point(1.10 + flowX + breathe + noteSwell * 0.5 + baseKickSwell, 1.10 + flowY + breathe + noteSwell * 0.5 + baseKickSwell);
-
-        // Apply dynamic radial accent blooms:
-        // 1. Cyan (Top-Left)
-        BrushCyan.Center = BrushCyan.GradientOrigin = new Point(driftCyanX, driftCyanY);
-        BrushCyan.RadiusX = BrushCyan.RadiusY = CyanBaseRadius + breathe + noteSwell + (pumpCyan * PumpRadiusBoost);
-        RectCyan.Opacity = Math.Clamp(0.50f + (breathe * 0.3f) + (noteSwell * 0.15f) + (pumpCyan * PumpOpacityBoost), 0.20f, 1.0f);
-
-        // 2. Violet (Mid-Upper)
-        BrushViolet.Center = BrushViolet.GradientOrigin = new Point(driftVioletX, driftVioletY);
-        BrushViolet.RadiusX = BrushViolet.RadiusY = VioletBaseRadius - breathe + noteSwell + (pumpViolet * PumpRadiusBoost);
-        RectViolet.Opacity = Math.Clamp(0.45f - (breathe * 0.3f) + (noteSwell * 0.15f) + (pumpViolet * PumpOpacityBoost), 0.20f, 1.0f);
-
-        // 3. Hot Pink / Magenta (Bottom-Center)
-        BrushPink.Center = BrushPink.GradientOrigin = new Point(driftPinkX, driftPinkY);
-        BrushPink.RadiusX = BrushPink.RadiusY = PinkBaseRadius + breathe + noteSwell + (pumpPink * PumpRadiusBoost);
-        RectPink.Opacity = Math.Clamp(0.50f + (breathe * 0.3f) + (noteSwell * 0.15f) + (pumpPink * PumpOpacityBoost), 0.20f, 1.0f);
-
-        // 4. Radiant Orange (Bottom-Right)
-        BrushOrange.Center = BrushOrange.GradientOrigin = new Point(driftOrangeX, driftOrangeY);
-        BrushOrange.RadiusX = BrushOrange.RadiusY = OrangeBaseRadius - breathe + noteSwell + (pumpOrange * PumpRadiusBoost);
-        RectOrange.Opacity = Math.Clamp(0.48f - (breathe * 0.3f) + (noteSwell * 0.15f) + (pumpOrange * PumpOpacityBoost), 0.20f, 1.0f);
+        // 4. Radiant Orange (Bottom-Right quadrant)
+        BrushOrange.Center = BrushOrange.GradientOrigin = new Point(OrangeBaseX, OrangeBaseY);
+        BrushOrange.RadiusX = BrushOrange.RadiusY = OrangeBaseRadius + (pumpOrange * KickRadiusBoost);
+        RectOrange.Opacity = Math.Clamp(0.45f + (pumpOrange * KickOpacityBoost), 0.20f, 1.0f);
     }
 }

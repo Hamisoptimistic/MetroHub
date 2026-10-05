@@ -29,6 +29,9 @@ public sealed class RadioAudioService : IRadioAudioService
     // Hard delegate references to prevent native Garbage Collection
     private readonly SyncProcedure _stallSyncProc;
     private readonly SyncProcedure _endSyncProc;
+    private readonly ManagedBass.Fx.BPMBeatProcedure _beatProc;
+
+    private long _lastBeatTimestampTicks;
 
     private RadioStation? _currentStation;
     private bool _isPlaying;
@@ -123,6 +126,7 @@ public sealed class RadioAudioService : IRadioAudioService
     public event EventHandler<bool>? MuteStateChanged;
     public event EventHandler<string>? ErrorOccurred;
     public event EventHandler? EndOfStreamReached;
+    public event EventHandler? BassBeatTriggered;
 
     public RadioAudioService()
     {
@@ -132,6 +136,7 @@ public sealed class RadioAudioService : IRadioAudioService
         // 2. Retain persistent delegate references for native callbacks
         _stallSyncProc = OnStallSync;
         _endSyncProc = OnEndSync;
+        _beatProc = OnBassFxBeat;
 
         // 3. Initialize BASS engine (device -1 is default Windows Core Audio/WASAPI device)
         bool initialized = Bass.Init(-1, 44100, DeviceInitFlags.Default, IntPtr.Zero);
@@ -166,6 +171,7 @@ public sealed class RadioAudioService : IRadioAudioService
             LoadBassPlugin(baseDir, "bass_aac.dll");
             LoadBassPlugin(baseDir, "basshls.dll");
             LoadBassPlugin(baseDir, "bassopus.dll");
+            LoadBassPlugin(baseDir, "bass_fx.dll");
         }
         else
         {
@@ -387,6 +393,17 @@ public sealed class RadioAudioService : IRadioAudioService
             Bass.ChannelSetSync(newStream, SyncFlags.Stalled, 0, _stallSyncProc, IntPtr.Zero);
             Bass.ChannelSetSync(newStream, SyncFlags.End, 0, _endSyncProc, IntPtr.Zero);
 
+            // Register native BASS_FX real-time beat detection callback on the stream
+            try
+            {
+                ManagedBass.Fx.BassFx.BPMBeatCallbackSet(newStream, _beatProc, IntPtr.Zero);
+                ManagedBass.Fx.BassFx.BPMBeatSetParameters(newStream, 65.0f, 85.0f, 0.12f);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[RadioAudioService] BassFx beat callback registration note: {ex.Message}");
+            }
+
             bool started = Bass.ChannelPlay(newStream);
             if (!started)
             {
@@ -504,6 +521,7 @@ public sealed class RadioAudioService : IRadioAudioService
         {
             try
             {
+                try { ManagedBass.Fx.BassFx.BPMBeatFree(streamHandle); } catch { }
                 Bass.ChannelStop(streamHandle);
                 Bass.StreamFree(streamHandle);
             }
@@ -536,6 +554,7 @@ public sealed class RadioAudioService : IRadioAudioService
                 }
                 try
                 {
+                    try { ManagedBass.Fx.BassFx.BPMBeatFree(streamHandle); } catch { }
                     Bass.ChannelStop(streamHandle);
                     Bass.StreamFree(streamHandle);
                 }
@@ -646,6 +665,21 @@ public sealed class RadioAudioService : IRadioAudioService
     public bool GetSpectrumLevels(out float bass, out float mid, out float treble)
     {
         return GetSpectrumLevels(out _, out bass, out mid, out treble);
+    }
+
+    private void OnBassFxBeat(int channel, double beatPos, IntPtr user)
+    {
+        if (channel != Volatile.Read(ref _currentStream)) return;
+        Volatile.Write(ref _lastBeatTimestampTicks, DateTime.UtcNow.Ticks);
+        BassBeatTriggered?.Invoke(this, EventArgs.Empty);
+    }
+
+    public bool HasRecentBassBeat(double windowSeconds = 0.09)
+    {
+        long lastTicks = Volatile.Read(ref _lastBeatTimestampTicks);
+        if (lastTicks == 0) return false;
+        double elapsedSec = (DateTime.UtcNow.Ticks - lastTicks) / (double)TimeSpan.TicksPerSecond;
+        return elapsedSec <= windowSeconds;
     }
 
     private void OnStallSync(int handle, int channel, int data, IntPtr user)

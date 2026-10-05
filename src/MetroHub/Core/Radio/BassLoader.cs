@@ -29,14 +29,16 @@ public static class BassLoader
         try
         {
             var bassAssembly = typeof(Bass).Assembly;
+            var bassFxAssembly = typeof(ManagedBass.Fx.BassFx).Assembly;
 
-            NativeLibrary.SetDllImportResolver(bassAssembly, (libraryName, assembly, searchPath) =>
+            IntPtr Resolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
             {
                 if (libraryName.Equals("bass", StringComparison.OrdinalIgnoreCase) ||
                     libraryName.Equals("bass_aac", StringComparison.OrdinalIgnoreCase) ||
                     libraryName.Equals("basshls", StringComparison.OrdinalIgnoreCase) ||
                     libraryName.Equals("bassopus", StringComparison.OrdinalIgnoreCase) ||
-                    libraryName.Equals("basswebm", StringComparison.OrdinalIgnoreCase))
+                    libraryName.Equals("basswebm", StringComparison.OrdinalIgnoreCase) ||
+                    libraryName.Equals("bass_fx", StringComparison.OrdinalIgnoreCase))
                 {
                     string fileName = libraryName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
                         ? libraryName
@@ -76,7 +78,10 @@ public static class BassLoader
 
                 // Default runtime resolution
                 return IntPtr.Zero;
-            });
+            }
+
+            NativeLibrary.SetDllImportResolver(bassAssembly, Resolver);
+            NativeLibrary.SetDllImportResolver(bassFxAssembly, Resolver);
 
             Debug.WriteLine("[BassLoader] Successfully registered native library resolver for ManagedBass.");
         }

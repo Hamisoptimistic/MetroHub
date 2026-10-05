@@ -79,6 +79,16 @@ public interface IRadioAudioService : IDisposable
     event EventHandler<string>? ErrorOccurred;
 
     /// <summary>
+    /// Fired when a musical bass beat is detected in real time by the native DSP beat detection engine.
+    /// </summary>
+    event EventHandler? BassBeatTriggered;
+
+    /// <summary>
+    /// Checks whether a native DSP bass beat occurred within the specified recent time window.
+    /// </summary>
+    bool HasRecentBassBeat(double windowSeconds = 0.09);
+
+    /// <summary>
     /// Fired when a stream reaches its natural end (not user pause/stop).
     /// </summary>
     event EventHandler? EndOfStreamReached;

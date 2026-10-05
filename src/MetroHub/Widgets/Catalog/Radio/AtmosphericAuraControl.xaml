@@ -13,9 +13,10 @@
     <!-- 2D Fluid Mesh Reactive Aura:
          Combines a continuous multi-color base spectrum (balanced Cyan, Violet, Pink, Orange)
          with soft floating radial accent blooms that flare on bass kick transients.
-         Zero geometry transforms (zero border gaps), unified flow breathing. -->
+         Zero geometry transforms (zero border gaps), unified flow breathing.
+         Zero white blobs: all layers use rich, saturated chromatic pigments with gentle falloff. -->
     <Grid x:Name="AuraRoot" Opacity="0" Visibility="Collapsed" ClipToBounds="True">
-        <!-- Layer 0: Continuous 2D Spectrum Base (Balanced proportions, wide Cyan top-left) -->
+        <!-- Layer 0: Continuous 2D Spectrum Base (Balanced proportions, wide diagonal flow) -->
         <Rectangle HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
             <Rectangle.Fill>
                 <LinearGradientBrush x:Name="BaseGradient" StartPoint="-0.15,-0.15" EndPoint="1.10,1.10">
@@ -40,14 +41,14 @@
             </Rectangle.Fill>
         </Rectangle>
 
-        <!-- Layer 2: Floating LILAC / VIOLET Accent (Mid-Upper) -->
+        <!-- Layer 2: Floating ROYAL VIOLET Accent (Mid-Upper) - Zero White Blob -->
         <Rectangle x:Name="RectViolet" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.45">
             <Rectangle.Fill>
                 <RadialGradientBrush x:Name="BrushViolet" Center="0.45,0.35" GradientOrigin="0.45,0.35" RadiusX="0.75" RadiusY="0.75">
-                    <GradientStop Offset="0.0" Color="#FFD8B4FE" />
-                    <GradientStop Offset="0.35" Color="#809D4EDD" />
-                    <GradientStop Offset="0.70" Color="#209D4EDD" />
-                    <GradientStop Offset="1.0" Color="#009D4EDD" />
+                    <GradientStop Offset="0.0" Color="#FF9D4EDD" />
+                    <GradientStop Offset="0.35" Color="#807B2CBF" />
+                    <GradientStop Offset="0.70" Color="#205A189A" />
+                    <GradientStop Offset="1.0" Color="#003C096C" />
                 </RadialGradientBrush>
             </Rectangle.Fill>
         </Rectangle>
