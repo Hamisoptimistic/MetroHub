@@ -37,12 +37,12 @@ public partial class AtmosphericAuraControl : UserControl
     private const float ContinuousAttack = 0.04f;    // ~40ms fast attack
     private const float ContinuousRelease = 0.22f;   // ~220ms smooth release
 
-    // Tier 2: Drone-Stripped Transient Beat Pump
+    // Tier 2: Drone-Stripped Transient Beat Pump & Harmonic Pulse
     private const float FastAttack = 0.012f;         // ~12ms instant transient snap
     private const float FastRelease = 0.045f;        // ~45ms rapid decay
     private const float SlowBaselineAttack = 0.14f;  // ~140ms drone follower attack
     private const float SlowBaselineRelease = 0.35f; // ~350ms drone follower release
-    private const float OnsetThreshold = 0.048f;     // Minimum transient flux to trigger a kick
+    private const float MinOnsetFloor = 0.024f;      // Absolute floor to reject silence/hiss
     private const float KickRefractoryTime = 0.11f;  // 110ms refractory window between kicks
     private const float ColorSwitchInterval = 0.25f; // 250ms minimum between color switches
     private const float PumpReleaseDecay = 0.16f;    // 160ms decay for kick envelope
@@ -102,10 +102,10 @@ public partial class AtmosphericAuraControl : UserControl
     private float _slowBassBaseline;         // Drone tracking baseline (~140ms)
     private float _fastMidEnv;               // Snappy attack mid envelope (~10ms)
     private float _slowMidBaseline;          // Drone tracking mid baseline (~120ms)
+    private float _fluxAvg = 0.025f;         // Moving average of transient flux for adaptive threshold
     private float _kickEnv;                  // Tier 2 velocity-scaled kick envelope
     private float _kickCooldown;             // Refractory timer (110ms)
     private float _colorCooldown;            // Color switch timer (250ms)
-    private float _lastTransientFlux;        // Previous frame flux for rising-edge detection
     private int _pumpingColorIndex = 2;      // 0=Cyan, 1=Violet, 2=Pink, 3=Orange
     private static bool _isBatterySaver;
 
@@ -294,7 +294,7 @@ public partial class AtmosphericAuraControl : UserControl
             _slowBassBaseline = 0f;
             _fastMidEnv = 0f;
             _slowMidBaseline = 0f;
-            _lastTransientFlux = 0f;
+            _fluxAvg = 0.025f;
             return;
         }
 
@@ -346,7 +346,7 @@ public partial class AtmosphericAuraControl : UserControl
         else
             _slowBassBaseline += slowReleaseCoeff * (normBass - _slowBassBaseline);
 
-        // Mid fast snap and slow baseline tracking (kick beater slap & transient click)
+        // Mid fast snap and slow baseline tracking (kick beater slap & pop handclap/snare)
         if (normMid > _fastMidEnv)
             _fastMidEnv += fastAttackCoeff * (normMid - _fastMidEnv);
         else
@@ -357,20 +357,27 @@ public partial class AtmosphericAuraControl : UserControl
         else
             _slowMidBaseline += slowReleaseCoeff * (normMid - _slowMidBaseline);
 
-        // Drone-subtracted transient onset energy
+        // Drone-subtracted transient onset energy (combines bass thump + pop clap/snare snap)
         float bassOnset = Math.Max(0f, _fastBassEnv - _slowBassBaseline);
         float midOnset = Math.Max(0f, _fastMidEnv - _slowMidBaseline);
-        float transientFlux = bassOnset + (midOnset * 0.45f);
+        float transientFlux = bassOnset + (midOnset * 0.60f);
+
+        // Adaptive sensitivity: auto-calibrates to song dynamic range (~1.8s time constant)
+        float fluxAvgCoeff = 1f - MathF.Exp(-dt / 1.8f);
+        _fluxAvg += fluxAvgCoeff * (transientFlux - _fluxAvg);
+        if (_fluxAvg < 0.015f) _fluxAvg = 0.015f;
+
+        float dynamicThreshold = Math.Max(MinOnsetFloor, _fluxAvg * 1.35f);
 
         _kickCooldown -= dt;
         _colorCooldown -= dt;
 
-        bool isHit = (_kickCooldown <= 0f) && (transientFlux >= OnsetThreshold) && (transientFlux >= _lastTransientFlux);
+        bool isHit = (_kickCooldown <= 0f) && (transientFlux >= dynamicThreshold);
 
         if (isHit)
         {
-            // Velocity scaling: hit strength proportional to onset overshoot above threshold
-            float velocity = Math.Clamp(transientFlux / 0.32f, 0.30f, 1.0f);
+            // Dynamic velocity scaling: hit strength proportional to overshoot above adaptive baseline
+            float velocity = Math.Clamp((transientFlux - dynamicThreshold * 0.5f) / Math.Max(0.08f, dynamicThreshold * 1.5f), 0.35f, 1.0f);
 
             _kickEnv = Math.Max(_kickEnv, velocity);
             _kickCooldown = KickRefractoryTime;
@@ -388,8 +395,6 @@ public partial class AtmosphericAuraControl : UserControl
                 _colorCooldown = ColorSwitchInterval;
             }
         }
-
-        _lastTransientFlux = transientFlux;
 
         // Exponential Release Decay for Kick Envelope (~160ms)
         float pumpDecay = MathF.Exp(-dt / PumpReleaseDecay);
@@ -415,18 +420,22 @@ public partial class AtmosphericAuraControl : UserControl
         float driftOrangeX = (float)(OrangeBaseX + Math.Cos(phase * 0.75 + 3.4) * DriftAmpX * calm);
         float driftOrangeY = (float)(OrangeBaseY + Math.Sin(phase * 0.85 + 2.9) * DriftAmpY * calm);
 
-        // Determine pump intensity for each individual color
-        float pumpCyan = (_pumpingColorIndex == 0) ? _kickEnv : 0f;
-        float pumpViolet = (_pumpingColorIndex == 1) ? _kickEnv : 0f;
-        float pumpPink = (_pumpingColorIndex == 2) ? _kickEnv : 0f;
-        float pumpOrange = (_pumpingColorIndex == 3) ? _kickEnv : 0f;
+        // Determine pump intensity: Unified Harmonic Surge
+        // The chosen color gets 100% full kick power, while the remaining 3 colors get a generous 45% supporting pulse.
+        // This ensures the whole tile punches with the rhythm and prevents lower layers from being masked.
+        float sharedPump = _kickEnv * 0.45f;
+        float pumpCyan   = sharedPump + ((_pumpingColorIndex == 0) ? (_kickEnv * 0.55f) : 0f);
+        float pumpViolet = sharedPump + ((_pumpingColorIndex == 1) ? (_kickEnv * 0.55f) : 0f);
+        float pumpPink   = sharedPump + ((_pumpingColorIndex == 2) ? (_kickEnv * 0.55f) : 0f);
+        float pumpOrange = sharedPump + ((_pumpingColorIndex == 3) ? (_kickEnv * 0.55f) : 0f);
 
         // Tier 1 continuous note swell: applied to ALL blobs equally (+10 to +15% radius)
         float noteSwell = _smoothedBass * ContinuousSwellAmp;
 
-        // Base gradient vector expands with continuous note swell + ambient wave
-        BaseGradient.StartPoint = new Point(-0.15 + flowX - breathe - noteSwell * 0.5, -0.15 + flowY - breathe - noteSwell * 0.5);
-        BaseGradient.EndPoint = new Point(1.10 + flowX + breathe + noteSwell * 0.5, 1.10 + flowY + breathe + noteSwell * 0.5);
+        // Base gradient vector expands with continuous note swell + ambient wave + kick pulse
+        float baseKickSwell = _kickEnv * 0.14f;
+        BaseGradient.StartPoint = new Point(-0.15 + flowX - breathe - noteSwell * 0.5 - baseKickSwell, -0.15 + flowY - breathe - noteSwell * 0.5 - baseKickSwell);
+        BaseGradient.EndPoint = new Point(1.10 + flowX + breathe + noteSwell * 0.5 + baseKickSwell, 1.10 + flowY + breathe + noteSwell * 0.5 + baseKickSwell);
 
         // Apply dynamic radial accent blooms:
         // 1. Cyan (Top-Left)
