@@ -84,15 +84,15 @@ public class WidgetTiles : Selector
         MouseMove += OnTilesMouseMove;
         MouseEnter += OnTilesMouseEnter;
         MouseLeave += OnTilesMouseLeave;
+    }
 
-        var dpd = DependencyPropertyDescriptor.FromProperty(SelectedValueProperty, typeof(WidgetTiles));
-        dpd?.AddValueChanged(this, (s, e) =>
+    protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+        if (e.Property == SelectedValueProperty && !_isInternalSync)
         {
-            if (!_isInternalSync)
-            {
-                SyncSelectionFromValue(SelectedValue);
-            }
-        });
+            SyncSelectionFromValue(SelectedValue);
+        }
     }
 
     public override void OnApplyTemplate()

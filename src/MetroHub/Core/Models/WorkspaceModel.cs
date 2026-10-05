@@ -30,7 +30,13 @@ public sealed class WorkspaceModel : INotifyPropertyChanged
     public string Name
     {
         get => _name;
-        set => SetField(ref _name, value);
+        set
+        {
+            if (SetField(ref _name, value))
+            {
+                OnPropertyChanged(nameof(TooltipText));
+            }
+        }
     }
 
     public string IconSymbol
@@ -47,6 +53,7 @@ public sealed class WorkspaceModel : INotifyPropertyChanged
             if (SetField(ref _order, value))
             {
                 OnPropertyChanged(nameof(DisplayGlyph));
+                OnPropertyChanged(nameof(TooltipText));
             }
         }
     }
@@ -81,6 +88,9 @@ public sealed class WorkspaceModel : INotifyPropertyChanged
 
     [JsonIgnore]
     public string DisplayGlyph => (Order + 1).ToString();
+
+    [JsonIgnore]
+    public string TooltipText => $"{Name} (Ctrl+Shift+{Math.Min(Order + 1, 9)})";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

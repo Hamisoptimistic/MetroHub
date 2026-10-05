@@ -19,8 +19,11 @@ using MetroHub.Core.Services.Catalog;
 using MetroHub.Presentation.Controls;
 using MetroHub.Presentation.Views;
 using MetroHub.Presentation.Messaging;
+using MetroHub.Presentation.Controllers;
 using MetroHub.Widgets.Messaging;
 using CommunityToolkit.Mvvm.Messaging;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Wpf.Ui.Controls;
 using MenuItem = System.Windows.Controls.MenuItem;
 using ContextMenu = System.Windows.Controls.ContextMenu;
@@ -29,10 +32,40 @@ using TextBlock = System.Windows.Controls.TextBlock;
 
 namespace MetroHub;
 
-public partial class MainWindow : BorderlessFluentWindow
+public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 {
-    public ObservableCollection<TileModel> Tiles { get; set; } = new();
-    public ObservableCollection<TileGroupModel> Groups { get; set; } = new();
+    private ObservableCollection<TileModel> _tiles = new();
+    public ObservableCollection<TileModel> Tiles
+    {
+        get => _tiles;
+        set
+        {
+            if (_tiles != value)
+            {
+                _tiles = value;
+                NotifyPropertyChanged();
+            }
+        }
+    }
+
+    private ObservableCollection<TileGroupModel> _groups = new();
+    public ObservableCollection<TileGroupModel> Groups
+    {
+        get => _groups;
+        set
+        {
+            if (_groups != value)
+            {
+                _groups = value;
+                NotifyPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void NotifyPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
     public AppSettings Settings { get; set; } = new();
     public string HotkeyDisplayString => Settings?.HotkeyDisplayString ?? "Ctrl + `";
 
@@ -210,6 +243,7 @@ public partial class MainWindow : BorderlessFluentWindow
         DataContext = this;
 
         LoadData();
+        InitializeWorkspaces();
         SetupAutoScrollTimer();
         SetupSidebarTimers();
 
@@ -475,8 +509,10 @@ public partial class MainWindow : BorderlessFluentWindow
         Settings = StorageService.LoadSettings();
         SystemAccentColorService.SetStyleMode(Settings.AccentStyle);
         Application.Current.Resources["TileCornerRadius"] = new CornerRadius(Settings.TileCornerRadius);
-        Tiles = StorageService.LoadLayout();
-        Groups = StorageService.LoadGroups();
+        WorkspaceManager.Instance.Initialize();
+        var activeWs = WorkspaceManager.Instance.ActiveWorkspace;
+        Tiles = activeWs.Tiles;
+        Groups = activeWs.Groups;
         GridPlacementService.SetActiveGroups(Groups);
 
         // Auto-migrate: ensure Row 0 is the dedicated header zone.
@@ -489,6 +525,7 @@ public partial class MainWindow : BorderlessFluentWindow
                 t.Row += 1;
             }
             StorageService.SaveLayout(Tiles);
+            StorageService.SaveWorkspaceLayout(activeWs.Id, Tiles);
         }
 
         // Re-sync all tiles pixel positions with current GridPlacementService metrics
@@ -500,8 +537,9 @@ public partial class MainWindow : BorderlessFluentWindow
         }
 
         // Housekeeping: widget state files are keyed by tile id, so files whose tile no longer
-        // exists are dead weight. Pruned at startup only — same-session undo/unpin stays recoverable.
-        WidgetStateStore.Default.PruneAllExcept(Tiles.Select(t => t.Id).ToHashSet());
+        // exists are dead weight. Pruned across ALL workspaces so inactive workspace widgets are safe.
+        var allWorkspaceTileIds = WorkspaceManager.Instance.GetAllTileIdsAcrossAllWorkspaces();
+        WidgetStateStore.Default.PruneAllExcept(allWorkspaceTileIds);
 
         DiscoverGroupsFromTiles();
         EnsureGroupIndices();

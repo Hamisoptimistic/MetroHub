@@ -1,0 +1,61 @@
+<dialogs:MetroDialog x:Class="MetroHub.Presentation.Dialogs.WorkspaceRenameDialog"
+                     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                     xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+                     xmlns:dialogs="clr-namespace:MetroHub.Presentation.Dialogs"
+                     Title="Rename Workspace"
+                     Subtitle="Enter a new display name for this workspace"
+                     Width="520" Height="260">
+
+    <!-- Frosted Acrylic Left Sidebar Content Slot -->
+    <dialogs:MetroDialog.SidebarContent>
+        <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+            <ui:SymbolIcon Symbol="Edit24"
+                           FontSize="48"
+                           Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+        </Grid>
+    </dialogs:MetroDialog.SidebarContent>
+
+    <!-- Dark Obsidian Form Content Slot -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" VerticalAlignment="Center">
+            <TextBlock Text="Workspace Name"
+                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       Margin="0,0,0,8" />
+
+            <TextBox x:Name="WorkspaceNameInput"
+                     controls:InputHelper.Icon="Edit24"
+                     KeyDown="OnWorkspaceNameInputKeyDown"
+                     TextChanged="OnWorkspaceNameInputTextChanged" />
+
+            <TextBlock x:Name="WorkspaceNameErrorMessage"
+                       Text="Workspace name cannot be empty."
+                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                       Foreground="{DynamicResource StatusErrorBrush}"
+                       Margin="0,6,0,0"
+                       Visibility="Collapsed" />
+        </StackPanel>
+
+        <!-- Footer Action Buttons -->
+        <Grid Grid.Row="1" Margin="0,16,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel"
+                        Style="{DynamicResource DefaultButtonStyle}"
+                        Margin="0,0,10,0"
+                        Click="OnCancelClick" />
+                <Button x:Name="SaveButton"
+                        Content="Save"
+                        Style="{DynamicResource AccentButtonStyle}"
+                        Click="OnSaveClick" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</dialogs:MetroDialog>

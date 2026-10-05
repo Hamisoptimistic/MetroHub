@@ -8,6 +8,8 @@ public sealed class LayoutHistoryService
     private const int MaxHistory = 40;
     private readonly Stack<string> _undoStack = new();
     private readonly Stack<string> _redoStack = new();
+    private readonly Dictionary<string, (List<string> Undo, List<string> Redo)> _workspaceStacks = new(StringComparer.OrdinalIgnoreCase);
+    private string _currentWorkspaceId = "default";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -17,6 +19,31 @@ public sealed class LayoutHistoryService
 
     public bool CanUndo => _undoStack.Count > 0;
     public bool CanRedo => _redoStack.Count > 0;
+
+    public void SwitchWorkspace(string workspaceId)
+    {
+        if (string.IsNullOrWhiteSpace(workspaceId) || string.Equals(_currentWorkspaceId, workspaceId, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        // Save current workspace stacks (ToList() has index 0 as top of stack)
+        _workspaceStacks[_currentWorkspaceId] = (_undoStack.ToList(), _redoStack.ToList());
+
+        _currentWorkspaceId = workspaceId;
+        _undoStack.Clear();
+        _redoStack.Clear();
+
+        if (_workspaceStacks.TryGetValue(workspaceId, out var saved))
+        {
+            for (int i = saved.Undo.Count - 1; i >= 0; i--)
+            {
+                _undoStack.Push(saved.Undo[i]);
+            }
+            for (int i = saved.Redo.Count - 1; i >= 0; i--)
+            {
+                _redoStack.Push(saved.Redo[i]);
+            }
+        }
+    }
 
     public static string CaptureSnapshot(IEnumerable<TileModel> tiles, IEnumerable<TileGroupModel>? groups = null)
     {

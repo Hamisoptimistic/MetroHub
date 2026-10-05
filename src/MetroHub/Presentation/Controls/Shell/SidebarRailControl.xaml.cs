@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using Microsoft.Win32;
+using System.Windows.Media.Animation;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 
@@ -98,6 +99,42 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
     private void OnAppsToggleClick(object sender, RoutedEventArgs e)
     {
         AppsToggleRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private bool _isWorkspacesFolderExpanded;
+
+    private void OnWorkspacesFolderToggleClick(object sender, RoutedEventArgs e)
+    {
+        _isWorkspacesFolderExpanded = !_isWorkspacesFolderExpanded;
+        if (WorkspacesFolderButton != null)
+        {
+            WorkspacesFolderButton.Tag = _isWorkspacesFolderExpanded ? "Active" : null;
+        }
+
+        if (WorkspacesAccordionDrawer != null)
+        {
+            double targetHeight = _isWorkspacesFolderExpanded ? 280 : 0;
+            double targetOpacity = _isWorkspacesFolderExpanded ? 1.0 : 0.0;
+
+            var ease = new CubicEase { EasingMode = EasingMode.EaseInOut };
+
+            var heightAnimation = new DoubleAnimation
+            {
+                To = targetHeight,
+                Duration = TimeSpan.FromMilliseconds(200),
+                EasingFunction = ease
+            };
+
+            var opacityAnimation = new DoubleAnimation
+            {
+                To = targetOpacity,
+                Duration = TimeSpan.FromMilliseconds(200),
+                EasingFunction = ease
+            };
+
+            WorkspacesAccordionDrawer.BeginAnimation(FrameworkElement.MaxHeightProperty, heightAnimation);
+            WorkspacesAccordionDrawer.BeginAnimation(UIElement.OpacityProperty, opacityAnimation);
+        }
     }
 
     private void OnItemPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)

@@ -18,7 +18,7 @@ namespace MetroHub.Widgets.Catalog.Dino;
 /// Subscribes to CompositionTarget.Rendering ONLY during active gameplay (Running / Dying)
 /// to strictly maintain 0.0% CPU usage when Idle, Paused, or Game Over.
 /// </summary>
-public sealed partial class DinoWidgetViewModel : WidgetViewModelBase, IWidgetContextMenuProvider
+public sealed partial class DinoWidgetViewModel : WidgetViewModelBase, IWidgetContextMenuProvider, IDormancyAware
 {
     private readonly DinoGameEngine _engine;
     private readonly DinoAudioService _audioService;
@@ -158,6 +158,21 @@ public sealed partial class DinoWidgetViewModel : WidgetViewModelBase, IWidgetCo
             _engine.Resume();
             HookRendering();
         }
+    }
+
+    public void OnDormant()
+    {
+        if (_engine.State == DinoGameState.Running)
+        {
+            _engine.Pause();
+            UnhookRendering();
+            FrameTick?.Invoke();
+        }
+    }
+
+    public void OnAwakened()
+    {
+        // Remain paused when switching back; user can press Space/Up to resume gameplay
     }
 
     public void ToggleMute()

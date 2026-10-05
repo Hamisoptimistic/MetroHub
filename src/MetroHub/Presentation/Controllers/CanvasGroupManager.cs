@@ -454,9 +454,19 @@ public sealed class CanvasGroupManager
 
     public void SaveGroupsAndLayout()
     {
-        StorageService.SaveLayout(_tilesProvider());
-        StorageService.SaveGroups(_groupsProvider());
-        GridPlacementService.SetActiveGroups(_groupsProvider());
+        var tiles = _tilesProvider();
+        var groups = _groupsProvider();
+        StorageService.SaveLayout(tiles);
+        StorageService.SaveGroups(groups);
+
+        var activeWs = WorkspaceManager.Instance.ActiveWorkspace;
+        if (activeWs != null)
+        {
+            StorageService.SaveWorkspaceLayout(activeWs.Id, tiles);
+            StorageService.SaveWorkspaceGroups(activeWs.Id, groups);
+        }
+
+        GridPlacementService.SetActiveGroups(groups);
         UpdateCanvasHeight();
     }
 

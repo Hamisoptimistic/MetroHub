@@ -139,6 +139,11 @@
                         <ui:SymbolIcon Symbol="FolderArrowRight24" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
                     </MenuItem.Icon>
                 </MenuItem>
+                <MenuItem x:Name="MoveToWorkspaceMenuItem" Header="Move to Workspace">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="ArrowRight24" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
+                    </MenuItem.Icon>
+                </MenuItem>
                 <Separator x:Name="SingleAppSeparator" />
                 <MenuItem x:Name="RunAdminMenuItem" Header="Run as Administrator" Click="OnRunAsAdminClick">
                     <MenuItem.Icon>

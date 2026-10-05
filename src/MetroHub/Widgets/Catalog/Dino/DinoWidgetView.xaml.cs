@@ -83,6 +83,7 @@ public partial class DinoWidgetView : UserControl
         if (_viewModel != null)
         {
             _viewModel.FrameTick -= OnFrameTick;
+            _viewModel.OnDormant();
         }
     }
 

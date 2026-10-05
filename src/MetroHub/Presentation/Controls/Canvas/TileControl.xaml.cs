@@ -10,6 +10,7 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
+using MetroHub.Presentation.Controllers;
 using MetroHub.Presentation.Messaging;
 using MetroHub.Presentation.Themes;
 using MetroHub.Widgets;
@@ -476,6 +477,10 @@ public partial class TileControl : UserControl
             StyleMenuItem.Header = "Style";
             GroupMenuItem.Header = "Create Group from Tiles";
             AddToGroupMenuItem.Header = "Add to Group";
+            if (MoveToWorkspaceMenuItem != null)
+            {
+                MoveToWorkspaceMenuItem.Header = $"Move {selectedCount} Tiles to Workspace";
+            }
             UnpinMenuItem.Header = "Unpin from MetroHub";
 
             RunAdminMenuItem.Visibility = Visibility.Collapsed;
@@ -488,6 +493,10 @@ public partial class TileControl : UserControl
             StyleMenuItem.Header = "Style";
             GroupMenuItem.Header = "Create Group from Tiles";
             AddToGroupMenuItem.Header = "Add to Group";
+            if (MoveToWorkspaceMenuItem != null)
+            {
+                MoveToWorkspaceMenuItem.Header = "Move to Workspace";
+            }
             UnpinMenuItem.Header = "Unpin from MetroHub";
 
             RunAdminMenuItem.Visibility = Visibility.Visible;
@@ -559,6 +568,7 @@ public partial class TileControl : UserControl
 
         PopulateResizeSubmenu(tile);
         PopulateAddToGroupSubmenu();
+        PopulateMoveToWorkspaceSubmenu(tile, selectedTiles);
         var rail = CanvasMessenger.GetSidebarRail();
         ConfigureSidebarPinMenuItem(tile, rail, selectedTiles);
     }
@@ -756,6 +766,63 @@ public partial class TileControl : UserControl
             }
 
             AddToGroupMenuItem.Items.Add(item);
+        }
+    }
+
+    private void PopulateMoveToWorkspaceSubmenu(TileModel tile, IReadOnlyList<TileModel> selectedTiles)
+    {
+        if (MoveToWorkspaceMenuItem == null) return;
+
+        MoveToWorkspaceMenuItem.Items.Clear();
+
+        var wm = WorkspaceManager.Instance;
+        var activeWs = wm.ActiveWorkspace;
+        var destinationWorkspaces = wm.Workspaces
+            .Where(w => activeWs == null || !string.Equals(w.Id, activeWs.Id, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(w => w.Order)
+            .ToList();
+
+        if (destinationWorkspaces.Count == 0)
+        {
+            var emptyItem = new MenuItem
+            {
+                Header = "(No other workspaces)",
+                IsEnabled = false
+            };
+            MoveToWorkspaceMenuItem.Items.Add(emptyItem);
+            MoveToWorkspaceMenuItem.IsEnabled = false;
+            return;
+        }
+
+        MoveToWorkspaceMenuItem.IsEnabled = true;
+
+        foreach (var ws in destinationWorkspaces)
+        {
+            var item = new MenuItem
+            {
+                Header = ws.Name,
+                Icon = new Wpf.Ui.Controls.SymbolIcon
+                {
+                    Symbol = Wpf.Ui.Controls.SymbolRegular.Desktop24,
+                    FontSize = 18,
+                    Foreground = (Brush)FindResource("TextSecondaryBrush")
+                }
+            };
+
+            string targetWsId = ws.Id;
+            item.Click += (s, e) =>
+            {
+                var tilesToMove = selectedTiles.Count > 0 && selectedTiles.Contains(tile)
+                    ? selectedTiles.ToList()
+                    : new List<TileModel> { tile };
+
+                foreach (var t in tilesToMove)
+                {
+                    WorkspaceManager.Instance.MoveTileToWorkspace(t, targetWsId);
+                }
+            };
+
+            MoveToWorkspaceMenuItem.Items.Add(item);
         }
     }
 
