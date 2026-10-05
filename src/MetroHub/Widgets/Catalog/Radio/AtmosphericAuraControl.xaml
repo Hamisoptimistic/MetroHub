@@ -31,7 +31,7 @@
         <!-- Layer 1: Floating CYAN / SKY BLUE Accent (Top-Left) -->
         <Rectangle x:Name="RectCyan" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.50">
             <Rectangle.Fill>
-                <RadialGradientBrush x:Name="BrushCyan" Center="0.25,0.22" GradientOrigin="0.25,0.22" RadiusX="0.80" RadiusY="0.80">
+                <RadialGradientBrush x:Name="BrushCyan" Center="0.25,0.22" GradientOrigin="0.25,0.22" RadiusX="0.46" RadiusY="0.46">
                     <GradientStop Offset="0.0" Color="#FF00D4FF" />
                     <GradientStop Offset="0.55" Color="#8000A3FF" />
                     <GradientStop Offset="1.0" Color="#0000A3FF" />
@@ -42,7 +42,7 @@
         <!-- Layer 2: Floating LILAC / VIOLET Accent (Mid-Upper) -->
         <Rectangle x:Name="RectViolet" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.45">
             <Rectangle.Fill>
-                <RadialGradientBrush x:Name="BrushViolet" Center="0.45,0.35" GradientOrigin="0.45,0.35" RadiusX="0.75" RadiusY="0.75">
+                <RadialGradientBrush x:Name="BrushViolet" Center="0.45,0.35" GradientOrigin="0.45,0.35" RadiusX="0.42" RadiusY="0.42">
                     <GradientStop Offset="0.0" Color="#FFD8B4FE" />
                     <GradientStop Offset="0.55" Color="#809D4EDD" />
                     <GradientStop Offset="1.0" Color="#009D4EDD" />
@@ -53,7 +53,7 @@
         <!-- Layer 3: Floating NEON MAGENTA / HOT PINK Accent (Bottom-Center) -->
         <Rectangle x:Name="RectPink" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.50">
             <Rectangle.Fill>
-                <RadialGradientBrush x:Name="BrushPink" Center="0.52,0.72" GradientOrigin="0.52,0.72" RadiusX="0.80" RadiusY="0.80">
+                <RadialGradientBrush x:Name="BrushPink" Center="0.52,0.72" GradientOrigin="0.52,0.72" RadiusX="0.48" RadiusY="0.48">
                     <GradientStop Offset="0.0" Color="#FFFF2A85" />
                     <GradientStop Offset="0.55" Color="#80FF1493" />
                     <GradientStop Offset="1.0" Color="#00FF1493" />
@@ -64,7 +64,7 @@
         <!-- Layer 4: Floating RADIANT SUNSET ORANGE Accent (Bottom-Right, balanced opacity) -->
         <Rectangle x:Name="RectOrange" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Opacity="0.48">
             <Rectangle.Fill>
-                <RadialGradientBrush x:Name="BrushOrange" Center="0.80,0.75" GradientOrigin="0.80,0.75" RadiusX="0.75" RadiusY="0.75">
+                <RadialGradientBrush x:Name="BrushOrange" Center="0.80,0.75" GradientOrigin="0.80,0.75" RadiusX="0.44" RadiusY="0.44">
                     <GradientStop Offset="0.0" Color="#FFFFA200" />
                     <GradientStop Offset="0.55" Color="#80FF7A00" />
                     <GradientStop Offset="1.0" Color="#00FF7A00" />

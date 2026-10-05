@@ -21,19 +21,19 @@ public partial class AtmosphericAuraControl : UserControl
     // Visual & Audio Physics Tuning Constants
     // ==========================================
     // Blob Base Focal Centers & Radii (Normalized 0.0 - 1.0)
-    private const float CyanBaseX = 0.25f, CyanBaseY = 0.22f, CyanBaseRadius = 0.80f;
-    private const float VioletBaseX = 0.45f, VioletBaseY = 0.35f, VioletBaseRadius = 0.75f;
-    private const float PinkBaseX = 0.52f, PinkBaseY = 0.72f, PinkBaseRadius = 0.80f;
-    private const float OrangeBaseX = 0.80f, OrangeBaseY = 0.75f, OrangeBaseRadius = 0.75f;
+    private const float CyanBaseX = 0.25f, CyanBaseY = 0.22f, CyanBaseRadius = 0.46f;
+    private const float VioletBaseX = 0.45f, VioletBaseY = 0.35f, VioletBaseRadius = 0.42f;
+    private const float PinkBaseX = 0.52f, PinkBaseY = 0.72f, PinkBaseRadius = 0.48f;
+    private const float OrangeBaseX = 0.80f, OrangeBaseY = 0.75f, OrangeBaseRadius = 0.44f;
 
     // Drift Motion Amplitudes (Normalized 0.0 - 1.0)
-    private const float DriftAmpX = 0.09f;
-    private const float DriftAmpY = 0.08f;
+    private const float DriftAmpX = 0.07f;
+    private const float DriftAmpY = 0.06f;
     private const float CyclePeriod = 4.2f;
-    private const float AmbientBreatheAmp = 0.07f;
+    private const float AmbientBreatheAmp = 0.04f;
 
     // Tier 1: Continuous Bass Groove Swell (Whole-tile musical breathing)
-    private const float ContinuousSwellAmp = 0.12f;  // +12% size on continuous bass notes
+    private const float ContinuousSwellAmp = 0.08f;  // +8% size on continuous bass notes
     private const float ContinuousAttack = 0.04f;    // ~40ms fast attack
     private const float ContinuousRelease = 0.22f;   // ~220ms smooth release
 
@@ -46,8 +46,8 @@ public partial class AtmosphericAuraControl : UserControl
     private const float KickRefractoryTime = 0.11f;  // 110ms refractory window between kicks
     private const float ColorSwitchInterval = 0.25f; // 250ms minimum between color switches
     private const float PumpReleaseDecay = 0.16f;    // 160ms decay for kick envelope
-    private const float PumpRadiusBoost = 0.48f;     // Up to +48% radius on maximum velocity kick
-    private const float PumpOpacityBoost = 0.40f;    // Up to +40% opacity on maximum velocity kick
+    private const float PumpRadiusBoost = 0.24f;     // Up to +24% radius on maximum velocity kick (clean localized bloom)
+    private const float PumpOpacityBoost = 0.45f;    // Up to +45% opacity on maximum velocity kick
 
     // ==========================================
     // Dependency Properties
@@ -268,25 +268,25 @@ public partial class AtmosphericAuraControl : UserControl
             BrushCyan.Center = BrushCyan.GradientOrigin = new Point(
                 (float)(CyanBaseX + Math.Sin(phase * 0.8) * DriftAmpX),
                 (float)(CyanBaseY + Math.Cos(phase * 0.7) * DriftAmpY));
-            BrushCyan.RadiusX = BrushCyan.RadiusY = CyanBaseRadius + p0 * 0.10;
+            BrushCyan.RadiusX = BrushCyan.RadiusY = CyanBaseRadius + p0 * 0.05;
             RectCyan.Opacity = 0.40 + p0 * 0.20;
 
             BrushViolet.Center = BrushViolet.GradientOrigin = new Point(
                 (float)(VioletBaseX + Math.Cos(phase * 0.85 + 1.2) * DriftAmpX),
                 (float)(VioletBaseY + Math.Sin(phase * 0.75 + 0.8) * DriftAmpY));
-            BrushViolet.RadiusX = BrushViolet.RadiusY = VioletBaseRadius + p1 * 0.10;
+            BrushViolet.RadiusX = BrushViolet.RadiusY = VioletBaseRadius + p1 * 0.05;
             RectViolet.Opacity = 0.38 + p1 * 0.20;
 
             BrushPink.Center = BrushPink.GradientOrigin = new Point(
                 (float)(PinkBaseX + Math.Sin(phase * 0.8 + 2.1) * DriftAmpX),
                 (float)(PinkBaseY + Math.Cos(phase * 0.9 + 1.7) * DriftAmpY));
-            BrushPink.RadiusX = BrushPink.RadiusY = PinkBaseRadius + p2 * 0.10;
+            BrushPink.RadiusX = BrushPink.RadiusY = PinkBaseRadius + p2 * 0.05;
             RectPink.Opacity = 0.40 + p2 * 0.20;
 
             BrushOrange.Center = BrushOrange.GradientOrigin = new Point(
                 (float)(OrangeBaseX + Math.Cos(phase * 0.75 + 3.4) * DriftAmpX),
                 (float)(OrangeBaseY + Math.Sin(phase * 0.85 + 2.9) * DriftAmpY));
-            BrushOrange.RadiusX = BrushOrange.RadiusY = OrangeBaseRadius + p3 * 0.10;
+            BrushOrange.RadiusX = BrushOrange.RadiusY = OrangeBaseRadius + p3 * 0.05;
             RectOrange.Opacity = 0.38 + p3 * 0.20;
 
             _kickEnv = 0f;
@@ -360,7 +360,10 @@ public partial class AtmosphericAuraControl : UserControl
         // Drone-subtracted transient onset energy (combines bass thump + pop clap/snare snap)
         float bassOnset = Math.Max(0f, _fastBassEnv - _slowBassBaseline);
         float midOnset = Math.Max(0f, _fastMidEnv - _slowMidBaseline);
-        float transientFlux = bassOnset + (midOnset * 0.60f);
+        float transientFlux = bassOnset + (midOnset * 0.50f);
+
+        // Calculate bass dominance: distinguishes real low-end bass kicks from claps/snares
+        float bassRatio = Math.Clamp(bassOnset / Math.Max(0.01f, bassOnset + midOnset), 0f, 1f);
 
         // Adaptive sensitivity: auto-calibrates to song dynamic range (~1.8s time constant)
         float fluxAvgCoeff = 1f - MathF.Exp(-dt / 1.8f);
@@ -376,14 +379,18 @@ public partial class AtmosphericAuraControl : UserControl
 
         if (isHit)
         {
-            // Dynamic velocity scaling: hit strength proportional to overshoot above adaptive baseline
-            float velocity = Math.Clamp((transientFlux - dynamicThreshold * 0.5f) / Math.Max(0.08f, dynamicThreshold * 1.5f), 0.35f, 1.0f);
+            // Dynamic velocity scaling with Bass Priority:
+            // Heavy bass thumps get full 100% explosive power (hitScale ~ 1.0).
+            // Claps/snares without bass are scaled down to a subtle ~35% rhythmic bounce.
+            float rawVelocity = Math.Clamp((transientFlux - dynamicThreshold * 0.5f) / Math.Max(0.08f, dynamicThreshold * 1.5f), 0.30f, 1.0f);
+            float hitScale = 0.32f + (0.68f * bassRatio);
+            float scaledVelocity = rawVelocity * hitScale;
 
-            _kickEnv = Math.Max(_kickEnv, velocity);
+            _kickEnv = Math.Max(_kickEnv, scaledVelocity);
             _kickCooldown = KickRefractoryTime;
 
-            // Color switch with dedicated 250ms gap
-            if (_colorCooldown <= 0f)
+            // Color switches are tied to bass kicks for clean, musical transitions
+            if (_colorCooldown <= 0f && bassRatio > 0.30f)
             {
                 int next;
                 do
@@ -420,20 +427,21 @@ public partial class AtmosphericAuraControl : UserControl
         float driftOrangeX = (float)(OrangeBaseX + Math.Cos(phase * 0.75 + 3.4) * DriftAmpX * calm);
         float driftOrangeY = (float)(OrangeBaseY + Math.Sin(phase * 0.85 + 2.9) * DriftAmpY * calm);
 
-        // Determine pump intensity: Unified Harmonic Surge
-        // The chosen color gets 100% full kick power, while the remaining 3 colors get a generous 45% supporting pulse.
-        // This ensures the whole tile punches with the rhythm and prevents lower layers from being masked.
-        float sharedPump = _kickEnv * 0.45f;
-        float pumpCyan   = sharedPump + ((_pumpingColorIndex == 0) ? (_kickEnv * 0.55f) : 0f);
-        float pumpViolet = sharedPump + ((_pumpingColorIndex == 1) ? (_kickEnv * 0.55f) : 0f);
-        float pumpPink   = sharedPump + ((_pumpingColorIndex == 2) ? (_kickEnv * 0.55f) : 0f);
-        float pumpOrange = sharedPump + ((_pumpingColorIndex == 3) ? (_kickEnv * 0.55f) : 0f);
+        // Determine pump intensity: Unified Harmonic Surge with High Contrast
+        // The chosen color gets 100% full kick power, while the remaining 3 colors get a tight 20% supporting pulse.
+        // This gives high dramatic contrast while preventing any layer from being masked.
+        float sharedPump = _kickEnv * 0.20f;
+        float focalBoost = _kickEnv * 0.80f;
+        float pumpCyan   = sharedPump + ((_pumpingColorIndex == 0) ? focalBoost : 0f);
+        float pumpViolet = sharedPump + ((_pumpingColorIndex == 1) ? focalBoost : 0f);
+        float pumpPink   = sharedPump + ((_pumpingColorIndex == 2) ? focalBoost : 0f);
+        float pumpOrange = sharedPump + ((_pumpingColorIndex == 3) ? focalBoost : 0f);
 
         // Tier 1 continuous note swell: applied to ALL blobs equally (+10 to +15% radius)
         float noteSwell = _smoothedBass * ContinuousSwellAmp;
 
         // Base gradient vector expands with continuous note swell + ambient wave + kick pulse
-        float baseKickSwell = _kickEnv * 0.14f;
+        float baseKickSwell = _kickEnv * 0.08f;
         BaseGradient.StartPoint = new Point(-0.15 + flowX - breathe - noteSwell * 0.5 - baseKickSwell, -0.15 + flowY - breathe - noteSwell * 0.5 - baseKickSwell);
         BaseGradient.EndPoint = new Point(1.10 + flowX + breathe + noteSwell * 0.5 + baseKickSwell, 1.10 + flowY + breathe + noteSwell * 0.5 + baseKickSwell);
 
