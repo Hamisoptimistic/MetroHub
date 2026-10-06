@@ -30,7 +30,10 @@ public partial class WorkspaceEditDialog : MetroDialog
         _selectedIconSymbol = initialSymbol;
 
         WorkspaceGlyphPicker.SelectedGlyph = initialSymbol;
-        SidebarPreviewIcon.Glyph = initialSymbol;
+        if (Enum.TryParse<Wpf.Ui.Controls.SymbolRegular>(initialSymbol, true, out var initialSym))
+        {
+            SidebarPreviewIcon.Symbol = initialSym;
+        }
     }
 
     protected override IInputElement? InitialFocusedElement => WorkspaceNameInput;
@@ -38,7 +41,10 @@ public partial class WorkspaceEditDialog : MetroDialog
     private void OnGlyphPickerSelectedGlyphChanged(object? sender, string newGlyph)
     {
         _selectedIconSymbol = newGlyph;
-        SidebarPreviewIcon.Glyph = newGlyph;
+        if (Enum.TryParse<Wpf.Ui.Controls.SymbolRegular>(newGlyph, true, out var sym))
+        {
+            SidebarPreviewIcon.Symbol = sym;
+        }
     }
 
     private void OnWorkspaceNameInputKeyDown(object sender, KeyEventArgs e)

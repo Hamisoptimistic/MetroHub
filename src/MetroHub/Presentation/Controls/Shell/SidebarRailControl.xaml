@@ -327,12 +327,12 @@
                                                             </Style.Triggers>
                                                         </Style>
                                                     </Border.Style>
-                                                    <controls:GlyphPresenter Glyph="{Binding IconSymbol}"
-                                                                             GlyphSize="14"
-                                                                             HorizontalAlignment="Center"
-                                                                             VerticalAlignment="Center">
-                                                        <controls:GlyphPresenter.Style>
-                                                            <Style TargetType="{x:Type controls:GlyphPresenter}">
+                                                    <ui:SymbolIcon Symbol="{Binding IconSymbol}"
+                                                                   FontSize="14"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center">
+                                                        <ui:SymbolIcon.Style>
+                                                            <Style TargetType="{x:Type ui:SymbolIcon}">
                                                                 <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding IsActive}" Value="True">
@@ -340,8 +340,8 @@
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
-                                                        </controls:GlyphPresenter.Style>
-                                                    </controls:GlyphPresenter>
+                                                        </ui:SymbolIcon.Style>
+                                                    </ui:SymbolIcon>
                                                 </Border>
                                             </Grid>
                                         </Button>

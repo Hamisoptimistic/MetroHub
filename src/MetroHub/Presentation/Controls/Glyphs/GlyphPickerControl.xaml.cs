@@ -1,17 +1,33 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using Wpf.Ui.Controls;
+using Button = System.Windows.Controls.Button;
 
 namespace MetroHub.Presentation.Controls;
 
 /// <summary>
-/// Universal dual-mode picker control supporting categorized Fluent symbols and Unicode emojis/characters.
-/// Encapsulates segmented mode switching, curated grids, and live custom input.
+/// Lean, tactile icon picker strip displaying curated standard Fluent vector icons.
 /// </summary>
 public partial class GlyphPickerControl : UserControl
 {
     private bool _isUpdatingInternally;
+    private readonly List<IconTileItem> _icons =
+    [
+        new("Desktop", SymbolRegular.Desktop24),
+        new("Work", SymbolRegular.Briefcase24),
+        new("Code", SymbolRegular.Code24),
+        new("Rocket", SymbolRegular.Rocket24),
+        new("Target", SymbolRegular.TargetArrow24),
+        new("Study", SymbolRegular.Book24),
+        new("Health", SymbolRegular.Heart24),
+        new("Music", SymbolRegular.Headphones24),
+        new("Gaming", SymbolRegular.Games24),
+        new("Files", SymbolRegular.Folder24)
+    ];
 
     public static readonly DependencyProperty SelectedGlyphProperty =
         DependencyProperty.Register(
@@ -31,8 +47,8 @@ public partial class GlyphPickerControl : UserControl
     public GlyphPickerControl()
     {
         InitializeComponent();
-        FluentListBox.ItemsSource = GlyphCatalog.FluentIcons;
-        EmojiListBox.ItemsSource = GlyphCatalog.Emojis;
+        IconsItemsControl.ItemsSource = _icons;
+        ApplySelectedGlyphToUi(SelectedGlyph);
         Loaded += (_, _) => ApplySelectedGlyphToUi(SelectedGlyph);
     }
 
@@ -53,52 +69,23 @@ public partial class GlyphPickerControl : UserControl
 
         try
         {
-            var matchingFluent = GlyphCatalog.FluentIcons.FirstOrDefault(i =>
-                string.Equals(i.Glyph, current, StringComparison.OrdinalIgnoreCase));
+            var matchingIcon = _icons.FirstOrDefault(i =>
+                string.Equals(i.Glyph, current, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(i.Name, current, StringComparison.OrdinalIgnoreCase));
 
-            if (matchingFluent != null)
+            if (matchingIcon != null)
             {
-                FluentTabRadio.IsChecked = true;
-                FluentViewHost.Visibility = Visibility.Visible;
-                EmojiViewHost.Visibility = Visibility.Collapsed;
-                FluentListBox.SelectedItem = matchingFluent;
-                EmojiListBox.SelectedItem = null;
-                CustomGlyphInput.Text = string.Empty;
-                return;
-            }
-
-            var matchingEmoji = GlyphCatalog.Emojis.FirstOrDefault(e =>
-                string.Equals(e.Glyph, current, StringComparison.Ordinal));
-
-            if (matchingEmoji != null)
-            {
-                EmojiTabRadio.IsChecked = true;
-                FluentViewHost.Visibility = Visibility.Collapsed;
-                EmojiViewHost.Visibility = Visibility.Visible;
-                EmojiListBox.SelectedItem = matchingEmoji;
-                FluentListBox.SelectedItem = null;
-                CustomGlyphInput.Text = current;
-                return;
-            }
-
-            // Custom glyph or symbol
-            if (GlyphCatalog.IsSymbol(current))
-            {
-                FluentTabRadio.IsChecked = true;
-                FluentViewHost.Visibility = Visibility.Visible;
-                EmojiViewHost.Visibility = Visibility.Collapsed;
-                FluentListBox.SelectedItem = null;
-                EmojiListBox.SelectedItem = null;
-                CustomGlyphInput.Text = string.Empty;
+                foreach (var item in _icons)
+                {
+                    item.IsSelected = (item == matchingIcon);
+                }
             }
             else
             {
-                EmojiTabRadio.IsChecked = true;
-                FluentViewHost.Visibility = Visibility.Collapsed;
-                EmojiViewHost.Visibility = Visibility.Visible;
-                FluentListBox.SelectedItem = null;
-                EmojiListBox.SelectedItem = null;
-                CustomGlyphInput.Text = current;
+                foreach (var item in _icons)
+                {
+                    item.IsSelected = false;
+                }
             }
         }
         finally
@@ -107,75 +94,59 @@ public partial class GlyphPickerControl : UserControl
         }
     }
 
-    private void OnTabRadioChecked(object sender, RoutedEventArgs e)
+    private void OnIconTileClick(object sender, RoutedEventArgs e)
     {
-        if (FluentViewHost == null || EmojiViewHost == null) return;
-
-        bool isFluent = FluentTabRadio.IsChecked == true;
-        FluentViewHost.Visibility = isFluent ? Visibility.Visible : Visibility.Collapsed;
-        EmojiViewHost.Visibility = isFluent ? Visibility.Collapsed : Visibility.Visible;
-    }
-
-    private void OnFluentSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_isUpdatingInternally) return;
-
-        if (FluentListBox.SelectedItem is GlyphOption option)
-        {
-            _isUpdatingInternally = true;
-            try
-            {
-                EmojiListBox.SelectedItem = null;
-                CustomGlyphInput.Text = string.Empty;
-                SelectedGlyph = option.Glyph;
-                SelectedGlyphChanged?.Invoke(this, option.Glyph);
-            }
-            finally
-            {
-                _isUpdatingInternally = false;
-            }
-        }
-    }
-
-    private void OnEmojiSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_isUpdatingInternally) return;
-
-        if (EmojiListBox.SelectedItem is GlyphOption option)
-        {
-            _isUpdatingInternally = true;
-            try
-            {
-                FluentListBox.SelectedItem = null;
-                CustomGlyphInput.Text = option.Glyph;
-                SelectedGlyph = option.Glyph;
-                SelectedGlyphChanged?.Invoke(this, option.Glyph);
-            }
-            finally
-            {
-                _isUpdatingInternally = false;
-            }
-        }
-    }
-
-    private void OnCustomGlyphInputTextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (_isUpdatingInternally) return;
-
-        string text = CustomGlyphInput.Text.Trim();
-        if (string.IsNullOrEmpty(text)) return;
+        if (sender is not Button btn) return;
+        var targetItem = (btn.Tag as IconTileItem) ?? (btn.DataContext as IconTileItem);
+        if (targetItem == null) return;
 
         _isUpdatingInternally = true;
         try
         {
-            FluentListBox.SelectedItem = null;
-            EmojiListBox.SelectedItem = GlyphCatalog.Emojis.FirstOrDefault(i => i.Glyph == text);
-            SelectedGlyph = text;
-            SelectedGlyphChanged?.Invoke(this, text);
+            foreach (var item in _icons)
+            {
+                item.IsSelected = (item == targetItem);
+            }
+            SelectedGlyph = targetItem.Glyph;
+            SelectedGlyphChanged?.Invoke(this, targetItem.Glyph);
         }
         finally
         {
             _isUpdatingInternally = false;
         }
+    }
+}
+
+/// <summary>
+/// Data model for curated Fluent icon button tiles in the picker strip.
+/// </summary>
+public sealed class IconTileItem : INotifyPropertyChanged
+{
+    private bool _isSelected;
+
+    public string Name { get; }
+    public SymbolRegular Symbol { get; }
+    public string Glyph { get; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public IconTileItem(string name, SymbolRegular symbol)
+    {
+        Name = name;
+        Symbol = symbol;
+        Glyph = symbol.ToString();
     }
 }

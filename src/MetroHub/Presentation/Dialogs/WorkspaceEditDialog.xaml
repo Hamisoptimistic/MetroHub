@@ -15,12 +15,12 @@
                     Background="{DynamicResource SurfaceGlassBrush}"
                     BorderBrush="{DynamicResource SurfaceBorderBrush}"
                     BorderThickness="1">
-                <controls:GlyphPresenter x:Name="SidebarPreviewIcon"
-                                         Glyph="Desktop24"
-                                         GlyphSize="42"
-                                         Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                         HorizontalAlignment="Center"
-                                         VerticalAlignment="Center" />
+                <ui:SymbolIcon x:Name="SidebarPreviewIcon"
+                               Symbol="Desktop24"
+                               FontSize="42"
+                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
             </Border>
         </Grid>
     </dialogs:MetroDialog.SidebarContent>
