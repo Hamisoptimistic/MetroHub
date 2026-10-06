@@ -18,7 +18,7 @@
                 <ui:SymbolIcon x:Name="SidebarPreviewIcon"
                                Symbol="Desktop24"
                                FontSize="42"
-                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center" />
             </Border>
@@ -67,18 +67,12 @@
 
         <!-- Footer Buttons -->
         <Grid Grid.Row="1" Margin="0,16,0,0">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Cancel"
-                        Style="{DynamicResource DefaultButtonStyle}"
-                        Margin="0,0,10,0"
-                        IsCancel="True"
-                        Click="OnCancelClick" />
-                <Button x:Name="SaveButton"
-                        Content="Save"
-                        Style="{DynamicResource AccentButtonStyle}"
-                        IsDefault="True"
-                        Click="OnSaveClick" />
-            </StackPanel>
+            <Button x:Name="SaveButton"
+                    Content="Save"
+                    Style="{DynamicResource AccentButtonStyle}"
+                    HorizontalAlignment="Right"
+                    IsDefault="True"
+                    Click="OnSaveClick" />
         </Grid>
     </Grid>
 </dialogs:MetroDialog>

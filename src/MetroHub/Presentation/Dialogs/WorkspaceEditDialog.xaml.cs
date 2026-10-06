@@ -82,12 +82,6 @@ public partial class WorkspaceEditDialog : MetroDialog
         Close();
     }
 
-    private void OnCancelClick(object sender, RoutedEventArgs e)
-    {
-        DialogResult = false;
-        Close();
-    }
-
     public static (string Name, string IconSymbol)? Show(
         Window? owner,
         string currentName,

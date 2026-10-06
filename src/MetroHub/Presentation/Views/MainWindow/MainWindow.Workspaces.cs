@@ -95,7 +95,8 @@ public partial class MainWindow
             detail: $"All tiles in \"{ws.Name}\" will be archived to the workspace trash folder. The active canvas will switch to an available workspace.",
             confirmText: "Delete Workspace",
             isDestructive: true,
-            symbol: Wpf.Ui.Controls.SymbolRegular.Delete24);
+            symbol: Wpf.Ui.Controls.SymbolRegular.Delete24,
+            showCancelButton: false);
 
         if (confirmed)
         {

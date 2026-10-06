@@ -391,7 +391,8 @@ public class MetroDialog : BorderlessFluentWindow
         bool isDestructive = false,
         SymbolRegular? symbol = null,
         string? subtitle = null,
-        string cancelText = "Cancel")
+        string cancelText = "Cancel",
+        bool showCancelButton = true)
     {
         return Confirm(owner, new MetroConfirmOptions
         {
@@ -401,6 +402,7 @@ public class MetroDialog : BorderlessFluentWindow
             Detail = detail,
             ConfirmText = confirmText,
             CancelText = cancelText,
+            ShowCancelButton = showCancelButton,
             IsDestructive = isDestructive,
             Symbol = symbol
         });
@@ -492,19 +494,22 @@ public class MetroDialog : BorderlessFluentWindow
             HorizontalAlignment = HorizontalAlignment.Right
         };
 
-        var cancelButton = new Button
+        if (options.ShowCancelButton)
         {
-            Content = options.CancelText,
-            Margin = new Thickness(0, 0, 10, 0),
-            IsCancel = true
-        };
-        cancelButton.SetResourceReference(FrameworkElement.StyleProperty, "DefaultButtonStyle");
-        cancelButton.Click += (_, _) =>
-        {
-            dlg.DialogResult = false;
-            dlg.Close();
-        };
-        buttonPanel.Children.Add(cancelButton);
+            var cancelButton = new Button
+            {
+                Content = options.CancelText,
+                Margin = new Thickness(0, 0, 10, 0),
+                IsCancel = true
+            };
+            cancelButton.SetResourceReference(FrameworkElement.StyleProperty, "DefaultButtonStyle");
+            cancelButton.Click += (_, _) =>
+            {
+                dlg.DialogResult = false;
+                dlg.Close();
+            };
+            buttonPanel.Children.Add(cancelButton);
+        }
 
         var confirmButton = new Button
         {
@@ -557,6 +562,7 @@ public sealed record MetroConfirmOptions
     public string? Detail { get; init; }
     public string ConfirmText { get; init; } = "Confirm";
     public string CancelText { get; init; } = "Cancel";
+    public bool ShowCancelButton { get; init; } = true;
     public bool IsDestructive { get; init; }
     public SymbolRegular? Symbol { get; init; }
     public ImageSource? SidebarIcon { get; init; }
