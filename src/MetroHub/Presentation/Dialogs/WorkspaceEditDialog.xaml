@@ -1,59 +1,82 @@
-<dialogs:MetroDialog x:Class="MetroHub.Presentation.Dialogs.WorkspaceRenameDialog"
+<dialogs:MetroDialog x:Class="MetroHub.Presentation.Dialogs.WorkspaceEditDialog"
                      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                      xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
                      xmlns:dialogs="clr-namespace:MetroHub.Presentation.Dialogs"
-                     Title="Rename Workspace"
-                     Subtitle="Enter a new display name for this workspace"
-                     Width="520" Height="260">
+                     Title="Edit Workspace"
+                     Subtitle="Customize workspace name and icon">
 
-    <!-- Frosted Acrylic Left Sidebar Content Slot -->
+    <!-- Frosted Acrylic Left Sidebar: Live Dynamic Preview -->
     <dialogs:MetroDialog.SidebarContent>
         <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-            <ui:SymbolIcon Symbol="Edit24"
-                           FontSize="48"
-                           Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" />
+            <Border Width="88" Height="88"
+                    CornerRadius="44"
+                    Background="{DynamicResource SurfaceGlassBrush}"
+                    BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                    BorderThickness="1">
+                <controls:GlyphPresenter x:Name="SidebarPreviewIcon"
+                                         Glyph="Desktop24"
+                                         GlyphSize="42"
+                                         Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center" />
+            </Border>
         </Grid>
     </dialogs:MetroDialog.SidebarContent>
 
-    <!-- Dark Obsidian Form Content Slot -->
+    <!-- Obsidian Dark Content Panel Body -->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
+        <!-- Form Fields -->
         <StackPanel Grid.Row="0" VerticalAlignment="Center">
+            <!-- Workspace Name Label -->
             <TextBlock Text="Workspace Name"
                        FontSize="{DynamicResource TypeCaptionFontSize}"
                        FontWeight="{DynamicResource TypeCaptionFontWeight}"
                        Foreground="{DynamicResource TextMutedBrush}"
-                       Margin="0,0,0,8" />
+                       Margin="0,0,0,6" />
 
             <TextBox x:Name="WorkspaceNameInput"
                      controls:InputHelper.Icon="Edit24"
-                     KeyDown="OnWorkspaceNameInputKeyDown"
-                     TextChanged="OnWorkspaceNameInputTextChanged" />
+                     TextChanged="OnWorkspaceNameInputTextChanged"
+                     KeyDown="OnWorkspaceNameInputKeyDown" />
 
             <TextBlock x:Name="WorkspaceNameErrorMessage"
                        Text="Workspace name cannot be empty."
                        FontSize="{DynamicResource TypeCaptionFontSize}"
                        Foreground="{DynamicResource StatusErrorBrush}"
-                       Margin="0,6,0,0"
+                       Margin="0,4,0,8"
                        Visibility="Collapsed" />
+
+            <!-- Icon Palette Section -->
+            <TextBlock Text="Choose Icon"
+                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       Margin="0,6,0,6" />
+
+            <!-- Universal Dual-Support Glyph Picker -->
+            <controls:GlyphPickerControl x:Name="WorkspaceGlyphPicker"
+                                         SelectedGlyphChanged="OnGlyphPickerSelectedGlyphChanged" />
         </StackPanel>
 
-        <!-- Footer Action Buttons -->
+        <!-- Footer Buttons -->
         <Grid Grid.Row="1" Margin="0,16,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="Cancel"
                         Style="{DynamicResource DefaultButtonStyle}"
                         Margin="0,0,10,0"
+                        IsCancel="True"
                         Click="OnCancelClick" />
                 <Button x:Name="SaveButton"
                         Content="Save"
                         Style="{DynamicResource AccentButtonStyle}"
+                        IsDefault="True"
                         Click="OnSaveClick" />
             </StackPanel>
         </Grid>

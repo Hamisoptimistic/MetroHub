@@ -19,52 +19,7 @@
 
 
 
-        <!-- 34x34 Fluent Icon Choice Button Style (CornerRadius: 2px) -->
-        <Style x:Key="HabitIconChoiceButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="#15FFFFFF" />
-            <Setter Property="BorderBrush" Value="#25FFFFFF" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Width" Value="34" />
-            <Setter Property="Height" Value="34" />
-            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-            <Setter Property="Margin" Value="0,0,6,6" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                >
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#25FFFFFF" />
-                                <Setter TargetName="Border" Property="BorderBrush" Value="#60FFFFFF" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#35FFFFFF" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <DataTrigger Value="True">
-                    <DataTrigger.Binding>
-                        <MultiBinding Converter="{StaticResource EqualityConverter}">
-                            <Binding Path="SetupSelectedIcon" />
-                            <Binding Path="CommandParameter" RelativeSource="{RelativeSource Self}" />
-                        </MultiBinding>
-                    </DataTrigger.Binding>
-                    <Setter Property="Background" Value="#30FFFFFF" />
-                    <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
-                    <Setter Property="BorderThickness" Value="1.5" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
+
 
         <!-- Seamless Day Cell Button Style (Zero Outer Border / Margin) -->
         <Style x:Key="HabitDayButtonStyle" TargetType="Button">
@@ -351,11 +306,11 @@
                                         CornerRadius="{DynamicResource ControlCornerRadius}"
                                         Padding="{TemplateBinding Padding}">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <ui:SymbolIcon Symbol="{Binding IconSymbol}"
-                                                       FontSize="20"
-                                                       Foreground="#0B9E76"
-                                                       VerticalAlignment="Center"
-                                                       Margin="0,0,7,0" />
+                                        <controls:GlyphPresenter Glyph="{Binding IconSymbol}"
+                                                                 GlyphSize="20"
+                                                                 Foreground="#0B9E76"
+                                                                 VerticalAlignment="Center"
+                                                                 Margin="0,0,7,0" />
                                         <TextBlock Text="{Binding HabitName}"
                                                    FontFamily="{DynamicResource AppDisplayFontFamily}"
                                                    FontSize="{DynamicResource TypeHeaderFontSize}"
@@ -463,54 +418,14 @@
                              KeyDown="HabitNameInput_KeyDown" />
                 </StackPanel>
 
-                <!-- Icon Preset Picker -->
+                <!-- Universal Dual-Support Icon & Emoji Picker -->
                 <StackPanel Grid.Row="2" Margin="0,0,0,16">
                     <TextBlock Text="Choose Icon"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,0,0,6" />
-                    <WrapPanel Orientation="Horizontal">
-                        <Button Style="{StaticResource HabitIconChoiceButtonStyle}"
-                                Command="{Binding SelectIconCommand}" CommandParameter="TargetArrow24" ToolTip="Target Arrow">
-                            <ui:SymbolIcon Symbol="TargetArrow24" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
-                        </Button>
-
-                        <Button Style="{StaticResource HabitIconChoiceButtonStyle}"
-                                Command="{Binding SelectIconCommand}" CommandParameter="PersonRunning20" ToolTip="Running">
-                            <ui:SymbolIcon Symbol="PersonRunning20" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
-                        </Button>
-
-                        <Button Style="{StaticResource HabitIconChoiceButtonStyle}"
-                                Command="{Binding SelectIconCommand}" CommandParameter="Book24" ToolTip="Reading">
-                            <ui:SymbolIcon Symbol="Book24" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
-                        </Button>
-
-                        <Button Style="{StaticResource HabitIconChoiceButtonStyle}"
-                                Command="{Binding SelectIconCommand}" CommandParameter="Code24" ToolTip="Coding">
-                            <ui:SymbolIcon Symbol="Code24" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
-                        </Button>
-
-                        <Button Style="{StaticResource HabitIconChoiceButtonStyle}"
-                                Command="{Binding SelectIconCommand}" CommandParameter="BrainCircuit24" ToolTip="Brain / Mind">
-                            <ui:SymbolIcon Symbol="BrainCircuit24" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
-                        </Button>
-
-                        <Button Style="{StaticResource HabitIconChoiceButtonStyle}"
-                                Command="{Binding SelectIconCommand}" CommandParameter="Prohibited24" ToolTip="Avoid / Prohibited">
-                            <ui:SymbolIcon Symbol="Prohibited24" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
-                        </Button>
-
-                        <Button Style="{StaticResource HabitIconChoiceButtonStyle}"
-                                Command="{Binding SelectIconCommand}" CommandParameter="Dumbbell24" ToolTip="Workout">
-                            <ui:SymbolIcon Symbol="Dumbbell24" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
-                        </Button>
-
-                        <Button Style="{StaticResource HabitIconChoiceButtonStyle}"
-                                Command="{Binding SelectIconCommand}" CommandParameter="Drop24" ToolTip="Hydration">
-                            <ui:SymbolIcon Symbol="Drop24" FontSize="16" Foreground="{DynamicResource TextPrimaryBrush}" />
-                        </Button>
-                    </WrapPanel>
+                    <controls:GlyphPickerControl SelectedGlyph="{Binding SetupSelectedIcon, Mode=TwoWay}" />
                 </StackPanel>
 
                 <!-- Actions: Add Button -->

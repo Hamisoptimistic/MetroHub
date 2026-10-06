@@ -11,6 +11,7 @@ using MetroHub.Presentation.Views;
 using Wpf.Ui.Controls;
 using Button = System.Windows.Controls.Button;
 using TextBox = System.Windows.Controls.TextBox;
+using TextBlock = System.Windows.Controls.TextBlock;
 
 namespace MetroHub.Presentation.Dialogs;
 
@@ -376,4 +377,187 @@ public class MetroDialog : BorderlessFluentWindow
 
         return NativeMethods.CallNextHookEx(_mouseHook, nCode, wParam, lParam);
     }
+
+    /// <summary>
+    /// Displays a standardized modal confirmation dialog (Title, Subtitle, Message, Detail, Cancel, Confirm)
+    /// rendered inside the standard 620x360 MetroDialog frame with Mica/Obsidian composition.
+    /// </summary>
+    public static bool Confirm(
+        Window? owner,
+        string title,
+        string message,
+        string? detail = null,
+        string confirmText = "Confirm",
+        bool isDestructive = false,
+        SymbolRegular? symbol = null,
+        string? subtitle = null,
+        string cancelText = "Cancel")
+    {
+        return Confirm(owner, new MetroConfirmOptions
+        {
+            Title = title,
+            Subtitle = subtitle,
+            Message = message,
+            Detail = detail,
+            ConfirmText = confirmText,
+            CancelText = cancelText,
+            IsDestructive = isDestructive,
+            Symbol = symbol
+        });
+    }
+
+    /// <summary>
+    /// Displays a standardized modal confirmation dialog using custom options.
+    /// </summary>
+    public static bool Confirm(Window? owner, MetroConfirmOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        var dlg = new MetroDialog
+        {
+            Owner = owner ?? Application.Current?.MainWindow,
+            Title = options.Title,
+            Subtitle = options.Subtitle,
+        };
+
+        if (options.Symbol.HasValue)
+        {
+            var icon = new SymbolIcon
+            {
+                Symbol = options.Symbol.Value,
+                FontSize = 54,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            if (options.IsDestructive)
+            {
+                icon.SetResourceReference(SymbolIcon.ForegroundProperty, "StatusErrorBrush");
+            }
+            else
+            {
+                icon.SetResourceReference(SymbolIcon.ForegroundProperty, "SystemAccentColorPrimaryBrush");
+            }
+
+            dlg.SidebarContent = icon;
+        }
+        else if (options.SidebarIcon != null)
+        {
+            dlg.SidebarIcon = options.SidebarIcon;
+        }
+
+        var contentGrid = new Grid();
+        contentGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        contentGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        var bodyStack = new StackPanel
+        {
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var messageBlock = new TextBlock
+        {
+            Text = options.Message,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 8, 8)
+        };
+        messageBlock.SetResourceReference(TextBlock.FontSizeProperty, "TypeBodyStrongFontSize");
+        messageBlock.SetResourceReference(TextBlock.FontWeightProperty, "TypeHeaderFontWeight");
+        messageBlock.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimaryBrush");
+        bodyStack.Children.Add(messageBlock);
+
+        if (!string.IsNullOrWhiteSpace(options.Detail))
+        {
+            var detailBlock = new TextBlock
+            {
+                Text = options.Detail,
+                TextWrapping = TextWrapping.Wrap,
+                LineHeight = 18
+            };
+            detailBlock.SetResourceReference(TextBlock.FontSizeProperty, "TypeCaptionFontSize");
+            detailBlock.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondaryBrush");
+            bodyStack.Children.Add(detailBlock);
+        }
+
+        Grid.SetRow(bodyStack, 0);
+        contentGrid.Children.Add(bodyStack);
+
+        var footerGrid = new Grid
+        {
+            Margin = new Thickness(0, 16, 0, 0)
+        };
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+
+        var cancelButton = new Button
+        {
+            Content = options.CancelText,
+            Margin = new Thickness(0, 0, 10, 0),
+            IsCancel = true
+        };
+        cancelButton.SetResourceReference(FrameworkElement.StyleProperty, "DefaultButtonStyle");
+        cancelButton.Click += (_, _) =>
+        {
+            dlg.DialogResult = false;
+            dlg.Close();
+        };
+        buttonPanel.Children.Add(cancelButton);
+
+        var confirmButton = new Button
+        {
+            Content = options.ConfirmText,
+            IsDefault = true
+        };
+
+        if (options.IsDestructive)
+        {
+            confirmButton.SetResourceReference(Control.BackgroundProperty, "StatusErrorBrush");
+            confirmButton.Foreground = Brushes.White;
+            confirmButton.BorderThickness = new Thickness(0);
+            confirmButton.Padding = new Thickness(16, 0, 16, 0);
+            confirmButton.Height = 32;
+            confirmButton.MinWidth = 100;
+            confirmButton.Cursor = Cursors.Hand;
+            confirmButton.SetResourceReference(Control.FontFamilyProperty, "AppFontFamily");
+            confirmButton.SetResourceReference(Control.FontSizeProperty, "TypeBodyStrongFontSize");
+            confirmButton.SetResourceReference(Control.FontWeightProperty, "TypeBodyStrongFontWeight");
+        }
+        else
+        {
+            confirmButton.SetResourceReference(FrameworkElement.StyleProperty, "AccentButtonStyle");
+        }
+
+        confirmButton.Click += (_, _) =>
+        {
+            dlg.DialogResult = true;
+            dlg.Close();
+        };
+        buttonPanel.Children.Add(confirmButton);
+
+        footerGrid.Children.Add(buttonPanel);
+        Grid.SetRow(footerGrid, 1);
+        contentGrid.Children.Add(footerGrid);
+
+        dlg.Content = contentGrid;
+        return dlg.ShowDialog() == true;
+    }
+}
+
+/// <summary>
+/// Options for displaying a standardized Metro confirmation modal dialog.
+/// </summary>
+public sealed record MetroConfirmOptions
+{
+    public string Title { get; init; } = "Confirm";
+    public string? Subtitle { get; init; }
+    public string Message { get; init; } = "Are you sure you want to proceed?";
+    public string? Detail { get; init; }
+    public string ConfirmText { get; init; } = "Confirm";
+    public string CancelText { get; init; } = "Cancel";
+    public bool IsDestructive { get; init; }
+    public SymbolRegular? Symbol { get; init; }
+    public ImageSource? SidebarIcon { get; init; }
 }

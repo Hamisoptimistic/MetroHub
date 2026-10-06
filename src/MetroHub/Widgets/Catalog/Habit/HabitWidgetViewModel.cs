@@ -12,6 +12,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
+using MetroHub.Presentation.Dialogs;
 using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Serialization;
 
@@ -693,12 +694,17 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase, IWidgetContextM
         };
         resetItem.Click += (s, ev) =>
         {
-            var result = MessageBox.Show(
-                $"Are you sure you want to reset all tracking data for '{HabitName}'? This cannot be undone.",
-                "Reset Habit Data",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
-            if (result == MessageBoxResult.Yes)
+            bool confirmed = MetroDialog.Confirm(
+                owner: Application.Current?.MainWindow,
+                title: "Reset Habit Data",
+                subtitle: "Confirm reset",
+                message: $"Are you sure you want to reset all tracking data for '{HabitName}'?",
+                detail: "This action cannot be undone. All streak and tracking history will be cleared.",
+                confirmText: "Reset Habit",
+                isDestructive: true,
+                symbol: Wpf.Ui.Controls.SymbolRegular.Warning24);
+
+            if (confirmed)
             {
                 ResetAllData();
             }

@@ -213,19 +213,20 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
     /// <summary>
     /// Creates a new workspace if under the 10-workspace soft cap, persists it, and switches to it.
     /// </summary>
-    public WorkspaceModel? CreateWorkspace(string? name = null)
+    public WorkspaceModel? CreateWorkspace(string? name = null, string? iconSymbol = null)
     {
         if (Workspaces.Count >= MaxWorkspacesLimit) return null;
 
         int nextOrder = Workspaces.Count;
         string wsName = string.IsNullOrWhiteSpace(name) ? $"Workspace {nextOrder + 1}" : name.Trim();
+        string wsIcon = string.IsNullOrWhiteSpace(iconSymbol) ? "Desktop24" : iconSymbol.Trim();
 
         var ws = new WorkspaceModel
         {
             Id = Guid.NewGuid().ToString("N"),
             Name = wsName,
             Order = nextOrder,
-            IconSymbol = "Desktop24",
+            IconSymbol = wsIcon,
             CreatedUtc = DateTime.UtcNow,
             IsDirty = true
         };
@@ -243,9 +244,9 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Renames a workspace and persists the updated manifest.
+    /// Updates workspace display name and icon, and persists the updated manifest.
     /// </summary>
-    public bool RenameWorkspace(string workspaceId, string newName)
+    public bool UpdateWorkspace(string workspaceId, string newName, string? newIconSymbol = null)
     {
         if (string.IsNullOrWhiteSpace(newName)) return false;
 
@@ -253,9 +254,20 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
         if (ws == null) return false;
 
         ws.Name = newName.Trim();
+        if (!string.IsNullOrWhiteSpace(newIconSymbol))
+        {
+            ws.IconSymbol = newIconSymbol.Trim();
+        }
         SaveManifest(sync: true);
         return true;
     }
+
+    /// <summary>
+    /// Renames a workspace and persists the updated manifest.
+    /// </summary>
+    public bool RenameWorkspace(string workspaceId, string newName)
+        => UpdateWorkspace(workspaceId, newName, null);
+
 
     /// <summary>
     /// Non-destructively deletes a workspace (minimum 1 workspace check; moves directory to trash).

@@ -69,12 +69,15 @@ public partial class MainWindow
     private void OnWorkspaceRequestRename(WorkspaceModel ws)
     {
         if (ws == null) return;
-        using (EnterDialogScope())
+        var result = WorkspaceEditDialog.Show(this, ws.Name, ws.IconSymbol);
+        if (result.HasValue)
         {
-            var newName = WorkspaceRenameDialog.Show(this, ws.Name);
-            if (!string.IsNullOrWhiteSpace(newName) && !string.Equals(newName, ws.Name, StringComparison.Ordinal))
+            var (newName, newIcon) = result.Value;
+            if (!string.IsNullOrWhiteSpace(newName) &&
+                (!string.Equals(newName, ws.Name, StringComparison.Ordinal) ||
+                 !string.Equals(newIcon, ws.IconSymbol, StringComparison.Ordinal)))
             {
-                WorkspaceManager.Instance.RenameWorkspace(ws.Id, newName);
+                WorkspaceManager.Instance.UpdateWorkspace(ws.Id, newName, newIcon);
             }
         }
     }
@@ -82,14 +85,20 @@ public partial class MainWindow
     private void OnWorkspaceRequestDelete(WorkspaceModel ws)
     {
         if (ws == null) return;
-        using (EnterDialogScope())
+        bool confirmed = MetroDialog.Confirm(
+            owner: this,
+            title: "Delete Workspace",
+            subtitle: "Confirm workspace removal",
+            message: "Are you sure you want to delete this workspace?",
+            detail: $"All tiles in \"{ws.Name}\" will be archived to the workspace trash folder. The active canvas will switch to an available workspace.",
+            confirmText: "Delete Workspace",
+            isDestructive: true,
+            symbol: Wpf.Ui.Controls.SymbolRegular.Delete24);
+
+        if (confirmed)
         {
-            bool confirmed = WorkspaceDeleteDialog.Show(this, ws.Name);
-            if (confirmed)
-            {
-                CleanupWorkspaceCanvas(ws.Id);
-                WorkspaceManager.Instance.DeleteWorkspace(ws.Id);
-            }
+            CleanupWorkspaceCanvas(ws.Id);
+            WorkspaceManager.Instance.DeleteWorkspace(ws.Id);
         }
     }
 

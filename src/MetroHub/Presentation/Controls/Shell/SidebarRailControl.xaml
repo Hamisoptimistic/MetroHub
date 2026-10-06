@@ -286,7 +286,7 @@
                                                 <ContextMenu DataContext="{Binding Path=PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                                                     <MenuItem Header="{Binding Name}" IsEnabled="False" FontWeight="SemiBold" />
                                                     <Separator />
-                                                    <MenuItem Header="Rename..." 
+                                                    <MenuItem Header="Edit Workspace..." 
                                                               Command="{Binding Path=RequestRenameWorkspaceCommand, Source={x:Static controllers:WorkspaceManager.Instance}}"
                                                               CommandParameter="{Binding Id}">
                                                         <MenuItem.Icon>
@@ -312,9 +312,9 @@
                                                         Background="{DynamicResource SystemAccentColorPrimaryBrush}"
                                                         Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}" />
 
-                                                <!-- Workspace Avatar Pill / Glyph -->
+                                                <!-- Workspace Avatar Pill / Icon -->
                                                 <Border Width="26" Height="26"
-                                                        CornerRadius="6"
+                                                        CornerRadius="{DynamicResource ControlCornerRadius}"
                                                         HorizontalAlignment="Center"
                                                         VerticalAlignment="Center">
                                                     <Border.Style>
@@ -327,23 +327,21 @@
                                                             </Style.Triggers>
                                                         </Style>
                                                     </Border.Style>
-                                                    <TextBlock Text="{Binding DisplayGlyph}"
-                                                               FontSize="12"
-                                                               FontWeight="SemiBold"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center">
-                                                        <TextBlock.Style>
-                                                            <Style TargetType="TextBlock">
-                                                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                                    <controls:GlyphPresenter Glyph="{Binding IconSymbol}"
+                                                                             GlyphSize="14"
+                                                                             HorizontalAlignment="Center"
+                                                                             VerticalAlignment="Center">
+                                                        <controls:GlyphPresenter.Style>
+                                                            <Style TargetType="{x:Type controls:GlyphPresenter}">
+                                                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding IsActive}" Value="True">
                                                                         <Setter Property="Foreground" Value="#FFFFFF" />
-                                                                        <Setter Property="FontWeight" Value="Bold" />
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
-                                                        </TextBlock.Style>
-                                                    </TextBlock>
+                                                        </controls:GlyphPresenter.Style>
+                                                    </controls:GlyphPresenter>
                                                 </Border>
                                             </Grid>
                                         </Button>

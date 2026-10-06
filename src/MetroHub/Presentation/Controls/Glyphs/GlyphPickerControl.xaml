@@ -1,0 +1,223 @@
+<UserControl x:Class="MetroHub.Presentation.Controls.GlyphPickerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+             Focusable="False"
+             Background="Transparent">
+
+    <UserControl.Resources>
+        <!-- Segmented Tab Pill Radio Button Style -->
+        <Style x:Key="SegmentedTabRadioStyle" TargetType="RadioButton">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeCaptionFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeCaptionFontWeight}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+            <Setter Property="Padding" Value="12,4" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Pill"
+                                Background="Transparent"
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource SystemAccentColorSelectionFill}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Clean 38x34 ListBoxItem Container Style (Single Accent Border, Zero Double-Borders) -->
+        <Style x:Key="GlyphItemContainerStyle" TargetType="ListBoxItem">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Width" Value="38" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Pill"
+                                Width="38" Height="34"
+                                CornerRadius="{DynamicResource ControlCornerRadius}"
+                                Background="Transparent"
+                                BorderThickness="1"
+                                BorderBrush="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="{DynamicResource SystemAccentColorSelectionFill}" />
+                                <Setter TargetName="Pill" Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Fluent Icon Template -->
+        <DataTemplate x:Key="FluentGlyphTemplate" DataType="{x:Type controls:GlyphOption}">
+            <ui:SymbolIcon Symbol="{Binding Glyph}"
+                           FontSize="18"
+                           ToolTip="{Binding Name}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center">
+                <ui:SymbolIcon.Style>
+                    <Style TargetType="{x:Type ui:SymbolIcon}">
+                        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ui:SymbolIcon.Style>
+            </ui:SymbolIcon>
+        </DataTemplate>
+
+        <!-- Emoji Glyph Template -->
+        <DataTemplate x:Key="EmojiGlyphTemplate" DataType="{x:Type controls:GlyphOption}">
+            <TextBlock Text="{Binding Glyph}"
+                       FontSize="18"
+                       FontFamily="Segoe UI Emoji, Segoe UI Variable, Arial, Segoe UI Symbol"
+                       ToolTip="{Binding Name}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center" />
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- 0: Mode Switcher Tab Bar -->
+            <RowDefinition Height="Auto" />
+            <!-- 1: Icon / Emoji Body Slot -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Segmented Mode Switcher -->
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Border HorizontalAlignment="Left"
+                    Background="{DynamicResource SurfaceGlassSubtleBrush}"
+                    BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource ControlCornerRadius}">
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton x:Name="FluentTabRadio"
+                                 Content="Fluent Icons"
+                                 GroupName="GlyphPickerMode"
+                                 IsChecked="True"
+                                 Style="{StaticResource SegmentedTabRadioStyle}"
+                                 Checked="OnTabRadioChecked" />
+                    <RadioButton x:Name="EmojiTabRadio"
+                                 Content="Emojis &amp; Custom"
+                                 GroupName="GlyphPickerMode"
+                                 Style="{StaticResource SegmentedTabRadioStyle}"
+                                 Checked="OnTabRadioChecked" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Panel 1: Fluent Icons Grid (32 Curated, Scrollable 2-Row Window) -->
+        <Grid x:Name="FluentViewHost" Grid.Row="1" Visibility="Visible">
+            <ScrollViewer MaxHeight="80"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Focusable="False">
+                <ListBox x:Name="FluentListBox"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                         ItemContainerStyle="{StaticResource GlyphItemContainerStyle}"
+                         ItemTemplate="{StaticResource FluentGlyphTemplate}"
+                         SelectionChanged="OnFluentSelectionChanged">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="8" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                </ListBox>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- Panel 2: Emojis & Custom Input -->
+        <Grid x:Name="EmojiViewHost" Grid.Row="1" Visibility="Collapsed">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Curated Emojis Grid (16 Popular, 2 Rows of 8) -->
+            <ListBox x:Name="EmojiListBox"
+                     Grid.Row="0"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                     ItemContainerStyle="{StaticResource GlyphItemContainerStyle}"
+                     ItemTemplate="{StaticResource EmojiGlyphTemplate}"
+                     SelectionChanged="OnEmojiSelectionChanged">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="8" />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+            </ListBox>
+
+            <!-- Custom Emoji / Character Input Row -->
+            <Grid Grid.Row="1" Margin="0,8,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="Custom Glyph:"
+                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                           Foreground="{DynamicResource TextMutedBrush}"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0" />
+
+                <TextBox x:Name="CustomGlyphInput"
+                         Grid.Column="1"
+                         Width="64"
+                         Height="28"
+                         MaxLength="8"
+                         HorizontalContentAlignment="Center"
+                         VerticalContentAlignment="Center"
+                         FontSize="15"
+                         FontFamily="Segoe UI Emoji, Segoe UI Variable, Arial, Segoe UI Symbol"
+                         TextChanged="OnCustomGlyphInputTextChanged" />
+
+                <TextBlock Grid.Column="2"
+                           Text="Tip: Press Win + . for Windows emoji picker"
+                           FontSize="11"
+                           Foreground="{DynamicResource TextDisabledBrush}"
+                           VerticalAlignment="Center"
+                           Margin="10,0,0,0"
+                           TextTrimming="CharacterEllipsis" />
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>
