@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using MetroHub.Core.Models;
@@ -54,6 +55,7 @@ public partial class MainWindow
     }
 
     private bool _isWorkspaceTransitionRunning;
+    private WorkspaceModel? _lastOutgoingWorkspace;
 
     private void InitializeWorkspaces()
     {
@@ -113,6 +115,7 @@ public partial class MainWindow
 
     private void OnWorkspaceChanging(WorkspaceModel? outgoing, WorkspaceModel incoming)
     {
+        _lastOutgoingWorkspace = outgoing;
         if (outgoing != null)
         {
             InvokeOnDormant(outgoing.Tiles);
@@ -135,64 +138,134 @@ public partial class MainWindow
             return;
         }
 
-        // Cancel any in-flight transition and complete it immediately
+        // Cancel any in-flight transition and reset clocks immediately
         if (_isWorkspaceTransitionRunning)
         {
             MainCanvasGrid.BeginAnimation(UIElement.OpacityProperty, null);
+            CanvasTranslateTransform?.BeginAnimation(TranslateTransform.YProperty, null);
+            MainCanvasGrid.Opacity = 1.0;
+            if (CanvasTranslateTransform != null) CanvasTranslateTransform.Y = 0.0;
             _isWorkspaceTransitionRunning = false;
         }
 
         _isWorkspaceTransitionRunning = true;
 
-        var fadeOutEase = new CubicEase { EasingMode = EasingMode.EaseOut };
-        var fadeInEase = new CubicEase { EasingMode = EasingMode.EaseIn };
+        // Determine spatial direction based on workspace rail order
+        var wm = WorkspaceManager.Instance;
+        int outgoingIndex = _lastOutgoingWorkspace != null ? wm.Workspaces.IndexOf(_lastOutgoingWorkspace) : -1;
+        int incomingIndex = wm.Workspaces.IndexOf(target);
+        bool movingDown = incomingIndex >= outgoingIndex;
+
+        double exitY = movingDown ? -18.0 : 18.0;
+        double enterStartY = movingDown ? 24.0 : -24.0;
+
+        var fadeOutEase = new CubicEase { EasingMode = EasingMode.EaseIn };
+        var fadeInEase = new CubicEase { EasingMode = EasingMode.EaseOut };
 
         var fadeOut = new DoubleAnimation
         {
             To = 0.0,
-            Duration = TimeSpan.FromMilliseconds(120),
+            Duration = TimeSpan.FromMilliseconds(100),
             EasingFunction = fadeOutEase
         };
+        Timeline.SetDesiredFrameRate(fadeOut, 120);
 
-        fadeOut.Completed += (s, e) =>
+        DoubleAnimation? slideOut = null;
+        if (CanvasTranslateTransform != null)
         {
+            slideOut = new DoubleAnimation
+            {
+                To = exitY,
+                Duration = TimeSpan.FromMilliseconds(100),
+                EasingFunction = fadeOutEase
+            };
+            Timeline.SetDesiredFrameRate(slideOut, 120);
+        }
+
+        EventHandler? onFadeOutCompleted = null;
+        onFadeOutCompleted = (s, e) =>
+        {
+            fadeOut.Completed -= onFadeOutCompleted;
             try
             {
-                // In-memory swap while canvas opacity is 0.0
+                // In-memory visual tree swap while canvas is fully transparent
                 ApplyWorkspaceData(target);
+
+                if (CanvasTranslateTransform != null)
+                {
+                    CanvasTranslateTransform.BeginAnimation(TranslateTransform.YProperty, null);
+                    CanvasTranslateTransform.Y = enterStartY;
+                }
 
                 var fadeIn = new DoubleAnimation
                 {
                     To = 1.0,
-                    Duration = TimeSpan.FromMilliseconds(150),
+                    Duration = TimeSpan.FromMilliseconds(180),
                     EasingFunction = fadeInEase
                 };
+                Timeline.SetDesiredFrameRate(fadeIn, 120);
 
-                fadeIn.Completed += (s2, e2) =>
+                DoubleAnimation? slideIn = null;
+                if (CanvasTranslateTransform != null)
                 {
+                    slideIn = new DoubleAnimation
+                    {
+                        To = 0.0,
+                        Duration = TimeSpan.FromMilliseconds(180),
+                        EasingFunction = fadeInEase
+                    };
+                    Timeline.SetDesiredFrameRate(slideIn, 120);
+                }
+
+                EventHandler? onFadeInCompleted = null;
+                onFadeInCompleted = (s2, e2) =>
+                {
+                    fadeIn.Completed -= onFadeInCompleted;
                     _isWorkspaceTransitionRunning = false;
+
+                    // Fully detach WPF animation clocks so idle CPU returns to 0.0%
                     MainCanvasGrid.BeginAnimation(UIElement.OpacityProperty, null);
+                    if (CanvasTranslateTransform != null)
+                    {
+                        CanvasTranslateTransform.BeginAnimation(TranslateTransform.YProperty, null);
+                        CanvasTranslateTransform.Y = 0.0;
+                    }
                     MainCanvasGrid.Opacity = 1.0;
 
-                    // Deferred wake-up at DispatcherPriority.Loaded
+                    // Deferred wake-up of active widgets
                     Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
                     {
                         InvokeOnAwakened(target.Tiles);
                     });
                 };
 
+                fadeIn.Completed += onFadeInCompleted;
                 MainCanvasGrid.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+                if (slideIn != null && CanvasTranslateTransform != null)
+                {
+                    CanvasTranslateTransform.BeginAnimation(TranslateTransform.YProperty, slideIn);
+                }
             }
             catch (Exception ex)
             {
                 Safe.Log("MainWindow.TransitionToWorkspace", ex);
                 _isWorkspaceTransitionRunning = false;
                 MainCanvasGrid.BeginAnimation(UIElement.OpacityProperty, null);
+                if (CanvasTranslateTransform != null)
+                {
+                    CanvasTranslateTransform.BeginAnimation(TranslateTransform.YProperty, null);
+                    CanvasTranslateTransform.Y = 0.0;
+                }
                 MainCanvasGrid.Opacity = 1.0;
             }
         };
 
+        fadeOut.Completed += onFadeOutCompleted;
         MainCanvasGrid.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+        if (slideOut != null && CanvasTranslateTransform != null)
+        {
+            CanvasTranslateTransform.BeginAnimation(TranslateTransform.YProperty, slideOut);
+        }
     }
 
     private void ApplyWorkspaceData(WorkspaceModel target)

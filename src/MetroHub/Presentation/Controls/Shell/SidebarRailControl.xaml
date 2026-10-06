@@ -361,7 +361,26 @@
                                             </Button>
                                             <DataTemplate.Triggers>
                                                 <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                    <Setter TargetName="ActivePill" Property="Opacity" Value="0.70" />
+                                                    <DataTrigger.EnterActions>
+                                                        <BeginStoryboard>
+                                                            <Storyboard>
+                                                                <DoubleAnimation Storyboard.TargetName="ActivePill"
+                                                                                 Storyboard.TargetProperty="Opacity"
+                                                                                 To="0.70"
+                                                                                 Duration="0:0:0.150" />
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </DataTrigger.EnterActions>
+                                                    <DataTrigger.ExitActions>
+                                                        <BeginStoryboard>
+                                                            <Storyboard>
+                                                                <DoubleAnimation Storyboard.TargetName="ActivePill"
+                                                                                 Storyboard.TargetProperty="Opacity"
+                                                                                 To="0.0"
+                                                                                 Duration="0:0:0.120" />
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </DataTrigger.ExitActions>
                                                     <Setter TargetName="WorkspaceIcon" Property="Foreground" Value="#FFFFFF" />
                                                 </DataTrigger>
                                             </DataTemplate.Triggers>

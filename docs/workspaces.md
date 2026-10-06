@@ -547,4 +547,21 @@ This section documents the memory dump diagnosis, the root causes identified, an
 | **Unit Test Coverage** | 351 tests passed | **359 tests passed** (100% pass rate) |
 | **Deployment** | Development build | Release build published to `Desktop\MetroHubApp` |
 
+---
+
+### 8.8. Optimization 6: Directional Slide + Fade Workspace Transitions
+* **Targets:**
+  * `src/MetroHub/Presentation/Views/MainWindow/MainWindow.xaml`
+  * `src/MetroHub/Presentation/Views/MainWindow/MainWindow.Workspaces.cs`
+  * `src/MetroHub/Presentation/Controls/Shell/SidebarRailControl.xaml`
+* **Problem:** In-place opacity fading (120ms fade-out, 150ms fade-in) felt flat, abrupt, and lacked spatial continuity across workspaces. In addition, the sidebar rail active indicator jumped instantly without transition.
+* **Resolution:**
+  * **Directional Motion Vectoring:** `MainWindow.Workspaces.cs` tracks outgoing vs incoming workspace indices in `WorkspaceManager.Instance.Workspaces`. Moving downward on the rail slides the outgoing canvas upward (-18px) and enters the new canvas from below (+24px to 0px). Moving upward reverses the vectors.
+  * **Zero Layout Recalculation:** Motion runs entirely via GPU-accelerated `TranslateTransform.Y` on `MainCanvasGrid.RenderTransform` (0 layout passes, 0 measurement passes).
+  * **Clock Detachment for 0.0% Idle CPU:** On animation completion and cancellation guards, `MainCanvasGrid.BeginAnimation(OpacityProperty, null)` and `CanvasTranslateTransform.BeginAnimation(TranslateTransform.YProperty, null)` explicitly detach animation clocks, preventing composition thread polling.
+  * **120 FPS Synchronization:** `Timeline.SetDesiredFrameRate(anim, 120)` ensures high refresh rate monitors render buttery-smooth transitions.
+  * **Sidebar Rail Active Pill Smooth Fade:** Added 150ms enter / 120ms exit storyboards to `ActivePill` in `SidebarRailControl.xaml`, smoothly dissolving the active accent highlight between workspace icons.
+* **Verification:** Validated via unit test suite `tests/MetroHub.Tests/WorkspaceManagerTests.cs` (21/21 passed).
+
+
 
