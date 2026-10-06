@@ -143,11 +143,7 @@
 
             <Grid x:Name="MainCanvasGrid"
                   Background="Transparent"
-                  PreviewMouseRightButtonDown="OnCanvasPreviewMouseRightButtonDown"
-                  RenderTransformOrigin="0.5,0.5">
-                <Grid.RenderTransform>
-                    <TranslateTransform x:Name="CanvasTranslateTransform" X="0" Y="0" />
-                </Grid.RenderTransform>
+                  PreviewMouseRightButtonDown="OnCanvasPreviewMouseRightButtonDown">
                 <Grid.ContextMenu>
                     <ContextMenu x:Name="CanvasContextMenu"
                                  Opened="OnCanvasContextMenuOpened"
@@ -512,7 +508,7 @@
                 </Canvas>
 
                 <!-- Retained Workspaces Host Grid: houses WorkspaceCanvasControl instances per workspace -->
-                <Grid x:Name="CanvasHostPanel" Background="Transparent" />
+                <Grid x:Name="CanvasHostPanel" Background="Transparent" ClipToBounds="True" />
 
             </Grid>
         </ScrollViewer>

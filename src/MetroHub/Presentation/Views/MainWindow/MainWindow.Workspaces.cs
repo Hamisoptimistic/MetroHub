@@ -131,8 +131,18 @@ public partial class MainWindow
     {
         if (target == null) return;
 
-        // If window is not yet loaded or not visible, perform instant swap with zero animation
-        if (!IsLoaded || !IsVisible || MainCanvasGrid == null)
+        // If window is not yet loaded or not visible, perform instant swap
+        if (!IsLoaded || !IsVisible || CanvasHostPanel == null)
+        {
+            ApplyWorkspaceData(target);
+            return;
+        }
+
+        var outgoingCanvas = _activeCanvas;
+        var incomingCanvas = GetOrCreateCanvas(target);
+
+        // If same canvas or no outgoing canvas, swap immediately
+        if (outgoingCanvas == null || outgoingCanvas == incomingCanvas)
         {
             ApplyWorkspaceData(target);
             return;
@@ -141,11 +151,7 @@ public partial class MainWindow
         // Cancel any in-flight transition and reset clocks immediately
         if (_isWorkspaceTransitionRunning)
         {
-            MainCanvasGrid.BeginAnimation(UIElement.OpacityProperty, null);
-            CanvasTranslateTransform?.BeginAnimation(TranslateTransform.YProperty, null);
-            MainCanvasGrid.Opacity = 1.0;
-            if (CanvasTranslateTransform != null) CanvasTranslateTransform.Y = 0.0;
-            _isWorkspaceTransitionRunning = false;
+            CleanupTransitionState();
         }
 
         _isWorkspaceTransitionRunning = true;
@@ -154,130 +160,164 @@ public partial class MainWindow
         var wm = WorkspaceManager.Instance;
         int outgoingIndex = _lastOutgoingWorkspace != null ? wm.Workspaces.IndexOf(_lastOutgoingWorkspace) : -1;
         int incomingIndex = wm.Workspaces.IndexOf(target);
-        bool movingDown = incomingIndex >= outgoingIndex;
+        bool movingForward = incomingIndex >= outgoingIndex;
 
-        double exitY = movingDown ? -18.0 : 18.0;
-        double enterStartY = movingDown ? 24.0 : -24.0;
+        // Full-screen contiguous slide distance (true Windows 11 Virtual Desktop push)
+        double hostWidth = CanvasHostPanel.ActualWidth;
+        double slideDistance = hostWidth > 100.0 ? hostWidth : Math.Max(800.0, ActualWidth);
+        double exitX = movingForward ? -slideDistance : slideDistance;
+        double enterStartX = movingForward ? slideDistance : -slideDistance;
 
-        var fadeOutEase = new CubicEase { EasingMode = EasingMode.EaseIn };
-        var fadeInEase = new CubicEase { EasingMode = EasingMode.EaseOut };
+        // Layer order: incoming on top
+        Panel.SetZIndex(incomingCanvas, 1);
+        Panel.SetZIndex(outgoingCanvas, 0);
 
-        var fadeOut = new DoubleAnimation
+        var outgoingTransform = new TranslateTransform(0, 0);
+        var incomingTransform = new TranslateTransform(enterStartX, 0);
+
+        outgoingCanvas.RenderTransform = outgoingTransform;
+        incomingCanvas.RenderTransform = incomingTransform;
+
+        // 100% Solid Opacity - Zero fading, Zero font antialiasing snapping, Zero ghosting
+        outgoingCanvas.Opacity = 1.0;
+        incomingCanvas.Opacity = 1.0;
+        incomingCanvas.Visibility = Visibility.Visible;
+        outgoingCanvas.Visibility = Visibility.Visible;
+
+        // High-DPI physical texture caching with sub-pixel ClearType enabled for locked 120 FPS
+        double dpiScale = 1.0;
+        try
         {
-            To = 0.0,
-            Duration = TimeSpan.FromMilliseconds(100),
-            EasingFunction = fadeOutEase
-        };
-        Timeline.SetDesiredFrameRate(fadeOut, 120);
-
-        DoubleAnimation? slideOut = null;
-        if (CanvasTranslateTransform != null)
+            dpiScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
+            if (dpiScale <= 0) dpiScale = 1.0;
+        }
+        catch
         {
-            slideOut = new DoubleAnimation
-            {
-                To = exitY,
-                Duration = TimeSpan.FromMilliseconds(100),
-                EasingFunction = fadeOutEase
-            };
-            Timeline.SetDesiredFrameRate(slideOut, 120);
+            dpiScale = 1.0;
         }
 
-        EventHandler? onFadeOutCompleted = null;
-        onFadeOutCompleted = (s, e) =>
+        outgoingCanvas.CacheMode = new BitmapCache
         {
-            fadeOut.Completed -= onFadeOutCompleted;
-            try
-            {
-                // In-memory visual tree swap while canvas is fully transparent
-                ApplyWorkspaceData(target);
-
-                if (CanvasTranslateTransform != null)
-                {
-                    CanvasTranslateTransform.BeginAnimation(TranslateTransform.YProperty, null);
-                    CanvasTranslateTransform.Y = enterStartY;
-                }
-
-                var fadeIn = new DoubleAnimation
-                {
-                    To = 1.0,
-                    Duration = TimeSpan.FromMilliseconds(180),
-                    EasingFunction = fadeInEase
-                };
-                Timeline.SetDesiredFrameRate(fadeIn, 120);
-
-                DoubleAnimation? slideIn = null;
-                if (CanvasTranslateTransform != null)
-                {
-                    slideIn = new DoubleAnimation
-                    {
-                        To = 0.0,
-                        Duration = TimeSpan.FromMilliseconds(180),
-                        EasingFunction = fadeInEase
-                    };
-                    Timeline.SetDesiredFrameRate(slideIn, 120);
-                }
-
-                EventHandler? onFadeInCompleted = null;
-                onFadeInCompleted = (s2, e2) =>
-                {
-                    fadeIn.Completed -= onFadeInCompleted;
-                    _isWorkspaceTransitionRunning = false;
-
-                    // Fully detach WPF animation clocks so idle CPU returns to 0.0%
-                    MainCanvasGrid.BeginAnimation(UIElement.OpacityProperty, null);
-                    if (CanvasTranslateTransform != null)
-                    {
-                        CanvasTranslateTransform.BeginAnimation(TranslateTransform.YProperty, null);
-                        CanvasTranslateTransform.Y = 0.0;
-                    }
-                    MainCanvasGrid.Opacity = 1.0;
-
-                    // Deferred wake-up of active widgets
-                    Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
-                    {
-                        InvokeOnAwakened(target.Tiles);
-                    });
-                };
-
-                fadeIn.Completed += onFadeInCompleted;
-                MainCanvasGrid.BeginAnimation(UIElement.OpacityProperty, fadeIn);
-                if (slideIn != null && CanvasTranslateTransform != null)
-                {
-                    CanvasTranslateTransform.BeginAnimation(TranslateTransform.YProperty, slideIn);
-                }
-            }
-            catch (Exception ex)
-            {
-                Safe.Log("MainWindow.TransitionToWorkspace", ex);
-                _isWorkspaceTransitionRunning = false;
-                MainCanvasGrid.BeginAnimation(UIElement.OpacityProperty, null);
-                if (CanvasTranslateTransform != null)
-                {
-                    CanvasTranslateTransform.BeginAnimation(TranslateTransform.YProperty, null);
-                    CanvasTranslateTransform.Y = 0.0;
-                }
-                MainCanvasGrid.Opacity = 1.0;
-            }
+            RenderAtScale = dpiScale,
+            EnableClearType = true,
+            SnapsToDevicePixels = true
+        };
+        incomingCanvas.CacheMode = new BitmapCache
+        {
+            RenderAtScale = dpiScale,
+            EnableClearType = true,
+            SnapsToDevicePixels = true
         };
 
-        fadeOut.Completed += onFadeOutCompleted;
-        MainCanvasGrid.BeginAnimation(UIElement.OpacityProperty, fadeOut);
-        if (slideOut != null && CanvasTranslateTransform != null)
+        // Apply target model metadata, placement, and metrics immediately
+        ApplyWorkspaceData(target, skipCanvasVisibility: true);
+
+        // Standard Fluent 2 Deceleration Curve (EaseOut) across 280 ms
+        var easeOut = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var duration = TimeSpan.FromMilliseconds(280);
+
+        var outgoingSlide = new DoubleAnimation
         {
-            CanvasTranslateTransform.BeginAnimation(TranslateTransform.YProperty, slideOut);
+            To = exitX,
+            Duration = duration,
+            EasingFunction = easeOut
+        };
+        Timeline.SetDesiredFrameRate(outgoingSlide, 120);
+
+        var incomingSlide = new DoubleAnimation
+        {
+            To = 0.0,
+            Duration = duration,
+            EasingFunction = easeOut
+        };
+        Timeline.SetDesiredFrameRate(incomingSlide, 120);
+
+        EventHandler? onCompleted = null;
+        onCompleted = (s, e) =>
+        {
+            incomingSlide.Completed -= onCompleted;
+            CompleteTransition(outgoingCanvas, incomingCanvas, target);
+        };
+
+        incomingSlide.Completed += onCompleted;
+
+        // Hardware-composite both contiguous canvases at 120 FPS
+        outgoingTransform.BeginAnimation(TranslateTransform.XProperty, outgoingSlide);
+        incomingTransform.BeginAnimation(TranslateTransform.XProperty, incomingSlide);
+    }
+
+    private void CompleteTransition(WorkspaceCanvasControl outgoingCanvas, WorkspaceCanvasControl incomingCanvas, WorkspaceModel target)
+    {
+        _isWorkspaceTransitionRunning = false;
+
+        // Teardown outgoing canvas: detach animation clocks and collapse
+        outgoingCanvas.Visibility = Visibility.Collapsed;
+        outgoingCanvas.CacheMode = null;
+        if (outgoingCanvas.RenderTransform is TranslateTransform outTt)
+        {
+            outTt.BeginAnimation(TranslateTransform.XProperty, null);
+        }
+        outgoingCanvas.RenderTransform = null;
+
+        // Teardown incoming canvas: detach animation clocks and restore clean vector state
+        incomingCanvas.CacheMode = null;
+        if (incomingCanvas.RenderTransform is TranslateTransform inTt)
+        {
+            inTt.BeginAnimation(TranslateTransform.XProperty, null);
+        }
+        incomingCanvas.RenderTransform = null;
+        incomingCanvas.Visibility = Visibility.Visible;
+
+        _activeCanvas = incomingCanvas;
+
+        // Deferred wake-up of active widgets
+        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+        {
+            InvokeOnAwakened(target.Tiles);
+        });
+    }
+
+    private void CleanupTransitionState()
+    {
+        _isWorkspaceTransitionRunning = false;
+        if (CanvasHostPanel != null)
+        {
+            foreach (UIElement child in CanvasHostPanel.Children)
+            {
+                if (child is WorkspaceCanvasControl canvas)
+                {
+                    canvas.CacheMode = null;
+                    if (canvas.RenderTransform is TranslateTransform tt)
+                    {
+                        tt.BeginAnimation(TranslateTransform.XProperty, null);
+                    }
+                    canvas.RenderTransform = null;
+                    if (canvas != _activeCanvas)
+                    {
+                        canvas.Visibility = Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        canvas.Visibility = Visibility.Visible;
+                    }
+                }
+            }
         }
     }
 
-    private void ApplyWorkspaceData(WorkspaceModel target)
+    private void ApplyWorkspaceData(WorkspaceModel target, bool skipCanvasVisibility = false)
     {
-        if (_activeCanvas != null && _activeCanvas.Workspace?.Id != target.Id)
+        if (!skipCanvasVisibility)
         {
-            _activeCanvas.Visibility = Visibility.Collapsed;
-        }
+            if (_activeCanvas != null && _activeCanvas.Workspace?.Id != target.Id)
+            {
+                _activeCanvas.Visibility = Visibility.Collapsed;
+            }
 
-        var targetCanvas = GetOrCreateCanvas(target);
-        targetCanvas.Visibility = Visibility.Visible;
-        _activeCanvas = targetCanvas;
+            var targetCanvas = GetOrCreateCanvas(target);
+            targetCanvas.Visibility = Visibility.Visible;
+            _activeCanvas = targetCanvas;
+        }
 
         Tiles = target.Tiles;
         Groups = target.Groups;
