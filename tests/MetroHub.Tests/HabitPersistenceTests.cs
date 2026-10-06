@@ -185,4 +185,30 @@ public class HabitPersistenceTests
             Assert.Equal(firstWrite, File.GetLastWriteTimeUtc(path));
         });
     }
+
+    [Fact]
+    public void WidgetStateStore_Default_RoutesToCustomAppDataDir_WhenRedirected()
+    {
+        string tempAppDir = Path.Combine(Path.GetTempPath(), "MetroHub_WidgetStateStoreTest_" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            AppPaths.CustomAppDataDir = tempAppDir;
+            WidgetStateStore.Default.Write("habit", "test_tile_1", "{\"habitName\":\"Testing\"}");
+
+            string expectedFile = Path.Combine(tempAppDir, "config", "widgets", "habit", "test_tile_1.json");
+            Assert.True(File.Exists(expectedFile));
+
+            string? readBack = WidgetStateStore.Default.Read("habit", "test_tile_1");
+            Assert.NotNull(readBack);
+            Assert.Contains("Testing", readBack);
+        }
+        finally
+        {
+            AppPaths.CustomAppDataDir = null;
+            if (Directory.Exists(tempAppDir))
+            {
+                try { Directory.Delete(tempAppDir, recursive: true); } catch { }
+            }
+        }
+    }
 }

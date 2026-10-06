@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Hardcodet.Wpf.TaskbarNotification;
 using MetroHub.Core.Services;
+using MetroHub.Presentation.Controllers;
 
 namespace MetroHub;
 
@@ -242,6 +243,7 @@ public partial class App : Application
     protected override void OnSessionEnding(SessionEndingCancelEventArgs e)
     {
         Safe.Try(() => _mainWindow?.SaveGroupsAndLayout(), "App.OnSessionEnding.SaveGroupsAndLayout");
+        Safe.Try(() => WorkspaceManager.Instance.FlushSync(), "App.OnSessionEnding.WorkspaceFlush");
         Safe.Try(StorageService.Flush, "App.OnSessionEnding.StorageFlush");
         LoggingService.Shutdown();
 
@@ -251,6 +253,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         Safe.Try(() => _mainWindow?.SaveGroupsAndLayout(), "App.OnExit.SaveGroupsAndLayout");
+        Safe.Try(() => WorkspaceManager.Instance.FlushSync(), "App.OnExit.WorkspaceFlush");
         Safe.Try(StorageService.Flush, "App.OnExit.StorageFlush");
 
         if (_notifyIcon != null)

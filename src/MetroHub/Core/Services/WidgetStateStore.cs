@@ -52,19 +52,23 @@ public sealed class WidgetStateStore : IWidgetStateStore
     private static readonly object Gate = new();
     private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
-    private readonly string _rootDir;
-    private readonly string _bakRootDir;
+    private readonly string? _customRootDir;
+    private readonly string? _customBakRootDir;
+
+    private string RootDir => _customRootDir ?? AppPaths.WidgetStateDir;
+    private string BakRootDir => _customBakRootDir ?? AppPaths.WidgetStateBakDir;
 
     public WidgetStateStore()
-        : this(AppPaths.WidgetStateDir, AppPaths.WidgetStateBakDir)
     {
+        _customRootDir = null;
+        _customBakRootDir = null;
     }
 
     /// <summary>Test seam: point the store at an arbitrary root instead of %LocalAppData%.</summary>
     public WidgetStateStore(string rootDir, string bakRootDir)
     {
-        _rootDir = rootDir;
-        _bakRootDir = bakRootDir;
+        _customRootDir = rootDir;
+        _customBakRootDir = bakRootDir;
     }
 
     public string? Read(string widgetId, string tileId)
@@ -144,8 +148,8 @@ public sealed class WidgetStateStore : IWidgetStateStore
     {
         Safe.Try(() =>
         {
-            if (!Directory.Exists(_rootDir)) return;
-            foreach (string dir in Directory.EnumerateDirectories(_rootDir))
+            if (!Directory.Exists(RootDir)) return;
+            foreach (string dir in Directory.EnumerateDirectories(RootDir))
             {
                 PruneExcept(Path.GetFileName(dir), knownTileIds);
             }
@@ -165,13 +169,13 @@ public sealed class WidgetStateStore : IWidgetStateStore
     }
 
     private string DirectoryFor(string widgetId)
-        => Path.Combine(_rootDir, Sanitize(widgetId));
+        => Path.Combine(RootDir, Sanitize(widgetId));
 
     private string PathFor(string widgetId, string tileId)
         => Path.Combine(DirectoryFor(widgetId), Sanitize(tileId) + ".json");
 
     private string BakFor(string widgetId, string tileId)
-        => Path.Combine(_bakRootDir, Sanitize(widgetId), Sanitize(tileId) + ".json.bak");
+        => Path.Combine(BakRootDir, Sanitize(widgetId), Sanitize(tileId) + ".json.bak");
 
     /// <summary>File-name safety: ids are registry strings / GUID "N" values, but never trust them blindly.</summary>
     private static string Sanitize(string token)

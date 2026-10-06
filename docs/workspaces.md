@@ -516,7 +516,26 @@ This section documents the memory dump diagnosis, the root causes identified, an
 
 ---
 
-### 8.6. Summary of Hardening Results
+### 8.6. Optimization 5: Full Persistence Synchronization & Shutdown Flushes
+* **Targets:**
+  - `src/MetroHub/Presentation/Controllers/TileManager.cs`
+  - `src/MetroHub/Presentation/Views/MainWindow/MainWindow.xaml.cs`
+  - `src/MetroHub/App.xaml.cs`
+  - `src/MetroHub/Core/Services/WidgetStateStore.cs`
+* **Problem:** 
+  - `TileManager.cs` executed 7 raw calls to legacy `StorageService.SaveLayout(tiles)` during loose tile pinning, web bookmark creation, and asynchronous favicon downloads, bypassing `StorageService.SaveWorkspaceLayout(activeWs.Id, tiles)`.
+  - Application shutdown routines (`MainWindow.OnClosing`, `MainWindow.ExitApplication`, `App.OnSessionEnding`, and `App.OnExit`) invoked `StorageService.Flush()` without first calling `WorkspaceManager.Instance.FlushSync()`. If a user moved a tile to an inactive workspace (e.g., via context menu) and immediately exited, the modified inactive workspace remained marked `IsDirty = true` in memory and was never written to disk.
+  - `WidgetStateStore.Default` initialized `_rootDir = AppPaths.WidgetStateDir` at static class load time. When test suites executed, widget state pruning operated against live user AppData.
+* **Resolution:**
+  - **TileManager Centralization**: Added `SaveLayoutAndWorkspace(tiles)` helper to `TileManager.cs` to mirror all tile additions, web links, and async favicon updates to both legacy layout and the active workspace folder.
+  - **Comprehensive Shutdown Flush**: Embedded `Safe.Try(() => WorkspaceManager.Instance.FlushSync(), ...)` into all window closing and application termination lifecycles, ensuring all dirty inactive workspaces are synchronously serialized to disk before process exit.
+  - **Dynamic State Redirection**: Refactored `WidgetStateStore._rootDir` into a dynamic property (`RootDir => _customRootDir ?? AppPaths.WidgetStateDir`), isolating all test runs to sandbox directories.
+* **Verification:** Validated via unit tests `FlushSync_PersistsDirtyInactiveWorkspacesToDisk` and `TileManager_AddWebLinkTile_PersistsToActiveWorkspaceLayout` in `tests/MetroHub.Tests/WorkspaceManagerTests.cs`.
+* **Impact:** Guarantees zero data loss across workspace switches, asynchronous web tile downloads, and application exits.
+
+---
+
+### 8.7. Summary of Hardening Results
 
 | Metric / Component | Pre-Hardening State | Post-Hardening State |
 | :--- | :--- | :--- |
@@ -524,6 +543,8 @@ This section documents the memory dump diagnosis, the root causes identified, an
 | **Icon Decoding** | Unclamped (256px–512px, 262 KB–1 MB per icon on LOH) | Clamped to 96px (36 KB, Gen 0 only, bypassed LOH) |
 | **Icon Sharing** | Duplicate files decoded multiple times | `ConcurrentDictionary` cached; 1 instance per path |
 | **Inactive Tile GC** | Blocked by static property descriptor leak | Cleanly collected; zero static rooted references |
-| **Unit Test Coverage** | 351 tests passed | **356 tests passed** (100% pass rate) |
+| **Workspace Persistence** | Loose tiles & shutdown uncommitted to inactive workspaces | Synchronized on every mutate and flushed on exit |
+| **Unit Test Coverage** | 351 tests passed | **359 tests passed** (100% pass rate) |
 | **Deployment** | Development build | Release build published to `Desktop\MetroHubApp` |
+
 

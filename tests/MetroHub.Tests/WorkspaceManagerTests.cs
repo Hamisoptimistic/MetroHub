@@ -446,5 +446,77 @@ public sealed class WorkspaceManagerTests : IDisposable
         Assert.True(ws1.IsActive);
         Assert.False(ws2.IsActive);
     }
+
+    [Fact]
+    public void FlushSync_PersistsDirtyInactiveWorkspacesToDisk()
+    {
+        WorkspaceManager.Instance.Initialize();
+        var ws1 = WorkspaceManager.Instance.ActiveWorkspace;
+        var ws2 = WorkspaceManager.Instance.CreateWorkspace("Target WS");
+        Assert.NotNull(ws2);
+
+        // Switch back to ws1 so ws2 is inactive
+        WorkspaceManager.Instance.SwitchWorkspace(ws1.Id);
+        Assert.Equal(ws1.Id, WorkspaceManager.Instance.ActiveWorkspace.Id);
+
+        // Add a tile to ws1 and move it to inactive ws2
+        var tile = new TileModel { Id = "tile_moved_to_ws2", Title = "Moved Tile" };
+        ws1.Tiles.Add(tile);
+        WorkspaceManager.Instance.MoveTileToWorkspace(tile, ws2.Id);
+
+        // At this point, ws2 has the tile and ws2.IsDirty is true
+        Assert.True(ws2.IsDirty);
+        Assert.Contains(ws2.Tiles, t => t.Id == "tile_moved_to_ws2");
+
+        // Call FlushSync (as called on app shutdown)
+        WorkspaceManager.Instance.FlushSync();
+
+        Assert.False(ws2.IsDirty);
+
+        // Verify from disk: LoadWorkspaceLayout for ws2 should now contain the tile
+        var onDiskTiles = StorageService.LoadWorkspaceLayout(ws2.Id);
+        Assert.Contains(onDiskTiles, t => t.Id == "tile_moved_to_ws2");
+    }
+
+    [Fact]
+    public void TileManager_AddWebLinkTile_PersistsToActiveWorkspaceLayout()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            WorkspaceManager.Instance.Initialize();
+            var activeWs = WorkspaceManager.Instance.ActiveWorkspace;
+            Assert.NotNull(activeWs);
+
+            var tiles = activeWs.Tiles;
+            var groups = activeWs.Groups;
+
+            var manager = new TileManager(
+                tilesProvider: () => tiles,
+                groupsProvider: () => groups,
+                tilesListBoxProvider: () => null,
+                contentScrollViewerProvider: () => null,
+                windowWidthProvider: () => 1920.0,
+                animateModifiedTilesAction: _ => { },
+                updateGroupHeaderPositionsAction: () => { },
+                updateLayoutMetricsAction: () => { },
+                updateCanvasHeightAction: () => { },
+                updateExposedAddSlotsAction: () => { },
+                saveGroupsAndLayoutAction: () => { },
+                cleanEmptyGroupsAndReflowAction: () => { },
+                compactGroupGapsAction: () => { },
+                flashLockedGroupAction: _ => { },
+                hideDropSlotIndicatorAction: () => { },
+                historyService: new LayoutHistoryService(),
+                dispatcher: System.Windows.Threading.Dispatcher.CurrentDispatcher);
+
+            manager.AddWebLinkTile("Test Web Link", "https://example.com", iconPath: null);
+
+            // Force flush background storage write
+            StorageService.Flush();
+
+            var onDiskTiles = StorageService.LoadWorkspaceLayout(activeWs.Id);
+            Assert.Contains(onDiskTiles, t => t.Title == "Test Web Link");
+        });
+    }
 }
 

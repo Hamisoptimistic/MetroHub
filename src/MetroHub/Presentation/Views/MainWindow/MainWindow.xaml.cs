@@ -288,7 +288,15 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         // Auto-persist layout in background when any widget notifies of settings changes
         WeakReferenceMessenger.Default.Register<MainWindow, WidgetSettingsChangedMessage>(
             this,
-            (r, msg) => StorageService.SaveLayout(r.Tiles));
+            (r, msg) =>
+            {
+                StorageService.SaveLayout(r.Tiles);
+                var activeWs = WorkspaceManager.Instance.ActiveWorkspace;
+                if (activeWs != null)
+                {
+                    StorageService.SaveWorkspaceLayout(activeWs.Id, r.Tiles);
+                }
+            });
 
         WeakReferenceMessenger.Default.Register<MainWindow, TargetLaunchFailedMessage>(
             this,
@@ -1128,6 +1136,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         else
         {
             CleanupEventSubscriptions();
+            Safe.Try(() => WorkspaceManager.Instance.FlushSync(), "MainWindow.OnClosing.WorkspaceFlush");
             Safe.Try(StorageService.Flush, "MainWindow.OnClosing.StorageFlush");
             Safe.Try(InstalledAppsService.Shutdown, "MainWindow.OnClosing.InstalledAppsServiceShutdown");
             UninstallWinEventHook();
@@ -1140,6 +1149,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     {
         _isClosingToExit = true;
         Safe.Try(SaveGroupsAndLayout, "MainWindow.ExitApplication.SaveGroupsAndLayout");
+        Safe.Try(() => WorkspaceManager.Instance.FlushSync(), "MainWindow.ExitApplication.WorkspaceFlush");
         Safe.Try(StorageService.Flush, "MainWindow.ExitApplication.StorageFlush");
 
         // Cleanly dispose and tear down all active widget models (audio endpoints, media sessions, timers)

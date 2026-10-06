@@ -571,7 +571,7 @@ public sealed class TileManager
             _saveGroupsAndLayoutAction();
         }
 
-        StorageService.SaveLayout(tiles);
+        SaveLayoutAndWorkspace(tiles);
         _updateCanvasHeightAction();
         _updateExposedAddSlotsAction();
     }
@@ -688,7 +688,7 @@ public sealed class TileManager
                 _saveGroupsAndLayoutAction();
             }
 
-            StorageService.SaveLayout(tiles);
+            SaveLayoutAndWorkspace(tiles);
             _updateCanvasHeightAction();
             _updateExposedAddSlotsAction();
         }
@@ -704,7 +704,7 @@ public sealed class TileManager
                     await _dispatcher.InvokeAsync(() =>
                     {
                         tile.IconPath = fetched;
-                        StorageService.SaveLayout(tiles);
+                        SaveLayoutAndWorkspace(tiles);
                     });
                 }
             });
@@ -787,7 +787,7 @@ public sealed class TileManager
                         await _dispatcher.InvokeAsync(() =>
                         {
                             createdTile.IconPath = fetched;
-                            StorageService.SaveLayout(tiles);
+                            SaveLayoutAndWorkspace(tiles);
                         });
                     }
                 });
@@ -857,7 +857,7 @@ public sealed class TileManager
                     await _dispatcher.InvokeAsync(() =>
                     {
                         createdTile.IconPath = fetched;
-                        StorageService.SaveLayout(tiles);
+                        SaveLayoutAndWorkspace(tiles);
                     });
                 }
             });
@@ -873,7 +873,7 @@ public sealed class TileManager
             _saveGroupsAndLayoutAction();
         }
 
-        StorageService.SaveLayout(tiles);
+        SaveLayoutAndWorkspace(tiles);
         _updateCanvasHeightAction();
         _updateExposedAddSlotsAction();
     }
@@ -998,8 +998,18 @@ public sealed class TileManager
 
         _animateModifiedTilesAction(modLoose);
         _saveGroupsAndLayoutAction();
-        StorageService.SaveLayout(tiles);
+        SaveLayoutAndWorkspace(tiles);
         _updateCanvasHeightAction();
         _updateExposedAddSlotsAction();
+    }
+
+    private static void SaveLayoutAndWorkspace(ObservableCollection<TileModel> tiles)
+    {
+        StorageService.SaveLayout(tiles);
+        var activeWs = WorkspaceManager.Instance.ActiveWorkspace;
+        if (activeWs != null)
+        {
+            StorageService.SaveWorkspaceLayout(activeWs.Id, tiles);
+        }
     }
 }
