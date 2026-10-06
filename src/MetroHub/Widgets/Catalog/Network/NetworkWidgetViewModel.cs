@@ -244,6 +244,10 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         {
             CancelSpeedTest();
         }
+        else
+        {
+            _ = EnsureSpeedTestServerLocationAsync();
+        }
         if (string.Equals(value, "Usage", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(value, "DataUsage", StringComparison.OrdinalIgnoreCase))
         {
@@ -947,11 +951,15 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SpeedTestPingDisplay))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestPingNumberDisplay))]
+    [NotifyPropertyChangedFor(nameof(HasSpeedTestPing))]
     [NotifyPropertyChangedFor(nameof(SpeedTestMainNumberDisplay))]
     private double? _speedTestPingMs;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SpeedTestJitterDisplay))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestJitterNumberDisplay))]
+    [NotifyPropertyChangedFor(nameof(HasSpeedTestJitter))]
     private double? _speedTestJitterMs;
 
     [ObservableProperty]
@@ -970,7 +978,49 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     private string _speedTestStatusMessage = "Ready to test network speed";
 
     [ObservableProperty]
-    private string _speedTestServerName = "Cloudflare Edge • Auto";
+    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillText))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillIcon))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillTooltip))]
+    private string _speedTestServerName = "Cloudflare Edge";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillText))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillIcon))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillTooltip))]
+    private string _speedTestServerLocation = "Auto Edge";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillText))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillIcon))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillTooltip))]
+    private int _speedTestServerDisplayMode = 0; // 0 = Provider ("Cloudflare Edge"), 1 = Location ("Mumbai (BOM)")
+
+    public string SpeedTestServerPillText => SpeedTestServerDisplayMode switch
+    {
+        1 => !string.IsNullOrWhiteSpace(SpeedTestServerLocation) && SpeedTestServerLocation != "Auto Edge"
+            ? SpeedTestServerLocation
+            : "Nearest Edge",
+        _ => SpeedTestServerName
+    };
+
+    public string SpeedTestServerPillIcon => SpeedTestServerDisplayMode switch
+    {
+        1 => "\uE707", // MapPin
+        _ => "\uE774"  // Globe
+    };
+
+    public string SpeedTestServerPillTooltip => SpeedTestServerDisplayMode == 0
+        ? "Provider: Cloudflare Edge • Click to view nearest edge server location"
+        : $"Location: {SpeedTestServerPillText} • Click to view provider";
+
+    [RelayCommand]
+    public void ToggleSpeedTestServerDisplay()
+    {
+        SpeedTestServerDisplayMode = (SpeedTestServerDisplayMode + 1) % 2;
+        OnPropertyChanged(nameof(SpeedTestServerPillText));
+        OnPropertyChanged(nameof(SpeedTestServerPillIcon));
+        OnPropertyChanged(nameof(SpeedTestServerPillTooltip));
+    }
 
     [ObservableProperty]
     private double _speedTestPhaseProgress;
@@ -981,8 +1031,12 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     [ObservableProperty]
     private Brush _speedTestArcBrush = BlueIndicatorBrush;
 
+    public bool HasSpeedTestPing => SpeedTestPingMs.HasValue;
+    public bool HasSpeedTestJitter => SpeedTestJitterMs.HasValue;
     public string SpeedTestPingDisplay => SpeedTestPingMs.HasValue ? $"{SpeedTestPingMs.Value:0.#} ms" : "--";
     public string SpeedTestJitterDisplay => SpeedTestJitterMs.HasValue ? $"{SpeedTestJitterMs.Value:0.#} ms" : "--";
+    public string SpeedTestPingNumberDisplay => SpeedTestPingMs.HasValue ? $"{SpeedTestPingMs.Value:0.#}" : "--";
+    public string SpeedTestJitterNumberDisplay => SpeedTestJitterMs.HasValue ? $"{SpeedTestJitterMs.Value:0.#}" : "--";
     public string SpeedTestDownloadDisplay => SpeedTestDownloadMbps.HasValue ? $"{SpeedTestDownloadMbps.Value:0.#}" : (IsDownloadPhaseActive ? $"{SpeedTestInstantaneousMbps:0.#}" : "--");
     public string SpeedTestUploadDisplay => SpeedTestUploadMbps.HasValue ? $"{SpeedTestUploadMbps.Value:0.#}" : (IsUploadPhaseActive ? $"{SpeedTestInstantaneousMbps:0.#}" : "--");
     public string SpeedTestDownloadShortDisplay => SpeedTestDownloadMbps.HasValue ? $"{SpeedTestDownloadMbps.Value:0.#}" : (IsDownloadPhaseActive ? $"{SpeedTestInstantaneousMbps:0.#}" : "--");
@@ -1078,6 +1132,9 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             if (!string.IsNullOrEmpty(p.StatusMessage))
                 SpeedTestStatusMessage = p.StatusMessage;
 
+            if (!string.IsNullOrEmpty(p.ServerLocation))
+                SpeedTestServerLocation = p.ServerLocation;
+
             if (p.IsMeteredConnection) IsMeteredNetwork = true;
             SpeedTestPeakMbps = p.PeakMbps;
             SpeedTestPhaseProgress = p.PhaseProgress;
@@ -1128,6 +1185,10 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
                 OnPropertyChanged(nameof(SpeedTestUploadShortDisplay));
                 OnPropertyChanged(nameof(SpeedTestPingDisplay));
                 OnPropertyChanged(nameof(SpeedTestJitterDisplay));
+                OnPropertyChanged(nameof(SpeedTestPingNumberDisplay));
+                OnPropertyChanged(nameof(SpeedTestJitterNumberDisplay));
+                OnPropertyChanged(nameof(HasSpeedTestPing));
+                OnPropertyChanged(nameof(HasSpeedTestJitter));
             }
         });
 
@@ -1189,6 +1250,20 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         SpeedTestArcBrush = BlueIndicatorBrush;
         IsMeteredNetwork = false;
         OnPropertyChanged(nameof(SpeedTestMainNumberDisplay));
+    }
+
+    private async Task EnsureSpeedTestServerLocationAsync()
+    {
+        if (SpeedTestServerLocation != "Auto Edge") return;
+        try
+        {
+            var loc = await SpeedTestService.ProbeServerLocationAsync();
+            if (!string.IsNullOrEmpty(loc))
+            {
+                SpeedTestServerLocation = loc;
+            }
+        }
+        catch { }
     }
 
 

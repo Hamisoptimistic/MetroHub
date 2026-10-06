@@ -40,17 +40,6 @@
                                     >
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
-
-                            <!-- Active Left Indicator Pip (Bound to System Accent Color) -->
-                            <Border x:Name="ActiveIndicator"
-                                    Width="3"
-                                    Height="16"
-                                    CornerRadius="1.5"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Margin="1,0,0,0"
-                                    Background="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                    Visibility="Collapsed" />
                         </Grid>
                         <ControlTemplate.Triggers>
                             <!-- Hover state: soft brighten, subtle glass sheen, zero borders (matching widgets) -->
@@ -65,7 +54,6 @@
                             </Trigger>
                             <!-- Active state (Pinned / Drawer Open) -->
                             <Trigger Property="Tag" Value="Active">
-                                <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
                                 <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource SurfaceGlassSubtleBrush}" />
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
@@ -84,12 +72,12 @@
             </Setter>
         </Style>
 
-        <!-- Modern Fluent Workspace Rail Item Style with Smooth Hover Pill -->
+        <!-- Modern Fluent Workspace Rail Item Style with Tokenized Corner Radius -->
         <Style x:Key="WorkspaceRailItemStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Width" Value="40" />
-            <Setter Property="Height" Value="34" />
+            <Setter Property="Width" Value="38" />
+            <Setter Property="Height" Value="36" />
             <Setter Property="Margin" Value="0,1" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -102,8 +90,8 @@
                     <ControlTemplate TargetType="Button">
                         <Grid Background="Transparent">
                             <Border x:Name="HoverPill"
-                                    Margin="2,1"
-                                    CornerRadius="6"
+                                    Margin="1"
+                                    CornerRadius="{DynamicResource TileCornerRadius}"
                                     Background="Transparent"
                                     BorderThickness="0">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -236,133 +224,166 @@
                                Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" />
             </Button>
 
-            <!-- Workspaces Expandable Folder Container -->
-            <StackPanel x:Name="WorkspacesFolderHost" Margin="0,2,0,2">
-                <!-- Folder Header Toggle Button (48x42) -->
-                <Button x:Name="WorkspacesFolderButton"
-                        Style="{StaticResource RailButtonStyle}"
-                        ToolTip="Workspaces"
-                        Click="OnWorkspacesFolderToggleClick">
-                    <Grid Width="24" Height="24">
-                        <ui:SymbolIcon Symbol="Grid24" FontSize="20"
-                                       Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        <!-- Pill Badge with Workspace Count -->
-                        <Border HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                Margin="0,0,-6,-3" CornerRadius="5" Padding="3,0"
-                                Height="12" MinWidth="12"
-                                Background="{DynamicResource SystemAccentColorPrimaryBrush}">
-                            <TextBlock Text="{Binding Path=Workspaces.Count, Source={x:Static controllers:WorkspaceManager.Instance}}"
-                                       FontSize="9" FontWeight="SemiBold" Foreground="#FFFFFF"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
-                    </Grid>
-                </Button>
+            <!-- Workspaces Unified Capsule Container (Option A) -->
+            <Border x:Name="WorkspacesCapsule"
+                    Margin="4,2"
+                    CornerRadius="{DynamicResource TileCornerRadius}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderBrush" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="1" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ElementName=WorkspacesFolderButton, Path=Tag}" Value="Active">
+                                <Setter Property="Background" Value="{DynamicResource SurfaceGlassSubtleBrush}" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderSubtleBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <StackPanel>
+                    <!-- Folder Header Toggle Button (40x38, EE40 TaskViewSettings glyph, no count badge) -->
+                    <Button x:Name="WorkspacesFolderButton"
+                            ToolTip="Workspaces"
+                            Click="OnWorkspacesFolderToggleClick">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent" />
+                                <Setter Property="BorderThickness" Value="0" />
+                                <Setter Property="Height" Value="38" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+                                <Setter Property="ToolTipService.Placement" Value="Right" />
+                                <Setter Property="ToolTipService.HorizontalOffset" Value="8" />
+                                <Setter Property="ToolTipService.InitialShowDelay" Value="350" />
+                                <Setter Property="ToolTipService.BetweenShowDelay" Value="100" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="HeaderPill"
+                                                    Margin="1"
+                                                    CornerRadius="{DynamicResource TileCornerRadius}"
+                                                    Background="Transparent">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="HeaderPill" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="HeaderPill" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                        <!-- Header Icon: &#xEE40; (TaskViewSettings - Windows Virtual Desktops glyph) -->
+                        <TextBlock Text="&#xEE40;"
+                                   FontFamily="{DynamicResource AppIconFontFamily}"
+                                   FontSize="19"
+                                   Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Button>
 
-                <!-- Collapsible Accordion Drawer with CubicEase -->
-                <Border x:Name="WorkspacesAccordionDrawer"
-                        ClipToBounds="True"
-                        MaxHeight="0"
-                        Opacity="0"
-                        Background="{DynamicResource SurfaceGlassSubtleBrush}"
-                        CornerRadius="8"
-                        Margin="4,2">
-                    <StackPanel Margin="0,4">
-                        <!-- Bounded ScrollViewer (MaxHeight 240 prevents window overflow) -->
-                        <ScrollViewer MaxHeight="240"
-                                      VerticalScrollBarVisibility="Auto"
-                                      HorizontalScrollBarVisibility="Disabled"
-                                      controls:AutoHideScrollBehavior.IsEnabled="True"
-                                      Focusable="False">
-                            <ItemsControl ItemsSource="{Binding Path=Workspaces, Source={x:Static controllers:WorkspaceManager.Instance}}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate DataType="{x:Type models:WorkspaceModel}">
-                                        <Button Style="{StaticResource WorkspaceRailItemStyle}"
-                                                Tag="{Binding}"
-                                                Command="{Binding Path=SwitchWorkspaceCommand, Source={x:Static controllers:WorkspaceManager.Instance}}"
-                                                CommandParameter="{Binding Id}"
-                                                ToolTip="{Binding TooltipText}">
-                                            <Button.ContextMenu>
-                                                <ContextMenu DataContext="{Binding Path=PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
-                                                    <MenuItem Header="{Binding Name}" IsEnabled="False" FontWeight="SemiBold" />
-                                                    <Separator />
-                                                    <MenuItem Header="Edit Workspace..." 
-                                                              Command="{Binding Path=RequestRenameWorkspaceCommand, Source={x:Static controllers:WorkspaceManager.Instance}}"
-                                                              CommandParameter="{Binding Id}">
-                                                        <MenuItem.Icon>
-                                                            <ui:SymbolIcon Symbol="Edit24" FontSize="16" />
-                                                        </MenuItem.Icon>
-                                                    </MenuItem>
-                                                    <Separator />
-                                                    <MenuItem Header="Delete Workspace" 
-                                                              Command="{Binding Path=RequestDeleteWorkspaceCommand, Source={x:Static controllers:WorkspaceManager.Instance}}"
-                                                              CommandParameter="{Binding Id}"
-                                                              Foreground="{DynamicResource StatusErrorBrush}">
-                                                        <MenuItem.Icon>
-                                                            <ui:SymbolIcon Symbol="Delete24" FontSize="16" Foreground="{DynamicResource StatusErrorBrush}" />
-                                                        </MenuItem.Icon>
-                                                    </MenuItem>
-                                                </ContextMenu>
-                                            </Button.ContextMenu>
-                                            <Grid Width="38" Height="30">
-                                                <!-- Active Left Accent Indicator Pip -->
-                                                <Border Width="3" Height="14" CornerRadius="1.5"
-                                                        HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                        Margin="1,0,0,0"
-                                                        Background="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                                        Visibility="{Binding IsActive, Converter={StaticResource BoolToVis}}" />
+                    <!-- Collapsible Accordion Drawer (zero gap, flows seamlessly inside capsule) -->
+                    <Border x:Name="WorkspacesAccordionDrawer"
+                            ClipToBounds="True"
+                            MaxHeight="0"
+                            Opacity="0"
+                            Background="Transparent"
+                            BorderThickness="0">
+                        <StackPanel Margin="0,1,0,3">
+                            <!-- Subtle Hairline Separator under header -->
+                            <Rectangle Height="1"
+                                       Margin="4,0,4,3"
+                                       Fill="{DynamicResource WidgetDividerBrush}" />
 
-                                                <!-- Workspace Avatar Pill / Icon -->
-                                                <Border Width="26" Height="26"
-                                                        CornerRadius="{DynamicResource ControlCornerRadius}"
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center">
-                                                    <Border.Style>
-                                                        <Style TargetType="Border">
-                                                            <Setter Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                                    <Setter Property="Background" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Border.Style>
-                                                    <ui:SymbolIcon Symbol="{Binding IconSymbol}"
-                                                                   FontSize="14"
+                            <!-- Bounded ScrollViewer (MaxHeight 240 prevents window overflow, scrollbar hidden) -->
+                            <ScrollViewer x:Name="WorkspacesScrollViewer"
+                                          MaxHeight="240"
+                                          VerticalScrollBarVisibility="Hidden"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          Focusable="False">
+                                <ItemsControl x:Name="WorkspacesItemsControl"
+                                              ItemsSource="{Binding Path=Workspaces, Source={x:Static controllers:WorkspaceManager.Instance}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type models:WorkspaceModel}">
+                                            <Button Style="{StaticResource WorkspaceRailItemStyle}"
+                                                    Tag="{Binding}"
+                                                    Command="{Binding Path=SwitchWorkspaceCommand, Source={x:Static controllers:WorkspaceManager.Instance}}"
+                                                    CommandParameter="{Binding Id}"
+                                                    ToolTip="{Binding TooltipText}">
+                                                <Button.ContextMenu>
+                                                    <ContextMenu DataContext="{Binding Path=PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                                        <MenuItem Header="{Binding Name}" IsEnabled="False" FontWeight="SemiBold" />
+                                                        <Separator />
+                                                        <MenuItem Header="Edit Workspace..." 
+                                                                  Command="{Binding Path=RequestRenameWorkspaceCommand, Source={x:Static controllers:WorkspaceManager.Instance}}"
+                                                                  CommandParameter="{Binding Id}">
+                                                            <MenuItem.Icon>
+                                                                <ui:SymbolIcon Symbol="Edit24" FontSize="16" />
+                                                            </MenuItem.Icon>
+                                                        </MenuItem>
+                                                        <Separator />
+                                                        <MenuItem Header="Delete Workspace" 
+                                                                  Command="{Binding Path=RequestDeleteWorkspaceCommand, Source={x:Static controllers:WorkspaceManager.Instance}}"
+                                                                  CommandParameter="{Binding Id}"
+                                                                  Foreground="{DynamicResource StatusErrorBrush}">
+                                                            <MenuItem.Icon>
+                                                                <ui:SymbolIcon Symbol="Delete24" FontSize="16" Foreground="{DynamicResource StatusErrorBrush}" />
+                                                            </MenuItem.Icon>
+                                                        </MenuItem>
+                                                    </ContextMenu>
+                                                </Button.ContextMenu>
+                                                <Grid Width="36" Height="32">
+                                                    <!-- Active Pill: Solid System Accent Color at 70% Opacity (Borderless) -->
+                                                    <Border x:Name="ActivePill"
+                                                            CornerRadius="{DynamicResource TileCornerRadius}"
+                                                            Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                                            BorderThickness="0"
+                                                            Opacity="0"
+                                                            IsHitTestVisible="False" />
+
+                                                    <!-- Clean Vector Icon (18px) with Fallback -->
+                                                    <ui:SymbolIcon x:Name="WorkspaceIcon"
+                                                                   Symbol="{Binding IconSymbol, FallbackValue=Desktop24, TargetNullValue=Desktop24}"
+                                                                   FontSize="18"
+                                                                   Foreground="{DynamicResource TextSecondaryBrush}"
                                                                    HorizontalAlignment="Center"
-                                                                   VerticalAlignment="Center">
-                                                        <ui:SymbolIcon.Style>
-                                                            <Style TargetType="{x:Type ui:SymbolIcon}">
-                                                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                                                        <Setter Property="Foreground" Value="#FFFFFF" />
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </ui:SymbolIcon.Style>
-                                                    </ui:SymbolIcon>
-                                                </Border>
-                                            </Grid>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
+                                                                   VerticalAlignment="Center" />
+                                                </Grid>
+                                            </Button>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                    <Setter TargetName="ActivePill" Property="Opacity" Value="0.70" />
+                                                    <Setter TargetName="WorkspaceIcon" Property="Foreground" Value="#FFFFFF" />
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
 
-                        <!-- Add Workspace Button (+) [Disabled if count >= 10] -->
-                        <Button x:Name="AddWorkspaceButton"
-                                Style="{StaticResource WorkspaceRailItemStyle}"
-                                Width="40" Height="28" Margin="0,2,0,0"
-                                ToolTip="New Workspace (Max 10)"
-                                Command="{Binding Path=CreateWorkspaceCommand, Source={x:Static controllers:WorkspaceManager.Instance}}"
-                                IsEnabled="{Binding Path=CanCreateWorkspace, Source={x:Static controllers:WorkspaceManager.Instance}}">
-                            <ui:SymbolIcon Symbol="Add16" FontSize="14"
-                                           Foreground="{DynamicResource TextSecondaryBrush}" />
-                        </Button>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+                            <!-- Add Workspace Button (+) [Disabled if count >= 10] -->
+                            <Button x:Name="AddWorkspaceButton"
+                                    Style="{StaticResource WorkspaceRailItemStyle}"
+                                    Width="38" Height="34" Margin="0,2,0,0"
+                                    ToolTip="New Workspace (Max 10)"
+                                    Command="{Binding Path=CreateWorkspaceCommand, Source={x:Static controllers:WorkspaceManager.Instance}}"
+                                    IsEnabled="{Binding Path=CanCreateWorkspace, Source={x:Static controllers:WorkspaceManager.Instance}}">
+                                <ui:SymbolIcon Symbol="Add24" FontSize="18"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
         </StackPanel>
 
         <!-- 2. Center Dynamic Shortcuts Area -->

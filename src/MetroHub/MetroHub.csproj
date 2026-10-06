@@ -45,6 +45,7 @@
 
   <ItemGroup>
     <None Remove="Assets\**" />
+    <Resource Include="Assets\app.ico" />
     <Resource Include="Assets\Fonts\**\*.ttf" />
     <Resource Include="Assets\Weather\Glassmorphic\*.png" />
     <Resource Include="Assets\Radio\*.json" />

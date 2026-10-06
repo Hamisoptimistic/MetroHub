@@ -206,14 +206,15 @@ public partial class App : Application
 
         try
         {
-            string iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "app.ico");
-            if (File.Exists(iconPath))
+            string? exePath = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
             {
-                _notifyIcon.Icon = new Icon(iconPath);
+                _notifyIcon.Icon = System.Drawing.Icon.ExtractAssociatedIcon(exePath) ?? SystemIcons.Application;
             }
             else
             {
-                _notifyIcon.Icon = SystemIcons.Application;
+                var streamInfo = Application.GetResourceStream(new Uri("pack://application:,,,/Assets/app.ico"));
+                _notifyIcon.Icon = streamInfo != null ? new System.Drawing.Icon(streamInfo.Stream) : SystemIcons.Application;
             }
         }
         catch

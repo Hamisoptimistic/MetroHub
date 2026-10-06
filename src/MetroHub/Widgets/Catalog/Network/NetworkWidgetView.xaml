@@ -1486,11 +1486,13 @@
                             <RowDefinition Height="32" />
                         </Grid.RowDefinitions>
 
-                        <!-- ROW 0: TOP METRICS (Download flush-left, Upload flush-right with separator) -->
+                        <!-- ROW 0: TOP METRICS (Download flush-left, Server/Edge Pill Center, Upload flush-right) -->
                         <Grid Grid.Row="0" Margin="0" VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
                                 <!-- Left: Download -->
                                 <ColumnDefinition Width="*" />
+                                <!-- Center: Server / Edge Pill Button -->
+                                <ColumnDefinition Width="Auto" />
                                 <!-- Right: Upload -->
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
@@ -1519,22 +1521,54 @@
                                 </StackPanel>
                             </StackPanel>
 
-                            <!-- Right: Upload (Flush with right end of separator) -->
-                            <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                <TextBlock Text="Upload"
+                            <!-- Center: Server / Edge Interactive Pill (Aligned with bottom baseline directly above divider) -->
+                            <Button Grid.Column="1"
+                                    Style="{StaticResource SubtleButtonStyle}"
+                                    Command="{Binding ToggleSpeedTestServerDisplayCommand}"
+                                    ToolTip="{Binding SpeedTestServerPillTooltip}"
+                                    VerticalAlignment="Bottom"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,0,0,2"
+                                    Padding="10,4,10,4"
+                                    Cursor="Hand"
+                                    Tag="InteractiveControl">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding SpeedTestServerPillIcon}"
+                                               FontFamily="{DynamicResource AppIconFontFamily}"
+                                               FontSize="11"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,6,0" />
+                                    <TextBlock Text="{Binding SpeedTestServerPillText}"
+                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Right: Upload (Flush with right end of separator, anchored text layout) -->
+                            <Grid Grid.Column="2" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0"
+                                           Text="Upload"
                                            FontSize="{DynamicResource TypeBodyFontSize}"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            HorizontalAlignment="Right"
                                            Margin="0,0,0,3" />
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
                                     <TextBlock Text="{Binding SpeedTestUploadDisplay}"
                                                FontFamily="{DynamicResource AppDisplayFontFamily}"
                                                FontSize="{DynamicResource TypeDisplayFontSize}"
                                                FontWeight="{DynamicResource TypeDisplayFontWeight}"
                                                Foreground="{DynamicResource TextPrimaryBrush}"
                                                TextOptions.TextFormattingMode="Ideal"
-                                               Typography.NumeralAlignment="Tabular" />
+                                               Typography.NumeralAlignment="Tabular"
+                                               TextAlignment="Right" />
                                     <TextBlock Text="Mbps"
                                                FontSize="{DynamicResource TypeBodyFontSize}"
                                                FontWeight="{DynamicResource TypeCaptionFontWeight}"
@@ -1542,7 +1576,7 @@
                                                VerticalAlignment="Bottom"
                                                Margin="4,0,0,2" />
                                 </StackPanel>
-                            </StackPanel>
+                            </Grid>
                         </Grid>
 
                         <!-- ROW 1: SEPARATOR (Exact same length, thickness, and color as Ethernet & Wi-Fi) -->
@@ -1563,14 +1597,14 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
-                            <!-- Left: Ping (Flush with left end of separator) -->
+                            <!-- Left: Ping (Flush with left end of separator, clean tight spacing) -->
                             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
                                 <TextBlock Text="Ping"
                                            FontSize="{DynamicResource TypeBodyFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            VerticalAlignment="Center"
-                                           Margin="0,0,5,0" />
+                                           Margin="0,0,6,0" />
                                 <TextBlock Text="{Binding SpeedTestPingDisplay}"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
@@ -1595,14 +1629,14 @@
                                 <Border x:Name="DotUpload" Style="{StaticResource SpeedTestDot3Style}" />
                             </StackPanel>
 
-                            <!-- Right: Jitter (Flush with right end of separator) -->
+                            <!-- Right: Jitter (Flush with right end of separator, clean tight spacing) -->
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                                 <TextBlock Text="Jitter"
                                            FontSize="{DynamicResource TypeBodyFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
                                            VerticalAlignment="Center"
-                                           Margin="0,0,5,0" />
+                                           Margin="0,0,6,0" />
                                 <TextBlock Text="{Binding SpeedTestJitterDisplay}"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"

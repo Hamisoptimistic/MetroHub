@@ -32,6 +32,72 @@ public sealed class SpeedTestService
         HttpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) MetroHub/1.0");
     }
 
+    private static string? _cachedServerLocation;
+    public static string? CachedServerLocation => _cachedServerLocation;
+
+    public static async Task<string?> ProbeServerLocationAsync(CancellationToken ct = default)
+    {
+        if (!string.IsNullOrEmpty(_cachedServerLocation))
+            return _cachedServerLocation;
+
+        try
+        {
+            using var response = await HttpClient.GetAsync(
+                "https://speed.cloudflare.com/__down?bytes=0",
+                HttpCompletionOption.ResponseHeadersRead,
+                ct).ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                ExtractServerLocation(response);
+            }
+        }
+        catch { }
+
+        return _cachedServerLocation;
+    }
+
+    private static void ExtractServerLocation(HttpResponseMessage response)
+    {
+        if (!string.IsNullOrEmpty(_cachedServerLocation)) return;
+
+        string? city = null;
+        if (response.Headers.TryGetValues("city", out var cityVals) ||
+            response.Headers.TryGetValues("cf-meta-city", out cityVals))
+        {
+            city = cityVals.FirstOrDefault();
+        }
+
+        string? colo = null;
+        if (response.Headers.TryGetValues("colo", out var coloVals) ||
+            response.Headers.TryGetValues("cf-meta-colo", out coloVals))
+        {
+            colo = coloVals.FirstOrDefault();
+        }
+
+        if (string.IsNullOrEmpty(colo) && response.Headers.TryGetValues("CF-RAY", out var rayVals))
+        {
+            var ray = rayVals.FirstOrDefault();
+            if (!string.IsNullOrEmpty(ray) && ray.Contains('-'))
+            {
+                colo = ray.Split('-').LastOrDefault();
+            }
+        }
+
+        if (!string.IsNullOrEmpty(city) && !string.IsNullOrEmpty(colo))
+        {
+            _cachedServerLocation = $"{city} ({colo})";
+        }
+        else if (!string.IsNullOrEmpty(city))
+        {
+            _cachedServerLocation = city;
+        }
+        else if (!string.IsNullOrEmpty(colo))
+        {
+            _cachedServerLocation = $"Edge ({colo})";
+        }
+    }
+
     public static bool IsCurrentConnectionMetered()
     {
         try
@@ -96,6 +162,7 @@ public sealed class SpeedTestService
 
                         if (response.IsSuccessStatusCode)
                         {
+                            ExtractServerLocation(response);
                             elapsedMs = (Stopwatch.GetTimestamp() - probeStart) * 1000.0 / Stopwatch.Frequency;
                         }
                     }
@@ -188,6 +255,7 @@ public sealed class SpeedTestService
                     PingMs = liveP,
                     JitterMs = liveJ,
                     PhaseProgress = phaseProg,
+                    ServerLocation = _cachedServerLocation,
                     StatusMessage = "Measuring latency..."
                 });
 
@@ -219,6 +287,7 @@ public sealed class SpeedTestService
                 Phase = SpeedTestPhase.Download,
                 PingMs = measuredPing,
                 JitterMs = measuredJitter,
+                ServerLocation = _cachedServerLocation,
                 IsMeteredConnection = isMetered,
                 StatusMessage = downloadStatusMsg
             });
@@ -264,6 +333,7 @@ public sealed class SpeedTestService
                         }
 
                         res.EnsureSuccessStatusCode();
+                        ExtractServerLocation(res);
 
                         using var stream = await res.Content.ReadAsStreamAsync(downloadCts.Token).ConfigureAwait(false);
                         int read;
@@ -345,6 +415,7 @@ public sealed class SpeedTestService
                     PhaseProgress = phaseProg,
                     PingMs = measuredPing,
                     JitterMs = measuredJitter,
+                    ServerLocation = _cachedServerLocation,
                     IsMeteredConnection = isMetered,
                     StatusMessage = downloadStatusMsg
                 });
@@ -399,6 +470,7 @@ public sealed class SpeedTestService
                 FinalDownloadMbps = finalDownloadMbps,
                 PingMs = measuredPing,
                 JitterMs = measuredJitter,
+                ServerLocation = _cachedServerLocation,
                 IsMeteredConnection = isMetered,
                 StatusMessage = uploadStatusMsg
             });
@@ -533,6 +605,7 @@ public sealed class SpeedTestService
                     FinalDownloadMbps = finalDownloadMbps,
                     PingMs = measuredPing,
                     JitterMs = measuredJitter,
+                    ServerLocation = _cachedServerLocation,
                     IsMeteredConnection = isMetered,
                     StatusMessage = uploadStatusMsg
                 });
@@ -597,6 +670,7 @@ public sealed class SpeedTestService
                 PingMs = measuredPing,
                 JitterMs = measuredJitter,
                 PhaseProgress = 1.0,
+                ServerLocation = _cachedServerLocation,
                 IsMeteredConnection = isMetered,
                 StatusMessage = isMetered ? "Test completed (metered network)" : "Test completed"
             });

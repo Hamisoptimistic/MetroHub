@@ -40,6 +40,15 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
     {
         InitializeComponent();
         ShortcutsItemsControl.ItemsSource = Shortcuts;
+        MetroHub.Presentation.Controllers.WorkspaceManager.Instance.WorkspaceChanged += OnWorkspaceChanged;
+    }
+
+    private void OnWorkspaceChanged(WorkspaceModel incoming)
+    {
+        if (_isWorkspacesFolderExpanded)
+        {
+            ScrollToActiveWorkspace();
+        }
     }
 
     public void InitializeSettings(AppSettings settings)
@@ -106,9 +115,14 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
     private void OnWorkspacesFolderToggleClick(object sender, RoutedEventArgs e)
     {
         _isWorkspacesFolderExpanded = !_isWorkspacesFolderExpanded;
-        if (WorkspacesFolderButton != null)
+
+        if (_isWorkspacesFolderExpanded)
         {
-            WorkspacesFolderButton.Tag = _isWorkspacesFolderExpanded ? "Active" : null;
+            if (WorkspacesFolderButton != null)
+            {
+                WorkspacesFolderButton.Tag = "Active";
+            }
+            ScrollToActiveWorkspace();
         }
 
         if (WorkspacesAccordionDrawer != null)
@@ -125,6 +139,17 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
                 EasingFunction = ease
             };
 
+            if (!_isWorkspacesFolderExpanded)
+            {
+                heightAnimation.Completed += (_, _) =>
+                {
+                    if (!_isWorkspacesFolderExpanded && WorkspacesFolderButton != null)
+                    {
+                        WorkspacesFolderButton.Tag = null;
+                    }
+                };
+            }
+
             var opacityAnimation = new DoubleAnimation
             {
                 To = targetOpacity,
@@ -135,6 +160,33 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
             WorkspacesAccordionDrawer.BeginAnimation(FrameworkElement.MaxHeightProperty, heightAnimation);
             WorkspacesAccordionDrawer.BeginAnimation(UIElement.OpacityProperty, opacityAnimation);
         }
+        else if (WorkspacesFolderButton != null)
+        {
+            WorkspacesFolderButton.Tag = _isWorkspacesFolderExpanded ? "Active" : null;
+        }
+    }
+
+    private void ScrollToActiveWorkspace()
+    {
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+        {
+            var activeWs = MetroHub.Presentation.Controllers.WorkspaceManager.Instance.ActiveWorkspace;
+            if (activeWs == null) return;
+
+            var container = WorkspacesItemsControl?.ItemContainerGenerator.ContainerFromItem(activeWs) as FrameworkElement;
+            if (container != null)
+            {
+                container.BringIntoView();
+            }
+            else if (WorkspacesScrollViewer != null)
+            {
+                int index = MetroHub.Presentation.Controllers.WorkspaceManager.Instance.Workspaces.IndexOf(activeWs);
+                if (index >= 0)
+                {
+                    WorkspacesScrollViewer.ScrollToVerticalOffset(index * 38.0);
+                }
+            }
+        });
     }
 
     private void OnItemPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
