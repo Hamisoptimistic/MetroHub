@@ -274,5 +274,40 @@ public class TileManagerAndCanvasTests
             Assert.True(isInteractive);
         });
     }
+
+    [Fact]
+    public void TileControl_ContextMenu_IsLazyAndSharedAcrossInstances()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tileModel1 = new Core.Models.TileModel { Title = "App1", TargetPath = "C:\\app1.exe" };
+            var tileModel2 = new Core.Models.TileModel { Title = "App2", TargetPath = "C:\\app2.exe" };
+
+            var tile1 = new Presentation.Controls.TileControl { DataContext = tileModel1 };
+            var tile2 = new Presentation.Controls.TileControl { DataContext = tileModel2 };
+
+            // 1. Verify zero eager ContextMenu allocation on creation (Lazy realization)
+            Assert.Null(tile1.RootBorder.ContextMenu);
+            Assert.Null(tile2.RootBorder.ContextMenu);
+
+            // 2. Simulate right click opening on tile 1
+            tile1.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0, System.Windows.Input.MouseButton.Right)
+            {
+                RoutedEvent = System.Windows.UIElement.PreviewMouseRightButtonDownEvent
+            });
+            var menu1 = tile1.RootBorder.ContextMenu;
+            Assert.NotNull(menu1);
+
+            // 3. Simulate right click opening on tile 2 - must reuse same menu instance and detach tile 1
+            tile2.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0, System.Windows.Input.MouseButton.Right)
+            {
+                RoutedEvent = System.Windows.UIElement.PreviewMouseRightButtonDownEvent
+            });
+            var menu2 = tile2.RootBorder.ContextMenu;
+            Assert.NotNull(menu2);
+            Assert.Same(menu1, menu2);
+            Assert.Null(tile1.RootBorder.ContextMenu);
+        });
+    }
 }
 

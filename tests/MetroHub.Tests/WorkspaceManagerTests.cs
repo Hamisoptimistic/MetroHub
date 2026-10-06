@@ -410,4 +410,41 @@ public sealed class WorkspaceManagerTests : IDisposable
         // Notice: with event subscriber, it did not silently delete without confirmation!
         Assert.Equal(2, WorkspaceManager.Instance.Workspaces.Count);
     }
+
+    [Fact]
+    public void RapidWorkspaceToggling_MaintainsConsistentModelCollectionsAndZeroStateLoss()
+    {
+        WorkspaceManager.Instance.Initialize();
+        var ws1 = WorkspaceManager.Instance.ActiveWorkspace;
+        int initialWs1Tiles = ws1.Tiles.Count;
+
+        var ws2 = WorkspaceManager.Instance.CreateWorkspace("Workspace Two");
+        Assert.NotNull(ws2);
+
+        // Add 10 tiles to ws1 and 5 tiles to ws2
+        for (int i = 0; i < 10; i++)
+        {
+            ws1.Tiles.Add(new TileModel { Id = $"ws1_tile_{i}", Title = $"Tile 1-{i}" });
+        }
+        for (int i = 0; i < 5; i++)
+        {
+            ws2.Tiles.Add(new TileModel { Id = $"ws2_tile_{i}", Title = $"Tile 2-{i}" });
+        }
+
+        // Toggle back and forth 50 times rapidly
+        for (int i = 0; i < 50; i++)
+        {
+            WorkspaceManager.Instance.SwitchWorkspace(i % 2 == 0 ? ws1.Id : ws2.Id);
+        }
+
+        // Settle on ws1
+        WorkspaceManager.Instance.SwitchWorkspace(ws1.Id);
+
+        Assert.Equal(ws1.Id, WorkspaceManager.Instance.ActiveWorkspace.Id);
+        Assert.Equal(initialWs1Tiles + 10, ws1.Tiles.Count);
+        Assert.Equal(5, ws2.Tiles.Count);
+        Assert.True(ws1.IsActive);
+        Assert.False(ws2.IsActive);
+    }
 }
+

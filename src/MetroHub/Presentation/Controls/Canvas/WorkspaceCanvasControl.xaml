@@ -1,0 +1,105 @@
+<UserControl x:Class="MetroHub.Presentation.Controls.Canvas.WorkspaceCanvasControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             Background="Transparent"
+             Focusable="False">
+
+    <Grid Background="Transparent">
+        <!-- Group Tint Backplates Layer (Below tiles, non-hit-testable decorative acrylic plates) -->
+        <ItemsControl x:Name="GroupTintBackplates"
+                      ItemsSource="{Binding Groups}"
+                      Background="{x:Null}"
+                      Focusable="False"
+                      IsHitTestVisible="False"
+                      Panel.ZIndex="0">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Canvas Background="{x:Null}" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Width="{Binding PlateWidth}"
+                            Height="{Binding PlateHeight}"
+                            CornerRadius="{DynamicResource TileCornerRadius}"
+                            Background="{Binding TintBackgroundBrush}"
+                            BorderBrush="{Binding TintBorderBrush}"
+                            BorderThickness="1"
+                            IsHitTestVisible="False">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasTint}" Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+            <ItemsControl.ItemContainerStyle>
+                <Style TargetType="ContentPresenter">
+                    <Setter Property="Canvas.Left" Value="{Binding PlateX}" />
+                    <Setter Property="Canvas.Top" Value="{Binding PlateY}" />
+                    <Setter Property="IsHitTestVisible" Value="False" />
+                </Style>
+            </ItemsControl.ItemContainerStyle>
+        </ItemsControl>
+
+        <!-- Groups Header Layer (Pass-through transparent: only header controls intercept hits) -->
+        <ItemsControl x:Name="GroupsListBox"
+                      ItemsSource="{Binding Groups}"
+                      Background="{x:Null}"
+                      Focusable="False"
+                      Panel.ZIndex="100">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Canvas Background="{x:Null}" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <controls:GroupHeaderControl />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+            <ItemsControl.ItemContainerStyle>
+                <Style TargetType="ContentPresenter">
+                    <Setter Property="Canvas.Left" Value="{Binding X, Mode=TwoWay}" />
+                    <Setter Property="Canvas.Top" Value="{Binding Y, Mode=TwoWay}" />
+                </Style>
+            </ItemsControl.ItemContainerStyle>
+        </ItemsControl>
+
+        <!-- ItemsControl with Canvas panel: free-placement grid -->
+        <ItemsControl x:Name="TilesListBox"
+                      ItemsSource="{Binding Tiles}"
+                      Background="Transparent"
+                      Focusable="False">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Canvas Background="Transparent" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <controls:TileControl />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+
+            <!-- ContentPresenter is the container for ItemsControl items -->
+            <ItemsControl.ItemContainerStyle>
+                <Style TargetType="ContentPresenter">
+                    <Setter Property="Canvas.Left" Value="{Binding X, Mode=TwoWay}" />
+                    <Setter Property="Canvas.Top" Value="{Binding Y, Mode=TwoWay}" />
+                </Style>
+            </ItemsControl.ItemContainerStyle>
+        </ItemsControl>
+    </Grid>
+</UserControl>

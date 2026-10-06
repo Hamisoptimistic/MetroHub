@@ -244,6 +244,11 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
         LoadData();
         InitializeWorkspaces();
+
+        AddHandler(TileControl.TileActivatedEvent, new RoutedEventHandler(OnTileActivated));
+        AddHandler(TileControl.TileUnpinnedEvent, new RoutedEventHandler(OnTileUnpinned));
+        AddHandler(TileControl.TileModifiedEvent, new RoutedEventHandler(OnTileModified));
+
         SetupAutoScrollTimer();
         SetupSidebarTimers();
 
@@ -554,9 +559,9 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             SaveGroupsAndLayout();
         }
 
-        TilesListBox.ItemsSource = Tiles;
-        if (GroupsListBox != null) GroupsListBox.ItemsSource = Groups;
-        if (GroupTintBackplates != null) GroupTintBackplates.ItemsSource = Groups;
+        var canvas = GetOrCreateCanvas(activeWs);
+        canvas.Visibility = Visibility.Visible;
+        _activeCanvas = canvas;
         UpdateCanvasHeight();
         UpdateExposedAddSlots();
     }

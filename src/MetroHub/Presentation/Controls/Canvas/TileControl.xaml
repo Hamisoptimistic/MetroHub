@@ -15,6 +15,7 @@
     <UserControl.Resources>
         <conv:TileSpanToPixelsConverter x:Key="SpanConverter" />
         <conv:StringToBrushConverter x:Key="StringToBrushConverter" />
+        <conv:IconPathToBitmapConverter x:Key="IconConverter" />
         <widgets:WidgetTemplateSelector x:Key="WidgetTemplateSelector" />
 
         <!-- 1. App Tile DataTemplate (Exact original visual layout and ClearType hinting) -->
@@ -24,7 +25,7 @@
                   
                 <!-- 1x1 Small Tile Layout (56x56) -->
                 <Grid Visibility="{Binding IsSmall, Converter={StaticResource BoolToVis}}">
-                    <Image Source="{Binding IconPath, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                    <Image Source="{Binding IconPath, Converter={StaticResource IconConverter}, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Width="28" Height="28"
@@ -33,7 +34,7 @@
 
                 <!-- 2x2 Medium Tile Layout (120x120) -->
                 <Grid Visibility="{Binding IsMedium, Converter={StaticResource BoolToVis}}">
-                    <Image Source="{Binding IconPath, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                    <Image Source="{Binding IconPath, Converter={StaticResource IconConverter}, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Width="44" Height="44"
@@ -58,7 +59,7 @@
 
                 <!-- 4x2 Wide Tile Layout (248x120) -->
                 <Grid Visibility="{Binding IsWide, Converter={StaticResource BoolToVis}}">
-                    <Image Source="{Binding IconPath, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                    <Image Source="{Binding IconPath, Converter={StaticResource IconConverter}, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Width="46" Height="46"
@@ -115,64 +116,6 @@
             <ScaleTransform x:Name="TileScale" ScaleX="1.0" ScaleY="1.0" />
         </Border.RenderTransform>
 
-        <Border.ContextMenu>
-            <ContextMenu x:Name="TileContextMenu">
-                <MenuItem x:Name="ResizeMenuItem" Header="Resize">
-                    <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="ResizeLarge16" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem x:Name="StyleMenuItem" Header="Style">
-                    <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="PaintBrush16" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
-                    </MenuItem.Icon>
-                    <MenuItem x:Name="StyleDefaultMenuItem" Header="Default" IsCheckable="True" Click="OnStyleDefaultClick" />
-                    <MenuItem x:Name="StyleColourfulMenuItem" Header="Colourful" IsCheckable="True" Click="OnStyleColourfulClick" />
-                </MenuItem>
-                <MenuItem x:Name="GroupMenuItem" Header="Create Group from Tiles" Click="OnGroupTilesClick">
-                    <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="FolderAdd24" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem x:Name="AddToGroupMenuItem" Header="Add to Group">
-                    <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="FolderArrowRight24" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem x:Name="MoveToWorkspaceMenuItem" Header="Move to Workspace">
-                    <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="ArrowRight24" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
-                    </MenuItem.Icon>
-                </MenuItem>
-                <Separator x:Name="SingleAppSeparator" />
-                <MenuItem x:Name="RunAdminMenuItem" Header="Run as Administrator" Click="OnRunAsAdminClick">
-                    <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="Shield32" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem x:Name="OpenLocationMenuItem" Header="Open File Location" Click="OnOpenFileLocationClick">
-                    <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="FolderOpenVertical20" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem x:Name="CopyUrlMenuItem" Header="Copy Web Link" Visibility="Collapsed" Click="OnCopyUrlClick">
-                    <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="Copy24" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
-                    </MenuItem.Icon>
-                </MenuItem>
-                <Separator x:Name="UnpinSeparator" />
-                <MenuItem x:Name="PinToSidebarMenuItem" Header="Pin to Sidebar" Click="OnPinToSidebarClick">
-                    <MenuItem.Icon>
-                        <ui:SymbolIcon x:Name="PinToSidebarIcon" Symbol="Pin24" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
-                    </MenuItem.Icon>
-                </MenuItem>
-                <MenuItem x:Name="UnpinMenuItem" Header="Unpin from MetroHub" Click="OnUnpinClick" Foreground="{DynamicResource StatusErrorBrush}">
-                    <MenuItem.Icon>
-                        <ui:SymbolIcon Symbol="PinOff24" FontSize="18" Foreground="{DynamicResource StatusErrorBrush}" />
-                    </MenuItem.Icon>
-                </MenuItem>
-            </ContextMenu>
-        </Border.ContextMenu>
 
         <Grid>
             <!-- Fluent Reveal Highlight: Surface Spotlight -->

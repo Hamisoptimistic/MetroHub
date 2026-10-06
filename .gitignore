@@ -3,6 +3,8 @@ bin/
 obj/
 dist/
 publish/
+publish*/
+publish_release/
 *.exe
 *.pdb
 

@@ -12,12 +12,47 @@ using System.Windows.Threading;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Controllers;
+using MetroHub.Presentation.Controls.Canvas;
 using MetroHub.Presentation.Dialogs;
 
 namespace MetroHub;
 
 public partial class MainWindow
 {
+    private WorkspaceCanvasControl? _activeCanvas;
+    private readonly Dictionary<string, WorkspaceCanvasControl> _canvasPool = new(StringComparer.OrdinalIgnoreCase);
+
+    internal ItemsControl? TilesListBox => _activeCanvas?.TilesListBox;
+    internal ItemsControl? GroupsListBox => _activeCanvas?.GroupsListBox;
+    internal ItemsControl? GroupTintBackplates => _activeCanvas?.GroupTintBackplates;
+
+    private WorkspaceCanvasControl GetOrCreateCanvas(WorkspaceModel ws)
+    {
+        if (_canvasPool.TryGetValue(ws.Id, out var existing))
+        {
+            return existing;
+        }
+
+        var canvas = new WorkspaceCanvasControl
+        {
+            DataContext = ws,
+            Visibility = Visibility.Collapsed
+        };
+
+        _canvasPool[ws.Id] = canvas;
+        CanvasHostPanel?.Children.Add(canvas);
+        return canvas;
+    }
+
+    private void CleanupWorkspaceCanvas(string workspaceId)
+    {
+        if (_canvasPool.Remove(workspaceId, out var canvas))
+        {
+            CanvasHostPanel?.Children.Remove(canvas);
+            canvas.DataContext = null;
+        }
+    }
+
     private bool _isWorkspaceTransitionRunning;
 
     private void InitializeWorkspaces()
@@ -52,6 +87,7 @@ public partial class MainWindow
             bool confirmed = WorkspaceDeleteDialog.Show(this, ws.Name);
             if (confirmed)
             {
+                CleanupWorkspaceCanvas(ws.Id);
                 WorkspaceManager.Instance.DeleteWorkspace(ws.Id);
             }
         }
@@ -152,21 +188,17 @@ public partial class MainWindow
 
     private void ApplyWorkspaceData(WorkspaceModel target)
     {
+        if (_activeCanvas != null && _activeCanvas.Workspace?.Id != target.Id)
+        {
+            _activeCanvas.Visibility = Visibility.Collapsed;
+        }
+
+        var targetCanvas = GetOrCreateCanvas(target);
+        targetCanvas.Visibility = Visibility.Visible;
+        _activeCanvas = targetCanvas;
+
         Tiles = target.Tiles;
         Groups = target.Groups;
-
-        if (TilesListBox != null)
-        {
-            TilesListBox.ItemsSource = Tiles;
-        }
-        if (GroupsListBox != null)
-        {
-            GroupsListBox.ItemsSource = Groups;
-        }
-        if (GroupTintBackplates != null)
-        {
-            GroupTintBackplates.ItemsSource = Groups;
-        }
 
         GridPlacementService.SetActiveGroups(Groups);
         _historyService.SwitchWorkspace(target.Id);
