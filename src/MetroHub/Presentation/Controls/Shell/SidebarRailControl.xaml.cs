@@ -21,6 +21,7 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
     public event EventHandler? PinToggled;
     public event EventHandler? ShortcutsChanged;
     public event EventHandler<string?>? AddWebLinkRequested;
+    public event EventHandler? SettingsRequested;
 
     public bool IsPinned { get; private set; } = false;
 
@@ -1083,5 +1084,10 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
         {
             Debug.WriteLine($"Failed to lock workstation: {ex.Message}");
         }
+    }
+
+    private void OnSettingsClick(object sender, RoutedEventArgs e)
+    {
+        SettingsRequested?.Invoke(this, EventArgs.Empty);
     }
 }

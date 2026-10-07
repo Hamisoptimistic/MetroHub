@@ -235,6 +235,32 @@ public partial class MainWindow
         SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
     }
 
+    private MetroHub.Presentation.Views.Settings.SettingsWindow? _settingsWindow;
+
+    private void OnSidebarSettingsRequested(object? sender, EventArgs e)
+    {
+        OpenSettingsWindow();
+    }
+
+    public void OpenSettingsWindow()
+    {
+        if (_settingsWindow == null || !_settingsWindow.IsLoaded)
+        {
+            _settingsWindow = new MetroHub.Presentation.Views.Settings.SettingsWindow();
+            _settingsWindow.Owner = this;
+            _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+            _settingsWindow.Show();
+        }
+        else
+        {
+            if (_settingsWindow.WindowState == WindowState.Minimized)
+            {
+                _settingsWindow.WindowState = WindowState.Normal;
+            }
+            _settingsWindow.Activate();
+        }
+    }
+
     private void OnSidebarAppsToggleRequested(object? sender, EventArgs e)
     {
         AllAppsDrawer?.Toggle();

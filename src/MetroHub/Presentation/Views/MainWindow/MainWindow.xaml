@@ -109,6 +109,7 @@
                                      Panel.ZIndex="2000"
                                      AppsToggleRequested="OnSidebarAppsToggleRequested"
                                      AddWebLinkRequested="OnSidebarAddWebLinkRequested"
+                                     SettingsRequested="OnSidebarSettingsRequested"
                                      MouseEnter="OnSidebarRailMouseEnter"
                                      MouseLeave="OnSidebarRailMouseLeave">
             <controls:SidebarRailControl.RenderTransform>

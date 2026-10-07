@@ -772,6 +772,15 @@
                     </ContextMenu>
                 </Button.ContextMenu>
             </Button>
+
+            <!-- Settings Button -->
+            <Button x:Name="SettingsButton"
+                    Style="{StaticResource RailButtonStyle}"
+                    ToolTip="Settings"
+                    Click="OnSettingsClick">
+                <ui:SymbolIcon Symbol="Settings24" FontSize="19"
+                               Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" />
+            </Button>
         </StackPanel>
     </Grid>
 </UserControl>
