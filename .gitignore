@@ -21,6 +21,12 @@ publish_release/
 .gemini/
 scratch_*
 
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
 # Diagnostic traces, profiling artifacts, counters, dumps & logs
 logs/
 diagnostics/

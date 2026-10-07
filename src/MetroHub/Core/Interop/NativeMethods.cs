@@ -401,6 +401,40 @@ public static class NativeMethods
 
     #endregion
 
+    #region Shell Icon Metrics
+
+    [DllImport("user32.dll")]
+    private static extern int GetSystemMetrics(int nIndex);
+
+    private const int SM_CXSMICON = 49;
+
+    /// <summary>
+    /// Physical pixel size the shell paints small icons at (notification area,
+    /// list views, window chrome) for the DPI of the calling thread.
+    /// </summary>
+    public static int SmallIconSize
+    {
+        get
+        {
+            try
+            {
+                int size = GetSystemMetrics(SM_CXSMICON);
+                if (size >= 8 && size <= 256)
+                {
+                    return size;
+                }
+            }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "NativeMethods.SmallIconSize");
+            }
+
+            return 16; // Classic 100 % DPI small icon size
+        }
+    }
+
+    #endregion
+
     #region Display Refresh Rate
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]

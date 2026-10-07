@@ -201,26 +201,9 @@ public partial class App : Application
     {
         _notifyIcon = new TaskbarIcon
         {
-            ToolTipText = "MetroHub (Ctrl + ` to toggle)"
+            ToolTipText = "MetroHub (Ctrl + ` to toggle)",
+            Icon = LoadTrayIcon()
         };
-
-        try
-        {
-            string? exePath = Environment.ProcessPath;
-            if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
-            {
-                _notifyIcon.Icon = System.Drawing.Icon.ExtractAssociatedIcon(exePath) ?? SystemIcons.Application;
-            }
-            else
-            {
-                var streamInfo = Application.GetResourceStream(new Uri("pack://application:,,,/Assets/app.ico"));
-                _notifyIcon.Icon = streamInfo != null ? new System.Drawing.Icon(streamInfo.Stream) : SystemIcons.Application;
-            }
-        }
-        catch
-        {
-            _notifyIcon.Icon = SystemIcons.Application;
-        }
 
         _notifyIcon.TrayLeftMouseDown += (s, e) =>
         {
@@ -239,6 +222,48 @@ public partial class App : Application
         menu.Items.Add(exitItem);
 
         _notifyIcon.ContextMenu = menu;
+    }
+
+    /// <summary>
+    /// Loads the tray icon at the exact frame the notification area asks for.
+    /// Extracting the icon from the executable only yields its default 32 px
+    /// frame, which the shell then has to rescale down to 16 px (100 % DPI) and
+    /// blurs on the way. Assets/app.ico carries a hand-tuned frame per size, so
+    /// the resource stream is the preferred source.
+    /// </summary>
+    private static Icon LoadTrayIcon()
+    {
+        try
+        {
+            var streamInfo = Application.GetResourceStream(new Uri("pack://application:,,,/Assets/app.ico"));
+            if (streamInfo?.Stream is { } stream)
+            {
+                using (stream)
+                {
+                    int size = NativeMethods.SmallIconSize;
+                    return new Icon(stream, new System.Drawing.Size(size, size));
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or ArgumentException or NotSupportedException)
+        {
+            Serilog.Log.Debug(ex, "Tray icon resource could not be read");
+        }
+
+        try
+        {
+            string? exePath = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+            {
+                return Icon.ExtractAssociatedIcon(exePath) ?? SystemIcons.Application;
+            }
+        }
+        catch (Exception ex) when (ex is IOException or ArgumentException)
+        {
+            Serilog.Log.Debug(ex, "Tray icon could not be extracted from the executable");
+        }
+
+        return SystemIcons.Application;
     }
 
     protected override void OnSessionEnding(SessionEndingCancelEventArgs e)
