@@ -32,7 +32,7 @@ public partial class SettingsHomeViewModel : ObservableObject
         {
             Id = "General",
             Title = "General",
-            Description = "Startup at login, exit on launch, and hub behavior",
+            Description = "Startup, window behavior, system tray",
             Symbol = SymbolRegular.Power24
         });
 
@@ -40,23 +40,23 @@ public partial class SettingsHomeViewModel : ObservableObject
         {
             Id = "Personalization",
             Title = "Personalization",
-            Description = "Theme mode, acrylic backdrops, wallpapers, and tile corners",
+            Description = "Themes, Wallpapers, Animations",
             Symbol = SymbolRegular.PaintBucket24
         });
 
         Categories.Add(new SettingsCategoryItem
         {
             Id = "Canvas",
-            Title = "Canvas & Workspaces",
-            Description = "Canvas scroll orientation and slide direction",
+            Title = "Workspaces & Sidebar",
+            Description = "Canvas layout, rail behavior, scroll",
             Symbol = SymbolRegular.Grid24
         });
 
         Categories.Add(new SettingsCategoryItem
         {
             Id = "Shortcuts",
-            Title = "Shortcuts & Hotkeys",
-            Description = "Global activation shortcut and workspace direct keys",
+            Title = "Keyboard Shortcuts",
+            Description = "Global hotkey, navigation Shortcuts",
             Symbol = SymbolRegular.Keyboard24
         });
 
@@ -64,15 +64,15 @@ public partial class SettingsHomeViewModel : ObservableObject
         {
             Id = "Widgets",
             Title = "Widgets",
-            Description = "Universal defaults for clock, weather units, and calendar",
+            Description = "Widget Defaults",
             Symbol = SymbolRegular.AppGeneric24
         });
 
         Categories.Add(new SettingsCategoryItem
         {
             Id = "About",
-            Title = "About & Updates",
-            Description = "Version information, Velopack updater, and application logs",
+            Title = "About",
+            Description = "App updates",
             Symbol = SymbolRegular.Info24
         });
     }
