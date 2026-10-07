@@ -31,6 +31,7 @@ public partial class SettingsWindow : BorderlessFluentWindow
     public SettingsWindow()
     {
         InitializeComponent();
+        DataContext = new SettingsShellViewModel();
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -248,10 +249,5 @@ public partial class SettingsWindow : BorderlessFluentWindow
         base.OnClosed(e);
         _dialogScope?.Dispose();
         _dialogScope = null;
-    }
-
-    private void OnCategoryCardClick(object sender, RoutedEventArgs e)
-    {
-        // Category selection hook for Phase 2 navigation transition
     }
 }
