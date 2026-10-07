@@ -285,7 +285,7 @@
                         <!-- Header Icon: &#xEE40; (TaskViewSettings - Windows Virtual Desktops glyph) -->
                         <TextBlock Text="&#xEE40;"
                                    FontFamily="{DynamicResource AppIconFontFamily}"
-                                   FontSize="19"
+                                   FontSize="20"
                                    Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
@@ -298,7 +298,7 @@
                             Opacity="0"
                             Background="Transparent"
                             BorderThickness="0">
-                        <StackPanel Margin="0,1,0,3">
+                        <StackPanel Margin="0,1,0,0">
                             <!-- Subtle Hairline Separator under header -->
                             <Rectangle Height="1"
                                        Margin="4,0,4,3"
@@ -350,10 +350,10 @@
                                                             Opacity="0"
                                                             IsHitTestVisible="False" />
 
-                                                    <!-- Clean Vector Icon (18px) with Fallback -->
+                                                    <!-- Clean Vector Icon (20px) with Fallback -->
                                                     <ui:SymbolIcon x:Name="WorkspaceIcon"
                                                                    Symbol="{Binding IconSymbol, FallbackValue=Desktop24, TargetNullValue=Desktop24}"
-                                                                   FontSize="18"
+                                                                   FontSize="20"
                                                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                                                    HorizontalAlignment="Center"
                                                                    VerticalAlignment="Center" />
@@ -391,13 +391,51 @@
 
                             <!-- Add Workspace Button (+) [Disabled if count >= 10] -->
                             <Button x:Name="AddWorkspaceButton"
-                                    Style="{StaticResource WorkspaceRailItemStyle}"
-                                    Width="38" Height="34" Margin="0,2,0,0"
+                                    Margin="0,1,0,0"
                                     ToolTip="New Workspace (Max 10)"
                                     Command="{Binding Path=CreateWorkspaceCommand, Source={x:Static controllers:WorkspaceManager.Instance}}"
                                     IsEnabled="{Binding Path=CanCreateWorkspace, Source={x:Static controllers:WorkspaceManager.Instance}}">
-                                <ui:SymbolIcon Symbol="Add24" FontSize="18"
-                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="BorderThickness" Value="0" />
+                                        <Setter Property="Height" Value="38" />
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+                                        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                                        <Setter Property="ToolTipService.Placement" Value="Right" />
+                                        <Setter Property="ToolTipService.HorizontalOffset" Value="8" />
+                                        <Setter Property="ToolTipService.InitialShowDelay" Value="350" />
+                                        <Setter Property="ToolTipService.BetweenShowDelay" Value="100" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="FooterPill"
+                                                            Margin="1"
+                                                            CornerRadius="{DynamicResource TileCornerRadius}"
+                                                            Background="Transparent">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="FooterPill" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="FooterPill" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsEnabled" Value="False">
+                                                            <Setter Property="Opacity" Value="0.38" />
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                                <ui:SymbolIcon Symbol="Add24" FontSize="20"
+                                               Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" />
                             </Button>
                         </StackPanel>
                     </Border>
