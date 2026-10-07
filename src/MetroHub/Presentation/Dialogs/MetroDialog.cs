@@ -124,9 +124,9 @@ public class MetroDialog : BorderlessFluentWindow
 
     /// <summary>
     /// When enabled, clicking outside the dialog or switching away automatically dismisses the dialog.
-    /// Defaults to true for all standard MetroDialog modals.
+    /// Disabled so screenshot utilities and outside clicks do not prematurely dismiss modals.
     /// </summary>
-    protected virtual bool EnableLightDismiss => true;
+    protected virtual bool EnableLightDismiss => false;
 
     /// <summary>
     /// Modal dialogs use WS_EX_TOOLWINDOW to prevent DWM composition flash on open

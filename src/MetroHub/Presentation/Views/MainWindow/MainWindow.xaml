@@ -534,6 +534,15 @@
                                            Closed="OnDrawerClosed" />
         </Grid>
 
+        <!-- Ambient Canvas Focus Scrim (Softly dims the background canvas when Settings or Dialog is active) -->
+        <Border x:Name="AmbientFocusScrim"
+                Grid.Column="0"
+                Grid.ColumnSpan="2"
+                Background="{DynamicResource SmokeFillColorDefaultBrush}"
+                Opacity="0"
+                IsHitTestVisible="False"
+                Panel.ZIndex="3000" />
+
         <!-- Universal WPF-UI Modal ContentDialog Host Presenter (Spans entire window above all layers) -->
         <ContentPresenter x:Name="RootContentDialogPresenter"
                           Grid.Column="0"

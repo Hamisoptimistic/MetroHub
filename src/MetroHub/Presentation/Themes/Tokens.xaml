@@ -72,7 +72,7 @@
     <!-- ========================================================================= -->
     <SolidColorBrush x:Key="ContentDialogBackground" Color="#F214161A" />
     <SolidColorBrush x:Key="ContentDialogBorderBrush" Color="#35FFFFFF" />
-    <SolidColorBrush x:Key="SmokeFillColorDefaultBrush" Color="#8A08080C" />
+    <SolidColorBrush x:Key="SmokeFillColorDefaultBrush" Color="#1A08080C" />
     <SolidColorBrush x:Key="ContentDialogSeparatorBorderBrush" Color="#18FFFFFF" />
     <SolidColorBrush x:Key="ContentDialogTopOverlay" Color="#08FFFFFF" />
     <CornerRadius x:Key="DialogOverlayCornerRadius">10,10,0,0</CornerRadius>

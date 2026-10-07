@@ -20,8 +20,6 @@ namespace MetroHub.Presentation.Views.Settings;
 public partial class SettingsWindow : BorderlessFluentWindow
 {
     private IDisposable? _dialogScope;
-    private NativeMethods.LowLevelMouseProc? _mouseHookProc;
-    private IntPtr _mouseHook = IntPtr.Zero;
     private long _shownTimestamp;
     private bool _isClosing;
     private bool _isDismissing;
@@ -39,8 +37,6 @@ public partial class SettingsWindow : BorderlessFluentWindow
         base.OnSourceInitialized(e);
         _dialogScope = MainWindow.EnterDialogScope();
         _shownTimestamp = Environment.TickCount64;
-
-        InstallMouseHook();
 
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd != IntPtr.Zero)
@@ -81,96 +77,13 @@ public partial class SettingsWindow : BorderlessFluentWindow
         }
     }
 
-    private void InstallMouseHook()
-    {
-        if (_mouseHook != IntPtr.Zero) return;
-        _mouseHookProc = LowLevelMouseHookCallback;
-        _mouseHook = NativeMethods.SetWindowsHookEx(
-            NativeMethods.WH_MOUSE_LL,
-            _mouseHookProc,
-            IntPtr.Zero,
-            0);
-    }
-
-    private void UninstallMouseHook()
-    {
-        if (_mouseHook != IntPtr.Zero)
-        {
-            NativeMethods.UnhookWindowsHookEx(_mouseHook);
-            _mouseHook = IntPtr.Zero;
-            _mouseHookProc = null;
-        }
-    }
-
-    private IntPtr LowLevelMouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-    {
-        if (nCode >= 0 && (wParam == (IntPtr)NativeMethods.WM_LBUTTONDOWN ||
-                           wParam == (IntPtr)NativeMethods.WM_NCLBUTTONDOWN ||
-                           wParam == (IntPtr)NativeMethods.WM_RBUTTONDOWN ||
-                           wParam == (IntPtr)NativeMethods.WM_NCRBUTTONDOWN))
-        {
-            if (Environment.TickCount64 - _shownTimestamp >= 200 && !_isDismissing && !_isClosing && IsLoaded)
-            {
-                var hookStruct = Marshal.PtrToStructure<NativeMethods.MSLLHOOKSTRUCT>(lParam);
-                IntPtr hwnd = new WindowInteropHelper(this).Handle;
-                if (hwnd != IntPtr.Zero)
-                {
-                    IntPtr clickedWnd = NativeMethods.WindowFromPoint(hookStruct.pt);
-                    if (clickedWnd != IntPtr.Zero)
-                    {
-                        if (clickedWnd == hwnd || NativeMethods.GetAncestor(clickedWnd, NativeMethods.GA_ROOTOWNER) == hwnd)
-                        {
-                            return NativeMethods.CallNextHookEx(_mouseHook, nCode, wParam, lParam);
-                        }
-                    }
-
-                    if (NativeMethods.GetWindowRect(hwnd, out NativeMethods.RECT rect))
-                    {
-                        int x = hookStruct.pt.X;
-                        int y = hookStruct.pt.Y;
-                        bool isInside = x >= rect.Left && x <= rect.Right && y >= rect.Top && y <= rect.Bottom;
-                        if (!isInside)
-                        {
-                            Dispatcher.InvokeAsync(Dismiss);
-                        }
-                    }
-                }
-            }
-        }
-
-        return NativeMethods.CallNextHookEx(_mouseHook, nCode, wParam, lParam);
-    }
-
     protected override void OnActivated(EventArgs e)
     {
         base.OnActivated(e);
         _shownTimestamp = Environment.TickCount64;
     }
 
-    protected override void OnDeactivated(EventArgs e)
-    {
-        base.OnDeactivated(e);
-        if (Environment.TickCount64 - _shownTimestamp >= 200 && !_isDismissing && !_isClosing && IsLoaded)
-        {
-            Dispatcher.InvokeAsync(() =>
-            {
-                if (!_isDismissing && !_isClosing && IsLoaded)
-                {
-                    IntPtr hwnd = new WindowInteropHelper(this).Handle;
-                    if (hwnd != IntPtr.Zero)
-                    {
-                        IntPtr activeWnd = NativeMethods.GetActiveWindow();
-                        if (activeWnd != IntPtr.Zero && (activeWnd == hwnd || NativeMethods.GetAncestor(activeWnd, NativeMethods.GA_ROOTOWNER) == hwnd))
-                        {
-                            return;
-                        }
-                    }
 
-                    Dismiss();
-                }
-            });
-        }
-    }
 
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
@@ -209,7 +122,6 @@ public partial class SettingsWindow : BorderlessFluentWindow
         if (_isDismissing || _isClosing) return;
         _isClosing = true;
         _isDismissing = true;
-        UninstallMouseHook();
 
         try
         {
@@ -237,7 +149,6 @@ public partial class SettingsWindow : BorderlessFluentWindow
     {
         _isClosing = true;
         _isDismissing = true;
-        UninstallMouseHook();
         base.OnClosing(e);
     }
 
@@ -245,7 +156,6 @@ public partial class SettingsWindow : BorderlessFluentWindow
     {
         _isClosing = true;
         _isDismissing = true;
-        UninstallMouseHook();
         base.OnClosed(e);
         _dialogScope?.Dispose();
         _dialogScope = null;

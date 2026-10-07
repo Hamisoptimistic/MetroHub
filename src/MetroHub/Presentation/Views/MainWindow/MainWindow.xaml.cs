@@ -90,7 +90,32 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
                     if (current <= 0) break;
                 } while (System.Threading.Interlocked.CompareExchange(ref _dialogOpenCount, current - 1, current) != current);
             }
+            Dispatcher.InvokeAsync(UpdateDialogScrim);
         }
+    }
+
+    /// <summary>
+    /// Smoothly animates the ambient canvas focus scrim (smoke layer) to softly dim the background
+    /// canvas whenever a modal dialog or the settings window is active, providing high-contrast elevation.
+    /// </summary>
+    public void UpdateDialogScrim()
+    {
+        if (AmbientFocusScrim == null) return;
+
+        bool shouldDim = IsDialogOpen;
+        double targetOpacity = shouldDim ? 1.0 : 0.0;
+
+        var anim = new DoubleAnimation
+        {
+            To = targetOpacity,
+            Duration = TimeSpan.FromMilliseconds(200),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        int refreshRate = NativeMethods.GetScreenRefreshRate();
+        Timeline.SetDesiredFrameRate(anim, refreshRate > 0 ? refreshRate : 100);
+
+        AmbientFocusScrim.BeginAnimation(UIElement.OpacityProperty, anim);
     }
 
     /// <summary>
@@ -104,6 +129,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         if (win == null) return ActionDisposable.Empty;
 
         Interlocked.Increment(ref _dialogScopeDepth);
+        win.Dispatcher.InvokeAsync(win.UpdateDialogScrim);
 
         return new ActionDisposable(() =>
         {
@@ -111,35 +137,18 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             if (Interlocked.Decrement(ref _dialogScopeDepth) <= 0)
             {
                 Interlocked.Exchange(ref _dialogScopeDepth, 0);
+                win.Dispatcher.InvokeAsync(win.UpdateDialogScrim);
                 win.Dispatcher.InvokeAsync(() =>
                 {
-                    IntPtr foreHwnd = NativeMethods.GetForegroundWindow();
-                    uint ourPid = (uint)Environment.ProcessId;
-                    uint forePid = 0;
-                    if (foreHwnd != IntPtr.Zero)
+                    try
                     {
-                        NativeMethods.GetWindowThreadProcessId(foreHwnd, out forePid);
+                        win.Activate();
+                        win.Focus();
+                        Keyboard.Focus(win);
                     }
-
-                    if (forePid != 0 && forePid != ourPid)
+                    catch (Exception ex)
                     {
-                        if (win.IsVisible && !win._isDismissing)
-                        {
-                            win.HideScreen(restorePreviousFocus: false);
-                        }
-                    }
-                    else
-                    {
-                        try
-                        {
-                            win.Activate();
-                            win.Focus();
-                            Keyboard.Focus(win);
-                        }
-                        catch (Exception ex)
-                        {
-                            Safe.Log("MainWindow.Activate", ex);
-                        }
+                        Safe.Log("MainWindow.Activate", ex);
                     }
                 });
             }
@@ -157,27 +166,10 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         Action action = () =>
         {
             win.IsDialogOpen = isOpen;
+            win.UpdateDialogScrim();
             if (!isOpen)
             {
-                IntPtr foreHwnd = NativeMethods.GetForegroundWindow();
-                uint ourPid = (uint)Environment.ProcessId;
-                uint forePid = 0;
-                if (foreHwnd != IntPtr.Zero)
-                {
-                    NativeMethods.GetWindowThreadProcessId(foreHwnd, out forePid);
-                }
-
-                if (forePid != 0 && forePid != ourPid)
-                {
-                    if (win.IsVisible && !win._isDismissing)
-                    {
-                        win.HideScreen(restorePreviousFocus: false);
-                    }
-                }
-                else
-                {
-                    try { win.Activate(); win.Focus(); Keyboard.Focus(win); } catch (Exception ex) { Safe.Log("MainWindow.Activate", ex); }
-                }
+                try { win.Activate(); win.Focus(); Keyboard.Focus(win); } catch (Exception ex) { Safe.Log("MainWindow.Activate", ex); }
             }
         };
 
@@ -870,6 +862,12 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         _lastShownTime = DateTime.UtcNow;
         _isFullyActivated = false;
 
+        if (AmbientFocusScrim != null)
+        {
+            AmbientFocusScrim.BeginAnimation(UIElement.OpacityProperty, null);
+            AmbientFocusScrim.Opacity = 0.0;
+        }
+
         SnapToWorkArea(force: true);
         ApplyBorderlessAttributes();
         ApplyConfiguredBackdrop(force: false);
@@ -934,6 +932,11 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         MetroHub.Core.Services.HiddenDiagnosticsLogger.LogTransition(false);
         Interlocked.Exchange(ref _dialogScopeDepth, 0);
         Interlocked.Exchange(ref _dialogOpenCount, 0);
+        if (AmbientFocusScrim != null)
+        {
+            AmbientFocusScrim.BeginAnimation(UIElement.OpacityProperty, null);
+            AmbientFocusScrim.Opacity = 0.0;
+        }
         if (AllAppsDrawer != null && AllAppsDrawer.IsOpen)
         {
             AllAppsDrawer.Close();
