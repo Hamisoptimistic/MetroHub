@@ -4,13 +4,14 @@
         xmlns:views="clr-namespace:MetroHub.Presentation.Views"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="Settings"
-        Width="920" Height="600"
-        MinWidth="800" MinHeight="500"
-        WindowStartupLocation="CenterScreen"
+        Width="960" Height="640"
+        MinWidth="720" MinHeight="460"
+        WindowStartupLocation="CenterOwner"
         WindowBackdropType="Acrylic"
         WindowCornerPreference="DoNotRound"
         WindowStyle="None"
-        ResizeMode="CanResizeWithGrip"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
         Background="Transparent"
         ExtendsContentIntoTitleBar="True"
         Foreground="{DynamicResource TextPrimaryBrush}"
@@ -45,34 +46,37 @@
         <!-- ========================================================================= -->
         <!-- ROW 0: CUSTOM TITLEBAR & DRAG STRIP                                      -->
         <!-- ========================================================================= -->
-        <Grid Grid.Row="0"
-              Background="Transparent"
-              PreviewMouseLeftButtonDown="OnTitleBarMouseDown">
+        <Grid Grid.Row="0" Background="Transparent">
             <Grid.ColumnDefinitions>
+                <!-- Column 0: Dedicated Drag Region (Title & Strip) -->
                 <ColumnDefinition Width="*" />
+                <!-- Column 1: Close Button (Isolated from Drag) -->
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <!-- Window Title & Glyph -->
-            <StackPanel Grid.Column="0"
-                        Orientation="Horizontal"
-                        VerticalAlignment="Center"
-                        Margin="16,0,0,0">
-                <ui:SymbolIcon Symbol="Settings24"
-                               FontSize="16"
-                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
-                               Margin="0,0,8,0" />
-                <TextBlock Text="Settings"
-                           FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                           FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                           Foreground="{DynamicResource TextPrimaryBrush}" />
-            </StackPanel>
+            <!-- Window Title & Drag Area -->
+            <Border Grid.Column="0"
+                    Background="Transparent"
+                    MouseLeftButtonDown="OnTitleBarMouseDown">
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="16,0,0,0">
+                    <ui:SymbolIcon Symbol="Settings24"
+                                   FontSize="16"
+                                   Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                   Margin="0,0,8,0" />
+                    <TextBlock Text="Settings"
+                               FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                               FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                </StackPanel>
+            </Border>
 
             <!-- Top-Right Close Button -->
             <StackPanel Grid.Column="1"
                         Orientation="Horizontal"
                         VerticalAlignment="Center"
-                        Margin="0,0,8,0">
+                        Margin="0,0,10,0">
                 <Button x:Name="CloseButton"
                         Style="{DynamicResource ModalDismissButtonStyle}"
                         Click="OnCloseButtonClick"

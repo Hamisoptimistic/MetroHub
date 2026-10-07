@@ -270,10 +270,12 @@ All low-level grid math (cell size, tile gaps, resistance, group column widths) 
 - [x] Add Settings button (`Settings24` icon) directly below Power button in [`SidebarRailControl.xaml`](file:///d:/MetroHub/src/MetroHub/Presentation/Controls/Shell/SidebarRailControl.xaml).
 - [x] Wire sidebar Settings button click in [`MainWindow.xaml`](file:///d:/MetroHub/src/MetroHub/Presentation/Views/MainWindow/MainWindow.xaml) and [`MainWindow.Sidebar.cs`](file:///d:/MetroHub/src/MetroHub/Presentation/Views/MainWindow/MainWindow.Sidebar.cs) to open `SettingsWindow`.
 - [x] Create directory `src/MetroHub/Presentation/Views/Settings/`.
-- [ ] **Window Host Architecture:**
-  - [ ] Set exact window dimensions, minimum bounds, and startup position (`CenterOwner`).
-  - [ ] Configure DWM Acrylic backdrop (`DWMSBT_TRANSIENTWINDOW`) and obsidian dark base brush.
-  - [ ] Standardize header titlebar drag region, title text, and top-right dismiss button (`ModalDismissButtonStyle`).
+- [x] **Window Host Architecture:**
+  - [x] Set exact window dimensions (`960x640`), minimum bounds (`720x460`), startup position (`CenterOwner`), and `NoResize` (no bottom resize grip).
+  - [x] Responsive auto-clamping to active monitor's work area on small/high-DPI screens.
+  - [x] Full `MetroDialog` DNA: outside-click dismissal (`WH_MOUSE_LL` hook, 200ms grace period, root-owner check), `Escape` key close, and `MainWindow.EnterDialogScope()` integration.
+  - [x] Configure DWM Acrylic backdrop (`DWMSBT_TRANSIENTWINDOW`) and obsidian dark base brush.
+  - [x] Standardize header titlebar drag region, title text, and top-right dismiss button (`ModalDismissButtonStyle`).
 - [ ] **Home View Elements (Single-Pane Grid):**
   - [ ] Header Banner: Profile/System Hero Card (App Icon, MetroHub title, version, system status).
   - [ ] Category Card Grid: 6 high-density Fluent cards (General, Personalization, Canvas, Shortcuts, Widgets, About).
