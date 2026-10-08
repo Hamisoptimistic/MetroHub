@@ -377,7 +377,7 @@ public static class SearchRanker
                path.IndexOf("\\downloads\\", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
-    private static bool IsNoisePath(string path)
+    public static bool IsNoisePath(string path)
     {
         if (path.Length < 6) return false;
         for (int i = 0; i < NoiseKeywords.Length; i++)

@@ -96,6 +96,8 @@ public sealed class SearchOrchestrator : IDisposable
         _debounceMs = debounceMs;
         // Default Tier 1: Installed Apps
         _tier1Sources.Add(new AppSearchSource());
+        // Default Tier 2: Everything file search
+        _tier2Sources.Add(new EverythingSearchSource());
     }
 
     public SearchOrchestrator(IEnumerable<ISearchSource> tier1Sources, IEnumerable<ISearchSource>? tier2Sources = null, int debounceMs = 150)
@@ -193,50 +195,96 @@ public sealed class SearchOrchestrator : IDisposable
 
             if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
 
-            // 2. Deduplicate, Score & Rank Candidates
-            var deduped = SearchRanker.Deduplicate(candidates);
-            var scoredResults = new List<ScoredResult>(deduped.Count);
-
-            for (int i = 0; i < deduped.Count; i++)
+            // Blueprint Section 5: Progressive display - Publish Tier 1 snapshot (IsFinal = false) if Tier 2 sources present
+            if (_tier2Sources.Count > 0)
             {
-                if (ct.IsCancellationRequested) return;
-                var scored = SearchRanker.ScoreCandidate(deduped[i], query);
-                if (scored.Score > 0)
-                {
-                    scoredResults.Add(scored);
-                }
+                var t1Scored = ScoreAndSort(candidates, query, ct);
+                var t1Groups = BuildSearchGroups(t1Scored, query.MaxPerCategory);
+                var intermediateSnapshot = new SearchSnapshot(
+                    SessionId: sessionId,
+                    Groups: t1Groups,
+                    IsFinal: false,
+                    ElapsedMs: sw.ElapsedMilliseconds,
+                    SourceStates: new Dictionary<string, SourceState>(sourceStates));
+
+                PublishIfCurrent(intermediateSnapshot, sessionId, ct);
             }
 
-            SearchRanker.SortResults(scoredResults);
+            // 2. Tier 2: Everything File Search
+            for (int i = 0; i < _tier2Sources.Count; i++)
+            {
+                if (ct.IsCancellationRequested) return;
+                var source = _tier2Sources[i];
+                sourceStates[source.SourceId] = source.State;
+
+                try
+                {
+                    var batch = await source.SearchAsync(query, ct).ConfigureAwait(false);
+                    if (batch != null && batch.Count > 0)
+                    {
+                        candidates.AddRange(batch);
+                    }
+                }
+                catch (OperationCanceledException) { return; }
+                catch (Exception ex)
+                {
+                    sourceStates[source.SourceId] = new SourceState(SourceStateKind.Degraded, ex.Message);
+                }
+                sourceStates[source.SourceId] = source.State;
+            }
 
             if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
 
-            // 3. Category Grouping (Top N per group, ordered by group's top score)
-            var groups = BuildSearchGroups(scoredResults, query.MaxPerCategory);
+            // 3. Deduplicate, Score & Rank Merged Candidates
+            var finalScored = ScoreAndSort(candidates, query, ct);
+            var finalGroups = BuildSearchGroups(finalScored, query.MaxPerCategory);
 
             sw.Stop();
 
-            var snapshot = new SearchSnapshot(
+            var finalSnapshot = new SearchSnapshot(
                 SessionId: sessionId,
-                Groups: groups,
+                Groups: finalGroups,
                 IsFinal: true,
                 ElapsedMs: sw.ElapsedMilliseconds,
                 SourceStates: sourceStates);
 
-            // 4. Publish only if still current session
-            lock (_sessionLock)
-            {
-                if (sessionId == Interlocked.Read(ref _currentSessionId) && !ct.IsCancellationRequested)
-                {
-                    CurrentSnapshot = snapshot;
-                    SnapshotUpdated?.Invoke(snapshot);
-                }
-            }
+            PublishIfCurrent(finalSnapshot, sessionId, ct);
         }
         catch (OperationCanceledException) { }
         catch (Exception)
         {
             // Fail fast, publish empty degraded snapshot
+        }
+    }
+
+    private static List<ScoredResult> ScoreAndSort(List<Candidate> candidates, SearchQuery query, CancellationToken ct)
+    {
+        var deduped = SearchRanker.Deduplicate(candidates);
+        var scoredResults = new List<ScoredResult>(deduped.Count);
+
+        for (int i = 0; i < deduped.Count; i++)
+        {
+            if (ct.IsCancellationRequested) break;
+            var scored = SearchRanker.ScoreCandidate(deduped[i], query);
+            if (scored.Score > 0)
+            {
+                scoredResults.Add(scored);
+            }
+        }
+
+        SearchRanker.SortResults(scoredResults);
+        return scoredResults;
+    }
+
+    private void PublishIfCurrent(SearchSnapshot snapshot, long sessionId, CancellationToken ct)
+    {
+        lock (_sessionLock)
+        {
+            if (sessionId == Interlocked.Read(ref _currentSessionId) && !ct.IsCancellationRequested)
+            {
+                CurrentSnapshot = snapshot;
+                SnapshotUpdated?.Invoke(snapshot);
+            }
         }
     }
 
@@ -302,6 +350,14 @@ public sealed class SearchOrchestrator : IDisposable
             _debounceTimer?.Dispose();
             _debounceTimer = null;
             CancelActiveSession();
+        }
+
+        foreach (var src in _tier1Sources.Concat(_tier2Sources))
+        {
+            if (src is IDisposable disposable)
+            {
+                try { disposable.Dispose(); } catch { }
+            }
         }
     }
 }

@@ -37,7 +37,7 @@ This document records the architectural decisions, streamlined realization plan,
 | :--- | :--- | :--- | :--- | :--- |
 | **Phase 1** | **Contracts & Pure Ranker** | `SearchContracts.cs`<br>`SearchRanker.cs`<br>`SearchRankerTests.cs` | 1. All 363 existing tests pass.<br>2. 100% pass on new tests.<br>3. 10,000 candidates scored in <8ms (no GC Gen 1/2). | **PASSED & VERIFIED** |
 | **Phase 2** | **Orchestrator & App Search** | `SearchOrchestrator.cs`<br>Wire to `InstalledAppsService` | 1. Debounce 150ms.<br>2. App search response <50ms.<br>3. Zero disk I/O on keystroke. | **PASSED & VERIFIED** |
-| **Phase 3** | **Everything Search Source** | `EverythingSearchSource.cs`<br>Add `Voidtools` package | 1. Dedicated worker thread.<br>2. Graceful degradation when Everything is closed.<br>3. Chaos test passed. | Queued |
+| **Phase 3** | **Everything Search Source** | `EverythingSearchSource.cs`<br>Add `Voidtools` package | 1. Dedicated worker thread.<br>2. Graceful degradation when Everything is closed.<br>3. Chaos test passed. | **PASSED & VERIFIED** |
 | **Phase 4** | **Drawer UI & Navigation** | Update `AllAppsDrawerControl.xaml/.cs` | 1. UI thread work <8ms per key.<br>2. Progressive display with stable keys (no flicker).<br>3. Full arrow/Enter navigation. | Queued |
 | **Phase 5** | **Usage Learning & History** | Frequency & recency tracking in `StorageService` | 1. Frequently opened apps/files boosted.<br>2. Batched writes to disk. | Queued |
 | **Phase 6** | **Hardening & Verification** | Soak & leak tests, edge case audit | 1. Memory growth <5% after soak.<br>2. Zero leaked token sources or event handlers. | Queued |
@@ -63,3 +63,15 @@ This document records the architectural decisions, streamlined realization plan,
 * *Disk I/O During Search*: 0 disk operations (in-memory cache)
 * *Cancellation & Cleanup*: Previous CTS cancelled and disposed cleanly upon new query arrival.
 * *Status*: **GATE 2 PASSED**
+
+### Phase 3 Gate Measurements
+* *Date*: 2026-10-08
+* *Total Tests*: 404 passed / 0 failed (387 baseline + 17 new)
+* *Phase 3 Unit Tests*: 17 / 17 passed (100%)
+* *Worker Thread & Queue*: Single dedicated background thread (`MetroHub-EverythingWorker`), capacity-1 bounded queue (latest-wins drops superseded work).
+* *Encapsulation*: `Voidtools.Everything.Net` (v0.1.3) types are 100% private to `EverythingSearchSource.cs`. No package types leaked.
+* *Graceful Degradation*: Probed and verified `Unavailable` state with exponential backoff (1s -> 30s) when Everything service is closed; `Degraded` on temporary error/timeout, auto-recovery to `Ready` on success.
+* *Hard Timeout*: Hard 400ms timeout verified under simulated hang without blocking UI or worker thread.
+* *Noise Filtering*: Verified build output (`\bin\`, `\obj\`), dependency (`\node_modules\`), and system files are excluded.
+* *Chaos Test*: Concurrent queries across multiple threads with randomized cancellations passed with 0 unhandled exceptions and 0 deadlocks.
+* *Status*: **GATE 3 PASSED**
