@@ -13,6 +13,9 @@
              ClipToBounds="False"
              Visibility="Collapsed"
              Background="Transparent"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType"
+             UseLayoutRounding="True"
 >
 
     <UserControl.RenderTransform>
@@ -55,8 +58,8 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
-            <Setter Property="Margin" Value="8,1,8,1" />
-            <Setter Property="Padding" Value="7,4" />
+            <Setter Property="Margin" Value="12,1,12,1" />
+            <Setter Property="Padding" Value="8,5" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
@@ -140,7 +143,7 @@
             <StackPanel Margin="0">
                 <!-- Category Section Header: completely outside the row card with generous typography -->
                 <Border Visibility="{Binding CategoryHeaderVisibility}"
-                        Margin="14,14,14,6"
+                        Margin="12,14,12,6"
                         Padding="0"
                         Focusable="False"
                         Background="Transparent"
@@ -154,8 +157,8 @@
 
                 <!-- Search Result Item Row Card: isolated selection highlight, hover effect, and accent pill -->
                 <Border x:Name="RowCard"
-                        Margin="8,1,8,1"
-                        Padding="7,5"
+                        Margin="12,1,12,1"
+                        Padding="8,5"
                         CornerRadius="{DynamicResource ControlCornerRadius}"
                         Background="Transparent"
                         SnapsToDevicePixels="True"
@@ -176,10 +179,10 @@
                                    RadiusY="1.5"
                                    Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
                                    Visibility="Collapsed"
-                                   Margin="-4,0,0,0" />
+                                   Margin="-6,0,0,0" />
 
                         <!-- Search Result Item Content -->
-                        <Grid Margin="4,0,0,0">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="28" />
                                 <ColumnDefinition Width="*" />
@@ -204,7 +207,7 @@
                             </Grid>
 
                             <!-- Display Name and Subtitle (Path/Details) -->
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,4,0">
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,8,0">
                                 <TextBlock Text="{Binding DisplayName}"
                                            FontSize="{DynamicResource TypeBodyFontSize}"
                                            FontWeight="{DynamicResource TypeBodyFontWeight}"
@@ -214,6 +217,7 @@
                                 <TextBlock Text="{Binding Subtitle}"
                                            FontSize="12"
                                            Foreground="{DynamicResource TextMutedBrush}"
+                                           Opacity="0.6"
                                            TextWrapping="WrapWithOverflow"
                                            TextTrimming="CharacterEllipsis"
                                            MaxHeight="36"
@@ -279,13 +283,13 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Grid x:Name="DrawerHeaderGrid" Grid.Row="0" Margin="16,14,16,6">
+            <Grid x:Name="DrawerHeaderGrid" Grid.Row="0" Margin="12,14,12,6">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <ui:SymbolIcon Symbol="AppsListDetail24" FontSize="18" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0" VerticalAlignment="Center" />
                     <TextBlock Text="All apps"
                                FontSize="{DynamicResource TypeHeaderFontSize}"
                                FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                               FontFamily="{DynamicResource AppDisplayFontFamily}"
+                               FontFamily="{DynamicResource AppFontFamily}"
                                Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center" />
                 </StackPanel>
@@ -317,7 +321,7 @@
 
             <Border Grid.Row="1"
                     x:Name="SearchBorder"
-                    Margin="14,4,14,12"
+                    Margin="12,4,12,12"
                     Height="34"
                     CornerRadius="{DynamicResource ControlCornerRadius}"
                     Background="{DynamicResource WidgetDividerBrush}"
@@ -338,13 +342,13 @@
                                FontWeight="{DynamicResource TypeBodyFontWeight}"
                                Foreground="{DynamicResource TextSubtleBrush}"
                                VerticalAlignment="Center"
-                               Margin="34,0,28,0"
+                               Margin="32,0,28,0"
                                IsHitTestVisible="False" />
 
                     <TextBox x:Name="SearchBox"
                              Style="{StaticResource CleanSearchTextBoxStyle}"
                              VerticalAlignment="Center"
-                             Margin="34,0,28,0"
+                             Margin="32,0,28,0"
                              TextChanged="OnSearchBoxTextChanged"
                              GotFocus="OnSearchBoxGotFocus"
                              LostFocus="OnSearchBoxLostFocus"
@@ -380,11 +384,11 @@
                         <StackPanel x:Name="RecentSuggestionsPanel"
                                     Margin="0,0,0,10"
                                     Visibility="Collapsed">
-                            <Border Margin="14,8,14,4">
+                            <Border Margin="23,8,0,4">
                                 <TextBlock Text="Recent"
-                                           FontSize="14"
-                                           FontWeight="SemiBold"
-                                           FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                           FontSize="18"
+                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                           FontFamily="{DynamicResource AppFontFamily}"
                                            Foreground="{DynamicResource TextSubtleBrush}" />
                             </Border>
 
@@ -407,13 +411,13 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel Margin="0,0,0,6">
-                                        <!-- Group Letter Header -->
+                                        <!-- Group Letter Header: Left-Aligned Directly to App Icon Edge (X = 23px) -->
                                         <TextBlock Text="{Binding Header}"
-                                                   FontSize="{DynamicResource TypeSubtitleFontSize}"
-                                                   FontWeight="{DynamicResource TypeSubtitleFontWeight}"
-                                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                                   FontSize="18"
+                                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                                   FontFamily="{DynamicResource AppFontFamily}"
                                                    Foreground="{DynamicResource TextSubtleBrush}"
-                                                   Margin="16,12,0,2" />
+                                                   Margin="23,12,0,4" />
 
                                         <!-- Apps in this letter group -->
                                         <ItemsControl ItemsSource="{Binding Items}">
