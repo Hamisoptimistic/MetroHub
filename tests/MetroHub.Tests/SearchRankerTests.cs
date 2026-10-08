@@ -215,7 +215,11 @@ public class SearchRankerTests
 
         var query = SearchRanker.ParseQuery("Worker");
 
-        // Warm up JIT
+        // Warm up JIT and candidate properties
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            _ = candidates[i].NormalizedDisplayName;
+        }
         for (int i = 0; i < 500; i++)
         {
             SearchRanker.ScoreCandidate(candidates[i], query);

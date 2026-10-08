@@ -1266,6 +1266,19 @@ public sealed class StorageService
 
             try
             {
+                // Prune dead records (decayed to 0 and older than 60 days) if cache exceeds 500 entries
+                if (_searchUsageCache.Count > 500)
+                {
+                    var now = DateTimeOffset.UtcNow;
+                    foreach (var (k, rec) in _searchUsageCache)
+                    {
+                        if ((now - rec.LastOpened).TotalDays > 60 && GetEffectiveOpenCount(k, now) == 0)
+                        {
+                            _searchUsageCache.TryRemove(k, out _);
+                        }
+                    }
+                }
+
                 var snapshot = new Dictionary<string, SearchUsageRecord>(_searchUsageCache, StringComparer.OrdinalIgnoreCase);
                 string json = JsonSerializer.Serialize(snapshot, JsonOptions);
                 SaveAtomic(AppPaths.SearchHistoryPath, AppPaths.SearchHistoryBakPath, json);
