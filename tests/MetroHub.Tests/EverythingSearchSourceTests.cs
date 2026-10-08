@@ -101,6 +101,36 @@ public sealed class EverythingSearchSourceTests
         Assert.Contains(@"!node_modules\", text);
     }
 
+    [Fact]
+    public void BuildSearchText_SpecialCharacters_QuotesOperatorTokensForLiteralSearch()
+    {
+        // Dash: prevents Everything from treating - as boolean NOT
+        var dashQuery = SearchRanker.ParseQuery("my-file", 1);
+        string dashText = EverythingSearchSource.BuildSearchText(dashQuery);
+        Assert.Contains("\"my-file\"", dashText);
+
+        // Comma
+        var commaQuery = SearchRanker.ParseQuery("report,v1", 1);
+        string commaText = EverythingSearchSource.BuildSearchText(commaQuery);
+        Assert.Contains("\"report,v1\"", commaText);
+
+        // Dot
+        var dotQuery = SearchRanker.ParseQuery("index.html", 1);
+        string dotText = EverythingSearchSource.BuildSearchText(dotQuery);
+        Assert.Contains("\"index.html\"", dotText);
+
+        // Backtick
+        var backtickQuery = SearchRanker.ParseQuery("code`test", 1);
+        string backtickText = EverythingSearchSource.BuildSearchText(backtickQuery);
+        Assert.Contains("\"code`test\"", backtickText);
+
+        // Standard letters should NOT have quotes
+        var plainQuery = SearchRanker.ParseQuery("brave browser", 1);
+        string plainText = EverythingSearchSource.BuildSearchText(plainQuery);
+        Assert.Contains("brave browser", plainText);
+        Assert.DoesNotContain("\"brave\"", plainText);
+    }
+
     [Theory]
     [InlineData(SearchCategory.Folders, "folder:")]
     [InlineData(SearchCategory.Documents, "ext:doc;docx;pdf")]

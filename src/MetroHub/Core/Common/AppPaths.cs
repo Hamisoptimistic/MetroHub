@@ -83,6 +83,15 @@ public static class AppPaths
         Path.Combine(ConfigDir, "quotes.json"),
         Path.Combine(AppDataDir, "quotes.json"));
 
+    // Search Usage History
+    public static string SearchHistoryPath => ResolveFilePath(
+        Path.Combine(ConfigDir, "search_history.json"),
+        Path.Combine(AppDataDir, "search_history.json"));
+
+    public static string SearchHistoryBakPath => ResolveFilePath(
+        Path.Combine(BackupsDir, "search_history.json.bak"),
+        Path.Combine(AppDataDir, "search_history.json.bak"));
+
     // Workspaces
     /// <summary>Directory storing per-workspace layouts and metadata: %LocalAppData%\MetroHub\workspaces.</summary>
     public static string WorkspacesDir => Path.Combine(AppDataDir, "workspaces");

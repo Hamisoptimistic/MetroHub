@@ -1100,5 +1100,207 @@ public sealed class StorageService
             }
         }
     }
+
+    // ────────────────────────────────────────────────────────
+    // Universal Search Usage History (Phase 5)
+    // ────────────────────────────────────────────────────────
+
+    private static readonly ConcurrentDictionary<string, SearchUsageRecord> _searchUsageCache = new(StringComparer.OrdinalIgnoreCase);
+    private static bool _searchUsageLoaded = false;
+    private static readonly object _searchUsageLock = new();
+    private static Timer? _searchUsageFlushTimer;
+
+    public static void RecordSearchLaunch(string key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return;
+
+        EnsureSearchUsageLoaded();
+
+        _searchUsageCache.AddOrUpdate(
+            key,
+            _ => new SearchUsageRecord { OpenCount = 1, LastOpened = DateTimeOffset.UtcNow },
+            (_, existing) =>
+            {
+                existing.OpenCount++;
+                existing.LastOpened = DateTimeOffset.UtcNow;
+                return existing;
+            });
+
+        ScheduleSearchUsageFlush();
+    }
+
+    public static int GetEffectiveOpenCount(string key, DateTimeOffset? now = null)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return 0;
+
+        EnsureSearchUsageLoaded();
+
+        if (_searchUsageCache.TryGetValue(key, out var record) && record.OpenCount > 0)
+        {
+            var refTime = now ?? DateTimeOffset.UtcNow;
+            double days = (refTime - record.LastOpened).TotalDays;
+            if (days <= 0) return record.OpenCount;
+
+            // Half-life decay: 30 days
+            double decayed = record.OpenCount * Math.Pow(0.5, days / 30.0);
+            return (int)Math.Max(0, Math.Round(decayed));
+        }
+
+        return 0;
+    }
+
+    public static IReadOnlyDictionary<string, int> GetAllEffectiveOpenCounts(DateTimeOffset? now = null)
+    {
+        EnsureSearchUsageLoaded();
+
+        var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var refTime = now ?? DateTimeOffset.UtcNow;
+
+        foreach (var (k, record) in _searchUsageCache)
+        {
+            if (record.OpenCount > 0)
+            {
+                double days = (refTime - record.LastOpened).TotalDays;
+                double decayed = days <= 0
+                    ? record.OpenCount
+                    : record.OpenCount * Math.Pow(0.5, days / 30.0);
+
+                int count = (int)Math.Max(0, Math.Round(decayed));
+                if (count > 0)
+                {
+                    result[k] = count;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Returns the top launched search keys ordered by decayed effective launch count and recency.
+    /// </summary>
+    public static IReadOnlyList<(string Key, int OpenCount, DateTimeOffset LastOpened)> GetTopRecentLaunches(int maxCount = 15, DateTimeOffset? now = null)
+    {
+        EnsureSearchUsageLoaded();
+
+        if (maxCount <= 0 || _searchUsageCache.IsEmpty)
+        {
+            return Array.Empty<(string Key, int OpenCount, DateTimeOffset LastOpened)>();
+        }
+
+        var refTime = now ?? DateTimeOffset.UtcNow;
+        var list = new List<(string Key, int OpenCount, DateTimeOffset LastOpened, double EffectiveCount)>(_searchUsageCache.Count);
+
+        foreach (var (k, record) in _searchUsageCache)
+        {
+            if (record.OpenCount > 0)
+            {
+                double days = (refTime - record.LastOpened).TotalDays;
+                double decayed = days <= 0
+                    ? record.OpenCount
+                    : record.OpenCount * Math.Pow(0.5, days / 30.0);
+
+                list.Add((k, record.OpenCount, record.LastOpened, decayed));
+            }
+        }
+
+        return list
+            .OrderByDescending(x => x.EffectiveCount)
+            .ThenByDescending(x => x.LastOpened)
+            .Take(maxCount)
+            .Select(x => (x.Key, x.OpenCount, x.LastOpened))
+            .ToList();
+    }
+
+    private static void EnsureSearchUsageLoaded()
+    {
+        if (_searchUsageLoaded) return;
+
+        lock (_searchUsageLock)
+        {
+            if (_searchUsageLoaded) return;
+
+            try
+            {
+                string path = AppPaths.SearchHistoryPath;
+                if (File.Exists(path))
+                {
+                    string json = File.ReadAllText(path, Encoding.UTF8);
+                    var dict = JsonSerializer.Deserialize<Dictionary<string, SearchUsageRecord>>(json, JsonOptions);
+                    if (dict != null)
+                    {
+                        foreach (var kvp in dict)
+                        {
+                            _searchUsageCache[kvp.Key] = kvp.Value;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Safe.Log("StorageService.LoadSearchUsage", ex);
+            }
+            finally
+            {
+                _searchUsageLoaded = true;
+            }
+        }
+    }
+
+    private static void ScheduleSearchUsageFlush()
+    {
+        lock (_searchUsageLock)
+        {
+            _searchUsageFlushTimer?.Dispose();
+            // Batched write: flush 1 second after search launch
+            _searchUsageFlushTimer = new Timer(_ => FlushSearchUsageSync(), null, 1000, Timeout.Infinite);
+        }
+    }
+
+    public static void FlushSearchUsageSync()
+    {
+        lock (_searchUsageLock)
+        {
+            _searchUsageFlushTimer?.Dispose();
+            _searchUsageFlushTimer = null;
+
+            try
+            {
+                var snapshot = new Dictionary<string, SearchUsageRecord>(_searchUsageCache, StringComparer.OrdinalIgnoreCase);
+                string json = JsonSerializer.Serialize(snapshot, JsonOptions);
+                SaveAtomic(AppPaths.SearchHistoryPath, AppPaths.SearchHistoryBakPath, json);
+            }
+            catch (Exception ex)
+            {
+                Safe.Log("StorageService.FlushSearchUsage", ex);
+            }
+        }
+    }
+
+    public static void ResetSearchUsageForTesting(bool deleteFile = false)
+    {
+        lock (_searchUsageLock)
+        {
+            _searchUsageFlushTimer?.Dispose();
+            _searchUsageFlushTimer = null;
+            _searchUsageCache.Clear();
+            _searchUsageLoaded = false;
+
+            if (deleteFile)
+            {
+                Safe.Try(() =>
+                {
+                    if (File.Exists(AppPaths.SearchHistoryPath)) File.Delete(AppPaths.SearchHistoryPath);
+                    if (File.Exists(AppPaths.SearchHistoryBakPath)) File.Delete(AppPaths.SearchHistoryBakPath);
+                }, context: "StorageService.ResetSearchUsageForTesting");
+            }
+        }
+    }
+}
+
+public sealed class SearchUsageRecord
+{
+    public int OpenCount { get; set; }
+    public DateTimeOffset LastOpened { get; set; }
 }
 

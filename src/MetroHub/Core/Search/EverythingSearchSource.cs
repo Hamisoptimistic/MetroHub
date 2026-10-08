@@ -341,8 +341,11 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
             return string.Empty;
         }
 
-        var sb = new StringBuilder(baseText.Length + 64);
-        sb.Append(baseText);
+        // Quote terms that contain operators or punctuation so Everything treats them as literal characters
+        string formattedSearchTerms = FormatTermsForEverything(baseText);
+
+        var sb = new StringBuilder(formattedSearchTerms.Length + 64);
+        sb.Append(formattedSearchTerms);
 
         // 3. Category filters
         if (query.Mode == SearchMode.Folders || query.CategoryFilter == SearchCategory.Folders)
@@ -370,6 +373,50 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
         sb.Append(@" !node_modules\ !bin\ !obj\ !.git\");
 
         return sb.ToString();
+    }
+
+    internal static string FormatTermsForEverything(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+
+        var tokens = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var sb = new StringBuilder();
+
+        for (int i = 0; i < tokens.Length; i++)
+        {
+            string token = tokens[i].Replace("\"", "");
+            if (token.Length == 0) continue;
+
+            if (sb.Length > 0) sb.Append(' ');
+
+            // If token has punctuation or operator characters, quote it for literal search
+            if (HasEverythingOperatorsOrPunctuation(token))
+            {
+                sb.Append('"').Append(token).Append('"');
+            }
+            else
+            {
+                sb.Append(token);
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private static bool HasEverythingOperatorsOrPunctuation(string s)
+    {
+        for (int i = 0; i < s.Length; i++)
+        {
+            char c = s[i];
+            if (c == '-' || c == ',' || c == '.' || c == '`' || c == '!' || c == '|' ||
+                c == '&' || c == ':' || c == '<' || c == '>' || c == '(' || c == ')' ||
+                c == '*' || c == '?' || c == '^' || c == '$' || c == '#' || c == '=' ||
+                c == '+' || c == '~')
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     internal static string SanitizeSafeQuery(string text)

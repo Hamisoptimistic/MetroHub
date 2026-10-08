@@ -97,7 +97,14 @@ public sealed record Candidate(
     DateTimeOffset? Modified = null,
     long? Size = null,
     bool IsFolder = false,
-    object? Tag = null);
+    object? Tag = null)
+{
+    private string? _normalizedDisplayName;
+    private string? _normalizedPath;
+
+    public string NormalizedDisplayName => _normalizedDisplayName ??= SearchRanker.NormalizeText(DisplayName);
+    public string NormalizedPath => _normalizedPath ??= SearchRanker.NormalizeText(FullPathOrKey);
+}
 
 /// <summary>
 /// Ranked candidate with score, match quality, and optional debug reasons.

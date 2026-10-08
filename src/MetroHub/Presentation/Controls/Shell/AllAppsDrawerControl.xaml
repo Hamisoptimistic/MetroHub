@@ -65,59 +65,21 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Modern Fluent Search Result Item Style with Selection & Hover Focus -->
+        <!-- Modern Fluent Search Result Item Style: Zero Padding, Completely Transparent Container -->
         <Style x:Key="FluentSearchListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="BorderBrush" Value="Transparent" />
-            <Setter Property="Margin" Value="8,1,8,1" />
-            <Setter Property="Padding" Value="7,4" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="VerticalContentAlignment" Value="Stretch" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ListBoxItem}">
-                        <Border x:Name="Bd"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{DynamicResource ControlCornerRadius}"
-                                Padding="{TemplateBinding Padding}"
-                                >
-                            <Grid>
-                                <Rectangle x:Name="AccentPill"
-                                           Width="3"
-                                           Height="16"
-                                           HorizontalAlignment="Left"
-                                           VerticalAlignment="Center"
-                                           RadiusX="1.5"
-                                           RadiusY="1.5"
-                                           Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                           Visibility="Collapsed"
-                                           Margin="-5,0,0,0" />
-                                <ContentPresenter />
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
-                                <Setter TargetName="AccentPill" Property="Visibility" Value="Visible" />
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
-                                <Setter TargetName="AccentPill" Property="Visibility" Value="Visible" />
-                            </Trigger>
-                            <MultiTrigger>
-                                <MultiTrigger.Conditions>
-                                    <Condition Property="IsSelected" Value="True" />
-                                    <Condition Property="IsMouseOver" Value="True" />
-                                </MultiTrigger.Conditions>
-                                <Setter TargetName="Bd" Property="Background" Value="#25FFFFFF" />
-                            </MultiTrigger>
-                        </ControlTemplate.Triggers>
+                        <ContentPresenter SnapsToDevicePixels="True" />
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -152,6 +114,137 @@
                 </MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
+
+        <!-- Modern File/Folder Context Menu for Universal Search Results -->
+        <ContextMenu x:Key="FileItemContextMenu" PreviewKeyDown="OnAppContextMenuPreviewKeyDown">
+            <MenuItem Header="Open" Click="OnFileContextMenuOpenClick">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="ArrowRight24" FontSize="18" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Open file location" Click="OnFileContextMenuOpenLocationClick">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="FolderOpen24" FontSize="18" />
+                </MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="Copy path" Click="OnFileContextMenuCopyPathClick">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="Copy24" FontSize="18" />
+                </MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+
+        <!-- Shared Search and Recent Suggestion Item Row Template -->
+        <DataTemplate x:Key="SearchItemRowTemplate">
+            <StackPanel Margin="0">
+                <!-- Category Section Header: completely outside the row card with generous typography -->
+                <Border Visibility="{Binding CategoryHeaderVisibility}"
+                        Margin="14,14,14,6"
+                        Padding="0"
+                        Focusable="False"
+                        Background="Transparent"
+                        PreviewMouseLeftButtonDown="OnCategoryHeaderPreviewMouseDown">
+                    <TextBlock Text="{Binding CategoryHeader}"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               FontFamily="{DynamicResource AppDisplayFontFamily}"
+                               Foreground="{DynamicResource TextSubtleBrush}" />
+                </Border>
+
+                <!-- Search Result Item Row Card: isolated selection highlight, hover effect, and accent pill -->
+                <Border x:Name="RowCard"
+                        Margin="8,1,8,1"
+                        Padding="7,5"
+                        CornerRadius="{DynamicResource ControlCornerRadius}"
+                        Background="Transparent"
+                        SnapsToDevicePixels="True"
+                        ToolTip="{Binding FullPath}"
+                        Tag="{Binding}"
+                        PreviewMouseLeftButtonDown="OnSearchRowPreviewMouseLeftButtonDown"
+                        PreviewMouseMove="OnSearchRowPreviewMouseMove"
+                        MouseLeftButtonUp="OnSearchRowMouseLeftButtonUp"
+                        ContextMenuOpening="OnSearchRowContextMenuOpening">
+                    <Grid>
+                        <!-- Selection Accent Pill: strictly aligned to the row card -->
+                        <Rectangle x:Name="AccentPill"
+                                   Width="3"
+                                   Height="16"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Center"
+                                   RadiusX="1.5"
+                                   RadiusY="1.5"
+                                   Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                   Visibility="Collapsed"
+                                   Margin="-4,0,0,0" />
+
+                        <!-- Search Result Item Content -->
+                        <Grid Margin="4,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Left Icon or Category Symbol -->
+                            <Grid Grid.Column="0" Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Image Source="{Binding Icon, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                                       Width="22"
+                                       Height="22"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Visibility="{Binding CustomIconVisibility}"
+                                       RenderOptions.BitmapScalingMode="HighQuality" />
+
+                                <ui:SymbolIcon Symbol="{Binding Symbol}"
+                                               FontSize="16"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Visibility="{Binding SymbolVisibility}" />
+                            </Grid>
+
+                            <!-- Display Name and Subtitle (Path/Details) -->
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,4,0">
+                                <TextBlock Text="{Binding DisplayName}"
+                                           FontSize="{DynamicResource TypeBodyFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           TextTrimming="CharacterEllipsis" />
+
+                                <TextBlock Text="{Binding Subtitle}"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           TextWrapping="WrapWithOverflow"
+                                           TextTrimming="CharacterEllipsis"
+                                           MaxHeight="36"
+                                           Margin="0,2,0,0"
+                                           Visibility="{Binding SubtitleVisibility}" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </StackPanel>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding ElementName=RowCard, Path=IsMouseOver}" Value="True">
+                    <Setter TargetName="RowCard" Property="Background" Value="{DynamicResource FluentHoverBrush}" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
+                    <Setter TargetName="RowCard" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
+                    <Setter TargetName="AccentPill" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsKeyboardFocused}" Value="True">
+                    <Setter TargetName="RowCard" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
+                    <Setter TargetName="AccentPill" Property="Visibility" Value="Visible" />
+                </DataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True" />
+                        <Condition Binding="{Binding ElementName=RowCard, Path=IsMouseOver}" Value="True" />
+                    </MultiDataTrigger.Conditions>
+                    <Setter TargetName="RowCard" Property="Background" Value="#25FFFFFF" />
+                </MultiDataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid>
@@ -282,60 +375,89 @@
                               Focusable="False"
                               Background="Transparent"
                               Padding="0,2,14,16">
-                    <ItemsControl x:Name="GroupedItemsControl">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Margin="0,0,0,6">
-                                    <!-- Group Letter Header -->
-                                    <TextBlock Text="{Binding Header}"
-                                               FontSize="{DynamicResource TypeSubtitleFontSize}"
-                                               FontWeight="{DynamicResource TypeSubtitleFontWeight}"
-                                               FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                               Foreground="{DynamicResource TextSubtleBrush}"
-                                               Margin="16,12,0,2" />
+                    <StackPanel>
+                        <!-- Mode 1A: Zero-State Suggestions (Recent Apps & Files on Empty Search, Up to 15 Items) -->
+                        <StackPanel x:Name="RecentSuggestionsPanel"
+                                    Margin="0,0,0,10"
+                                    Visibility="Collapsed">
+                            <Border Margin="14,8,14,4">
+                                <TextBlock Text="Recent"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                           Foreground="{DynamicResource TextSubtleBrush}" />
+                            </Border>
 
-                                    <!-- Apps in this letter group -->
-                                    <ItemsControl ItemsSource="{Binding Items}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border Style="{StaticResource AppRowContainerStyle}"
-                                                        Tag="{Binding}"
-                                                        PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
-                                                        PreviewMouseMove="OnAppRowPreviewMouseMove"
-                                                        MouseLeftButtonUp="OnAppRowMouseLeftButtonUp"
-                                                        ContextMenu="{StaticResource AppItemContextMenu}"
-                                                        ContextMenuOpening="OnAppContextMenuOpening">
-                                                    <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="28" />
-                                                            <ColumnDefinition Width="*" />
-                                                        </Grid.ColumnDefinitions>
+                            <ListBox x:Name="RecentSuggestionsListBox"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Padding="0"
+                                     FocusVisualStyle="{x:Null}"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                     ItemContainerStyle="{StaticResource FluentSearchListBoxItemStyle}"
+                                     ItemTemplate="{StaticResource SearchItemRowTemplate}"
+                                     KeyDown="OnRecentSuggestionsKeyDown"
+                                     PreviewKeyDown="OnRecentSuggestionsPreviewKeyDown"
+                                     PreviewTextInput="OnRecentSuggestionsPreviewTextInput" />
+                        </StackPanel>
 
-                                                        <Image Grid.Column="0"
-                                                               Source="{Binding Icon, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
-                                                               Width="22"
-                                                               Height="22"
-                                                               HorizontalAlignment="Center"
-                                                               VerticalAlignment="Center"
-                                                               RenderOptions.BitmapScalingMode="HighQuality" />
+                        <!-- Mode 1B: Alphabetical Grouped Apps -->
+                        <ItemsControl x:Name="GroupedItemsControl">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,0,0,6">
+                                        <!-- Group Letter Header -->
+                                        <TextBlock Text="{Binding Header}"
+                                                   FontSize="{DynamicResource TypeSubtitleFontSize}"
+                                                   FontWeight="{DynamicResource TypeSubtitleFontWeight}"
+                                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                                   Foreground="{DynamicResource TextSubtleBrush}"
+                                                   Margin="16,12,0,2" />
 
-                                                        <TextBlock Grid.Column="1"
-                                                                   Text="{Binding Name}"
-                                                                   FontSize="{DynamicResource TypeBodyFontSize}"
-                                                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                        <!-- Apps in this letter group -->
+                                        <ItemsControl ItemsSource="{Binding Items}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Style="{StaticResource AppRowContainerStyle}"
+                                                            Tag="{Binding}"
+                                                            PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
+                                                            PreviewMouseMove="OnAppRowPreviewMouseMove"
+                                                            MouseLeftButtonUp="OnAppRowMouseLeftButtonUp"
+                                                            ContextMenu="{StaticResource AppItemContextMenu}"
+                                                            ContextMenuOpening="OnAppContextMenuOpening">
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="28" />
+                                                                <ColumnDefinition Width="*" />
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <Image Grid.Column="0"
+                                                                   Source="{Binding Icon, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                                                                   Width="22"
+                                                                   Height="22"
+                                                                   HorizontalAlignment="Center"
                                                                    VerticalAlignment="Center"
-                                                                   Margin="8,0,8,0"
-                                                                   TextTrimming="CharacterEllipsis" />
-                                                    </Grid>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                                                                   RenderOptions.BitmapScalingMode="HighQuality" />
+
+                                                            <TextBlock Grid.Column="1"
+                                                                       Text="{Binding Name}"
+                                                                       FontSize="{DynamicResource TypeBodyFontSize}"
+                                                                       FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                       VerticalAlignment="Center"
+                                                                       Margin="8,0,8,0"
+                                                                       TextTrimming="CharacterEllipsis" />
+                                                        </Grid>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
                 </ScrollViewer>
 
                 <!-- Mode 2: Search Results Flat List with Breathing Room -->
@@ -365,44 +487,10 @@
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  ScrollViewer.VerticalScrollBarVisibility="Disabled"
                                  ItemContainerStyle="{StaticResource FluentSearchListBoxItemStyle}"
+                                 ItemTemplate="{StaticResource SearchItemRowTemplate}"
                                  KeyDown="OnSearchResultsKeyDown"
                                  PreviewKeyDown="OnSearchResultsPreviewKeyDown"
-                                 PreviewTextInput="OnSearchResultsPreviewTextInput">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Tag="{Binding}"
-                                          Background="Transparent"
-                                          PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
-                                          PreviewMouseMove="OnAppRowPreviewMouseMove"
-                                          MouseLeftButtonUp="OnAppRowMouseLeftButtonUp"
-                                          ContextMenu="{StaticResource AppItemContextMenu}"
-                                          ContextMenuOpening="OnAppContextMenuOpening">
-
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="28" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <Image Grid.Column="0"
-                                               Source="{Binding Icon, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
-                                               Width="22"
-                                               Height="22"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               RenderOptions.BitmapScalingMode="HighQuality" />
-
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding Name}"
-                                                   FontSize="{DynamicResource TypeBodyFontSize}"
-                                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                                   VerticalAlignment="Center"
-                                                   Margin="8,0,8,0"
-                                                   TextTrimming="CharacterEllipsis" />
-                                    </Grid>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                                 PreviewTextInput="OnSearchResultsPreviewTextInput" />
                     </StackPanel>
                 </ScrollViewer>
             </Grid>

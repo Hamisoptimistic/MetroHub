@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -260,12 +261,15 @@ public sealed class SearchOrchestrator : IDisposable
     private static List<ScoredResult> ScoreAndSort(List<Candidate> candidates, SearchQuery query, CancellationToken ct)
     {
         var deduped = SearchRanker.Deduplicate(candidates);
+        var usageCounts = StorageService.GetAllEffectiveOpenCounts();
         var scoredResults = new List<ScoredResult>(deduped.Count);
 
         for (int i = 0; i < deduped.Count; i++)
         {
             if (ct.IsCancellationRequested) break;
-            var scored = SearchRanker.ScoreCandidate(deduped[i], query);
+            var c = deduped[i];
+            usageCounts.TryGetValue(c.Id, out int openCount);
+            var scored = SearchRanker.ScoreCandidate(c, query, openCount: openCount);
             if (scored.Score > 0)
             {
                 scoredResults.Add(scored);
@@ -288,7 +292,7 @@ public sealed class SearchOrchestrator : IDisposable
         }
     }
 
-    private static IReadOnlyList<SearchGroup> BuildSearchGroups(List<ScoredResult> results, int maxPerGroup)
+    internal static IReadOnlyList<SearchGroup> BuildSearchGroups(List<ScoredResult> results, int maxPerGroup)
     {
         if (results.Count == 0) return Array.Empty<SearchGroup>();
 
@@ -324,9 +328,135 @@ public sealed class SearchOrchestrator : IDisposable
             groups.Add(new SearchGroup(cat, title, topItems, items.Count, topScore));
         }
 
-        // Blueprint 7.3: Order groups by their top score descending
-        groups.Sort((a, b) => b.TopScore.CompareTo(a.TopScore));
+        // Apps always comes first if present. Other categories ordered by TopScore descending.
+        groups.Sort((a, b) =>
+        {
+            if (a.Category == SearchCategory.Apps && b.Category != SearchCategory.Apps) return -1;
+            if (b.Category == SearchCategory.Apps && a.Category != SearchCategory.Apps) return 1;
+
+            int scoreComp = b.TopScore.CompareTo(a.TopScore);
+            if (scoreComp != 0) return scoreComp;
+
+            return a.Category.CompareTo(b.Category);
+        });
         return groups;
+    }
+
+    /// <summary>
+    /// Resolves up to maxCount zero-state suggestions (recent apps and recently launched files/folders)
+    /// based on frequency and recency from StorageService.
+    /// </summary>
+    public static IReadOnlyList<Candidate> GetZeroStateSuggestions(
+        IEnumerable<CatalogItemModel>? apps = null,
+        int maxCount = 15,
+        DateTimeOffset? now = null,
+        Func<string, bool>? fileExists = null,
+        Func<string, bool>? directoryExists = null,
+        bool fallbackToInstalledApps = false)
+    {
+        if (maxCount <= 0) return Array.Empty<Candidate>();
+
+        var topLaunches = StorageService.GetTopRecentLaunches(maxCount, now);
+        var appList = apps as IList<CatalogItemModel> ?? apps?.ToList() ?? (IList<CatalogItemModel>)Array.Empty<CatalogItemModel>();
+        var candidates = new List<Candidate>(maxCount);
+
+        if (topLaunches != null && topLaunches.Count > 0)
+        {
+            var isDir = directoryExists ?? Directory.Exists;
+            var isFile = fileExists ?? File.Exists;
+
+            for (int t = 0; t < topLaunches.Count; t++)
+            {
+                if (candidates.Count >= maxCount) break;
+                var (key, _, _) = topLaunches[t];
+                if (string.IsNullOrWhiteSpace(key)) continue;
+
+                // 1. Resolve against installed apps
+                CatalogItemModel? matchingApp = null;
+                for (int i = 0; i < appList.Count; i++)
+                {
+                    var a = appList[i];
+                    if (string.Equals(a.TargetPath, key, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(a.Name, key, StringComparison.OrdinalIgnoreCase))
+                    {
+                        matchingApp = a;
+                        break;
+                    }
+                }
+
+                if (matchingApp != null)
+                {
+                    candidates.Add(new Candidate(
+                        Id: matchingApp.TargetPath ?? matchingApp.Name,
+                        DisplayName: matchingApp.Name,
+                        FullPathOrKey: matchingApp.TargetPath ?? string.Empty,
+                        Category: SearchCategory.Apps,
+                        SourceId: "recent_apps",
+                        Modified: null,
+                        Size: null,
+                        IsFolder: false,
+                        Tag: matchingApp));
+                    continue;
+                }
+
+                // 2. Resolve against file system (or custom predicate)
+                try
+                {
+                    bool folder = isDir(key);
+                    bool file = !folder && isFile(key);
+
+                    if (folder || file)
+                    {
+                        string name = Path.GetFileName(key);
+                        if (string.IsNullOrEmpty(name)) name = key;
+
+                        var cat = EverythingSearchSource.DetermineCategory(folder, Path.GetExtension(key), name);
+
+                        candidates.Add(new Candidate(
+                            Id: key,
+                            DisplayName: name,
+                            FullPathOrKey: key,
+                            Category: cat,
+                            SourceId: "recent_files",
+                            Modified: null,
+                            Size: null,
+                            IsFolder: folder,
+                            Tag: null));
+                    }
+                }
+                catch
+                {
+                    // Silently skip invalid paths
+                }
+            }
+        }
+
+        // 3. Optional backfill with installed apps if requested
+        if (fallbackToInstalledApps && candidates.Count < maxCount && appList.Count > 0)
+        {
+            var existingIds = new HashSet<string>(candidates.Select(c => c.Id), StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < appList.Count && candidates.Count < maxCount; i++)
+            {
+                var app = appList[i];
+                string id = app.TargetPath ?? app.Name;
+                if (!existingIds.Contains(id))
+                {
+                    existingIds.Add(id);
+                    candidates.Add(new Candidate(
+                        Id: id,
+                        DisplayName: app.Name,
+                        FullPathOrKey: app.TargetPath ?? string.Empty,
+                        Category: SearchCategory.Apps,
+                        SourceId: "installed_apps",
+                        Modified: null,
+                        Size: null,
+                        IsFolder: false,
+                        Tag: app));
+                }
+            }
+        }
+
+        return candidates;
     }
 
     private void CancelActiveSession()

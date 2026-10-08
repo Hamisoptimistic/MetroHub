@@ -37,9 +37,27 @@ public sealed record RankingWeights
 /// </summary>
 public static class SearchRanker
 {
-    private static readonly string[] NoiseKeywords = ["\\bin\\", "\\obj\\", "\\node_modules\\", "\\.git\\", "\\temp\\", "\\appdata\\local\\temp\\"];
+    private static readonly CompareInfo InvariantCompare = CultureInfo.InvariantCulture.CompareInfo;
+    private const CompareOptions DiacriticInsensitive = CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace;
+
+    private static readonly string[] NoiseKeywords =
+    [
+        "\\bin\\",
+        "\\obj\\",
+        "\\node_modules\\",
+        "\\.git\\",
+        "\\temp\\",
+        "\\appdata\\local\\temp\\",
+        "\\cachedmedia\\",
+        "\\packagecache\\",
+        "\\packages\\",
+        "\\appdata\\local\\devolutions\\",
+        "\\appdata\\local\\unigetui\\",
+        "\\npm\\",
+        "\\chocolatey\\"
+    ];
     private static readonly string[] ExcludedExtensions = [".tmp", ".pdb", ".log", ".bak", ".ilk", ".exp"];
-    private static readonly string[] ExcludedKeywords = ["uninstall", "unins000", "crashreport", "diagnostics", "troubleshoot"];
+    private static readonly string[] ExcludedKeywords = ["unins000", "crashreport", "diagnostics", "troubleshoot"];
 
     #region Query Parser
 
@@ -106,17 +124,38 @@ public static class SearchRanker
     {
         if (string.IsNullOrEmpty(text)) return string.Empty;
 
-        // 1. Unicode NFC
-        string nfc = text.Normalize(NormalizationForm.FormC);
+        bool hasNonAscii = false;
+        bool hasMultiSpaceOrTrim = text[0] == ' ' || text[^1] == ' ';
 
-        // 2. Remove diacritics / accents
-        string noAccents = RemoveDiacritics(nfc);
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (c >= 128)
+            {
+                hasNonAscii = true;
+            }
+            if (c == ' ' && i > 0 && text[i - 1] == ' ')
+            {
+                hasMultiSpaceOrTrim = true;
+            }
+        }
 
-        // 3. Lowercase & collapse whitespace
-        var sb = new StringBuilder(noAccents.Length);
+        string toProcess = text;
+        if (hasNonAscii)
+        {
+            string nfc = text.Normalize(NormalizationForm.FormC);
+            toProcess = RemoveDiacritics(nfc);
+        }
+
+        if (!hasMultiSpaceOrTrim)
+        {
+            return toProcess.ToLowerInvariant();
+        }
+
+        var sb = new StringBuilder(toProcess.Length);
         bool inSpace = false;
 
-        foreach (char c in noAccents)
+        foreach (char c in toProcess)
         {
             if (char.IsWhiteSpace(c))
             {
@@ -138,7 +177,11 @@ public static class SearchRanker
 
     public static string RemoveDiacritics(string text)
     {
-        string normalizedString = text.Normalize(NormalizationForm.FormD);
+        if (string.IsNullOrEmpty(text)) return string.Empty;
+
+        // Map Turkish dotless i (ı) to i for universal search equivalence
+        string preprocessed = text.Replace('ı', 'i');
+        string normalizedString = preprocessed.Normalize(NormalizationForm.FormD);
         var stringBuilder = new StringBuilder(normalizedString.Length);
 
         foreach (char c in normalizedString)
@@ -219,20 +262,20 @@ public static class SearchRanker
         }
 
         string q = query.NormalizedText;
-        string name = candidate.DisplayName;
-        string path = candidate.FullPathOrKey;
+        string name = candidate.NormalizedDisplayName;
+        string rawPath = candidate.FullPathOrKey;
 
         MatchKind matchKind = MatchKind.None;
         int matchScore = 0;
 
-        // 1. Exact Name Match (Fast case-insensitive check)
-        if (name.Length == q.Length && string.Equals(name, q, StringComparison.OrdinalIgnoreCase))
+        // 1. Exact Name Match
+        if (string.Equals(name, q, StringComparison.Ordinal))
         {
             matchKind = MatchKind.Exact;
             matchScore = weights.Exact;
         }
         // 2. Prefix Match
-        else if (name.StartsWith(q, StringComparison.OrdinalIgnoreCase))
+        else if (name.StartsWith(q, StringComparison.Ordinal))
         {
             matchKind = MatchKind.Prefix;
             matchScore = weights.Prefix;
@@ -240,7 +283,7 @@ public static class SearchRanker
         else
         {
             // 3. Word Prefix / Contains check
-            int matchIdx = name.IndexOf(q, StringComparison.OrdinalIgnoreCase);
+            int matchIdx = name.IndexOf(q, StringComparison.Ordinal);
             if (matchIdx >= 0)
             {
                 if (matchIdx == 0 || IsWordBoundary(name[matchIdx - 1]))
@@ -254,31 +297,41 @@ public static class SearchRanker
                     matchScore = weights.Contains;
                 }
             }
-            // 4. Acronym Match (e.g. "vsc" for "Visual Studio Code")
-            else if (q.Length >= 2 && q.Length <= 8 && MatchesAcronymFast(name, q))
+            // 4. Multi-token match across word boundaries (e.g. "annual report" -> "Annual_Report_2024.pdf")
+            else if (query.Tokens.Count > 1 && MatchesQueryTokensAsPrefixes(candidate.DisplayName, query.Tokens))
+            {
+                matchKind = MatchKind.WordPrefix;
+                matchScore = 50;
+            }
+            // 5. Acronym Match (e.g. "vsc" for "Visual Studio Code")
+            else if (q.Length >= 2 && q.Length <= 8 && MatchesAcronymFast(candidate.DisplayName, q))
             {
                 matchKind = MatchKind.Acronym;
                 matchScore = weights.Acronym;
             }
-            // 5. Path Match
-            else if (path.IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0)
+            // 6. Path Match
+            else if (candidate.NormalizedPath.IndexOf(q, StringComparison.Ordinal) >= 0)
             {
                 matchKind = MatchKind.PathOnly;
                 matchScore = weights.PathOnly;
             }
-            // 6. Bounded Fuzzy / Typo Match (for Apps only, query length >= 3)
-            else if (candidate.Category == SearchCategory.Apps && q.Length >= 3 && Math.Abs(name.Length - q.Length) <= 2)
+            // 7. Bounded Fuzzy / Typo Match (for Apps only, query length >= 3)
+            else if (candidate.Category == SearchCategory.Apps && q.Length >= 3)
             {
-                int dist = ComputeLevenshteinDistance(q, name.ToLowerInvariant(), maxThreshold: 2);
-                if (dist == 1)
+                int maxDist = q.Length <= 4 ? 1 : 2;
+                if (Math.Abs(name.Length - q.Length) <= maxDist)
                 {
-                    matchKind = MatchKind.Fuzzy;
-                    matchScore = weights.Fuzzy1;
-                }
-                else if (dist == 2)
-                {
-                    matchKind = MatchKind.Fuzzy;
-                    matchScore = weights.Fuzzy2;
+                    int dist = ComputeLevenshteinDistance(q, name, maxThreshold: maxDist);
+                    if (dist == 1)
+                    {
+                        matchKind = MatchKind.Fuzzy;
+                        matchScore = weights.Fuzzy1;
+                    }
+                    else if (dist == 2 && maxDist >= 2)
+                    {
+                        matchKind = MatchKind.Fuzzy;
+                        matchScore = weights.Fuzzy2;
+                    }
                 }
             }
         }
@@ -301,9 +354,12 @@ public static class SearchRanker
             totalScore += weights.FolderPathBoost;
         }
 
+        // Cap dynamic boosts (usage + recency + location) together at max 20 so exact matches always win
+        int dynamicBoosts = 0;
+
         if (openCount > 0)
         {
-            totalScore += Math.Min(weights.MaxUsageBoost, openCount * 5);
+            dynamicBoosts += Math.Min(weights.MaxUsageBoost, openCount * 5);
         }
 
         if (candidate.Modified.HasValue)
@@ -312,22 +368,24 @@ public static class SearchRanker
             double days = (refTime - candidate.Modified.Value).TotalDays;
             if (days >= 0 && days < 7)
             {
-                totalScore += (int)Math.Max(0, weights.MaxRecencyBoost - (days * 1.4));
+                dynamicBoosts += (int)Math.Max(0, weights.MaxRecencyBoost - (days * 1.4));
             }
         }
 
-        if (IsUserLocation(path))
+        if (IsUserLocation(rawPath))
         {
-            totalScore += weights.UserLocationBoost;
+            dynamicBoosts += weights.UserLocationBoost;
         }
 
+        totalScore += Math.Min(20, dynamicBoosts);
+
         // Penalties
-        if (IsNoisePath(path))
+        if (IsNoisePath(rawPath))
         {
             totalScore -= weights.NoisePenalty;
         }
 
-        if (path.Length > 50 && CountPathDepth(path) > 8)
+        if (rawPath.Length > 50 && CountPathDepth(rawPath) > 8)
         {
             totalScore -= weights.DeepPathPenalty;
         }
@@ -335,9 +393,36 @@ public static class SearchRanker
         return new ScoredResult(candidate, Math.Max(1, totalScore), matchKind);
     }
 
+    private static bool MatchesQueryTokensAsPrefixes(string candidateName, IReadOnlyList<string> queryTokens)
+    {
+        if (queryTokens.Count == 0) return false;
+        var nameTokens = Tokenize(RemoveDiacritics(candidateName));
+        if (nameTokens.Length == 0) return false;
+
+        for (int i = 0; i < queryTokens.Count; i++)
+        {
+            string qt = queryTokens[i];
+            if (qt.Length == 0) continue;
+
+            bool found = false;
+            for (int j = 0; j < nameTokens.Length; j++)
+            {
+                if (nameTokens[j].StartsWith(qt, StringComparison.OrdinalIgnoreCase))
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) return false;
+        }
+
+        return true;
+    }
+
     private static bool IsWordBoundary(char c)
     {
-        return c == ' ' || c == '.' || c == '-' || c == '_' || c == '/' || c == '\\';
+        return c == ' ' || c == '.' || c == '-' || c == '_' || c == '/' || c == '\\' || c == ',' || c == '`' || c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}';
     }
 
     private static bool MatchesAcronymFast(string name, string query)
@@ -505,8 +590,7 @@ public static class SearchRanker
 
         foreach (var kw in ExcludedKeywords)
         {
-            if (name.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
-                fullPath.Contains(kw, StringComparison.OrdinalIgnoreCase))
+            if (name.Contains(kw, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }

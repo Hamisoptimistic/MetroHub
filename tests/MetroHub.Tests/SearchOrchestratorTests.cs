@@ -151,4 +151,35 @@ public class SearchOrchestratorTests
             };
         }
     }
+
+    [Fact]
+    public void BuildSearchGroups_AppsCategoryAlwaysFirst_EvenWhenFoldersScoreTiesOrExceeds()
+    {
+        var appCandidate = new Candidate("1", "Brave Browser", @"C:\Program Files\Brave\brave.exe", SearchCategory.Apps, "test");
+        var folderCandidate = new Candidate("2", "brave", @"C:\Users\HamB\AppData\Local\brave", SearchCategory.Folders, "test", IsFolder: true);
+        var docCandidate = new Candidate("3", "brave-guide.pdf", @"C:\Docs\brave-guide.pdf", SearchCategory.Documents, "test");
+
+        // Folders has a top score of 120 (e.g. recency boost), Apps has 100, Documents has 80
+        var results = new List<ScoredResult>
+        {
+            new(folderCandidate, 120, MatchKind.Exact),
+            new(appCandidate, 100, MatchKind.Exact),
+            new(docCandidate, 80, MatchKind.Prefix)
+        };
+
+        var groups = SearchOrchestrator.BuildSearchGroups(results, maxPerGroup: 5);
+
+        Assert.Equal(3, groups.Count);
+        // Apps MUST be first, even if Folders has higher score!
+        Assert.Equal(SearchCategory.Apps, groups[0].Category);
+        Assert.Equal("Apps", groups[0].Title);
+
+        // Remaining categories ordered by TopScore descending
+        Assert.Equal(SearchCategory.Folders, groups[1].Category);
+        Assert.Equal("Folders", groups[1].Title);
+
+        Assert.Equal(SearchCategory.Documents, groups[2].Category);
+        Assert.Equal("Documents", groups[2].Title);
+    }
 }
+
