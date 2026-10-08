@@ -128,6 +128,8 @@ public sealed record SearchSnapshot(
     long ElapsedMs,
     IReadOnlyDictionary<string, SourceState> SourceStates)
 {
+    public bool IsEmpty => Groups == null || Groups.Count == 0;
+
     public static readonly SearchSnapshot Empty = new(
         0,
         Array.Empty<SearchGroup>(),

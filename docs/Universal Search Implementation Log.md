@@ -36,7 +36,7 @@ This document records the architectural decisions, streamlined realization plan,
 | Phase | Description | Deliverables | Gate Criteria | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | **Phase 1** | **Contracts & Pure Ranker** | `SearchContracts.cs`<br>`SearchRanker.cs`<br>`SearchRankerTests.cs` | 1. All 363 existing tests pass.<br>2. 100% pass on new tests.<br>3. 10,000 candidates scored in <8ms (no GC Gen 1/2). | **PASSED & VERIFIED** |
-| **Phase 2** | **Orchestrator & App Search** | `SearchOrchestrator.cs`<br>Wire to `InstalledAppsService` | 1. Debounce 150ms.<br>2. App search response <50ms.<br>3. Zero disk I/O on keystroke. | Queued |
+| **Phase 2** | **Orchestrator & App Search** | `SearchOrchestrator.cs`<br>Wire to `InstalledAppsService` | 1. Debounce 150ms.<br>2. App search response <50ms.<br>3. Zero disk I/O on keystroke. | **PASSED & VERIFIED** |
 | **Phase 3** | **Everything Search Source** | `EverythingSearchSource.cs`<br>Add `Voidtools` package | 1. Dedicated worker thread.<br>2. Graceful degradation when Everything is closed.<br>3. Chaos test passed. | Queued |
 | **Phase 4** | **Drawer UI & Navigation** | Update `AllAppsDrawerControl.xaml/.cs` | 1. UI thread work <8ms per key.<br>2. Progressive display with stable keys (no flicker).<br>3. Full arrow/Enter navigation. | Queued |
 | **Phase 5** | **Usage Learning & History** | Frequency & recency tracking in `StorageService` | 1. Frequently opened apps/files boosted.<br>2. Batched writes to disk. | Queued |
@@ -53,3 +53,13 @@ This document records the architectural decisions, streamlined realization plan,
 * *10k Scoring Latency*: ~3ms (isolated) / 9ms (under full-suite parallel load)
 * *GC Allocation in Hot Path*: 0 Gen 1/2 allocations
 * *Status*: **GATE 1 PASSED**
+
+### Phase 2 Gate Measurements
+* *Date*: 2026-10-08
+* *Total Tests*: 387 passed / 0 failed (382 baseline + 5 new)
+* *Phase 2 Unit Tests*: 5 / 5 passed (100%)
+* *Debounce Verification*: Tested 150ms debounce with multi-keystroke burst; strictly only latest session published.
+* *In-Memory Apps Query Latency*: <2ms (Target: <50ms)
+* *Disk I/O During Search*: 0 disk operations (in-memory cache)
+* *Cancellation & Cleanup*: Previous CTS cancelled and disposed cleanly upon new query arrival.
+* *Status*: **GATE 2 PASSED**
