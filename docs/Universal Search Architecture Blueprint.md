@@ -65,26 +65,37 @@ Purpose: a build plan for a fast, safe, ranked search feature. It combines the i
 
 **Dependency rule:** a layer may only call the layer directly below it. L4 depends on nothing. Interfaces live in L3 or L4. Implementations live in L5 and L6. This keeps each part testable with fakes.
 
+### 2.1 Physical Code Organization (Streamlined Architecture)
+
+To prevent file sprawl (avoiding 25–30 micro-files with heavy indirection) while strictly preventing "god files", modern C# 12 / .NET 10 features (records, static pure functions, ReadOnlySpan) group these logical layers into **4 cohesive, single-responsibility files** under `MetroHub.Core.Search`:
+
+1. **`SearchContracts.cs`** (~70 lines, L3/L4): All immutable data models (`SearchQuery`, `Candidate`, `ScoredResult`, `SearchSnapshot`, `SourceState`) and `ISearchSource`. Pure data definitions, zero logic, zero side effects.
+2. **`SearchRanker.cs`** (~220 lines, L4): Pure domain algorithms. Normalization, tokenization (`QueryParser`), scoring weights (`Ranker`), tie-breaking, and deduplication (`Deduplicator`). Zero I/O, zero threading, 100% pure math.
+3. **`SearchOrchestrator.cs`** (~160 lines, L3): Concurrency coordinator. Owns the 150ms debounce timer, session cancellation, dispatching to `ISearchSource` instances, tier merging, and snapshot publishing.
+4. **`EverythingSearchSource.cs`** (~130 lines, L5/L6): Everything adapter. Dedicated worker thread, safe query escaping, and health state machine. Isolated external I/O.
+
+No file exceeds ~250 lines. Clear boundaries are maintained: Data, Math, Concurrency, and I/O remain strictly separated.
+
 ## 3. Components and their single job
 
-| Component | Job | Must not |
-| --- | --- | --- |
-| SearchView | Draw the box, list, groups, status bar | Hold state or call sources |
-| SearchViewModel | Debounce input, call the orchestrator, expose results | Touch Everything or the file system |
-| SearchOrchestrator | Run one search session. Cancel the old one. Merge results from sources in tiers | Know how a source works inside |
-| QueryParser | Turn raw text into a SearchQuery object (see Section 4) | Do I/O |
-| ISearchSource | Return scored candidates for a SearchQuery | Sort across sources |
-| AppSource | Search the in-memory app index | Scan the disk during a search |
-| FileSource | Build Everything queries, call the gateway, map results | Call native code directly |
-| EverythingGateway | The only place that calls the Everything library. Owns the single worker thread and the health state | Leak library types to upper layers |
-| AppIndexStore | Build and refresh the app index in the background | Block a search |
-| Ranker | Compute one score per candidate | Do I/O |
-| Deduplicator | Remove repeated items across sources | Change scores |
-| UsageStore | Save open counts and last-open time | Block the UI thread |
-| ExclusionPolicy | Decide which paths and extensions to hide | Read the disk |
-| IconCache | Load icons on demand, bounded size | Grow without a limit |
-| HealthMonitor | Track state of each source and publish it | Run when the window is hidden |
-| Logger and Metrics | Structured logs and counters | Log raw queries or full paths by default |
+| Component | Target File | Job | Must not |
+| --- | --- | --- | --- |
+| SearchView | `AllAppsDrawerControl.xaml` | Draw the box, list, groups, status bar | Hold state or call sources |
+| SearchViewModel | `AllAppsDrawerControl.xaml.cs` | Debounce input, call the orchestrator, expose results | Touch Everything or the file system |
+| SearchOrchestrator | `SearchOrchestrator.cs` | Run one search session. Cancel the old one. Merge results from sources in tiers | Know how a source works inside |
+| QueryParser | `SearchRanker.cs` | Turn raw text into a SearchQuery object (see Section 4) | Do I/O |
+| ISearchSource | `SearchContracts.cs` | Return scored candidates for a SearchQuery | Sort across sources |
+| AppSource | `InstalledAppsService.cs` | Search the in-memory app index | Scan the disk during a search |
+| FileSource | `EverythingSearchSource.cs` | Build Everything queries, call the gateway, map results | Call native code directly |
+| EverythingGateway | `EverythingSearchSource.cs` | The only place that calls the Everything library. Owns the single worker thread and the health state | Leak library types to upper layers |
+| AppIndexStore | `InstalledAppsService.cs` | Build and refresh the app index in the background | Block a search |
+| Ranker | `SearchRanker.cs` | Compute one score per candidate | Do I/O |
+| Deduplicator | `SearchRanker.cs` | Remove repeated items across sources | Change scores |
+| UsageStore | `StorageService.cs` | Save open counts and last-open time | Block the UI thread |
+| ExclusionPolicy | `SearchRanker.cs` | Decide which paths and extensions to hide | Read the disk |
+| IconCache | `IconExtractorService.cs` | Load icons on demand, bounded size | Grow without a limit |
+| HealthMonitor | `EverythingSearchSource.cs` | Track state of each source and publish it | Run when the window is hidden |
+| Logger and Metrics | `Safe.cs` / `LoggingService.cs` | Structured logs and counters | Log raw queries or full paths by default |
 
 ## 4. Core data contracts
 
@@ -273,18 +284,16 @@ Treat each rule as a code review gate.
 7. **CPU profile**: run a typing test. Check that the UI thread stays under budget and that nothing runs when the window is hidden.
 8. **Chaos test**: random delays, random native errors, and random cancel calls.
 
-## 13. Build phases and gates
+## 13. Build phases and gates (Streamlined Execution)
 
-| Phase | Work | Gate to pass |
-| --- | --- | --- |
-| 1 | Contracts, QueryParser, Ranker, Deduplicator, fakes, unit tests | All unit tests pass. Scoring benchmark within budget |
-| 2 | AppSource with a background AppIndexStore | Apps appear under 50 ms. No disk scan during a search |
-| 3 | EverythingGateway: worker thread, health state machine, safe query builder | Chaos test passes. No handle or thread growth |
-| 4 | FileSource, ExclusionPolicy, category queries | Result quality review on 30 sample queries |
-| 5 | Orchestrator: sessions, cancel, tiers, merge, progressive display | No stale snapshot ever shown. No flicker |
-| 6 | View model and view: grouping, virtualization, status messages, keyboard, accessibility | UI thread budget met |
-| 7 | UsageStore and learning | Ranking improves in a replay test. Writes are batched |
-| 8 | Hardening: soak, leak check, CPU profile, edge case matrix | All Section 1 budgets met |
+| Phase | Work | Files Touched / Created | Gate to pass |
+| --- | --- | --- | --- |
+| 1 | **Core Contracts & Ranker**: Contracts, parser, scoring math, deduplication, test suite | `SearchContracts.cs`, `SearchRanker.cs`, `SearchRankerTests.cs` | All unit tests pass. 10k candidates scored in <8ms |
+| 2 | **Orchestrator & App Search**: Debounce (150ms), session cancel, in-memory app query | `SearchOrchestrator.cs`, wired to `InstalledAppsService.cs` | Apps appear in <50ms. No disk I/O during typing |
+| 3 | **Everything Integration**: Single worker thread, health state, safe query escaping | `EverythingSearchSource.cs` (isolated) | Chaos test passes. Degrades gracefully if Everything is down |
+| 4 | **UI & Keyboard Navigation**: Bind to drawer, progressive display, stable keys, arrows/Enter | `AllAppsDrawerControl.xaml/.cs` | UI thread budget <8ms per key press. Zero layout flicker |
+| 5 | **Usage Learning & History**: Frequency boosting and decay | `StorageService.cs` (extended) | Ranking improves for frequently used items. Batched writes |
+| 6 | **Hardening & Leak Checks**: Soak test, edge-case matrix, memory & handle verification | Hardening tests | Working set growth <5% after soak; zero retained view models |
 
 ## 14. Engineering laws applied
 
@@ -333,8 +342,8 @@ This project uses the NuGet package `Voidtools.Everything.Net`, version 0.1.3. I
 
 **Rules for the agent**
 
-1. Add the package to the project that holds the infrastructure layer (L6) only. No other project may reference it.
-2. `EverythingGateway` is the only class that uses the package types. No package type may appear in an interface, a Candidate, or a view model.
+1. Keep the existing single-project structure (`MetroHub.csproj`). Encapsulate the package strictly inside `EverythingSearchSource.cs`. No package type may leak into `SearchContracts.cs`, `SearchRanker.cs`, `SearchOrchestrator.cs`, or the UI.
+2. `EverythingSearchSource` is the only class that uses the package types. No package type may appear in an interface, a Candidate, or a view model.
 3. Read the package's own interfaces and README first. Use its real class names. Do not guess them.
 4. Keep the single worker thread and the latest-wins queue from Section 6.1. Do not assume the package is safe for parallel calls, unless its documentation says so.
 5. Use its dependency injection helper only if the project already uses a container. Register it in the existing start-up code.
