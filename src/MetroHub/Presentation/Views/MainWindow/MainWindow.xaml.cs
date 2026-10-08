@@ -490,14 +490,20 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             NativeMethods.GetWindowThreadProcessId(foreHwnd, out foreProcessId);
         }
 
-        // If focus shifted internally to one of our own windows (like a MetroDialog), do not dismiss
+        // If focus shifted internally to one of our own windows (like a MetroDialog or SettingsWindow), do not dismiss
         if (foreProcessId == currentProcessId)
         {
             return;
         }
 
-        // If a dialog is open or opening and foreground window is transitioning (0), do not dismiss prematurely
-        if (IsDialogOpen && foreProcessId == 0)
+        // If a modal dialog or settings window is open, do not auto-dismiss
+        if (IsDialogOpen)
+        {
+            return;
+        }
+
+        // If the incoming foreground window is a transient tool window or screen capture overlay (Snipping Tool, etc.), do not dismiss
+        if (IsTransientToolOverlay(foreHwnd, foreProcessId))
         {
             return;
         }
@@ -594,7 +600,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     private void OnSystemForegroundChanged(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
     {
         if (hwnd == IntPtr.Zero) return;
-        if (!IsVisible || _isDismissing) return;
+        if (!IsVisible || _isDismissing || IsDialogOpen) return;
 
         // Prevent premature dismissal in first 150ms of opening
         if ((DateTime.UtcNow - _lastShownTime).TotalMilliseconds < 150) return;
@@ -608,15 +614,119 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
         if (foreProcessId != 0 && foreProcessId != currentProcessId)
         {
+            // If the incoming window is a transient tool window or screen capture overlay (Snipping Tool, crosshairs, etc.), do not dismiss
+            if (IsTransientToolOverlay(hwnd, foreProcessId))
+            {
+                return;
+            }
+
             Dispatcher.InvokeAsync(() =>
             {
-                if (IsVisible && !_isDismissing)
+                if (IsVisible && !_isDismissing && !IsDialogOpen)
                 {
                     DismissOpenDialogs();
                     HideScreen(restorePreviousFocus: false);
                 }
             });
         }
+    }
+
+    /// <summary>
+    /// Identifies whether a window belongs to the Windows shell surface (Taskbar, Desktop, Start Menu, System Tray, Action Center)
+    /// where activation indicates the user intentionally clicked outside or navigated away from MetroHub.
+    /// </summary>
+    private static bool IsShellSurface(IntPtr hwnd, uint processId)
+    {
+        if (hwnd == IntPtr.Zero) return false;
+
+        // 1. Direct Shell Window handles (Desktop / Program Manager)
+        if (hwnd == NativeMethods.GetShellWindow() || hwnd == NativeMethods.GetDesktopWindow())
+        {
+            return true;
+        }
+
+        // 2. Standard Windows Shell Class Names (Taskbar, Multi-Monitor Taskbars, Desktop Workers, Tray Overflow)
+        string className = NativeMethods.GetWindowClassName(hwnd);
+        if (!string.IsNullOrEmpty(className))
+        {
+            if (className == "Shell_TrayWnd" ||
+                className == "Shell_SecondaryTrayWnd" ||
+                className == "Progman" ||
+                className == "WorkerW" ||
+                className == "NotifyIconOverflowWindow")
+            {
+                return true;
+            }
+        }
+
+        // 3. Known Windows Shell processes (Explorer, Start Menu, Windows Search, Action Center)
+        if (processId != 0)
+        {
+            try
+            {
+                using var proc = Process.GetProcessById((int)processId);
+                string procName = proc.ProcessName;
+                if (procName.Equals("explorer", StringComparison.OrdinalIgnoreCase) ||
+                    procName.Equals("StartMenuExperienceHost", StringComparison.OrdinalIgnoreCase) ||
+                    procName.Equals("SearchHost", StringComparison.OrdinalIgnoreCase) ||
+                    procName.Equals("ShellExperienceHost", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                // Process may have exited or access denied
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Identifies whether a window is a transient tool window, screen capture overlay, or HUD
+    /// (e.g. Snipping Tool, ShareX, Greenshot, Game Bar, PowerToys Color Picker, Radeon/GeForce HUD),
+    /// rather than a true application or shell surface that the user switched to.
+    /// Uses standard Win32 extended window styles (WS_EX_TOOLWINDOW, WS_EX_TRANSPARENT, WS_EX_NOACTIVATE),
+    /// while strictly excluding Windows Shell surfaces (Taskbar, Desktop, Start Menu, System Tray).
+    /// </summary>
+    private static bool IsTransientToolOverlay(IntPtr hwnd, uint processId)
+    {
+        if (hwnd == IntPtr.Zero) return false;
+
+        // Windows Shell surfaces (Taskbar, Desktop, Start Menu, System Tray) must NEVER be treated as transient overlays.
+        // Interacting with them means the user clicked outside or navigated away.
+        if (IsShellSurface(hwnd, processId))
+        {
+            return false;
+        }
+
+        try
+        {
+            int exStyle = NativeMethods.GetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE);
+            if (exStyle == 0) return false;
+
+            // 1. WS_EX_TOOLWINDOW (0x80): Floating palette/tool window excluded from Alt+Tab and taskbar
+            // (Snipping Tool overlay, crosshairs, color pickers, HUD overlays).
+            if ((exStyle & NativeMethods.WS_EX_TOOLWINDOW) != 0)
+            {
+                return true;
+            }
+
+            // 2. WS_EX_TRANSPARENT (0x20) or WS_EX_NOACTIVATE (0x08000000): Transient click-through or non-activating HUD layer.
+            const int WS_EX_TRANSPARENT = 0x00000020;
+            const int WS_EX_NOACTIVATE = 0x08000000;
+            if ((exStyle & (WS_EX_TRANSPARENT | WS_EX_NOACTIVATE)) != 0)
+            {
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "MainWindow.IsTransientToolOverlay");
+        }
+
+        return false;
     }
 
     private void DismissOpenDialogs()

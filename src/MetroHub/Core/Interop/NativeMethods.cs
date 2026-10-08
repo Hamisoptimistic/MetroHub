@@ -322,6 +322,31 @@ public static class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool IsWindow(IntPtr hWnd);
 
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetShellWindow();
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetDesktopWindow();
+
+    public static string GetWindowClassName(IntPtr hWnd)
+    {
+        if (hWnd == IntPtr.Zero) return string.Empty;
+        try
+        {
+            var sb = new System.Text.StringBuilder(256);
+            int length = GetClassName(hWnd, sb, sb.Capacity);
+            return length > 0 ? sb.ToString() : string.Empty;
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NativeMethods.GetWindowClassName");
+            return string.Empty;
+        }
+    }
+
     public static void ForceForeground(IntPtr hWnd)
     {
         try
