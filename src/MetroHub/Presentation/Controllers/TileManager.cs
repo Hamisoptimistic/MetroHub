@@ -711,6 +711,225 @@ public sealed class TileManager
         }
     }
 
+    public void BatchAddPastedTiles(IReadOnlyList<PasteItemSpec> items, Point? targetCanvasPosition = null)
+    {
+        if (items == null || items.Count == 0) return;
+
+        var tiles = _tilesProvider();
+        var groups = _groupsProvider();
+
+        // Clear previous selection before selecting new pasted batch
+        ClearSelection();
+
+        _updateLayoutMetricsAction();
+        var sv = _contentScrollViewerProvider();
+        double winWidth = _windowWidthProvider();
+        double viewportWidth = sv?.ActualWidth > 0 ? sv.ActualWidth : (winWidth > 0 ? winWidth : 1920);
+        int maxCols = GridPlacementService.GetMaxCols(viewportWidth);
+
+        // Determine anchor column and row
+        int anchorCol;
+        int anchorRow;
+        if (targetCanvasPosition.HasValue)
+        {
+            anchorCol = GridPlacementService.ColFromPixel(targetCanvasPosition.Value.X);
+            anchorRow = GridPlacementService.RowFromPixel(targetCanvasPosition.Value.Y);
+        }
+        else
+        {
+            double vOffset = sv?.VerticalOffset ?? 0;
+            anchorCol = 0;
+            anchorRow = Math.Max(1, GridPlacementService.RowFromPixel(vOffset));
+        }
+
+        TileGroupModel? targetGroup = null;
+        if (targetCanvasPosition.HasValue)
+        {
+            foreach (var g in groups)
+            {
+                var (minC, maxC, minR, maxR) = GridPlacementService.GetGroupBoundingBox(g, tiles);
+                if (anchorCol >= minC && anchorCol < maxC && anchorRow >= minR && anchorRow <= maxR)
+                {
+                    targetGroup = g;
+                    break;
+                }
+            }
+        }
+
+        var newTiles = new List<TileModel>();
+        var modifiedTiles = new List<TileModel>();
+        int currentCol = anchorCol;
+        int currentRow = Math.Max(1, anchorRow);
+
+        foreach (var item in items)
+        {
+            if (targetGroup != null)
+            {
+                int clickRelCol = Math.Max(0, currentCol - targetGroup.Col);
+                int clickRelRow = Math.Max(0, currentRow - (targetGroup.Row + 1));
+                var existingGroupTiles = tiles.Where(t => t.Group == targetGroup.Id).ToList();
+                var (slotCol, slotRow) = GridPlacementService.FindFreeSlotInGroup(
+                    targetGroup, clickRelCol, clickRelRow, item.SpanX, item.SpanY, existingGroupTiles);
+
+                // Guard G10: Skip invalid slot safely
+                if (slotCol < 0 || slotRow < 0) continue;
+
+                var groupTile = new TileModel
+                {
+                    Title = item.Title,
+                    TargetPath = item.TargetPath,
+                    IconPath = item.IconPath,
+                    TileType = item.TileType,
+                    SpanX = item.SpanX,
+                    SpanY = item.SpanY,
+                    Group = targetGroup.Id,
+                    SectionHeader = targetGroup.Title,
+                    Col = slotCol,
+                    Row = slotRow,
+                    X = GridPlacementService.PixelXFromCol(slotCol),
+                    Y = GridPlacementService.PixelYFromRow(slotRow),
+                    IsSelected = true // Automatically select newly pasted tile
+                };
+
+                tiles.Add(groupTile);
+                newTiles.Add(groupTile);
+                var mod = GridPlacementService.PlaceTileInGroup(
+                    groupTile, slotCol, slotRow, slotCol, slotRow, targetGroup, tiles);
+                foreach (var m in mod)
+                {
+                    if (!modifiedTiles.Contains(m)) modifiedTiles.Add(m);
+                }
+
+                currentCol = slotCol + item.SpanX;
+                var (_, gMaxC, _, _) = GridPlacementService.GetGroupBoundingBox(targetGroup, tiles);
+                if (currentCol >= gMaxC)
+                {
+                    currentCol = targetGroup.Col;
+                    currentRow = slotRow + item.SpanY;
+                }
+            }
+            else
+            {
+                // Guard G10: Search for nearest available slot
+                var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(
+                    currentCol, Math.Max(1, currentRow), item.SpanX, item.SpanY, tiles, null, maxCols, groups);
+
+                if (freeCol < 0 || freeRow < 1) continue;
+
+                var tile = new TileModel
+                {
+                    Title = item.Title,
+                    TargetPath = item.TargetPath,
+                    IconPath = item.IconPath,
+                    TileType = item.TileType,
+                    SpanX = item.SpanX,
+                    SpanY = item.SpanY,
+                    Col = freeCol,
+                    Row = freeRow,
+                    X = GridPlacementService.PixelXFromCol(freeCol),
+                    Y = GridPlacementService.PixelYFromRow(freeRow),
+                    IsSelected = true // Automatically select newly pasted tile
+                };
+
+                tiles.Add(tile);
+                newTiles.Add(tile);
+                if (!modifiedTiles.Contains(tile)) modifiedTiles.Add(tile);
+
+                // Advance horizontal flow across columns, then wrap downwards
+                currentCol = freeCol + item.SpanX;
+                if (currentCol + item.SpanX > maxCols)
+                {
+                    currentCol = 0;
+                    currentRow = freeRow + item.SpanY;
+                }
+                else
+                {
+                    currentRow = freeRow;
+                }
+            }
+        }
+
+        if (newTiles.Count == 0) return;
+
+        // Push lower groups down if needed
+        if (targetGroup != null)
+        {
+            var pushed = GridPlacementService.PushLowerGroupsDown(targetGroup, groups, tiles);
+            foreach (var pt in pushed)
+            {
+                if (!modifiedTiles.Contains(pt)) modifiedTiles.Add(pt);
+            }
+        }
+        else if (groups.Count > 0)
+        {
+            var looseTiles = tiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+            var pushedGroupTiles = GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, groups, tiles);
+            foreach (var pt in pushedGroupTiles)
+            {
+                if (!modifiedTiles.Contains(pt)) modifiedTiles.Add(pt);
+            }
+            _compactGroupGapsAction();
+        }
+
+        // Single batch animation pass and single atomic layout save
+        _animateModifiedTilesAction(modifiedTiles);
+        _updateGroupHeaderPositionsAction();
+        _saveGroupsAndLayoutAction();
+        SaveLayoutAndWorkspace(tiles);
+        _updateCanvasHeightAction();
+        _updateExposedAddSlotsAction();
+
+        // Guard G11: Asynchronously fetch high-resolution web favicons with fallback
+        var pendingWebTiles = newTiles.Where(t => t.TileType == TileType.WebUrl && string.IsNullOrWhiteSpace(t.IconPath)).ToList();
+        if (pendingWebTiles.Count > 0)
+        {
+            _ = Task.Run(async () =>
+            {
+                bool updated = false;
+                foreach (var wt in pendingWebTiles)
+                {
+                    string? fetched = await WebFaviconService.GetFaviconPathAsync(wt.TargetPath).ConfigureAwait(false);
+                    if (string.IsNullOrWhiteSpace(fetched))
+                    {
+                        fetched = ResolveFallbackWebIcon();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(fetched))
+                    {
+                        await _dispatcher.InvokeAsync(() =>
+                        {
+                            wt.IconPath = fetched;
+                            updated = true;
+                        });
+                    }
+                }
+
+                if (updated)
+                {
+                    await _dispatcher.InvokeAsync(() => SaveLayoutAndWorkspace(tiles));
+                }
+            });
+        }
+    }
+
+    private static string? ResolveFallbackWebIcon()
+    {
+        try
+        {
+            string edge = @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe";
+            if (File.Exists(edge)) return IconExtractorService.ExtractAndCacheIcon(edge);
+
+            string chrome = @"C:\Program Files\Google\Chrome\Application\chrome.exe";
+            if (File.Exists(chrome)) return IconExtractorService.ExtractAndCacheIcon(chrome);
+
+            return IconExtractorService.ExtractAndCacheIcon("explorer.exe");
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public void PinCatalogItem(CatalogItemModel item, Point? targetCanvasPosition = null)
     {
         if (item == null) return;
