@@ -26,4 +26,6 @@ public sealed class AppSettings
     public bool SidebarAutoHide { get; set; } = true;
     public bool SidebarPinned { get; set; } = false;
     public List<SidebarShortcutItem> SidebarShortcuts { get; set; } = SidebarShortcutItem.CreateDefaultList();
+
+    public bool BrowserExtensionCompanionEnabled { get; set; } = true;
 }

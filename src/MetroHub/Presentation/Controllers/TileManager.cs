@@ -1239,4 +1239,159 @@ public sealed class TileManager
             StorageService.SaveWorkspaceLayout(activeWs.Id, tiles);
         }
     }
+
+    /// <summary>
+    /// Pins a web link received from the browser extension companion service.
+    /// Handles duplicate URL checks, target workspace resolution (active or inactive),
+    /// slot finding, tile creation, asynchronous thumbnail/favicon download, and persistence.
+    /// </summary>
+    public async Task<CompanionPinResult> PinWebLinkFromCompanionAsync(CompanionPinRequest request, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (string.IsNullOrWhiteSpace(request.Url))
+        {
+            return new CompanionPinResult(false, false, null, 0, 0, "Missing URL");
+        }
+
+        string targetUrl = request.Url.Trim();
+        var wm = WorkspaceManager.Instance;
+
+        // 1. Determine target workspace
+        WorkspaceModel? targetWorkspace = null;
+        if (!string.IsNullOrWhiteSpace(request.WorkspaceId))
+        {
+            targetWorkspace = wm.Workspaces.FirstOrDefault(w => w.Id.Equals(request.WorkspaceId, StringComparison.OrdinalIgnoreCase));
+            if (targetWorkspace == null)
+            {
+                return new CompanionPinResult(false, false, null, 0, 0, $"Workspace '{request.WorkspaceId}' not found");
+            }
+        }
+        else
+        {
+            targetWorkspace = wm.ActiveWorkspace;
+        }
+
+        bool isActiveWorkspace = targetWorkspace == null || targetWorkspace.Id == wm.ActiveWorkspace?.Id;
+
+        // 2. Select target collections
+        var targetTiles = isActiveWorkspace ? _tilesProvider() : targetWorkspace!.Tiles;
+        var targetGroups = isActiveWorkspace ? _groupsProvider() : targetWorkspace!.Groups;
+
+        // 3. Deduplication check: if identical URL already exists in this workspace, return existing coordinates
+        var existingTile = targetTiles.FirstOrDefault(t =>
+            (t.TileType == TileType.WebUrl || t.TileType == TileType.App) &&
+            string.Equals(t.TargetPath?.TrimEnd('/'), targetUrl.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
+
+        if (existingTile != null)
+        {
+            return new CompanionPinResult(
+                Success: true,
+                Duplicate: true,
+                TileId: existingTile.Id,
+                Col: existingTile.Col,
+                Row: existingTile.Row,
+                Message: "Tile already exists in workspace"
+            );
+        }
+
+        // 4. Dimensions & slot calculation
+        int spanX = request.SpanX is 2 or 4 ? request.SpanX.Value : 2;
+        int spanY = request.SpanY is 2 ? request.SpanY.Value : 2;
+        int maxCols = GridPlacementService.GetMaxCols(_windowWidthProvider());
+
+        var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(
+            0, 1, spanX, spanY, targetTiles, null, maxCols, targetGroups);
+
+        string displayTitle = !string.IsNullOrWhiteSpace(request.Title)
+            ? request.Title
+            : WebFaviconService.InferTitleFromUrl(targetUrl);
+
+        var tile = new TileModel
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Title = displayTitle,
+            TargetPath = targetUrl,
+            TileType = TileType.WebUrl,
+            SpanX = spanX,
+            SpanY = spanY,
+            Col = freeCol,
+            Row = freeRow,
+            X = GridPlacementService.PixelXFromCol(freeCol),
+            Y = GridPlacementService.PixelYFromRow(freeRow)
+        };
+
+        targetTiles.Add(tile);
+
+        if (isActiveWorkspace)
+        {
+            var mod = new List<TileModel> { tile };
+            if (targetGroups.Count > 0)
+            {
+                var looseTiles = targetTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+                var pushed = GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, targetGroups, targetTiles);
+                foreach (var pt in pushed)
+                {
+                    if (!mod.Contains(pt)) mod.Add(pt);
+                }
+                _compactGroupGapsAction();
+            }
+
+            _animateModifiedTilesAction(mod);
+            _updateGroupHeaderPositionsAction();
+            _saveGroupsAndLayoutAction();
+            SaveLayoutAndWorkspace(targetTiles);
+            _updateCanvasHeightAction();
+            _updateExposedAddSlotsAction();
+        }
+        else
+        {
+            StorageService.SaveWorkspaceLayout(targetWorkspace!.Id, targetTiles);
+            targetWorkspace.IsDirty = true;
+        }
+
+        // 5. Asynchronous thumbnail / favicon retrieval
+        string? thumbUrl = request.ThumbnailUrl;
+        _ = Task.Run(async () =>
+        {
+            string? iconPath = null;
+            if (!string.IsNullOrWhiteSpace(thumbUrl))
+            {
+                iconPath = await CompanionImageDownloader.DownloadImageAsync(thumbUrl).ConfigureAwait(false);
+            }
+
+            if (string.IsNullOrWhiteSpace(iconPath))
+            {
+                iconPath = await WebFaviconService.GetFaviconPathAsync(targetUrl).ConfigureAwait(false);
+            }
+
+            if (string.IsNullOrWhiteSpace(iconPath))
+            {
+                iconPath = ResolveFallbackWebIcon();
+            }
+
+            if (!string.IsNullOrWhiteSpace(iconPath))
+            {
+                await _dispatcher.InvokeAsync(() =>
+                {
+                    tile.IconPath = iconPath;
+                    if (isActiveWorkspace)
+                    {
+                        SaveLayoutAndWorkspace(targetTiles);
+                    }
+                    else
+                    {
+                        StorageService.SaveWorkspaceLayout(targetWorkspace!.Id, targetTiles);
+                    }
+                });
+            }
+        });
+
+        return new CompanionPinResult(
+            Success: true,
+            Duplicate: false,
+            TileId: tile.Id,
+            Col: freeCol,
+            Row: freeRow
+        );
+    }
 }

@@ -306,6 +306,33 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             });
 
         RegisterCanvasMessageHandlers();
+        InitializeCompanionService();
+    }
+
+    private void InitializeCompanionService()
+    {
+        var service = LocalCompanionService.Instance;
+        service.WorkspacesHandler = () =>
+        {
+            var wm = WorkspaceManager.Instance;
+            var list = new List<CompanionWorkspaceDto>(wm.Workspaces.Count);
+            string activeId = wm.ActiveWorkspace?.Id ?? "default";
+            foreach (var ws in wm.Workspaces)
+            {
+                list.Add(new CompanionWorkspaceDto(ws.Id, ws.Name, ws.Id == activeId));
+            }
+            return list;
+        };
+
+        service.PinTileHandler = async (req, ct) =>
+        {
+            return await Dispatcher.InvokeAsync(() => TileManager.PinWebLinkFromCompanionAsync(req, ct)).Task.Unwrap();
+        };
+
+        if (Settings.BrowserExtensionCompanionEnabled)
+        {
+            _ = service.StartAsync();
+        }
     }
 
     private void RegisterCanvasMessageHandlers()
@@ -931,6 +958,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         _keepWarmTimer = null;
         CancelPendingWallpaperLoad();
         TeardownWallpaperVideo();
+        _ = LocalCompanionService.Instance.StopAsync();
         base.OnClosed(e);
     }
 
