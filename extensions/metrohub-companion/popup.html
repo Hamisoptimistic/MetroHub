@@ -43,9 +43,27 @@
 
     <!-- Main Content Form -->
     <main class="app-body">
-      <!-- Title Input -->
+      <!-- Mode Switcher: Single Tab vs All Tabs -->
+      <div class="mode-switcher" role="tablist" aria-label="Pin mode">
+        <button type="button" id="modeSingleTab" class="mode-tab active" role="tab" aria-selected="true">
+          <svg class="mode-tab-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+          <span>Current Tab</span>
+        </button>
+        <button type="button" id="modeAllTabs" class="mode-tab" role="tab" aria-selected="false">
+          <svg class="mode-tab-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+            <path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"></path>
+          </svg>
+          <span id="allTabsLabelText">All Tabs</span>
+        </button>
+      </div>
+
+      <!-- Title / Group Name Input -->
       <div class="form-row">
-        <label for="tileTitle" class="row-label">Title</label>
+        <label for="tileTitle" id="tileTitleLabel" class="row-label">Title</label>
         <div class="input-wrap">
           <input type="text" id="tileTitle" class="text-input" placeholder="Page title" spellcheck="false" autocomplete="off" />
           <svg class="input-trailing-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -56,7 +74,7 @@
       </div>
 
       <!-- Segmented Control: Tile Dimensions -->
-      <div class="form-row">
+      <div class="form-row" id="sizeRow">
         <label class="row-label">Size</label>
         <div class="segmented-control">
           <button type="button" id="size2x2" class="seg-btn active" data-span-x="2" data-span-y="2">
@@ -95,12 +113,33 @@
         </div>
       </div>
 
-      <!-- Favicon Preview Row -->
-      <div class="favicon-card">
+      <!-- Favicon Preview Row (Current Tab Mode) -->
+      <div class="favicon-card" id="faviconCard">
         <div class="favicon-wrap">
           <img id="faviconPreview" width="22" height="22" src="" alt="Favicon" />
         </div>
         <span class="favicon-domain" id="faviconDomain">Website</span>
+      </div>
+
+      <!-- Session Group Summary Card (All Tabs Mode) -->
+      <div class="session-card hidden" id="sessionCard">
+        <div class="session-header">
+          <div class="session-icon-box">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+          </div>
+          <div class="session-details">
+            <span class="session-count-title" id="sessionSummaryText">Loading tabs...</span>
+            <span class="session-subtext">Desktop Tile Group</span>
+          </div>
+        </div>
+        <label class="close-tabs-toggle" for="closeTabsCheckbox">
+          <input type="checkbox" id="closeTabsCheckbox" class="custom-checkbox" checked />
+          <span class="toggle-label-text">Close tabs after stashing</span>
+        </label>
       </div>
     </main>
 
@@ -110,6 +149,11 @@
         <svg class="pin-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <line x1="12" y1="17" x2="12" y2="22"></line>
           <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V5a3 3 0 0 0-6 0v5.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path>
+        </svg>
+        <svg class="stash-svg hidden" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
         </svg>
         <svg class="check-svg hidden" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <polyline points="20 6 9 17 4 12"></polyline>

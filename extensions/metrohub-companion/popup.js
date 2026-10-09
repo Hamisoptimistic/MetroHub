@@ -4,6 +4,10 @@ const CLIENT_HEADER = 'BrowserExtension';
 
 let activePort = null;
 let currentTab = null;
+let currentMode = 'single'; // 'single' | 'all'
+let windowTabs = [];
+let cachedSingleTitle = '';
+let cachedGroupName = '';
 let selectedSpanX = 2;
 let selectedSpanY = 2;
 let selectedWorkspaceId = null;
@@ -13,15 +17,24 @@ let setPlugTargetState = null;
 // DOM Elements
 const statusBadge = document.getElementById('statusBadge');
 const statusText = document.getElementById('statusText');
+const modeSingleTabBtn = document.getElementById('modeSingleTab');
+const modeAllTabsBtn = document.getElementById('modeAllTabs');
+const allTabsLabelText = document.getElementById('allTabsLabelText');
+const tileTitleLabel = document.getElementById('tileTitleLabel');
 const tileTitleInput = document.getElementById('tileTitle');
+const sizeRow = document.getElementById('sizeRow');
 const workspaceDropdown = document.getElementById('workspaceDropdown');
 const workspaceTrigger = document.getElementById('workspaceTrigger');
 const workspaceSelectedText = document.getElementById('workspaceSelectedText');
 const workspaceMenu = document.getElementById('workspaceMenu');
 const size2x2Btn = document.getElementById('size2x2');
 const size4x2Btn = document.getElementById('size4x2');
+const faviconCard = document.getElementById('faviconCard');
 const faviconPreview = document.getElementById('faviconPreview');
 const faviconDomain = document.getElementById('faviconDomain');
+const sessionCard = document.getElementById('sessionCard');
+const sessionSummaryText = document.getElementById('sessionSummaryText');
+const closeTabsCheckbox = document.getElementById('closeTabsCheckbox');
 const pinBtn = document.getElementById('pinBtn');
 const feedbackBanner = document.getElementById('feedbackBanner');
 const themeToggleBtn = document.getElementById('themeToggleBtn');
@@ -29,6 +42,7 @@ const themeToggleBtn = document.getElementById('themeToggleBtn');
 document.addEventListener('DOMContentLoaded', () => {
   setupTheme();
   setupPlugAnimation();
+  setupModeSwitcher();
   setupSizeButtons();
   setupDropdownListeners();
   setupPinButton();
@@ -85,6 +99,94 @@ function setupTheme() {
   });
 }
 
+function setupModeSwitcher() {
+  if (!modeSingleTabBtn || !modeAllTabsBtn) return;
+
+  modeSingleTabBtn.addEventListener('click', () => {
+    switchMode('single');
+  });
+
+  modeAllTabsBtn.addEventListener('click', () => {
+    switchMode('all');
+  });
+}
+
+function getDefaultGroupName() {
+  const now = new Date();
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const month = monthNames[now.getMonth()];
+  const day = now.getDate();
+  let hours = now.getHours();
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12 || 12;
+  return `Session • ${month} ${day}, ${hours}:${minutes} ${ampm}`;
+}
+
+function switchMode(mode) {
+  if (currentMode === mode) return;
+  currentMode = mode;
+
+  hideFeedback();
+
+  if (mode === 'all') {
+    modeSingleTabBtn?.classList.remove('active');
+    modeSingleTabBtn?.setAttribute('aria-selected', 'false');
+    modeAllTabsBtn?.classList.add('active');
+    modeAllTabsBtn?.setAttribute('aria-selected', 'true');
+
+    // Morph title into group name
+    cachedSingleTitle = tileTitleInput ? tileTitleInput.value : '';
+    if (tileTitleLabel) tileTitleLabel.textContent = 'Group Name';
+    if (tileTitleInput) {
+      tileTitleInput.placeholder = 'e.g. Work Session';
+      tileTitleInput.value = cachedGroupName || getDefaultGroupName();
+    }
+
+    // Hide size controls (desktop groups default to standard 2x2 grid tiles)
+    sizeRow?.classList.add('collapsed');
+
+    // Switch preview card to group summary card
+    faviconCard?.classList.add('hidden');
+    sessionCard?.classList.remove('hidden');
+
+    updateAllTabsSummary();
+    setButtonState('default');
+  } else {
+    modeAllTabsBtn?.classList.remove('active');
+    modeAllTabsBtn?.setAttribute('aria-selected', 'false');
+    modeSingleTabBtn?.classList.add('active');
+    modeSingleTabBtn?.setAttribute('aria-selected', 'true');
+
+    // Morph group name back to single tab title
+    cachedGroupName = tileTitleInput ? tileTitleInput.value : '';
+    if (tileTitleLabel) tileTitleLabel.textContent = 'Title';
+    if (tileTitleInput) {
+      tileTitleInput.placeholder = 'Page title';
+      tileTitleInput.value = cachedSingleTitle || (currentTab ? currentTab.title : '');
+    }
+
+    // Show size controls
+    sizeRow?.classList.remove('collapsed');
+
+    // Switch preview card back to single favicon preview
+    sessionCard?.classList.add('hidden');
+    faviconCard?.classList.remove('hidden');
+
+    setButtonState('default');
+  }
+}
+
+function updateAllTabsSummary() {
+  const count = windowTabs.length;
+  if (allTabsLabelText) {
+    allTabsLabelText.textContent = count > 0 ? `All Tabs (${count})` : 'All Tabs';
+  }
+  if (sessionSummaryText) {
+    sessionSummaryText.textContent = count === 1 ? '1 tab will be grouped' : `${count} tabs will be grouped`;
+  }
+}
+
 function setupSizeButtons() {
   size2x2Btn.addEventListener('click', () => {
     size2x2Btn.classList.add('active');
@@ -133,31 +235,43 @@ function closeDropdown() {
 
 async function initializeTabContext() {
   try {
+    // 1. Current active tab context
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tabs || tabs.length === 0) return;
+    if (tabs && tabs.length > 0) {
+      currentTab = tabs[0];
+      cachedSingleTitle = currentTab.title || '';
+      if (currentMode === 'single' && tileTitleInput) {
+        tileTitleInput.value = cachedSingleTitle;
+      }
 
-    currentTab = tabs[0];
-    tileTitleInput.value = currentTab.title || '';
+      let domain = '';
+      try {
+        domain = new URL(currentTab.url).hostname.replace(/^www\./, '');
+      } catch { }
 
-    let domain = '';
-    try {
-      domain = new URL(currentTab.url).hostname.replace(/^www\./, '');
-    } catch { }
+      if (faviconDomain) {
+        faviconDomain.textContent = domain || 'Website';
+      }
 
-    if (faviconDomain) {
-      faviconDomain.textContent = domain || 'Website';
+      const faviconUrl = currentTab.favIconUrl || (domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : '');
+      if (faviconPreview) {
+        faviconPreview.onerror = () => {
+          if (domain && !faviconPreview.src.includes('google.com')) {
+            faviconPreview.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+          }
+        };
+        if (faviconUrl) {
+          faviconPreview.src = faviconUrl;
+        }
+      }
     }
 
-    const faviconUrl = currentTab.favIconUrl || (domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : '');
-    if (faviconPreview) {
-      faviconPreview.onerror = () => {
-        if (domain && !faviconPreview.src.includes('google.com')) {
-          faviconPreview.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-        }
-      };
-      if (faviconUrl) {
-        faviconPreview.src = faviconUrl;
-      }
+    // 2. Query all tabs in the active window for session stashing
+    const allTabs = await chrome.tabs.query({ currentWindow: true });
+    if (Array.isArray(allTabs)) {
+      windowTabs = allTabs.filter(t => t.url && (t.url.startsWith('http://') || t.url.startsWith('https://')));
+      updateAllTabsSummary();
+      setButtonState('default');
     }
   } catch (err) {
     console.warn('[MetroHub] Error initializing tab context:', err);
@@ -419,21 +533,38 @@ function setButtonState(state, text = null) {
   const btnText = pinBtn.querySelector('.btn-text');
   const spinner = pinBtn.querySelector('.btn-spinner');
   const pinSvg = pinBtn.querySelector('.pin-svg');
+  const stashSvg = pinBtn.querySelector('.stash-svg');
   const checkSvg = pinBtn.querySelector('.check-svg');
 
   if (state === 'loading') {
     pinBtn.disabled = true;
     pinSvg?.classList.add('hidden');
+    stashSvg?.classList.add('hidden');
     checkSvg?.classList.add('hidden');
     spinner?.classList.remove('hidden');
-    if (btnText) btnText.textContent = text || 'Pinning to Canvas...';
+    if (btnText) {
+      btnText.textContent = text || (currentMode === 'all' ? 'Stashing Tabs...' : 'Pinning to Canvas...');
+    }
   } else {
     // default
-    pinBtn.disabled = !activePort;
-    pinSvg?.classList.remove('hidden');
+    pinBtn.disabled = !activePort || (currentMode === 'all' && windowTabs.length === 0);
     checkSvg?.classList.add('hidden');
     spinner?.classList.add('hidden');
-    if (btnText) btnText.textContent = 'Pin to MetroHub';
+
+    if (currentMode === 'all') {
+      pinSvg?.classList.add('hidden');
+      stashSvg?.classList.remove('hidden');
+      const count = windowTabs.length;
+      if (btnText) {
+        btnText.textContent = count > 0 ? `Stash ${count} Tabs to MetroHub` : 'Stash Tabs to MetroHub';
+      }
+    } else {
+      stashSvg?.classList.add('hidden');
+      pinSvg?.classList.remove('hidden');
+      if (btnText) {
+        btnText.textContent = 'Pin to MetroHub';
+      }
+    }
   }
 }
 
