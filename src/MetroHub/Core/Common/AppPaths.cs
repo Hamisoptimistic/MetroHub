@@ -32,9 +32,14 @@ public static class AppPaths
 
     // ── Categorized subdirectories ───────────────────────────
     public static string ConfigDir => Path.Combine(AppDataDir, "config");
+    public static string DataDir => Path.Combine(AppDataDir, "data");
     public static string CacheDir => Path.Combine(AppDataDir, "cache");
     public static string LogsDir => Path.Combine(AppDataDir, "logs");
     public static string BackupsDir => Path.Combine(AppDataDir, "backups");
+
+    // ── Persistent User Assets (Pasted Data) ─────────────────
+    public static string PastedImagesDir => Path.Combine(DataDir, "pasted_images");
+    public static string PastedNotesDir => Path.Combine(DataDir, "pasted_notes");
 
     // ── Widget state (per-tile autosave mirrors) ─────────────
     /// <summary>Root for widget-owned state files: config\widgets\{widgetId}\{tileId}.json.</summary>
