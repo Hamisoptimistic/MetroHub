@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "MetroHub Companion",
+  "version": "1.0.0",
+  "description": "Send links directly to your MetroHub desktop canvas as customizable tiles.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4a8NwE8C+SVuTDeHcRdkU1Bj6uVJeJ03/tzX/FVW118nKcyIXBxs4YwlJVydPr0iESQBQsc9WaX023o0TA8HNm7BEEkOtu0VJMhQQMizoEjN+88lBfdO6Wk23Xus+GX4AJg3tRduGCXum9uxHK5ssVM192CmXwvHqnyQhhKm+2H4CNaIVV03OA2FgJ1n4XEtCreMEk+6KodA1xw7krjGcTTgIqFZp7nTdfr3IYI5b/iZVA9GtrFOHLR2qK05SdNkxcqz1Fn88Zk/otR8IgZ5lAqrIlnmZnYQsOoRJsZ06bWYQo3jv2rvO+OXIORcyuU6UPw97dDfkBqpfCfk4OCZEQIDAQAB",
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:48842/*",
+    "http://127.0.0.1:48843/*",
+    "http://127.0.0.1:48844/*",
+    "http://127.0.0.1:48845/*",
+    "http://127.0.0.1:48846/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "commands": {
+    "pin_tab": {
+      "suggested_key": {
+        "default": "Alt+M"
+      },
+      "description": "Send active tab to MetroHub"
+    }
+  }
+}

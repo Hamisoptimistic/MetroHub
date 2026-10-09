@@ -333,7 +333,7 @@ public sealed class LocalCompanionService : IDisposable
             }
 
             int startPort = preferredPort ?? BasePort;
-            int endPort = preferredPort ?? MaxPort;
+            int endPort = preferredPort.HasValue ? Math.Max(MaxPort, preferredPort.Value + 10) : MaxPort;
 
             for (int port = startPort; port <= endPort; port++)
             {

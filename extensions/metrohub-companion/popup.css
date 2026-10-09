@@ -1,0 +1,412 @@
+/* =========================================================================
+   MetroHub Browser Companion - Raycast / Linear Dark Design System
+   Matches modern high-end extension standards: clean typography,
+   compact media card, seamless body (no window-in-a-window), and
+   refined subtle elevation.
+   ========================================================================= */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body {
+  width: 320px;
+  background-color: #121317;
+  color: #ededed;
+  font-size: 13px;
+  line-height: 1.4;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* App Shell (Fills the entire popup viewport with zero nested window margins) */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  padding: 15px 16px 16px;
+  gap: 13px;
+  background: linear-gradient(180deg, #17181f 0%, #111216 100%);
+}
+
+/* =========================================================================
+   Header
+   ========================================================================= */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 11px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-logo {
+  display: block;
+}
+
+.brand-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: #ffffff;
+}
+
+/* Status Indicator (Minimalist dot + label, zero capsule) */
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #a1a1aa;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #f59e0b;
+  transition: all 0.2s ease;
+}
+
+.status-indicator.connected .status-dot {
+  background-color: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.status-indicator.connected .status-text {
+  color: #34d399;
+}
+
+.status-indicator.offline .status-dot {
+  background-color: #ef4444;
+  box-shadow: 0 0 5px rgba(239, 68, 68, 0.5);
+}
+
+.status-indicator.offline .status-text {
+  color: #f87171;
+}
+
+.status-indicator.connecting .status-dot {
+  background-color: #f59e0b;
+  box-shadow: 0 0 5px rgba(245, 158, 11, 0.5);
+}
+
+.status-indicator.connecting .status-text {
+  color: #fbbf24;
+}
+
+/* =========================================================================
+   Form Rows & Inputs
+   ========================================================================= */
+.app-body {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.row-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #a1a1aa;
+  letter-spacing: -0.1px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+.input-wrap,
+.select-wrap {
+  width: 100%;
+  position: relative;
+}
+
+.text-input,
+.select-input {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #ffffff;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.text-input::placeholder {
+  color: #71717a;
+}
+
+.text-input:hover,
+.select-input:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.text-input:focus,
+.select-input:focus {
+  background-color: rgba(255, 255, 255, 0.07);
+  border-color: #0078d4;
+  box-shadow: 0 0 0 1px #0078d4, 0 0 10px rgba(0, 120, 212, 0.2);
+}
+
+/* Custom Select Dropdown */
+.select-input {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  padding-right: 30px;
+}
+
+.select-input option {
+  background-color: #17181f;
+  color: #ffffff;
+}
+
+.select-chevron {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #71717a;
+  transition: color 0.15s ease;
+}
+
+.select-wrap:hover .select-chevron {
+  color: #a1a1aa;
+}
+
+/* =========================================================================
+   Segmented Control (Tile Size)
+   ========================================================================= */
+.segmented-control {
+  display: flex;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 7px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.seg-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: #71717a;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.seg-btn:hover:not(.active) {
+  color: #a1a1aa;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.seg-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.seg-btn.active .seg-icon {
+  background-color: #4cc2ff;
+}
+
+.seg-icon {
+  display: inline-block;
+  background-color: #71717a;
+  border-radius: 1.5px;
+  transition: background-color 0.15s ease;
+}
+
+.icon-square {
+  width: 9px;
+  height: 9px;
+}
+
+.icon-wide {
+  width: 16px;
+  height: 9px;
+}
+
+/* =========================================================================
+   Favicon Preview Card
+   ========================================================================= */
+.favicon-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 7px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.favicon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.favicon-wrap img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  border-radius: 3px;
+}
+
+.favicon-wrap img:not([src]),
+.favicon-wrap img[src=""] {
+  opacity: 0;
+}
+
+.favicon-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.favicon-domain {
+  font-size: 13px;
+  font-weight: 500;
+  color: #ededed;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.favicon-sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: #71717a;
+}
+
+/* =========================================================================
+   Footer & Action Button
+   ========================================================================= */
+.app-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.submit-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: linear-gradient(135deg, #0078d4 0%, #0098ff 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 7px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 120, 212, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.15s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1084e0 0%, #1aa3ff 100%);
+  box-shadow: 0 5px 16px rgba(0, 120, 212, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transform: translateY(-0.5px);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: scale(0.985);
+  filter: brightness(0.95);
+}
+
+.submit-btn:disabled {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.25);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Spinner */
+.btn-spinner {
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Feedback Banner */
+.feedback-banner {
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.feedback-banner.success {
+  background-color: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #34d399;
+}
+
+.feedback-banner.duplicate {
+  background-color: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+}
+
+.feedback-banner.error {
+  background-color: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #f87171;
+}
+
+.hidden {
+  display: none !important;
+}

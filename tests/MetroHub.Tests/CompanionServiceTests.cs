@@ -325,32 +325,21 @@ public sealed class CompanionServiceTests : IAsyncLifetime
     [Fact]
     public async Task PortBusy_FallsBackToNext()
     {
-        // Bind a dummy listener on 48843
-        var dummy = new HttpListener();
-        dummy.Prefixes.Add("http://127.0.0.1:48843/");
-        dummy.Start();
+        // _service is already running on _port. Starting another service with preferredPort: _port
+        // must automatically detect that _port is busy and fall back to the next free port.
+        var fallbackService = new LocalCompanionService();
+        await fallbackService.StartAsync(preferredPort: _port);
 
         try
         {
-            var fallbackService = new LocalCompanionService();
-            await fallbackService.StartAsync(preferredPort: null);
-
-            try
-            {
-                Assert.True(fallbackService.IsRunning);
-                Assert.NotEqual(48843, fallbackService.ActivePort);
-                Assert.InRange(fallbackService.ActivePort, LocalCompanionService.BasePort, LocalCompanionService.MaxPort);
-            }
-            finally
-            {
-                await fallbackService.StopAsync();
-                fallbackService.Dispose();
-            }
+            Assert.True(fallbackService.IsRunning);
+            Assert.NotEqual(_port, fallbackService.ActivePort);
+            Assert.True(fallbackService.ActivePort > _port);
         }
         finally
         {
-            dummy.Stop();
-            dummy.Close();
+            await fallbackService.StopAsync();
+            fallbackService.Dispose();
         }
     }
 

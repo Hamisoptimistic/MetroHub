@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MetroHub Companion</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Header: MetroHub Brand + Minimal Connected Status -->
+    <header class="app-header">
+      <div class="brand">
+        <svg class="brand-logo" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <rect x="0" y="0" width="8" height="8" rx="2" fill="#0078D4"/>
+          <rect x="10" y="0" width="8" height="8" rx="2" fill="#4CC2FF"/>
+          <rect x="0" y="10" width="8" height="8" rx="2" fill="#005A9E"/>
+          <rect x="10" y="10" width="8" height="8" rx="2" fill="#60CDFF"/>
+        </svg>
+        <span class="brand-title">MetroHub</span>
+      </div>
+
+      <div id="statusBadge" class="status-indicator connecting">
+        <span class="status-dot"></span>
+        <span id="statusText" class="status-text">Checking...</span>
+      </div>
+    </header>
+
+    <!-- Main Content Form -->
+    <main class="app-body">
+      <!-- Title Input -->
+      <div class="form-row">
+        <label for="tileTitle" class="row-label">Title</label>
+        <div class="input-wrap">
+          <input type="text" id="tileTitle" class="text-input" placeholder="Page title" spellcheck="false" autocomplete="off" />
+        </div>
+      </div>
+
+      <!-- Segmented Control: Tile Dimensions -->
+      <div class="form-row">
+        <label class="row-label">Size</label>
+        <div class="segmented-control">
+          <button type="button" id="size2x2" class="seg-btn active" data-span-x="2" data-span-y="2">
+            <span class="seg-icon icon-square"></span>
+            <span>2×2 Standard</span>
+          </button>
+          <button type="button" id="size4x2" class="seg-btn" data-span-x="4" data-span-y="2">
+            <span class="seg-icon icon-wide"></span>
+            <span>4×2 Wide</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Workspace Selection -->
+      <div class="form-row">
+        <label for="workspaceSelect" class="row-label">Workspace</label>
+        <div class="select-wrap">
+          <select id="workspaceSelect" class="select-input">
+            <option value="">Main (Active)</option>
+          </select>
+          <svg class="select-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Favicon Preview Row -->
+      <div class="favicon-card">
+        <div class="favicon-wrap">
+          <img id="faviconPreview" src="" alt="Favicon" />
+        </div>
+        <div class="favicon-info">
+          <span class="favicon-domain" id="faviconDomain">Website</span>
+          <span class="favicon-sub">Website Favicon</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer Action -->
+    <footer class="app-footer">
+      <button type="button" id="pinBtn" class="submit-btn" disabled>
+        <span class="btn-text">Pin to MetroHub</span>
+        <span class="btn-spinner hidden"></span>
+      </button>
+
+      <div id="feedbackBanner" class="feedback-banner hidden"></div>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
