@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -234,15 +235,29 @@ public static class CanvasPasteService
                 Directory.CreateDirectory(targetDir);
             }
 
-            // Guard G8: Deterministic unique filename with timestamp and GUID
-            string fileName = GenerateImageFileName();
+            // Guard G8 & Content-Addressable Storage: encode to memory buffer and compute SHA-256 hash
+            using var ms = new MemoryStream();
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bitmap));
+            encoder.Save(ms);
+            byte[] pngBytes = ms.ToArray();
+
+            string fileName = GenerateImageFileName(pngBytes);
             string targetPath = Path.Combine(targetDir, fileName);
 
-            using (var fs = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            // Fast deduplication: if identical image exists on disk, reuse it without rewriting
+            if (!File.Exists(targetPath))
             {
-                var encoder = new PngBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(bitmap));
-                encoder.Save(fs);
+                string tmpPath = Path.Combine(targetDir, $"{fileName}.tmp.{Guid.NewGuid():N}");
+                try
+                {
+                    File.WriteAllBytes(tmpPath, pngBytes);
+                    File.Move(tmpPath, targetPath, overwrite: false);
+                }
+                catch (IOException)
+                {
+                    Safe.Try(() => { if (File.Exists(tmpPath)) File.Delete(tmpPath); });
+                }
             }
 
             string title = $"Image {DateTime.Now:yyyy-MM-dd HH.mm}";
@@ -399,6 +414,14 @@ public static class CanvasPasteService
     }
 
     internal static string GenerateImageFileName() => $"img_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}.png";
+
+    internal static string GenerateImageFileName(ReadOnlySpan<byte> pngBytes)
+    {
+        Span<byte> hash = stackalloc byte[32];
+        SHA256.HashData(pngBytes, hash);
+        return $"img_{Convert.ToHexStringLower(hash)}.png";
+    }
+
     internal static string GenerateNoteFileName() => $"Note_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}.txt";
 
     private static string ParseUrlFile(string urlFilePath)

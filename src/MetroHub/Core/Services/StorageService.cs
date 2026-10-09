@@ -65,6 +65,17 @@ public sealed class StorageService
 
     private static void SaveAtomic(string targetPath, string bakPath, string content)
     {
+        // Guard against test leakage: if running in a test process, never write into the real user %LocalAppData%\MetroHub
+        if (AppPaths.IsTestProcess)
+        {
+            string realMetroHub = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetroHub");
+            if (targetPath.StartsWith(realMetroHub, StringComparison.OrdinalIgnoreCase))
+            {
+                System.Diagnostics.Debug.WriteLine($"[StorageService] BLOCKED write to real AppData during test execution: {targetPath}");
+                return;
+            }
+        }
+
         lock (WriteLock)
         {
             string tmpPath = targetPath + ".tmp";
@@ -537,6 +548,40 @@ public sealed class StorageService
             _pendingWorkspaceLayouts.Clear();
             _pendingWorkspaceGroups.Clear();
         }
+
+        Task? task;
+        lock (_flushGate)
+        {
+            task = _backgroundFlushTask;
+        }
+        if (task != null && !task.IsCompleted)
+        {
+            Safe.Try(() => task.Wait(500), context: "StorageService.ResetPending.Wait");
+        }
+    }
+
+    /// <summary>
+    /// Returns any uncommitted layout JSON strings currently held in memory write queues.
+    /// Used by garbage-collection services (e.g. PastedAssetCleanupService) to inspect referenced assets.
+    /// </summary>
+    public static IEnumerable<string> GetPendingLayoutJsonStrings()
+    {
+        var list = new List<string>();
+        lock (WriteLock)
+        {
+            if (!string.IsNullOrWhiteSpace(_pendingLayoutJson))
+            {
+                list.Add(_pendingLayoutJson);
+            }
+            foreach (var kvp in _pendingWorkspaceLayouts)
+            {
+                if (!string.IsNullOrWhiteSpace(kvp.Value))
+                {
+                    list.Add(kvp.Value);
+                }
+            }
+        }
+        return list;
     }
 
     public static void SaveLayout(ObservableCollection<TileModel> tiles)

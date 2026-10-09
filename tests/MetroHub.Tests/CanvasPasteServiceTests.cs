@@ -14,8 +14,40 @@ using Xunit;
 
 namespace MetroHub.Tests;
 
-public sealed class CanvasPasteServiceTests
+[Collection("StorageTests")]
+public sealed class CanvasPasteServiceTests : IDisposable
 {
+    private readonly string _sandboxDir;
+
+    public CanvasPasteServiceTests()
+    {
+        StorageService.ResetPending();
+        _sandboxDir = Path.Combine(Path.GetTempPath(), "MetroHub_CanvasPasteTests_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_sandboxDir);
+        AppPaths.CustomAppDataDir = _sandboxDir;
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            StorageService.Flush();
+            StorageService.ResetPending();
+        }
+        catch { }
+        finally
+        {
+            AppPaths.CustomAppDataDir = null;
+            try
+            {
+                if (Directory.Exists(_sandboxDir))
+                {
+                    Directory.Delete(_sandboxDir, recursive: true);
+                }
+            }
+            catch { }
+        }
+    }
     private static BitmapSource CreateTestBitmap(int width = 2, int height = 2)
     {
         int stride = width * 4;
@@ -63,9 +95,7 @@ public sealed class CanvasPasteServiceTests
     [Fact]
     public void ProcessSnapshot_FormatPriority_FileDropWinsOverUrlAndBitmapAndText()
     {
-        string tempDir = AppPaths.DataDir;
-        if (!Directory.Exists(tempDir)) Directory.CreateDirectory(tempDir);
-
+        string tempDir = _sandboxDir;
         string tempFile = Path.Combine(tempDir, "priority_test_" + Guid.NewGuid().ToString("N") + ".txt");
         File.WriteAllText(tempFile, "sample file");
 
@@ -205,7 +235,7 @@ public sealed class CanvasPasteServiceTests
     [Fact]
     public void ProcessSnapshot_FileDropFiltering_SkipsMissing_KeepsFolders_ParsesUrlShortcuts()
     {
-        string tempDir = Path.Combine(AppPaths.DataDir, "test_filedrop_" + Guid.NewGuid().ToString("N"));
+        string tempDir = Path.Combine(_sandboxDir, "test_filedrop_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDir);
 
         try
@@ -458,5 +488,265 @@ public sealed class CanvasPasteServiceTests
         Assert.Equal(50, CanvasPasteService.MaxFileCount);
         Assert.Equal(1024 * 1024, CanvasPasteService.MaxTextLength);
         Assert.Equal(8192, CanvasPasteService.MaxBitmapDimension);
+    }
+
+    // ── 10. Hash Deduplication (Content-Addressable Storage) ─────────────────
+
+    [Fact]
+    public void GenerateImageFileName_WithBytes_ProducesDeterministicSha256Name()
+    {
+        byte[] sample1 = [1, 2, 3, 4, 5];
+        byte[] sample2 = [1, 2, 3, 4, 5];
+        byte[] different = [1, 2, 3, 4, 6];
+
+        string name1 = CanvasPasteService.GenerateImageFileName(sample1);
+        string name2 = CanvasPasteService.GenerateImageFileName(sample2);
+        string nameDiff = CanvasPasteService.GenerateImageFileName(different);
+
+        Assert.Equal(name1, name2);
+        Assert.NotEqual(name1, nameDiff);
+        Assert.StartsWith("img_", name1);
+        Assert.EndsWith(".png", name1);
+    }
+
+    [Fact]
+    public void ProcessBitmap_IdenticalBitmaps_ReuseSameDiskFile()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var bmp1 = CreateTestBitmap(4, 4);
+            var bmp2 = CreateTestBitmap(4, 4);
+
+            var snap1 = new ClipboardSnapshot(null, null, bmp1, false);
+            var snap2 = new ClipboardSnapshot(null, null, bmp2, false);
+
+            var items1 = CanvasPasteService.ProcessSnapshot(snap1);
+            var items2 = CanvasPasteService.ProcessSnapshot(snap2);
+
+            Assert.NotNull(items1);
+            Assert.NotNull(items2);
+            Assert.Single(items1!);
+            Assert.Single(items2!);
+
+            string path1 = items1![0].TargetPath;
+            string path2 = items2![0].TargetPath;
+
+            // Must point to the exact same file path on disk
+            Assert.Equal(path1, path2);
+            Assert.True(File.Exists(path1));
+
+            // Verify only one file was written in PastedImagesDir
+            var files = Directory.GetFiles(AppPaths.PastedImagesDir, "img_*.png");
+            Assert.Single(files);
+        });
+    }
+
+    // ── 11. Orphan Asset Mark & Sweep Garbage Collection ────────────────────
+
+    [Fact]
+    public async Task PastedAssetCleanupService_KeepsReferenced_DeletesOrphanOlderThanGrace()
+    {
+        string imagesDir = AppPaths.PastedImagesDir;
+        Directory.CreateDirectory(imagesDir);
+
+        // 1. Live referenced file
+        string liveFile = Path.Combine(imagesDir, "img_live_123.png");
+        File.WriteAllText(liveFile, "live image data");
+        File.SetLastWriteTimeUtc(liveFile, DateTime.UtcNow.AddDays(-5));
+        File.SetCreationTimeUtc(liveFile, DateTime.UtcNow.AddDays(-5));
+
+        // 2. Unreferenced file within grace period (young)
+        string youngFile = Path.Combine(imagesDir, "img_young_456.png");
+        File.WriteAllText(youngFile, "young image data");
+        File.SetLastWriteTimeUtc(youngFile, DateTime.UtcNow.AddMinutes(-10));
+        File.SetCreationTimeUtc(youngFile, DateTime.UtcNow.AddMinutes(-10));
+
+        // 3. Unreferenced file older than grace period (stale orphan)
+        string staleFile = Path.Combine(imagesDir, "img_stale_789.png");
+        File.WriteAllText(staleFile, "stale orphan image data");
+        File.SetLastWriteTimeUtc(staleFile, DateTime.UtcNow.AddDays(-3));
+        File.SetCreationTimeUtc(staleFile, DateTime.UtcNow.AddDays(-3));
+
+        // 4. Stale temporary file
+        string staleTmp = Path.Combine(imagesDir, "img_test.png.tmp.abc");
+        File.WriteAllText(staleTmp, "temp data");
+        File.SetLastWriteTimeUtc(staleTmp, DateTime.UtcNow.AddHours(-3));
+
+        var liveTile = new TileModel
+        {
+            Id = "tile_live",
+            Title = "Live Tile",
+            TargetPath = liveFile,
+            IconPath = liveFile
+        };
+
+        var result = await PastedAssetCleanupService.SweepAsync(
+            gracePeriod: TimeSpan.FromHours(24),
+            activeTiles: [liveTile],
+            historySnapshots: null,
+            force: true);
+
+        Assert.True(File.Exists(liveFile), "Live referenced tile image must be kept.");
+        Assert.True(File.Exists(youngFile), "Young unreferenced tile image within grace period must be kept.");
+        Assert.False(File.Exists(staleFile), "Stale orphan image older than grace period must be deleted.");
+        Assert.False(File.Exists(staleTmp), "Stale temporary file must be deleted.");
+        Assert.Equal(2, result.DeletedCount);
+        Assert.True(result.ReclaimedBytes > 0);
+    }
+
+    [Fact]
+    public async Task PastedAssetCleanupService_ProtectsUndoHistorySnapshots()
+    {
+        string imagesDir = AppPaths.PastedImagesDir;
+        Directory.CreateDirectory(imagesDir);
+
+        string undoFile = Path.Combine(imagesDir, "img_history_999.png");
+        File.WriteAllText(undoFile, "history image data");
+        File.SetLastWriteTimeUtc(undoFile, DateTime.UtcNow.AddDays(-5));
+        File.SetCreationTimeUtc(undoFile, DateTime.UtcNow.AddDays(-5));
+
+        var historyTile = new TileModel
+        {
+            Id = "tile_in_history",
+            Title = "History Tile",
+            TargetPath = undoFile
+        };
+
+        string snapshotJson = LayoutHistoryService.CaptureSnapshot([historyTile]);
+
+        var result = await PastedAssetCleanupService.SweepAsync(
+            gracePeriod: TimeSpan.FromHours(24),
+            activeTiles: [], // No active tiles currently on canvas
+            historySnapshots: [snapshotJson], // Retained in Undo stack
+            force: true
+        );
+
+        Assert.True(File.Exists(undoFile), "Image referenced in Undo history stack must never be deleted.");
+        Assert.Equal(0, result.DeletedCount);
+    }
+
+    // ── 12. Pure SelectOrphans & Fail-Closed Guard Tests ─────────────────────
+
+    [Fact]
+    public void SelectOrphans_PureEvaluation_MatchesAllExpectedConditions()
+    {
+        var now = DateTime.UtcNow;
+        var grace = TimeSpan.FromHours(24);
+
+        var referenced = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "C:\\data\\img_by_full_path.png",
+            "img_by_filename.png"
+        };
+
+        var candidates = new List<AssetFileInfo>
+        {
+            // 1. Referenced by full path -> keep
+            new("C:\\data\\img_by_full_path.png", now.AddDays(-5), now.AddDays(-5), 100),
+
+            // 2. Referenced by filename only -> keep
+            new("D:\\other\\img_by_filename.png", now.AddDays(-5), now.AddDays(-5), 200),
+
+            // 3. Unreferenced but created recently (< 24h) -> keep
+            new("C:\\data\\img_recent.png", now.AddHours(-2), now.AddHours(-2), 300),
+
+            // 4. Stale temp file (> 1h old) -> delete temp
+            new("C:\\data\\img_stale.png.tmp", now.AddHours(-3), now.AddHours(-3), 400),
+
+            // 5. Young temp file (< 1h old) -> keep
+            new("C:\\data\\img_young.png.tmp", now.AddMinutes(-10), now.AddMinutes(-10), 500),
+
+            // 6. Stale unreferenced file (> 24h old) -> delete orphan
+            new("C:\\data\\img_orphan.png", now.AddDays(-3), now.AddDays(-3), 600)
+        };
+
+        var orphans = PastedAssetCleanupService.SelectOrphans(candidates, referenced, now, grace);
+
+        Assert.Equal(2, orphans.Count);
+
+        var staleTemp = orphans.FirstOrDefault(o => o.FullPath == "C:\\data\\img_stale.png.tmp");
+        Assert.NotNull(staleTemp);
+        Assert.True(staleTemp!.IsStaleTemp);
+
+        var staleOrphan = orphans.FirstOrDefault(o => o.FullPath == "C:\\data\\img_orphan.png");
+        Assert.NotNull(staleOrphan);
+        Assert.False(staleOrphan!.IsStaleTemp);
+    }
+
+    [Fact]
+    public void SelectOrphans_CircuitBreaker_EmptyReferencedSetReturnsZeroOrphans()
+    {
+        var now = DateTime.UtcNow;
+        var grace = TimeSpan.FromHours(24);
+
+        var emptyReferenced = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var candidates = new List<AssetFileInfo>
+        {
+            new("C:\\data\\img_orphan.png", now.AddDays(-3), now.AddDays(-3), 600)
+        };
+
+        // When reference set is empty, circuit breaker triggers and returns 0 orphans
+        var orphans = PastedAssetCleanupService.SelectOrphans(candidates, emptyReferenced, now, grace);
+
+        Assert.Empty(orphans);
+    }
+
+    [Fact]
+    public void TryCollectReferencedPastedAssets_AbortsOnCorruptLayoutFile()
+    {
+        string layoutPath = AppPaths.LayoutPath;
+        AppPaths.EnsureDirectory(layoutPath);
+        File.WriteAllText(layoutPath, "{ this is corrupted invalid json }}}");
+
+        try
+        {
+            bool success = PastedAssetCleanupService.TryCollectReferencedPastedAssets(
+                activeTiles: null,
+                historySnapshots: null,
+                out var referenced);
+
+            Assert.False(success, "Corrupt layout file must cause Mark phase to abort (fail-closed).");
+            Assert.Null(referenced);
+        }
+        finally
+        {
+            if (File.Exists(layoutPath))
+            {
+                File.Delete(layoutPath);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task SweepAsync_Throttling_SkipsSecondRunWithin24Hours()
+    {
+        string imagesDir = AppPaths.PastedImagesDir;
+        Directory.CreateDirectory(imagesDir);
+
+        string liveFile = Path.Combine(imagesDir, "img_throttle_test.png");
+        File.WriteAllText(liveFile, "test data");
+
+        var liveTile = new TileModel
+        {
+            Id = "tile_throttle",
+            Title = "Throttle Tile",
+            TargetPath = liveFile
+        };
+
+        // Run 1 with force: true sets the timestamp
+        var run1 = await PastedAssetCleanupService.SweepAsync(
+            activeTiles: [liveTile],
+            force: true);
+
+        Assert.True(File.Exists(liveFile));
+
+        // Run 2 immediately with force: false should be throttled (returns 0 scanned/deleted)
+        var run2 = await PastedAssetCleanupService.SweepAsync(
+            activeTiles: [liveTile],
+            force: false);
+
+        Assert.Equal(0, run2.ScannedCount);
+        Assert.Equal(0, run2.DeletedCount);
     }
 }

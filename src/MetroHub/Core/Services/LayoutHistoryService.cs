@@ -138,6 +138,23 @@ public sealed class LayoutHistoryService
         _undoStack.Clear();
         _redoStack.Clear();
     }
+
+    /// <summary>
+    /// Returns all snapshots currently retained across active undo/redo stacks and saved workspace stacks.
+    /// Used by garbage-collection services (e.g. PastedAssetCleanupService) to ensure assets in history are preserved.
+    /// </summary>
+    public IReadOnlyList<string> GetAllSnapshots()
+    {
+        var list = new List<string>(_undoStack.Count + _redoStack.Count);
+        list.AddRange(_undoStack);
+        list.AddRange(_redoStack);
+        foreach (var ws in _workspaceStacks.Values)
+        {
+            list.AddRange(ws.Undo);
+            list.AddRange(ws.Redo);
+        }
+        return list;
+    }
 }
 
 public sealed class LayoutSnapshotModel

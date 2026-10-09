@@ -721,6 +721,9 @@ public sealed class TileManager
         var tiles = _tilesProvider();
         var groups = _groupsProvider();
 
+        string prePaste = LayoutHistoryService.CaptureSnapshot(tiles, groups);
+        _historyService.PushState(prePaste);
+
         // Clear previous selection before selecting new pasted batch
         ClearSelection();
 

@@ -13,9 +13,40 @@ public static class AppPaths
 {
     private static string? _customAppDataDir;
 
+    private static readonly bool _isTestProcess = DetectTestEnvironment();
+
+    public static bool IsTestProcess => _isTestProcess;
+
+    private static readonly string _defaultTestSandboxDir = Path.Combine(
+        Path.GetTempPath(),
+        "MetroHub_TestSandbox_Default");
+
+    private static bool DetectTestEnvironment()
+    {
+        try
+        {
+            string proc = System.Diagnostics.Process.GetCurrentProcess().ProcessName;
+            if (proc.IndexOf("testhost", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                proc.IndexOf("vstest", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            string domainName = AppDomain.CurrentDomain.FriendlyName;
+            if (domainName.IndexOf("testhost", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                domainName.IndexOf("test", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+        }
+        catch { }
+
+        return false;
+    }
+
     /// <summary>
     /// Optional override for isolated unit testing or portable runs.
-    /// When null, defaults to %LocalAppData%\MetroHub.
+    /// When null, defaults to %LocalAppData%\MetroHub in production, or %TEMP%\MetroHub_TestSandbox_Default in unit test hosts.
     /// </summary>
     public static string? CustomAppDataDir
     {
@@ -24,11 +55,14 @@ public static class AppPaths
     }
 
     /// <summary>
-    /// Base application directory: %LocalAppData%\MetroHub.
+    /// Base application directory: %LocalAppData%\MetroHub in production,
+    /// or isolated sandboxes in unit test hosts.
     /// </summary>
-    public static string AppDataDir => _customAppDataDir ?? Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "MetroHub");
+    public static string AppDataDir => _customAppDataDir ?? (_isTestProcess
+        ? _defaultTestSandboxDir
+        : Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "MetroHub"));
 
     // ── Categorized subdirectories ───────────────────────────
     public static string ConfigDir => Path.Combine(AppDataDir, "config");

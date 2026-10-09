@@ -441,6 +441,36 @@ public partial class MainWindow
         });
     }
 
+    private void StartBackgroundMaintenance()
+    {
+        Task.Run(async () =>
+        {
+            try
+            {
+                // Defer background maintenance by 5 seconds to ensure app startup is fully idle
+                await Task.Delay(5000).ConfigureAwait(false);
+
+                List<TileModel>? liveTiles = null;
+                IReadOnlyList<string>? historySnapshots = null;
+
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    liveTiles = Tiles?.ToList();
+                    historySnapshots = _historyService?.GetAllSnapshots();
+                }, DispatcherPriority.Background);
+
+                await PastedAssetCleanupService.SweepAsync(
+                    gracePeriod: TimeSpan.FromHours(24),
+                    activeTiles: liveTiles,
+                    historySnapshots: historySnapshots).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Safe.Logger(ex, "MainWindow.StartBackgroundMaintenance");
+            }
+        });
+    }
+
     private async Task LoadAppsSubmenuAsync()
     {
         if (_isAppsLoaded || _isLoadingApps) return;
