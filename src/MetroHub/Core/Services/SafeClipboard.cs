@@ -65,6 +65,11 @@ public static class SafeClipboard
     }
 
     /// <summary>
+    /// Legacy clipboard format used by password managers to instruct tools not to record clipboard content.
+    /// </summary>
+    public const string FormatClipboardViewerIgnore = "Clipboard Viewer Ignore";
+
+    /// <summary>
     /// Checks if the clipboard payload contains privacy or security flags set by password managers
     /// or confidential applications, prohibiting persistent storage.
     /// </summary>
@@ -74,7 +79,9 @@ public static class SafeClipboard
 
         try
         {
-            if (dataObject.GetDataPresent(FormatExcludeFromMonitor))
+            // Format presence alone indicates confidential/sensitive content
+            if (dataObject.GetDataPresent(FormatExcludeFromMonitor) ||
+                dataObject.GetDataPresent(FormatClipboardViewerIgnore))
             {
                 return true;
             }
@@ -82,9 +89,9 @@ public static class SafeClipboard
             if (dataObject.GetDataPresent(FormatCanIncludeInHistory))
             {
                 var val = dataObject.GetData(FormatCanIncludeInHistory);
-                if (val is int intVal && intVal == 0) return true;
-                if (val is bool boolVal && !boolVal) return true;
-                if (val is byte byteVal && byteVal == 0) return true;
+                int dword = ParseDwordValue(val);
+                // When 0, password managers or apps explicitly prohibit recording to history/disk
+                if (dword == 0) return true;
             }
         }
         catch (Exception ex)
@@ -93,6 +100,25 @@ public static class SafeClipboard
         }
 
         return false;
+    }
+
+    private static int ParseDwordValue(object? val)
+    {
+        if (val is int intVal) return intVal;
+        if (val is bool boolVal) return boolVal ? 1 : 0;
+        if (val is byte byteVal) return byteVal;
+        if (val is System.IO.MemoryStream ms)
+        {
+            byte[] bytes = ms.ToArray();
+            if (bytes.Length >= 4) return BitConverter.ToInt32(bytes, 0);
+            if (bytes.Length > 0) return bytes[0];
+        }
+        if (val is byte[] rawBytes)
+        {
+            if (rawBytes.Length >= 4) return BitConverter.ToInt32(rawBytes, 0);
+            if (rawBytes.Length > 0) return rawBytes[0];
+        }
+        return -1;
     }
 
     /// <summary>

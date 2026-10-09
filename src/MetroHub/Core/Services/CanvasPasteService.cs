@@ -24,6 +24,16 @@ public sealed class PasteItemSpec
 }
 
 /// <summary>
+/// Immutable snapshot of clipboard payload for pure, deterministic transformation.
+/// </summary>
+public sealed record ClipboardSnapshot(
+    IReadOnlyList<string>? Files,
+    string? Text,
+    BitmapSource? Image,
+    bool IsSensitive
+);
+
+/// <summary>
 /// Core service responsible for discriminating clipboard formats with strict priority,
 /// applying safety caps, offloading file validation and encoding to background threads,
 /// and generating tile specifications.
@@ -37,42 +47,70 @@ public static class CanvasPasteService
     private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
     /// <summary>
-    /// Reads clipboard data on the caller's STA thread and performs format discrimination
-    /// and I/O persistence on a background thread. Returns a list of pending tile specifications.
+    /// Reads clipboard data on the caller's STA thread into an immutable snapshot.
+    /// Returns null if the clipboard is empty, locked, or unavailable.
+    /// </summary>
+    public static ClipboardSnapshot? CaptureSnapshot(IDataObject? dataObject = null)
+    {
+        try
+        {
+            dataObject ??= SafeClipboard.GetDataObject();
+            if (dataObject == null) return null;
+
+            string[]? rawFiles = null;
+            if (dataObject.GetDataPresent(DataFormats.FileDrop))
+            {
+                rawFiles = dataObject.GetData(DataFormats.FileDrop) as string[];
+            }
+
+            string? rawText = null;
+            if (dataObject.GetDataPresent(DataFormats.UnicodeText) || dataObject.GetDataPresent(DataFormats.Text))
+            {
+                rawText = (dataObject.GetData(DataFormats.UnicodeText) ?? dataObject.GetData(DataFormats.Text)) as string;
+            }
+
+            BitmapSource? frozenImage = SafeClipboard.TryGetFrozenImage(dataObject);
+            bool isSensitive = SafeClipboard.IsSensitiveData(dataObject);
+
+            return new ClipboardSnapshot(rawFiles, rawText, frozenImage, isSensitive);
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "CanvasPasteService: Failed to capture clipboard snapshot");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Pure transformation of a clipboard snapshot into tile specifications.
+    /// Performs format discrimination in strict priority: FileDrop -> URL -> Bitmap -> Text note.
+    /// </summary>
+    public static IReadOnlyList<PasteItemSpec>? ProcessSnapshot(ClipboardSnapshot? snapshot)
+    {
+        if (snapshot == null) return null;
+        return ProcessClipboardDataCore(snapshot.Files, snapshot.Text, snapshot.Image, snapshot.IsSensitive);
+    }
+
+    /// <summary>
+    /// Captures a clipboard snapshot on the STA thread and offloads file validation,
+    /// image encoding, and I/O to a background thread.
     /// </summary>
     public static async Task<IReadOnlyList<PasteItemSpec>?> ExtractPasteItemsAsync(IDataObject? dataObject = null)
     {
-        // 1. STA UI Thread: Capture clipboard snapshot safely
-        dataObject ??= SafeClipboard.GetDataObject();
-        if (dataObject == null) return null;
+        var snapshot = CaptureSnapshot(dataObject);
+        if (snapshot == null) return null;
 
-        string[]? rawFiles = null;
-        if (dataObject.GetDataPresent(DataFormats.FileDrop))
-        {
-            rawFiles = dataObject.GetData(DataFormats.FileDrop) as string[];
-        }
-
-        string? rawText = null;
-        if (dataObject.GetDataPresent(DataFormats.UnicodeText) || dataObject.GetDataPresent(DataFormats.Text))
-        {
-            rawText = (dataObject.GetData(DataFormats.UnicodeText) ?? dataObject.GetData(DataFormats.Text)) as string;
-        }
-
-        BitmapSource? frozenImage = SafeClipboard.TryGetFrozenImage(dataObject);
-        bool isSensitive = SafeClipboard.IsSensitiveData(dataObject);
-
-        // 2. Offload I/O, network checks, and encoding to background thread (Guard G5)
-        return await Task.Run(() => ProcessClipboardDataCore(rawFiles, rawText, frozenImage, isSensitive)).ConfigureAwait(false);
+        return await Task.Run(() => ProcessSnapshot(snapshot)).ConfigureAwait(false);
     }
 
     private static IReadOnlyList<PasteItemSpec>? ProcessClipboardDataCore(
-        string[]? rawFiles,
+        IReadOnlyList<string>? rawFiles,
         string? rawText,
         BitmapSource? frozenImage,
         bool isSensitive)
     {
         // ── Priority 1: Files from Explorer (DataFormats.FileDrop) ──────────────
-        if (rawFiles != null && rawFiles.Length > 0)
+        if (rawFiles != null && rawFiles.Count > 0)
         {
             var fileSpecs = ProcessFiles(rawFiles);
             if (fileSpecs != null && fileSpecs.Count > 0)
@@ -120,13 +158,17 @@ public static class CanvasPasteService
         return null;
     }
 
-    private static List<PasteItemSpec>? ProcessFiles(string[] files)
+    private static List<PasteItemSpec>? ProcessFiles(IReadOnlyList<string> files)
     {
-        // Guard G7: Cap number of items to prevent canvas DOS
-        var candidates = files.Take(MaxFileCount).ToList();
+        // Guard G7: Cap number of items to prevent canvas DOS. Oversized list rejected.
+        if (files.Count > MaxFileCount)
+        {
+            return null;
+        }
+
         var results = new List<PasteItemSpec>();
 
-        foreach (string path in candidates)
+        foreach (string path in files)
         {
             if (string.IsNullOrWhiteSpace(path)) continue;
 
@@ -193,7 +235,7 @@ public static class CanvasPasteService
             }
 
             // Guard G8: Deterministic unique filename with timestamp and GUID
-            string fileName = $"img_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}.png";
+            string fileName = GenerateImageFileName();
             string targetPath = Path.Combine(targetDir, fileName);
 
             using (var fs = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -226,8 +268,11 @@ public static class CanvasPasteService
     {
         try
         {
-            // Guard G7: Cap text size to 1 MB
-            string content = text.Length > MaxTextLength ? text.Substring(0, MaxTextLength) : text;
+            // Guard G7: Cap text size to 1 MB. Oversized text rejected silently.
+            if (text.Length > MaxTextLength)
+            {
+                return null;
+            }
 
             string targetDir = AppPaths.PastedNotesDir;
             if (!Directory.Exists(targetDir))
@@ -236,13 +281,13 @@ public static class CanvasPasteService
             }
 
             // Guard G8: Deterministic unique filename
-            string fileName = $"Note_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}.txt";
+            string fileName = GenerateNoteFileName();
             string targetPath = Path.Combine(targetDir, fileName);
 
-            File.WriteAllText(targetPath, content, Utf8NoBom);
+            File.WriteAllText(targetPath, text, Utf8NoBom);
 
             // Determine display title from first non-empty line
-            string firstLine = content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+            string firstLine = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
             string title = firstLine.Length > 24
                 ? firstLine.Substring(0, 24).Trim() + "..."
                 : firstLine.Trim();
@@ -274,7 +319,7 @@ public static class CanvasPasteService
     /// <summary>
     /// Guard G3: Validates text strictly as a web URL.
     /// Requires a single trimmed line without spaces, a valid URI, and strict HTTP/HTTPS scheme.
-    /// Rejects javascript:, file:, data:, and multi-line snippets.
+    /// Rejects javascript:, file:, data:, bare filenames, userinfo, and multi-line snippets.
     /// </summary>
     public static bool TryValidateWebUrl(string? rawText, out string normalizedUrl, out string title)
     {
@@ -285,29 +330,63 @@ public static class CanvasPasteService
 
         string trimmed = rawText.Trim();
 
+        if (trimmed.Length > MaxTextLength) return false;
+
         // Must be a single line
         if (trimmed.Contains('\n') || trimmed.Contains('\r')) return false;
 
-        // Must not contain spaces
+        // Must not contain whitespace
         if (trimmed.Any(char.IsWhiteSpace)) return false;
+
+        // Reject scheme-relative URLs and user credentials / email addresses
+        if (trimmed.StartsWith("//", StringComparison.Ordinal) || trimmed.Contains('@')) return false;
 
         // Reject dangerous/unsupported schemes
         if (trimmed.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase) ||
             trimmed.StartsWith("file:", StringComparison.OrdinalIgnoreCase) ||
             trimmed.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ||
-            trimmed.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase))
+            trimmed.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("ftp:", StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
-        string normalized = WebFaviconService.NormalizeUrl(trimmed);
-        if (string.IsNullOrWhiteSpace(normalized)) return false;
+        bool hasHttp = trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                       trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+        bool hasWww = trimmed.StartsWith("www.", StringComparison.OrdinalIgnoreCase);
+
+        string domainCandidate = trimmed;
+        int slashIdx = domainCandidate.IndexOf('/');
+        if (slashIdx > 0)
+        {
+            domainCandidate = domainCandidate.Substring(0, slashIdx);
+        }
+        int colonIdx = domainCandidate.IndexOf(':');
+        if (colonIdx > 0 && !hasHttp)
+        {
+            domainCandidate = domainCandidate.Substring(0, colonIdx);
+        }
+
+        bool isKnownBrand = WebFaviconService.KnownBrands.ContainsKey(domainCandidate);
+
+        // Only accept if explicit http/https, starts with www., or belongs to KnownBrands
+        if (!hasHttp && !hasWww && !isKnownBrand)
+        {
+            return false;
+        }
+
+        string normalized = hasHttp
+            ? trimmed
+            : (hasWww ? "https://" + trimmed : "https://" + trimmed);
 
         if (Uri.TryCreate(normalized, UriKind.Absolute, out Uri? uri))
         {
             if (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
             {
-                if (!string.IsNullOrWhiteSpace(uri.Host) && uri.Host.Contains('.'))
+                if (string.IsNullOrEmpty(uri.UserInfo) &&
+                    !string.IsNullOrWhiteSpace(uri.Host) &&
+                    uri.Host.Contains('.') &&
+                    !uri.Host.EndsWith('.'))
                 {
                     normalizedUrl = uri.AbsoluteUri;
                     title = WebFaviconService.InferTitleFromUrl(normalizedUrl);
@@ -318,6 +397,9 @@ public static class CanvasPasteService
 
         return false;
     }
+
+    internal static string GenerateImageFileName() => $"img_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}.png";
+    internal static string GenerateNoteFileName() => $"Note_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}.txt";
 
     private static string ParseUrlFile(string urlFilePath)
     {

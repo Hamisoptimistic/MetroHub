@@ -711,7 +711,10 @@ public sealed class TileManager
         }
     }
 
-    public void BatchAddPastedTiles(IReadOnlyList<PasteItemSpec> items, Point? targetCanvasPosition = null)
+    public void BatchAddPastedTiles(
+        IReadOnlyList<PasteItemSpec> items,
+        Point? targetCanvasPosition = null,
+        Func<int, int, int, int, (int Col, int Row)>? customSlotFinder = null)
     {
         if (items == null || items.Count == 0) return;
 
@@ -811,8 +814,10 @@ public sealed class TileManager
             else
             {
                 // Guard G10: Search for nearest available slot
-                var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(
-                    currentCol, Math.Max(1, currentRow), item.SpanX, item.SpanY, tiles, null, maxCols, groups);
+                var (freeCol, freeRow) = customSlotFinder != null
+                    ? customSlotFinder(currentCol, Math.Max(1, currentRow), item.SpanX, item.SpanY)
+                    : GridPlacementService.FindNearestAvailableSlot(
+                        currentCol, Math.Max(1, currentRow), item.SpanX, item.SpanY, tiles, null, maxCols, groups);
 
                 if (freeCol < 0 || freeRow < 1) continue;
 

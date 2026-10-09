@@ -674,4 +674,30 @@ public partial class MainWindow
         if (TileCornerMediumItem != null) TileCornerMediumItem.IsChecked = r == 4;
         if (TileCornerRoundedItem != null) TileCornerRoundedItem.IsChecked = r == 8;
     }
+
+    public async Task ExecuteCanvasPasteAsync()
+    {
+        try
+        {
+            Point? anchorPoint = null;
+            if (TilesListBox != null && TilesListBox.IsMouseOver)
+            {
+                Point mousePos = Mouse.GetPosition(TilesListBox);
+                if (mousePos.X >= 0 && mousePos.Y >= 0)
+                {
+                    anchorPoint = mousePos;
+                }
+            }
+
+            var specs = await CanvasPasteService.ExtractPasteItemsAsync().ConfigureAwait(true);
+            if (specs != null && specs.Count > 0)
+            {
+                TileManager.BatchAddPastedTiles(specs, anchorPoint);
+            }
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "MainWindow.ExecuteCanvasPasteAsync");
+        }
+    }
 }

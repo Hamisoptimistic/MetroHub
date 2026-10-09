@@ -21,7 +21,7 @@ public static partial class WebFaviconService
 
     private static readonly ConcurrentDictionary<string, string> _memoryCache = new(StringComparer.OrdinalIgnoreCase);
 
-    private static readonly FrozenDictionary<string, string> KnownBrands = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    public static readonly FrozenDictionary<string, string> KnownBrands = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         { "youtube.com", "YouTube" },
         { "youtu.be", "YouTube" },

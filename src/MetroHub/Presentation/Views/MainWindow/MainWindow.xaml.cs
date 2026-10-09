@@ -1144,6 +1144,17 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             return;
         }
 
+        if (isCtrl && e.Key == Key.V)
+        {
+            if (IsTextInputFocused() || IsDialogOpen || _isDragging || _isPotentialDrag || _isRubberBanding)
+            {
+                return;
+            }
+
+            e.Handled = true;
+            _ = ExecuteCanvasPasteAsync();
+            return;
+        }
     }
 
     private static T? FindParent<T>(DependencyObject? child) where T : DependencyObject
@@ -1163,8 +1174,11 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         if (focused == null) return false;
         if (focused is System.Windows.Controls.Primitives.TextBoxBase || focused is System.Windows.Controls.PasswordBox)
             return true;
+        if (focused is System.Windows.Controls.ComboBox cb && cb.IsEditable)
+            return true;
         return FindParent<System.Windows.Controls.Primitives.TextBoxBase>(focused) != null
-               || FindParent<System.Windows.Controls.PasswordBox>(focused) != null;
+               || FindParent<System.Windows.Controls.PasswordBox>(focused) != null
+               || FindParent<System.Windows.Controls.ComboBox>(focused)?.IsEditable == true;
     }
 
     private void OnCloseToTrayClick(object sender, RoutedEventArgs e)
