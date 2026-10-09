@@ -614,7 +614,7 @@ public sealed class LocalCompanionService : IDisposable
         if (!rawUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
             !rawUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
-            await SendJsonAsync(response, 400, new CompanionErrorResponse("Invalid URL scheme: only http and https are permitted."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
+            await SendJsonAsync(response, 400, new CompanionErrorResponse("Only standard websites can be pinned."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
             return;
         }
 

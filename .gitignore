@@ -52,3 +52,7 @@ docs/arch-map/
 .editorconfig
 docs/
 
+# Extension release archives & store upload assets
+extensions/*.zip
+extensions/*.xpi
+extensions/*.png
