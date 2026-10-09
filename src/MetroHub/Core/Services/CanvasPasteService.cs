@@ -201,9 +201,7 @@ public static class CanvasPasteService
                 string title = isDir
                     ? new DirectoryInfo(path).Name
                     : Path.GetFileNameWithoutExtension(path);
-
-                bool isImage = isFile && IconExtractorService.IsImageFile(path);
-                string? iconPath = isImage ? path : IconExtractorService.ExtractAndCacheIcon(path);
+                string? iconPath = IconExtractorService.ExtractAndCacheIcon(path);
 
                 results.Add(new PasteItemSpec
                 {
@@ -413,8 +411,6 @@ public static class CanvasPasteService
 
         return false;
     }
-
-    internal static string GenerateImageFileName() => $"img_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid():N}.png";
 
     internal static string GenerateImageFileName(ReadOnlySpan<byte> pngBytes)
     {

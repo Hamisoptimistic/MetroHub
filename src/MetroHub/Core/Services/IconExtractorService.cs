@@ -148,7 +148,7 @@ public static class IconExtractorService
                 hr = AssocQueryString(ASSOCF_NONE, ASSOCSTR_EXECUTABLE, ext, null, sb, ref cch);
                 if (hr == 0 && sb.Length > 0)
                 {
-                    return sb.ToString().Trim().ToLowerInvariant();
+                    return sb.ToString().Trim('"', ' ', '\t').ToLowerInvariant();
                 }
             }
 
@@ -160,7 +160,7 @@ public static class IconExtractorService
                 hr = AssocQueryString(ASSOCF_NONE, ASSOCSTR_PROGID, ext, null, sb, ref cch);
                 if (hr == 0 && sb.Length > 0)
                 {
-                    return sb.ToString().Trim().ToLowerInvariant();
+                    return sb.ToString().Trim('"', ' ', '\t').ToLowerInvariant();
                 }
             }
         }
@@ -371,15 +371,18 @@ public static class IconExtractorService
             }
             else
             {
-                // Background sweep: Purge orphaned non-deterministic v4_* files from earlier versions
+                // Background sweep: Purge orphaned legacy v1-v4 cache files from earlier versions
                 Task.Run(() =>
                 {
                     try
                     {
                         var dir = new DirectoryInfo(IconCacheDir);
-                        foreach (var f in dir.GetFiles("v4_*.png"))
+                        foreach (var f in dir.GetFiles("v*.png"))
                         {
-                            try { f.Delete(); } catch { }
+                            if (!f.Name.StartsWith("v5_", StringComparison.OrdinalIgnoreCase))
+                            {
+                                try { f.Delete(); } catch { }
+                            }
                         }
                         foreach (var f in dir.GetFiles("*.tmp"))
                         {

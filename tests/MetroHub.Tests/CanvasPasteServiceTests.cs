@@ -341,15 +341,11 @@ public sealed class CanvasPasteServiceTests : IDisposable
     // ── 5. Filename Uniqueness in the Same Millisecond ───────────────────────
 
     [Fact]
-    public void Filenames_TwoGeneratedNamesInSameMillisecond_AreUnique()
+    public void GenerateNoteFileName_TwoGeneratedNamesInSameMillisecond_AreUnique()
     {
         string note1 = CanvasPasteService.GenerateNoteFileName();
         string note2 = CanvasPasteService.GenerateNoteFileName();
         Assert.NotEqual(note1, note2);
-
-        string img1 = CanvasPasteService.GenerateImageFileName();
-        string img2 = CanvasPasteService.GenerateImageFileName();
-        Assert.NotEqual(img1, img2);
     }
 
     // ── 6. Batch Placement with Injectable Slot Finder ──────────────────────
@@ -808,11 +804,41 @@ public sealed class CanvasPasteServiceTests : IDisposable
         string handler2 = IconExtractorService.GetDefaultHandlerForExtension(".txt");
 
         Assert.Equal(handler1, handler2);
+        Assert.NotEmpty(handler1);
 
         // Verify invalidation clears the cache without throwing
         IconExtractorService.InvalidateAssociationCache();
 
         string handler3 = IconExtractorService.GetDefaultHandlerForExtension(".txt");
         Assert.Equal(handler1, handler3);
+        Assert.DoesNotContain("\"", handler1);
+    }
+
+    [Fact]
+    public void NormalizeTiles_ImageTileWithGenericIcon_SelfHealsToTargetPath()
+    {
+        string imageFile = Path.Combine(_sandboxDir, "healing_photo.png");
+        File.WriteAllText(imageFile, "test image bytes");
+
+        string oldCachedIcon = Path.Combine(_sandboxDir, "v5_old_generic_icon.png");
+        File.WriteAllText(oldCachedIcon, "old generic icon bytes");
+
+        var tile = new TileModel
+        {
+            Title = "My Photo",
+            TargetPath = imageFile,
+            IconPath = oldCachedIcon,
+            TileType = TileType.App,
+            Col = 1,
+            Row = 1
+        };
+
+        var tiles = new ObservableCollection<TileModel> { tile };
+
+        bool dirty = StorageService.NormalizeTiles(tiles);
+
+        Assert.True(dirty);
+        // Self-heals: IconPath should now point directly to the image file, not the generic icon
+        Assert.Equal(imageFile, tile.IconPath);
     }
 }

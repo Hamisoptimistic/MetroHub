@@ -270,7 +270,7 @@ public sealed class StorageService
     /// Shared normalization pipeline for tiles — used by both LoadLayout and ImportLayout.
     /// Returns true if any tile was modified and the layout should be persisted.
     /// </summary>
-    private static bool NormalizeTiles(ObservableCollection<TileModel> tiles)
+    internal static bool NormalizeTiles(ObservableCollection<TileModel> tiles)
     {
         bool dirty = false;
 
@@ -387,8 +387,32 @@ public sealed class StorageService
             // Avoids calling the full COM IShellItemImageFactory pipeline for every tile on every launch.
             if (!string.IsNullOrWhiteSpace(tile.TargetPath))
             {
+                // If the target is directly an image file, ensure the tile's IconPath points to the image itself
+                if (IconExtractorService.IsImageFile(tile.TargetPath) && File.Exists(tile.TargetPath))
+                {
+                    if (tile.IconPath != tile.TargetPath)
+                    {
+                        tile.IconPath = tile.TargetPath;
+                        dirty = true;
+                    }
+                    continue;
+                }
+
                 bool iconAlreadyValid = !string.IsNullOrWhiteSpace(tile.IconPath) && File.Exists(tile.IconPath);
-                if (!iconAlreadyValid)
+
+                string ext = Path.GetExtension(tile.TargetPath);
+                bool isDocument = !string.IsNullOrEmpty(ext) &&
+                    !ext.Equals(".exe", StringComparison.OrdinalIgnoreCase) &&
+                    !ext.Equals(".lnk", StringComparison.OrdinalIgnoreCase) &&
+                    !ext.Equals(".ico", StringComparison.OrdinalIgnoreCase) &&
+                    !ext.Equals(".dll", StringComparison.OrdinalIgnoreCase) &&
+                    !ext.Equals(".cmd", StringComparison.OrdinalIgnoreCase) &&
+                    !ext.Equals(".bat", StringComparison.OrdinalIgnoreCase);
+
+                bool isCachedDocument = iconAlreadyValid && isDocument &&
+                    tile.IconPath!.StartsWith(IconCacheDir, StringComparison.OrdinalIgnoreCase);
+
+                if (!iconAlreadyValid || isCachedDocument)
                 {
                     string? highRes = IconExtractorService.ExtractAndCacheIcon(tile.TargetPath);
                     if (!string.IsNullOrWhiteSpace(highRes) && tile.IconPath != highRes)

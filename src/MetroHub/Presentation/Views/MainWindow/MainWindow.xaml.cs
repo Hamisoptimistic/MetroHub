@@ -831,6 +831,32 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
                     ApplyConfiguredBackdrop();
                     await Task.Delay(400);
                     ApplyConfiguredBackdrop();
+
+                    // Refresh active document tile icons if default Windows app association changed
+                    if (Tiles != null)
+                    {
+                        foreach (var tile in Tiles)
+                        {
+                            if (tile.TileType != TileType.Widget &&
+                                !string.IsNullOrWhiteSpace(tile.TargetPath) &&
+                                !IconExtractorService.IsImageFile(tile.TargetPath))
+                            {
+                                string ext = Path.GetExtension(tile.TargetPath);
+                                if (!string.IsNullOrEmpty(ext) &&
+                                    !ext.Equals(".exe", StringComparison.OrdinalIgnoreCase) &&
+                                    !ext.Equals(".lnk", StringComparison.OrdinalIgnoreCase) &&
+                                    !ext.Equals(".ico", StringComparison.OrdinalIgnoreCase) &&
+                                    !ext.Equals(".dll", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    string? newIcon = IconExtractorService.ExtractAndCacheIcon(tile.TargetPath);
+                                    if (!string.IsNullOrWhiteSpace(newIcon) && tile.IconPath != newIcon)
+                                    {
+                                        tile.IconPath = newIcon;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
