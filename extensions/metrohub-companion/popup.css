@@ -9,94 +9,94 @@
    ========================================================================= */
 
 :root {
-  /* Light Theme (Default) */
-  --bg-app: #ffffff;
-  --text-primary: #111827;
-  --text-secondary: #374151;
-  --text-muted: #6b7280;
-  --text-placeholder: #9ca3af;
+  /* Warm Linen Light Theme (#EFE9E3) - Soft, harmonious contrast */
+  --bg-app: #efe9e3;
+  --text-primary: #1e2329;
+  --text-secondary: #4a525d;
+  --text-muted: #737c87;
+  --text-placeholder: #9ca4af;
 
-  --input-bg: #f3f6fb;
-  --input-border: #e2e8f0;
-  --input-border-hover: #cbd5e1;
+  --input-bg: #e7e1db;
+  --input-border: #d7d1cc;
+  --input-border-hover: #c8c1ba;
   --input-border-focus: #0066ff;
 
-  --seg-bg: #f3f6fb;
-  --seg-border: #e2e8f0;
-  --seg-text: #4b5563;
-  --seg-hover-bg: #e8eef7;
-  --seg-hover-border: #cbd5e1;
-  --seg-hover-text: #1e293b;
+  --seg-bg: #e7e1db;
+  --seg-border: #d7d1cc;
+  --seg-text: #4a525d;
+  --seg-hover-bg: #dfd9d2;
+  --seg-hover-border: #c8c1ba;
+  --seg-hover-text: #1e2329;
 
   --seg-active-bg: #0066ff;
   --seg-active-text: #ffffff;
   --seg-active-shadow: 0 4px 12px rgba(0, 102, 255, 0.28);
 
-  --dropdown-menu-bg: #ffffff;
-  --dropdown-menu-border: #e2e8f0;
-  --dropdown-item-hover-bg: #eef2f8;
-  --dropdown-item-hover-text: #111827;
+  --dropdown-menu-bg: #efe9e3;
+  --dropdown-menu-border: #d7d1cc;
+  --dropdown-item-hover-bg: #dfd9d2;
+  --dropdown-item-hover-text: #1e2329;
 
-  --favicon-card-bg: #f3f6fb;
-  --favicon-card-border: #e2e8f0;
-  --favicon-icon-box-bg: #0f1218;
-  --chevron-color: #94a3b8;
+  --favicon-card-bg: #e7e1db;
+  --favicon-card-border: #d7d1cc;
+  --favicon-icon-box-bg: #181a20;
+  --chevron-color: #737c87;
 
   --btn-primary-bg: #0066ff;
   --btn-primary-hover: #0056e0;
   --btn-primary-text: #ffffff;
   --btn-primary-shadow: 0 4px 14px rgba(0, 102, 255, 0.32);
 
-  --border-divider: #f1f5f9;
-  --toggle-btn-bg: #f3f6fb;
-  --toggle-btn-border: #e2e8f0;
+  --border-divider: #dcd6cf;
+  --toggle-btn-bg: #e7e1db;
+  --toggle-btn-border: #d7d1cc;
   --toggle-btn-color: #64748b;
 
   --hover-box-shadow: rgba(0, 102, 255, 0.35) 0px 3px, rgba(0, 102, 255, 0.28) 0px 6px, rgba(0, 102, 255, 0.2) 0px 9px, rgba(0, 102, 255, 0.12) 0px 12px, rgba(0, 102, 255, 0.06) 0px 15px;
 }
 
 [data-theme="dark"] {
-  /* Modern Fluent Dark Theme - pleasant slate tone, comfortable on eyes */
-  --bg-app: #1e2028;
-  --text-primary: #f3f4f6;
-  --text-secondary: #9da5b4;
-  --text-muted: #858d9c;
-  --text-placeholder: #697180;
+  /* Modern Fluent Dark Theme (#1F1F1F) - Sleek, velvety depth */
+  --bg-app: #1f1f1f;
+  --text-primary: #f5f6f8;
+  --text-secondary: #c9cdd4;
+  --text-muted: #8b929e;
+  --text-placeholder: #6a717e;
 
-  --input-bg: #282b36;
-  --input-border: #383c4a;
-  --input-border-hover: #4c5264;
+  --input-bg: #292929;
+  --input-border: #383838;
+  --input-border-hover: #484848;
   --input-border-focus: #0066ff;
 
-  --seg-bg: #282b36;
-  --seg-border: #383c4a;
-  --seg-text: #9da5b4;
-  --seg-hover-bg: #323644;
-  --seg-hover-border: #4c5264;
-  --seg-hover-text: #f3f4f6;
+  --seg-bg: #292929;
+  --seg-border: #383838;
+  --seg-text: #c9cdd4;
+  --seg-hover-bg: #323232;
+  --seg-hover-border: #484848;
+  --seg-hover-text: #ffffff;
 
   --seg-active-bg: #0066ff;
   --seg-active-text: #ffffff;
   --seg-active-shadow: 0 4px 14px rgba(0, 102, 255, 0.4);
 
-  --dropdown-menu-bg: #282b36;
-  --dropdown-menu-border: #383c4a;
-  --dropdown-item-hover-bg: #333746;
+  --dropdown-menu-bg: #262626;
+  --dropdown-menu-border: #383838;
+  --dropdown-item-hover-bg: #323232;
   --dropdown-item-hover-text: #ffffff;
 
-  --favicon-card-bg: #282b36;
-  --favicon-card-border: #383c4a;
-  --favicon-icon-box-bg: #181a22;
-  --chevron-color: #858d9c;
+  --favicon-card-bg: #292929;
+  --favicon-card-border: #383838;
+  --favicon-icon-box-bg: #161616;
+  --chevron-color: #8b929e;
 
   --btn-primary-bg: #0066ff;
   --btn-primary-hover: #1a75ff;
   --btn-primary-text: #ffffff;
   --btn-primary-shadow: 0 4px 16px rgba(0, 102, 255, 0.42);
 
-  --border-divider: #2d313d;
-  --toggle-btn-bg: #282b36;
-  --toggle-btn-border: #383c4a;
+  --border-divider: #333333;
+  --toggle-btn-bg: #292929;
+  --toggle-btn-border: #383838;
   --toggle-btn-color: #cbd5e1;
 
   --hover-box-shadow: rgba(0, 102, 255, 0.45) 0px 3px, rgba(0, 102, 255, 0.35) 0px 6px, rgba(0, 102, 255, 0.25) 0px 9px, rgba(0, 102, 255, 0.15) 0px 12px, rgba(0, 102, 255, 0.08) 0px 15px;
@@ -122,6 +122,43 @@ html, body {
   line-height: 1.4;
   overflow-x: hidden;
   user-select: none;
+  transition: background-color 0.35s ease-in-out, color 0.35s ease-in-out;
+}
+
+/* Smooth window-wide theme transition (0.35s ease-in-out) */
+html.theme-transitioning,
+html.theme-transitioning body,
+html.theme-transitioning .app-shell,
+html.theme-transitioning .app-header,
+html.theme-transitioning .brand-title,
+html.theme-transitioning .brand-logo-wrap,
+html.theme-transitioning .theme-toggle-btn,
+html.theme-transitioning .status-indicator,
+html.theme-transitioning .status-text,
+html.theme-transitioning .row-label,
+html.theme-transitioning .input-wrap,
+html.theme-transitioning .text-input,
+html.theme-transitioning .input-trailing-icon,
+html.theme-transitioning .segmented-control,
+html.theme-transitioning .seg-btn,
+html.theme-transitioning .custom-dropdown,
+html.theme-transitioning .dropdown-trigger,
+html.theme-transitioning .dropdown-selected-text,
+html.theme-transitioning .dropdown-chevron,
+html.theme-transitioning .dropdown-menu,
+html.theme-transitioning .dropdown-item,
+html.theme-transitioning .favicon-card,
+html.theme-transitioning .favicon-wrap,
+html.theme-transitioning .favicon-domain,
+html.theme-transitioning .submit-btn,
+html.theme-transitioning .feedback-banner,
+html.theme-transitioning .feedback-text-title,
+html.theme-transitioning .feedback-text-sub {
+  transition: 
+    background-color 0.35s ease-in-out,
+    color 0.35s ease-in-out,
+    border-color 0.35s ease-in-out,
+    box-shadow 0.35s ease-in-out !important;
 }
 
 /* App Shell */
@@ -135,6 +172,7 @@ html, body {
   gap: 16px;
   background-color: var(--bg-app);
   contain: layout style;
+  transition: background-color 0.35s ease-in-out;
 }
 
 /* =========================================================================
@@ -146,6 +184,7 @@ html, body {
   justify-content: space-between;
   padding-bottom: 14px;
   border-bottom: 1px solid var(--border-divider);
+  transition: border-color 0.35s ease-in-out;
 }
 
 .brand {
@@ -228,23 +267,78 @@ html, body {
   color: #f59e0b;
 }
 
-/* Theme Toggle Button */
+/* Theme Toggle Button with 3D Perspective Flip & Fade */
 .theme-toggle-btn {
   width: 30px;
   height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  perspective: 400px;
+  overflow: hidden;
   border-radius: 2px;
   border: 1px solid var(--toggle-btn-border);
   background-color: var(--toggle-btn-bg);
   color: var(--toggle-btn-color);
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: 
+    background-color 0.35s ease-in-out,
+    border-color 0.35s ease-in-out,
+    color 0.35s ease-in-out,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
 }
 
 .theme-toggle-btn:hover {
-  filter: brightness(0.94);
+  border-color: rgba(0, 102, 255, 0.4);
+  color: #0066ff;
+  box-shadow: 0 2px 6px rgba(0, 102, 255, 0.15);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.92);
+}
+
+.theme-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  margin-left: -7px;
+  transform-origin: center center;
+  backface-visibility: hidden;
+  transition: transform 0.35s ease-in-out, opacity 0.35s ease-in-out;
+  pointer-events: none;
+}
+
+/* Prevent initial flash on cold open */
+body:not(.ready) .theme-icon {
+  transition: none !important;
+}
+
+/* Light Mode: Moon icon is facing front and visible, Sun icon is rotated away and faded */
+[data-theme="light"] .moon-icon {
+  transform: rotateY(0deg);
+  opacity: 1;
+}
+
+[data-theme="light"] .sun-icon {
+  transform: rotateY(180deg);
+  opacity: 0;
+}
+
+/* Dark Mode: Sun icon is visible facing front, Moon icon is rotated away and faded */
+[data-theme="dark"] .sun-icon {
+  transform: rotateY(0deg);
+  opacity: 1;
+}
+
+[data-theme="dark"] .moon-icon {
+  transform: rotateY(-180deg);
+  opacity: 0;
 }
 
 /* =========================================================================
@@ -286,7 +380,7 @@ html, body {
   color: var(--text-primary);
   outline: none;
   box-shadow: none;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.35s ease-in-out, color 0.35s ease-in-out;
 }
 
 .text-input::placeholder {
@@ -336,7 +430,7 @@ html, body {
   cursor: pointer;
   outline: none;
   box-shadow: none;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.35s ease-in-out, color 0.35s ease-in-out;
 }
 
 .dropdown-trigger:hover {
@@ -430,10 +524,10 @@ html, body {
 .seg-btn {
   flex: 1;
   height: 44px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 9px;
+  gap: 8px;
   border-radius: 2px;
   border: 1px solid var(--seg-border);
   background-color: var(--seg-bg);
@@ -446,7 +540,15 @@ html, body {
 }
 
 .seg-btn .seg-svg {
+  display: block;
   flex-shrink: 0;
+  transform: translateY(1px);
+}
+
+.seg-btn span {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
 }
 
 .seg-btn:hover:not(.active) {
@@ -481,6 +583,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 12px;
+  transition: background-color 0.35s ease-in-out, border-color 0.35s ease-in-out;
 }
 
 .favicon-wrap {
@@ -492,6 +595,7 @@ html, body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: background-color 0.35s ease-in-out;
 }
 
 .favicon-wrap img {
@@ -512,6 +616,7 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 0.35s ease-in-out;
 }
 
 /* =========================================================================
@@ -591,6 +696,7 @@ html, body {
   border: 1px solid var(--input-border);
   text-align: center;
   animation: bannerFadeIn 0.2s ease-out forwards;
+  transition: background-color 0.35s ease-in-out, border-color 0.35s ease-in-out;
 }
 
 @keyframes bannerFadeIn {
@@ -613,6 +719,7 @@ html, body {
   font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.1px;
+  transition: color 0.35s ease-in-out;
 }
 
 .feedback-text-sub {
@@ -620,6 +727,7 @@ html, body {
   font-size: 12px;
   font-weight: 500;
   margin-top: 3px;
+  transition: color 0.35s ease-in-out;
 }
 
 /* Theme-specific text colors: strictly black in light mode, white in dark mode */

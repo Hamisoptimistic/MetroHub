@@ -38,33 +38,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function setupTheme() {
   if (!themeToggleBtn) return;
-  const sunIcon = themeToggleBtn.querySelector('.sun-icon');
-  const moonIcon = themeToggleBtn.querySelector('.moon-icon');
 
   function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-    if (theme === 'dark') {
-      sunIcon?.classList.remove('hidden');
-      moonIcon?.classList.add('hidden');
-    } else {
-      sunIcon?.classList.add('hidden');
-      moonIcon?.classList.remove('hidden');
-    }
+    const label = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
+    themeToggleBtn.setAttribute('title', label);
+    themeToggleBtn.setAttribute('aria-label', label);
   }
 
   try {
     chrome.storage.local.get('metrohub_theme', (res) => {
       const theme = res && res.metrohub_theme ? res.metrohub_theme : 'light';
       applyTheme(theme);
+      requestAnimationFrame(() => {
+        document.body.classList.add('ready');
+      });
     });
   } catch {
     applyTheme('light');
+    document.body.classList.add('ready');
   }
 
   themeToggleBtn.addEventListener('click', () => {
     const current = document.documentElement.getAttribute('data-theme') || 'light';
     const next = current === 'light' ? 'dark' : 'light';
+
+    // Trigger smooth window-wide theme transition (0.35s ease-in-out)
+    document.documentElement.classList.add('theme-transitioning');
     applyTheme(next);
+
+    setTimeout(() => {
+      document.documentElement.classList.remove('theme-transitioning');
+    }, 400);
+
     try {
       chrome.storage.local.set({ metrohub_theme: next });
     } catch { }
