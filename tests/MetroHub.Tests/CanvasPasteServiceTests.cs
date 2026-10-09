@@ -749,4 +749,70 @@ public sealed class CanvasPasteServiceTests : IDisposable
         Assert.Equal(0, run2.ScannedCount);
         Assert.Equal(0, run2.DeletedCount);
     }
+
+    // ── 13. Image File Icon Passthrough & Association Cache Tests ───────────
+
+    [Fact]
+    public void IsImageFile_AccuratelyIdentifiesImageFormats()
+    {
+        Assert.True(IconExtractorService.IsImageFile("C:\\test\\photo.png"));
+        Assert.True(IconExtractorService.IsImageFile("C:\\test\\photo.jpg"));
+        Assert.True(IconExtractorService.IsImageFile("C:\\test\\photo.jpeg"));
+        Assert.True(IconExtractorService.IsImageFile("C:\\test\\photo.webp"));
+        Assert.True(IconExtractorService.IsImageFile("C:\\test\\photo.gif"));
+        Assert.True(IconExtractorService.IsImageFile("C:\\test\\photo.bmp"));
+
+        Assert.False(IconExtractorService.IsImageFile("C:\\test\\notes.txt"));
+        Assert.False(IconExtractorService.IsImageFile("C:\\test\\app.exe"));
+        Assert.False(IconExtractorService.IsImageFile("C:\\test\\document.pdf"));
+        Assert.False(IconExtractorService.IsImageFile("C:\\test\\script.bat"));
+    }
+
+    [Fact]
+    public void ExtractAndCacheIcon_DirectImageFile_ReturnsImagePathDirectly()
+    {
+        string tempImage = Path.Combine(_sandboxDir, "sample_thumbnail.png");
+        File.WriteAllText(tempImage, "fake png content");
+
+        string? icon = IconExtractorService.ExtractAndCacheIcon(tempImage);
+
+        // Must return the image path itself without creating any icon cache files
+        Assert.Equal(tempImage, icon);
+    }
+
+    [Fact]
+    public void ProcessFiles_ImageFile_SetsIconPathToImageDirectly()
+    {
+        string tempImage = Path.Combine(_sandboxDir, "pasted_explorer_img.png");
+        File.WriteAllText(tempImage, "fake image");
+
+        var snapshot = new ClipboardSnapshot(
+            Files: [tempImage],
+            Text: null,
+            Image: null,
+            IsSensitive: false
+        );
+
+        var items = CanvasPasteService.ProcessSnapshot(snapshot);
+
+        Assert.NotNull(items);
+        Assert.Single(items!);
+        Assert.Equal(tempImage, items![0].TargetPath);
+        Assert.Equal(tempImage, items![0].IconPath);
+    }
+
+    [Fact]
+    public void GetDefaultHandlerForExtension_CachesAndCanBeInvalidated()
+    {
+        string handler1 = IconExtractorService.GetDefaultHandlerForExtension(".txt");
+        string handler2 = IconExtractorService.GetDefaultHandlerForExtension(".txt");
+
+        Assert.Equal(handler1, handler2);
+
+        // Verify invalidation clears the cache without throwing
+        IconExtractorService.InvalidateAssociationCache();
+
+        string handler3 = IconExtractorService.GetDefaultHandlerForExtension(".txt");
+        Assert.Equal(handler1, handler3);
+    }
 }

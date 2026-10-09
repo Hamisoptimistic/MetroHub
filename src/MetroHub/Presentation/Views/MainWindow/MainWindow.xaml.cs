@@ -823,6 +823,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         }
         else if (msg == WM_SETTINGCHANGE)
         {
+            IconExtractorService.InvalidateAssociationCache();
             Dispatcher.InvokeAsync(async () =>
             {
                 try

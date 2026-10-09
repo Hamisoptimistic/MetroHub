@@ -202,7 +202,8 @@ public static class CanvasPasteService
                     ? new DirectoryInfo(path).Name
                     : Path.GetFileNameWithoutExtension(path);
 
-                string? iconPath = IconExtractorService.ExtractAndCacheIcon(path);
+                bool isImage = isFile && IconExtractorService.IsImageFile(path);
+                string? iconPath = isImage ? path : IconExtractorService.ExtractAndCacheIcon(path);
 
                 results.Add(new PasteItemSpec
                 {

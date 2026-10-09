@@ -99,6 +99,94 @@ public static class IconExtractorService
         IntPtr hToken,
         out IntPtr ppszPath);
 
+    [DllImport("shlwapi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern int AssocQueryString(
+        uint flags,
+        uint str,
+        string pszAssoc,
+        string? pszExtra,
+        [Out] StringBuilder? pszOut,
+        ref uint pcchOut);
+
+    private const uint ASSOCF_NONE = 0x00000000;
+    private const uint ASSOCSTR_EXECUTABLE = 1;
+    private const uint ASSOCSTR_PROGID = 20;
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _extHandlerCache = new(StringComparer.OrdinalIgnoreCase);
+
+    public static bool IsImageFile(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+        string ext = Path.GetExtension(path);
+        return ext is ".png" or ".jpg" or ".jpeg" or ".bmp" or ".gif" or ".webp" or ".ico" or ".tiff";
+    }
+
+    public static string GetDefaultHandlerForExtension(string ext)
+    {
+        if (string.IsNullOrWhiteSpace(ext)) return string.Empty;
+        if (!ext.StartsWith('.')) ext = "." + ext;
+
+        if (_extHandlerCache.TryGetValue(ext, out var cached))
+        {
+            return cached;
+        }
+
+        string handler = QueryDefaultHandler(ext);
+        _extHandlerCache[ext] = handler;
+        return handler;
+    }
+
+    private static string QueryDefaultHandler(string ext)
+    {
+        try
+        {
+            uint cch = 0;
+            int hr = AssocQueryString(ASSOCF_NONE, ASSOCSTR_EXECUTABLE, ext, null, null, ref cch);
+            if (hr == 1 && cch > 0)
+            {
+                var sb = new StringBuilder((int)cch);
+                hr = AssocQueryString(ASSOCF_NONE, ASSOCSTR_EXECUTABLE, ext, null, sb, ref cch);
+                if (hr == 0 && sb.Length > 0)
+                {
+                    return sb.ToString().Trim().ToLowerInvariant();
+                }
+            }
+
+            cch = 0;
+            hr = AssocQueryString(ASSOCF_NONE, ASSOCSTR_PROGID, ext, null, null, ref cch);
+            if (hr == 1 && cch > 0)
+            {
+                var sb = new StringBuilder((int)cch);
+                hr = AssocQueryString(ASSOCF_NONE, ASSOCSTR_PROGID, ext, null, sb, ref cch);
+                if (hr == 0 && sb.Length > 0)
+                {
+                    return sb.ToString().Trim().ToLowerInvariant();
+                }
+            }
+        }
+        catch { }
+
+        try
+        {
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                $@"Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\{ext}\UserChoice");
+            var progId = key?.GetValue("ProgId")?.ToString();
+            if (!string.IsNullOrWhiteSpace(progId))
+            {
+                return progId.Trim().ToLowerInvariant();
+            }
+        }
+        catch { }
+
+        return string.Empty;
+    }
+
+    public static void InvalidateAssociationCache()
+    {
+        _extHandlerCache.Clear();
+        _iconPathCache.Clear();
+    }
+
     private static readonly Dictionary<string, string> KnownFolderMap = new(StringComparer.OrdinalIgnoreCase)
     {
         { "{6D809377-6AF0-444B-8957-A3773F02200E}", Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) },
@@ -321,6 +409,12 @@ public static class IconExtractorService
     {
         if (string.IsNullOrWhiteSpace(filePath)) return null;
 
+        // If the file is directly an image, return the file itself as its icon/thumbnail
+        if (IsImageFile(filePath) && File.Exists(filePath))
+        {
+            return filePath;
+        }
+
         // Never attempt Windows Shell file icon extraction on Web URLs
         if (filePath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
             filePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
@@ -347,6 +441,18 @@ public static class IconExtractorService
                 try { keyPath = Path.GetFullPath(keyPath); } catch { }
             }
             keyPath = keyPath.Trim().ToLowerInvariant();
+
+            // For documents/associated files, append the current default application handler (ProgId/Executable)
+            // so changing default app in Windows (e.g. Zen -> Sublime) automatically updates the cache key
+            string ext = Path.GetExtension(keyPath).ToLowerInvariant();
+            if (!string.IsNullOrEmpty(ext) && ext != ".exe" && ext != ".lnk" && ext != ".ico" && ext != ".dll")
+            {
+                string handler = GetDefaultHandlerForExtension(ext);
+                if (!string.IsNullOrEmpty(handler))
+                {
+                    keyPath = $"{keyPath}@{handler}";
+                }
+            }
 
             string hashName = $"v5_{ComputeDeterministicHash(keyPath)}.png";
             string cachedFilePath = Path.Combine(IconCacheDir, hashName);
