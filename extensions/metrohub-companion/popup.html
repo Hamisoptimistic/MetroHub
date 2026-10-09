@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,21 +8,36 @@
 </head>
 <body>
   <div class="app-shell">
-    <!-- Header: MetroHub Brand + Minimal Connected Status -->
+    <!-- Header: MetroHub Brand + Minimal Connected Status + Theme Switcher -->
     <header class="app-header">
       <div class="brand">
-        <svg class="brand-logo" width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-          <rect x="0" y="0" width="8" height="8" rx="2" fill="#0078D4"/>
-          <rect x="10" y="0" width="8" height="8" rx="2" fill="#4CC2FF"/>
-          <rect x="0" y="10" width="8" height="8" rx="2" fill="#005A9E"/>
-          <rect x="10" y="10" width="8" height="8" rx="2" fill="#60CDFF"/>
-        </svg>
+        <div class="brand-logo-wrap">
+          <img class="brand-logo" src="icons/icon48.png" width="18" height="18" alt="MetroHub" />
+        </div>
         <span class="brand-title">MetroHub</span>
       </div>
 
-      <div id="statusBadge" class="status-indicator connecting">
-        <span class="status-dot"></span>
-        <span id="statusText" class="status-text">Checking...</span>
+      <div class="header-actions">
+        <div id="statusBadge" class="status-indicator connecting">
+          <span class="status-dot"></span>
+          <span id="statusText" class="status-text">Checking...</span>
+        </div>
+        <button type="button" id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle light/dark theme" title="Toggle theme">
+          <svg class="theme-icon moon-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg class="theme-icon sun-icon hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
       </div>
     </header>
 
@@ -33,6 +48,10 @@
         <label for="tileTitle" class="row-label">Title</label>
         <div class="input-wrap">
           <input type="text" id="tileTitle" class="text-input" placeholder="Page title" spellcheck="false" autocomplete="off" />
+          <svg class="input-trailing-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
         </div>
       </div>
 
@@ -41,44 +60,62 @@
         <label class="row-label">Size</label>
         <div class="segmented-control">
           <button type="button" id="size2x2" class="seg-btn active" data-span-x="2" data-span-y="2">
-            <span class="seg-icon icon-square"></span>
+            <svg class="seg-svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <rect x="2" y="2" width="12" height="12" rx="2"/>
+            </svg>
             <span>2×2 Standard</span>
           </button>
           <button type="button" id="size4x2" class="seg-btn" data-span-x="4" data-span-y="2">
-            <span class="seg-icon icon-wide"></span>
+            <svg class="seg-svg" width="16" height="14" viewBox="0 0 20 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="2" width="16" height="10" rx="2"/>
+              <line x1="7" y1="15" x2="13" y2="15"/>
+              <line x1="10" y1="12" x2="10" y2="15"/>
+            </svg>
             <span>4×2 Wide</span>
           </button>
         </div>
       </div>
 
-      <!-- Workspace Selection -->
+      <!-- Workspace Selection (Custom Cohesive Dropdown) -->
       <div class="form-row">
-        <label for="workspaceSelect" class="row-label">Workspace</label>
-        <div class="select-wrap">
-          <select id="workspaceSelect" class="select-input">
-            <option value="">Main (Active)</option>
-          </select>
-          <svg class="select-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-            <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+        <label id="workspaceLabel" class="row-label">Workspace</label>
+        <div class="custom-dropdown" id="workspaceDropdown">
+          <button type="button" id="workspaceTrigger" class="dropdown-trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="workspaceLabel">
+            <span id="workspaceSelectedText" class="dropdown-selected-text">Main (Active)</span>
+            <svg class="dropdown-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
+          <div id="workspaceMenu" class="dropdown-menu hidden" role="listbox">
+            <button type="button" class="dropdown-item selected" role="option" aria-selected="true" data-id="">
+              <span>Main (Active)</span>
+              <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- Favicon Preview Row -->
       <div class="favicon-card">
         <div class="favicon-wrap">
-          <img id="faviconPreview" src="" alt="Favicon" />
+          <img id="faviconPreview" width="22" height="22" src="" alt="Favicon" />
         </div>
-        <div class="favicon-info">
-          <span class="favicon-domain" id="faviconDomain">Website</span>
-          <span class="favicon-sub">Website Favicon</span>
-        </div>
+        <span class="favicon-domain" id="faviconDomain">Website</span>
       </div>
     </main>
 
     <!-- Footer Action -->
     <footer class="app-footer">
       <button type="button" id="pinBtn" class="submit-btn" disabled>
+        <svg class="pin-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="17" x2="12" y2="22"></line>
+          <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V5a3 3 0 0 0-6 0v5.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path>
+        </svg>
+        <svg class="check-svg hidden" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
         <span class="btn-text">Pin to MetroHub</span>
         <span class="btn-spinner hidden"></span>
       </button>

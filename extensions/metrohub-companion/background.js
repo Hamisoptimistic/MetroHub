@@ -73,31 +73,41 @@ async function pinUrl(url, title) {
 
 async function getActivePort() {
   try {
-    const cached = await chrome.storage.session.get('metrohub_active_port');
+    const cached = await chrome.storage.local.get('metrohub_active_port');
     if (cached && cached.metrohub_active_port) {
-      if (await probePort(cached.metrohub_active_port)) {
+      if (await probePort(cached.metrohub_active_port, 250)) {
         return cached.metrohub_active_port;
       }
     }
   } catch { }
 
-  for (const port of PORTS) {
-    if (await probePort(port)) {
-      try {
-        await chrome.storage.session.set({ metrohub_active_port: port });
-      } catch { }
-      return port;
-    }
+  const probePromises = PORTS.map(async (port) => {
+    const ok = await probePort(port, 350);
+    if (ok) return port;
+    throw new Error('offline');
+  });
+
+  try {
+    const foundPort = await Promise.any(probePromises);
+    try {
+      await chrome.storage.local.set({ metrohub_active_port: foundPort });
+    } catch { }
+    return foundPort;
+  } catch {
+    return null;
   }
-  return null;
 }
 
-async function probePort(port) {
+async function probePort(port, timeoutMs = 350) {
   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch(`http://127.0.0.1:${port}/api/health`, {
       method: 'GET',
-      headers: { 'X-MetroHub-Client': CLIENT_HEADER }
+      headers: { 'X-MetroHub-Client': CLIENT_HEADER },
+      signal: controller.signal
     });
+    clearTimeout(timer);
     if (res.ok) {
       const data = await res.json();
       return data.app === 'MetroHub';
