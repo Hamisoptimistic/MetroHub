@@ -329,6 +329,11 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             return await Dispatcher.InvokeAsync(() => TileManager.PinWebLinkFromCompanionAsync(req, ct)).Task.Unwrap();
         };
 
+        service.PinTileGroupHandler = async (req, ct) =>
+        {
+            return await Dispatcher.InvokeAsync(() => TileManager.PinTileGroupFromCompanionAsync(req, ct)).Task.Unwrap();
+        };
+
         if (Settings.BrowserExtensionCompanionEnabled)
         {
             _ = service.StartAsync();

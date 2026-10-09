@@ -586,4 +586,252 @@ public sealed class CompanionServiceTests : IAsyncLifetime
     }
 
     #endregion
+
+    #region Tile Group Tests
+
+    [Fact]
+    public async Task PostTileGroups_ValidPayload_Returns200AndGroupDetails()
+    {
+        CompanionTileGroupRequest? captured = null;
+        _service!.PinTileGroupHandler = (req, ct) =>
+        {
+            captured = req;
+            return Task.FromResult(new CompanionTileGroupResult(
+                Success: true,
+                GroupId: "grp-test-1",
+                GroupTitle: req.GroupName ?? "Session",
+                TilesAdded: req.Tiles?.Count ?? 0,
+                Col: 0,
+                Row: 0
+            ));
+        };
+
+        string json = """
+        {
+            "groupName": "Research Session",
+            "tiles": [
+                { "url": "https://example.com/doc1", "title": "Doc 1" },
+                { "url": "https://example.com/doc2", "title": "Doc 2" },
+                { "url": "https://example.com/doc3", "title": "Doc 3" }
+            ]
+        }
+        """;
+
+        using var request = CreateRequest(HttpMethod.Post, "/api/tile-groups");
+        request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        using var response = await _client!.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        string resBody = await response.Content.ReadAsStringAsync();
+        Assert.Contains("\"success\":true", resBody);
+        Assert.Contains("grp-test-1", resBody);
+        Assert.Contains("\"tilesAdded\":3", resBody);
+        Assert.NotNull(captured);
+        Assert.Equal("Research Session", captured.GroupName);
+        Assert.Equal(3, captured.Tiles!.Count);
+    }
+
+    [Fact]
+    public async Task PostTileGroups_EmptyTilesList_Returns400()
+    {
+        using var request = CreateRequest(HttpMethod.Post, "/api/tile-groups");
+        request.Content = new StringContent("{\"groupName\":\"Test\",\"tiles\":[]}", Encoding.UTF8, "application/json");
+
+        using var response = await _client!.SendAsync(request);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PostTileGroups_OnlyInvalidUrls_Returns400()
+    {
+        string json = """
+        {
+            "groupName": "Test",
+            "tiles": [
+                { "url": "javascript:alert(1)" },
+                { "url": "file:///C:/secrets.txt" }
+            ]
+        }
+        """;
+        using var request = CreateRequest(HttpMethod.Post, "/api/tile-groups");
+        request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        using var response = await _client!.SendAsync(request);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PostTileGroups_Over100Tabs_Returns400()
+    {
+        var items = new StringBuilder("{\"groupName\":\"Big\",\"tiles\":[");
+        for (int i = 0; i < 101; i++)
+        {
+            if (i > 0) items.Append(',');
+            items.Append($"{{\"url\":\"https://example.com/tab{i}\"}}");
+        }
+        items.Append("]}");
+
+        using var request = CreateRequest(HttpMethod.Post, "/api/tile-groups");
+        request.Content = new StringContent(items.ToString(), Encoding.UTF8, "application/json");
+
+        using var response = await _client!.SendAsync(request);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PostTileGroups_FiltersOutInvalidUrlsWhileKeepingValid()
+    {
+        CompanionTileGroupRequest? captured = null;
+        _service!.PinTileGroupHandler = (req, ct) =>
+        {
+            captured = req;
+            return Task.FromResult(new CompanionTileGroupResult(true, "grp-1", "Mixed", req.Tiles?.Count ?? 0, 0, 0));
+        };
+
+        string json = """
+        {
+            "groupName": "Mixed",
+            "tiles": [
+                { "url": "https://example.com/valid1" },
+                { "url": "about:blank" },
+                { "url": "https://example.com/valid2" }
+            ]
+        }
+        """;
+
+        using var request = CreateRequest(HttpMethod.Post, "/api/tile-groups");
+        request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        using var response = await _client!.SendAsync(request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.NotNull(captured);
+        Assert.Equal(2, captured.Tiles!.Count);
+    }
+
+    [Fact]
+    public void PinTileGroupFromCompanion_PlacesGroupAndTilesInGrid()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tiles = new ObservableCollection<TileModel>();
+            var groups = new ObservableCollection<TileGroupModel>();
+            var manager = CreateTestTileManager(tiles, groups);
+
+            var req = new CompanionTileGroupRequest(
+                GroupName: "Project Alpha",
+                Tiles: new List<CompanionPinRequest>
+                {
+                    new("https://example.com/tab1", Title: "Tab 1"),
+                    new("https://example.com/tab2", Title: "Tab 2"),
+                    new("https://example.com/tab3", Title: "Tab 3"),
+                    new("https://example.com/tab4", Title: "Tab 4"),
+                    new("https://example.com/tab5", Title: "Tab 5")
+                }
+            );
+
+            var result = manager.PinTileGroupFromCompanionAsync(req, CancellationToken.None).GetAwaiter().GetResult();
+
+            Assert.True(result.Success);
+            Assert.NotNull(result.GroupId);
+            Assert.Equal("Project Alpha", result.GroupTitle);
+            Assert.Equal(5, result.TilesAdded);
+
+            Assert.Single(groups);
+            Assert.Equal(result.GroupId, groups[0].Id);
+            Assert.Equal("Project Alpha", groups[0].Title);
+
+            Assert.Equal(5, tiles.Count);
+            foreach (var t in tiles)
+            {
+                Assert.Equal(result.GroupId, t.Group);
+                Assert.Equal("Project Alpha", t.SectionHeader);
+                Assert.Equal(2, t.SpanX);
+                Assert.Equal(2, t.SpanY);
+                Assert.Equal(TileType.WebUrl, t.TileType);
+            }
+
+            // First 4 tiles fit in row 1 (columns 0, 2, 4, 6)
+            Assert.Equal(0, tiles[0].Col);
+            Assert.Equal(1, tiles[0].Row);
+            Assert.Equal(2, tiles[1].Col);
+            Assert.Equal(1, tiles[1].Row);
+            Assert.Equal(4, tiles[2].Col);
+            Assert.Equal(1, tiles[2].Row);
+            Assert.Equal(6, tiles[3].Col);
+            Assert.Equal(1, tiles[3].Row);
+
+            // 5th tile wraps to row 3 (column 0)
+            Assert.Equal(0, tiles[4].Col);
+            Assert.Equal(3, tiles[4].Row);
+        });
+    }
+
+    [Fact]
+    public void PinTileGroupFromCompanion_DeduplicatesSameUrlsWithinSession()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tiles = new ObservableCollection<TileModel>();
+            var groups = new ObservableCollection<TileGroupModel>();
+            var manager = CreateTestTileManager(tiles, groups);
+
+            var req = new CompanionTileGroupRequest(
+                GroupName: "Duplicates Test",
+                Tiles: new List<CompanionPinRequest>
+                {
+                    new("https://example.com/same-url"),
+                    new("https://example.com/same-url/"),
+                    new("https://example.com/different-url")
+                }
+            );
+
+            var result = manager.PinTileGroupFromCompanionAsync(req, CancellationToken.None).GetAwaiter().GetResult();
+
+            Assert.True(result.Success);
+            Assert.Equal(2, result.TilesAdded); // 1 duplicate filtered
+            Assert.Equal(2, tiles.Count);
+        });
+    }
+
+    [Fact]
+    public void PinTileGroupFromCompanion_PlacesBelowExistingContent()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tiles = new ObservableCollection<TileModel>
+            {
+                new()
+                {
+                    Id = "loose-1",
+                    Title = "Existing Loose",
+                    TargetPath = "https://example.com/existing",
+                    TileType = TileType.WebUrl,
+                    Col = 0,
+                    Row = 2,
+                    SpanX = 2,
+                    SpanY = 2
+                }
+            };
+            var groups = new ObservableCollection<TileGroupModel>();
+            var manager = CreateTestTileManager(tiles, groups);
+
+            var req = new CompanionTileGroupRequest(
+                GroupName: "Appended Session",
+                Tiles: new List<CompanionPinRequest>
+                {
+                    new("https://example.com/new1")
+                }
+            );
+
+            var result = manager.PinTileGroupFromCompanionAsync(req, CancellationToken.None).GetAwaiter().GetResult();
+
+            Assert.True(result.Success);
+            Assert.Single(groups);
+            // Existing tile bottom is row 4 (2 + 2). New group starts below at row 5.
+            Assert.Equal(5, groups[0].Row);
+        });
+    }
+
+    #endregion
 }

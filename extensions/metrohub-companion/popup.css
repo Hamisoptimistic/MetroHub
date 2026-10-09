@@ -119,7 +119,7 @@
 
 html, body {
   width: 350px;
-  min-height: 480px;
+  min-height: 420px;
   margin: 0 !important;
   padding: 0 !important;
   background-color: var(--bg-app);
@@ -135,16 +135,19 @@ html, body {
 /* App Shell */
 .app-shell {
   width: 350px;
-  min-height: 480px;
+  min-height: 420px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   padding: 16px 16px 20px 16px;
   gap: 14px;
   background-color: var(--bg-app);
+  background-image: radial-gradient(ellipse 90% 45% at 50% -5%, rgba(29, 100, 236, 0.16) 0%, rgba(29, 100, 236, 0.04) 50%, transparent 80%);
   border: 1px solid var(--app-shell-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   contain: layout style;
   transition: background-color 0.2s ease, border-color 0.2s ease;
+  position: relative;
 }
 
 /* =========================================================================
@@ -154,15 +157,16 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 14px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--border-divider);
   transition: border-color 0.2s ease;
+  position: relative;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
 }
 
 .brand-logo-wrap {
@@ -185,60 +189,76 @@ html, body {
 }
 
 .brand-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.2px;
   color: var(--text-primary);
 }
 
+/* Minimal Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px 2px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.status-badge.connecting {
+  background-color: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.25);
+  color: var(--text-muted);
+}
+.status-badge.connecting .status-dot {
+  background-color: #94a3b8;
+}
+
+.status-badge.connected {
+  background-color: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.28);
+  color: #10b981;
+}
+.status-badge.connected .status-dot {
+  background-color: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.status-badge.offline {
+  background-color: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.28);
+  color: #ef4444;
+}
+.status-badge.offline .status-dot {
+  background-color: #ef4444;
+}
+
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
-/* Status Indicator (Tactile Plug & Socket Animation) */
-.status-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  cursor: default;
-}
-
-.plug-canvas {
-  display: block;
-  width: 58px;
-  height: 27px;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 24%);
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* Theme Toggle Button with 3D Perspective Flip & Fade */
-.theme-toggle-btn {
+/* Header Action Buttons (Theme Toggle & Settings Hamburger) */
+.header-icon-btn {
   width: 30px;
   height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  perspective: 400px;
-  overflow: hidden;
   border-radius: 2px;
   border: 1px solid var(--toggle-btn-border);
   background-color: var(--toggle-btn-bg);
@@ -248,26 +268,171 @@ html, body {
     background-color 0.2s ease,
     border-color 0.2s ease,
     box-shadow 0.2s ease,
+    color 0.2s ease,
     transform 0.15s ease;
 }
 
-.theme-toggle-btn:hover {
+.header-icon-btn:hover {
   border-color: rgba(29, 100, 236, 0.45);
   color: #1d64ec;
   box-shadow: 0 2px 6px rgba(29, 100, 236, 0.15);
 }
 
-.theme-toggle-btn:focus {
+.header-icon-btn:focus {
   outline: none;
 }
 
-.theme-toggle-btn:focus-visible {
+.header-icon-btn:focus-visible {
   outline: 2px solid rgba(29, 100, 236, 0.5);
   outline-offset: 1px;
 }
 
-.theme-toggle-btn:active {
+.header-icon-btn:active {
   transform: scale(0.92);
+}
+
+.menu-toggle-btn.active {
+  border-color: #1d64ec;
+  color: #1d64ec;
+  background-color: rgba(29, 100, 236, 0.1);
+}
+
+/* Settings Popover Dropdown */
+.settings-menu {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  width: 220px;
+  background-color: var(--dropdown-menu-bg);
+  border: 1px solid var(--dropdown-menu-border);
+  border-radius: 4px;
+  padding: 10px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(12px);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: menuFadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.settings-menu.hidden {
+  display: none !important;
+}
+
+@keyframes menuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.settings-menu-header {
+  padding: 2px 4px 4px 4px;
+}
+
+.settings-menu-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding-left: 4px;
+}
+
+.settings-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.settings-option-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.settings-option-item:hover {
+  background-color: var(--dropdown-item-hover-bg);
+  color: var(--dropdown-item-hover-text);
+}
+
+.settings-option-item.active {
+  background-color: rgba(29, 100, 236, 0.12);
+  border-color: rgba(29, 100, 236, 0.35);
+  color: #1d64ec;
+  font-weight: 600;
+}
+
+.settings-option-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-divider {
+  height: 1px;
+  background-color: var(--border-divider);
+  margin: 2px 0;
+}
+
+.settings-link-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.settings-link-item:hover {
+  background-color: var(--dropdown-item-hover-bg);
+  color: var(--text-primary);
+}
+
+.github-icon {
+  flex-shrink: 0;
+  fill: currentColor;
+  transition: transform 0.15s ease;
+}
+
+.settings-link-item:hover .github-icon {
+  transform: scale(1.08);
+}
+
+.external-icon {
+  color: var(--text-muted);
 }
 
 .theme-icon {
@@ -322,45 +487,97 @@ body:not(.ready) .theme-icon {
 
 /* Mode Switcher Segmented Control */
 .mode-switcher {
+  position: relative;
   display: flex;
+  height: 36px;
   background-color: var(--input-bg);
   border: 1px solid var(--input-border);
   border-radius: 2px;
   padding: 3px;
-  gap: 4px;
+  box-sizing: border-box;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* Sliding active thumb indicator */
+.mode-slider {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  background-color: var(--seg-active-bg);
+  border-radius: 2px;
+  box-shadow: var(--seg-active-shadow);
+  pointer-events: none;
+  z-index: 1;
+  transform: translateX(0);
+  transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+  will-change: transform;
+}
+
+/* Position states */
+.mode-switcher[data-active="single"] .mode-slider {
+  transform: translateX(0);
+}
+
+.mode-switcher[data-active="all"] .mode-slider {
+  transform: translateX(100%);
+}
+
+/* Prevent transition jump on cold popup load */
+body:not(.ready) .mode-slider {
+  transition: none !important;
 }
 
 .mode-tab {
   flex: 1;
-  height: 30px;
+  height: 100%;
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   border: none;
-  background: transparent;
+  background: transparent !important;
   color: var(--seg-text);
   font-size: 12px;
   font-weight: 500;
   border-radius: 2px;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+  transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.12s ease;
+}
+
+.mode-tab:focus {
+  outline: none;
+}
+
+.mode-tab:focus-visible {
+  outline: 2px solid rgba(29, 100, 236, 0.5);
+  outline-offset: -2px;
 }
 
 .mode-tab:hover:not(.active) {
   color: var(--text-primary);
-  background-color: var(--seg-hover-bg);
+}
+
+.mode-tab:active {
+  transform: scale(0.97);
 }
 
 .mode-tab.active {
-  background-color: var(--btn-primary-bg);
-  color: #ffffff;
+  color: var(--seg-active-text);
   font-weight: 600;
-  box-shadow: 0 2px 6px rgba(29, 100, 236, 0.35);
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .mode-tab-icon {
   flex-shrink: 0;
+  stroke: currentColor;
+  transition: stroke 0.2s ease;
 }
 
 .form-row {
@@ -491,7 +708,7 @@ body:not(.ready) .theme-icon {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.18), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+  box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px, rgba(0, 0, 0, 0.22) 0px 15px 12px;
   max-height: 180px;
   overflow-y: auto;
 }
@@ -595,32 +812,34 @@ body:not(.ready) .theme-icon {
    Favicon Card
    ========================================================================= */
 .favicon-card {
-  background-color: var(--favicon-card-bg);
-  border: 1px solid var(--favicon-card-border);
-  border-radius: 2px;
-  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  padding: 2px 2px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  gap: 10px;
 }
 
 .favicon-wrap {
-  width: 36px;
-  height: 36px;
-  border-radius: 2px;
-  background-color: var(--favicon-icon-box-bg);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(150deg, #ffffff 0%, #f4f5f8 55%, #e2e4e9 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background-color 0.2s ease;
+  box-shadow:
+    inset 0 1px 1px 0.5px rgba(255, 255, 255, 1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.12),
+    0 3px 8px rgba(0, 0, 0, 0.32);
 }
 
 .favicon-wrap img {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
 }
 
 .favicon-wrap img:not([src]),
@@ -638,115 +857,188 @@ body:not(.ready) .theme-icon {
 }
 
 /* =========================================================================
-   Session Group Card (All Tabs Mode)
+   Session Group View (All Tabs Mode) - Clean Unboxed Stack
    ========================================================================= */
 .session-card {
-  background-color: var(--favicon-card-bg);
-  border: 1px solid var(--favicon-card-border);
-  border-radius: 2px;
-  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  padding: 2px 2px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  gap: 8px;
 }
 
-.session-header {
+.session-favicon-stack {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 4px 0;
+}
+
+.session-favicon-stack::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(29, 100, 236, 0.28) 0%, transparent 70%);
+  filter: blur(8px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.session-favicon-item {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(150deg, #ffffff 0%, #f4f5f8 55%, #e2e4e9 100%);
+  border: 2px solid var(--bg-app);
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  cursor: default;
+  box-shadow:
+    inset 0 1px 1px 0.5px rgba(255, 255, 255, 1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.12),
+    0 3px 8px rgba(0, 0, 0, 0.32);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), margin-left 0.24s cubic-bezier(0.34, 1.3, 0.64, 1), box-shadow 0.2s ease;
 }
 
-.session-icon-box {
-  width: 36px;
-  height: 36px;
-  border-radius: 2px;
-  background-color: var(--favicon-icon-box-bg);
-  color: #1d64ec;
+.session-favicon-item:not(:first-child) {
+  margin-left: -10px;
+}
+
+/* Accordion Fan-Out only when hovering over the icons (stack is width: fit-content) */
+.session-favicon-stack:hover .session-favicon-item:not(:first-child) {
+  margin-left: -2px;
+}
+
+.session-favicon-item:hover {
+  transform: translateY(-4px) scale(1.08) !important;
+  box-shadow:
+    inset 0 1px 1px 0.5px rgba(255, 255, 255, 1),
+    0 8px 18px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(29, 100, 236, 0.35) !important;
+  z-index: 100 !important;
+}
+
+.session-favicon-item img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
+}
+
+.session-favicon-more {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(150deg, #ffffff 0%, #f4f5f8 55%, #e2e4e9 100%);
+  border: 2px solid var(--bg-app);
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background-color 0.2s ease;
+  margin-left: -10px;
+  box-shadow:
+    inset 0 1px 1px 0.5px rgba(255, 255, 255, 1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.12),
+    0 3px 8px rgba(0, 0, 0, 0.32);
+  cursor: default;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), margin-left 0.24s cubic-bezier(0.34, 1.3, 0.64, 1), box-shadow 0.2s ease;
 }
 
-.session-details {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  gap: 1px;
+.session-favicon-stack:hover .session-favicon-more {
+  margin-left: -2px;
 }
 
-.session-count-title {
+.session-favicon-more:hover {
+  transform: translateY(-4px) scale(1.08) !important;
+  box-shadow:
+    inset 0 1px 1px 0.5px rgba(255, 255, 255, 1),
+    0 8px 18px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(29, 100, 236, 0.35) !important;
+  z-index: 100 !important;
+}
+
+/* === Concept 2: Card Deal Stagger Entrance === */
+@keyframes cardDealEntrance {
+  0% {
+    opacity: 0;
+    transform: translateX(-16px) scale(0.6);
+  }
+  65% {
+    opacity: 1;
+    transform: translateX(2px) scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.session-favicon-item.dealing,
+.session-favicon-more.dealing {
+  animation: cardDealEntrance 0.38s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
+}
+
+/* === Concept 1: Vault Stash Absorption === */
+@keyframes vaultStashAbsorption {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(48px) scale(0.22);
+  }
+}
+
+.session-favicon-item.absorbing {
+  animation: vaultStashAbsorption 0.32s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+  pointer-events: none;
+}
+
+@keyframes buttonAbsorbPulse {
+  0% {
+    transform: scale(0.97);
+    box-shadow: 0 0 0 0 rgba(29, 100, 236, 0.7);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 12px rgba(29, 100, 236, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 14px rgba(29, 100, 236, 0.35);
+  }
+}
+
+.submit-btn.pulse-absorbed {
+  animation: buttonAbsorbPulse 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.session-summary-text {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.session-subtext {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-
-.close-tabs-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border-divider);
-  cursor: pointer;
-  user-select: none;
-}
-
-.custom-checkbox {
-  appearance: none;
-  -webkit-appearance: none;
-  width: 15px;
-  height: 15px;
-  border: 1.5px solid var(--input-border-hover);
-  border-radius: 2px;
-  background-color: var(--input-bg);
-  cursor: pointer;
-  position: relative;
-  flex-shrink: 0;
-  margin: 0;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
-}
-
-.custom-checkbox:hover {
-  border-color: rgba(29, 100, 236, 0.6);
-}
-
-.custom-checkbox:checked {
-  background-color: var(--btn-primary-bg);
-  border-color: var(--btn-primary-bg);
-}
-
-.custom-checkbox:checked::after {
-  content: '';
-  position: absolute;
-  left: 4px;
-  top: 1px;
-  width: 3.5px;
-  height: 7px;
-  border: solid #ffffff;
-  border-width: 0 1.8px 1.8px 0;
-  transform: rotate(45deg);
-}
-
-.custom-checkbox:focus-visible {
-  outline: 2px solid rgba(29, 100, 236, 0.5);
-  outline-offset: 1px;
-}
-
-.toggle-label-text {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-secondary);
+  letter-spacing: -0.1px;
 }
 
 .stash-svg {
@@ -754,7 +1046,7 @@ body:not(.ready) .theme-icon {
 }
 
 /* =========================================================================
-   Footer & Submit Action
+   Footer & Submit Action (Clean Flat Action Button, No Specular Rim)
    ========================================================================= */
 .app-footer {
   display: flex;
@@ -771,7 +1063,7 @@ body:not(.ready) .theme-icon {
   justify-content: center;
   gap: 8px;
   background-color: var(--btn-primary-bg);
-  border: none;
+  border: 1px solid transparent;
   border-radius: 2px;
   color: var(--btn-primary-text);
   font-size: 14px;
@@ -779,18 +1071,19 @@ body:not(.ready) .theme-icon {
   letter-spacing: -0.1px;
   cursor: pointer;
   position: relative;
-  box-shadow: var(--btn-primary-shadow);
-  transition: background-color 0.2s ease, box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(29, 100, 236, 0.35);
+  transition: background-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
 }
 
 .submit-btn:hover:not(:disabled) {
   background-color: var(--btn-primary-hover);
-  box-shadow: var(--hover-box-shadow);
-  z-index: 5;
+  box-shadow: 0 6px 20px rgba(29, 100, 236, 0.48);
+  transform: translateY(-1px);
 }
 
 .submit-btn:active:not(:disabled) {
-  filter: brightness(0.95);
+  transform: scale(0.985) translateY(1px);
+  box-shadow: 0 2px 8px rgba(29, 100, 236, 0.3);
 }
 
 .submit-btn:disabled {

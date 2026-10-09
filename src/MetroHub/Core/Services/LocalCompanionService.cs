@@ -63,6 +63,32 @@ public sealed record CompanionErrorResponse(
     [property: JsonPropertyName("error")] string Error
 );
 
+public sealed record CompanionTileGroupRequest(
+    [property: JsonPropertyName("groupName")] string? GroupName,
+    [property: JsonPropertyName("workspaceId")] string? WorkspaceId = null,
+    [property: JsonPropertyName("tiles")] IReadOnlyList<CompanionPinRequest>? Tiles = null
+);
+
+public sealed record CompanionTileGroupResponse(
+    [property: JsonPropertyName("success")] bool Success,
+    [property: JsonPropertyName("groupId")] string? GroupId,
+    [property: JsonPropertyName("groupTitle")] string? GroupTitle,
+    [property: JsonPropertyName("tilesAdded")] int TilesAdded,
+    [property: JsonPropertyName("col")] int Col,
+    [property: JsonPropertyName("row")] int Row,
+    [property: JsonPropertyName("message")] string? Message = null
+);
+
+public sealed record CompanionTileGroupResult(
+    bool Success,
+    string? GroupId,
+    string? GroupTitle,
+    int TilesAdded,
+    int Col,
+    int Row,
+    string? Message = null
+);
+
 [JsonSourceGenerationOptions(
     WriteIndented = false,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
@@ -71,6 +97,8 @@ public sealed record CompanionErrorResponse(
 [JsonSerializable(typeof(List<CompanionWorkspaceDto>))]
 [JsonSerializable(typeof(CompanionPinRequest))]
 [JsonSerializable(typeof(CompanionPinResponse))]
+[JsonSerializable(typeof(CompanionTileGroupRequest))]
+[JsonSerializable(typeof(CompanionTileGroupResponse))]
 [JsonSerializable(typeof(CompanionErrorResponse))]
 internal partial class CompanionJsonContext : JsonSerializerContext
 {
@@ -309,6 +337,11 @@ public sealed class LocalCompanionService : IDisposable
     /// Pluggable delegate for testing or decoupling tile placement from WPF Dispatcher.
     /// </summary>
     public Func<CompanionPinRequest, CancellationToken, Task<CompanionPinResult>>? PinTileHandler { get; set; }
+
+    /// <summary>
+    /// Pluggable delegate for creating and grouping browser tabs into a section on the canvas.
+    /// </summary>
+    public Func<CompanionTileGroupRequest, CancellationToken, Task<CompanionTileGroupResult>>? PinTileGroupHandler { get; set; }
 
     /// <summary>
     /// Pluggable delegate for testing workspace discovery.
@@ -565,6 +598,12 @@ public sealed class LocalCompanionService : IDisposable
             return;
         }
 
+        if (httpMethod == "POST" && rawPath.Equals("/api/tile-groups", StringComparison.OrdinalIgnoreCase))
+        {
+            await HandlePostTileGroupsAsync(request, response, ct).ConfigureAwait(false);
+            return;
+        }
+
         // Route not found
         await SendJsonAsync(response, 404, new CompanionErrorResponse($"Route not found: '{rawPath}'."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
     }
@@ -732,6 +771,159 @@ public sealed class LocalCompanionService : IDisposable
         }
     }
 
+    private async Task HandlePostTileGroupsAsync(HttpListenerRequest request, HttpListenerResponse response, CancellationToken ct)
+    {
+        // Body reading up to 128 KB cap for tab groups
+        int maxGroupPayloadBytes = MaxRequestBodyBytes * 2;
+        byte[] buffer = new byte[maxGroupPayloadBytes + 1];
+        int totalBytesRead = 0;
+        int bytesRead;
+
+        while ((bytesRead = await request.InputStream.ReadAsync(buffer.AsMemory(totalBytesRead, buffer.Length - totalBytesRead), ct).ConfigureAwait(false)) > 0)
+        {
+            totalBytesRead += bytesRead;
+            if (totalBytesRead > maxGroupPayloadBytes)
+            {
+                await SendJsonAsync(response, 413, new CompanionErrorResponse("Payload too large: request body exceeds 128 KB."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
+                return;
+            }
+        }
+
+        if (totalBytesRead == 0)
+        {
+            await SendJsonAsync(response, 400, new CompanionErrorResponse("Empty request body."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
+            return;
+        }
+
+        CompanionTileGroupRequest? groupRequest;
+        try
+        {
+            groupRequest = JsonSerializer.Deserialize(buffer.AsSpan(0, totalBytesRead), CompanionJsonContext.Default.CompanionTileGroupRequest);
+        }
+        catch (JsonException)
+        {
+            await SendJsonAsync(response, 400, new CompanionErrorResponse("Invalid JSON payload."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
+            return;
+        }
+
+        if (groupRequest == null || groupRequest.Tiles == null || groupRequest.Tiles.Count == 0)
+        {
+            await SendJsonAsync(response, 400, new CompanionErrorResponse("Missing or empty 'tiles' list."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
+            return;
+        }
+
+        if (groupRequest.Tiles.Count > 100)
+        {
+            await SendJsonAsync(response, 400, new CompanionErrorResponse("Too many tabs: maximum 100 tabs allowed per session group."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
+            return;
+        }
+
+        string groupName = groupRequest.GroupName?.Trim() ?? string.Empty;
+        if (groupName.Length > 128)
+        {
+            groupName = groupName.Substring(0, 128);
+        }
+
+        var sanitizedTiles = new List<CompanionPinRequest>(groupRequest.Tiles.Count);
+        foreach (var tile in groupRequest.Tiles)
+        {
+            if (tile == null || string.IsNullOrWhiteSpace(tile.Url)) continue;
+
+            string rawUrl = tile.Url.Trim();
+            if (!rawUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                !rawUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (!Uri.TryCreate(rawUrl, UriKind.Absolute, out Uri? parsedUri) ||
+                (parsedUri.Scheme != Uri.UriSchemeHttp && parsedUri.Scheme != Uri.UriSchemeHttps))
+            {
+                continue;
+            }
+
+            string title = tile.Title?.Trim() ?? string.Empty;
+            if (title.Length > 256) title = title.Substring(0, 256);
+
+            string sanitizedUrl = SanitizeUrl(rawUrl);
+            sanitizedTiles.Add(new CompanionPinRequest(
+                Url: sanitizedUrl,
+                Title: title,
+                Note: null,
+                WorkspaceId: groupRequest.WorkspaceId,
+                SpanX: 2,
+                SpanY: 2,
+                ThumbnailUrl: null
+            ));
+        }
+
+        if (sanitizedTiles.Count == 0)
+        {
+            await SendJsonAsync(response, 400, new CompanionErrorResponse("No valid web links found in 'tiles' list."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
+            return;
+        }
+
+        // Validate workspace if explicitly specified
+        if (!string.IsNullOrWhiteSpace(groupRequest.WorkspaceId))
+        {
+            var workspaces = WorkspacesHandler != null ? WorkspacesHandler() : GetDefaultWorkspaces();
+            bool exists = false;
+            foreach (var ws in workspaces)
+            {
+                if (ws.Id.Equals(groupRequest.WorkspaceId, StringComparison.OrdinalIgnoreCase))
+                {
+                    exists = true;
+                    break;
+                }
+            }
+
+            if (!exists)
+            {
+                await SendJsonAsync(response, 404, new CompanionErrorResponse($"Workspace '{groupRequest.WorkspaceId}' not found."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
+                return;
+            }
+        }
+
+        var sanitizedRequest = new CompanionTileGroupRequest(
+            GroupName: groupName,
+            WorkspaceId: groupRequest.WorkspaceId,
+            Tiles: sanitizedTiles
+        );
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeSpan.FromSeconds(DispatcherTimeoutSeconds + 1.0));
+
+        try
+        {
+            CompanionTileGroupResult result;
+            if (PinTileGroupHandler != null)
+            {
+                result = await PinTileGroupHandler(sanitizedRequest, cts.Token).ConfigureAwait(false);
+            }
+            else
+            {
+                result = await PlaceTileGroupDefaultAsync(sanitizedRequest, cts.Token).ConfigureAwait(false);
+            }
+
+            var groupResponse = new CompanionTileGroupResponse(
+                Success: result.Success,
+                GroupId: result.GroupId,
+                GroupTitle: result.GroupTitle,
+                TilesAdded: result.TilesAdded,
+                Col: result.Col,
+                Row: result.Row,
+                Message: result.Message
+            );
+
+            await SendJsonAsync(response, 200, groupResponse, CompanionJsonContext.Default.CompanionTileGroupResponse, ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            response.Headers["Retry-After"] = "2";
+            await SendJsonAsync(response, 503, new CompanionErrorResponse("Service Unavailable: Desktop UI thread busy. Please retry."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
+        }
+    }
+
     private static void ApplyCorsHeaders(HttpListenerResponse response, string origin)
     {
         response.Headers["Access-Control-Allow-Origin"] = origin;
@@ -855,7 +1047,7 @@ public sealed class LocalCompanionService : IDisposable
 
     private static Task<CompanionPinResult> PlaceTileDefaultAsync(CompanionPinRequest request, CancellationToken ct)
     {
-        // Default stub for Phase 1 before Phase 2 wires full TileManager
+        // Default stub when running without UI or during initialization
         string tileId = Guid.NewGuid().ToString("N");
         return Task.FromResult(new CompanionPinResult(
             Success: true,
@@ -863,6 +1055,22 @@ public sealed class LocalCompanionService : IDisposable
             TileId: tileId,
             Col: 0,
             Row: 0
+        ));
+    }
+
+    private static Task<CompanionTileGroupResult> PlaceTileGroupDefaultAsync(CompanionTileGroupRequest request, CancellationToken ct)
+    {
+        string groupId = Guid.NewGuid().ToString("N");
+        string title = !string.IsNullOrWhiteSpace(request.GroupName) ? request.GroupName : "Session";
+        int count = request.Tiles?.Count ?? 0;
+        return Task.FromResult(new CompanionTileGroupResult(
+            Success: true,
+            GroupId: groupId,
+            GroupTitle: title,
+            TilesAdded: count,
+            Col: 0,
+            Row: 0,
+            Message: "Default group stub"
         ));
     }
 
