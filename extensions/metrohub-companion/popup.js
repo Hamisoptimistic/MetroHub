@@ -114,6 +114,22 @@ function setupModeSwitcher() {
   modeAllTabsBtn.addEventListener('click', () => {
     switchMode('all');
   });
+
+  modeSingleTabBtn.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      switchMode('all');
+      modeAllTabsBtn.focus();
+    }
+  });
+
+  modeAllTabsBtn.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      switchMode('single');
+      modeSingleTabBtn.focus();
+    }
+  });
 }
 
 function getDefaultGroupName() {
@@ -353,27 +369,30 @@ function setupSettingsMenu() {
   });
 }
 
-function setupDropdownListeners() {
+let dropdownFocusedIndex = -1;
+
+function updateWorkspaceTrigger(name) {
+  if (!workspaceSelectedText) return;
+  workspaceSelectedText.innerHTML = '';
+
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'ws-name';
+  nameSpan.textContent = name;
+  workspaceSelectedText.appendChild(nameSpan);
+}
+
+function openDropdown() {
   if (!workspaceTrigger || !workspaceMenu) return;
+  workspaceTrigger.classList.add('open');
+  workspaceMenu.classList.remove('hidden');
+  workspaceTrigger.setAttribute('aria-expanded', 'true');
 
-  workspaceTrigger.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isOpen = workspaceTrigger.classList.toggle('open');
-    workspaceMenu.classList.toggle('hidden', !isOpen);
-    workspaceTrigger.setAttribute('aria-expanded', String(isOpen));
-  });
+  const items = Array.from(workspaceMenu.querySelectorAll('.dropdown-item'));
+  if (items.length === 0) return;
 
-  document.addEventListener('click', (e) => {
-    if (workspaceDropdown && !workspaceDropdown.contains(e.target)) {
-      closeDropdown();
-    }
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      closeDropdown();
-    }
-  });
+  const selectedIdx = items.findIndex((it) => it.getAttribute('aria-selected') === 'true');
+  dropdownFocusedIndex = selectedIdx >= 0 ? selectedIdx : 0;
+  highlightDropdownItem(dropdownFocusedIndex);
 }
 
 function closeDropdown() {
@@ -381,6 +400,99 @@ function closeDropdown() {
   workspaceTrigger.classList.remove('open');
   workspaceMenu.classList.add('hidden');
   workspaceTrigger.setAttribute('aria-expanded', 'false');
+  dropdownFocusedIndex = -1;
+  workspaceMenu.querySelectorAll('.dropdown-item').forEach((it) => it.classList.remove('focused'));
+}
+
+function highlightDropdownItem(index) {
+  if (!workspaceMenu) return;
+  const items = Array.from(workspaceMenu.querySelectorAll('.dropdown-item'));
+  if (items.length === 0) return;
+
+  dropdownFocusedIndex = Math.max(0, Math.min(index, items.length - 1));
+  items.forEach((it, i) => {
+    it.classList.toggle('focused', i === dropdownFocusedIndex);
+  });
+
+  const focusedItem = items[dropdownFocusedIndex];
+  if (focusedItem) {
+    focusedItem.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function setupDropdownListeners() {
+  if (!workspaceTrigger || !workspaceMenu) return;
+
+  workspaceTrigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (workspaceTrigger.classList.contains('open')) {
+      closeDropdown();
+    } else {
+      openDropdown();
+    }
+  });
+
+  workspaceTrigger.addEventListener('keydown', (e) => {
+    const isOpen = workspaceTrigger.classList.contains('open');
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!isOpen) {
+        openDropdown();
+      } else {
+        const items = Array.from(workspaceMenu.querySelectorAll('.dropdown-item'));
+        if (items.length > 0) {
+          highlightDropdownItem((dropdownFocusedIndex + 1) % items.length);
+        }
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!isOpen) {
+        openDropdown();
+      } else {
+        const items = Array.from(workspaceMenu.querySelectorAll('.dropdown-item'));
+        if (items.length > 0) {
+          highlightDropdownItem((dropdownFocusedIndex - 1 + items.length) % items.length);
+        }
+      }
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (isOpen) {
+        const items = Array.from(workspaceMenu.querySelectorAll('.dropdown-item'));
+        if (dropdownFocusedIndex >= 0 && dropdownFocusedIndex < items.length) {
+          items[dropdownFocusedIndex].click();
+        } else {
+          closeDropdown();
+        }
+      } else {
+        openDropdown();
+      }
+    } else if (e.key === 'Escape') {
+      if (isOpen) {
+        e.preventDefault();
+        closeDropdown();
+      }
+    } else if (e.key === 'Tab') {
+      if (isOpen) {
+        closeDropdown();
+      }
+    } else if (e.key === 'Home' && isOpen) {
+      e.preventDefault();
+      highlightDropdownItem(0);
+    } else if (e.key === 'End' && isOpen) {
+      e.preventDefault();
+      const items = workspaceMenu.querySelectorAll('.dropdown-item');
+      if (items.length > 0) {
+        highlightDropdownItem(items.length - 1);
+      }
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (workspaceDropdown && !workspaceDropdown.contains(e.target)) {
+      closeDropdown();
+    }
+  });
 }
 
 async function initializeTabContext() {
@@ -546,53 +658,57 @@ function renderWorkspaceMenu(workspaces) {
   workspaceMenu.innerHTML = '';
   let activeFound = false;
 
-  workspaces.forEach((ws) => {
-    const isCurrent = ws.isActive;
-    if (isCurrent && !activeFound) {
+  workspaces.forEach((ws, index) => {
+    const isCurrentActive = Boolean(ws.isActive);
+    if (isCurrentActive && !activeFound) {
       selectedWorkspaceId = ws.id;
       selectedWorkspaceName = ws.name;
-      workspaceSelectedText.textContent = `${ws.name} (Active)`;
+      updateWorkspaceTrigger(ws.name);
       activeFound = true;
     }
 
+    const isSelected = selectedWorkspaceId === ws.id;
+
     const item = document.createElement('button');
     item.type = 'button';
-    item.className = `dropdown-item ${selectedWorkspaceId === ws.id ? 'selected' : ''}`;
+    item.className = `dropdown-item ${isSelected ? 'selected' : ''}`;
     item.setAttribute('role', 'option');
-    item.setAttribute('aria-selected', String(selectedWorkspaceId === ws.id));
+    item.setAttribute('aria-selected', String(isSelected));
     item.setAttribute('data-id', ws.id);
+    item.setAttribute('data-index', String(index));
+    item.tabIndex = -1;
 
-    const span = document.createElement('span');
-    span.textContent = ws.isActive ? `${ws.name} (Active)` : ws.name;
-    item.appendChild(span);
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'ws-name';
+    nameSpan.textContent = ws.name;
+    item.appendChild(nameSpan);
 
-    const checkSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    checkSvg.setAttribute('class', 'check-icon');
-    checkSvg.setAttribute('viewBox', '0 0 24 24');
-    checkSvg.setAttribute('fill', 'none');
-    checkSvg.setAttribute('stroke', 'currentColor');
-    checkSvg.setAttribute('stroke-width', '2.2');
-    checkSvg.setAttribute('stroke-linecap', 'round');
-    checkSvg.setAttribute('stroke-linejoin', 'round');
-    const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-    polyline.setAttribute('points', '20 6 9 17 4 12');
-    checkSvg.appendChild(polyline);
-    item.appendChild(checkSvg);
+    if (isCurrentActive) {
+      const liveSpan = document.createElement('span');
+      liveSpan.className = 'live';
+      liveSpan.textContent = 'Active';
+      item.appendChild(liveSpan);
+    }
+
+    item.addEventListener('mouseenter', () => {
+      highlightDropdownItem(index);
+    });
 
     item.addEventListener('click', (e) => {
       e.stopPropagation();
       selectedWorkspaceId = ws.id;
       selectedWorkspaceName = ws.name;
-      workspaceSelectedText.textContent = span.textContent;
+      updateWorkspaceTrigger(ws.name);
 
-      // Update selected styles
       workspaceMenu.querySelectorAll('.dropdown-item').forEach((el) => {
         const isMatch = el.getAttribute('data-id') === ws.id;
         el.classList.toggle('selected', isMatch);
         el.setAttribute('aria-selected', String(isMatch));
+        el.classList.remove('focused');
       });
 
       closeDropdown();
+      workspaceTrigger?.focus();
       setButtonState('default');
     });
 
@@ -602,7 +718,7 @@ function renderWorkspaceMenu(workspaces) {
   if (!activeFound && workspaces.length > 0) {
     selectedWorkspaceId = workspaces[0].id;
     selectedWorkspaceName = workspaces[0].name;
-    workspaceSelectedText.textContent = workspaces[0].name;
+    updateWorkspaceTrigger(workspaces[0].name);
     const firstItem = workspaceMenu.querySelector('.dropdown-item');
     if (firstItem) {
       firstItem.classList.add('selected');
@@ -750,7 +866,7 @@ function setButtonState(state, customBig = null, customSub = null) {
     if (target) target.classList.remove('hidden');
   }
 
-  const wsName = selectedWorkspaceName || (workspaceSelectedText?.textContent || 'Main').replace(/\s*\(Active\)\s*$/i, '').trim();
+  const wsName = selectedWorkspaceName || (workspaceSelectedText?.querySelector('.ws-name')?.textContent || workspaceSelectedText?.textContent || 'Main').replace(/\s*\(Active\)\s*$/i, '').trim();
 
   // Reset state classes
   pinBtn.classList.remove('done', 'loading', 'error');

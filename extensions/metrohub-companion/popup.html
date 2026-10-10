@@ -104,15 +104,21 @@
         <div class="mode-slider" aria-hidden="true"></div>
         <button type="button" id="modeSingleTab" class="mode-tab active" role="tab" aria-selected="true">
           <svg class="mode-tab-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <line x1="2" y1="9" x2="22" y2="9"></line>
+            <circle cx="16" cy="6.5" r="0.75" fill="currentColor"></circle>
+            <circle cx="18.5" cy="6.5" r="0.75" fill="currentColor"></circle>
           </svg>
           <span>Current Tab</span>
         </button>
         <button type="button" id="modeAllTabs" class="mode-tab" role="tab" aria-selected="false">
           <svg class="mode-tab-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-            <path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"></path>
+            <path d="M6 5.5v-0.5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v0.5"></path>
+            <path d="M4 8.5v-0.5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v0.5"></path>
+            <rect x="2" y="9.5" width="20" height="12" rx="2"></rect>
+            <line x1="2" y1="14" x2="22" y2="14"></line>
+            <circle cx="16" cy="11.8" r="0.75" fill="currentColor"></circle>
+            <circle cx="18.5" cy="11.8" r="0.75" fill="currentColor"></circle>
           </svg>
           <span id="allTabsLabelText">All Tabs</span>
         </button>
@@ -124,8 +130,8 @@
         <div class="input-wrap">
           <input type="text" id="tileTitle" class="text-input" placeholder="Page title" spellcheck="false" autocomplete="off" />
           <svg class="input-trailing-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 20h9"/>
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
+            <path d="m15 5 4 4"/>
           </svg>
         </div>
       </div>
@@ -135,17 +141,17 @@
         <label id="workspaceLabel" class="row-label">Workspace</label>
         <div class="custom-dropdown" id="workspaceDropdown">
           <button type="button" id="workspaceTrigger" class="dropdown-trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="workspaceLabel">
-            <span id="workspaceSelectedText" class="dropdown-selected-text">Main (Active)</span>
+            <span id="workspaceSelectedText" class="dropdown-selected-text">
+              <span class="ws-name">Main</span>
+            </span>
             <svg class="dropdown-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </button>
-          <div id="workspaceMenu" class="dropdown-menu hidden" role="listbox">
+          <div id="workspaceMenu" class="dropdown-menu hidden" role="listbox" tabindex="-1">
             <button type="button" class="dropdown-item selected" role="option" aria-selected="true" data-id="">
-              <span>Main (Active)</span>
-              <svg class="check-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
+              <span class="ws-name">Main</span>
+              <span class="live">Active</span>
             </button>
           </div>
         </div>
@@ -176,19 +182,21 @@
         <div class="btn-icon-wrap">
           <svg class="ico-pin" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="12" y1="17" x2="12" y2="22"></line>
-            <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V5a3 3 0 0 0-6 0v5.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path>
+            <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path>
           </svg>
           <svg class="ico-stash hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 3l9 5-9 5-9-5z"/>
-            <path d="M3 13l9 5 9-5"/>
-            <path d="M3 17.5l9 5 9-5" opacity=".55"/>
+            <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"></path>
+            <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"></path>
+            <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"></path>
           </svg>
           <svg class="ico-off hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 4l16 16"/>
-            <path d="M9 5.5h6M12 5.5V9M7 12.5h10l-1 4.5a3 3 0 0 1-3 2.5h-2a3 3 0 0 1-3-2.5z"/>
+            <line x1="2" y1="2" x2="22" y2="22"></line>
+            <line x1="12" y1="17" x2="12" y2="22"></line>
+            <path d="M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h12"></path>
+            <path d="M15 9.34V6h1a2 2 0 0 0 0-4H7.89"></path>
           </svg>
           <svg class="ico-check hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path class="ck" d="M5 12.5l4.5 4.5L19 7.5"/>
+            <path class="ck" d="M20 6 9 17l-5-5"></path>
           </svg>
           <span class="btn-spinner hidden" aria-hidden="true"></span>
         </div>

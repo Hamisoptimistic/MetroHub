@@ -10,7 +10,7 @@
 
 :root {
   color-scheme: light;
-  --app-shell-border: rgba(0, 0, 0, 0.08);
+  --app-shell-border: rgba(0, 0, 0, 0.10);
 
   /* Warm Linen Light Theme (#EFE9E3) - Soft, harmonious contrast */
   --bg-app: #efe9e3;
@@ -63,7 +63,7 @@
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --app-shell-border: rgba(255, 255, 255, 0.07);
+  --app-shell-border: rgba(255, 255, 255, 0.12);
 
   /* Modern Fluent Dark Theme (#1F1F1F) - Sleek, velvety depth */
   --bg-app: #1f1f1f;
@@ -114,13 +114,26 @@
   --hover-box-shadow: rgba(29, 100, 236, 0.42) 0px 3px, rgba(29, 100, 236, 0.32) 0px 6px, rgba(29, 100, 236, 0.22) 0px 9px, rgba(29, 100, 236, 0.12) 0px 12px, rgba(29, 100, 236, 0.06) 0px 15px;
 }
 
+@font-face {
+  font-family: 'Google Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('fonts/GoogleSans-Variable.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  font-family: 'Google Sans', 'Google Sans Text', 'Product Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
 }
 
 html, body {
@@ -149,8 +162,8 @@ html, body {
   gap: 14px;
   background-color: var(--bg-app);
   background-image: radial-gradient(ellipse 90% 45% at 50% -5%, rgba(29, 100, 236, 0.16) 0%, rgba(29, 100, 236, 0.04) 50%, transparent 80%);
-  border: 1px solid var(--app-shell-border);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border: 0.5px solid var(--app-shell-border);
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
   contain: layout style;
   transition: background-color 0.2s ease, border-color 0.2s ease;
   position: relative;
@@ -683,7 +696,7 @@ body:not(.ready) .mode-slider {
 }
 
 /* =========================================================================
-   Custom Dropdown Component
+   Custom Dropdown Component (Workspace Listbox)
    ========================================================================= */
 .custom-dropdown {
   position: relative;
@@ -692,21 +705,22 @@ body:not(.ready) .mode-slider {
 
 .dropdown-trigger {
   width: 100%;
-  height: 44px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   background-color: var(--input-bg);
   border: 1px solid var(--input-border);
-  border-radius: 2px;
-  padding: 0 14px;
-  font-size: 13px;
+  border-radius: 4px;
+  padding: 0 12px;
+  font-size: 13.5px;
   font-weight: 500;
   color: var(--text-primary);
   cursor: pointer;
   outline: none;
   box-shadow: none;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .dropdown-trigger:hover {
@@ -715,78 +729,134 @@ body:not(.ready) .mode-slider {
 
 .dropdown-trigger.open,
 .dropdown-trigger:focus-visible {
-  border-color: var(--input-border-focus);
+  border-color: var(--btn-primary-bg);
+  box-shadow: 0 0 0 1px var(--btn-primary-bg);
   outline: none;
-  box-shadow: none;
 }
 
 .dropdown-selected-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0;
+  padding-right: 4px;
 }
 
 .dropdown-chevron {
-  color: var(--chevron-color);
+  color: var(--text-muted);
   flex-shrink: 0;
-  transition: transform 0.2s ease, color 0.15s ease;
+  transition: transform 0.25s cubic-bezier(0.3, 0.9, 0.25, 1);
 }
 
-.dropdown-trigger.open .dropdown-chevron {
+.dropdown-trigger.open .dropdown-chevron,
+.dropdown-trigger[aria-expanded="true"] .dropdown-chevron {
   transform: rotate(180deg);
-  color: #0066ff;
 }
 
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 5px);
   left: 0;
   right: 0;
   z-index: 50;
   background-color: var(--dropdown-menu-bg);
   border: 1px solid var(--dropdown-menu-border);
-  border-radius: 2px;
+  border-radius: 6px;
   padding: 4px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px, rgba(0, 0, 0, 0.22) 0px 15px 12px;
-  max-height: 180px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+  max-height: 200px;
   overflow-y: auto;
+  transform-origin: top;
+  animation: dropdownPop 0.18s cubic-bezier(0.3, 0.9, 0.25, 1) backwards;
+}
+
+@keyframes dropdownPop {
+  from {
+    opacity: 0;
+    transform: scaleY(0.92) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
 }
 
 .dropdown-item {
-  height: 36px;
-  padding: 0 10px;
+  position: relative;
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-radius: 2px;
-  font-size: 13px;
+  border-radius: 4px;
+  font-size: 13.5px;
   font-weight: 500;
   color: var(--text-primary);
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  text-align: left;
+  outline: none;
+  transition: background-color 0.12s ease;
 }
 
-.dropdown-item:hover {
+.dropdown-item:hover,
+.dropdown-item.focused {
   background-color: var(--dropdown-item-hover-bg);
-  color: var(--dropdown-item-hover-text);
+  outline: none;
 }
 
+/* Side pill active indicator instead of making the entire workspace blue */
+.dropdown-item[aria-selected="true"],
 .dropdown-item.selected {
-  background-color: var(--btn-primary-bg);
-  color: var(--btn-primary-text);
   font-weight: 600;
+  color: var(--text-primary);
+  background-color: transparent;
 }
 
-.dropdown-item .check-icon {
-  width: 14px;
-  height: 14px;
-  stroke: currentColor;
-  stroke-width: 2.2;
+.dropdown-item[aria-selected="true"]:hover,
+.dropdown-item[aria-selected="true"].focused,
+.dropdown-item.selected:hover,
+.dropdown-item.selected.focused {
+  background-color: var(--dropdown-item-hover-bg);
+}
+
+.dropdown-item[aria-selected="true"]::before,
+.dropdown-item.selected::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--btn-primary-bg);
+}
+
+.ws-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: inherit;
+  color: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.live {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 /* =========================================================================
