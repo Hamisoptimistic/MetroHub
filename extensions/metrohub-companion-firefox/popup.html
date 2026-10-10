@@ -94,6 +94,9 @@
       </div>
     </header>
 
+    <!-- Animated Plug & Socket Cable Divider -->
+    <div class="pw" id="wire" aria-hidden="true"></div>
+
     <!-- Main Content Form -->
     <main class="app-body">
       <!-- Mode Switcher: Single Tab vs All Tabs -->
@@ -163,26 +166,35 @@
       </div>
     </main>
 
-    <!-- Footer Action -->
+    <!-- Footer Action - AIO (All-In-One) Action Tile -->
     <footer class="app-footer">
       <button type="button" id="pinBtn" class="submit-btn" disabled>
-        <svg class="pin-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="12" y1="17" x2="12" y2="22"></line>
-          <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V5a3 3 0 0 0-6 0v5.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path>
-        </svg>
-        <svg class="stash-svg hidden" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-          <polyline points="2 17 12 22 22 17"></polyline>
-          <polyline points="2 12 12 17 22 12"></polyline>
-        </svg>
-        <svg class="check-svg hidden" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-        <span class="btn-text">Pin to MetroHub</span>
-        <span class="btn-spinner hidden"></span>
+        <span class="btn-tx">
+          <span class="btn-big" id="pinBtnBig">Pin to MetroHub</span>
+          <span class="btn-sub" id="pinBtnSub">to Main</span>
+        </span>
+        <div class="btn-icon-wrap">
+          <svg class="ico-pin" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="17" x2="12" y2="22"></line>
+            <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V5a3 3 0 0 0-6 0v5.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24V17z"></path>
+          </svg>
+          <svg class="ico-stash hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3l9 5-9 5-9-5z"/>
+            <path d="M3 13l9 5 9-5"/>
+            <path d="M3 17.5l9 5 9-5" opacity=".55"/>
+          </svg>
+          <svg class="ico-off hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 4l16 16"/>
+            <path d="M9 5.5h6M12 5.5V9M7 12.5h10l-1 4.5a3 3 0 0 1-3 2.5h-2a3 3 0 0 1-3-2.5z"/>
+          </svg>
+          <svg class="ico-check hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path class="ck" d="M5 12.5l4.5 4.5L19 7.5"/>
+          </svg>
+          <span class="btn-spinner hidden" aria-hidden="true"></span>
+        </div>
       </button>
 
-      <div id="feedbackBanner" class="feedback-banner hidden"></div>
+      <div id="feedbackBanner" class="feedback-banner hidden" style="display: none !important;"></div>
     </footer>
   </div>
 

@@ -13,6 +13,7 @@ let selectedSpanX = 2;
 let selectedSpanY = 2;
 let selectedWorkspaceId = null;
 let selectedWorkspaceName = 'Main';
+let wire = null;
 
 // DOM Elements
 const statusBadge = document.getElementById('statusBadge');
@@ -44,6 +45,7 @@ const themeToggleBtn = document.getElementById('themeToggleBtn');
 
 document.addEventListener('DOMContentLoaded', () => {
   setupTheme();
+  setupWire();
   setupSettingsMenu();
   setupModeSwitcher();
   setupDropdownListeners();
@@ -62,6 +64,7 @@ function setupTheme() {
     const label = theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
     themeToggleBtn.setAttribute('title', label);
     themeToggleBtn.setAttribute('aria-label', label);
+    if (wire) setTimeout(() => wire.refreshTheme(), 10);
   }
 
   // 1. Instant synchronous theme application (0ms delay)
@@ -490,11 +493,13 @@ function onConnected() {
 
 function onDisconnected() {
   setConnectionStatus('offline', 'Offline');
-  setButtonState('default');
-  showFeedback('error', 'MetroHub Offline', 'Start MetroHub desktop app to pin tiles.');
+  setButtonState('offline');
 }
 
 function setConnectionStatus(type, label) {
+  if (wire) {
+    wire.setConnected(type === 'connected');
+  }
   if (statusBadge) {
     statusBadge.className = `status-badge ${type}`;
     statusBadge.setAttribute('title', `MetroHub: ${label}`);
@@ -588,6 +593,7 @@ function renderWorkspaceMenu(workspaces) {
       });
 
       closeDropdown();
+      setButtonState('default');
     });
 
     workspaceMenu.appendChild(item);
@@ -628,16 +634,7 @@ function setupPinButton() {
         }))
       };
 
-      // Trigger Vault Stash absorption animation on all discs
-      const items = Array.from(sessionFaviconStack.querySelectorAll('.session-favicon-item, .session-favicon-more'));
-      items.forEach((it, i) => {
-        it.classList.remove('dealing');
-        it.style.animationDelay = `${i * 36}ms`;
-        it.classList.add('absorbing');
-      });
-
-      const cascadeTime = Math.max(300, (items.length * 36) + 240);
-      const minDelay = new Promise((resolve) => setTimeout(resolve, cascadeTime));
+      const minDelay = new Promise((resolve) => setTimeout(resolve, 260));
 
       try {
         const fetchPromise = fetch(`http://127.0.0.1:${activePort}/api/tile-groups`, {
@@ -652,27 +649,19 @@ function setupPinButton() {
         const [res] = await Promise.all([fetchPromise, minDelay]);
         const data = await res.json();
 
-        setButtonState('default');
-
         if (res.ok && data.success) {
-          pinBtn.classList.add('pulse-absorbed');
-          setTimeout(() => pinBtn.classList.remove('pulse-absorbed'), 500);
-
           const wsName = selectedWorkspaceName || (workspaceSelectedText?.textContent || 'Main').replace(/\s*\(Active\)\s*$/i, '').trim();
-          showFeedback(
-            'success',
+          setButtonState(
+            'done',
             `Stashed ${data.tilesAdded} Tabs`,
             `"${data.groupTitle}" • ${wsName}`
           );
         } else {
-          items.forEach(it => it.classList.remove('absorbing'));
           const errorMsg = data.error || data.message || 'Failed to stash tabs into group.';
-          showFeedback('error', 'Unable to Stash Tabs', errorMsg);
+          setButtonState('error', 'Unable to Stash Tabs', errorMsg);
         }
       } catch (err) {
-        items.forEach(it => it.classList.remove('absorbing'));
-        setButtonState('default');
-        showFeedback('error', 'Connection Lost', 'Is MetroHub desktop app running?');
+        setButtonState('error', 'Connection Lost', 'Is MetroHub desktop app running?');
       }
       return;
     }
@@ -683,7 +672,7 @@ function setupPinButton() {
     const title = tileTitleInput.value.trim();
     const workspaceId = selectedWorkspaceId || null;
     
-    setButtonState('loading', 'Pinning to Canvas...');
+    setButtonState('loading', 'Pinning to Canvas...', 'Connecting to MetroHub');
     hideFeedback();
 
     const payload = {
@@ -711,69 +700,154 @@ function setupPinButton() {
       const [res] = await Promise.all([fetchPromise, minDelay]);
       const data = await res.json();
 
-      setButtonState('default');
-
       if (res.ok && data.success) {
         const wsName = selectedWorkspaceName || (workspaceSelectedText?.textContent || 'Main').replace(/\s*\(Active\)\s*$/i, '').trim();
         if (data.duplicate) {
-          showFeedback(
-            'duplicate',
+          setButtonState(
+            'done',
             'Already on Canvas',
-            `${wsName} - Row ${data.row} - Col ${data.col}`
+            `${wsName} • Row ${data.row}, Col ${data.col}`
           );
         } else {
-          showFeedback(
-            'success',
+          setButtonState(
+            'done',
             'Pinned Successfully',
-            `${wsName} - Row ${data.row} - Col ${data.col}`
+            `${wsName} • Row ${data.row}, Col ${data.col}`
           );
         }
       } else {
         const errorMsg = data.error || data.message || 'Failed to place tile.';
-        showFeedback('error', 'Unable to Pin Tile', errorMsg);
+        setButtonState('error', 'Unable to Pin Tile', errorMsg);
       }
     } catch (err) {
-      setButtonState('default');
-      showFeedback('error', 'Connection Lost', 'Is MetroHub desktop app running?');
+      setButtonState('error', 'Connection Lost', 'Is MetroHub desktop app running?');
     }
   });
 }
 
-function setButtonState(state, text = null) {
+let buttonStateTimer = null;
+
+function setButtonState(state, customBig = null, customSub = null) {
   if (!pinBtn) return;
-  const btnText = pinBtn.querySelector('.btn-text');
+
+  if (buttonStateTimer) {
+    clearTimeout(buttonStateTimer);
+    buttonStateTimer = null;
+  }
+
+  const bigEl = document.getElementById('pinBtnBig') || pinBtn.querySelector('.btn-big');
+  const subEl = document.getElementById('pinBtnSub') || pinBtn.querySelector('.btn-sub');
+  const icoPin = pinBtn.querySelector('.ico-pin');
+  const icoStash = pinBtn.querySelector('.ico-stash');
+  const icoOff = pinBtn.querySelector('.ico-off');
+  const icoCheck = pinBtn.querySelector('.ico-check');
   const spinner = pinBtn.querySelector('.btn-spinner');
-  const pinSvg = pinBtn.querySelector('.pin-svg');
-  const stashSvg = pinBtn.querySelector('.stash-svg');
-  const checkSvg = pinBtn.querySelector('.check-svg');
+
+  function showIcon(target) {
+    [icoPin, icoStash, icoOff, icoCheck, spinner].forEach((el) => {
+      if (el) el.classList.add('hidden');
+    });
+    if (target) target.classList.remove('hidden');
+  }
+
+  const wsName = selectedWorkspaceName || (workspaceSelectedText?.textContent || 'Main').replace(/\s*\(Active\)\s*$/i, '').trim();
+
+  // Reset state classes
+  pinBtn.classList.remove('done', 'loading', 'error');
 
   if (state === 'loading') {
     pinBtn.disabled = true;
-    pinSvg?.classList.add('hidden');
-    stashSvg?.classList.add('hidden');
-    checkSvg?.classList.add('hidden');
-    spinner?.classList.remove('hidden');
-    if (btnText) {
-      btnText.textContent = text || (currentMode === 'all' ? 'Stashing Tabs...' : 'Pinning to Canvas...');
+    pinBtn.classList.add('loading');
+    showIcon(spinner);
+    if (bigEl) {
+      bigEl.textContent = customBig || (currentMode === 'all' ? `Stashing ${windowTabs.length} Tabs...` : 'Pinning to Canvas...');
+    }
+    if (subEl) {
+      subEl.textContent = customSub || 'Connecting to MetroHub';
+    }
+  } else if (state === 'done' || state === 'success') {
+    pinBtn.disabled = false;
+    pinBtn.classList.add('done');
+    showIcon(icoCheck);
+
+    // Retrigger checkmark draw animation
+    if (icoCheck) {
+      const ck = icoCheck.querySelector('.ck');
+      if (ck) {
+        ck.style.animation = 'none';
+        ck.offsetHeight; // trigger reflow
+        ck.style.animation = '';
+      }
+    }
+
+    if (bigEl) {
+      bigEl.textContent = customBig || (currentMode === 'all' ? `Stashed ${windowTabs.length} Tabs` : 'Pinned Successfully');
+    }
+    if (subEl) {
+      subEl.textContent = customSub || `to ${wsName}`;
+    }
+
+    // Auto-revert back to default state after 2600ms (matching widget_animation.html)
+    buttonStateTimer = setTimeout(() => {
+      setButtonState('default');
+    }, 2600);
+  } else if (state === 'error') {
+    pinBtn.disabled = false;
+    pinBtn.classList.add('error');
+    showIcon(icoOff);
+
+    if (bigEl) {
+      bigEl.textContent = customBig || (currentMode === 'all' ? 'Unable to Stash Tabs' : 'Unable to Pin Tile');
+    }
+    if (subEl) {
+      subEl.textContent = customSub || 'Failed to place tile';
+    }
+
+    // Auto-revert back to default (or offline) after 3000ms
+    buttonStateTimer = setTimeout(() => {
+      setButtonState(activePort ? 'default' : 'offline');
+    }, 3000);
+  } else if (state === 'offline' || !activePort) {
+    pinBtn.disabled = true;
+    showIcon(icoOff);
+
+    if (bigEl) {
+      bigEl.textContent = customBig || (currentMode === 'all' ? "Can't stash right now" : "Can't pin right now");
+    }
+    if (subEl) {
+      subEl.textContent = customSub || 'Not connected to MetroHub';
     }
   } else {
-    // default
-    pinBtn.disabled = !activePort || (currentMode === 'all' && windowTabs.length === 0);
-    checkSvg?.classList.add('hidden');
-    spinner?.classList.add('hidden');
+    // Default (ready / connected)
+    const isAllMode = currentMode === 'all';
+    const noTabs = isAllMode && windowTabs.length === 0;
 
-    if (currentMode === 'all') {
-      pinSvg?.classList.add('hidden');
-      stashSvg?.classList.remove('hidden');
+    if (noTabs) {
+      pinBtn.disabled = true;
+      showIcon(icoStash);
+      if (bigEl) bigEl.textContent = customBig || 'No Tabs to Stash';
+      if (subEl) subEl.textContent = customSub || 'Open tabs in current window';
+      return;
+    }
+
+    pinBtn.disabled = false;
+
+    if (isAllMode) {
+      showIcon(icoStash);
       const count = windowTabs.length;
-      if (btnText) {
-        btnText.textContent = count > 0 ? `Stash ${count} Tabs to MetroHub` : 'Stash Tabs to MetroHub';
+      if (bigEl) {
+        bigEl.textContent = customBig || (count > 0 ? `Stash ${count} ${count === 1 ? 'Tab' : 'Tabs'}` : 'Stash Tabs to MetroHub');
+      }
+      if (subEl) {
+        subEl.textContent = customSub || `to ${wsName}`;
       }
     } else {
-      stashSvg?.classList.add('hidden');
-      pinSvg?.classList.remove('hidden');
-      if (btnText) {
-        btnText.textContent = 'Pin to MetroHub';
+      showIcon(icoPin);
+      if (bigEl) {
+        bigEl.textContent = customBig || 'Pin to MetroHub';
+      }
+      if (subEl) {
+        subEl.textContent = customSub || `to ${wsName}`;
       }
     }
   }
@@ -784,29 +858,444 @@ function setLoading(isLoading) {
 }
 
 function showFeedback(type, title, subtitle = '') {
-  if (!feedbackBanner) return;
-  feedbackBanner.className = `feedback-banner ${type}`;
-  feedbackBanner.innerHTML = '';
-
-  const titleEl = document.createElement('span');
-  titleEl.className = 'feedback-text-title';
-  titleEl.textContent = title;
-  feedbackBanner.appendChild(titleEl);
-
-  if (subtitle) {
-    const subEl = document.createElement('span');
-    subEl.className = 'feedback-text-sub';
-    subEl.textContent = subtitle;
-    feedbackBanner.appendChild(subEl);
+  // AIO Button handles all feedback directly on the tile - no extra banner box below
+  if (type === 'success' || type === 'duplicate') {
+    setButtonState('done', title, subtitle);
+  } else if (type === 'error') {
+    setButtonState('error', title, subtitle);
+  } else {
+    setButtonState('default');
   }
-
-  feedbackBanner.classList.remove('hidden');
 }
 
 function hideFeedback() {
-  if (!feedbackBanner) return;
-  feedbackBanner.classList.add('hidden');
-  feedbackBanner.innerHTML = '';
+  if (buttonStateTimer) {
+    clearTimeout(buttonStateTimer);
+    buttonStateTimer = null;
+  }
 }
+
+function setupWire() {
+  const wireEl = document.getElementById('wire');
+  if (!wireEl || typeof PlugWire === 'undefined') return;
+
+  let initialConnected = false;
+  try {
+    const saved = localStorage.getItem('metrohub_companion_status');
+    if (saved === 'connected') initialConnected = true;
+  } catch { }
+
+  wire = new PlugWire(wireEl, { connected: initialConnected });
+}
+
+/* ───────── PlugWire Component (Physics & Particles Rope) ───────── */
+(() => {
+  const REAR = 28, PRONG = 10, YP = 4.6;      // plug geometry (px)
+  const N = 28, PAD = 16, H = 50;            // rope points, canvas overflow, stage height
+  const CY = 24, FLOOR = CY + 14, GAP = 24;  // center Y, floor, disconnected gap
+  const G = 1100;                            // rope gravity
+  const rand  = (a, b) => a + Math.random() * (b - a);
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+  class PlugWire {
+    constructor(root, opts = {}) {
+      this.root = root;
+      this.on = opts.connected !== false;
+      this.t = 0; this.acc = 0; this.last = 0; this.W = 0;
+      this.plug = { x: 0, v: 0 }; this.sock = { x: 0, v: 0 };
+      this.kP = 240; this.zP = .8; this.kS = 190; this.zS = .55;
+      this.angP = 0; this.angS = 0;
+      this.sparks = []; this.arcs = []; this.pulses = [];
+      this.flash = 0; this.energy = this.on ? 1 : 0; this.tension = this.on ? 1 : 0;
+      this.apart = !this.on; this.sepDone = !this.on;
+      this.popAt = 0; this.trail = 0; this.trailT = 0; this.zapAt = 0; this.arcDue = 0;
+      this.flow = { busy: false, wait: .6 };
+      this.mq = matchMedia('(prefers-reduced-motion: reduce)');
+      this.build();
+      this.refreshTheme();
+      this.resize();
+      this.label();
+      this.ro = new ResizeObserver(() => this.resize());
+      this.ro.observe(root);
+      this.raf = requestAnimationFrame(t => this.loop(t));
+    }
+
+    /* ───── DOM ───── */
+    build() {
+      this.root.innerHTML = `
+      <svg class="pw-svg" aria-hidden="true">
+        <path class="pw-wire" data-w="L"/><path class="pw-wire" data-w="R"/>
+        <g class="pw-sock">
+          <rect class="pw-shape" x="21" y="-3" width="7" height="6" rx="2.2"/>
+          <path class="pw-shape" d="M0 -10H10C19 -10 24 -6 24 0S19 10 10 10H0Z"/>
+          <path class="pw-thin" d="M8 -6.6C14 -6.6 17.5 -3.6 17.5 0"/>
+          <circle class="pw-dot" cx="12" cy="4.4" r="1"/>
+          <path class="pw-hole" d="M0 -6.8H9.2a2.2 2.2 0 0 1 0 4.4H0"/>
+          <path class="pw-hole" d="M0 2.4H9.2a2.2 2.2 0 0 1 0 4.4H0"/>
+        </g>
+        <g class="pw-plug">
+          <rect class="pw-shape" x="-28" y="-3" width="7" height="6" rx="2.2"/>
+          <path class="pw-shape" d="M0 -10H-10C-19 -10 -24 -6 -24 0S-19 10 -10 10H0Z"/>
+          <path class="pw-thin" d="M-8 -6.6C-14 -6.6 -17.5 -3.6 -17.5 0"/>
+          <circle class="pw-dot" cx="-12" cy="4.4" r="1"/>
+          <rect class="pw-prong" x="-1" y="-6" width="11" height="2.8" rx="1.3"/>
+          <rect class="pw-prong" x="-1" y="3.2" width="11" height="2.8" rx="1.3"/>
+        </g>
+      </svg>
+      <canvas class="pw-fx" aria-hidden="true"></canvas>
+      <span class="pw-sr" role="status"></span>`;
+      const q = s => this.root.querySelector(s);
+      this.root.style.height = H + 'px';
+      this.svg = q('svg'); this.wL = q('[data-w=L]'); this.wR = q('[data-w=R]');
+      this.gP = q('.pw-plug'); this.gS = q('.pw-sock');
+      this.cv = q('canvas'); this.ctx = this.cv.getContext('2d');
+      this.sr = q('.pw-sr');
+    }
+    label() { this.sr.textContent = this.on ? 'Connected' : 'Disconnected'; }
+
+    refreshTheme() {
+      const raw = getComputedStyle(this.root).getPropertyValue('--ink').trim();
+      const ink = raw ? raw.split(/\s+/) : ['236', '236', '240'];
+      this.rgb = ink.join(',');
+      this.dark = (+ink[0]) > 128;
+      this.cOk   = this.dark ? '74,222,128' : '22,163,74';     // plugged in
+      this.cBad  = this.dark ? '255,92,80'  : '220,38,38';     // came apart
+      this.cBad2 = this.dark ? '255,165,80' : '234,120,20';    // hotter edge of the sparks
+    }
+
+    /* ───── layout ───── */
+    resize() {
+      const w = Math.max(240, Math.round(this.root.clientWidth || 350));
+      if (w === this.W) return;
+      this.W = w; this.CX = w / 2;
+      this.svg.setAttribute('width', w); this.svg.setAttribute('height', H);
+      this.svg.setAttribute('viewBox', `0 0 ${w} ${H}`);
+      this.dpr = Math.min(2, window.devicePixelRatio || 1);
+      this.cv.width = w * this.dpr; this.cv.height = (H + PAD * 2) * this.dpr;
+      this.cv.style.width = w + 'px'; this.cv.style.height = (H + PAD * 2) + 'px'; this.cv.style.top = -PAD + 'px';
+      this.rL = this.makeRope(this.CX - REAR);
+      this.rR = this.makeRope(w - (this.CX + REAR));
+      this.snap();
+    }
+    makeRope(len) {
+      const p = Array.from({ length: N }, () => ({ x: 0, y: CY, px: 0, py: CY }));
+      return { p, total: len, seg: len / (N - 1), cum: new Float32Array(N), len };
+    }
+    targets() { const c = this.CX; return this.on ? [c, c] : [c - GAP, c + GAP]; }
+    snap() {
+      const [tp, ts] = this.targets();
+      this.plug.x = tp; this.sock.x = ts; this.plug.v = this.sock.v = 0; this.tension = this.on ? 1 : 0;
+      this.layout(this.rL, 0, tp - REAR); this.layout(this.rR, ts + REAR, this.W);
+      for (let i = 0; i < 240; i++) this.stepRopes(1 / 120);
+      this.measure(this.rL); this.measure(this.rR);
+      this.angP = this.angS = 0;
+    }
+    layout(r, ax, bx) {
+      const slack = Math.max(0, r.total - (bx - ax));
+      const sag = Math.min(FLOOR - CY, Math.sqrt(3 * (bx - ax) * slack / 8));
+      r.p.forEach((p, i) => {
+        const u = i / (N - 1);
+        p.x = p.px = ax + (bx - ax) * u; p.y = p.py = CY + sag * Math.sin(Math.PI * u);
+      });
+    }
+
+    /* ───── state changes ───── */
+    setConnected(on) {
+      if (on === this.on) return;
+      this.on = on; this.label();
+      this.popAt = 0; this.trail = 0; this.arcDue = 0; this.arcs.length = 0;
+      this.pulses.length = 0; this.flow.busy = false;
+      if (this.mq.matches) { this.apart = !on; this.sepDone = !on; this.snap(); return; }
+      if (on) {
+        if (this.apart) { this.kP = 300; this.zP = .75; }
+      } else {
+        this.kP = 900; this.zP = 1; this.popAt = this.t + .11;
+      }
+    }
+
+    /* ───── physics ───── */
+    spring(o, tgt, k, z, h) {
+      const c = 2 * z * Math.sqrt(k);
+      o.v += (k * (tgt - o.x) - c * o.v) * h; o.x += o.v * h;
+    }
+    stepRope(r, ax, bx, h) {
+      const P = r.p, n = P.length, seg = r.seg;
+      for (let i = 1; i < n - 1; i++) {
+        const p = P[i], vx = (p.x - p.px) * .992, vy = (p.y - p.py) * .992;
+        p.px = p.x; p.py = p.y; p.x += vx; p.y += vy + G * (1 - .97 * this.tension) * h * h;
+      }
+      const pin = () => {
+        P[0].x = P[0].px = ax; P[0].y = P[0].py = CY;
+        P[n - 1].x = P[n - 1].px = bx; P[n - 1].y = P[n - 1].py = CY;
+      };
+      pin();
+      for (let it = 0; it < 14; it++) {
+        for (let i = 0; i < n - 1; i++) {
+          const a = P[i], b = P[i + 1];
+          const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1e-6, k = (d - seg) / d;
+          const wa = i === 0 ? 0 : i === n - 2 ? 1 : .5, wb = i === 0 ? 1 : i === n - 2 ? 0 : .5;
+          a.x += dx * k * wa; a.y += dy * k * wa; b.x -= dx * k * wb; b.y -= dy * k * wb;
+        }
+        for (let i = 0; i < n - 2; i++) {
+          const a = P[i], c = P[i + 2];
+          const dx = c.x - a.x, dy = c.y - a.y, d = Math.hypot(dx, dy) || 1e-6, min = 2 * seg * .95;
+          if (d < min) {
+            const k = (min - d) / d;
+            let wa = i === 0 ? 0 : .5, wc = i + 2 === n - 1 ? 0 : .5;
+            if (!wa) wc = 1; if (!wc) wa = 1;
+            a.x -= dx * k * wa; a.y -= dy * k * wa; c.x += dx * k * wc; c.y += dy * k * wc;
+          }
+        }
+        for (let i = 1; i < n - 1; i++) {
+          const p = P[i];
+          if (p.y > FLOOR) { p.y = FLOOR; p.px = p.x - (p.x - p.px) * .7; }
+        }
+        pin();
+      }
+    }
+    stepRopes(h) {
+      this.stepRope(this.rL, 0, this.plug.x - REAR, h);
+      this.stepRope(this.rR, this.sock.x + REAR, this.W, h);
+    }
+    measure(r) {
+      let s = 0; r.cum[0] = 0;
+      for (let i = 1; i < N; i++) { s += Math.hypot(r.p[i].x - r.p[i - 1].x, r.p[i].y - r.p[i - 1].y); r.cum[i] = s; }
+      r.len = s;
+    }
+    pointAt(r, s) {
+      s = clamp(s, 0, r.len); let i = 1; const n = r.p.length;
+      while (i < n - 1 && r.cum[i] < s) i++;
+      const a = r.p[i - 1], b = r.p[i], span = r.cum[i] - r.cum[i - 1] || 1, u = (s - r.cum[i - 1]) / span;
+      return [a.x + (b.x - a.x) * u, a.y + (b.y - a.y) * u];
+    }
+    shudder(amp) {
+      for (const r of [this.rL, this.rR])
+        r.p.forEach((p, i) => { p.py -= amp / 120 * Math.sin(Math.PI * i / (N - 1)); });
+    }
+
+    step(h) {
+      this.t += h;
+      const [tp, ts] = this.targets(), c = this.CX;
+      let target = tp;
+      if (this.popAt) target = c - 2.2;
+      else if (this.on && this.apart) target = c + 18;
+      if (this.popAt && this.t >= this.popAt) {
+        this.popAt = 0; this.apart = true; this.sepDone = false;
+        this.kP = 240; this.zP = .34; target = tp;
+        this.plug.v = -640; this.sock.v = 110;
+        this.zapAt = this.t + 3.4;
+      }
+      const tgoal = this.on && !this.apart && !this.popAt ? 1 : 0;
+      this.tension += (tgoal - this.tension) * Math.min(1, h * (tgoal ? 7 : 30));
+      this.spring(this.plug, target, this.kP, this.zP, h);
+      this.spring(this.sock, ts, this.kS, this.on ? .9 : .42, h);
+
+      const g = this.sock.x - this.plug.x;
+      if (g < 0) {
+        const vi = Math.max(0, this.plug.v - this.sock.v);
+        this.plug.x = this.sock.x; this.plug.v = Math.min(this.plug.v, this.sock.v) * .1;
+        if (this.on && this.apart) { this.apart = false; this.sock.v += vi * .22; this.contact(vi); this.kP = 240; this.zP = .8; }
+      }
+      if (!this.on && this.apart && !this.sepDone && g >= 9) { this.sepDone = true; this.separation(); }
+      this.stepRopes(h);
+    }
+
+    /* ───── effects ───── */
+    spark(x, y, ang, spd, life, w = 1.2, ember = false, col = this.rgb) {
+      if (this.sparks.length > 140) return;
+      this.sparks.push({ x, y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, life, max: life, w, ember, col });
+    }
+    separation() {
+      if (this.mq.matches) return;
+      const x = this.sock.x;
+      for (const y of [CY - YP, CY + YP]) {
+        for (let i = 0; i < 7; i++) this.spark(x, y, Math.PI + rand(-.95, .95), rand(90, 300), rand(.25, .6), 1.2, false, Math.random() < .7 ? this.cBad : this.cBad2);
+        for (let i = 0; i < 2; i++) this.spark(x, y, Math.PI + rand(-1.3, 1.3), rand(20, 70), rand(.8, 1.2), 1.6, true, this.cBad);
+      }
+      this.trail = .22; this.flash = .0; this.shudder(60);
+    }
+    contact(vi) {
+      if (this.mq.matches) { this.startFlow(); return; }
+      const n = Math.round(clamp(4 + vi / 70, 4, 10));
+      for (const y of [CY - YP, CY + YP])
+        for (let i = 0; i < n / 2; i++) this.spark(this.sock.x, y, rand(0, Math.PI * 2), rand(50, 210), rand(.18, .45), 1.1, false, Math.random() < .65 ? this.cOk : this.rgb);
+      this.flash = 1; this.shudder(clamp(vi * .12, 20, 90));
+      let left = 2; const done = () => { if (--left === 0) { this.flow.busy = false; this.flow.wait = .5; } };
+      this.flow.busy = true;
+      this.addPulse({ r: this.rL, dir: -1, dur: .62, tail: 90, power: 1, out: true, done });
+      this.addPulse({ r: this.rR, dir: +1, dur: .62, tail: 90, power: 1, out: true, done });
+    }
+    startFlow() {
+      this.flow.busy = true;
+      this.addPulse({ r: this.rL, dir: 1, dur: 1.15, tail: 62, power: .95, next: () =>
+        this.addPulse({ kind: 'pill', dir: 1, dur: .7, tail: 34, power: 1, next: () =>
+          this.addPulse({ r: this.rR, dir: 1, dur: 1.15, tail: 62, power: .95,
+            done: () => { this.flow.busy = false; this.flow.wait = 1.1; } }) }) });
+    }
+    addPulse(o) { this.pulses.push(Object.assign({ t: 0, head: 0, fired: false, rs: o.kind === 'pill' ? this.routes() : [o.r] }, o)); }
+    routes() {
+      const f = this.plug.x, s = this.sock.x, x0 = f - REAR, x1 = s + REAR;
+      return [-1, 1].map(sg => {
+        const y = CY + sg * YP;
+        const p = [[x0, CY], [f - 11, CY], [f - 6, y], [s + PRONG + 1, y], [s + PRONG + 6, CY], [x1, CY]].map(([x, yy]) => ({ x, y: yy }));
+        const cum = new Float32Array(p.length); let L = 0;
+        for (let i = 1; i < p.length; i++) { L += Math.hypot(p[i].x - p[i - 1].x, p[i].y - p[i - 1].y); cum[i] = L; }
+        return { p, cum, len: L };
+      });
+    }
+    zap() {
+      this.plug.v += 330;
+      this.arcDue = this.t + .085;
+    }
+
+    fx(dt) {
+      const goal = this.on && !this.popAt ? 1 : 0;
+      this.energy += (goal - this.energy) * Math.min(1, dt * (goal ? 3 : 9));
+      this.flash = Math.max(0, this.flash - dt * 2.2);
+      if (this.mq.matches) return;
+
+      if (this.on && !this.apart && !this.flow.busy) { this.flow.wait -= dt; if (this.flow.wait <= 0) this.startFlow(); }
+      for (let i = this.pulses.length - 1; i >= 0; i--) {
+        const p = this.pulses[i]; p.t += dt;
+        p.rs = p.kind === 'pill' ? this.routes() : [p.r];
+        const len = p.rs[0].len, q = clamp(p.t / p.dur, 0, 1);
+        p.head = (p.out ? 1 - (1 - q) * (1 - q) : p.t / p.dur) * len;
+        if (p.kind === 'pill' && p.head > len * .25 && p.head < len * .8) this.flash = Math.max(this.flash, .55);
+        if (p.next && !p.fired && p.head >= len) { p.fired = true; p.next(); }
+        if (p.next ? p.head >= len + p.tail : p.t >= p.dur) { this.pulses.splice(i, 1); p.done && p.done(); }
+      }
+      if (this.trail > 0) {
+        this.trail -= dt; this.trailT -= dt;
+        if (this.trailT <= 0) {
+          this.trailT = .03;
+          const y = CY + (Math.random() < .5 ? -YP : YP);
+          this.spark(this.plug.x + PRONG, y, Math.PI + rand(-1, 1), rand(40, 140), rand(.15, .3), .9, false, this.cBad2);
+        }
+      }
+      if (!this.on && this.apart && this.sepDone && this.t >= this.zapAt) { this.zapAt = this.t + rand(2.8, 5.5); this.zap(); }
+      if (this.arcDue && this.t >= this.arcDue) {
+        this.arcDue = 0;
+        const y = Math.random() < .5 ? -YP : YP;
+        this.arcs.push({ y, t: 0, dur: .17 });
+        for (let i = 0; i < 4; i++) this.spark(this.sock.x, CY + y, Math.PI + rand(-1.3, 1.3), rand(50, 150), rand(.2, .4), 1, false, this.cBad);
+        this.shudder(26);
+      }
+      for (let i = this.arcs.length - 1; i >= 0; i--) { this.arcs[i].t += dt; if (this.arcs[i].t > this.arcs[i].dur) this.arcs.splice(i, 1); }
+      for (let i = this.sparks.length - 1; i >= 0; i--) {
+        const s = this.sparks[i];
+        s.life -= dt; if (s.life <= 0) { this.sparks.splice(i, 1); continue; }
+        s.vy += (s.ember ? 160 : 560) * dt; s.vx *= 1 - 1.4 * dt;
+        s.x += s.vx * dt; s.y += s.vy * dt;
+        if (s.y > FLOOR + 3 && s.vy > 0) { s.y = FLOOR + 3; s.vy *= -.3; s.vx *= .6; }
+      }
+    }
+
+    /* ───── drawing ───── */
+    pathD(P) {
+      let d = `M${P[0].x.toFixed(2)} ${P[0].y.toFixed(2)}`;
+      for (let i = 1; i < P.length - 1; i++) {
+        const mx = (P[i].x + P[i + 1].x) / 2, my = (P[i].y + P[i + 1].y) / 2;
+        d += `Q${P[i].x.toFixed(2)} ${P[i].y.toFixed(2)} ${mx.toFixed(2)} ${my.toFixed(2)}`;
+      }
+      const l = P[P.length - 1];
+      return d + `L${l.x.toFixed(2)} ${l.y.toFixed(2)}`;
+    }
+    edge(x) { return clamp(Math.min(x, this.W - x) / 24, 0, 1); }
+
+    render(dt) {
+      this.measure(this.rL); this.measure(this.rR);
+      this.wL.setAttribute('d', this.pathD(this.rL.p)); this.wR.setAttribute('d', this.pathD(this.rR.p));
+      const op = .3 + .3 * this.energy;
+      this.wL.style.opacity = this.wR.style.opacity = op;
+
+      const g = this.sock.x - this.plug.x, align = clamp(g / 22, 0, 1);
+      const pl = this.rL.p, pr = this.rR.p;
+      const aP = clamp(Math.atan2(pl[N - 1].y - pl[N - 2].y, pl[N - 1].x - pl[N - 2].x), -.20, .20) * align;
+      const aS = clamp(Math.atan2(pr[1].y - pr[0].y, pr[1].x - pr[0].x), -.20, .20) * align;
+      const k = Math.min(1, dt * 16);
+      this.angP += (aP - this.angP) * k; this.angS += (aS - this.angS) * k;
+      this.gP.setAttribute('transform', `translate(${(this.plug.x - REAR).toFixed(2)} ${CY}) rotate(${(this.angP * 57.3).toFixed(2)}) translate(${REAR} 0)`);
+      this.gS.setAttribute('transform', `translate(${(this.sock.x + REAR).toFixed(2)} ${CY}) rotate(${(this.angS * 57.3).toFixed(2)}) translate(${-REAR} 0)`);
+
+      this.draw();
+    }
+    draw() {
+      const c = this.ctx, rgb = this.rgb;
+      c.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+      c.clearRect(0, 0, this.W, H + PAD * 2);
+      c.translate(0, PAD); c.lineCap = 'round'; c.lineJoin = 'round';
+
+      if (this.flash > .01) {
+        const gr = c.createRadialGradient(this.CX, CY, 0, this.CX, CY, 38);
+        gr.addColorStop(0, `rgba(${this.cOk},${(this.dark ? .3 : .16) * this.flash})`);
+        gr.addColorStop(1, `rgba(${this.cOk},0)`);
+        c.fillStyle = gr; c.fillRect(this.CX - 40, CY - 40, 80, 80);
+      }
+      c.shadowColor = `rgba(${this.cOk},.9)`; c.shadowBlur = 9;
+      for (const p of this.pulses) this.drawPulse(c, p);
+
+      for (const a of this.arcs) {
+        const life = 1 - a.t / a.dur, bucket = Math.floor(this.t * 45);
+        const x1 = this.plug.x + PRONG + 1, y1 = CY + a.y, x2 = this.sock.x + 1, y2 = y1;
+        const trace = () => {
+          c.beginPath(); c.moveTo(x1, y1);
+          for (let i = 1; i < 5; i++) {
+            const u = i / 5, r = Math.sin((bucket * 13.37 + i * 7.1)) * 43758.5453;
+            c.lineTo(x1 + (x2 - x1) * u, y1 + ((r - Math.floor(r)) - .5) * 8 * Math.sin(Math.PI * u));
+          }
+          c.lineTo(x2, y2);
+        };
+        c.shadowColor = `rgba(${this.cBad},.9)`; c.shadowBlur = 10;
+        trace(); c.strokeStyle = `rgba(${this.cBad},${.9 * life})`; c.lineWidth = 1.7; c.stroke();
+        c.shadowBlur = 0;
+        trace(); c.strokeStyle = `rgba(${this.dark ? '255,235,225' : this.cBad2},${.9 * life})`; c.lineWidth = .7; c.stroke();
+      }
+      for (const s of this.sparks) {
+        const al = Math.pow(s.life / s.max, 1.2) * (s.ember ? .8 + .2 * Math.sin(this.t * 50 + s.x) : 1);
+        c.shadowColor = `rgba(${s.col},.9)`; c.shadowBlur = 6;
+        c.strokeStyle = c.fillStyle = `rgba(${s.col},${al})`;
+        if (s.ember) { c.beginPath(); c.arc(s.x, s.y, s.w * .7, 0, 6.283); c.fill(); }
+        else { c.lineWidth = s.w; c.beginPath(); c.moveTo(s.x - s.vx * .024, s.y - s.vy * .024); c.lineTo(s.x, s.y); c.stroke(); }
+      }
+      c.shadowBlur = 0;
+    }
+    drawPulse(c, p) {
+      const K = 14, pill = p.kind === 'pill';
+      for (const r of p.rs) {
+        for (let k = 0; k < K; k++) {
+          let s0 = p.head - p.tail * k / K, s1 = p.head - p.tail * (k + 1) / K;
+          if (s0 < 0) continue; s1 = Math.max(0, s1); if (s1 > r.len) continue; s0 = Math.min(s0, r.len);
+          const a0 = p.dir > 0 ? s0 : r.len - s0, a1 = p.dir > 0 ? s1 : r.len - s1;
+          const A = this.pointAt(r, a0), B = this.pointAt(r, a1);
+          const fade = pill ? .8 : this.edge((A[0] + B[0]) / 2);
+          const al = p.power * this.energy * Math.pow(1 - k / K, 1.7) * fade;
+          if (al < .01) continue;
+          c.strokeStyle = `rgba(${this.cOk},${al})`; c.lineWidth = (pill ? 2 : 2.3) - .9 * k / K;
+          c.beginPath(); c.moveTo(A[0], A[1]); c.lineTo(B[0], B[1]); c.stroke();
+          if (k < 3 && this.dark) {
+            c.strokeStyle = `rgba(235,255,242,${al * .75})`; c.lineWidth = .9;
+            c.beginPath(); c.moveTo(A[0], A[1]); c.lineTo(B[0], B[1]); c.stroke();
+          }
+        }
+      }
+    }
+
+    loop(now) {
+      const dt = Math.min(.033, (now - (this.last || now)) / 1000); this.last = now;
+      if (this.mq.matches) {
+        this.snap(); this.fx(dt); this.render(dt);
+      } else {
+        this.acc += dt;
+        while (this.acc >= 1 / 120) { this.step(1 / 120); this.acc -= 1 / 120; }
+        this.fx(dt); this.render(dt);
+      }
+      this.raf = requestAnimationFrame(t => this.loop(t));
+    }
+    destroy() { cancelAnimationFrame(this.raf); this.ro.disconnect(); this.root.innerHTML = ''; }
+  }
+
+  window.PlugWire = PlugWire;
+})();
+
 
 

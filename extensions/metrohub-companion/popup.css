@@ -55,6 +55,9 @@
   --toggle-btn-border: #d7d1cc;
   --toggle-btn-color: #64748b;
 
+  --ink: 28 28 32;
+  --pw-body: #e7e1db;
+
   --hover-box-shadow: rgba(29, 100, 236, 0.38) 0px 3px, rgba(29, 100, 236, 0.28) 0px 6px, rgba(29, 100, 236, 0.18) 0px 9px, rgba(29, 100, 236, 0.1) 0px 12px, rgba(29, 100, 236, 0.05) 0px 15px;
 }
 
@@ -104,6 +107,9 @@
   --toggle-btn-bg: #292929;
   --toggle-btn-border: #383838;
   --toggle-btn-color: #cbd5e1;
+
+  --ink: 236 236 240;
+  --pw-body: #292929;
 
   --hover-box-shadow: rgba(29, 100, 236, 0.42) 0px 3px, rgba(29, 100, 236, 0.32) 0px 6px, rgba(29, 100, 236, 0.22) 0px 9px, rgba(29, 100, 236, 0.12) 0px 12px, rgba(29, 100, 236, 0.06) 0px 15px;
 }
@@ -157,11 +163,47 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border-divider);
-  transition: border-color 0.2s ease;
+  padding-bottom: 4px;
+  border-bottom: none;
   position: relative;
 }
+
+/* =========================================================================
+   PlugWire Component (Animated Plug & Socket Cable Divider)
+   ========================================================================= */
+.pw {
+  position: relative;
+  height: 50px;
+  width: auto;
+  margin: -12px -16px -12px -16px;
+  cursor: default;
+  user-select: none;
+  pointer-events: none;
+}
+
+.pw-svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+}
+
+.pw-fx {
+  position: absolute;
+  left: 0;
+  pointer-events: none;
+}
+
+.pw-wire  { fill: none; stroke: rgb(var(--ink)); stroke-width: 1.5; stroke-linecap: round; }
+.pw-shape { fill: var(--pw-body); stroke: rgb(var(--ink)); stroke-width: 1.5; stroke-linejoin: round; }
+.pw-thin  { fill: none; stroke: rgb(var(--ink) / .4); stroke-width: 1.2; stroke-linecap: round; }
+.pw-hole  { fill: none; stroke: rgb(var(--ink) / .85); stroke-width: 1.2; }
+.pw-prong { fill: rgb(var(--ink)); }
+.pw-dot   { fill: rgb(var(--ink) / .7); }
+.pw-sr    { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 
 .brand {
   display: flex;
@@ -824,22 +866,22 @@ body:not(.ready) .mode-slider {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(150deg, #ffffff 0%, #f4f5f8 55%, #e2e4e9 100%);
+  background: #ffffff;
+  border: 2px solid #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   box-shadow:
-    inset 0 1px 1px 0.5px rgba(255, 255, 255, 1),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.12),
-    0 3px 8px rgba(0, 0, 0, 0.32);
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 2px 6px rgba(0, 0, 0, 0.07);
 }
 
 .favicon-wrap img {
   width: 18px;
   height: 18px;
   object-fit: contain;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
+  image-rendering: -webkit-optimize-contrast;
 }
 
 .favicon-wrap img:not([src]),
@@ -878,7 +920,85 @@ body:not(.ready) .mode-slider {
   padding: 4px 0;
 }
 
-.session-favicon-stack::before {
+/* Light Mode (Default): Pristine Porcelain Discs - Zero Beige Rims & Zero Dirty Smudges */
+.session-favicon-item {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  cursor: default;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 2px 6px rgba(0, 0, 0, 0.07);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), margin-left 0.24s cubic-bezier(0.34, 1.3, 0.64, 1), box-shadow 0.2s ease;
+}
+
+.session-favicon-item:not(:first-child) {
+  margin-left: -10px;
+}
+
+.session-favicon-stack:hover .session-favicon-item:not(:first-child) {
+  margin-left: -2px;
+}
+
+.session-favicon-item img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  pointer-events: none;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.session-favicon-item:hover {
+  transform: translateY(-4px) scale(1.08) !important;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 8px 18px rgba(0, 0, 0, 0.12),
+    0 0 12px rgba(29, 100, 236, 0.15) !important;
+  z-index: 100 !important;
+}
+
+.session-favicon-more {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #ffffff;
+  color: #0f172a;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: -10px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 2px 6px rgba(0, 0, 0, 0.07);
+  cursor: default;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), margin-left 0.24s cubic-bezier(0.34, 1.3, 0.64, 1), box-shadow 0.2s ease;
+}
+
+.session-favicon-stack:hover .session-favicon-more {
+  margin-left: -2px;
+}
+
+.session-favicon-more:hover {
+  transform: translateY(-4px) scale(1.08) !important;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.08),
+    0 8px 18px rgba(0, 0, 0, 0.12) !important;
+  z-index: 100 !important;
+}
+
+/* Dark Mode Only: Ceramic White Discs with Specular High-Contrast Rim */
+[data-theme="dark"] .session-favicon-stack::before {
   content: '';
   position: absolute;
   left: 0;
@@ -893,35 +1013,50 @@ body:not(.ready) .mode-slider {
   z-index: 0;
 }
 
-.session-favicon-item {
+[data-theme="dark"] .favicon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(150deg, #ffffff 0%, #f4f5f8 55%, #e2e4e9 100%);
+  box-shadow:
+    inset 0 1px 1px 0.5px rgba(255, 255, 255, 1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.12),
+    0 3px 8px rgba(0, 0, 0, 0.32);
+}
+
+[data-theme="dark"] .favicon-wrap img {
+  width: 18px;
+  height: 18px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
+}
+
+[data-theme="dark"] .session-favicon-item {
   width: 32px;
   height: 32px;
   border-radius: 50%;
   background: linear-gradient(150deg, #ffffff 0%, #f4f5f8 55%, #e2e4e9 100%);
   border: 2px solid var(--bg-app);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  flex-shrink: 0;
-  cursor: default;
   box-shadow:
     inset 0 1px 1px 0.5px rgba(255, 255, 255, 1),
     inset 0 -1px 1px rgba(0, 0, 0, 0.12),
     0 3px 8px rgba(0, 0, 0, 0.32);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), margin-left 0.24s cubic-bezier(0.34, 1.3, 0.64, 1), box-shadow 0.2s ease;
 }
 
-.session-favicon-item:not(:first-child) {
+[data-theme="dark"] .session-favicon-item:not(:first-child) {
   margin-left: -10px;
 }
 
-/* Accordion Fan-Out only when hovering over the icons (stack is width: fit-content) */
-.session-favicon-stack:hover .session-favicon-item:not(:first-child) {
+[data-theme="dark"] .session-favicon-stack:hover .session-favicon-item:not(:first-child) {
   margin-left: -2px;
 }
 
-.session-favicon-item:hover {
+[data-theme="dark"] .session-favicon-item img {
+  width: 18px;
+  height: 18px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
+}
+
+[data-theme="dark"] .session-favicon-item:hover {
   transform: translateY(-4px) scale(1.08) !important;
   box-shadow:
     inset 0 1px 1px 0.5px rgba(255, 255, 255, 1),
@@ -930,41 +1065,25 @@ body:not(.ready) .mode-slider {
   z-index: 100 !important;
 }
 
-.session-favicon-item img {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-  pointer-events: none;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
-}
-
-.session-favicon-more {
+[data-theme="dark"] .session-favicon-more {
   width: 32px;
   height: 32px;
   border-radius: 50%;
   background: linear-gradient(150deg, #ffffff 0%, #f4f5f8 55%, #e2e4e9 100%);
   border: 2px solid var(--bg-app);
   color: #0f172a;
-  font-size: 11px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-left: -10px;
   box-shadow:
     inset 0 1px 1px 0.5px rgba(255, 255, 255, 1),
     inset 0 -1px 1px rgba(0, 0, 0, 0.12),
     0 3px 8px rgba(0, 0, 0, 0.32);
-  cursor: default;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), margin-left 0.24s cubic-bezier(0.34, 1.3, 0.64, 1), box-shadow 0.2s ease;
+  margin-left: -10px;
 }
 
-.session-favicon-stack:hover .session-favicon-more {
+[data-theme="dark"] .session-favicon-stack:hover .session-favicon-more {
   margin-left: -2px;
 }
 
-.session-favicon-more:hover {
+[data-theme="dark"] .session-favicon-more:hover {
   transform: translateY(-4px) scale(1.08) !important;
   box-shadow:
     inset 0 1px 1px 0.5px rgba(255, 255, 255, 1),
@@ -994,45 +1113,6 @@ body:not(.ready) .mode-slider {
   animation: cardDealEntrance 0.38s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
 }
 
-/* === Concept 1: Vault Stash Absorption === */
-@keyframes vaultStashAbsorption {
-  0% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  35% {
-    opacity: 1;
-    transform: translateY(-4px) scale(1.08);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(48px) scale(0.22);
-  }
-}
-
-.session-favicon-item.absorbing {
-  animation: vaultStashAbsorption 0.32s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
-  pointer-events: none;
-}
-
-@keyframes buttonAbsorbPulse {
-  0% {
-    transform: scale(0.97);
-    box-shadow: 0 0 0 0 rgba(29, 100, 236, 0.7);
-  }
-  50% {
-    transform: scale(1.04);
-    box-shadow: 0 0 0 12px rgba(29, 100, 236, 0);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 4px 14px rgba(29, 100, 236, 0.35);
-  }
-}
-
-.submit-btn.pulse-absorbed {
-  animation: buttonAbsorbPulse 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
 
 .session-summary-text {
   font-size: 13px;
@@ -1051,61 +1131,181 @@ body:not(.ready) .mode-slider {
 .app-footer {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   margin-top: 4px;
 }
 
 .submit-btn {
   width: 100%;
-  height: 46px;
+  height: 54px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background-color: var(--btn-primary-bg);
+  justify-content: space-between;
   border: 1px solid transparent;
-  border-radius: 2px;
-  color: var(--btn-primary-text);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -0.1px;
+  border-radius: 4px;
+  background-color: var(--btn-primary-bg);
+  color: #ffffff;
+  text-align: left;
   cursor: pointer;
   position: relative;
-  box-shadow: 0 4px 14px rgba(29, 100, 236, 0.35);
-  transition: background-color 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+  overflow: hidden;
+  box-shadow: var(--btn-primary-shadow);
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.12s ease;
 }
 
 .submit-btn:hover:not(:disabled) {
   background-color: var(--btn-primary-hover);
-  box-shadow: 0 6px 20px rgba(29, 100, 236, 0.48);
-  transform: translateY(-1px);
+  box-shadow: var(--hover-box-shadow);
+  z-index: 5;
 }
 
 .submit-btn:active:not(:disabled) {
-  transform: scale(0.985) translateY(1px);
-  box-shadow: 0 2px 8px rgba(29, 100, 236, 0.3);
+  transform: scale(0.985);
 }
 
-.submit-btn:disabled {
-  opacity: 0.55;
+.submit-btn .btn-tx {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  min-width: 0;
+}
+
+.submit-btn .btn-big {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.2s ease;
+}
+
+.submit-btn .btn-sub {
+  font-size: 11.5px;
+  font-weight: 500;
+  opacity: 0.85;
+  line-height: 1.2;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.submit-btn .btn-icon-wrap {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 10px;
+  color: currentColor;
+}
+
+.submit-btn .btn-icon-wrap svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.submit-btn .btn-icon-wrap svg path {
+  transition: stroke-dashoffset 0.4s 0.1s ease;
+}
+
+/* Offline / Disabled State */
+.submit-btn:disabled:not(.done):not(.loading) {
+  background-color: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text-muted);
   box-shadow: none;
   cursor: not-allowed;
   transform: none;
 }
 
-.pin-svg {
-  flex-shrink: 0;
+.submit-btn:disabled:not(.done):not(.loading) .btn-big {
+  color: var(--text-secondary);
 }
 
-.check-svg {
-  flex-shrink: 0;
+.submit-btn:disabled:not(.done):not(.loading) .btn-sub {
+  color: #ef4444;
+  opacity: 1;
 }
 
-/* Spinner */
-.btn-spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.35);
+.submit-btn:disabled:not(.done):not(.loading) .btn-icon-wrap {
+  color: var(--text-muted);
+}
+
+/* Success / Done State (Stashed / Pinned) */
+.submit-btn.done,
+.submit-btn.done:hover {
+  background-color: #16a34a !important;
+  border-color: #15803d !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.4) !important;
+  cursor: default;
+}
+
+[data-theme="dark"] .submit-btn.done,
+[data-theme="dark"] .submit-btn.done:hover {
+  background-color: #1e8e4a !important;
+  border-color: #166534 !important;
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.35) !important;
+}
+
+.submit-btn.done .btn-big,
+.submit-btn.done .btn-sub {
+  color: #ffffff !important;
+  opacity: 1;
+}
+
+/* Animated SVG Checkmark Drawing */
+.submit-btn.done .ck {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 0;
+  animation: drawCheck 0.45s 0.05s backwards cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes drawCheck {
+  from {
+    stroke-dashoffset: 24;
+  }
+}
+
+/* Error State */
+.submit-btn.error,
+.submit-btn.error:hover {
+  background-color: #dc2626 !important;
+  border-color: #b91c1c !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4) !important;
+  cursor: default;
+}
+
+[data-theme="dark"] .submit-btn.error,
+[data-theme="dark"] .submit-btn.error:hover {
+  background-color: #b91c1c !important;
+  border-color: #991b1b !important;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35) !important;
+}
+
+.submit-btn.error .btn-big,
+.submit-btn.error .btn-sub {
+  color: #ffffff !important;
+  opacity: 1;
+}
+
+/* Spinner during Loading */
+.submit-btn.loading {
+  cursor: wait;
+}
+
+.submit-btn .btn-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.2px solid rgba(255, 255, 255, 0.35);
   border-top-color: #ffffff;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
