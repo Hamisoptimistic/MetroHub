@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -1241,6 +1242,28 @@ public sealed class TileManager
     }
 
     /// <summary>
+    private async Task<T> RunOnDispatcherAsync<T>(Func<T> action)
+    {
+        if (_dispatcher.CheckAccess())
+        {
+            return action();
+        }
+        return await _dispatcher.InvokeAsync(action).Task.ConfigureAwait(false);
+    }
+
+    private async Task RunOnDispatcherAsync(Action action)
+    {
+        if (_dispatcher.CheckAccess())
+        {
+            action();
+        }
+        else
+        {
+            await _dispatcher.InvokeAsync(action).Task.ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
     /// Pins a web link received from the browser extension companion service.
     /// Handles duplicate URL checks, target workspace resolution (active or inactive),
     /// slot finding, tile creation, asynchronous thumbnail/favicon download, and persistence.
@@ -1248,151 +1271,270 @@ public sealed class TileManager
     public async Task<CompanionPinResult> PinWebLinkFromCompanionAsync(CompanionPinRequest request, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if (string.IsNullOrWhiteSpace(request.Url))
+        if (string.IsNullOrWhiteSpace(request.Url) &&
+            string.IsNullOrWhiteSpace(request.Note) &&
+            string.IsNullOrWhiteSpace(request.ThumbnailUrl))
         {
-            return new CompanionPinResult(false, false, null, 0, 0, "Missing URL");
+            return new CompanionPinResult(false, false, null, 0, 0, "Missing URL, note, or image");
         }
 
-        string targetUrl = request.Url.Trim();
-        var wm = WorkspaceManager.Instance;
+        bool isNote = !string.IsNullOrWhiteSpace(request.Note);
+        bool isImage = !isNote && !string.IsNullOrWhiteSpace(request.ThumbnailUrl);
+        string targetUrl = request.Url?.Trim() ?? string.Empty;
 
-        // 1. Determine target workspace
-        WorkspaceModel? targetWorkspace = null;
-        if (!string.IsNullOrWhiteSpace(request.WorkspaceId))
+        // 1. Perform background disk / network I/O asynchronously off the UI thread
+        string? noteFilePath = null;
+        string? noteIcon = null;
+        string? displayTitle = null;
+
+        if (isNote)
         {
-            targetWorkspace = wm.Workspaces.FirstOrDefault(w => w.Id.Equals(request.WorkspaceId, StringComparison.OrdinalIgnoreCase));
-            if (targetWorkspace == null)
+            string noteDir = AppPaths.PastedNotesDir;
+            if (!Directory.Exists(noteDir))
             {
-                return new CompanionPinResult(false, false, null, 0, 0, $"Workspace '{request.WorkspaceId}' not found");
+                Directory.CreateDirectory(noteDir);
             }
-        }
-        else
-        {
-            targetWorkspace = wm.ActiveWorkspace;
-        }
+            string noteFileName = CanvasPasteService.GenerateNoteFileName();
+            noteFilePath = Path.Combine(noteDir, noteFileName);
+            await File.WriteAllTextAsync(noteFilePath, request.Note!, Encoding.UTF8, ct).ConfigureAwait(false);
 
-        bool isActiveWorkspace = targetWorkspace == null || targetWorkspace.Id == wm.ActiveWorkspace?.Id;
+            string firstLine = request.Note!.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+            string snippetTitle = firstLine.Length > 24 ? firstLine.Substring(0, 24).Trim() + "..." : firstLine.Trim();
+            displayTitle = !string.IsNullOrWhiteSpace(request.Title) && !request.Title.Equals("null", StringComparison.OrdinalIgnoreCase)
+                ? request.Title
+                : (!string.IsNullOrWhiteSpace(snippetTitle) ? snippetTitle : $"Note {DateTime.Now:yyyy-MM-dd HH.mm}");
 
-        // 2. Select target collections
-        var targetTiles = isActiveWorkspace ? _tilesProvider() : targetWorkspace!.Tiles;
-        var targetGroups = isActiveWorkspace ? _groupsProvider() : targetWorkspace!.Groups;
-
-        // 3. Deduplication check: if identical URL already exists in this workspace, return existing coordinates
-        var existingTile = targetTiles.FirstOrDefault(t =>
-            (t.TileType == TileType.WebUrl || t.TileType == TileType.App) &&
-            string.Equals(t.TargetPath?.TrimEnd('/'), targetUrl.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
-
-        if (existingTile != null)
-        {
-            return new CompanionPinResult(
-                Success: true,
-                Duplicate: true,
-                TileId: existingTile.Id,
-                Col: existingTile.Col,
-                Row: existingTile.Row,
-                Message: "Tile already exists in workspace"
-            );
+            noteIcon = IconExtractorService.ExtractAndCacheIcon(noteFilePath);
         }
 
-        // 4. Dimensions & slot calculation
-        int spanX = request.SpanX is 2 or 4 ? request.SpanX.Value : 2;
-        int spanY = request.SpanY is 2 ? request.SpanY.Value : 2;
-        int maxCols = GridPlacementService.GetMaxCols(_windowWidthProvider());
-
-        var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(
-            0, 1, spanX, spanY, targetTiles, null, maxCols, targetGroups);
-
-        string displayTitle = !string.IsNullOrWhiteSpace(request.Title)
-            ? request.Title
-            : WebFaviconService.InferTitleFromUrl(targetUrl);
-
-        var tile = new TileModel
+        string? savedImagePath = null;
+        if (isImage)
         {
-            Id = Guid.NewGuid().ToString("N"),
-            Title = displayTitle,
-            TargetPath = targetUrl,
-            TileType = TileType.WebUrl,
-            SpanX = spanX,
-            SpanY = spanY,
-            Col = freeCol,
-            Row = freeRow,
-            X = GridPlacementService.PixelXFromCol(freeCol),
-            Y = GridPlacementService.PixelYFromRow(freeRow)
-        };
+            savedImagePath = await CompanionImageDownloader.DownloadImageAsync(
+                request.ThumbnailUrl!, AppPaths.PastedImagesDir, ct).ConfigureAwait(false);
 
-        targetTiles.Add(tile);
+            displayTitle = !string.IsNullOrWhiteSpace(request.Title) && !request.Title.Equals("Pinned Image", StringComparison.OrdinalIgnoreCase)
+                ? request.Title
+                : $"Image {DateTime.Now:yyyy-MM-dd HH.mm}";
+        }
 
-        if (isActiveWorkspace)
+        // 2. Perform all UI collection mutations and layout updates safely on the Dispatcher
+        return await RunOnDispatcherAsync(() =>
         {
-            var mod = new List<TileModel> { tile };
-            if (targetGroups.Count > 0)
+            var wm = WorkspaceManager.Instance;
+
+            // Determine target workspace
+            WorkspaceModel? targetWorkspace = null;
+            if (!string.IsNullOrWhiteSpace(request.WorkspaceId))
             {
-                var looseTiles = targetTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
-                var pushed = GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, targetGroups, targetTiles);
-                foreach (var pt in pushed)
+                targetWorkspace = wm.Workspaces.FirstOrDefault(w => w.Id.Equals(request.WorkspaceId, StringComparison.OrdinalIgnoreCase));
+                if (targetWorkspace == null)
                 {
-                    if (!mod.Contains(pt)) mod.Add(pt);
+                    return new CompanionPinResult(false, false, null, 0, 0, $"Workspace '{request.WorkspaceId}' not found");
                 }
-                _compactGroupGapsAction();
+            }
+            else
+            {
+                targetWorkspace = wm.ActiveWorkspace;
             }
 
-            _animateModifiedTilesAction(mod);
-            _updateGroupHeaderPositionsAction();
-            _saveGroupsAndLayoutAction();
-            SaveLayoutAndWorkspace(targetTiles);
-            _updateCanvasHeightAction();
-            _updateExposedAddSlotsAction();
-        }
-        else
-        {
-            StorageService.SaveWorkspaceLayout(targetWorkspace!.Id, targetTiles);
-            targetWorkspace.IsDirty = true;
-        }
+            bool isActiveWorkspace = targetWorkspace == null || targetWorkspace.Id == wm.ActiveWorkspace?.Id;
 
-        // 5. Asynchronous thumbnail / favicon retrieval
-        string? thumbUrl = request.ThumbnailUrl;
-        _ = Task.Run(async () =>
-        {
-            string? iconPath = null;
-            if (!string.IsNullOrWhiteSpace(thumbUrl))
-            {
-                iconPath = await CompanionImageDownloader.DownloadImageAsync(thumbUrl).ConfigureAwait(false);
-            }
+            // Select target collections
+            var targetTiles = isActiveWorkspace ? _tilesProvider() : targetWorkspace!.Tiles;
+            var targetGroups = isActiveWorkspace ? _groupsProvider() : targetWorkspace!.Groups;
 
-            if (string.IsNullOrWhiteSpace(iconPath))
+            // Deduplication check (for standard web links)
+            if (!isNote && !isImage && !string.IsNullOrWhiteSpace(targetUrl))
             {
-                iconPath = await WebFaviconService.GetFaviconPathAsync(targetUrl).ConfigureAwait(false);
-            }
+                var existingTile = targetTiles.FirstOrDefault(t =>
+                    (t.TileType == TileType.WebUrl || t.TileType == TileType.App) &&
+                    string.Equals(t.TargetPath?.TrimEnd('/'), targetUrl.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
 
-            if (string.IsNullOrWhiteSpace(iconPath))
-            {
-                iconPath = ResolveFallbackWebIcon();
-            }
-
-            if (!string.IsNullOrWhiteSpace(iconPath))
-            {
-                await _dispatcher.InvokeAsync(() =>
+                if (existingTile != null)
                 {
-                    tile.IconPath = iconPath;
-                    if (isActiveWorkspace)
+                    return new CompanionPinResult(
+                        Success: true,
+                        Duplicate: true,
+                        TileId: existingTile.Id,
+                        Col: existingTile.Col,
+                        Row: existingTile.Row,
+                        Message: "Tile already exists in workspace"
+                    );
+                }
+            }
+
+            // Dimensions & slot calculation
+            int spanX = request.SpanX is 2 or 4 ? request.SpanX.Value : 2;
+            int spanY = request.SpanY is 2 ? request.SpanY.Value : 2;
+            int maxCols = GridPlacementService.GetMaxCols(_windowWidthProvider());
+
+            var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(
+                0, 1, spanX, spanY, targetTiles, null, maxCols, targetGroups);
+
+            TileModel tile;
+
+            if (isNote)
+            {
+                tile = new TileModel
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Title = displayTitle ?? "Note",
+                    TargetPath = noteFilePath!,
+                    Arguments = targetUrl,
+                    IconPath = noteIcon,
+                    TileType = TileType.App,
+                    SpanX = spanX,
+                    SpanY = spanY,
+                    Col = freeCol,
+                    Row = freeRow,
+                    X = GridPlacementService.PixelXFromCol(freeCol),
+                    Y = GridPlacementService.PixelYFromRow(freeRow)
+                };
+            }
+            else if (isImage)
+            {
+                string resolvedPath = savedImagePath ?? request.ThumbnailUrl!;
+
+                if (!string.IsNullOrWhiteSpace(savedImagePath))
+                {
+                    var existingImg = targetTiles.FirstOrDefault(t =>
+                        string.Equals(t.TargetPath, savedImagePath, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(t.IconPath, savedImagePath, StringComparison.OrdinalIgnoreCase));
+
+                    if (existingImg != null)
                     {
-                        SaveLayoutAndWorkspace(targetTiles);
+                        return new CompanionPinResult(
+                            Success: true,
+                            Duplicate: true,
+                            TileId: existingImg.Id,
+                            Col: existingImg.Col,
+                            Row: existingImg.Row,
+                            Message: "Image already exists in workspace"
+                        );
                     }
-                    else
+                }
+
+                tile = new TileModel
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Title = displayTitle ?? "Image",
+                    TargetPath = resolvedPath,
+                    Arguments = targetUrl,
+                    IconPath = savedImagePath,
+                    TileType = TileType.App,
+                    SpanX = spanX,
+                    SpanY = spanY,
+                    Col = freeCol,
+                    Row = freeRow,
+                    X = GridPlacementService.PixelXFromCol(freeCol),
+                    Y = GridPlacementService.PixelYFromRow(freeRow)
+                };
+            }
+            else
+            {
+                string linkTitle = !string.IsNullOrWhiteSpace(request.Title)
+                    ? request.Title
+                    : WebFaviconService.InferTitleFromUrl(targetUrl);
+
+                tile = new TileModel
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Title = linkTitle,
+                    TargetPath = targetUrl,
+                    TileType = TileType.WebUrl,
+                    SpanX = spanX,
+                    SpanY = spanY,
+                    Col = freeCol,
+                    Row = freeRow,
+                    X = GridPlacementService.PixelXFromCol(freeCol),
+                    Y = GridPlacementService.PixelYFromRow(freeRow)
+                };
+            }
+
+            targetTiles.Add(tile);
+
+            if (isActiveWorkspace)
+            {
+                var mod = new List<TileModel> { tile };
+                if (targetGroups.Count > 0)
+                {
+                    var looseTiles = targetTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+                    var pushed = GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, targetGroups, targetTiles);
+                    foreach (var pt in pushed)
                     {
-                        StorageService.SaveWorkspaceLayout(targetWorkspace!.Id, targetTiles);
+                        if (!mod.Contains(pt)) mod.Add(pt);
+                    }
+                    _compactGroupGapsAction();
+                }
+
+                _animateModifiedTilesAction(mod);
+                _updateGroupHeaderPositionsAction();
+                _saveGroupsAndLayoutAction();
+                SaveLayoutAndWorkspace(targetTiles);
+                _updateCanvasHeightAction();
+                _updateExposedAddSlotsAction();
+            }
+            else
+            {
+                if (targetGroups.Count > 0)
+                {
+                    var looseTiles = targetTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+                    GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, targetGroups, targetTiles);
+                    StorageService.SaveWorkspaceGroups(targetWorkspace!.Id, targetGroups);
+                }
+                StorageService.SaveWorkspaceLayout(targetWorkspace!.Id, targetTiles);
+                targetWorkspace.IsDirty = true;
+            }
+
+            // 5. Asynchronous favicon / thumbnail retrieval (only for standard web links)
+            if (!isNote && !isImage && !string.IsNullOrWhiteSpace(targetUrl))
+            {
+                string? thumbUrl = request.ThumbnailUrl;
+                _ = Task.Run(async () =>
+                {
+                    string? iconPath = null;
+                    if (!string.IsNullOrWhiteSpace(thumbUrl))
+                    {
+                        iconPath = await CompanionImageDownloader.DownloadImageAsync(thumbUrl).ConfigureAwait(false);
+                    }
+
+                    if (string.IsNullOrWhiteSpace(iconPath))
+                    {
+                        iconPath = await WebFaviconService.GetFaviconPathAsync(targetUrl).ConfigureAwait(false);
+                    }
+
+                    if (string.IsNullOrWhiteSpace(iconPath))
+                    {
+                        iconPath = ResolveFallbackWebIcon();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(iconPath))
+                    {
+                        await RunOnDispatcherAsync(() =>
+                        {
+                            tile.IconPath = iconPath;
+                            if (isActiveWorkspace)
+                            {
+                                SaveLayoutAndWorkspace(targetTiles);
+                            }
+                            else
+                            {
+                                StorageService.SaveWorkspaceLayout(targetWorkspace!.Id, targetTiles);
+                            }
+                        }).ConfigureAwait(false);
                     }
                 });
             }
-        });
 
-        return new CompanionPinResult(
-            Success: true,
-            Duplicate: false,
-            TileId: tile.Id,
-            Col: freeCol,
-            Row: freeRow
-        );
+            return new CompanionPinResult(
+                Success: true,
+                Duplicate: false,
+                TileId: tile.Id,
+                Col: freeCol,
+                Row: freeRow
+            );
+        }).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -1409,181 +1551,185 @@ public sealed class TileManager
             return new CompanionTileGroupResult(false, null, null, 0, 0, 0, "No tiles provided");
         }
 
-        var wm = WorkspaceManager.Instance;
-
-        // 1. Determine target workspace
-        WorkspaceModel? targetWorkspace = null;
-        if (!string.IsNullOrWhiteSpace(request.WorkspaceId))
+        return await RunOnDispatcherAsync(() =>
         {
-            targetWorkspace = wm.Workspaces.FirstOrDefault(w => w.Id.Equals(request.WorkspaceId, StringComparison.OrdinalIgnoreCase));
-            if (targetWorkspace == null)
+            var wm = WorkspaceManager.Instance;
+
+            // 1. Determine target workspace
+            WorkspaceModel? targetWorkspace = null;
+            if (!string.IsNullOrWhiteSpace(request.WorkspaceId))
             {
-                return new CompanionTileGroupResult(false, null, null, 0, 0, 0, $"Workspace '{request.WorkspaceId}' not found");
+                targetWorkspace = wm.Workspaces.FirstOrDefault(w => w.Id.Equals(request.WorkspaceId, StringComparison.OrdinalIgnoreCase));
+                if (targetWorkspace == null)
+                {
+                    return new CompanionTileGroupResult(false, null, null, 0, 0, 0, $"Workspace '{request.WorkspaceId}' not found");
+                }
             }
-        }
-        else
-        {
-            targetWorkspace = wm.ActiveWorkspace;
-        }
-
-        bool isActiveWorkspace = targetWorkspace == null || targetWorkspace.Id == wm.ActiveWorkspace?.Id;
-
-        // 2. Select target collections
-        var targetTiles = isActiveWorkspace ? _tilesProvider() : targetWorkspace!.Tiles;
-        var targetGroups = isActiveWorkspace ? _groupsProvider() : targetWorkspace!.Groups;
-
-        // 3. Deduplicate tabs within the incoming session
-        var distinctItems = new List<CompanionPinRequest>();
-        var seenUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var t in request.Tiles)
-        {
-            if (string.IsNullOrWhiteSpace(t.Url)) continue;
-            string trimmedUrl = t.Url.Trim().TrimEnd('/');
-            if (seenUrls.Add(trimmedUrl))
+            else
             {
-                distinctItems.Add(t);
+                targetWorkspace = wm.ActiveWorkspace;
             }
-        }
 
-        if (distinctItems.Count == 0)
-        {
-            return new CompanionTileGroupResult(false, null, null, 0, 0, 0, "No unique tiles to place");
-        }
+            bool isActiveWorkspace = targetWorkspace == null || targetWorkspace.Id == wm.ActiveWorkspace?.Id;
 
-        // 4. Determine placement coordinates: append cleanly below existing canvas content
-        int maxBottom = 0;
-        if (targetGroups.Count > 0)
-        {
-            maxBottom = Math.Max(maxBottom, targetGroups.Max(g => GridPlacementService.GetGroupBoundingBox(g, targetTiles).MaxRow));
-        }
-        if (targetTiles.Count > 0)
-        {
-            maxBottom = Math.Max(maxBottom, targetTiles.Max(t => t.Row + t.SpanY));
-        }
+            // 2. Select target collections
+            var targetTiles = isActiveWorkspace ? _tilesProvider() : targetWorkspace!.Tiles;
+            var targetGroups = isActiveWorkspace ? _groupsProvider() : targetWorkspace!.Groups;
 
-        int targetCol = 0;
-        int targetRow = maxBottom > 0 ? maxBottom + 1 : 0;
-
-        string groupId = Guid.NewGuid().ToString("N");
-        string groupTitle = !string.IsNullOrWhiteSpace(request.GroupName)
-            ? request.GroupName.Trim()
-            : $"Session • {DateTime.Now:MMM dd, h:mm tt}";
-
-        var group = new TileGroupModel
-        {
-            Id = groupId,
-            Title = groupTitle,
-            ColumnIndex = GridPlacementService.GetColumnIndexFromCol(targetCol),
-            OrderIndex = targetGroups.Count,
-            Col = targetCol,
-            Row = targetRow,
-            IsEditing = false
-        };
-
-        targetGroups.Add(group);
-
-        // 5. Create tiles in 2x2 grid layout inside the group (4 tiles per row within track of width 8)
-        var createdTiles = new List<TileModel>(distinctItems.Count);
-        for (int i = 0; i < distinctItems.Count; i++)
-        {
-            var item = distinctItems[i];
-            int colOffset = (i % 4) * 2;
-            int rowOffset = (i / 4) * 2;
-            int tileCol = targetCol + colOffset;
-            int tileRow = targetRow + 1 + rowOffset;
-
-            string displayTitle = !string.IsNullOrWhiteSpace(item.Title)
-                ? item.Title
-                : WebFaviconService.InferTitleFromUrl(item.Url);
-
-            var tile = new TileModel
+            // 3. Deduplicate tabs within the incoming session
+            var distinctItems = new List<CompanionPinRequest>();
+            var seenUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var t in request.Tiles)
             {
-                Id = Guid.NewGuid().ToString("N"),
-                Title = displayTitle,
-                TargetPath = item.Url.Trim(),
-                TileType = TileType.WebUrl,
-                Group = groupId,
-                SectionHeader = groupTitle,
-                SpanX = 2,
-                SpanY = 2,
-                Col = tileCol,
-                Row = tileRow,
-                X = GridPlacementService.PixelXFromCol(tileCol),
-                Y = GridPlacementService.PixelYFromRow(tileRow)
+                if (string.IsNullOrWhiteSpace(t.Url)) continue;
+                string trimmedUrl = t.Url.Trim().TrimEnd('/');
+                if (seenUrls.Add(trimmedUrl))
+                {
+                    distinctItems.Add(t);
+                }
+            }
+
+            if (distinctItems.Count == 0)
+            {
+                return new CompanionTileGroupResult(false, null, null, 0, 0, 0, "No unique tiles to place");
+            }
+
+            // 4. Determine placement coordinates: append cleanly below existing canvas content
+            int maxBottom = 0;
+            if (targetGroups.Count > 0)
+            {
+                maxBottom = Math.Max(maxBottom, targetGroups.Max(g => GridPlacementService.GetGroupBoundingBox(g, targetTiles).MaxRow));
+            }
+            if (targetTiles.Count > 0)
+            {
+                maxBottom = Math.Max(maxBottom, targetTiles.Max(t => t.Row + t.SpanY));
+            }
+
+            int targetCol = 0;
+            int targetRow = maxBottom > 0 ? maxBottom + 1 : 0;
+
+            string groupId = Guid.NewGuid().ToString("N");
+            string groupTitle = !string.IsNullOrWhiteSpace(request.GroupName)
+                ? request.GroupName.Trim()
+                : $"Session • {DateTime.Now:MMM dd, h:mm tt}";
+
+            var group = new TileGroupModel
+            {
+                Id = groupId,
+                Title = groupTitle,
+                ColumnIndex = GridPlacementService.GetColumnIndexFromCol(targetCol),
+                OrderIndex = targetGroups.Count,
+                Col = targetCol,
+                Row = targetRow,
+                IsEditing = false
             };
 
-            createdTiles.Add(tile);
-            targetTiles.Add(tile);
-        }
+            targetGroups.Add(group);
 
-        // 6. Collision resolution and layout persistence
-        if (isActiveWorkspace)
-        {
-            var modified = GridPlacementService.InsertGroupAndResolveCollisions(group, targetCol, targetRow, targetGroups, targetTiles);
-            foreach (var ctItem in createdTiles)
+            // 5. Create tiles in 2x2 grid layout inside the group (4 tiles per row within track of width 8)
+            var createdTiles = new List<TileModel>(distinctItems.Count);
+            for (int i = 0; i < distinctItems.Count; i++)
             {
-                if (!modified.Contains(ctItem)) modified.Add(ctItem);
+                var item = distinctItems[i];
+                int colOffset = (i % 4) * 2;
+                int rowOffset = (i / 4) * 2;
+                int tileCol = targetCol + colOffset;
+                int tileRow = targetRow + 1 + rowOffset;
+
+                string displayTitle = !string.IsNullOrWhiteSpace(item.Title)
+                    ? item.Title
+                    : WebFaviconService.InferTitleFromUrl(item.Url);
+
+                var tile = new TileModel
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    Title = displayTitle,
+                    TargetPath = item.Url.Trim(),
+                    TileType = TileType.WebUrl,
+                    Group = groupId,
+                    SectionHeader = groupTitle,
+                    SpanX = 2,
+                    SpanY = 2,
+                    Col = tileCol,
+                    Row = tileRow,
+                    X = GridPlacementService.PixelXFromCol(tileCol),
+                    Y = GridPlacementService.PixelYFromRow(tileRow)
+                };
+
+                createdTiles.Add(tile);
+                targetTiles.Add(tile);
             }
 
-            _animateModifiedTilesAction(modified);
-            _updateGroupHeaderPositionsAction();
-            _saveGroupsAndLayoutAction();
-            SaveLayoutAndWorkspace(targetTiles);
-            _updateCanvasHeightAction();
-            _updateExposedAddSlotsAction();
-        }
-        else
-        {
-            StorageService.SaveWorkspaceLayout(targetWorkspace!.Id, targetTiles);
-            StorageService.SaveWorkspaceGroups(targetWorkspace.Id, targetGroups);
-            targetWorkspace.IsDirty = true;
-        }
-
-        // 7. Background asynchronous favicon fetching for each tile
-        _ = Task.Run(async () =>
-        {
-            foreach (var tile in createdTiles)
+            // 6. Collision resolution and layout persistence
+            if (isActiveWorkspace)
             {
-                try
+                var modified = GridPlacementService.InsertGroupAndResolveCollisions(group, targetCol, targetRow, targetGroups, targetTiles);
+                foreach (var ctItem in createdTiles)
                 {
-                    string targetUrl = tile.TargetPath ?? string.Empty;
-                    string? iconPath = await WebFaviconService.GetFaviconPathAsync(targetUrl).ConfigureAwait(false);
-                    if (string.IsNullOrWhiteSpace(iconPath))
-                    {
-                        iconPath = ResolveFallbackWebIcon();
-                    }
+                    if (!modified.Contains(ctItem)) modified.Add(ctItem);
+                }
 
-                    if (!string.IsNullOrWhiteSpace(iconPath))
+                _animateModifiedTilesAction(modified);
+                _updateGroupHeaderPositionsAction();
+                _saveGroupsAndLayoutAction();
+                SaveLayoutAndWorkspace(targetTiles);
+                _updateCanvasHeightAction();
+                _updateExposedAddSlotsAction();
+            }
+            else
+            {
+                GridPlacementService.InsertGroupAndResolveCollisions(group, targetCol, targetRow, targetGroups, targetTiles);
+                StorageService.SaveWorkspaceLayout(targetWorkspace!.Id, targetTiles);
+                StorageService.SaveWorkspaceGroups(targetWorkspace.Id, targetGroups);
+                targetWorkspace.IsDirty = true;
+            }
+
+            // 7. Background asynchronous favicon fetching for each tile
+            _ = Task.Run(async () =>
+            {
+                foreach (var tile in createdTiles)
+                {
+                    try
                     {
-                        await _dispatcher.InvokeAsync(() =>
+                        string targetUrl = tile.TargetPath ?? string.Empty;
+                        string? iconPath = await WebFaviconService.GetFaviconPathAsync(targetUrl).ConfigureAwait(false);
+                        if (string.IsNullOrWhiteSpace(iconPath))
                         {
-                            tile.IconPath = iconPath;
-                            if (isActiveWorkspace)
+                            iconPath = ResolveFallbackWebIcon();
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(iconPath))
+                        {
+                            await RunOnDispatcherAsync(() =>
                             {
-                                SaveLayoutAndWorkspace(targetTiles);
-                            }
-                            else
-                            {
-                                StorageService.SaveWorkspaceLayout(targetWorkspace!.Id, targetTiles);
-                            }
-                        });
+                                tile.IconPath = iconPath;
+                                if (isActiveWorkspace)
+                                {
+                                    SaveLayoutAndWorkspace(targetTiles);
+                                }
+                                else
+                                {
+                                    StorageService.SaveWorkspaceLayout(targetWorkspace!.Id, targetTiles);
+                                }
+                            }).ConfigureAwait(false);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Safe.Log(ex, $"[TileManager] Background favicon extraction failed for '{tile.TargetPath}'");
                     }
                 }
-                catch (Exception ex)
-                {
-                    Safe.Log(ex, $"[TileManager] Background favicon extraction failed for '{tile.TargetPath}'");
-                }
-            }
-        });
+            });
 
-        return new CompanionTileGroupResult(
-            Success: true,
-            GroupId: groupId,
-            GroupTitle: groupTitle,
-            TilesAdded: createdTiles.Count,
-            Col: targetCol,
-            Row: targetRow,
-            Message: "Session group pinned successfully"
-        );
+            return new CompanionTileGroupResult(
+                Success: true,
+                GroupId: groupId,
+                GroupTitle: groupTitle,
+                TilesAdded: createdTiles.Count,
+                Col: targetCol,
+                Row: targetRow,
+                Message: "Session group pinned successfully"
+            );
+        }).ConfigureAwait(false);
     }
 }

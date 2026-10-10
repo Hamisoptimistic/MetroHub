@@ -542,6 +542,7 @@ async function initializeTabContext() {
 
 async function discoverCompanionPort() {
   setConnectionStatus('connecting', 'Connecting...');
+  console.log('[MetroHub Popup] Probing MetroHub local companion service on ports:', PORTS);
 
   // 1. Check persistent local storage cache first (<2ms)
   try {
@@ -549,6 +550,7 @@ async function discoverCompanionPort() {
     if (cached && cached.metrohub_active_port) {
       if (await probePort(cached.metrohub_active_port, 250)) {
         activePort = cached.metrohub_active_port;
+        console.log(`[MetroHub Popup] Connected via cached port ${activePort}`);
         onConnected();
         return;
       }
@@ -565,11 +567,13 @@ async function discoverCompanionPort() {
   try {
     const foundPort = await Promise.any(probePromises);
     activePort = foundPort;
+    console.log(`[MetroHub Popup] Successfully connected to MetroHub desktop service on port ${foundPort}`);
     try {
       await chrome.storage.local.set({ metrohub_active_port: foundPort });
     } catch { }
     onConnected();
   } catch {
+    console.warn('[MetroHub Popup] Desktop companion offline: No response from MetroHub on ports 48842-48846.');
     onDisconnected();
   }
 }
@@ -644,12 +648,15 @@ async function loadWorkspaces() {
 
     if (res.ok) {
       const workspaces = await res.json();
+      console.log('[MetroHub Popup] Workspaces loaded from desktop:', workspaces);
       if (!Array.isArray(workspaces) || workspaces.length === 0) return;
 
       renderWorkspaceMenu(workspaces);
+    } else {
+      console.error(`[MetroHub Popup] Failed to fetch workspaces (HTTP ${res.status})`);
     }
   } catch (err) {
-    console.warn('[MetroHub] Error fetching workspaces:', err);
+    console.error('[MetroHub Popup] Error fetching workspaces:', err);
   }
 }
 
@@ -665,6 +672,7 @@ function renderWorkspaceMenu(workspaces) {
       selectedWorkspaceName = ws.name;
       updateWorkspaceTrigger(ws.name);
       activeFound = true;
+      console.log(`[MetroHub Popup] Active workspace detected: "${ws.name}" (${ws.id})`);
     }
 
     const isSelected = selectedWorkspaceId === ws.id;
@@ -699,6 +707,7 @@ function renderWorkspaceMenu(workspaces) {
       selectedWorkspaceId = ws.id;
       selectedWorkspaceName = ws.name;
       updateWorkspaceTrigger(ws.name);
+      console.log(`[MetroHub Popup] Target workspace selected: "${ws.name}" (${ws.id})`);
 
       workspaceMenu.querySelectorAll('.dropdown-item').forEach((el) => {
         const isMatch = el.getAttribute('data-id') === ws.id;
@@ -729,11 +738,17 @@ function renderWorkspaceMenu(workspaces) {
 
 function setupPinButton() {
   pinBtn.addEventListener('click', async () => {
-    if (!activePort) return;
+    if (!activePort) {
+      console.warn('[MetroHub Popup] Cannot pin: No active companion port.');
+      return;
+    }
 
     // Mode A: Stash All Tabs into Desktop Tile Group
     if (currentMode === 'all') {
-      if (windowTabs.length === 0) return;
+      if (windowTabs.length === 0) {
+        console.warn('[MetroHub Popup] No tabs to stash.');
+        return;
+      }
 
       const groupName = tileTitleInput.value.trim() || getDefaultGroupName();
       const workspaceId = selectedWorkspaceId || null;
@@ -750,9 +765,12 @@ function setupPinButton() {
         }))
       };
 
+      console.log('[MetroHub Popup] Stashing tabs payload:', payload);
+
       const minDelay = new Promise((resolve) => setTimeout(resolve, 260));
 
       try {
+        const t0 = performance.now();
         const fetchPromise = fetch(`http://127.0.0.1:${activePort}/api/tile-groups`, {
           method: 'POST',
           headers: {
@@ -763,7 +781,9 @@ function setupPinButton() {
         });
 
         const [res] = await Promise.all([fetchPromise, minDelay]);
-        const data = await res.json();
+        const elapsed = Math.round(performance.now() - t0);
+        const data = await res.json().catch(() => ({}));
+        console.log(`[MetroHub Popup] Stash tabs response (${elapsed}ms, HTTP ${res.status}):`, data);
 
         if (res.ok && data.success) {
           const wsName = selectedWorkspaceName || (workspaceSelectedText?.textContent || 'Main').replace(/\s*\(Active\)\s*$/i, '').trim();
@@ -774,16 +794,21 @@ function setupPinButton() {
           );
         } else {
           const errorMsg = data.error || data.message || 'Failed to stash tabs into group.';
+          console.error(`[MetroHub Popup] Stash tabs rejected (HTTP ${res.status}):`, errorMsg);
           setButtonState('error', 'Unable to Stash Tabs', errorMsg);
         }
       } catch (err) {
+        console.error('[MetroHub Popup] Stash tabs network error:', err);
         setButtonState('error', 'Connection Lost', 'Is MetroHub desktop app running?');
       }
       return;
     }
 
     // Mode B: Single Current Tab Pin
-    if (!currentTab || !currentTab.url) return;
+    if (!currentTab || !currentTab.url) {
+      console.warn('[MetroHub Popup] Cannot pin: No active tab URL.');
+      return;
+    }
 
     const title = tileTitleInput.value.trim();
     const workspaceId = selectedWorkspaceId || null;
@@ -800,10 +825,13 @@ function setupPinButton() {
       thumbnailUrl: null // Clean, crisp 128x128 Favicon via WebFaviconService
     };
 
+    console.log('[MetroHub Popup] Dispatching single tab pin:', payload);
+
     // Smooth micro-interaction: keep spinner visible for at least 260ms so the user feels the action
     const minDelay = new Promise((resolve) => setTimeout(resolve, 260));
 
     try {
+      const t0 = performance.now();
       const fetchPromise = fetch(`http://127.0.0.1:${activePort}/api/tiles`, {
         method: 'POST',
         headers: {
@@ -814,17 +842,22 @@ function setupPinButton() {
       });
 
       const [res] = await Promise.all([fetchPromise, minDelay]);
-      const data = await res.json();
+      const elapsed = Math.round(performance.now() - t0);
+      const data = await res.json().catch(() => ({}));
+
+      console.log(`[MetroHub Popup] Pin tab response (${elapsed}ms, HTTP ${res.status}):`, data);
 
       if (res.ok && data.success) {
         const wsName = selectedWorkspaceName || (workspaceSelectedText?.textContent || 'Main').replace(/\s*\(Active\)\s*$/i, '').trim();
         if (data.duplicate) {
+          console.warn('[MetroHub Popup] Tab is already pinned on canvas:', data);
           setButtonState(
             'done',
             'Already on Canvas',
             `${wsName} • Row ${data.row}, Col ${data.col}`
           );
         } else {
+          console.log(`[MetroHub Popup] Tab pinned successfully to ${wsName} at Col ${data.col}, Row ${data.row}!`);
           setButtonState(
             'done',
             'Pinned Successfully',
@@ -833,9 +866,11 @@ function setupPinButton() {
         }
       } else {
         const errorMsg = data.error || data.message || 'Failed to place tile.';
+        console.error(`[MetroHub Popup] Pin tab rejected by desktop app (HTTP ${res.status}):`, errorMsg);
         setButtonState('error', 'Unable to Pin Tile', errorMsg);
       }
     } catch (err) {
+      console.error('[MetroHub Popup] Pin tab network / fetch error:', err);
       setButtonState('error', 'Connection Lost', 'Is MetroHub desktop app running?');
     }
   });

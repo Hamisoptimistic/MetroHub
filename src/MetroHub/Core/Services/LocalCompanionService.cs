@@ -158,7 +158,7 @@ public static class CompanionImageDownloader
     /// manual redirect hops, 2 MB body cap, and image/* MIME type.
     /// Returns the absolute cached path on disk or null if invalid/rejected.
     /// </summary>
-    public static async Task<string?> DownloadImageAsync(string imageUrl, CancellationToken ct = default)
+    public static async Task<string?> DownloadImageAsync(string imageUrl, string? targetDir = null, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(imageUrl)) return null;
 
@@ -170,14 +170,15 @@ public static class CompanionImageDownloader
 
         try
         {
-            string cacheDir = AppPaths.PrimaryIconsDir;
+            string cacheDir = targetDir ?? AppPaths.PrimaryIconsDir;
             if (!Directory.Exists(cacheDir))
             {
                 Directory.CreateDirectory(cacheDir);
             }
 
             string hash = IconExtractorService.ComputeDeterministicHash(imageUrl);
-            string destinationPath = Path.Combine(cacheDir, $"ext_thumb_{hash}.png");
+            string filePrefix = targetDir != null ? "img_" : "ext_thumb_";
+            string destinationPath = Path.Combine(cacheDir, $"{filePrefix}{hash}.png");
 
             if (File.Exists(destinationPath))
             {
@@ -486,7 +487,7 @@ public sealed class LocalCompanionService : IDisposable
             try
             {
                 context.Response.StatusCode = 500;
-                await SendJsonAsync(context.Response, 500, new CompanionErrorResponse("Internal server error."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
+                await SendJsonAsync(context.Response, 500, new CompanionErrorResponse($"Internal server error: {ex.Message}"), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
             }
             catch { }
         }
@@ -532,7 +533,7 @@ public sealed class LocalCompanionService : IDisposable
             await SendJsonAsync(response, 403, new CompanionErrorResponse("Forbidden: Origin 'null' is not permitted."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
             return;
         }
-        else if (origin.Equals(PinnedChromeOrigin, StringComparison.Ordinal))
+        else if (origin.StartsWith("chrome-extension://", StringComparison.OrdinalIgnoreCase))
         {
             hasAllowedOrigin = true;
         }
@@ -642,26 +643,28 @@ public sealed class LocalCompanionService : IDisposable
             return;
         }
 
-        if (pinRequest == null || string.IsNullOrWhiteSpace(pinRequest.Url))
+        if (pinRequest == null || (string.IsNullOrWhiteSpace(pinRequest.Url) && string.IsNullOrWhiteSpace(pinRequest.Note) && string.IsNullOrWhiteSpace(pinRequest.ThumbnailUrl)))
         {
-            await SendJsonAsync(response, 400, new CompanionErrorResponse("Missing required 'url' field."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
+            await SendJsonAsync(response, 400, new CompanionErrorResponse("Missing required 'url', 'note', or 'thumbnailUrl' field."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
             return;
         }
 
-        // Validate URL scheme
-        string rawUrl = pinRequest.Url.Trim();
-        if (!rawUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-            !rawUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        string rawUrl = pinRequest.Url?.Trim() ?? string.Empty;
+        if (!string.IsNullOrEmpty(rawUrl))
         {
-            await SendJsonAsync(response, 400, new CompanionErrorResponse("Only standard websites can be pinned."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
-            return;
-        }
+            if (!rawUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                !rawUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                await SendJsonAsync(response, 400, new CompanionErrorResponse("Only standard websites can be pinned."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
+                return;
+            }
 
-        if (!Uri.TryCreate(rawUrl, UriKind.Absolute, out Uri? parsedUri) ||
-            (parsedUri.Scheme != Uri.UriSchemeHttp && parsedUri.Scheme != Uri.UriSchemeHttps))
-        {
-            await SendJsonAsync(response, 400, new CompanionErrorResponse("Malformed URL."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
-            return;
+            if (!Uri.TryCreate(rawUrl, UriKind.Absolute, out Uri? parsedUri) ||
+                (parsedUri.Scheme != Uri.UriSchemeHttp && parsedUri.Scheme != Uri.UriSchemeHttps))
+            {
+                await SendJsonAsync(response, 400, new CompanionErrorResponse("Malformed URL."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
+                return;
+            }
         }
 
         // Validate ThumbnailUrl scheme if provided
@@ -699,12 +702,12 @@ public sealed class LocalCompanionService : IDisposable
         }
 
         string note = pinRequest.Note?.Trim() ?? string.Empty;
-        if (note.Length > 1024)
+        if (note.Length > 4096)
         {
-            note = note.Substring(0, 1024);
+            note = note.Substring(0, 4096);
         }
 
-        string sanitizedUrl = SanitizeUrl(rawUrl);
+        string sanitizedUrl = !string.IsNullOrEmpty(rawUrl) ? SanitizeUrl(rawUrl) : string.Empty;
 
         var sanitizedRequest = new CompanionPinRequest(
             Url: sanitizedUrl,

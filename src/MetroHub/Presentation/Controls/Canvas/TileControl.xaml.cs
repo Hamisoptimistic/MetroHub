@@ -310,6 +310,21 @@ public partial class TileControl : UserControl
     private static string? _lastControlLaunchPath;
     private static readonly object _controlLaunchLock = new();
 
+    public static bool IsNoteTile(TileModel? tile)
+    {
+        if (tile == null || string.IsNullOrWhiteSpace(tile.TargetPath)) return false;
+        try
+        {
+            string noteDir = AppPaths.PastedNotesDir;
+            return tile.TargetPath.StartsWith(noteDir, StringComparison.OrdinalIgnoreCase) &&
+                   tile.TargetPath.EndsWith(".txt", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public void LaunchTile()
     {
         if (DataContext is TileModel tile)
@@ -320,6 +335,13 @@ public partial class TileControl : UserControl
                 {
                     actionHandler.OnPrimaryAction();
                 }
+                return;
+            }
+
+            if (IsNoteTile(tile))
+            {
+                Dialogs.NoteViewerDialog.Show(Window.GetWindow(this), tile);
+                RaiseEvent(new RoutedEventArgs(TileActivatedEvent, tile));
                 return;
             }
 

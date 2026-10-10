@@ -1003,6 +1003,7 @@ public partial class MainWindow
             if (!isCtrlDown && controlToLaunch != null)
             {
                 bool isWidget = controlToLaunch.DataContext is TileModel t && t.TileType == TileType.Widget;
+                bool isNote = controlToLaunch.DataContext is TileModel tn && Presentation.Controls.TileControl.IsNoteTile(tn);
                 var now = DateTime.UtcNow;
                 if (!isWidget && (_isLaunchingTile || (now - _lastTileLaunchTime).TotalMilliseconds < 800))
                 {
@@ -1022,7 +1023,7 @@ public partial class MainWindow
                     try
                     {
                         controlToLaunch.LaunchTile();
-                        if (!isWidget && Settings.CloseOnLaunch)
+                        if (!isWidget && !isNote && Settings.CloseOnLaunch)
                         {
                             HideScreen(restorePreviousFocus: false);
                         }
