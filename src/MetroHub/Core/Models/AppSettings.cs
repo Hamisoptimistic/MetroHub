@@ -29,4 +29,11 @@ public sealed class AppSettings
 
     public bool BrowserExtensionCompanionEnabled { get; set; } = true;
     public bool EnableGroupOpenAllButton { get; set; } = true;
+    public RecentItemsViewMode RecentViewMode { get; set; } = RecentItemsViewMode.Grid;
+}
+
+public enum RecentItemsViewMode
+{
+    List,
+    Grid
 }

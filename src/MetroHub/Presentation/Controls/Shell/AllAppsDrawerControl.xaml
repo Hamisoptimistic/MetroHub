@@ -199,7 +199,7 @@
                                        RenderOptions.BitmapScalingMode="HighQuality" />
 
                                 <ui:SymbolIcon Symbol="{Binding Symbol}"
-                                               FontSize="16"
+                                               FontSize="20"
                                                Foreground="{DynamicResource TextSecondaryBrush}"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
@@ -249,6 +249,131 @@
                 </MultiDataTrigger>
             </DataTemplate.Triggers>
         </DataTemplate>
+
+        <!-- Acrylic Squircle Grid Tile Template for Recent Items (Option A: Icon-Only, 5 Columns, Canvas Reveal) -->
+        <DataTemplate x:Key="RecentGridTileTemplate">
+            <Border x:Name="GridTileCard"
+                    Width="50"
+                    Height="46"
+                    Margin="2.5,2.5,2.5,2.5"
+                    CornerRadius="{DynamicResource TileCornerRadius}"
+                    BorderThickness="1"
+                    ClipToBounds="True"
+                    SnapsToDevicePixels="True"
+                    ToolTip="{Binding DisplayName}"
+                    Tag="{Binding}"
+                    Cursor="Hand"
+                    RenderTransformOrigin="0.5,0.5"
+                    PreviewMouseLeftButtonDown="OnSearchRowPreviewMouseLeftButtonDown"
+                    PreviewMouseMove="OnRecentGridTilePreviewMouseMove"
+                    MouseLeftButtonUp="OnSearchRowMouseLeftButtonUp"
+                    ContextMenuOpening="OnSearchRowContextMenuOpening">
+                <Border.RenderTransform>
+                    <ScaleTransform x:Name="TileScale" ScaleX="1.0" ScaleY="1.0" />
+                </Border.RenderTransform>
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="#14FFFFFF" />
+                        <Setter Property="BorderBrush" Value="#1AFFFFFF" />
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#25FFFFFF" />
+                                <Setter Property="BorderBrush" Value="#40FFFFFF" />
+                            </Trigger>
+                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+                                <Setter Property="Background" Value="#28FFFFFF" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+
+                <Grid>
+                    <!-- Fluent Reveal Highlight: Surface Spotlight -->
+                    <Border x:Name="RevealFillBorder"
+                            CornerRadius="{DynamicResource TileCornerRadius}"
+                            IsHitTestVisible="False"
+                            Opacity="0">
+                        <Border.Background>
+                            <RadialGradientBrush x:Name="RevealFillBrush" MappingMode="Absolute" RadiusX="120" RadiusY="120">
+                                <GradientStop Color="#30FFFFFF" Offset="0.0" />
+                                <GradientStop Color="#10FFFFFF" Offset="0.5" />
+                                <GradientStop Color="#00000000" Offset="1.0" />
+                            </RadialGradientBrush>
+                        </Border.Background>
+                    </Border>
+
+                    <!-- Icon Area -->
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <!-- High-DPI App Icon -->
+                        <Image Source="{Binding Icon, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                               Width="24"
+                               Height="24"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Visibility="{Binding CustomIconVisibility}"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
+
+                        <!-- Fallback Fluent Symbol Icon -->
+                        <ui:SymbolIcon Symbol="{Binding Symbol}"
+                                       FontSize="18"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Visibility="{Binding SymbolVisibility}" />
+                    </Grid>
+
+                    <!-- Fluent Reveal Highlight: Edge Illumination -->
+                    <Border x:Name="RevealEdgeBorder"
+                            CornerRadius="{DynamicResource TileCornerRadius}"
+                            BorderThickness="1.2"
+                            IsHitTestVisible="False"
+                            Opacity="0">
+                        <Border.BorderBrush>
+                            <RadialGradientBrush x:Name="RevealEdgeBrush" MappingMode="Absolute" RadiusX="90" RadiusY="90">
+                                <GradientStop Color="#FFFFFFFF" Offset="0.0" />
+                                <GradientStop Color="#60FFFFFF" Offset="0.5" />
+                                <GradientStop Color="#00000000" Offset="1.0" />
+                            </RadialGradientBrush>
+                        </Border.BorderBrush>
+                    </Border>
+                </Grid>
+            </Border>
+            <DataTemplate.Triggers>
+                <Trigger SourceName="GridTileCard" Property="IsMouseOver" Value="True">
+                    <Trigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="RevealFillBorder" Storyboard.TargetProperty="Opacity" To="1.0" Duration="0:0:0.15" />
+                                <DoubleAnimation Storyboard.TargetName="RevealEdgeBorder" Storyboard.TargetProperty="Opacity" To="1.0" Duration="0:0:0.15" />
+                                <DoubleAnimation Storyboard.TargetName="TileScale" Storyboard.TargetProperty="ScaleX" To="1.03" Duration="0:0:0.15" />
+                                <DoubleAnimation Storyboard.TargetName="TileScale" Storyboard.TargetProperty="ScaleY" To="1.03" Duration="0:0:0.15" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.EnterActions>
+                    <Trigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetName="RevealFillBorder" Storyboard.TargetProperty="Opacity" To="0.0" Duration="0:0:0.25" />
+                                <DoubleAnimation Storyboard.TargetName="RevealEdgeBorder" Storyboard.TargetProperty="Opacity" To="0.0" Duration="0:0:0.25" />
+                                <DoubleAnimation Storyboard.TargetName="TileScale" Storyboard.TargetProperty="ScaleX" To="1.0" Duration="0:0:0.2" />
+                                <DoubleAnimation Storyboard.TargetName="TileScale" Storyboard.TargetProperty="ScaleY" To="1.0" Duration="0:0:0.2" />
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </Trigger.ExitActions>
+                </Trigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- ItemsPanel Template for Grid Mode: 5 Columns UniformGrid -->
+        <ItemsPanelTemplate x:Key="RecentGridItemsPanelTemplate">
+            <UniformGrid Columns="5" HorizontalAlignment="Center" Margin="0,2,0,2" />
+        </ItemsPanelTemplate>
+
+        <!-- ItemsPanel Template for List Mode: Standard StackPanel -->
+        <ItemsPanelTemplate x:Key="RecentListItemsPanelTemplate">
+            <StackPanel />
+        </ItemsPanelTemplate>
     </UserControl.Resources>
 
     <Grid>
@@ -395,12 +520,13 @@
                             <ListBox x:Name="RecentSuggestionsListBox"
                                      Background="Transparent"
                                      BorderThickness="0"
-                                     Padding="0"
+                                     Padding="11,0,11,0"
                                      FocusVisualStyle="{x:Null}"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
                                      ItemContainerStyle="{StaticResource FluentSearchListBoxItemStyle}"
-                                     ItemTemplate="{StaticResource SearchItemRowTemplate}"
+                                     ItemTemplate="{StaticResource RecentGridTileTemplate}"
+                                     ItemsPanel="{StaticResource RecentGridItemsPanelTemplate}"
                                      KeyDown="OnRecentSuggestionsKeyDown"
                                      PreviewKeyDown="OnRecentSuggestionsPreviewKeyDown"
                                      PreviewTextInput="OnRecentSuggestionsPreviewTextInput" />

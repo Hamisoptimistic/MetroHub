@@ -384,6 +384,35 @@ public sealed class SearchOrchestrator : IDisposable
                     }
                 }
 
+                if (matchingApp == null)
+                {
+                    // Secondary check: compare filename without extension if key is a file path
+                    string? keyName = null;
+                    try { keyName = Path.GetFileNameWithoutExtension(key); } catch { }
+                    if (!string.IsNullOrEmpty(keyName))
+                    {
+                        for (int i = 0; i < appList.Count; i++)
+                        {
+                            var a = appList[i];
+                            if (string.Equals(a.Name, keyName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                matchingApp = a;
+                                break;
+                            }
+                            try
+                            {
+                                if (!string.IsNullOrEmpty(a.TargetPath) &&
+                                    string.Equals(Path.GetFileNameWithoutExtension(a.TargetPath), keyName, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    matchingApp = a;
+                                    break;
+                                }
+                            }
+                            catch { }
+                        }
+                    }
+                }
+
                 if (matchingApp != null)
                 {
                     candidates.Add(new Candidate(
@@ -412,6 +441,17 @@ public sealed class SearchOrchestrator : IDisposable
 
                         var cat = EverythingSearchSource.DetermineCategory(folder, Path.GetExtension(key), name);
 
+                        CatalogItemModel? model = null;
+                        if (!folder && (cat == SearchCategory.Apps || key.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || key.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            model = new CatalogItemModel
+                            {
+                                Name = name,
+                                TargetPath = key,
+                                TileType = TileType.App
+                            };
+                        }
+
                         candidates.Add(new Candidate(
                             Id: key,
                             DisplayName: name,
@@ -421,7 +461,7 @@ public sealed class SearchOrchestrator : IDisposable
                             Modified: null,
                             Size: null,
                             IsFolder: folder,
-                            Tag: null));
+                            Tag: model));
                     }
                 }
                 catch

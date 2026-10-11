@@ -72,6 +72,36 @@ namespace MetroHub.Presentation.Controls
                 SearchCategory.Code => Wpf.Ui.Controls.SymbolRegular.Code24,
                 _ => candidate.IsFolder ? Wpf.Ui.Controls.SymbolRegular.Folder24 : Wpf.Ui.Controls.SymbolRegular.Document24
             };
+
+            if (candidate.Tag is CatalogItemModel appModel)
+            {
+                System.ComponentModel.PropertyChangedEventManager.AddHandler(appModel, OnAppModelPropertyChanged, nameof(CatalogItemModel.Icon));
+                // Kick off background extraction immediately if not already cached
+                _ = appModel.Icon;
+            }
+        }
+
+        private void OnAppModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(CatalogItemModel.Icon))
+            {
+                var dispatcher = Application.Current?.Dispatcher;
+                if (dispatcher == null || dispatcher.CheckAccess())
+                {
+                    NotifyIconProperties();
+                }
+                else
+                {
+                    dispatcher.InvokeAsync(NotifyIconProperties, System.Windows.Threading.DispatcherPriority.Background);
+                }
+            }
+        }
+
+        private void NotifyIconProperties()
+        {
+            OnPropertyChanged(nameof(Icon));
+            OnPropertyChanged(nameof(CustomIconVisibility));
+            OnPropertyChanged(nameof(SymbolVisibility));
         }
     }
 
@@ -119,12 +149,58 @@ namespace MetroHub.Presentation.Controls
         public ScrollViewer? SearchResultsScrollViewerControl => SearchResultsScrollViewer;
         public ListBox? RecentSuggestionsListBoxControl => RecentSuggestionsListBox;
         public const int MaxZeroStateSuggestions = 15;
+        public const int MaxGridZeroStateSuggestions = 15;
+        public const int MaxListZeroStateSuggestions = 6;
+
+        public RecentItemsViewMode RecentViewMode { get; set; } = RecentItemsViewMode.Grid;
+
+        public void InitializeSettings(AppSettings? settings)
+        {
+            if (settings != null)
+            {
+                RecentViewMode = settings.RecentViewMode;
+                ApplyRecentViewMode(RecentViewMode);
+            }
+        }
+
+        public void ApplyRecentViewMode(RecentItemsViewMode mode)
+        {
+            RecentViewMode = mode;
+            if (RecentSuggestionsListBox == null) return;
+
+            if (mode == RecentItemsViewMode.Grid)
+            {
+                if (Resources["RecentGridTileTemplate"] is DataTemplate gridTemplate)
+                    RecentSuggestionsListBox.ItemTemplate = gridTemplate;
+                if (Resources["RecentGridItemsPanelTemplate"] is ItemsPanelTemplate gridPanel)
+                    RecentSuggestionsListBox.ItemsPanel = gridPanel;
+                RecentSuggestionsListBox.Padding = new Thickness(13, 0, 13, 0);
+            }
+            else
+            {
+                if (Resources["SearchItemRowTemplate"] is DataTemplate listTemplate)
+                    RecentSuggestionsListBox.ItemTemplate = listTemplate;
+                if (Resources["RecentListItemsPanelTemplate"] is ItemsPanelTemplate listPanel)
+                    RecentSuggestionsListBox.ItemsPanel = listPanel;
+                RecentSuggestionsListBox.Padding = new Thickness(0);
+            }
+        }
 
         public AllAppsDrawerControl()
         {
             InitializeComponent();
             Visibility = Visibility.Collapsed;
             DrawerTranslate.X = 0;
+
+            try
+            {
+                var settings = StorageService.LoadSettings();
+                if (settings != null)
+                {
+                    RecentViewMode = settings.RecentViewMode;
+                }
+            }
+            catch { }
 
             _searchOrchestrator = new SearchOrchestrator(
                 tier1Sources: new[] { new AppSearchSource(() => _allApps) },
@@ -315,13 +391,29 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
-        public void RefreshRecentSuggestions(int maxCount = MaxZeroStateSuggestions)
+        public void RefreshRecentSuggestions(int maxCount = -1)
         {
             try
             {
-                var candidates = SearchOrchestrator.GetZeroStateSuggestions(_allApps, maxCount);
+                ApplyRecentViewMode(RecentViewMode);
+
+                int targetCount = (maxCount > 0 && maxCount != MaxZeroStateSuggestions)
+                    ? maxCount
+                    : (RecentViewMode == RecentItemsViewMode.Grid ? MaxGridZeroStateSuggestions : MaxListZeroStateSuggestions);
+
+                var candidates = SearchOrchestrator.GetZeroStateSuggestions(_allApps, targetCount);
                 if (candidates != null && candidates.Count > 0)
                 {
+                    // Prewarm icons for recent app candidates so they resolve in parallel before drawer slide-in finishes
+                    var recentAppModels = candidates
+                        .Select(c => c.Tag as CatalogItemModel)
+                        .Where(a => a != null && !string.IsNullOrWhiteSpace(a.TargetPath))
+                        .ToList();
+                    if (recentAppModels.Count > 0)
+                    {
+                        CatalogItemModel.PrewarmMemoryCache(recentAppModels!, recentAppModels.Count);
+                    }
+
                     var rows = new List<SearchItemRowViewModel>(candidates.Count);
                     for (int i = 0; i < candidates.Count; i++)
                     {
@@ -895,6 +987,26 @@ namespace MetroHub.Presentation.Controls
             _draggedSearchRow = (sender as FrameworkElement)?.Tag as SearchItemRowViewModel
                              ?? (sender as FrameworkElement)?.DataContext as SearchItemRowViewModel;
             _isSearchRowDragPotential = _draggedSearchRow != null;
+        }
+
+        private void OnRecentGridTilePreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (sender is Border card && card.Child is Grid grid && grid.Children.Count >= 3)
+            {
+                Point pos = e.GetPosition(card);
+                if (grid.Children[0] is Border fillBorder && fillBorder.Background is RadialGradientBrush fillBrush)
+                {
+                    fillBrush.Center = pos;
+                    fillBrush.GradientOrigin = pos;
+                }
+                if (grid.Children[2] is Border edgeBorder && edgeBorder.BorderBrush is RadialGradientBrush edgeBrush)
+                {
+                    edgeBrush.Center = pos;
+                    edgeBrush.GradientOrigin = pos;
+                }
+            }
+
+            OnSearchRowPreviewMouseMove(sender, e);
         }
 
         private void OnSearchRowPreviewMouseMove(object sender, MouseEventArgs e)
