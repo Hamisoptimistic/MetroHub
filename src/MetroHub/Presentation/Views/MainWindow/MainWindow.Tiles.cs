@@ -98,6 +98,11 @@ public partial class MainWindow
 
     private void OnTileActivated(object sender, RoutedEventArgs e)
     {
+        if (e.OriginalSource is TileModel tile && (tile.TileType == TileType.Widget || Presentation.Controls.TileControl.IsNoteTile(tile)))
+        {
+            return;
+        }
+
         if (Settings.CloseOnLaunch)
         {
             HideScreen(restorePreviousFocus: false);

@@ -341,7 +341,6 @@ public partial class TileControl : UserControl
             if (IsNoteTile(tile))
             {
                 Dialogs.NoteViewerDialog.Show(Window.GetWindow(this), tile);
-                RaiseEvent(new RoutedEventArgs(TileActivatedEvent, tile));
                 return;
             }
 

@@ -158,8 +158,13 @@ public class BorderlessFluentWindow : FluentWindow
             return;
         }
 
-        // 1. Force sharp corners (no rounded outer border)
-        int cornerVal = NativeMethods.DWMWCP_DONOTROUND;
+        // 1. Apply corner preference
+        int cornerVal = WindowCornerPreference switch
+        {
+            WindowCornerPreference.Round => NativeMethods.DWMWCP_ROUND,
+            WindowCornerPreference.RoundSmall => NativeMethods.DWMWCP_ROUNDSMALL,
+            _ => NativeMethods.DWMWCP_DONOTROUND
+        };
         NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerVal, sizeof(int));
 
         // 2. Suppress 1px DWM window border completely (DWMWA_COLOR_NONE = 0xFFFFFFFE)

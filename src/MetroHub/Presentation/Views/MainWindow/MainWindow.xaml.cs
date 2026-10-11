@@ -137,6 +137,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             if (Interlocked.Decrement(ref _dialogScopeDepth) <= 0)
             {
                 Interlocked.Exchange(ref _dialogScopeDepth, 0);
+                win._lastShownTime = DateTime.UtcNow;
                 win.Dispatcher.InvokeAsync(win.UpdateDialogScrim);
                 win.Dispatcher.InvokeAsync(() =>
                 {

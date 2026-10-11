@@ -45,6 +45,8 @@ public static class NativeMethods
     public const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
     public const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
     public const int DWMWCP_DONOTROUND = 1;
+    public const int DWMWCP_ROUND = 2;
+    public const int DWMWCP_ROUNDSMALL = 3;
     public const int DWMWA_BORDER_COLOR = 34;
     public const int DWMWA_COLOR_NONE = unchecked((int)0xFFFFFFFE);
     public const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
@@ -55,7 +57,7 @@ public static class NativeMethods
     public const int DWMSBT_TRANSIENTWINDOW = 3; // Acrylic
     public const int DWMSBT_TABBEDWINDOW = 4; // Mica Alt
 
-    public static void ApplyMica(IntPtr hwnd, bool dark = true, int backdrop = DWMSBT_MAINWINDOW)
+    public static void ApplyMica(IntPtr hwnd, bool dark = true, int backdrop = DWMSBT_MAINWINDOW, int cornerPreference = DWMWCP_DONOTROUND)
     {
         try
         {
@@ -66,8 +68,8 @@ public static class NativeMethods
                 DwmSetWindowAttribute(hwnd, oldDarkAttr, ref darkVal, sizeof(int));
             }
 
-            // Suppress rounded corners (force clean square corners)
-            int cornerVal = DWMWCP_DONOTROUND;
+            // Apply corner preference (e.g. sharp or rounded)
+            int cornerVal = cornerPreference;
             DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerVal, sizeof(int));
 
             // Suppress the 1px DWM window border completely (DWMWA_COLOR_NONE = 0xFFFFFFFE)
