@@ -1,7 +1,11 @@
 using System;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+using System.Windows;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Core.Models;
 
@@ -103,13 +107,32 @@ public sealed class TileModel : INotifyPropertyChanged
     public string TargetPath
     {
         get => _targetPath;
-        set => SetField(ref _targetPath, value);
+        set
+        {
+            if (SetField(ref _targetPath, value))
+            {
+                OnPropertyChanged(nameof(IsNote));
+                OnPropertyChanged(nameof(ShowStandardIcon));
+                OnPropertyChanged(nameof(HasWebSource));
+                OnPropertyChanged(nameof(WebSourceIconPath));
+                OnPropertyChanged(nameof(HasWebSourceIcon));
+            }
+        }
     }
 
     public string? Arguments
     {
         get => _arguments;
-        set => SetField(ref _arguments, value);
+        set
+        {
+            if (SetField(ref _arguments, value))
+            {
+                _webSourceIconPath = null;
+                OnPropertyChanged(nameof(HasWebSource));
+                OnPropertyChanged(nameof(WebSourceIconPath));
+                OnPropertyChanged(nameof(HasWebSourceIcon));
+            }
+        }
     }
 
     public string? IconPath
@@ -274,6 +297,86 @@ public sealed class TileModel : INotifyPropertyChanged
 
     [JsonIgnore]
     public bool IsWide => SpanX >= 4 && SpanY == 2;
+
+    [JsonIgnore]
+    public bool IsNote
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_targetPath)) return false;
+            try
+            {
+                return _targetPath.StartsWith(AppPaths.PastedNotesDir, StringComparison.OrdinalIgnoreCase) &&
+                       _targetPath.EndsWith(".txt", StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    [JsonIgnore]
+    public bool HasWebSource => IsNote && !string.IsNullOrWhiteSpace(_arguments) &&
+                                (_arguments.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                                 _arguments.StartsWith("https://", StringComparison.OrdinalIgnoreCase));
+
+    [JsonIgnore]
+    public bool ShowStandardIcon => !IsNote;
+
+    private string? _webSourceIconPath;
+
+    [JsonIgnore]
+    public string? WebSourceIconPath
+    {
+        get
+        {
+            if (_webSourceIconPath != null) return _webSourceIconPath;
+            if (HasWebSource && !string.IsNullOrWhiteSpace(_arguments))
+            {
+                string domain = WebFaviconService.ExtractDomain(_arguments);
+                if (!string.IsNullOrWhiteSpace(domain))
+                {
+                    string safeDomain = System.Text.RegularExpressions.Regex.Replace(domain, @"[^a-zA-Z0-9_\-\.]", "_");
+                    string hash = IconExtractorService.ComputeDeterministicHash(domain);
+                    string cachedPath = Path.Combine(AppPaths.IconCacheDir, $"web_{safeDomain}_{hash}.png");
+                    if (File.Exists(cachedPath) && new FileInfo(cachedPath).Length > 200)
+                    {
+                        _webSourceIconPath = cachedPath;
+                        return _webSourceIconPath;
+                    }
+                }
+
+                string targetUrl = _arguments;
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        string? fetched = await WebFaviconService.GetFaviconPathAsync(targetUrl).ConfigureAwait(false);
+                        if (!string.IsNullOrWhiteSpace(fetched) && File.Exists(fetched))
+                        {
+                            Application.Current?.Dispatcher.InvokeAsync(() =>
+                            {
+                                WebSourceIconPath = fetched;
+                            });
+                        }
+                    }
+                    catch { }
+                });
+            }
+            return _webSourceIconPath;
+        }
+        set
+        {
+            if (SetField(ref _webSourceIconPath, value))
+            {
+                OnPropertyChanged(nameof(HasWebSourceIcon));
+            }
+        }
+    }
+
+    [JsonIgnore]
+    public bool HasWebSourceIcon => HasWebSource && !string.IsNullOrWhiteSpace(WebSourceIconPath);
 
     // Unit size: 56px base + 8px gap = 64px grid step
     [JsonIgnore]

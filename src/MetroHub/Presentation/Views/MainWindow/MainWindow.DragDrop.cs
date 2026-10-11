@@ -1005,13 +1005,14 @@ public partial class MainWindow
                 bool isWidget = controlToLaunch.DataContext is TileModel t && t.TileType == TileType.Widget;
                 bool isNote = controlToLaunch.DataContext is TileModel tn && Presentation.Controls.TileControl.IsNoteTile(tn);
                 var now = DateTime.UtcNow;
-                if (!isWidget && (_isLaunchingTile || (now - _lastTileLaunchTime).TotalMilliseconds < 800))
+                if (!isWidget && !isNote && (_isLaunchingTile || (now - _lastTileLaunchTime).TotalMilliseconds < 800))
                 {
+                    ClearTileSelection();
                     controlToLaunch.AnimateRelease();
                     return;
                 }
 
-                if (!isWidget)
+                if (!isWidget && !isNote)
                 {
                     _isLaunchingTile = true;
                     _lastTileLaunchTime = now;
@@ -1030,7 +1031,7 @@ public partial class MainWindow
                     }
                     finally
                     {
-                        if (!isWidget)
+                        if (!isWidget && !isNote)
                         {
                             Dispatcher.InvokeAsync(async () =>
                             {

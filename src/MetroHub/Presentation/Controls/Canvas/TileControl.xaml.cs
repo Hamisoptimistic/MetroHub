@@ -310,20 +310,7 @@ public partial class TileControl : UserControl
     private static string? _lastControlLaunchPath;
     private static readonly object _controlLaunchLock = new();
 
-    public static bool IsNoteTile(TileModel? tile)
-    {
-        if (tile == null || string.IsNullOrWhiteSpace(tile.TargetPath)) return false;
-        try
-        {
-            string noteDir = AppPaths.PastedNotesDir;
-            return tile.TargetPath.StartsWith(noteDir, StringComparison.OrdinalIgnoreCase) &&
-                   tile.TargetPath.EndsWith(".txt", StringComparison.OrdinalIgnoreCase);
-        }
-        catch
-        {
-            return false;
-        }
-    }
+    public static bool IsNoteTile(TileModel? tile) => tile?.IsNote ?? false;
 
     public void LaunchTile()
     {
@@ -816,12 +803,13 @@ public partial class TileControl : UserControl
         else
         {
             bool isWebUrl = tile.TileType == TileType.WebUrl;
-            if (s_singleAppSeparator != null) s_singleAppSeparator.Visibility = isWebUrl ? Visibility.Collapsed : Visibility.Visible;
-            if (s_runAdminMenuItem != null) s_runAdminMenuItem.Visibility = isWebUrl ? Visibility.Collapsed : Visibility.Visible;
+            bool isNote = tile.IsNote;
+            if (s_singleAppSeparator != null) s_singleAppSeparator.Visibility = (isWebUrl || isNote) ? Visibility.Collapsed : Visibility.Visible;
+            if (s_runAdminMenuItem != null) s_runAdminMenuItem.Visibility = (isWebUrl || isNote) ? Visibility.Collapsed : Visibility.Visible;
             if (s_openLocationMenuItem != null) s_openLocationMenuItem.Visibility = isWebUrl ? Visibility.Collapsed : Visibility.Visible;
             if (s_copyUrlMenuItem != null)
             {
-                s_copyUrlMenuItem.Visibility = isWebUrl ? Visibility.Visible : Visibility.Collapsed;
+                s_copyUrlMenuItem.Visibility = (isWebUrl || tile.HasWebSource) ? Visibility.Visible : Visibility.Collapsed;
             }
             if (s_styleMenuItem != null) s_styleMenuItem.Visibility = Visibility.Visible;
             if (s_unpinSeparator != null) s_unpinSeparator.Visibility = Visibility.Visible;
@@ -1219,13 +1207,20 @@ public partial class TileControl : UserControl
 
     private static void OnSharedCopyUrlClick(object sender, RoutedEventArgs e)
     {
-        if (s_activeTargetTile?.DataContext is TileModel tile && !string.IsNullOrWhiteSpace(tile.TargetPath))
+        if (s_activeTargetTile?.DataContext is TileModel tile)
         {
-            try
+            string? urlToCopy = tile.TileType == TileType.WebUrl
+                ? tile.TargetPath
+                : (tile.HasWebSource ? tile.Arguments : null);
+
+            if (!string.IsNullOrWhiteSpace(urlToCopy))
             {
-                Clipboard.SetText(tile.TargetPath);
+                try
+                {
+                    Clipboard.SetText(urlToCopy);
+                }
+                catch { }
             }
-            catch { }
         }
     }
 

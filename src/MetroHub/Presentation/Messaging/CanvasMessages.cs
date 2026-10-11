@@ -77,6 +77,8 @@ public record GroupUngroupMessage(TileGroupModel Group);
 
 public record GroupDeleteMessage(TileGroupModel Group);
 
+public record GroupLaunchTilesMessage(TileGroupModel Group);
+
 // ─────────────────────────────────────────────────────────────
 // Static Canvas Messenger Convenience Facade
 // ─────────────────────────────────────────────────────────────

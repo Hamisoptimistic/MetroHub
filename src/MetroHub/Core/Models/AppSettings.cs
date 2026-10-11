@@ -28,4 +28,5 @@ public sealed class AppSettings
     public List<SidebarShortcutItem> SidebarShortcuts { get; set; } = SidebarShortcutItem.CreateDefaultList();
 
     public bool BrowserExtensionCompanionEnabled { get; set; } = true;
+    public bool EnableGroupOpenAllButton { get; set; } = true;
 }

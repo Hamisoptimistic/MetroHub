@@ -385,6 +385,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         WeakReferenceMessenger.Default.Register<MainWindow, GroupSetTintColorMessage>(this, (r, m) => r.SetGroupTintColor(m.Group, m.HexTint));
         WeakReferenceMessenger.Default.Register<MainWindow, GroupUngroupMessage>(this, (r, m) => r.UngroupTiles(m.Group));
         WeakReferenceMessenger.Default.Register<MainWindow, GroupDeleteMessage>(this, (r, m) => r.DeleteGroupAndTiles(m.Group));
+        WeakReferenceMessenger.Default.Register<MainWindow, GroupLaunchTilesMessage>(this, (r, m) => r.LaunchGroupTiles(m.Group));
     }
 
     private void OnWindowPreviewMouseDown(object sender, MouseButtonEventArgs e)

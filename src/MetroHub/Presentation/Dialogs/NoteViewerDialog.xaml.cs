@@ -75,15 +75,26 @@ public partial class NoteViewerDialog : MetroDialog
         base.OnPreviewKeyDown(e);
     }
 
+    private static bool _isShowing;
+
     public static void Show(Window? owner, TileModel tile)
     {
-        using (MainWindow.EnterDialogScope())
+        if (_isShowing) return;
+        _isShowing = true;
+        try
         {
-            var dlg = new NoteViewerDialog(tile)
+            using (MainWindow.EnterDialogScope())
             {
-                Owner = owner ?? Application.Current?.MainWindow
-            };
-            dlg.ShowDialog();
+                var dlg = new NoteViewerDialog(tile)
+                {
+                    Owner = owner ?? Application.Current?.MainWindow
+                };
+                dlg.ShowDialog();
+            }
+        }
+        finally
+        {
+            _isShowing = false;
         }
     }
 
@@ -101,40 +112,9 @@ public partial class NoteViewerDialog : MetroDialog
         string siteName = ExtractWebsiteName(normalizedUrl);
 
         SourceWebButton.ToolTip = normalizedUrl;
+        SourceWebButton.NavigateUri = normalizedUrl;
         SourceWebButtonText.Text = siteName;
         SourceWebButton.Visibility = Visibility.Visible;
-
-        // Asynchronously load favicon if cached/available
-        _ = Dispatcher.InvokeAsync(async () =>
-        {
-            try
-            {
-                string? iconPath = await WebFaviconService.GetFaviconPathAsync(normalizedUrl);
-                if (!string.IsNullOrWhiteSpace(iconPath) && File.Exists(iconPath))
-                {
-                    var bitmap = new BitmapImage();
-                    bitmap.BeginInit();
-                    bitmap.UriSource = new Uri(iconPath, UriKind.Absolute);
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.EndInit();
-                    bitmap.Freeze();
-
-                    FaviconImage.Source = bitmap;
-                    FaviconImage.Visibility = Visibility.Visible;
-                    FallbackWebIcon.Visibility = Visibility.Collapsed;
-                }
-                else
-                {
-                    FaviconImage.Visibility = Visibility.Collapsed;
-                    FallbackWebIcon.Visibility = Visibility.Visible;
-                }
-            }
-            catch
-            {
-                FaviconImage.Visibility = Visibility.Collapsed;
-                FallbackWebIcon.Visibility = Visibility.Visible;
-            }
-        });
     }
 
     private static string ExtractWebsiteName(string url)
@@ -225,6 +205,7 @@ public partial class NoteViewerDialog : MetroDialog
 
     private void OnSourceWebButtonClick(object sender, RoutedEventArgs e)
     {
+        e.Handled = true;
         if (_tile != null && !string.IsNullOrWhiteSpace(_tile.Arguments))
         {
             try

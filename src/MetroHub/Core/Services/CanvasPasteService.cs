@@ -311,7 +311,8 @@ public static class CanvasPasteService
                 title = $"Note {DateTime.Now:yyyy-MM-dd HH.mm}";
             }
 
-            string? iconPath = IconExtractorService.ExtractAndCacheIcon(targetPath);
+            // Notes use native vector glyphs (E729) - bypass shell icon extraction
+            string? iconPath = null;
 
             return new PasteItemSpec
             {

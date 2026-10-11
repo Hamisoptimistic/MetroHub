@@ -150,4 +150,33 @@ public partial class MainWindow
             DeleteGroupAndTiles(_activeContextMenuGroup);
         }
     }
+
+    public void LaunchGroupTiles(TileGroupModel group)
+    {
+        if (group == null) return;
+
+        var tiles = Tiles?.Where(t => t.Group == group.Id).ToList();
+        if (tiles == null || tiles.Count == 0) return;
+
+        // Silently skip widgets and notes so only actual apps and web tabs open
+        var launchableTiles = tiles
+            .Where(t => t.TileType != TileType.Widget && !t.IsNote && !string.IsNullOrWhiteSpace(t.TargetPath))
+            .ToList();
+
+        if (launchableTiles.Count == 0) return;
+
+        _ = Task.Run(async () =>
+        {
+            foreach (var tile in launchableTiles)
+            {
+                ProcessLauncherService.LaunchTarget(tile.TargetPath, tile.Arguments, tile.RunAsAdmin);
+                await Task.Delay(150).ConfigureAwait(false);
+            }
+        });
+
+        if (Settings.CloseOnLaunch)
+        {
+            Dispatcher.InvokeAsync(() => HideScreen(restorePreviousFocus: false));
+        }
+    }
 }

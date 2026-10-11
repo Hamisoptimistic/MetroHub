@@ -14,8 +14,8 @@ namespace MetroHub.Presentation.Controls;
 
 public partial class GroupHeaderControl : UserControl
 {
-    private static readonly Brush LockClosedBrush = ThemeTokens.StatusInfoBrush;
-    private static readonly Brush LockOpenBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xA0, 0xFF, 0xFF, 0xFF));
+    private static readonly Brush LockClosedBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xF0, 0xFF, 0xFF, 0xFF));
+    private static readonly Brush LockOpenBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0x90, 0xFF, 0xFF, 0xFF));
 
     private Point _dragStartPoint;
     private bool _isPotentialDrag = false;
@@ -30,12 +30,28 @@ public partial class GroupHeaderControl : UserControl
         DataContextChanged += OnDataContextChanged;
     }
 
+    private static bool IsOpenAllEnabled => MainWindow.Current?.Settings?.EnableGroupOpenAllButton ?? true;
+
+    private void UpdateOpenAllVisibility(bool isHovering)
+    {
+        if (OpenAllButton == null) return;
+        if (!IsOpenAllEnabled)
+        {
+            OpenAllButton.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        // Appears on hover only
+        OpenAllButton.Visibility = isHovering ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         if (DataContext is TileGroupModel group)
         {
             // Restore icon states from persisted model
             UpdateLockIcon(group.IsLocked);
+            UpdateOpenAllVisibility(isHovering: IsMouseOver);
             AnimateActionButtons(group.IsLocked ? 0.85 : 0.0);
 
             if (group.IsEditing)
@@ -67,6 +83,7 @@ public partial class GroupHeaderControl : UserControl
             _boundGroup = group;
             _boundGroup.PropertyChanged += OnGroupPropertyChanged;
             UpdateLockIcon(group.IsLocked);
+            UpdateOpenAllVisibility(isHovering: IsMouseOver);
             AnimateActionButtons(group.IsLocked ? 0.85 : 0.0);
         }
     }
@@ -76,6 +93,7 @@ public partial class GroupHeaderControl : UserControl
         if (sender is TileGroupModel group && e.PropertyName == nameof(TileGroupModel.IsLocked))
         {
             UpdateLockIcon(group.IsLocked);
+            UpdateOpenAllVisibility(isHovering: IsMouseOver);
             AnimateActionButtons(group.IsLocked ? 0.85 : 0.0);
             if (group.IsLocked)
             {
@@ -98,12 +116,14 @@ public partial class GroupHeaderControl : UserControl
         {
             AnimateDragHint(0.7);
         }
+        UpdateOpenAllVisibility(isHovering: true);
         AnimateActionButtons(1.0);
     }
 
     private void OnMouseLeave(object sender, MouseEventArgs e)
     {
         AnimateDragHint(0.0);
+        UpdateOpenAllVisibility(isHovering: false);
 
         // Keep buttons visible when group is locked (always-visible indicator)
         bool keepVisible = DataContext is TileGroupModel g && g.IsLocked;
@@ -281,6 +301,7 @@ public partial class GroupHeaderControl : UserControl
         }
 
         UpdateLockIcon(group.IsLocked);
+        UpdateOpenAllVisibility(isHovering: IsMouseOver);
 
         // If now locked, keep buttons visible at reduced opacity as a persistent indicator
         AnimateActionButtons(group.IsLocked ? 0.85 : 0.0);
@@ -290,11 +311,11 @@ public partial class GroupHeaderControl : UserControl
 
     private void UpdateLockIcon(bool isLocked)
     {
-        if (LockIcon == null) return;
-        LockIcon.Symbol = isLocked
-            ? Wpf.Ui.Controls.SymbolRegular.LockClosed24
-            : Wpf.Ui.Controls.SymbolRegular.LockOpen24;
-        LockIcon.Foreground = isLocked ? LockClosedBrush : LockOpenBrush;
+        if (LockIconText != null)
+        {
+            LockIconText.Text = isLocked ? "\uE72E" : "\uE785";
+            LockIconText.Foreground = isLocked ? LockClosedBrush : LockOpenBrush;
+        }
 
         if (DragHintIcon != null)
         {
@@ -302,7 +323,19 @@ public partial class GroupHeaderControl : UserControl
             if (isLocked) DragHintIcon.Opacity = 0;
         }
 
-        LockButton.ToolTip = isLocked ? "Unlock group" : "Lock group";
+        if (LockButton != null)
+        {
+            LockButton.ToolTip = isLocked ? "Unlock group" : "Lock group";
+        }
+    }
+
+    private void OnOpenAllClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is TileGroupModel group)
+        {
+            WeakReferenceMessenger.Default.Send(new GroupLaunchTilesMessage(group));
+        }
+        e.Handled = true;
     }
 
     // ─────────────────────────────────────────────────────────

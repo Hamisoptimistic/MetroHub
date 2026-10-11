@@ -1304,7 +1304,8 @@ public sealed class TileManager
                 ? request.Title
                 : (!string.IsNullOrWhiteSpace(snippetTitle) ? snippetTitle : $"Note {DateTime.Now:yyyy-MM-dd HH.mm}");
 
-            noteIcon = IconExtractorService.ExtractAndCacheIcon(noteFilePath);
+            // Notes use native vector glyphs (E729) - bypass shell icon extraction
+            noteIcon = null;
         }
 
         string? savedImagePath = null;

@@ -94,6 +94,61 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Clean HyperlinkButton style with white tokens, matching 32px height, and elegant fluent hover -->
+        <Style x:Key="NoteViewerHyperlinkButtonStyle" TargetType="{x:Type ui:HyperlinkButton}">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Padding" Value="10,0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ui:HyperlinkButton}">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{DynamicResource ControlCornerRadius}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              Margin="{TemplateBinding Padding}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#18FFFFFF" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#25FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#15FFFFFF" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#38FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#20FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.35" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <!-- Master Fluent Acrylic Card Shell with sharp Metro 2px border -->
@@ -214,52 +269,35 @@
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
-                    <!-- Website Button (e.g. Wikipedia, visible when Web URL is present, placed to the left of Open With) -->
-                    <Button x:Name="SourceWebButton"
-                            Height="32"
-                            Padding="14,0"
-                            Margin="0,0,8,0"
-                            VerticalAlignment="Center"
-                            Style="{StaticResource NoteViewerActionButtonStyle}"
-                            Visibility="Collapsed"
-                            TabIndex="1"
-                            Click="OnSourceWebButtonClick">
-                        <Grid VerticalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                    <!-- Website HyperlinkButton (visible when Web URL is present, placed to the left of Open With) -->
+                    <ui:HyperlinkButton x:Name="SourceWebButton"
+                                        Height="32"
+                                        Padding="10,0"
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center"
+                                        Style="{StaticResource NoteViewerHyperlinkButtonStyle}"
+                                        Visibility="Collapsed"
+                                        TabIndex="1"
+                                        Click="OnSourceWebButtonClick">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Default Fluent Link Icon -->
+                            <ui:SymbolIcon Symbol="Link24"
+                                           FontSize="15"
+                                           Margin="0,0,6,0"
+                                           VerticalAlignment="Center"
+                                           Foreground="{DynamicResource TextPrimaryBrush}" />
 
-                            <!-- Centered Favicon Slot -->
-                            <Grid Grid.Column="0"
-                                  Width="16" Height="16"
-                                  VerticalAlignment="Center"
-                                  Margin="0,0,7,0">
-                                <Image x:Name="FaviconImage"
-                                       Width="15" Height="15"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center"
-                                       RenderOptions.BitmapScalingMode="HighQuality"
-                                       Visibility="Collapsed" />
-                                <ui:SymbolIcon x:Name="FallbackWebIcon"
-                                               Symbol="Globe24"
-                                               FontSize="14"
-                                               VerticalAlignment="Center"
-                                               HorizontalAlignment="Center"
-                                               Foreground="{DynamicResource TextSecondaryBrush}" />
-                            </Grid>
-
-                            <!-- Website Name -->
+                            <!-- Website Name (14px SemiBold matching Open With and Copy) -->
                             <TextBlock x:Name="SourceWebButtonText"
-                                       Grid.Column="1"
                                        Text="Website"
-                                       FontSize="{DynamicResource TypeBodyFontSize}"
+                                       FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="{DynamicResource TextPrimaryBrush}"
                                        VerticalAlignment="Center"
                                        MaxWidth="180"
                                        TextTrimming="CharacterEllipsis" />
-                        </Grid>
-                    </Button>
+                        </StackPanel>
+                    </ui:HyperlinkButton>
 
                     <!-- Open With Button (no glyph, clean text only, placed in the middle) -->
                     <Button x:Name="OpenWithButton"
