@@ -541,6 +541,7 @@
                 Background="{DynamicResource SmokeFillColorDefaultBrush}"
                 Opacity="0"
                 IsHitTestVisible="False"
+                MouseLeftButtonDown="OnAmbientFocusScrimMouseDown"
                 Panel.ZIndex="3000" />
 
         <!-- Universal WPF-UI Modal ContentDialog Host Presenter (Spans entire window above all layers) -->

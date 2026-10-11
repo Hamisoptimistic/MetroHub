@@ -35,48 +35,55 @@
         </DataTemplate>
     </Window.Resources>
 
-    <!-- Master Layout Grid (Tier 1: Uniform MetroDialog Frosted Acrylic) -->
-    <Grid Background="Transparent">
-        <Grid.RowDefinitions>
-            <!-- Row 0: Custom Titlebar Drag Strip & Close [X] (36px) -->
-            <RowDefinition Height="36" />
-            <!-- Row 1: Content Host (CurrentView) -->
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+    <!-- Master Fluent Acrylic Shell with sharp Metro hairline border -->
+    <Border Background="Transparent"
+            BorderBrush="{DynamicResource SurfaceBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="2"
+            SnapsToDevicePixels="True">
+        <!-- Master Layout Grid (Tier 1: Uniform MetroDialog Frosted Acrylic) -->
+        <Grid Background="Transparent">
+            <Grid.RowDefinitions>
+                <!-- Row 0: Custom Titlebar Drag Strip & Close [X] (36px) -->
+                <RowDefinition Height="36" />
+                <!-- Row 1: Content Host (CurrentView) -->
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-        <!-- ========================================================================= -->
-        <!-- ROW 0: CLEAN TITLEBAR (DRAG STRIP + CLOSE BUTTON ONLY)                   -->
-        <!-- ========================================================================= -->
-        <Grid Grid.Row="0" Background="Transparent">
-            <Grid.ColumnDefinitions>
-                <!-- Column 0: Full Drag Area (No text/icons) -->
-                <ColumnDefinition Width="*" />
-                <!-- Column 1: Close [X] Button -->
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+            <!-- ========================================================================= -->
+            <!-- ROW 0: CLEAN TITLEBAR (DRAG STRIP + CLOSE BUTTON ONLY)                   -->
+            <!-- ========================================================================= -->
+            <Grid Grid.Row="0" Background="Transparent">
+                <Grid.ColumnDefinitions>
+                    <!-- Column 0: Full Drag Area (No text/icons) -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Column 1: Close [X] Button -->
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-            <!-- Invisible Drag Strip -->
-            <Border Grid.Column="0"
-                    Background="Transparent"
-                    MouseLeftButtonDown="OnTitleBarMouseDown" />
+                <!-- Invisible Drag Strip -->
+                <Border Grid.Column="0"
+                        Background="Transparent"
+                        MouseLeftButtonDown="OnTitleBarMouseDown" />
 
-            <!-- Top-Right Close Button -->
-            <StackPanel Grid.Column="1"
-                        Orientation="Horizontal"
-                        VerticalAlignment="Center"
-                        Margin="0,0,10,0">
-                <Button x:Name="CloseButton"
-                        Style="{DynamicResource ModalDismissButtonStyle}"
-                        Click="OnCloseButtonClick"
-                        ToolTip="Close (Esc)" />
-            </StackPanel>
+                <!-- Top-Right Close Button -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="0,0,10,0">
+                    <Button x:Name="CloseButton"
+                            Style="{DynamicResource ModalDismissButtonStyle}"
+                            Click="OnCloseButtonClick"
+                            ToolTip="Close (Esc)" />
+                </StackPanel>
+            </Grid>
+
+            <!-- ========================================================================= -->
+            <!-- ROW 1: CONTENT VIEWPORT HOST                                             -->
+            <!-- ========================================================================= -->
+            <ContentControl Grid.Row="1"
+                            Content="{Binding CurrentView}"
+                            Focusable="False" />
         </Grid>
-
-        <!-- ========================================================================= -->
-        <!-- ROW 1: CONTENT VIEWPORT HOST                                             -->
-        <!-- ========================================================================= -->
-        <ContentControl Grid.Row="1"
-                        Content="{Binding CurrentView}"
-                        Focusable="False" />
-    </Grid>
+    </Border>
 </views:BorderlessFluentWindow>

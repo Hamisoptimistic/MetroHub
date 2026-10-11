@@ -28,8 +28,10 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type dialogs:MetroDialog}">
                     <Border Background="Transparent"
-                            BorderThickness="0"
-                            CornerRadius="{DynamicResource ControlCornerRadius}">
+                            BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="2"
+                            SnapsToDevicePixels="True">
                         <Grid RenderOptions.ClearTypeHint="Enabled">
                             <Grid.ColumnDefinitions>
                                 <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR -->

@@ -38,6 +38,62 @@
     <Window.Resources>
         <!-- Tier 2: Calibrated Obsidian Deck Tint matching Settings Window -->
         <SolidColorBrush x:Key="SettingsTier2ObsidianBrush" Color="#280D0D11" po:Freeze="True" />
+
+        <!-- Clean dialog action button without aggressive orange accent focus border -->
+        <Style x:Key="NoteViewerActionButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="32" />
+            <Setter Property="MinWidth" Value="85" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="Background" Value="#1CFFFFFF" />
+            <Setter Property="BorderBrush" Value="#20FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Foreground" Value="#F5FFFFFF" />
+            <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+            <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
+            <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="UseLayoutRounding" Value="True" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{DynamicResource ControlCornerRadius}">
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              Margin="{TemplateBinding Padding}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#28FFFFFF" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#38FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#25FFFFFF" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#38FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource FluentPressedBrush}" />
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#25FFFFFF" />
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.35" />
+                                <Setter Property="Cursor" Value="Arrow" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <!-- Master Fluent Acrylic Card Shell with sharp Metro 2px border -->
@@ -147,39 +203,27 @@
                 <!-- Left Slot: Subtle Reading Metadata (Token-based, >= 12px) -->
                 <TextBlock x:Name="ReadingMetadataText"
                            Grid.Column="0"
-                           Text="0 words · 0 chars"
+                           Text="0 words · 0 char"
                            FontSize="{DynamicResource TypeCaptionFontSize}"
                            Foreground="{DynamicResource TextMutedBrush}"
                            FontFamily="{DynamicResource AppFontFamily}"
                            VerticalAlignment="Center"
                            HorizontalAlignment="Left" />
 
-                <!-- Right Slot: Action Buttons -->
+                <!-- Right Slot: Action Buttons (Order: Website -> Open With -> Copy) -->
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
-                    <!-- Open With Button (no glyph, clean text only) -->
-                    <Button x:Name="OpenWithButton"
+                    <!-- Website Button (e.g. Wikipedia, visible when Web URL is present, placed to the left of Open With) -->
+                    <Button x:Name="SourceWebButton"
                             Height="32"
                             Padding="14,0"
                             Margin="0,0,8,0"
-                            Style="{DynamicResource DefaultButtonStyle}"
-                            Click="OnOpenWithClick"
+                            VerticalAlignment="Center"
+                            Style="{StaticResource NoteViewerActionButtonStyle}"
+                            Visibility="Collapsed"
                             TabIndex="1"
-                            ToolTip="Open in external editor">
-                        <TextBlock Text="Open With" VerticalAlignment="Center" />
-                    </Button>
-
-                    <!-- Website Button (e.g. Wikipedia, visible when Web URL is present, placed next to Copy) -->
-                    <ui:Button x:Name="SourceWebButton"
-                               Height="32"
-                               Padding="14,0"
-                               Margin="0,0,8,0"
-                               VerticalAlignment="Center"
-                               Style="{DynamicResource DefaultButtonStyle}"
-                               Visibility="Collapsed"
-                               TabIndex="2"
-                               Click="OnSourceWebButtonClick">
+                            Click="OnSourceWebButtonClick">
                         <Grid VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -215,13 +259,25 @@
                                        MaxWidth="180"
                                        TextTrimming="CharacterEllipsis" />
                         </Grid>
-                    </ui:Button>
+                    </Button>
 
-                    <!-- Copy Button (first from right, text changed to "Copy") -->
+                    <!-- Open With Button (no glyph, clean text only, placed in the middle) -->
+                    <Button x:Name="OpenWithButton"
+                            Height="32"
+                            Padding="14,0"
+                            Margin="0,0,8,0"
+                            Style="{StaticResource NoteViewerActionButtonStyle}"
+                            Click="OnOpenWithClick"
+                            TabIndex="2"
+                            ToolTip="Open in external editor">
+                        <TextBlock Text="Open With" VerticalAlignment="Center" />
+                    </Button>
+
+                    <!-- Copy Button (first from right, neutral border without orange system accent) -->
                     <Button x:Name="CopyButton"
                             Height="32"
                             Padding="14,0"
-                            Style="{DynamicResource DefaultButtonStyle}"
+                            Style="{StaticResource NoteViewerActionButtonStyle}"
                             TabIndex="3"
                             Click="OnCopyClick">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">

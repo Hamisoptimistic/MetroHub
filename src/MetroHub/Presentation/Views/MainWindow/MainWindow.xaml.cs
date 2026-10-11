@@ -104,6 +104,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
         bool shouldDim = IsDialogOpen;
         double targetOpacity = shouldDim ? 1.0 : 0.0;
+        AmbientFocusScrim.IsHitTestVisible = shouldDim;
 
         var anim = new DoubleAnimation
         {
@@ -116,6 +117,15 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         Timeline.SetDesiredFrameRate(anim, refreshRate > 0 ? refreshRate : 100);
 
         AmbientFocusScrim.BeginAnimation(UIElement.OpacityProperty, anim);
+    }
+
+    private void OnAmbientFocusScrimMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (IsDialogOpen && (DateTime.UtcNow - _lastShownTime).TotalMilliseconds >= 200)
+        {
+            e.Handled = true;
+            DismissOpenDialogs();
+        }
     }
 
     /// <summary>
@@ -530,12 +540,6 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             return;
         }
 
-        // If a modal dialog or settings window is open, do not auto-dismiss
-        if (IsDialogOpen)
-        {
-            return;
-        }
-
         // If the incoming foreground window is a transient tool window or screen capture overlay (Snipping Tool, etc.), do not dismiss
         if (IsTransientToolOverlay(foreHwnd, foreProcessId))
         {
@@ -634,7 +638,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     private void OnSystemForegroundChanged(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
     {
         if (hwnd == IntPtr.Zero) return;
-        if (!IsVisible || _isDismissing || IsDialogOpen) return;
+        if (!IsVisible || _isDismissing) return;
 
         // Prevent premature dismissal in first 150ms of opening
         if ((DateTime.UtcNow - _lastShownTime).TotalMilliseconds < 150) return;
@@ -656,7 +660,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
             Dispatcher.InvokeAsync(() =>
             {
-                if (IsVisible && !_isDismissing && !IsDialogOpen)
+                if (IsVisible && !_isDismissing)
                 {
                     DismissOpenDialogs();
                     HideScreen(restorePreviousFocus: false);
@@ -772,6 +776,10 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             if (window is MetroHub.Presentation.Dialogs.MetroDialog dialog)
             {
                 dialog.DismissDialog();
+            }
+            else if (window is MetroHub.Presentation.Views.Settings.SettingsWindow settingsWin)
+            {
+                settingsWin.Dismiss();
             }
             else if (window != this)
             {

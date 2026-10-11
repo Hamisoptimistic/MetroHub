@@ -18,7 +18,7 @@ public partial class NoteViewerDialog : MetroDialog
     private readonly string? _filePath;
     private readonly DispatcherTimer _copyTimer;
 
-    protected override IInputElement? InitialFocusedElement => CopyButton;
+    protected override IInputElement? InitialFocusedElement => null;
 
     public NoteViewerDialog(TileModel tile)
     {
@@ -203,7 +203,7 @@ public partial class NoteViewerDialog : MetroDialog
     {
         if (string.IsNullOrWhiteSpace(text))
         {
-            ReadingMetadataText.Text = "0 words · 0 chars";
+            ReadingMetadataText.Text = "0 words · 0 char";
             return;
         }
 
@@ -211,7 +211,7 @@ public partial class NoteViewerDialog : MetroDialog
         int wordCount = text.Split(new[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
 
         string wordPart = wordCount == 1 ? "1 word" : $"{wordCount:N0} words";
-        string charPart = charCount == 1 ? "1 char" : $"{charCount:N0} chars";
+        string charPart = $"{charCount:N0} char";
         ReadingMetadataText.Text = $"{wordPart} · {charPart}";
     }
 
