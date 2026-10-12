@@ -131,6 +131,28 @@ public sealed class EverythingSearchSourceTests
         Assert.DoesNotContain("\"brave\"", plainText);
     }
 
+    [Fact]
+    public void BuildSearchText_HyphenAndDigitLetterTransition_GeneratesEverythingVariationsAndExcludesAppData()
+    {
+        // t3code produces <t3code | "t3-code" | t3_code> and excludes appdata
+        var t3codeQuery = SearchRanker.ParseQuery("t3code", 1);
+        string t3codeText = EverythingSearchSource.BuildSearchText(t3codeQuery);
+        Assert.Contains("<t3code | \"t3-code\" | t3_code>", t3codeText);
+        Assert.Contains(@"!appdata\", t3codeText);
+        Assert.Contains(@"!programdata\", t3codeText);
+
+        // t3-code produces <"t3-code" | t3code | t3_code> and excludes appdata
+        var t3HyphenQuery = SearchRanker.ParseQuery("t3-code", 1);
+        string t3HyphenText = EverythingSearchSource.BuildSearchText(t3HyphenQuery);
+        Assert.Contains("<\"t3-code\" | t3code | t3_code>", t3HyphenText);
+        Assert.Contains(@"!appdata\", t3HyphenText);
+
+        // Explicit search for appdata should NOT exclude appdata
+        var appdataQuery = SearchRanker.ParseQuery("appdata", 1);
+        string appdataText = EverythingSearchSource.BuildSearchText(appdataQuery);
+        Assert.DoesNotContain(@"!appdata\", appdataText);
+    }
+
     [Theory]
     [InlineData(SearchCategory.Folders, "folder:")]
     [InlineData(SearchCategory.Documents, "ext:doc;docx;pdf")]

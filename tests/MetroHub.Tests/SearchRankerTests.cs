@@ -219,6 +219,7 @@ public class SearchRankerTests
         for (int i = 0; i < candidates.Count; i++)
         {
             _ = candidates[i].NormalizedDisplayName;
+            _ = candidates[i].NormalizedPath;
         }
         for (int i = 0; i < 500; i++)
         {
@@ -401,6 +402,47 @@ public class SearchRankerTests
         var resLong2 = SearchRanker.ScoreCandidate(browserCandidate, qLongDist2);
         Assert.True(resLong2.Score > 0);
         Assert.Equal(MatchKind.Fuzzy, resLong2.MatchKind);
+    }
+
+    [Fact]
+    public void ScoreCandidate_HyphenAndDelimiterInvariance_ScoresCleanMatchHighly()
+    {
+        // "t3code" matches "t3-code.txt"
+        var candidate1 = new Candidate("1", "t3-code.txt", @"D:\Projects\t3-code.txt", SearchCategory.Documents, "test");
+        var query1 = SearchRanker.ParseQuery("t3code");
+        var res1 = SearchRanker.ScoreCandidate(candidate1, query1);
+        Assert.True(res1.Score >= 85, $"Expected score >= 85, got {res1.Score}");
+
+        // "t3-code" matches "t3code.txt"
+        var candidate2 = new Candidate("2", "t3code.txt", @"D:\Projects\t3code.txt", SearchCategory.Documents, "test");
+        var query2 = SearchRanker.ParseQuery("t3-code");
+        var res2 = SearchRanker.ScoreCandidate(candidate2, query2);
+        Assert.True(res2.Score >= 85, $"Expected score >= 85, got {res2.Score}");
+
+        // "t3code" matches prefix of "t3-code-v2.md"
+        var candidate3 = new Candidate("3", "t3-code-v2.md", @"D:\Projects\t3-code-v2.md", SearchCategory.Documents, "test");
+        var res3 = SearchRanker.ScoreCandidate(candidate3, query1);
+        Assert.True(res3.Score >= 75, $"Expected score >= 75, got {res3.Score}");
+    }
+
+    [Fact]
+    public void IsNoisePath_DetectsAppDataRoamingAndToolCaches()
+    {
+        Assert.True(SearchRanker.IsNoisePath(@"C:\Users\HamB\AppData\Roaming\npm\cache\something.js"));
+        Assert.True(SearchRanker.IsNoisePath(@"C:\Users\HamB\AppData\Local\Packages\xyz\temp.dat"));
+        Assert.True(SearchRanker.IsNoisePath(@"C:\ProgramData\Microsoft\Search\Data\Applications\Windows\windows.edb"));
+        Assert.True(SearchRanker.IsNoisePath(@"C:\Users\HamB\.gradle\caches\modules-2\files-2.1\lib.jar"));
+        Assert.True(SearchRanker.IsNoisePath(@"C:\Users\HamB\.cargo\registry\cache\index\crate.crate"));
+    }
+
+    [Fact]
+    public void IsUserLocation_RecognizesNonCDrivesAndWorkspacePaths()
+    {
+        Assert.True(SearchRanker.IsUserLocation(@"D:\MetroHub\src\App.cs"));
+        Assert.True(SearchRanker.IsUserLocation(@"E:\Music\track.mp3"));
+        Assert.True(SearchRanker.IsUserLocation(@"C:\Users\HamB\source\repos\MyProject\Program.cs"));
+        Assert.True(SearchRanker.IsUserLocation(@"C:\Users\HamB\Desktop\Notes.txt"));
+        Assert.False(SearchRanker.IsUserLocation(@"C:\Windows\System32\cmd.exe"));
     }
 }
 

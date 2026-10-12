@@ -47,14 +47,21 @@ public static class SearchRanker
         "\\node_modules\\",
         "\\.git\\",
         "\\temp\\",
-        "\\appdata\\local\\temp\\",
+        "\\appdata\\",
+        "\\programdata\\",
+        "\\$recycle.bin\\",
         "\\cachedmedia\\",
         "\\packagecache\\",
         "\\packages\\",
-        "\\appdata\\local\\devolutions\\",
-        "\\appdata\\local\\unigetui\\",
         "\\npm\\",
-        "\\chocolatey\\"
+        "\\chocolatey\\",
+        "\\.vs\\",
+        "\\.vscode\\extensions\\",
+        "\\.gradle\\",
+        "\\.m2\\",
+        "\\.cargo\\",
+        "\\.rustup\\",
+        "\\site-packages\\"
     ];
     private static readonly string[] ExcludedExtensions = [".tmp", ".pdb", ".log", ".bak", ".ilk", ".exp"];
     private static readonly string[] ExcludedKeywords = ["unins000", "crashreport", "diagnostics", "troubleshoot"];
@@ -303,19 +310,37 @@ public static class SearchRanker
                 matchKind = MatchKind.WordPrefix;
                 matchScore = 50;
             }
-            // 5. Acronym Match (e.g. "vsc" for "Visual Studio Code")
+            // 5. Boundary-Agnostic Punctuation-Invariant Match (e.g. "t3code" <-> "t3-code.txt" <-> "t3_code")
+            // Evaluated only when direct IndexOf failed, with zero heap allocations using ReadOnlySpan
+            else if (q.Length >= 2 && MatchesCleanName(name.AsSpan(), q.AsSpan(), out bool isExactClean))
+            {
+                matchKind = MatchKind.Prefix;
+                matchScore = isExactClean ? 85 : 75;
+            }
+            else if (q.Length >= 3 && MatchesCleanSubstring(name.AsSpan(), q.AsSpan()))
+            {
+                matchKind = MatchKind.Contains;
+                matchScore = weights.Contains;
+            }
+            // 6. Acronym Match (e.g. "vsc" for "Visual Studio Code")
             else if (q.Length >= 2 && q.Length <= 8 && MatchesAcronymFast(candidate.DisplayName, q))
             {
                 matchKind = MatchKind.Acronym;
                 matchScore = weights.Acronym;
             }
-            // 6. Path Match
+            // 7. FZF Subsequence Match (e.g. "vscod" -> "Visual Studio Code", "chrm" -> "Google Chrome")
+            else if (q.Length >= 2 && FzfMatcher.Score(q.AsSpan(), candidate.DisplayName.AsSpan()) is var fzfScore && fzfScore > 0)
+            {
+                matchKind = MatchKind.Fuzzy;
+                matchScore = fzfScore;
+            }
+            // 8. Path Match
             else if (candidate.NormalizedPath.IndexOf(q, StringComparison.Ordinal) >= 0)
             {
                 matchKind = MatchKind.PathOnly;
                 matchScore = weights.PathOnly;
             }
-            // 7. Bounded Fuzzy / Typo Match (for Apps only, query length >= 3)
+            // 8. Bounded Fuzzy / Typo Match (for Apps only, query length >= 3)
             else if (candidate.Category == SearchCategory.Apps && q.Length >= 3)
             {
                 int maxDist = q.Length <= 4 ? 1 : 2;
@@ -372,7 +397,7 @@ public static class SearchRanker
             }
         }
 
-        if (IsUserLocation(rawPath))
+        if (IsUserLocationFast(rawPath, candidate.NormalizedPath))
         {
             dynamicBoosts += weights.UserLocationBoost;
         }
@@ -380,7 +405,7 @@ public static class SearchRanker
         totalScore += Math.Min(20, dynamicBoosts);
 
         // Penalties
-        if (IsNoisePath(rawPath))
+        if (IsNoisePathFast(candidate.NormalizedPath))
         {
             totalScore -= weights.NoisePenalty;
         }
@@ -454,20 +479,166 @@ public static class SearchRanker
         return qIdx == query.Length;
     }
 
-    private static bool IsUserLocation(string path)
+    /// <summary>
+    /// Checks if cleanQuery matches clean candidate name ignoring punctuation delimiters (spaces, hyphens, underscores, dots).
+    /// Allocation-free using ReadOnlySpan.
+    /// </summary>
+    internal static bool MatchesCleanName(ReadOnlySpan<char> name, ReadOnlySpan<char> query, out bool isExact)
     {
-        if (path.Length < 12) return false;
-        return path.IndexOf("\\desktop\\", StringComparison.OrdinalIgnoreCase) >= 0 ||
-               path.IndexOf("\\documents\\", StringComparison.OrdinalIgnoreCase) >= 0 ||
-               path.IndexOf("\\downloads\\", StringComparison.OrdinalIgnoreCase) >= 0;
+        isExact = false;
+        if (query.Length == 0 || name.Length == 0) return false;
+
+        // Strip extension from name if present
+        int dot = name.LastIndexOf('.');
+        ReadOnlySpan<char> nameBase = dot > 0 ? name[..dot] : name;
+
+        int i = 0; // query index
+        int j = 0; // nameBase index
+
+        while (i < query.Length && j < nameBase.Length)
+        {
+            if (IsWordBoundary(query[i]))
+            {
+                i++;
+                continue;
+            }
+            if (IsWordBoundary(nameBase[j]))
+            {
+                j++;
+                continue;
+            }
+
+            if (char.ToLowerInvariant(query[i]) != char.ToLowerInvariant(nameBase[j]))
+            {
+                return false;
+            }
+
+            i++;
+            j++;
+        }
+
+        // Skip any trailing delimiters in query
+        while (i < query.Length && IsWordBoundary(query[i])) i++;
+
+        if (i < query.Length)
+        {
+            return false;
+        }
+
+        // Skip any trailing delimiters in nameBase
+        while (j < nameBase.Length && IsWordBoundary(nameBase[j])) j++;
+
+        if (j == nameBase.Length)
+        {
+            isExact = true;
+            return true;
+        }
+
+        isExact = false;
+        return true;
+    }
+
+    /// <summary>
+    /// Checks if cleanQuery matches a substring within clean candidate name at any word boundary.
+    /// Allocation-free using ReadOnlySpan.
+    /// </summary>
+    internal static bool MatchesCleanSubstring(ReadOnlySpan<char> name, ReadOnlySpan<char> query)
+    {
+        if (query.Length == 0 || name.Length == 0) return false;
+
+        for (int k = 1; k < name.Length; k++)
+        {
+            if (IsWordBoundary(name[k - 1]))
+            {
+                if (MatchesCleanName(name[k..], query, out _))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static string GetNameWithoutExtension(string name)
+    {
+        int dot = name.LastIndexOf('.');
+        return dot > 0 ? name[..dot] : name;
+    }
+
+    /// <summary>
+    /// Returns text with all word-boundary punctuation and whitespace removed.
+    /// Enables boundary-invariant matching (e.g. "t3-code" == "t3code" == "t3_code" == "t3 code").
+    /// </summary>
+    public static string StripDelimiters(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return string.Empty;
+
+        bool hasDelimiter = false;
+        for (int i = 0; i < text.Length; i++)
+        {
+            if (IsWordBoundary(text[i]))
+            {
+                hasDelimiter = true;
+                break;
+            }
+        }
+
+        if (!hasDelimiter) return text;
+
+        var sb = new StringBuilder(text.Length);
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (!IsWordBoundary(c))
+            {
+                sb.Append(c);
+            }
+        }
+        return sb.ToString();
+    }
+
+    public static bool IsUserLocation(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || path.Length < 3) return false;
+        return IsUserLocationFast(path, path.ToLowerInvariant());
+    }
+
+    internal static bool IsUserLocationFast(string rawPath, string normPath)
+    {
+        if (string.IsNullOrWhiteSpace(rawPath) || rawPath.Length < 3) return false;
+
+        // Non-system drives (D:\, E:\, etc.) are user data/project drives
+        if (char.IsLetter(rawPath[0]) && rawPath[1] == ':' && char.ToUpperInvariant(rawPath[0]) != 'C')
+        {
+            return true;
+        }
+
+        // Standard Windows user locations checked with fast Ordinal against lowercase path
+        return normPath.IndexOf("\\desktop\\", StringComparison.Ordinal) >= 0 ||
+               normPath.IndexOf("\\documents\\", StringComparison.Ordinal) >= 0 ||
+               normPath.IndexOf("\\downloads\\", StringComparison.Ordinal) >= 0 ||
+               normPath.IndexOf("\\source\\", StringComparison.Ordinal) >= 0 ||
+               normPath.IndexOf("\\repos\\", StringComparison.Ordinal) >= 0 ||
+               normPath.IndexOf("\\projects\\", StringComparison.Ordinal) >= 0 ||
+               normPath.IndexOf("\\workspace\\", StringComparison.Ordinal) >= 0 ||
+               normPath.IndexOf("\\dev\\", StringComparison.Ordinal) >= 0 ||
+               normPath.IndexOf("\\pictures\\", StringComparison.Ordinal) >= 0 ||
+               normPath.IndexOf("\\videos\\", StringComparison.Ordinal) >= 0 ||
+               normPath.IndexOf("\\music\\", StringComparison.Ordinal) >= 0;
     }
 
     public static bool IsNoisePath(string path)
     {
-        if (path.Length < 6) return false;
+        if (string.IsNullOrEmpty(path) || path.Length < 6) return false;
+        return IsNoisePathFast(path.ToLowerInvariant());
+    }
+
+    internal static bool IsNoisePathFast(string normPath)
+    {
+        if (normPath.Length < 6) return false;
         for (int i = 0; i < NoiseKeywords.Length; i++)
         {
-            if (path.IndexOf(NoiseKeywords[i], StringComparison.OrdinalIgnoreCase) >= 0) return true;
+            if (normPath.IndexOf(NoiseKeywords[i], StringComparison.Ordinal) >= 0) return true;
         }
         return false;
     }

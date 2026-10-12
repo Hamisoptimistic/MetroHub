@@ -372,6 +372,14 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
         // 4. Exclusion syntax (Blueprint 6.3)
         sb.Append(@" !node_modules\ !bin\ !obj\ !.git\");
 
+        // Exclude system cache noise unless user explicitly searched for it or is in path navigation mode
+        bool isExplicitSystemQuery = query.NormalizedText.Contains("appdata", StringComparison.OrdinalIgnoreCase) ||
+                                     query.NormalizedText.Contains("programdata", StringComparison.OrdinalIgnoreCase);
+        if (!isExplicitSystemQuery && query.Mode != SearchMode.Path)
+        {
+            sb.Append(@" !appdata\ !programdata\");
+        }
+
         return sb.ToString();
     }
 
@@ -389,8 +397,12 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
 
             if (sb.Length > 0) sb.Append(' ');
 
-            // If token has punctuation or operator characters, quote it for literal search
-            if (HasEverythingOperatorsOrPunctuation(token))
+            var variations = GetTermVariations(token);
+            if (variations.Count > 1)
+            {
+                sb.Append('<').Append(string.Join(" | ", variations)).Append('>');
+            }
+            else if (HasEverythingOperatorsOrPunctuation(token))
             {
                 sb.Append('"').Append(token).Append('"');
             }
@@ -401,6 +413,66 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
         }
 
         return sb.ToString();
+    }
+
+    internal static List<string> GetTermVariations(string token)
+    {
+        var results = new List<string>(4);
+        if (string.IsNullOrWhiteSpace(token)) return results;
+
+        bool hasHyphen = token.Contains('-');
+        bool hasUnderscore = token.Contains('_');
+
+        if (hasHyphen || hasUnderscore)
+        {
+            string quotedOriginal = HasEverythingOperatorsOrPunctuation(token) ? $"\"{token}\"" : token;
+            results.Add(quotedOriginal);
+
+            string stripped = token.Replace("-", "").Replace("_", "");
+            if (stripped.Length > 0 && !results.Contains(stripped))
+            {
+                results.Add(stripped);
+            }
+
+            string alternate = hasHyphen ? token.Replace('-', '_') : token.Replace('_', '-');
+            string formattedAlt = HasEverythingOperatorsOrPunctuation(alternate) ? $"\"{alternate}\"" : alternate;
+            if (!results.Contains(formattedAlt))
+            {
+                results.Add(formattedAlt);
+            }
+
+            return results;
+        }
+
+        int splitIdx = -1;
+        for (int i = 1; i < token.Length; i++)
+        {
+            if (char.IsDigit(token[i - 1]) && char.IsLetter(token[i]))
+            {
+                splitIdx = i;
+                break;
+            }
+            else if (char.IsLetter(token[i - 1]) && char.IsDigit(token[i]) && i >= 2 && i < token.Length - 1)
+            {
+                splitIdx = i;
+                break;
+            }
+        }
+
+        if (splitIdx > 0 && splitIdx < token.Length)
+        {
+            string part1 = token[..splitIdx];
+            string part2 = token[splitIdx..];
+
+            if (part1.Length >= 2 && part2.Length >= 2)
+            {
+                results.Add(token);
+                results.Add($"\"{part1}-{part2}\"");
+                results.Add($"{part1}_{part2}");
+            }
+        }
+
+        return results;
     }
 
     private static bool HasEverythingOperatorsOrPunctuation(string s)

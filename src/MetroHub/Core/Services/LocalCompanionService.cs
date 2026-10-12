@@ -533,7 +533,7 @@ public sealed class LocalCompanionService : IDisposable
             await SendJsonAsync(response, 403, new CompanionErrorResponse("Forbidden: Origin 'null' is not permitted."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
             return;
         }
-        else if (origin.StartsWith("chrome-extension://", StringComparison.OrdinalIgnoreCase))
+        else if (origin.Equals(PinnedChromeOrigin, StringComparison.OrdinalIgnoreCase))
         {
             hasAllowedOrigin = true;
         }

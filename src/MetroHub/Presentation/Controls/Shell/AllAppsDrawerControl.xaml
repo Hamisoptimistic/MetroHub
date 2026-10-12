@@ -255,7 +255,8 @@
             <Border x:Name="GridTileCard"
                     Width="50"
                     Height="46"
-                    Margin="2.5,2.5,2.5,2.5"
+                    Margin="0,2.5,5,2.5"
+                    HorizontalAlignment="Left"
                     CornerRadius="{DynamicResource TileCornerRadius}"
                     BorderThickness="1"
                     ClipToBounds="True"
@@ -264,8 +265,10 @@
                     Tag="{Binding}"
                     Cursor="Hand"
                     RenderTransformOrigin="0.5,0.5"
-                    PreviewMouseLeftButtonDown="OnSearchRowPreviewMouseLeftButtonDown"
+                    MouseEnter="OnRecentGridTileMouseEnter"
+                    MouseLeave="OnRecentGridTileMouseLeave"
                     PreviewMouseMove="OnRecentGridTilePreviewMouseMove"
+                    PreviewMouseLeftButtonDown="OnSearchRowPreviewMouseLeftButtonDown"
                     MouseLeftButtonUp="OnSearchRowMouseLeftButtonUp"
                     ContextMenuOpening="OnSearchRowContextMenuOpening">
                 <Border.RenderTransform>
@@ -277,8 +280,7 @@
                         <Setter Property="BorderBrush" Value="#1AFFFFFF" />
                         <Style.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#25FFFFFF" />
-                                <Setter Property="BorderBrush" Value="#40FFFFFF" />
+                                <Setter Property="BorderBrush" Value="#25FFFFFF" />
                             </Trigger>
                             <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
                                 <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
@@ -295,9 +297,9 @@
                             IsHitTestVisible="False"
                             Opacity="0">
                         <Border.Background>
-                            <RadialGradientBrush x:Name="RevealFillBrush" MappingMode="Absolute" RadiusX="120" RadiusY="120">
-                                <GradientStop Color="#30FFFFFF" Offset="0.0" />
-                                <GradientStop Color="#10FFFFFF" Offset="0.5" />
+                            <RadialGradientBrush x:Name="RevealFillBrush" MappingMode="Absolute" Center="25,23" GradientOrigin="25,23" RadiusX="65" RadiusY="65">
+                                <GradientStop Color="#40FFFFFF" Offset="0.0" />
+                                <GradientStop Color="#16FFFFFF" Offset="0.5" />
                                 <GradientStop Color="#00000000" Offset="1.0" />
                             </RadialGradientBrush>
                         </Border.Background>
@@ -330,7 +332,7 @@
                             IsHitTestVisible="False"
                             Opacity="0">
                         <Border.BorderBrush>
-                            <RadialGradientBrush x:Name="RevealEdgeBrush" MappingMode="Absolute" RadiusX="90" RadiusY="90">
+                            <RadialGradientBrush x:Name="RevealEdgeBrush" MappingMode="Absolute" Center="25,23" GradientOrigin="25,23" RadiusX="55" RadiusY="55">
                                 <GradientStop Color="#FFFFFFFF" Offset="0.0" />
                                 <GradientStop Color="#60FFFFFF" Offset="0.5" />
                                 <GradientStop Color="#00000000" Offset="1.0" />
@@ -339,35 +341,11 @@
                     </Border>
                 </Grid>
             </Border>
-            <DataTemplate.Triggers>
-                <Trigger SourceName="GridTileCard" Property="IsMouseOver" Value="True">
-                    <Trigger.EnterActions>
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <DoubleAnimation Storyboard.TargetName="RevealFillBorder" Storyboard.TargetProperty="Opacity" To="1.0" Duration="0:0:0.15" />
-                                <DoubleAnimation Storyboard.TargetName="RevealEdgeBorder" Storyboard.TargetProperty="Opacity" To="1.0" Duration="0:0:0.15" />
-                                <DoubleAnimation Storyboard.TargetName="TileScale" Storyboard.TargetProperty="ScaleX" To="1.03" Duration="0:0:0.15" />
-                                <DoubleAnimation Storyboard.TargetName="TileScale" Storyboard.TargetProperty="ScaleY" To="1.03" Duration="0:0:0.15" />
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </Trigger.EnterActions>
-                    <Trigger.ExitActions>
-                        <BeginStoryboard>
-                            <Storyboard>
-                                <DoubleAnimation Storyboard.TargetName="RevealFillBorder" Storyboard.TargetProperty="Opacity" To="0.0" Duration="0:0:0.25" />
-                                <DoubleAnimation Storyboard.TargetName="RevealEdgeBorder" Storyboard.TargetProperty="Opacity" To="0.0" Duration="0:0:0.25" />
-                                <DoubleAnimation Storyboard.TargetName="TileScale" Storyboard.TargetProperty="ScaleX" To="1.0" Duration="0:0:0.2" />
-                                <DoubleAnimation Storyboard.TargetName="TileScale" Storyboard.TargetProperty="ScaleY" To="1.0" Duration="0:0:0.2" />
-                            </Storyboard>
-                        </BeginStoryboard>
-                    </Trigger.ExitActions>
-                </Trigger>
-            </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- ItemsPanel Template for Grid Mode: 5 Columns UniformGrid -->
+        <!-- ItemsPanel Template for Grid Mode: 5 Columns UniformGrid Left-Aligned -->
         <ItemsPanelTemplate x:Key="RecentGridItemsPanelTemplate">
-            <UniformGrid Columns="5" HorizontalAlignment="Center" Margin="0,2,0,2" />
+            <UniformGrid Columns="5" HorizontalAlignment="Left" Margin="0,2,0,2" />
         </ItemsPanelTemplate>
 
         <!-- ItemsPanel Template for List Mode: Standard StackPanel -->
@@ -509,7 +487,7 @@
                         <StackPanel x:Name="RecentSuggestionsPanel"
                                     Margin="0,0,0,10"
                                     Visibility="Collapsed">
-                            <Border Margin="23,8,0,4">
+                            <Border Margin="12,8,12,4">
                                 <TextBlock Text="Recent"
                                            FontSize="18"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
@@ -520,7 +498,8 @@
                             <ListBox x:Name="RecentSuggestionsListBox"
                                      Background="Transparent"
                                      BorderThickness="0"
-                                     Padding="11,0,11,0"
+                                     Margin="12,0,0,0"
+                                     Padding="0"
                                      FocusVisualStyle="{x:Null}"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
@@ -537,13 +516,13 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel Margin="0,0,0,6">
-                                        <!-- Group Letter Header: Left-Aligned Directly to App Icon Edge (X = 23px) -->
+                                        <!-- Group Letter Header: Left-Aligned Strictly to Drawer 12px Baseline -->
                                         <TextBlock Text="{Binding Header}"
                                                    FontSize="18"
                                                    FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                                    FontFamily="{DynamicResource AppFontFamily}"
                                                    Foreground="{DynamicResource TextSubtleBrush}"
-                                                   Margin="23,12,0,4" />
+                                                   Margin="12,12,12,4" />
 
                                         <!-- Apps in this letter group -->
                                         <ItemsControl ItemsSource="{Binding Items}">

@@ -137,6 +137,7 @@ namespace MetroHub.Presentation.Controls
         private static readonly Brush SearchBorderFocusedBrush = CreateFrozenBrush(Color.FromArgb(0x22, 0xFF, 0xFF, 0xFF));
         private static readonly Brush SearchBorderUnfocusedBrush = CreateFrozenBrush(Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF));
         private static readonly Brush UnpinRedBrush = ThemeTokens.StatusErrorBrush;
+        private static readonly QuadraticEase TileRevealEasing = new() { EasingMode = EasingMode.EaseOut };
 
         private static Brush CreateFrozenBrush(Color c)
         {
@@ -174,7 +175,8 @@ namespace MetroHub.Presentation.Controls
                     RecentSuggestionsListBox.ItemTemplate = gridTemplate;
                 if (Resources["RecentGridItemsPanelTemplate"] is ItemsPanelTemplate gridPanel)
                     RecentSuggestionsListBox.ItemsPanel = gridPanel;
-                RecentSuggestionsListBox.Padding = new Thickness(13, 0, 13, 0);
+                RecentSuggestionsListBox.Margin = new Thickness(12, 0, 0, 0);
+                RecentSuggestionsListBox.Padding = new Thickness(0);
             }
             else
             {
@@ -182,6 +184,7 @@ namespace MetroHub.Presentation.Controls
                     RecentSuggestionsListBox.ItemTemplate = listTemplate;
                 if (Resources["RecentListItemsPanelTemplate"] is ItemsPanelTemplate listPanel)
                     RecentSuggestionsListBox.ItemsPanel = listPanel;
+                RecentSuggestionsListBox.Margin = new Thickness(0);
                 RecentSuggestionsListBox.Padding = new Thickness(0);
             }
         }
@@ -989,24 +992,113 @@ namespace MetroHub.Presentation.Controls
             _isSearchRowDragPotential = _draggedSearchRow != null;
         }
 
+        private void OnRecentGridTileMouseEnter(object sender, MouseEventArgs e)
+        {
+            if (sender is not Border card) return;
+
+            Point pos = e.GetPosition(card);
+            UpdateTileRevealBrushes(card, pos);
+
+            if (card.Child is Grid grid)
+            {
+                if (grid.Children.Count > 0 && grid.Children[0] is Border fillBorder)
+                {
+                    var anim = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(120)) { EasingFunction = TileRevealEasing };
+                    fillBorder.BeginAnimation(UIElement.OpacityProperty, anim);
+                }
+                if (grid.Children.Count > 2 && grid.Children[2] is Border edgeBorder)
+                {
+                    var anim = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(120)) { EasingFunction = TileRevealEasing };
+                    edgeBorder.BeginAnimation(UIElement.OpacityProperty, anim);
+                }
+            }
+
+            if (card.RenderTransform is ScaleTransform scale)
+            {
+                if (scale.IsFrozen)
+                {
+                    scale = scale.Clone();
+                    card.RenderTransform = scale;
+                }
+                var scaleAnim = new DoubleAnimation(1.03, TimeSpan.FromMilliseconds(120)) { EasingFunction = TileRevealEasing };
+                scale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+                scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+            }
+        }
+
         private void OnRecentGridTilePreviewMouseMove(object sender, MouseEventArgs e)
         {
-            if (sender is Border card && card.Child is Grid grid && grid.Children.Count >= 3)
+            if (sender is Border card)
             {
                 Point pos = e.GetPosition(card);
-                if (grid.Children[0] is Border fillBorder && fillBorder.Background is RadialGradientBrush fillBrush)
+                UpdateTileRevealBrushes(card, pos);
+            }
+
+            OnSearchRowPreviewMouseMove(sender, e);
+        }
+
+        private void OnRecentGridTileMouseLeave(object sender, MouseEventArgs e)
+        {
+            if (sender is not Border card) return;
+
+            if (card.Child is Grid grid)
+            {
+                if (grid.Children.Count > 0 && grid.Children[0] is Border fillBorder)
                 {
+                    var anim = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(180)) { EasingFunction = TileRevealEasing };
+                    fillBorder.BeginAnimation(UIElement.OpacityProperty, anim);
+                }
+                if (grid.Children.Count > 2 && grid.Children[2] is Border edgeBorder)
+                {
+                    var anim = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(180)) { EasingFunction = TileRevealEasing };
+                    edgeBorder.BeginAnimation(UIElement.OpacityProperty, anim);
+                }
+            }
+
+            if (card.RenderTransform is ScaleTransform scale)
+            {
+                if (scale.IsFrozen)
+                {
+                    scale = scale.Clone();
+                    card.RenderTransform = scale;
+                }
+                var scaleAnim = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(180)) { EasingFunction = TileRevealEasing };
+                scale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+                scale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+            }
+        }
+
+        private static void UpdateTileRevealBrushes(Border card, Point pos)
+        {
+            if (card.Child is not Grid grid) return;
+
+            if (grid.Children.Count > 0 && grid.Children[0] is Border fillBorder)
+            {
+                if (fillBorder.Background is RadialGradientBrush fillBrush)
+                {
+                    if (fillBrush.IsFrozen)
+                    {
+                        fillBrush = fillBrush.Clone();
+                        fillBorder.Background = fillBrush;
+                    }
                     fillBrush.Center = pos;
                     fillBrush.GradientOrigin = pos;
                 }
-                if (grid.Children[2] is Border edgeBorder && edgeBorder.BorderBrush is RadialGradientBrush edgeBrush)
+            }
+
+            if (grid.Children.Count > 2 && grid.Children[2] is Border edgeBorder)
+            {
+                if (edgeBorder.BorderBrush is RadialGradientBrush edgeBrush)
                 {
+                    if (edgeBrush.IsFrozen)
+                    {
+                        edgeBrush = edgeBrush.Clone();
+                        edgeBorder.BorderBrush = edgeBrush;
+                    }
                     edgeBrush.Center = pos;
                     edgeBrush.GradientOrigin = pos;
                 }
             }
-
-            OnSearchRowPreviewMouseMove(sender, e);
         }
 
         private void OnSearchRowPreviewMouseMove(object sender, MouseEventArgs e)
