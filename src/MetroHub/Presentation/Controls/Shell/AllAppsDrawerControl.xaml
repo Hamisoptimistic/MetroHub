@@ -58,7 +58,7 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
-            <Setter Property="Margin" Value="12,1,12,1" />
+            <Setter Property="Margin" Value="4,1,12,1" />
             <Setter Property="Padding" Value="8,5" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Style.Triggers>
@@ -157,7 +157,7 @@
 
                 <!-- Search Result Item Row Card: isolated selection highlight, hover effect, and accent pill -->
                 <Border x:Name="RowCard"
-                        Margin="12,1,12,1"
+                        Margin="4,1,12,1"
                         Padding="8,5"
                         CornerRadius="{DynamicResource ControlCornerRadius}"
                         Background="Transparent"
@@ -179,29 +179,29 @@
                                    RadiusY="1.5"
                                    Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
                                    Visibility="Collapsed"
-                                   Margin="-6,0,0,0" />
+                                   Margin="-4,0,0,0" />
 
                         <!-- Search Result Item Content -->
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="28" />
+                                <ColumnDefinition Width="22" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
                             <!-- Left Icon or Category Symbol -->
-                            <Grid Grid.Column="0" Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Grid Grid.Column="0" Width="22" Height="22" HorizontalAlignment="Left" VerticalAlignment="Center">
                                 <Image Source="{Binding Icon, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                                        Width="22"
                                        Height="22"
-                                       HorizontalAlignment="Center"
+                                       HorizontalAlignment="Left"
                                        VerticalAlignment="Center"
                                        Visibility="{Binding CustomIconVisibility}"
                                        RenderOptions.BitmapScalingMode="HighQuality" />
 
                                 <ui:SymbolIcon Symbol="{Binding Symbol}"
-                                               FontSize="20"
+                                               FontSize="18"
                                                Foreground="{DynamicResource TextSecondaryBrush}"
-                                               HorizontalAlignment="Center"
+                                               HorizontalAlignment="Left"
                                                VerticalAlignment="Center"
                                                Visibility="{Binding SymbolVisibility}" />
                             </Grid>
@@ -537,7 +537,7 @@
                                                             ContextMenuOpening="OnAppContextMenuOpening">
                                                         <Grid>
                                                             <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="28" />
+                                                                <ColumnDefinition Width="22" />
                                                                 <ColumnDefinition Width="*" />
                                                             </Grid.ColumnDefinitions>
 
@@ -545,7 +545,7 @@
                                                                    Source="{Binding Icon, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
                                                                    Width="22"
                                                                    Height="22"
-                                                                   HorizontalAlignment="Center"
+                                                                   HorizontalAlignment="Left"
                                                                    VerticalAlignment="Center"
                                                                    RenderOptions.BitmapScalingMode="HighQuality" />
 

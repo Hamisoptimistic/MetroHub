@@ -258,6 +258,27 @@ public sealed class EverythingSearchSourceTests
     }
 
     [Fact]
+    public async Task SearchAsync_ConfiguresSortAsDateModifiedDescending()
+    {
+        EverythingQuery? capturedQuery = null;
+        var fakeClient = new FakeEverythingClient
+        {
+            SearchHandler = q =>
+            {
+                capturedQuery = q;
+                return CreateSuccessResponse(q.SearchText);
+            }
+        };
+
+        using var source = new EverythingSearchSource(fakeClient);
+        var query = SearchRanker.ParseQuery("report", 1);
+        await source.SearchAsync(query, CancellationToken.None);
+
+        Assert.NotNull(capturedQuery);
+        Assert.Equal(EverythingSort.DateModifiedDescending, capturedQuery.Sort);
+    }
+
+    [Fact]
     public async Task SearchAsync_ExclusionFilter_DropsExcludedNoise()
     {
         var fakeClient = new FakeEverythingClient

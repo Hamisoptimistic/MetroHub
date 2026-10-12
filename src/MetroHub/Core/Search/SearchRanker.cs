@@ -289,20 +289,36 @@ public static class SearchRanker
         }
         else
         {
-            // 3. Word Prefix / Contains check
-            int matchIdx = name.IndexOf(q, StringComparison.Ordinal);
-            if (matchIdx >= 0)
+            // 3. Word Prefix / Contains check (with CamelCase and boundary preservation)
+            int searchFrom = 0;
+            int firstMatchIdx = -1;
+            bool isWordPrefix = false;
+
+            while (searchFrom <= name.Length - q.Length)
             {
-                if (matchIdx == 0 || IsWordBoundary(name[matchIdx - 1]))
+                int matchIdx = name.IndexOf(q, searchFrom, StringComparison.Ordinal);
+                if (matchIdx < 0) break;
+
+                if (firstMatchIdx < 0) firstMatchIdx = matchIdx;
+
+                if (IsWordStart(candidate.DisplayName, matchIdx))
                 {
-                    matchKind = MatchKind.WordPrefix;
-                    matchScore = weights.WordPrefix;
+                    isWordPrefix = true;
+                    break;
                 }
-                else
-                {
-                    matchKind = MatchKind.Contains;
-                    matchScore = weights.Contains;
-                }
+
+                searchFrom = matchIdx + 1;
+            }
+
+            if (isWordPrefix)
+            {
+                matchKind = MatchKind.WordPrefix;
+                matchScore = weights.WordPrefix;
+            }
+            else if (firstMatchIdx >= 0)
+            {
+                matchKind = MatchKind.Contains;
+                matchScore = weights.Contains;
             }
             // 4. Multi-token match across word boundaries (e.g. "annual report" -> "Annual_Report_2024.pdf")
             else if (query.Tokens.Count > 1 && MatchesQueryTokensAsPrefixes(candidate.DisplayName, query.Tokens))
@@ -448,6 +464,33 @@ public static class SearchRanker
     private static bool IsWordBoundary(char c)
     {
         return c == ' ' || c == '.' || c == '-' || c == '_' || c == '/' || c == '\\' || c == ',' || c == '`' || c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}';
+    }
+
+    private static bool IsWordStart(string raw, int idx)
+    {
+        if (idx == 0) return true;
+        if (idx >= raw.Length) return false;
+
+        char prev = raw[idx - 1];
+        char curr = raw[idx];
+
+        // 1. Explicit punctuation / whitespace boundary
+        if (IsWordBoundary(prev)) return true;
+
+        // 2. CamelCase boundary: lower -> UPPER (e.g. "MyAwesomeApp" -> 'A')
+        if (char.IsLower(prev) && char.IsUpper(curr)) return true;
+
+        // 3. Digit <-> Letter boundary (e.g. "Win32App" -> 'A', "Office365" -> '3')
+        if (char.IsDigit(prev) && char.IsLetter(curr)) return true;
+        if (char.IsLetter(prev) && char.IsDigit(curr)) return true;
+
+        // 4. Uppercase Acronym to Title Case boundary (e.g. "XMLParser" -> 'P')
+        if (char.IsUpper(prev) && char.IsUpper(curr) && idx + 1 < raw.Length && char.IsLower(raw[idx + 1]))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private static bool MatchesAcronymFast(string name, string query)

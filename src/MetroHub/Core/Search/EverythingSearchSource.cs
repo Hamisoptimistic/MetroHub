@@ -257,7 +257,7 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
                            EverythingRequestFlags.Size |
                            EverythingRequestFlags.DateModified |
                            EverythingRequestFlags.Attributes,
-            Sort = null,
+            Sort = EverythingSort.DateModifiedDescending,
             MatchCase = false,
             MatchPath = false,
             MatchWholeWord = false,

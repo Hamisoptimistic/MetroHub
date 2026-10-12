@@ -97,6 +97,31 @@ public class SearchRankerTests
         Assert.True(result.Score >= 60);
     }
 
+    [Theory]
+    [InlineData("MyAwesomeApp", "awesome", MatchKind.WordPrefix, 60)]
+    [InlineData("MyAwesomeApp", "app", MatchKind.WordPrefix, 60)]
+    [InlineData("Office365", "365", MatchKind.WordPrefix, 60)]
+    [InlineData("Win32App", "app", MatchKind.WordPrefix, 60)]
+    [InlineData("XMLParser", "parser", MatchKind.WordPrefix, 60)]
+    [InlineData("SuperappApp", "app", MatchKind.WordPrefix, 60)]
+    [InlineData("Banana", "an", MatchKind.Contains, 40)]
+    public void ScoreCandidate_CamelCaseAndAlphanumericBoundaries_PreservesWordPrefix(
+        string candidateName,
+        string queryText,
+        MatchKind expectedKind,
+        int expectedScore)
+    {
+        var candidate = new Candidate("1", candidateName, @$"C:\{candidateName}.exe", SearchCategory.Apps, "test");
+        var query = SearchRanker.ParseQuery(queryText);
+
+        var result = SearchRanker.ScoreCandidate(candidate, query);
+
+        Assert.Equal(expectedKind, result.MatchKind);
+        // Note: Apps get AppSingleTokenBoost (+10) for single token queries if matchKind >= Prefix
+        // WordPrefix (60) is below Prefix (80), so base score is 60 without the boost
+        Assert.Equal(expectedScore, result.Score);
+    }
+
     [Fact]
     public void ScoreCandidate_AcronymMatch_MatchesInitials()
     {
