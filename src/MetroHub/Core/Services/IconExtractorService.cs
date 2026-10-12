@@ -91,6 +91,13 @@ public static class IconExtractorService
 
     private const uint SHGFI_ICON = 0x000000100;
     private const uint SHGFI_LARGEICON = 0x000000000;
+    private const uint SHGFI_SMALLICON = 0x000000001;
+    private const uint SHGFI_USEFILEATTRIBUTES = 0x000000010;
+    private const uint FILE_ATTRIBUTE_NORMAL = 0x00000080;
+    private const uint FILE_ATTRIBUTE_DIRECTORY = 0x00000010;
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource> _extensionIconCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource> _perFileIconCache = new(StringComparer.OrdinalIgnoreCase);
 
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     public static extern int SHGetKnownFolderPath(
@@ -185,6 +192,121 @@ public static class IconExtractorService
     {
         _extHandlerCache.Clear();
         _iconPathCache.Clear();
+        _extensionIconCache.Clear();
+        _perFileIconCache.Clear();
+    }
+
+    /// <summary>
+    /// Returns a high-DPI frozen ImageSource for any file or folder from the Windows Shell.
+    /// Generic extensions and folders are resolved in microseconds without disk I/O via SHGFI_USEFILEATTRIBUTES.
+    /// Executables (.exe / .lnk) return an immediate generic icon and asynchronously load the specific PE icon.
+    /// </summary>
+    public static ImageSource? GetFileOrExtensionIcon(string fullPath, bool isFolder, Action<ImageSource>? onAsyncIconLoaded = null)
+    {
+        if (string.IsNullOrWhiteSpace(fullPath)) return null;
+
+        // 1. Folders: Use Windows directory Shell attribute
+        if (isFolder)
+        {
+            return _extensionIconCache.GetOrAdd("__folder__", _ =>
+                ExtractShellIconByAttribute("dummy_folder", FILE_ATTRIBUTE_DIRECTORY));
+        }
+
+        string ext = Path.GetExtension(fullPath);
+        if (string.IsNullOrWhiteSpace(ext))
+        {
+            return _extensionIconCache.GetOrAdd("__generic_file__", _ =>
+                ExtractShellIconByAttribute("dummy_file", FILE_ATTRIBUTE_NORMAL));
+        }
+
+        // 2. Executables, shortcuts, and direct icon files have unique embedded icons per path
+        if (ext is ".exe" or ".lnk" or ".ico")
+        {
+            if (_perFileIconCache.TryGetValue(fullPath, out var cachedIcon))
+            {
+                return cachedIcon;
+            }
+
+            // Immediately provide the generic .exe / .lnk shell icon so the UI renders without blank space
+            var fallback = _extensionIconCache.GetOrAdd(ext, extension =>
+                ExtractShellIconByAttribute($"dummy{extension}", FILE_ATTRIBUTE_NORMAL));
+
+            // Asynchronously extract the crisp PE/shortcut icon in the background
+            if (onAsyncIconLoaded is not null)
+            {
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        var peIcon = ExtractPerFileIcon(fullPath);
+                        if (peIcon is not null)
+                        {
+                            _perFileIconCache[fullPath] = peIcon;
+                            onAsyncIconLoaded(peIcon);
+                        }
+                    }
+                    catch { }
+                });
+            }
+
+            return fallback;
+        }
+
+        // 3. Generic documents, media, code, archives (.pdf, .docx, .mp4, .zip, .cs, etc.)
+        // Share the exact same Shell association icon across all files
+        return _extensionIconCache.GetOrAdd(ext, extension =>
+            ExtractShellIconByAttribute($"dummy{extension}", FILE_ATTRIBUTE_NORMAL));
+    }
+
+    private static ImageSource? ExtractShellIconByAttribute(string dummyName, uint attributes)
+    {
+        try
+        {
+            var shinfo = new SHFILEINFO();
+            uint flags = SHGFI_ICON | SHGFI_LARGEICON | SHGFI_USEFILEATTRIBUTES;
+            IntPtr hRes = SHGetFileInfo(dummyName, attributes, ref shinfo, (uint)Marshal.SizeOf<SHFILEINFO>(), flags);
+            if (hRes != IntPtr.Zero && shinfo.hIcon != IntPtr.Zero)
+            {
+                try
+                {
+                    var bs = Imaging.CreateBitmapSourceFromHIcon(
+                        shinfo.hIcon,
+                        Int32Rect.Empty,
+                        BitmapSizeOptions.FromEmptyOptions());
+                    bs.Freeze();
+                    return bs;
+                }
+                finally
+                {
+                    DestroyIcon(shinfo.hIcon);
+                }
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    private static ImageSource? ExtractPerFileIcon(string fullPath)
+    {
+        try
+        {
+            string target = ResolveShortcutTarget(fullPath);
+            var shellIcon = ExtractViaShellItemImageFactory(fullPath, 48)
+                         ?? ExtractViaShellItemImageFactory(target, 48);
+            if (shellIcon is not null) return shellIcon;
+
+            if (target.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && File.Exists(target))
+            {
+                var peIcon = ExtractViaPrivateExtractIcons(target, 48);
+                if (peIcon is not null) return peIcon;
+            }
+
+            return ExtractViaLegacyShell(fullPath) ?? ExtractViaLegacyShell(target);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static readonly Dictionary<string, string> KnownFolderMap = new(StringComparer.OrdinalIgnoreCase)

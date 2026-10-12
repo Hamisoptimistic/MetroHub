@@ -237,6 +237,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     private IntPtr _winEventHook = IntPtr.Zero;
     private NativeMethods.WinEventDelegate? _winEventDelegate;
     private System.Threading.Timer? _keepWarmTimer;
+    private uint _shellChangeNotifyId = 0;
 
     public MainWindow()
     {
@@ -634,6 +635,22 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             0,
             NativeMethods.WINEVENT_OUTOFCONTEXT);
 
+        try
+        {
+            var entry = new NativeMethods.SHChangeNotifyEntry { pIdl = IntPtr.Zero, fRecursive = true };
+            _shellChangeNotifyId = NativeMethods.SHChangeNotifyRegister(
+                hwnd,
+                NativeMethods.SHCNF_ACCEPT_INTERRUPTS | NativeMethods.SHCNF_ACCEPT_NON_INTERRUPTS,
+                NativeMethods.SHCNE_ASSOCCHANGED,
+                (uint)NativeMethods.WM_SHNOTIFY,
+                1,
+                ref entry);
+        }
+        catch (Exception ex)
+        {
+            Safe.Log("MainWindow.SHChangeNotifyRegister", ex);
+        }
+
         SnapToWorkArea();
     }
 
@@ -864,16 +881,19 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
                 }
             });
         }
-        else if (msg == WM_SETTINGCHANGE)
+        else if (msg == NativeMethods.WM_SHNOTIFY || msg == WM_SETTINGCHANGE)
         {
             IconExtractorService.InvalidateAssociationCache();
             Dispatcher.InvokeAsync(async () =>
             {
                 try
                 {
-                    ApplyConfiguredBackdrop();
-                    await Task.Delay(400);
-                    ApplyConfiguredBackdrop();
+                    if (msg == WM_SETTINGCHANGE)
+                    {
+                        ApplyConfiguredBackdrop();
+                        await Task.Delay(400);
+                        ApplyConfiguredBackdrop();
+                    }
 
                     // Refresh active document tile icons if default Windows app association changed
                     if (Tiles != null)
@@ -1339,6 +1359,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             Safe.Try(StorageService.Flush, "MainWindow.OnClosing.StorageFlush");
             Safe.Try(InstalledAppsService.Shutdown, "MainWindow.OnClosing.InstalledAppsServiceShutdown");
             UninstallWinEventHook();
+            UninstallShellChangeNotify();
             _hotkeyService.Dispose();
             base.OnClosing(e);
         }
@@ -1363,9 +1384,23 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         CleanupEventSubscriptions();
         Safe.Try(InstalledAppsService.Shutdown, "MainWindow.ExitApplication.InstalledAppsServiceShutdown");
         UninstallWinEventHook();
+        UninstallShellChangeNotify();
         _hotkeyService.Dispose();
         Close();
         Application.Current?.Shutdown();
+    }
+
+    private void UninstallShellChangeNotify()
+    {
+        if (_shellChangeNotifyId != 0)
+        {
+            try
+            {
+                NativeMethods.SHChangeNotifyDeregister(_shellChangeNotifyId);
+            }
+            catch { }
+            _shellChangeNotifyId = 0;
+        }
     }
 
     private void UninstallWinEventHook()

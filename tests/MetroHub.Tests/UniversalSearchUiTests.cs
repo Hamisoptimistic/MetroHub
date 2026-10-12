@@ -4,6 +4,7 @@ using System.IO;
 using System.Windows;
 using MetroHub.Core.Models;
 using MetroHub.Core.Search;
+using MetroHub.Core.Services;
 using MetroHub.Presentation.Controls;
 using Xunit;
 
@@ -61,8 +62,9 @@ public sealed class UniversalSearchUiTests
         Assert.Equal(string.Empty, vm.CategoryHeader);
         Assert.Equal(Visibility.Collapsed, vm.CategoryHeaderVisibility);
         Assert.Equal(Wpf.Ui.Controls.SymbolRegular.Document24, vm.Symbol);
-        Assert.Equal(Visibility.Visible, vm.SymbolVisibility);
-        Assert.Equal(Visibility.Collapsed, vm.CustomIconVisibility);
+        Assert.NotNull(vm.Icon);
+        Assert.Equal(Visibility.Visible, vm.CustomIconVisibility);
+        Assert.Equal(Visibility.Collapsed, vm.SymbolVisibility);
     }
 
     [Fact]
@@ -87,6 +89,43 @@ public sealed class UniversalSearchUiTests
         Assert.Equal("Folders", vm.CategoryHeader);
         Assert.Equal(Visibility.Visible, vm.CategoryHeaderVisibility);
         Assert.Equal(Wpf.Ui.Controls.SymbolRegular.Folder24, vm.Symbol);
+        Assert.NotNull(vm.Icon);
+        Assert.Equal(Visibility.Visible, vm.CustomIconVisibility);
+        Assert.Equal(Visibility.Collapsed, vm.SymbolVisibility);
+    }
+
+    [Fact]
+    public void IconExtractorService_ExtensionFlyweightCache_ReusesExactSameInstance()
+    {
+        var icon1 = IconExtractorService.GetFileOrExtensionIcon(@"C:\test1.docx", isFolder: false);
+        var icon2 = IconExtractorService.GetFileOrExtensionIcon(@"D:\path\test2.docx", isFolder: false);
+
+        Assert.NotNull(icon1);
+        Assert.NotNull(icon2);
+        Assert.Same(icon1, icon2);
+    }
+
+    [Fact]
+    public void IconExtractorService_FolderIcon_ResolvesAndCaches()
+    {
+        var folder1 = IconExtractorService.GetFileOrExtensionIcon(@"C:\Folder1", isFolder: true);
+        var folder2 = IconExtractorService.GetFileOrExtensionIcon(@"D:\Folder2", isFolder: true);
+
+        Assert.NotNull(folder1);
+        Assert.NotNull(folder2);
+        Assert.Same(folder1, folder2);
+    }
+
+    [Fact]
+    public void IconExtractorService_InvalidateAssociationCache_ClearsCacheWithoutExceptions()
+    {
+        var iconBefore = IconExtractorService.GetFileOrExtensionIcon(@"C:\document.pdf", isFolder: false);
+        Assert.NotNull(iconBefore);
+
+        IconExtractorService.InvalidateAssociationCache();
+
+        var iconAfter = IconExtractorService.GetFileOrExtensionIcon(@"C:\document.pdf", isFolder: false);
+        Assert.NotNull(iconAfter);
     }
 
     [Fact]

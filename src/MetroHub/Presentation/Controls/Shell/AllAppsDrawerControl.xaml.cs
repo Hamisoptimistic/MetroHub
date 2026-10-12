@@ -48,10 +48,32 @@ namespace MetroHub.Presentation.Controls
 
         public string FullPath => Candidate.FullPathOrKey;
         public Visibility SubtitleVisibility => string.IsNullOrWhiteSpace(Subtitle) ? Visibility.Collapsed : Visibility.Visible;
-        public ImageSource? Icon => (Candidate.Tag as CatalogItemModel)?.Icon;
-        public Visibility CustomIconVisibility => Icon != null ? Visibility.Visible : Visibility.Collapsed;
+
+        private ImageSource? _fileIcon;
+
+        public ImageSource? Icon
+        {
+            get
+            {
+                if (Candidate.Tag is CatalogItemModel appModel)
+                {
+                    return appModel.Icon;
+                }
+
+                return _fileIcon;
+            }
+            private set
+            {
+                if (SetProperty(ref _fileIcon, value))
+                {
+                    NotifyIconProperties();
+                }
+            }
+        }
+
+        public Visibility CustomIconVisibility => Icon is not null ? Visibility.Visible : Visibility.Collapsed;
         public Wpf.Ui.Controls.SymbolRegular Symbol { get; }
-        public Visibility SymbolVisibility => Icon == null ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility SymbolVisibility => Icon is null ? Visibility.Visible : Visibility.Collapsed;
         public string CategoryHeader { get; set; } = string.Empty;
         public Visibility CategoryHeaderVisibility => !string.IsNullOrEmpty(CategoryHeader) ? Visibility.Visible : Visibility.Collapsed;
 
@@ -78,6 +100,25 @@ namespace MetroHub.Presentation.Controls
                 System.ComponentModel.PropertyChangedEventManager.AddHandler(appModel, OnAppModelPropertyChanged, nameof(CatalogItemModel.Icon));
                 // Kick off background extraction immediately if not already cached
                 _ = appModel.Icon;
+            }
+            else
+            {
+                // Resolve Shell file/extension icon (synchronous for extensions/folders, async update for executables)
+                _fileIcon = IconExtractorService.GetFileOrExtensionIcon(
+                    candidate.FullPathOrKey,
+                    candidate.IsFolder,
+                    onAsyncIconLoaded: updatedIcon =>
+                    {
+                        var dispatcher = Application.Current?.Dispatcher;
+                        if (dispatcher is null || dispatcher.CheckAccess())
+                        {
+                            Icon = updatedIcon;
+                        }
+                        else
+                        {
+                            dispatcher.InvokeAsync(() => Icon = updatedIcon, System.Windows.Threading.DispatcherPriority.Background);
+                        }
+                    });
             }
         }
 

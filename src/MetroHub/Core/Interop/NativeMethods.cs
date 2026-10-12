@@ -556,6 +556,36 @@ public static class NativeMethods
 
     #endregion
 
+    #region Shell Change Notify
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SHChangeNotifyEntry
+    {
+        public IntPtr pIdl;
+        [MarshalAs(UnmanagedType.Bool)]
+        public bool fRecursive;
+    }
+
+    public const int SHCNF_ACCEPT_INTERRUPTS = 0x0001;
+    public const int SHCNF_ACCEPT_NON_INTERRUPTS = 0x0002;
+    public const int SHCNE_ASSOCCHANGED = 0x08000000;
+    public const int WM_SHNOTIFY = 0x0401; // WM_USER + 1
+
+    [DllImport("shell32.dll", SetLastError = true)]
+    public static extern uint SHChangeNotifyRegister(
+        IntPtr hwnd,
+        int fSources,
+        int fEvents,
+        uint wMsg,
+        int cEntries,
+        ref SHChangeNotifyEntry pshe);
+
+    [DllImport("shell32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SHChangeNotifyDeregister(uint ulID);
+
+    #endregion
+
     #endregion
 }
 
