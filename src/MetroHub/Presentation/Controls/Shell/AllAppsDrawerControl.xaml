@@ -23,6 +23,16 @@
     </UserControl.RenderTransform>
 
     <UserControl.Resources>
+        <!-- Fluent Design System: Unified 12px Visual Gutter & Layout Tokens -->
+        <Thickness x:Key="DrawerGutterHeaderMargin">12,14,12,6</Thickness>
+        <Thickness x:Key="DrawerGutterSearchMargin">12,4,12,12</Thickness>
+        <Thickness x:Key="DrawerGutterSectionHeaderMargin">12,8,12,4</Thickness>
+        <Thickness x:Key="DrawerGutterGroupHeaderMargin">12,12,12,4</Thickness>
+        <Thickness x:Key="DrawerGutterRecentGridMargin">12,0,0,0</Thickness>
+        <Thickness x:Key="DrawerGutterRecentTileMargin">0,2.5,10,2.5</Thickness>
+        <Thickness x:Key="DrawerGutterHoverRowMargin">4,1,0,1</Thickness>
+        <Thickness x:Key="DrawerGutterHoverRowPadding">8,5</Thickness>
+
         <!-- Custom Clean TextBox Style: Zero WPF-UI chrome, no borders, no bottom accent line -->
         <Style x:Key="CleanSearchTextBoxStyle" TargetType="{x:Type TextBox}">
             <Setter Property="OverridesDefaultStyle" Value="True" />
@@ -58,8 +68,8 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
-            <Setter Property="Margin" Value="4,1,12,1" />
-            <Setter Property="Padding" Value="8,5" />
+            <Setter Property="Margin" Value="{StaticResource DrawerGutterHoverRowMargin}" />
+            <Setter Property="Padding" Value="{StaticResource DrawerGutterHoverRowPadding}" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
@@ -143,7 +153,7 @@
             <StackPanel Margin="0">
                 <!-- Category Section Header: completely outside the row card with generous typography -->
                 <Border Visibility="{Binding CategoryHeaderVisibility}"
-                        Margin="12,14,12,6"
+                        Margin="{StaticResource DrawerGutterHeaderMargin}"
                         Padding="0"
                         Focusable="False"
                         Background="Transparent"
@@ -157,8 +167,8 @@
 
                 <!-- Search Result Item Row Card: isolated selection highlight, hover effect, and accent pill -->
                 <Border x:Name="RowCard"
-                        Margin="4,1,12,1"
-                        Padding="8,5"
+                        Margin="{StaticResource DrawerGutterHoverRowMargin}"
+                        Padding="0"
                         CornerRadius="{DynamicResource ControlCornerRadius}"
                         Background="Transparent"
                         SnapsToDevicePixels="True"
@@ -169,7 +179,7 @@
                         MouseLeftButtonUp="OnSearchRowMouseLeftButtonUp"
                         ContextMenuOpening="OnSearchRowContextMenuOpening">
                     <Grid>
-                        <!-- Selection Accent Pill: strictly aligned to the row card -->
+                        <!-- Selection Accent Pill: docked cleanly to the card's outer left edge with zero overlap -->
                         <Rectangle x:Name="AccentPill"
                                    Width="3"
                                    Height="16"
@@ -179,12 +189,12 @@
                                    RadiusY="1.5"
                                    Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
                                    Visibility="Collapsed"
-                                   Margin="-4,0,0,0" />
+                                   Margin="0,0,0,0" />
 
-                        <!-- Search Result Item Content -->
-                        <Grid>
+                        <!-- Search Result Item Content: cleanly padded from the card boundaries -->
+                        <Grid Margin="{StaticResource DrawerGutterHoverRowPadding}">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="22" />
+                                <ColumnDefinition Width="22" SharedSizeGroup="AppIconColumn" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
@@ -255,7 +265,7 @@
             <Border x:Name="GridTileCard"
                     Width="50"
                     Height="46"
-                    Margin="0,2.5,5,2.5"
+                    Margin="{StaticResource DrawerGutterRecentTileMargin}"
                     HorizontalAlignment="Left"
                     CornerRadius="{DynamicResource TileCornerRadius}"
                     BorderThickness="1"
@@ -386,7 +396,7 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Grid x:Name="DrawerHeaderGrid" Grid.Row="0" Margin="12,14,12,6">
+            <Grid x:Name="DrawerHeaderGrid" Grid.Row="0" Margin="{StaticResource DrawerGutterHeaderMargin}">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <ui:SymbolIcon Symbol="AppsListDetail24" FontSize="18" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0" VerticalAlignment="Center" />
                     <TextBlock Text="All apps"
@@ -424,7 +434,7 @@
 
             <Border Grid.Row="1"
                     x:Name="SearchBorder"
-                    Margin="12,4,12,12"
+                    Margin="{StaticResource DrawerGutterSearchMargin}"
                     Height="34"
                     CornerRadius="{DynamicResource ControlCornerRadius}"
                     Background="{DynamicResource WidgetDividerBrush}"
@@ -476,6 +486,7 @@
 
                 <!-- Mode 1: Alphabetical Grouped Apps List with Breathing Room -->
                 <ScrollViewer x:Name="GroupedScrollViewer"
+                              Grid.IsSharedSizeScope="True"
                               controls:AutoHideScrollBehavior.IsEnabled="True"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
@@ -487,7 +498,7 @@
                         <StackPanel x:Name="RecentSuggestionsPanel"
                                     Margin="0,0,0,10"
                                     Visibility="Collapsed">
-                            <Border Margin="12,8,12,4">
+                            <Border Margin="{StaticResource DrawerGutterSectionHeaderMargin}">
                                 <TextBlock Text="Recent"
                                            FontSize="18"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
@@ -498,7 +509,7 @@
                             <ListBox x:Name="RecentSuggestionsListBox"
                                      Background="Transparent"
                                      BorderThickness="0"
-                                     Margin="12,0,0,0"
+                                     Margin="{StaticResource DrawerGutterRecentGridMargin}"
                                      Padding="0"
                                      FocusVisualStyle="{x:Null}"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -522,7 +533,7 @@
                                                    FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                                    FontFamily="{DynamicResource AppFontFamily}"
                                                    Foreground="{DynamicResource TextSubtleBrush}"
-                                                   Margin="12,12,12,4" />
+                                                   Margin="{StaticResource DrawerGutterGroupHeaderMargin}" />
 
                                         <!-- Apps in this letter group -->
                                         <ItemsControl ItemsSource="{Binding Items}">
@@ -537,7 +548,7 @@
                                                             ContextMenuOpening="OnAppContextMenuOpening">
                                                         <Grid>
                                                             <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="22" />
+                                                                <ColumnDefinition Width="22" SharedSizeGroup="AppIconColumn" />
                                                                 <ColumnDefinition Width="*" />
                                                             </Grid.ColumnDefinitions>
 
@@ -571,6 +582,7 @@
 
                 <!-- Mode 2: Search Results Flat List with Breathing Room -->
                 <ScrollViewer x:Name="SearchResultsScrollViewer"
+                              Grid.IsSharedSizeScope="True"
                               controls:AutoHideScrollBehavior.IsEnabled="True"
                               Visibility="Collapsed"
                               VerticalScrollBarVisibility="Auto"
