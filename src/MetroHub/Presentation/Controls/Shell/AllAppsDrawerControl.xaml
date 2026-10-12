@@ -28,9 +28,9 @@
         <Thickness x:Key="DrawerGutterSearchMargin">12,4,12,12</Thickness>
         <Thickness x:Key="DrawerGutterSectionHeaderMargin">12,8,12,4</Thickness>
         <Thickness x:Key="DrawerGutterGroupHeaderMargin">12,12,12,4</Thickness>
-        <Thickness x:Key="DrawerGutterRecentGridMargin">12,0,0,0</Thickness>
-        <Thickness x:Key="DrawerGutterRecentTileMargin">0,2.5,10,2.5</Thickness>
-        <Thickness x:Key="DrawerGutterHoverRowMargin">4,1,0,1</Thickness>
+        <Thickness x:Key="DrawerGutterRecentGridMargin">12,0,12,0</Thickness>
+        <Thickness x:Key="DrawerGutterRecentTileMargin">0</Thickness>
+        <Thickness x:Key="DrawerGutterHoverRowMargin">4,1,12,1</Thickness>
         <Thickness x:Key="DrawerGutterHoverRowPadding">8,5</Thickness>
 
         <!-- Custom Clean TextBox Style: Zero WPF-UI chrome, no borders, no bottom accent line -->
@@ -260,13 +260,13 @@
             </DataTemplate.Triggers>
         </DataTemplate>
 
-        <!-- Acrylic Squircle Grid Tile Template for Recent Items (Option A: Icon-Only, 5 Columns, Canvas Reveal) -->
+        <!-- Acrylic Squircle Grid Tile Template for Recent Items (Option A: Icon-Only, 5 Columns, Spaced Grid) -->
         <DataTemplate x:Key="RecentGridTileTemplate">
             <Border x:Name="GridTileCard"
-                    Width="50"
-                    Height="46"
-                    Margin="{StaticResource DrawerGutterRecentTileMargin}"
-                    HorizontalAlignment="Left"
+                    Height="48"
+                    Margin="0"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
                     CornerRadius="{DynamicResource TileCornerRadius}"
                     BorderThickness="1"
                     ClipToBounds="True"
@@ -307,7 +307,7 @@
                             IsHitTestVisible="False"
                             Opacity="0">
                         <Border.Background>
-                            <RadialGradientBrush x:Name="RevealFillBrush" MappingMode="Absolute" Center="25,23" GradientOrigin="25,23" RadiusX="65" RadiusY="65">
+                            <RadialGradientBrush x:Name="RevealFillBrush" MappingMode="Absolute" Center="26,24" GradientOrigin="26,24" RadiusX="65" RadiusY="65">
                                 <GradientStop Color="#40FFFFFF" Offset="0.0" />
                                 <GradientStop Color="#16FFFFFF" Offset="0.5" />
                                 <GradientStop Color="#00000000" Offset="1.0" />
@@ -342,7 +342,7 @@
                             IsHitTestVisible="False"
                             Opacity="0">
                         <Border.BorderBrush>
-                            <RadialGradientBrush x:Name="RevealEdgeBrush" MappingMode="Absolute" Center="25,23" GradientOrigin="25,23" RadiusX="55" RadiusY="55">
+                            <RadialGradientBrush x:Name="RevealEdgeBrush" MappingMode="Absolute" Center="26,24" GradientOrigin="26,24" RadiusX="55" RadiusY="55">
                                 <GradientStop Color="#FFFFFFFF" Offset="0.0" />
                                 <GradientStop Color="#60FFFFFF" Offset="0.5" />
                                 <GradientStop Color="#00000000" Offset="1.0" />
@@ -353,9 +353,9 @@
             </Border>
         </DataTemplate>
 
-        <!-- ItemsPanel Template for Grid Mode: 5 Columns UniformGrid Left-Aligned -->
+        <!-- ItemsPanel Template for Grid Mode: 5 Columns Spaced Uniform Grid (Calculated 52px Tiles, 9px Gap) -->
         <ItemsPanelTemplate x:Key="RecentGridItemsPanelTemplate">
-            <UniformGrid Columns="5" HorizontalAlignment="Left" Margin="0,2,0,2" />
+            <controls:SpacedUniformGrid Columns="5" ColumnGap="9" RowGap="8" Margin="0,2,0,2" />
         </ItemsPanelTemplate>
 
         <!-- ItemsPanel Template for List Mode: Standard StackPanel -->
@@ -492,7 +492,7 @@
                               HorizontalScrollBarVisibility="Disabled"
                               Focusable="False"
                               Background="Transparent"
-                              Padding="0,2,14,16">
+                              Padding="0,2,0,16">
                     <StackPanel>
                         <!-- Mode 1A: Zero-State Suggestions (Recent Apps & Files on Empty Search, Up to 15 Items) -->
                         <StackPanel x:Name="RecentSuggestionsPanel"
@@ -589,7 +589,7 @@
                               HorizontalScrollBarVisibility="Disabled"
                               Focusable="False"
                               Background="Transparent"
-                              Padding="0,2,14,16">
+                              Padding="0,2,0,16">
                     <ScrollViewer.RenderTransform>
                         <TranslateTransform x:Name="SearchResultsTranslate" Y="0" />
                     </ScrollViewer.RenderTransform>

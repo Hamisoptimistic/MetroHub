@@ -175,7 +175,9 @@ namespace MetroHub.Presentation.Controls
                     RecentSuggestionsListBox.ItemTemplate = gridTemplate;
                 if (Resources["RecentGridItemsPanelTemplate"] is ItemsPanelTemplate gridPanel)
                     RecentSuggestionsListBox.ItemsPanel = gridPanel;
-                RecentSuggestionsListBox.Margin = new Thickness(12, 0, 0, 0);
+                RecentSuggestionsListBox.Margin = Resources["DrawerGutterRecentGridMargin"] is Thickness gridMargin
+                    ? gridMargin
+                    : new Thickness(12, 0, 12, 0);
                 RecentSuggestionsListBox.Padding = new Thickness(0);
             }
             else
@@ -787,32 +789,65 @@ namespace MetroHub.Presentation.Controls
 
         private void OnRecentSuggestionsPreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Right || e.Key == Key.Apps || (e.Key == Key.F10 && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift))
+            if (RecentViewMode == RecentItemsViewMode.List)
             {
-                OpenContextMenuForRecentSuggestionItem();
-                e.Handled = true;
-            }
-            else if (e.Key == Key.Left)
-            {
-                SearchBox.Focus();
-                SearchBox.CaretIndex = SearchBox.Text.Length;
-                e.Handled = true;
-            }
-            else if (e.Key == Key.Up && RecentSuggestionsListBox.SelectedIndex == 0)
-            {
-                SearchBox.Focus();
-                SearchBox.CaretIndex = SearchBox.Text.Length;
-                e.Handled = true;
-            }
-            else if (e.Key == Key.Back)
-            {
-                SearchBox.Focus();
-                if (!string.IsNullOrEmpty(SearchBox.Text))
+                if (e.Key == Key.Right || e.Key == Key.Apps || (e.Key == Key.F10 && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift))
                 {
-                    SearchBox.Text = SearchBox.Text[..^1];
-                    SearchBox.CaretIndex = SearchBox.Text.Length;
+                    OpenContextMenuForRecentSuggestionItem();
+                    e.Handled = true;
                 }
-                e.Handled = true;
+                else if (e.Key == Key.Left)
+                {
+                    SearchBox.Focus();
+                    SearchBox.CaretIndex = SearchBox.Text.Length;
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Up && RecentSuggestionsListBox.SelectedIndex == 0)
+                {
+                    SearchBox.Focus();
+                    SearchBox.CaretIndex = SearchBox.Text.Length;
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Back)
+                {
+                    SearchBox.Focus();
+                    if (!string.IsNullOrEmpty(SearchBox.Text))
+                    {
+                        SearchBox.Text = SearchBox.Text[..^1];
+                        SearchBox.CaretIndex = SearchBox.Text.Length;
+                    }
+                    e.Handled = true;
+                }
+            }
+            else
+            {
+                if (e.Key == Key.Apps || (e.Key == Key.F10 && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift))
+                {
+                    OpenContextMenuForRecentSuggestionItem();
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Up && RecentSuggestionsListBox.SelectedIndex >= 0 && RecentSuggestionsListBox.SelectedIndex < 5)
+                {
+                    SearchBox.Focus();
+                    SearchBox.CaretIndex = SearchBox.Text.Length;
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Left && RecentSuggestionsListBox.SelectedIndex == 0)
+                {
+                    SearchBox.Focus();
+                    SearchBox.CaretIndex = SearchBox.Text.Length;
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Back)
+                {
+                    SearchBox.Focus();
+                    if (!string.IsNullOrEmpty(SearchBox.Text))
+                    {
+                        SearchBox.Text = SearchBox.Text[..^1];
+                        SearchBox.CaretIndex = SearchBox.Text.Length;
+                    }
+                    e.Handled = true;
+                }
             }
         }
 
