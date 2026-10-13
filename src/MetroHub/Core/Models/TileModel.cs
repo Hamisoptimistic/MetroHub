@@ -334,17 +334,11 @@ public sealed class TileModel : INotifyPropertyChanged
             if (_webSourceIconPath != null) return _webSourceIconPath;
             if (HasWebSource && !string.IsNullOrWhiteSpace(_arguments))
             {
-                string domain = WebFaviconService.ExtractDomain(_arguments);
-                if (!string.IsNullOrWhiteSpace(domain))
+                string cachedPath = WebFaviconService.GetCachedIconPath(_arguments);
+                if (!string.IsNullOrWhiteSpace(cachedPath) && File.Exists(cachedPath) && new FileInfo(cachedPath).Length > 200)
                 {
-                    string safeDomain = System.Text.RegularExpressions.Regex.Replace(domain, @"[^a-zA-Z0-9_\-\.]", "_");
-                    string hash = IconExtractorService.ComputeDeterministicHash(domain);
-                    string cachedPath = Path.Combine(AppPaths.IconCacheDir, $"web_{safeDomain}_{hash}.png");
-                    if (File.Exists(cachedPath) && new FileInfo(cachedPath).Length > 200)
-                    {
-                        _webSourceIconPath = cachedPath;
-                        return _webSourceIconPath;
-                    }
+                    _webSourceIconPath = cachedPath;
+                    return _webSourceIconPath;
                 }
 
                 string targetUrl = _arguments;

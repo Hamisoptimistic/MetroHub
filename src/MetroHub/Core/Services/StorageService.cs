@@ -337,22 +337,16 @@ public sealed class StorageService
                 bool isBogusOrMissing = string.IsNullOrWhiteSpace(tile.IconPath) ||
                                         !File.Exists(tile.IconPath);
 
-                string domain = WebFaviconService.ExtractDomain(tile.TargetPath);
-                if (!string.IsNullOrWhiteSpace(domain))
+                string cachedPath = WebFaviconService.GetCachedIconPath(tile.TargetPath);
+                if (!string.IsNullOrWhiteSpace(cachedPath) && File.Exists(cachedPath) && new FileInfo(cachedPath).Length > 200)
                 {
-                    string safeDomain = Regex.Replace(domain, @"[^a-zA-Z0-9_\-\.]", "_");
-                    string hash = IconExtractorService.ComputeDeterministicHash(domain);
-                    string cachedPath = Path.Combine(IconCacheDir, $"web_{safeDomain}_{hash}.png");
-
-                    if (File.Exists(cachedPath) && new FileInfo(cachedPath).Length > 200)
+                    if (tile.IconPath != cachedPath)
                     {
-                        if (tile.IconPath != cachedPath)
-                        {
-                            tile.IconPath = cachedPath;
-                            dirty = true;
-                        }
+                        tile.IconPath = cachedPath;
+                        dirty = true;
                     }
-                    else if (isBogusOrMissing)
+                }
+                else if (isBogusOrMissing)
                     {
                         // Fire-and-forget favicon fetch: only sets the tile's IconPath property.
                         // Does NOT call SaveLayout from the callback to avoid writing a stale
@@ -379,7 +373,6 @@ public sealed class StorageService
                             }
                         });
                     }
-                }
                 continue;
             }
 

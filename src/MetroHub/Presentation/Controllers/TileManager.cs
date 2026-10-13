@@ -1434,9 +1434,7 @@ public sealed class TileManager
             }
             else
             {
-                string linkTitle = !string.IsNullOrWhiteSpace(request.Title)
-                    ? request.Title
-                    : WebFaviconService.InferTitleFromUrl(targetUrl);
+                string linkTitle = WebFaviconService.CleanWebTitle(request.Title, targetUrl);
 
                 tile = new TileModel
                 {
@@ -1637,9 +1635,7 @@ public sealed class TileManager
                 int tileCol = targetCol + colOffset;
                 int tileRow = targetRow + 1 + rowOffset;
 
-                string displayTitle = !string.IsNullOrWhiteSpace(item.Title)
-                    ? item.Title
-                    : WebFaviconService.InferTitleFromUrl(item.Url);
+                string displayTitle = WebFaviconService.CleanWebTitle(item.Title, item.Url);
 
                 var tile = new TileModel
                 {

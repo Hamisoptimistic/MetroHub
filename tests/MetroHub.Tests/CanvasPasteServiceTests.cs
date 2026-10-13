@@ -841,4 +841,162 @@ public sealed class CanvasPasteServiceTests : IDisposable
         // Self-heals: IconPath should now point directly to the image file, not the generic icon
         Assert.Equal(imageFile, tile.IconPath);
     }
+
+    [Fact]
+    public void WebFaviconService_ComputeCacheScopeKey_IsolatesSuitesAndKeepsGeneralDomainsHostOnly()
+    {
+        // Google Workspace apps use static prefix mapping
+        Assert.Equal("docs.google.com_spreadsheets", WebFaviconService.ComputeCacheScopeKey("https://docs.google.com/spreadsheets/create"));
+        Assert.Equal("docs.google.com_spreadsheets", WebFaviconService.ComputeCacheScopeKey("https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5/edit?usp=sharing"));
+        Assert.Equal("docs.google.com_document", WebFaviconService.ComputeCacheScopeKey("https://docs.google.com/document/create"));
+        Assert.Equal("docs.google.com_presentation", WebFaviconService.ComputeCacheScopeKey("https://docs.google.com/presentation/create"));
+        Assert.Equal("docs.google.com_forms", WebFaviconService.ComputeCacheScopeKey("https://docs.google.com/forms/create"));
+
+        // All general websites strictly key by host to avoid cache explosion and token leakage
+        Assert.Equal("office.com", WebFaviconService.ComputeCacheScopeKey("https://www.office.com/launch/word?auth=2"));
+        Assert.Equal("youtube.com", WebFaviconService.ComputeCacheScopeKey("https://www.youtube.com/watch?v=dQw4w9WgXcQ"));
+        Assert.Equal("youtube.com", WebFaviconService.ComputeCacheScopeKey("https://youtube.com/"));
+        Assert.Equal("github.com", WebFaviconService.ComputeCacheScopeKey("https://github.com/dotnet/runtime"));
+        Assert.Equal("x.com", WebFaviconService.ComputeCacheScopeKey("https://x.com/user/status/123456"));
+    }
+
+    [Fact]
+    public void WebFaviconService_GetCachedIconPath_IsolatesDocsFromSheetsAndReusesWithinApp()
+    {
+        string sheetsPath1 = WebFaviconService.GetCachedIconPath("https://docs.google.com/spreadsheets/create");
+        string sheetsPath2 = WebFaviconService.GetCachedIconPath("https://docs.google.com/spreadsheets/d/another-id/edit");
+        string docsPath = WebFaviconService.GetCachedIconPath("https://docs.google.com/document/create");
+
+        // Sheets links reuse the exact same cached icon file
+        Assert.Equal(sheetsPath1, sheetsPath2);
+
+        // Sheets and Docs produce completely separate cache files
+        Assert.NotEqual(sheetsPath1, docsPath);
+    }
+
+    [Fact]
+    public void WebFaviconService_InferTitleFromUrl_UsesCuratedBrandCasingWithoutPathJunk()
+    {
+        Assert.Equal("YouTube", WebFaviconService.InferTitleFromUrl("https://www.youtube.com/watch?v=123"));
+        Assert.Equal("GitHub", WebFaviconService.InferTitleFromUrl("https://github.com/dotnet/runtime"));
+        Assert.Equal("Spotify", WebFaviconService.InferTitleFromUrl("https://open.spotify.com/album/123"));
+        Assert.Equal("Discord", WebFaviconService.InferTitleFromUrl("https://discord.com/channels/123"));
+        Assert.Equal("Sheets", WebFaviconService.InferTitleFromUrl("https://docs.google.com/spreadsheets/create"));
+    }
+
+    [Fact]
+    public void WebFaviconService_InferTitleFromUrl_GoogleWorkspaceApps()
+    {
+        Assert.Equal("Sheets", WebFaviconService.InferTitleFromUrl("https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5/edit"));
+        Assert.Equal("Docs", WebFaviconService.InferTitleFromUrl("https://docs.google.com/document/d/1BxiMVs0XRA5/edit"));
+        Assert.Equal("Slides", WebFaviconService.InferTitleFromUrl("https://docs.google.com/presentation/d/1BxiMVs0XRA5/edit"));
+        Assert.Equal("Forms", WebFaviconService.InferTitleFromUrl("https://docs.google.com/forms/d/e/1FAIpQLSc/viewform"));
+        Assert.Equal("Drive", WebFaviconService.InferTitleFromUrl("https://drive.google.com/drive/my-drive"));
+        Assert.Equal("Gmail", WebFaviconService.InferTitleFromUrl("https://mail.google.com/mail/u/0"));
+        Assert.Equal("Gmail", WebFaviconService.InferTitleFromUrl("https://gmail.com"));
+        Assert.Equal("Meet", WebFaviconService.InferTitleFromUrl("https://meet.google.com/abc-defg-hij"));
+        Assert.Equal("Calendar", WebFaviconService.InferTitleFromUrl("https://calendar.google.com/calendar/r"));
+    }
+
+    [Fact]
+    public void WebFaviconService_InferTitleFromUrl_Microsoft365CloudApps()
+    {
+        Assert.Equal("Excel", WebFaviconService.InferTitleFromUrl("https://excel.cloud.microsoft"));
+        Assert.Equal("Word", WebFaviconService.InferTitleFromUrl("https://word.cloud.microsoft"));
+        Assert.Equal("PowerPoint", WebFaviconService.InferTitleFromUrl("https://powerpoint.cloud.microsoft"));
+        Assert.Equal("Teams", WebFaviconService.InferTitleFromUrl("https://teams.cloud.microsoft"));
+        Assert.Equal("Outlook", WebFaviconService.InferTitleFromUrl("https://outlook.cloud.microsoft"));
+        Assert.Equal("OneNote", WebFaviconService.InferTitleFromUrl("https://onenote.cloud.microsoft"));
+        Assert.Equal("Excel", WebFaviconService.InferTitleFromUrl("https://excel.office.com"));
+        Assert.Equal("Word", WebFaviconService.InferTitleFromUrl("https://word.office.com"));
+    }
+
+    [Fact]
+    public void WebFaviconService_InferTitleFromUrl_MultiPartTldAndInternational()
+    {
+        Assert.Equal("Amazon", WebFaviconService.InferTitleFromUrl("https://amazon.co.uk/dp/B08N5WRWNW"));
+        Assert.Equal("Cloudflare", WebFaviconService.InferTitleFromUrl("https://blog.cloudflare.com/post"));
+        Assert.Equal("Danluu", WebFaviconService.InferTitleFromUrl("https://danluu.com/sounds-easy/"));
+    }
+
+    [Fact]
+    public void WebFaviconService_ComputeCacheScopeKey_IsolatesSuitesAndPreservesHost()
+    {
+        string sheetsKey = WebFaviconService.ComputeCacheScopeKey("https://docs.google.com/spreadsheets/d/123/edit");
+        string docsKey = WebFaviconService.ComputeCacheScopeKey("https://docs.google.com/document/d/456/edit");
+        string generalKey = WebFaviconService.ComputeCacheScopeKey("https://github.com/torvalds/linux");
+
+        Assert.Equal("docs.google.com_spreadsheets", sheetsKey);
+        Assert.Equal("docs.google.com_document", docsKey);
+        Assert.Equal("github.com", generalKey);
+        Assert.NotEqual(sheetsKey, docsKey);
+    }
+
+    [Fact]
+    public void WebFaviconService_CleanWebTitle_StripsMarketingSlogansOnRootPages()
+    {
+        // Notion: Slogan | Brand pattern
+        string notionClean = WebFaviconService.CleanWebTitle(
+            "The AI workspace that works for you. | Notion",
+            "https://www.notion.so");
+        Assert.Equal("Notion", notionClean);
+
+        // Obsidian: Brand - Slogan pattern
+        string obsidianClean = WebFaviconService.CleanWebTitle(
+            "Obsidian - Sharpen your thinking",
+            "https://obsidian.md");
+        Assert.Equal("Obsidian", obsidianClean);
+
+        // Figma: Brand: Slogan pattern
+        string figmaClean = WebFaviconService.CleanWebTitle(
+            "Figma: The Collaborative Interface Design Tool",
+            "https://www.figma.com");
+        Assert.Equal("Figma", figmaClean);
+
+        // Linear: Brand — Slogan pattern
+        string linearClean = WebFaviconService.CleanWebTitle(
+            "Linear – A better way to build products",
+            "https://linear.app");
+        Assert.Equal("Linear", linearClean);
+
+        // Slack: Slogan | Brand pattern
+        string slackClean = WebFaviconService.CleanWebTitle(
+            "Slack is where work happens | Slack",
+            "https://slack.com");
+        Assert.Equal("Slack", slackClean);
+    }
+
+    [Fact]
+    public void WebFaviconService_CleanWebTitle_PreservesSpecificDocumentAndPageTitles()
+    {
+        // Deep Notion page
+        string notionDoc = WebFaviconService.CleanWebTitle(
+            "Product Roadmap | Notion",
+            "https://www.notion.so/teams/roadmap-123");
+        Assert.Equal("Product Roadmap", notionDoc);
+
+        // Deep Obsidian help article
+        string obsidianDoc = WebFaviconService.CleanWebTitle(
+            "Obsidian - Getting started",
+            "https://help.obsidian.md/getting-started");
+        Assert.Equal("Getting started", obsidianDoc);
+
+        // YouTube video
+        string ytVideo = WebFaviconService.CleanWebTitle(
+            "Never Gonna Give You Up - YouTube",
+            "https://www.youtube.com/watch?v=123");
+        Assert.Equal("Never Gonna Give You Up", ytVideo);
+
+        // GitHub repository
+        string ghRepo = WebFaviconService.CleanWebTitle(
+            "dotnet/runtime: .NET runtime and libraries · GitHub",
+            "https://github.com/dotnet/runtime");
+        Assert.Equal("dotnet/runtime: .NET runtime and libraries", ghRepo);
+
+        // Google Sheets document
+        string sheetDoc = WebFaviconService.CleanWebTitle(
+            "Q4 Financials - Google Sheets",
+            "https://docs.google.com/spreadsheets/d/123/edit");
+        Assert.Equal("Q4 Financials", sheetDoc);
+    }
 }

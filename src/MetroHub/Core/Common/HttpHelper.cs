@@ -165,12 +165,15 @@ public static class HttpHelper
     /// <summary>
     /// Asynchronously downloads a remote file directly to disk atomically with temporary staging.
     /// Ensures that partially downloaded or corrupt files are cleaned up and not committed to destination.
+    /// Supports streaming maximumBytes cutoff and magic bitmap header validation.
     /// </summary>
     public static async Task<bool> DownloadFileAsync(
         string url,
         string destinationPath,
         CancellationToken ct = default,
-        long minimumBytes = 0)
+        long minimumBytes = 0,
+        long maximumBytes = 0,
+        bool requireValidBitmap = false)
     {
         if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(destinationPath))
         {
@@ -197,11 +200,34 @@ public static class HttpHelper
             await using (var responseStream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
             await using (var fileStream = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true))
             {
-                await responseStream.CopyToAsync(fileStream, ct).ConfigureAwait(false);
+                if (maximumBytes > 0)
+                {
+                    byte[] buffer = new byte[8192];
+                    long totalRead = 0;
+                    int read;
+                    while ((read = await responseStream.ReadAsync(buffer.AsMemory(0, buffer.Length), ct).ConfigureAwait(false)) > 0)
+                    {
+                        totalRead += read;
+                        if (totalRead > maximumBytes)
+                        {
+                            return false;
+                        }
+                        await fileStream.WriteAsync(buffer.AsMemory(0, read), ct).ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    await responseStream.CopyToAsync(fileStream, ct).ConfigureAwait(false);
+                }
             }
 
             var fi = new FileInfo(tempFile);
             if (minimumBytes > 0 && (!fi.Exists || fi.Length < minimumBytes))
+            {
+                return false;
+            }
+
+            if (requireValidBitmap && !IsValidBitmapFile(tempFile))
             {
                 return false;
             }
@@ -224,6 +250,50 @@ public static class HttpHelper
             {
                 try { File.Delete(tempFile); } catch { }
             }
+        }
+    }
+
+    /// <summary>
+    /// Inspects the header magic bytes of a file to confirm it is a valid bitmap (PNG, ICO, JPG, GIF, WEBP).
+    /// Prevents saving corrupted downloads, empty files, or HTML error pages.
+    /// </summary>
+    public static bool IsValidBitmapFile(string filePath)
+    {
+        try
+        {
+            using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (fs.Length < 4) return false;
+
+            Span<byte> header = stackalloc byte[12];
+            int read = fs.Read(header);
+            if (read < 4) return false;
+
+            // PNG: 89 50 4E 47
+            if (header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47)
+                return true;
+
+            // ICO: 00 00 01 00
+            if (header[0] == 0x00 && header[1] == 0x00 && header[2] == 0x01 && header[3] == 0x00)
+                return true;
+
+            // JPG: FF D8 FF
+            if (header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF)
+                return true;
+
+            // GIF: 47 49 46 38 ("GIF8")
+            if (header[0] == 0x47 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x38)
+                return true;
+
+            // WEBP: "RIFF" .... "WEBP"
+            if (read >= 12 && header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46 &&
+                header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50)
+                return true;
+
+            return false;
+        }
+        catch
+        {
+            return false;
         }
     }
 }
