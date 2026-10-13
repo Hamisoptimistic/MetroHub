@@ -60,14 +60,28 @@ public sealed class SidebarShortcutItem : INotifyPropertyChanged
             {
                 OnPropertyChanged(nameof(IsSeparator));
                 OnPropertyChanged(nameof(IsFolder));
+                OnPropertyChanged(nameof(IsApplication));
+                OnPropertyChanged(nameof(IsWebUrl));
+                OnPropertyChanged(nameof(IsNotWebUrl));
             }
         }
     }
 
     public string IconSymbol
     {
-        get => string.IsNullOrWhiteSpace(_iconSymbol) ? "Folder24" : _iconSymbol;
-        set => SetField(ref _iconSymbol, string.IsNullOrWhiteSpace(value) ? "Folder24" : value);
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_iconSymbol) || _iconSymbol.Equals("HardDrive24", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Storage24";
+            }
+            return _iconSymbol;
+        }
+        set
+        {
+            string val = (!string.IsNullOrWhiteSpace(value) && value.Equals("HardDrive24", StringComparison.OrdinalIgnoreCase)) ? "Storage24" : value;
+            SetField(ref _iconSymbol, string.IsNullOrWhiteSpace(val) ? "Folder24" : val);
+        }
     }
 
     public string? CustomIconPath
@@ -85,6 +99,9 @@ public sealed class SidebarShortcutItem : INotifyPropertyChanged
     public bool HasCustomIcon => !string.IsNullOrWhiteSpace(_customIconPath);
     public bool IsSeparator => TargetType == SidebarShortcutType.Separator;
     public bool IsFolder => TargetType == SidebarShortcutType.SystemFolder || TargetType == SidebarShortcutType.CustomFolder;
+    public bool IsApplication => TargetType == SidebarShortcutType.Application;
+    public bool IsWebUrl => TargetType == SidebarShortcutType.WebUrl;
+    public bool IsNotWebUrl => TargetType != SidebarShortcutType.WebUrl;
 
     public bool IsRemovable
     {
@@ -202,7 +219,7 @@ public sealed class SidebarShortcutItem : INotifyPropertyChanged
 
         // Root Drives (C:\, D:\, etc.)
         if (nameOrPath.EndsWith(":\\") || nameOrPath.EndsWith(":") || name.Contains("drive") || name.Contains("disk"))
-            return "HardDrive24";
+            return "Storage24";
 
         // Archives / Zip / Backups / ISO
         if (name.Contains("zip") || name.Contains("rar") || name.Contains("7z") || name.Contains("tar") || name.Contains("archive") || name.Contains("backup") || name.Contains("iso"))

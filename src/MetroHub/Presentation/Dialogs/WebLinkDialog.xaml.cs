@@ -34,6 +34,10 @@ public partial class WebLinkDialog : MetroDialog
         _resolvedIconPath = null;
         _webLinkResult = null;
 
+        Title = "Add Web Shortcut";
+        if (WebLinkDestStackPanel != null) WebLinkDestStackPanel.Visibility = Visibility.Visible;
+        if (WebLinkActionButton != null) WebLinkActionButton.Content = "Add Shortcut";
+
         WebLinkFaviconImage.Source = null;
         WebLinkFaviconImage.Visibility = Visibility.Collapsed;
         WebLinkFallbackIcon.Visibility = Visibility.Visible;
@@ -60,6 +64,50 @@ public partial class WebLinkDialog : MetroDialog
         {
             WebLinkUrlInput.Text = string.Empty;
             WebLinkTitleInput.Text = string.Empty;
+        }
+    }
+
+    public void SetupEdit(string initialUrl, string initialTitle, string? initialIconPath = null)
+    {
+        _userManuallyEditedTitle = true;
+        _resolvedIconPath = initialIconPath;
+        _webLinkResult = null;
+
+        Title = "Edit Web Shortcut";
+        if (WebLinkDestStackPanel != null) WebLinkDestStackPanel.Visibility = Visibility.Collapsed;
+        if (WebLinkActionButton != null) WebLinkActionButton.Content = "Save Changes";
+
+        WebLinkSidebarSpinner.Visibility = Visibility.Collapsed;
+        WebLinkUrlInput.Text = initialUrl ?? string.Empty;
+        WebLinkTitleInput.Text = initialTitle ?? string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(initialIconPath) && File.Exists(initialIconPath))
+        {
+            try
+            {
+                var bmp = new BitmapImage();
+                bmp.BeginInit();
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.UriSource = new Uri(initialIconPath);
+                bmp.EndInit();
+                bmp.Freeze();
+
+                WebLinkFaviconImage.Source = bmp;
+                WebLinkFaviconImage.Visibility = Visibility.Visible;
+                WebLinkFallbackIcon.Visibility = Visibility.Collapsed;
+            }
+            catch
+            {
+                WebLinkFaviconImage.Source = null;
+                WebLinkFaviconImage.Visibility = Visibility.Collapsed;
+                WebLinkFallbackIcon.Visibility = Visibility.Visible;
+            }
+        }
+        else
+        {
+            WebLinkFaviconImage.Source = null;
+            WebLinkFaviconImage.Visibility = Visibility.Collapsed;
+            WebLinkFallbackIcon.Visibility = Visibility.Visible;
         }
     }
 
@@ -255,6 +303,20 @@ public partial class WebLinkDialog : MetroDialog
             Owner = owner
         };
         dlg.Setup(initialUrl, initialTitle, defaultCanvasOnly);
+        return dlg.ShowDialog() == true ? dlg.WebLinkResult : null;
+    }
+
+    public static WebLinkCreatedEventArgs? ShowEdit(
+        Window? owner,
+        string initialUrl,
+        string initialTitle,
+        string? initialIconPath = null)
+    {
+        var dlg = new WebLinkDialog
+        {
+            Owner = owner
+        };
+        dlg.SetupEdit(initialUrl, initialTitle, initialIconPath);
         return dlg.ShowDialog() == true ? dlg.WebLinkResult : null;
     }
 }

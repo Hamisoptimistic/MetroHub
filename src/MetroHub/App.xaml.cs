@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Threading;
@@ -211,13 +212,55 @@ public partial class App : Application
         };
 
         var menu = new ContextMenu();
-        var openItem = new MenuItem { Header = "Open MetroHub" };
-        openItem.Click += (s, e) => _mainWindow?.Dispatcher.Invoke(() => _mainWindow.ShowScreen());
+        if (Current?.TryFindResource(typeof(ContextMenu)) is Style menuStyle)
+        {
+            menu.Style = menuStyle;
+        }
 
-        var exitItem = new MenuItem { Header = "Exit" };
+        var openIcon = new Wpf.Ui.Controls.SymbolIcon { Symbol = Wpf.Ui.Controls.SymbolRegular.Apps24, FontSize = 16 };
+        var openItem = new MenuItem { Header = "Open MetroHub", Icon = openIcon, FontWeight = FontWeights.SemiBold, InputGestureText = "Ctrl + `" };
+        openItem.Click += (s, e) => _mainWindow?.Dispatcher.Invoke(() => _mainWindow.ToggleVisibility());
+
+        var settingsIcon = new Wpf.Ui.Controls.SymbolIcon { Symbol = Wpf.Ui.Controls.SymbolRegular.Settings24, FontSize = 16 };
+        var settingsItem = new MenuItem { Header = "Settings...", Icon = settingsIcon };
+        settingsItem.Click += (s, e) => _mainWindow?.Dispatcher.Invoke(() => _mainWindow.OpenSettingsWindow());
+
+        var restartIcon = new Wpf.Ui.Controls.SymbolIcon { Symbol = Wpf.Ui.Controls.SymbolRegular.ArrowCounterclockwise24, FontSize = 16 };
+        var restartItem = new MenuItem { Header = "Restart MetroHub", Icon = restartIcon };
+        restartItem.Click += (s, e) =>
+        {
+            try
+            {
+                string? exe = Environment.ProcessPath;
+                if (!string.IsNullOrEmpty(exe))
+                {
+                    Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[App] Failed to restart: {ex.Message}");
+            }
+            _mainWindow?.Dispatcher.Invoke(() => _mainWindow.ExitApplication());
+        };
+
+        var exitIcon = new Wpf.Ui.Controls.SymbolIcon { Symbol = Wpf.Ui.Controls.SymbolRegular.Power24, FontSize = 16 };
+        exitIcon.SetResourceReference(Control.ForegroundProperty, "StatusErrorBrush");
+        var exitItem = new MenuItem { Header = "Exit", Icon = exitIcon };
+        exitItem.SetResourceReference(Control.ForegroundProperty, "StatusErrorBrush");
         exitItem.Click += (s, e) => _mainWindow?.Dispatcher.Invoke(() => _mainWindow.ExitApplication());
 
+        menu.Opened += (s, e) =>
+        {
+            bool isVisible = _mainWindow != null && _mainWindow.IsVisible;
+            openItem.Header = isVisible ? "Hide MetroHub" : "Open MetroHub";
+            openIcon.Symbol = isVisible ? Wpf.Ui.Controls.SymbolRegular.EyeOff24 : Wpf.Ui.Controls.SymbolRegular.Apps24;
+        };
+
         menu.Items.Add(openItem);
+        menu.Items.Add(settingsItem);
+        menu.Items.Add(new Separator());
+        menu.Items.Add(restartItem);
         menu.Items.Add(new Separator());
         menu.Items.Add(exitItem);
 

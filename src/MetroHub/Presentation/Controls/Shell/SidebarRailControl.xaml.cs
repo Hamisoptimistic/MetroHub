@@ -12,6 +12,8 @@ using Microsoft.Win32;
 using System.Windows.Media.Animation;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
+using MetroHub.Core.Services.Catalog;
+using MetroHub.Presentation.Dialogs;
 
 namespace MetroHub.Presentation.Controls;
 
@@ -36,12 +38,21 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
     private bool _isDragging;
     private int _currentDropIndex = -1;
     private const string ShortcutDataFormat = "MetroHub.SidebarShortcut";
+    private List<CatalogItemModel>? _cachedShortcutApps;
+    private bool _isLoadingShortcutApps;
 
     public SidebarRailControl()
     {
         InitializeComponent();
         ShortcutsItemsControl.ItemsSource = Shortcuts;
         MetroHub.Presentation.Controllers.WorkspaceManager.Instance.WorkspaceChanged += OnWorkspaceChanged;
+        InstalledAppsService.AppsCatalogChanged += freshApps =>
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                _cachedShortcutApps = freshApps?.OrderBy(i => i.Name, StringComparer.OrdinalIgnoreCase).ToList();
+            });
+        };
     }
 
     private void OnWorkspaceChanged(WorkspaceModel incoming)
@@ -433,6 +444,56 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
         }
     }
 
+    private async void OnAddShortcutAppsSubmenuOpened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem appsMenu) return;
+
+        if (_cachedShortcutApps != null && _cachedShortcutApps.Count > 0)
+        {
+            if (appsMenu.ItemsSource == null)
+            {
+                appsMenu.ItemsSource = _cachedShortcutApps;
+            }
+            return;
+        }
+
+        if (_isLoadingShortcutApps) return;
+        _isLoadingShortcutApps = true;
+
+        try
+        {
+            var provider = CatalogService.GetProvider("installed_apps");
+            if (provider != null)
+            {
+                var items = await provider.GetItemsAsync();
+                var ordered = items.OrderBy(i => i.Name, StringComparer.OrdinalIgnoreCase).ToList();
+                _cachedShortcutApps = ordered;
+
+                appsMenu.ItemsSource = null;
+                appsMenu.Items.Clear();
+                appsMenu.ItemsSource = ordered;
+
+                CatalogItemModel.PrewarmMemoryCache(ordered);
+            }
+        }
+        catch (Exception ex)
+        {
+            Safe.Log("SidebarRailControl.OnAddShortcutAppsSubmenuOpened", ex);
+        }
+        finally
+        {
+            _isLoadingShortcutApps = false;
+        }
+    }
+
+    private void OnAddShortcutAppItemClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem mi && mi.DataContext is CatalogItemModel item)
+        {
+            SidebarPinningService.PinCatalogItem(this, item);
+        }
+    }
+
     private void OnAddWebLinkClick(object sender, RoutedEventArgs e)
     {
         AddWebLinkRequested?.Invoke(this, null);
@@ -520,6 +581,54 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
                 ShortcutsChanged?.Invoke(this, EventArgs.Empty);
             }
         }
+    }
+
+    private void OnShortcutContextMenuOpened(object sender, RoutedEventArgs e)
+    {
+        if (sender is ContextMenu menu)
+        {
+            var item = menu.DataContext as SidebarShortcutItem
+                ?? (menu.PlacementTarget as FrameworkElement)?.Tag as SidebarShortcutItem;
+            if (item != null)
+            {
+                int index = Shortcuts.IndexOf(item);
+                var moveUpItem = FindMenuItemByHeader(menu, "Move Up");
+                if (moveUpItem != null) moveUpItem.IsEnabled = index > 0;
+
+                var moveDownItem = FindMenuItemByHeader(menu, "Move Down");
+                if (moveDownItem != null) moveDownItem.IsEnabled = index >= 0 && index < Shortcuts.Count - 1;
+            }
+        }
+    }
+
+    private void OnDividerContextMenuOpened(object sender, RoutedEventArgs e)
+    {
+        if (sender is ContextMenu menu)
+        {
+            var item = menu.DataContext as SidebarShortcutItem
+                ?? (menu.PlacementTarget as FrameworkElement)?.Tag as SidebarShortcutItem;
+            if (item != null)
+            {
+                int index = Shortcuts.IndexOf(item);
+                var moveUpItem = FindMenuItemByHeader(menu, "Move Up");
+                if (moveUpItem != null) moveUpItem.IsEnabled = index > 0;
+
+                var moveDownItem = FindMenuItemByHeader(menu, "Move Down");
+                if (moveDownItem != null) moveDownItem.IsEnabled = index >= 0 && index < Shortcuts.Count - 1;
+            }
+        }
+    }
+
+    private static MenuItem? FindMenuItemByHeader(ContextMenu menu, string header)
+    {
+        foreach (var item in menu.Items)
+        {
+            if (item is MenuItem mi && string.Equals(mi.Header?.ToString(), header, StringComparison.OrdinalIgnoreCase))
+            {
+                return mi;
+            }
+        }
+        return null;
     }
 
     private static SidebarShortcutItem? GetShortcutFromMenuItem(MenuItem menuItem)
@@ -646,6 +755,57 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
         if (sender is MenuItem menuItem && GetShortcutFromMenuItem(menuItem) is SidebarShortcutItem item)
         {
             LaunchShortcutInNewWindow(item);
+        }
+    }
+
+    private void OnRunAsAdminClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem menuItem && GetShortcutFromMenuItem(menuItem) is SidebarShortcutItem item)
+        {
+            LaunchShortcut(item, runAsAdmin: true);
+        }
+    }
+
+    private void OnOpenFileLocationClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem menuItem && GetShortcutFromMenuItem(menuItem) is SidebarShortcutItem item)
+        {
+            try
+            {
+                string target = IconExtractorService.ResolveShortcutTarget(item.Target);
+                if (File.Exists(target))
+                {
+                    Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{target}\"") { UseShellExecute = true });
+                }
+                else if (Directory.Exists(target))
+                {
+                    Process.Start(new ProcessStartInfo("explorer.exe", $"\"{target}\"") { UseShellExecute = true });
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[SidebarRail] Failed to open file location: {ex.Message}");
+            }
+        }
+    }
+
+    private void OnEditWebLinkClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem menuItem && GetShortcutFromMenuItem(menuItem) is SidebarShortcutItem item)
+        {
+            var owner = Window.GetWindow(this) ?? Application.Current?.MainWindow;
+            var result = WebLinkDialog.ShowEdit(owner, item.Target, item.Title, item.CustomIconPath);
+            if (result != null)
+            {
+                item.Target = result.Url;
+                item.Title = result.Title;
+                if (!string.IsNullOrWhiteSpace(result.IconPath))
+                {
+                    item.CustomIconPath = result.IconPath;
+                }
+                PersistShortcuts();
+                ShortcutsChanged?.Invoke(this, EventArgs.Empty);
+            }
         }
     }
 

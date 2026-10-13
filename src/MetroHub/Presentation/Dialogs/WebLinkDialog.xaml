@@ -63,7 +63,7 @@
                      KeyDown="OnWebLinkInputKeyDown"
                      TextChanged="OnWebLinkTitleTextChanged" />
 
-            <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+            <StackPanel x:Name="WebLinkDestStackPanel" Orientation="Horizontal" Margin="0,18,0,0">
                 <RadioButton x:Name="WebLinkDestBothRadio"
                              Style="{DynamicResource FluentGlassRadioButtonStyle}"
                              GroupName="ShortcutDest"
@@ -107,7 +107,8 @@
 
         <!-- Footer Action Buttons -->
         <Grid Grid.Row="1" Margin="0,16,0,0">
-            <Button Content="Add Shortcut"
+            <Button x:Name="WebLinkActionButton"
+                    Content="Add Shortcut"
                     Style="{DynamicResource AccentButtonStyle}"
                     HorizontalAlignment="Right"
                     IsDefault="True"

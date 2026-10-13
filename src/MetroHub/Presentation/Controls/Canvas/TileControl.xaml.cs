@@ -11,6 +11,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Controllers;
+using MetroHub.Presentation.Dialogs;
 using MetroHub.Presentation.Messaging;
 using MetroHub.Presentation.Themes;
 using MetroHub.Widgets;
@@ -485,9 +486,11 @@ public partial class TileControl : UserControl
     private static MenuItem? s_addToGroupMenuItem;
     private static MenuItem? s_moveToWorkspaceMenuItem;
     private static Separator? s_singleAppSeparator;
+    private static MenuItem? s_editMenuItem;
+    private static MenuItem? s_copyLinkOrTextMenuItem;
     private static MenuItem? s_runAdminMenuItem;
     private static MenuItem? s_openLocationMenuItem;
-    private static MenuItem? s_copyUrlMenuItem;
+    private static MenuItem? s_shareMenuItem;
     private static Separator? s_unpinSeparator;
     private static MenuItem? s_pinToSidebarMenuItem;
     private static Wpf.Ui.Controls.SymbolIcon? s_pinToSidebarIcon;
@@ -565,6 +568,26 @@ public partial class TileControl : UserControl
 
         s_singleAppSeparator = new Separator();
 
+        s_editMenuItem = new MenuItem { Header = "Edit..." };
+        var editIcon = new Wpf.Ui.Controls.SymbolIcon
+        {
+            Symbol = Wpf.Ui.Controls.SymbolRegular.Edit24,
+            FontSize = 18
+        };
+        editIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
+        s_editMenuItem.Icon = editIcon;
+        s_editMenuItem.Click += OnSharedEditClick;
+
+        s_copyLinkOrTextMenuItem = new MenuItem { Header = "Copy Link" };
+        var copyIcon = new Wpf.Ui.Controls.SymbolIcon
+        {
+            Symbol = Wpf.Ui.Controls.SymbolRegular.Copy24,
+            FontSize = 18
+        };
+        copyIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
+        s_copyLinkOrTextMenuItem.Icon = copyIcon;
+        s_copyLinkOrTextMenuItem.Click += OnSharedCopyLinkOrTextClick;
+
         s_runAdminMenuItem = new MenuItem { Header = "Run as Administrator" };
         var runAdminIcon = new Wpf.Ui.Controls.SymbolIcon
         {
@@ -585,19 +608,19 @@ public partial class TileControl : UserControl
         s_openLocationMenuItem.Icon = openLocationIcon;
         s_openLocationMenuItem.Click += OnSharedOpenFileLocationClick;
 
-        var copyUrlIcon = new Wpf.Ui.Controls.SymbolIcon
+        var shareIcon = new Wpf.Ui.Controls.SymbolIcon
         {
-            Symbol = Wpf.Ui.Controls.SymbolRegular.Copy24,
+            Symbol = Wpf.Ui.Controls.SymbolRegular.Share24,
             FontSize = 18
         };
-        copyUrlIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
-        s_copyUrlMenuItem = new MenuItem
+        shareIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
+        s_shareMenuItem = new MenuItem
         {
-            Header = "Copy Web Link",
+            Header = "Share...",
             Visibility = Visibility.Collapsed,
-            Icon = copyUrlIcon
+            Icon = shareIcon
         };
-        s_copyUrlMenuItem.Click += OnSharedCopyUrlClick;
+        s_shareMenuItem.Click += OnSharedShareClick;
 
         s_unpinSeparator = new Separator();
 
@@ -636,9 +659,11 @@ public partial class TileControl : UserControl
         s_sharedContextMenu.Items.Add(s_addToGroupMenuItem);
         s_sharedContextMenu.Items.Add(s_moveToWorkspaceMenuItem);
         s_sharedContextMenu.Items.Add(s_singleAppSeparator);
+        s_sharedContextMenu.Items.Add(s_editMenuItem);
+        s_sharedContextMenu.Items.Add(s_copyLinkOrTextMenuItem);
         s_sharedContextMenu.Items.Add(s_runAdminMenuItem);
         s_sharedContextMenu.Items.Add(s_openLocationMenuItem);
-        s_sharedContextMenu.Items.Add(s_copyUrlMenuItem);
+        s_sharedContextMenu.Items.Add(s_shareMenuItem);
         s_sharedContextMenu.Items.Add(s_unpinSeparator);
         s_sharedContextMenu.Items.Add(s_pinToSidebarMenuItem);
         s_sharedContextMenu.Items.Add(s_unpinMenuItem);
@@ -743,9 +768,12 @@ public partial class TileControl : UserControl
             }
             if (s_unpinMenuItem != null) s_unpinMenuItem.Header = "Unpin from MetroHub";
 
+            if (s_editMenuItem != null) s_editMenuItem.Visibility = Visibility.Collapsed;
+            if (s_copyLinkOrTextMenuItem != null) s_copyLinkOrTextMenuItem.Visibility = Visibility.Collapsed;
             if (s_runAdminMenuItem != null) s_runAdminMenuItem.Visibility = Visibility.Collapsed;
             if (s_openLocationMenuItem != null) s_openLocationMenuItem.Visibility = Visibility.Collapsed;
             if (s_singleAppSeparator != null) s_singleAppSeparator.Visibility = Visibility.Collapsed;
+            if (s_shareMenuItem != null) s_shareMenuItem.Visibility = Visibility.Collapsed;
         }
         else
         {
@@ -759,8 +787,6 @@ public partial class TileControl : UserControl
             }
             if (s_unpinMenuItem != null) s_unpinMenuItem.Header = "Unpin from MetroHub";
 
-            if (s_runAdminMenuItem != null) s_runAdminMenuItem.Visibility = Visibility.Visible;
-            if (s_openLocationMenuItem != null) s_openLocationMenuItem.Visibility = Visibility.Visible;
             if (s_singleAppSeparator != null) s_singleAppSeparator.Visibility = Visibility.Visible;
         }
 
@@ -778,9 +804,12 @@ public partial class TileControl : UserControl
 
         if (tile.TileType == TileType.Widget)
         {
+            if (s_editMenuItem != null) s_editMenuItem.Visibility = Visibility.Collapsed;
+            if (s_copyLinkOrTextMenuItem != null) s_copyLinkOrTextMenuItem.Visibility = Visibility.Collapsed;
             if (s_runAdminMenuItem != null) s_runAdminMenuItem.Visibility = Visibility.Collapsed;
             if (s_openLocationMenuItem != null) s_openLocationMenuItem.Visibility = Visibility.Collapsed;
             if (s_singleAppSeparator != null) s_singleAppSeparator.Visibility = Visibility.Collapsed;
+            if (s_shareMenuItem != null) s_shareMenuItem.Visibility = Visibility.Collapsed;
             if (s_styleMenuItem != null) s_styleMenuItem.Visibility = Visibility.Collapsed;
             if (s_unpinSeparator != null) s_unpinSeparator.Visibility = Visibility.Collapsed;
             if (s_groupMenuItem != null) s_groupMenuItem.Visibility = Visibility.Collapsed;
@@ -804,12 +833,40 @@ public partial class TileControl : UserControl
         {
             bool isWebUrl = tile.TileType == TileType.WebUrl;
             bool isNote = tile.IsNote;
-            if (s_singleAppSeparator != null) s_singleAppSeparator.Visibility = (isWebUrl || isNote) ? Visibility.Collapsed : Visibility.Visible;
-            if (s_runAdminMenuItem != null) s_runAdminMenuItem.Visibility = (isWebUrl || isNote) ? Visibility.Collapsed : Visibility.Visible;
-            if (s_openLocationMenuItem != null) s_openLocationMenuItem.Visibility = isWebUrl ? Visibility.Collapsed : Visibility.Visible;
-            if (s_copyUrlMenuItem != null)
+            bool isSpecialItem = isWebUrl || isNote;
+
+            if (selectedCount <= 1)
             {
-                s_copyUrlMenuItem.Visibility = (isWebUrl || tile.HasWebSource) ? Visibility.Visible : Visibility.Collapsed;
+                if (s_editMenuItem != null)
+                {
+                    s_editMenuItem.Visibility = isSpecialItem ? Visibility.Visible : Visibility.Collapsed;
+                    if (isWebUrl) s_editMenuItem.Header = "Edit Web Link...";
+                    else if (isNote) s_editMenuItem.Header = "Edit Note...";
+                }
+
+                if (s_copyLinkOrTextMenuItem != null)
+                {
+                    s_copyLinkOrTextMenuItem.Visibility = isSpecialItem ? Visibility.Visible : Visibility.Collapsed;
+                    if (isWebUrl) s_copyLinkOrTextMenuItem.Header = "Copy Link";
+                    else if (isNote) s_copyLinkOrTextMenuItem.Header = "Copy Text";
+                }
+
+                if (s_singleAppSeparator != null) s_singleAppSeparator.Visibility = Visibility.Visible;
+                if (s_runAdminMenuItem != null) s_runAdminMenuItem.Visibility = isSpecialItem ? Visibility.Collapsed : Visibility.Visible;
+                if (s_openLocationMenuItem != null) s_openLocationMenuItem.Visibility = isWebUrl ? Visibility.Collapsed : Visibility.Visible;
+                if (s_shareMenuItem != null)
+                {
+                    s_shareMenuItem.Visibility = WindowsShareService.CanShare(tile) ? Visibility.Visible : Visibility.Collapsed;
+                }
+            }
+            else
+            {
+                if (s_editMenuItem != null) s_editMenuItem.Visibility = Visibility.Collapsed;
+                if (s_copyLinkOrTextMenuItem != null) s_copyLinkOrTextMenuItem.Visibility = Visibility.Collapsed;
+                if (s_singleAppSeparator != null) s_singleAppSeparator.Visibility = Visibility.Collapsed;
+                if (s_runAdminMenuItem != null) s_runAdminMenuItem.Visibility = Visibility.Collapsed;
+                if (s_openLocationMenuItem != null) s_openLocationMenuItem.Visibility = Visibility.Collapsed;
+                if (s_shareMenuItem != null) s_shareMenuItem.Visibility = Visibility.Collapsed;
             }
             if (s_styleMenuItem != null) s_styleMenuItem.Visibility = Visibility.Visible;
             if (s_unpinSeparator != null) s_unpinSeparator.Visibility = Visibility.Visible;
@@ -1205,22 +1262,12 @@ public partial class TileControl : UserControl
         }
     }
 
-    private static void OnSharedCopyUrlClick(object sender, RoutedEventArgs e)
+    private static void OnSharedShareClick(object sender, RoutedEventArgs e)
     {
         if (s_activeTargetTile?.DataContext is TileModel tile)
         {
-            string? urlToCopy = tile.TileType == TileType.WebUrl
-                ? tile.TargetPath
-                : (tile.HasWebSource ? tile.Arguments : null);
-
-            if (!string.IsNullOrWhiteSpace(urlToCopy))
-            {
-                try
-                {
-                    Clipboard.SetText(urlToCopy);
-                }
-                catch { }
-            }
+            var ownerWindow = Window.GetWindow(s_activeTargetTile) ?? Application.Current?.MainWindow;
+            WindowsShareService.ShowShareUI(tile, ownerWindow);
         }
     }
 
@@ -1237,6 +1284,75 @@ public partial class TileControl : UserControl
         if (s_activeTargetTile?.DataContext is TileModel tile)
         {
             WeakReferenceMessenger.Default.Send(new TileBatchUnpinMessage(tile));
+        }
+    }
+
+    private static void OnSharedEditClick(object sender, RoutedEventArgs e)
+    {
+        if (s_activeTargetTile?.DataContext is not TileModel tile) return;
+
+        if (tile.TileType == TileType.WebUrl)
+        {
+            var owner = Window.GetWindow(s_activeTargetTile) ?? Application.Current?.MainWindow;
+            var result = WebLinkDialog.ShowEdit(owner, tile.TargetPath, tile.Title, tile.IconPath);
+            if (result != null)
+            {
+                tile.TargetPath = result.Url;
+                tile.Title = result.Title;
+                if (!string.IsNullOrWhiteSpace(result.IconPath))
+                {
+                    tile.IconPath = result.IconPath;
+                    tile.AccentColor = ColorExtractorService.ExtractAccentColor(result.IconPath);
+                }
+                s_activeTargetTile.ApplyTileStyle(animate: false);
+                s_activeTargetTile.RaiseEvent(new TileModifiedEventArgs(TileModifiedEvent, tile, isResize: false));
+            }
+        }
+        else if (tile.IsNote)
+        {
+            if (!string.IsNullOrWhiteSpace(tile.TargetPath) && File.Exists(tile.TargetPath))
+            {
+                try
+                {
+                    ProcessLauncherService.LaunchTargetAsync(tile.TargetPath, null, false, tile.Title);
+                }
+                catch (Exception ex)
+                {
+                    Safe.Log(ex, "TileControl: Failed to launch note in editor");
+                }
+            }
+        }
+    }
+
+    private static void OnSharedCopyLinkOrTextClick(object sender, RoutedEventArgs e)
+    {
+        if (s_activeTargetTile?.DataContext is not TileModel tile) return;
+
+        try
+        {
+            if (tile.TileType == TileType.WebUrl)
+            {
+                string url = !string.IsNullOrWhiteSpace(tile.TargetPath) ? tile.TargetPath : (tile.Arguments ?? string.Empty);
+                if (!string.IsNullOrWhiteSpace(url))
+                {
+                    Clipboard.SetText(url);
+                }
+            }
+            else if (tile.IsNote)
+            {
+                if (!string.IsNullOrWhiteSpace(tile.TargetPath) && File.Exists(tile.TargetPath))
+                {
+                    string text = File.ReadAllText(tile.TargetPath);
+                    if (!string.IsNullOrWhiteSpace(text))
+                    {
+                        Clipboard.SetText(text);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "TileControl: Failed to copy link or note text to clipboard");
         }
     }
 }

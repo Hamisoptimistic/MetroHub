@@ -390,6 +390,17 @@ public partial class GroupHeaderControl : UserControl
             UngroupMenuItem.IsEnabled = !group.IsLocked;
             DeleteGroupMenuItem.IsEnabled = !group.IsLocked;
 
+            if (LockMenuItem != null)
+            {
+                LockMenuItem.Header = group.IsLocked ? "Unlock Group" : "Lock Group";
+                if (LockMenuIcon != null)
+                {
+                    LockMenuIcon.Symbol = group.IsLocked
+                        ? Wpf.Ui.Controls.SymbolRegular.LockOpen24
+                        : Wpf.Ui.Controls.SymbolRegular.LockClosed24;
+                }
+            }
+
             if (HeaderColorMenuItem != null)
             {
                 string currentColor = string.IsNullOrWhiteSpace(group.HeaderColor) ? "#F0FFFFFF" : group.HeaderColor;

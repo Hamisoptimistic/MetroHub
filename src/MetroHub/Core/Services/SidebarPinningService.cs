@@ -386,7 +386,140 @@ public static class SidebarPinningService
         return (true, pinned, 1);
     }
 
-    internal static string GetDefaultFileSymbol(string ext) => ext switch
+    /// <summary>
+    /// Checks if a catalog item is already pinned to the sidebar rail.
+    /// </summary>
+    public static bool IsCatalogItemPinnedToSidebar(ISidebarShortcutStore? store, CatalogItemModel? item)
+    {
+        if (store?.Shortcuts == null || item == null || string.IsNullOrWhiteSpace(item.TargetPath))
+            return false;
+
+        string normalizedTarget = NormalizeTarget(item.TargetPath);
+        foreach (var shortcut in store.Shortcuts)
+        {
+            if (shortcut.IsSeparator) continue;
+            if (string.Equals(normalizedTarget, NormalizeTarget(shortcut.Target), StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            try
+            {
+                string resolvedTile = IconExtractorService.ResolveShortcutTarget(item.TargetPath);
+                string resolvedShortcut = IconExtractorService.ResolveShortcutTarget(shortcut.Target);
+                if (!string.IsNullOrWhiteSpace(resolvedTile) && !string.IsNullOrWhiteSpace(resolvedShortcut) &&
+                    string.Equals(NormalizeTarget(resolvedTile), NormalizeTarget(resolvedShortcut), StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Safe.Log("SidebarPinningService.IsCatalogItemPinnedToSidebar", ex);
+            }
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Pins an application from catalog to the sidebar rail.
+    /// </summary>
+    public static bool PinCatalogItem(ISidebarShortcutStore? store, CatalogItemModel? item)
+    {
+        if (store == null || item == null || string.IsNullOrWhiteSpace(item.TargetPath))
+            return false;
+
+        if (IsCatalogItemPinnedToSidebar(store, item))
+            return false;
+
+        string appName = !string.IsNullOrWhiteSpace(item.Name) ? item.Name : Path.GetFileNameWithoutExtension(item.TargetPath);
+        string? iconPath = null;
+        try
+        {
+            iconPath = IconExtractorService.ExtractAndCacheIcon(item.TargetPath);
+        }
+        catch (Exception ex)
+        {
+            Safe.Log("SidebarPinningService.PinCatalogItem.IconExtract", ex);
+        }
+
+        var shortcut = new SidebarShortcutItem
+        {
+            Title = appName,
+            Target = item.TargetPath,
+            TargetType = SidebarShortcutType.Application,
+            IconSymbol = "AppGeneric24",
+            CustomIconPath = iconPath,
+            SortOrder = store.Shortcuts.Count,
+            IsRemovable = true
+        };
+
+        store.AddShortcutItem(shortcut);
+        return true;
+    }
+
+    /// <summary>
+    /// Unpins an application from catalog from the sidebar rail.
+    /// </summary>
+    public static bool UnpinCatalogItemFromSidebar(ISidebarShortcutStore? store, CatalogItemModel? item)
+    {
+        if (store?.Shortcuts == null || item == null || string.IsNullOrWhiteSpace(item.TargetPath))
+            return false;
+
+        string normalizedTarget = NormalizeTarget(item.TargetPath);
+        var matching = store.Shortcuts.FirstOrDefault(shortcut =>
+            !shortcut.IsSeparator &&
+            (string.Equals(normalizedTarget, NormalizeTarget(shortcut.Target), StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(NormalizeTarget(IconExtractorService.ResolveShortcutTarget(item.TargetPath)),
+                           NormalizeTarget(IconExtractorService.ResolveShortcutTarget(shortcut.Target)),
+                           StringComparison.OrdinalIgnoreCase)));
+
+        if (matching != null)
+        {
+            return store.RemoveShortcutItem(matching);
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Checks whether the specified file or folder path is already pinned to the sidebar rail.
+    /// </summary>
+    public static bool IsPathPinnedToSidebar(ISidebarShortcutStore? store, string? path)
+    {
+        if (store?.Shortcuts == null || string.IsNullOrWhiteSpace(path))
+            return false;
+
+        string normalizedTarget = NormalizeTarget(path);
+        return store.Shortcuts.Any(shortcut =>
+            !shortcut.IsSeparator &&
+            (string.Equals(normalizedTarget, NormalizeTarget(shortcut.Target), StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(NormalizeTarget(IconExtractorService.ResolveShortcutTarget(path)),
+                           NormalizeTarget(IconExtractorService.ResolveShortcutTarget(shortcut.Target)),
+                           StringComparison.OrdinalIgnoreCase)));
+    }
+
+    /// <summary>
+    /// Unpins a file or folder path from the sidebar rail.
+    /// </summary>
+    public static bool UnpinPathFromSidebar(ISidebarShortcutStore? store, string? path)
+    {
+        if (store?.Shortcuts == null || string.IsNullOrWhiteSpace(path))
+            return false;
+
+        string normalizedTarget = NormalizeTarget(path);
+        var matching = store.Shortcuts.FirstOrDefault(shortcut =>
+            !shortcut.IsSeparator &&
+            (string.Equals(normalizedTarget, NormalizeTarget(shortcut.Target), StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(NormalizeTarget(IconExtractorService.ResolveShortcutTarget(path)),
+                           NormalizeTarget(IconExtractorService.ResolveShortcutTarget(shortcut.Target)),
+                           StringComparison.OrdinalIgnoreCase)));
+
+        if (matching != null)
+        {
+            return store.RemoveShortcutItem(matching);
+        }
+        return false;
+    }
+
+    public static string GetDefaultFileSymbol(string ext) => ext switch
     {
         ".exe" or ".lnk" => "AppGeneric24",
         ".pdf" or ".doc" or ".docx" or ".txt" or ".rtf" or ".md" => "Document24",

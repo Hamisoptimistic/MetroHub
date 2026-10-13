@@ -112,11 +112,26 @@
 
         <!-- Modern Fluent Add Shortcut Context Menu -->
         <ContextMenu x:Key="AddShortcutContextMenu">
+            <ContextMenu.Resources>
+                <!-- Cap submenu flyouts to exactly ~15 visible items (460px) with smooth scrolling -->
+                <Style TargetType="{x:Type ScrollViewer}" BasedOn="{StaticResource FloatingScrollViewerStyle}">
+                    <Setter Property="MaxHeight" Value="460" />
+                    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+                    <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+                    <Setter Property="CanContentScroll" Value="True" />
+                </Style>
+            </ContextMenu.Resources>
+
             <!-- System Folders Submenu -->
             <MenuItem Header="System Folders">
                 <MenuItem.Icon>
                     <ui:SymbolIcon Symbol="Folder24" FontSize="16" />
                 </MenuItem.Icon>
+                <MenuItem Header="Desktop" Tag="Desktop|Desktop|Desktop24" Click="OnAddSystemFolderClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon Symbol="Desktop24" FontSize="16" />
+                    </MenuItem.Icon>
+                </MenuItem>
                 <MenuItem Header="Documents" Tag="Documents|Documents|Document24" Click="OnAddSystemFolderClick">
                     <MenuItem.Icon>
                         <ui:SymbolIcon Symbol="Document24" FontSize="16" />
@@ -160,6 +175,54 @@
                 </MenuItem>
             </MenuItem>
 
+            <!-- Installed Apps Submenu -->
+            <MenuItem Header="Installed Apps"
+                      SubmenuOpened="OnAddShortcutAppsSubmenuOpened">
+                <MenuItem.Icon>
+                    <ui:SymbolIcon Symbol="AppsAddIn24" FontSize="16" />
+                </MenuItem.Icon>
+                <MenuItem.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <VirtualizingStackPanel IsVirtualizing="True"
+                                                VirtualizationMode="Recycling" />
+                    </ItemsPanelTemplate>
+                </MenuItem.ItemsPanel>
+                <MenuItem.ItemContainerStyle>
+                    <Style TargetType="{x:Type MenuItem}" BasedOn="{StaticResource {x:Type MenuItem}}">
+                        <Setter Property="MinHeight" Value="30" />
+                        <Setter Property="Padding" Value="10,4,14,4" />
+                        <Setter Property="Header" Value="{Binding}" />
+                        <Setter Property="HeaderTemplate">
+                            <Setter.Value>
+                                <DataTemplate>
+                                    <Grid VerticalAlignment="Center">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="24" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Image Grid.Column="0"
+                                               Source="{Binding Icon, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                                               Width="20" Height="20"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               RenderOptions.BitmapScalingMode="HighQuality" />
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Name}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="10,0,8,0"
+                                                   FontSize="{DynamicResource TypeBodyFontSize}"
+                                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <EventSetter Event="Click" Handler="OnAddShortcutAppItemClick" />
+                    </Style>
+                </MenuItem.ItemContainerStyle>
+                <MenuItem Header="Loading applications..." IsEnabled="False" />
+            </MenuItem>
+
             <Separator />
 
             <!-- Browse Local Folder -->
@@ -170,7 +233,7 @@
             </MenuItem>
 
             <!-- Browse Application -->
-            <MenuItem Header="Browse Application (.exe)..." Click="OnBrowseAppClick">
+            <MenuItem Header="Browse Application..." Click="OnBrowseAppClick">
                 <MenuItem.Icon>
                     <ui:SymbolIcon Symbol="AppGeneric24" FontSize="16" />
                 </MenuItem.Icon>
@@ -185,10 +248,10 @@
 
             <Separator />
 
-            <!-- Add Divider Line -->
-            <MenuItem Header="Add Divider Line" Click="OnAddSeparatorClick">
+            <!-- Add Divider -->
+            <MenuItem Header="Add Divider" Click="OnAddSeparatorClick">
                 <MenuItem.Icon>
-                    <ui:SymbolIcon Symbol="ReOrder24" FontSize="16" />
+                    <ui:SymbolIcon Symbol="LineHorizontal124" FontSize="16" />
                 </MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
@@ -476,7 +539,8 @@
                                     Tag="{Binding}"
                                     Click="OnShortcutClick">
                                 <Button.ContextMenu>
-                                    <ContextMenu DataContext="{Binding Path=PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                                    <ContextMenu DataContext="{Binding Path=PlacementTarget.Tag, RelativeSource={RelativeSource Self}}"
+                                                 Opened="OnShortcutContextMenuOpened">
                                         <MenuItem Header="{Binding Title}" IsEnabled="False" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" />
                                         <Separator />
 
@@ -494,8 +558,37 @@
                                             </MenuItem.Icon>
                                         </MenuItem>
 
-                                        <!-- Copy Path Action -->
-                                        <MenuItem Header="Copy Path" Click="OnCopyPathClick">
+                                        <!-- Application Actions (Visible when IsApplication is True) -->
+                                        <MenuItem Header="Run as Administrator" Click="OnRunAsAdminClick"
+                                                  Visibility="{Binding IsApplication, Converter={StaticResource BoolToVis}}">
+                                            <MenuItem.Icon>
+                                                <ui:SymbolIcon Symbol="Shield24" FontSize="16" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="Open File Location" Click="OnOpenFileLocationClick"
+                                                  Visibility="{Binding IsApplication, Converter={StaticResource BoolToVis}}">
+                                            <MenuItem.Icon>
+                                                <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                        <!-- Web Link Actions (Visible when IsWebUrl is True) -->
+                                        <MenuItem Header="Edit Web Link..." Click="OnEditWebLinkClick"
+                                                  Visibility="{Binding IsWebUrl, Converter={StaticResource BoolToVis}}">
+                                            <MenuItem.Icon>
+                                                <ui:SymbolIcon Symbol="Edit24" FontSize="16" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+
+                                        <!-- Copy Action (Dynamic: Copy Path for Folders/Apps, Copy Link for URLs) -->
+                                        <MenuItem Header="Copy Path" Click="OnCopyPathClick"
+                                                  Visibility="{Binding IsNotWebUrl, Converter={StaticResource BoolToVis}}">
+                                            <MenuItem.Icon>
+                                                <ui:SymbolIcon Symbol="Copy24" FontSize="16" />
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                        <MenuItem Header="Copy Link" Click="OnCopyPathClick"
+                                                  Visibility="{Binding IsWebUrl, Converter={StaticResource BoolToVis}}">
                                             <MenuItem.Icon>
                                                 <ui:SymbolIcon Symbol="Copy24" FontSize="16" />
                                             </MenuItem.Icon>
@@ -512,111 +605,117 @@
                                                 <ui:SymbolIcon Symbol="ArrowDown24" FontSize="16" />
                                             </MenuItem.Icon>
                                         </MenuItem>
-                                        <Separator />
 
-                                        <!-- Change Icon Submenu -->
-                                        <MenuItem Header="Change Icon">
+                                        <!-- Change Icon Submenu (Categorized, visible for Folders) -->
+                                        <MenuItem Header="Change Icon"
+                                                  Visibility="{Binding IsFolder, Converter={StaticResource BoolToVis}}">
                                             <MenuItem.Icon>
                                                 <ui:SymbolIcon Symbol="PaintBrush24" FontSize="16" />
                                             </MenuItem.Icon>
-                                            <MenuItem Header="Standard Folder" Tag="Folder24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Folder24" FontSize="16" />
-                                                </MenuItem.Icon>
+                                            <MenuItem Header="Folders">
+                                                <MenuItem Header="Standard Folder" Tag="Folder24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="Folder24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Open Folder" Tag="FolderOpen24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Archive / Zip" Tag="FolderZip24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="FolderZip24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Code / Projects" Tag="Code24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="Code24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Cloud Drive" Tag="Cloud24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="Cloud24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
                                             </MenuItem>
-                                            <MenuItem Header="Open Folder" Tag="FolderOpen24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" />
-                                                </MenuItem.Icon>
+                                            <MenuItem Header="Media &amp; Documents">
+                                                <MenuItem Header="Documents" Tag="Document24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="Document24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Photos / Media" Tag="Image24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="Image24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Music / Audio" Tag="MusicNote224" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="MusicNote224" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Videos / Movies" Tag="Video24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="Video24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Downloads" Tag="ArrowDownload24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
                                             </MenuItem>
-                                            <MenuItem Header="Archive / Zip" Tag="FolderZip24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="FolderZip24" FontSize="16" />
-                                                </MenuItem.Icon>
+                                            <MenuItem Header="Places &amp; Devices">
+                                                <MenuItem Header="Desktop" Tag="Desktop24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="Desktop24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Hard Drive" Tag="Storage24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="Storage24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Work / Office" Tag="Briefcase24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="Briefcase24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Tools / Utilities" Tag="Wrench24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="Wrench24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
                                             </MenuItem>
-                                            <Separator />
-                                            <MenuItem Header="Games" Tag="Games24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Games24" FontSize="16" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="Code / Projects" Tag="Code24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Code24" FontSize="16" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="Music / Audio" Tag="MusicNote224" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="MusicNote224" FontSize="16" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="Photos / Media" Tag="Image24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Image24" FontSize="16" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="Videos / Movies" Tag="Video24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Video24" FontSize="16" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="Documents" Tag="Document24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Document24" FontSize="16" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="Downloads" Tag="ArrowDownload24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="16" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <Separator />
-                                            <MenuItem Header="Work / Office" Tag="Briefcase24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Briefcase24" FontSize="16" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="Cloud Drive" Tag="Cloud24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Cloud24" FontSize="16" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="Desktop" Tag="Desktop24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Desktop24" FontSize="16" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="Hard Drive" Tag="HardDrive24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="HardDrive24" FontSize="16" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="Tools / Utilities" Tag="Wrench24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Wrench24" FontSize="16" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <Separator />
-                                            <MenuItem Header="Star" Tag="Star24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Star24" FontSize="16" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="Rocket" Tag="Rocket24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Rocket24" FontSize="16" />
-                                                </MenuItem.Icon>
-                                            </MenuItem>
-                                            <MenuItem Header="Heart" Tag="Heart24" Click="OnChangeIconClick">
-                                                <MenuItem.Icon>
-                                                    <ui:SymbolIcon Symbol="Heart24" FontSize="16" />
-                                                </MenuItem.Icon>
+                                            <MenuItem Header="Badges">
+                                                <MenuItem Header="Star" Tag="Star24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="Star24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Rocket" Tag="Rocket24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="Rocket24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Heart" Tag="Heart24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="Heart24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Games" Tag="Games24" Click="OnChangeIconClick">
+                                                    <MenuItem.Icon>
+                                                        <ui:SymbolIcon Symbol="Games24" FontSize="16" />
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
                                             </MenuItem>
                                         </MenuItem>
                                         <Separator />
-                                        <MenuItem Header="Unpin from Sidebar" Click="OnRemoveShortcutClick">
+                                        <MenuItem Header="Unpin from Sidebar" Click="OnRemoveShortcutClick"
+                                                  Foreground="{DynamicResource StatusErrorBrush}">
                                             <MenuItem.Icon>
-                                                <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
+                                                <ui:SymbolIcon Symbol="PinOff24" FontSize="16" Foreground="{DynamicResource StatusErrorBrush}" />
                                             </MenuItem.Icon>
                                         </MenuItem>
                                     </ContextMenu>
@@ -670,7 +769,8 @@
                                     Cursor="SizeNS"
                                     Visibility="Collapsed">
                                 <Border.ContextMenu>
-                                    <ContextMenu DataContext="{Binding Path=PlacementTarget.Tag, RelativeSource={RelativeSource Self}}">
+                                    <ContextMenu DataContext="{Binding Path=PlacementTarget.Tag, RelativeSource={RelativeSource Self}}"
+                                                 Opened="OnDividerContextMenuOpened">
                                         <MenuItem Header="Divider" IsEnabled="False" FontWeight="{DynamicResource TypeBodyStrongFontWeight}" />
                                         <Separator />
                                         <MenuItem Header="Move Up" Click="OnMoveUpClick">
@@ -684,9 +784,10 @@
                                             </MenuItem.Icon>
                                         </MenuItem>
                                         <Separator />
-                                        <MenuItem Header="Remove Divider" Click="OnRemoveShortcutClick">
+                                        <MenuItem Header="Remove Divider" Click="OnRemoveShortcutClick"
+                                                  Foreground="{DynamicResource StatusErrorBrush}">
                                             <MenuItem.Icon>
-                                                <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
+                                                <ui:SymbolIcon Symbol="Delete24" FontSize="16" Foreground="{DynamicResource StatusErrorBrush}" />
                                             </MenuItem.Icon>
                                         </MenuItem>
                                     </ContextMenu>

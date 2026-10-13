@@ -350,8 +350,19 @@ public partial class MainWindow
         UpdateBackdropMenuChecks();
         UpdateTileCornerMenuChecks();
 
-        if (GroupMenuSeparator != null)
-            GroupMenuSeparator.Visibility = isInsideGroup ? Visibility.Visible : Visibility.Collapsed;
+        if (PasteCanvasMenuItem != null)
+        {
+            bool canPaste = false;
+            try
+            {
+                canPaste = Clipboard.ContainsText() || Clipboard.ContainsImage() || Clipboard.ContainsFileDropList();
+            }
+            catch
+            {
+                // Clipboard may be temporarily locked by another process
+            }
+            PasteCanvasMenuItem.IsEnabled = canPaste;
+        }
 
         if (RenameGroupCanvasMenuItem != null)
         {
@@ -360,17 +371,39 @@ public partial class MainWindow
         }
 
         if (GroupHeaderColorCanvasMenuItem != null)
+        {
             GroupHeaderColorCanvasMenuItem.Visibility = isInsideGroup ? Visibility.Visible : Visibility.Collapsed;
+            if (isInsideGroup && _activeContextMenuGroup != null)
+            {
+                string currentColor = string.IsNullOrWhiteSpace(_activeContextMenuGroup.HeaderColor) ? "#F0FFFFFF" : _activeContextMenuGroup.HeaderColor;
+                foreach (var item in GroupHeaderColorCanvasMenuItem.Items.OfType<MenuItem>())
+                {
+                    item.IsCheckable = true;
+                    item.IsChecked = string.Equals(item.Tag as string, currentColor, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+        }
 
         if (GroupTintColorCanvasMenuItem != null)
+        {
             GroupTintColorCanvasMenuItem.Visibility = isInsideGroup ? Visibility.Visible : Visibility.Collapsed;
+            if (isInsideGroup && _activeContextMenuGroup != null)
+            {
+                string currentTint = string.IsNullOrWhiteSpace(_activeContextMenuGroup.TintColor) ? "None" : _activeContextMenuGroup.TintColor;
+                foreach (var item in GroupTintColorCanvasMenuItem.Items.OfType<MenuItem>())
+                {
+                    item.IsCheckable = true;
+                    item.IsChecked = string.Equals(item.Tag as string, currentTint, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+        }
 
         if (LockGroupCanvasMenuItem != null)
         {
             LockGroupCanvasMenuItem.Visibility = isInsideGroup ? Visibility.Visible : Visibility.Collapsed;
-            if (isInsideGroup)
+            if (isInsideGroup && _activeContextMenuGroup != null)
             {
-                LockGroupCanvasMenuItem.Header = _activeContextMenuGroup!.IsLocked ? "Unlock Group" : "Lock Group";
+                LockGroupCanvasMenuItem.Header = _activeContextMenuGroup.IsLocked ? "Unlock Group" : "Lock Group";
                 if (LockGroupCanvasIcon != null)
                 {
                     LockGroupCanvasIcon.Symbol = _activeContextMenuGroup.IsLocked
@@ -401,6 +434,11 @@ public partial class MainWindow
         {
             _ = LoadAppsSubmenuAsync();
         }
+    }
+
+    private void OnCanvasPasteClick(object sender, RoutedEventArgs e)
+    {
+        _ = ExecuteCanvasPasteAsync();
     }
 
     private async void OnAppsSubmenuOpened(object sender, RoutedEventArgs e)

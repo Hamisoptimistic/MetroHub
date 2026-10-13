@@ -265,6 +265,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         {
             AllAppsDrawer.RefreshRequested += (s, e) => TriggerBackgroundAppsCatalogRefresh();
             AllAppsDrawer.IsAppPinnedPredicate = IsCatalogItemPinned;
+            AllAppsDrawer.IsFilePinnedPredicate = IsFilePathPinned;
             AllAppsDrawer.InitializeSettings(Settings);
         }
 

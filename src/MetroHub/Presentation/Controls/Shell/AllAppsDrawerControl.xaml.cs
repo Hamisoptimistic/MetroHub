@@ -13,6 +13,7 @@ using MetroHub.Core.Models;
 using MetroHub.Core.Search;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Themes;
+using MetroHub.Presentation.Messaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MetroHub.Presentation.Controls
@@ -47,6 +48,18 @@ namespace MetroHub.Presentation.Controls
         }
 
         public string FullPath => Candidate.FullPathOrKey;
+        public bool IsFolder => Candidate.IsFolder || (!string.IsNullOrEmpty(FullPath) && Directory.Exists(FullPath));
+
+        public bool IsExecutableOrScript
+        {
+            get
+            {
+                if (IsFolder || string.IsNullOrEmpty(FullPath)) return false;
+                string ext = Path.GetExtension(FullPath).ToLowerInvariant();
+                return ext is ".exe" or ".bat" or ".cmd" or ".ps1" or ".msc";
+            }
+        }
+
         public Visibility SubtitleVisibility => string.IsNullOrWhiteSpace(Subtitle) ? Visibility.Collapsed : Visibility.Visible;
 
         private ImageSource? _fileIcon;
@@ -150,6 +163,7 @@ namespace MetroHub.Presentation.Controls
     {
         public event EventHandler<CatalogItemModel>? AppPinRequested;
         public event EventHandler<CatalogItemModel>? AppUnpinRequested;
+        public event EventHandler<string>? FilePinRequested;
         public event EventHandler<CatalogItemModel>? AppLaunchRequested;
         public event EventHandler? ShellHideRequested;
         public event EventHandler? Opened;
@@ -158,6 +172,8 @@ namespace MetroHub.Presentation.Controls
         public event EventHandler? RefreshRequested;
 
         public Func<CatalogItemModel, bool>? IsAppPinnedPredicate { get; set; }
+        public Func<string, bool>? IsFilePinnedPredicate { get; set; }
+        public event EventHandler<string>? FileUnpinRequested;
 
         public bool IsOpen { get; private set; } = false;
 
@@ -1300,6 +1316,115 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
+        private void OnFileContextMenuRunAsAdminClick(object sender, RoutedEventArgs e)
+        {
+            var row = _activeSearchFileItem ?? (sender as FrameworkElement)?.DataContext as SearchItemRowViewModel;
+            if (row != null && !string.IsNullOrWhiteSpace(row.Candidate.FullPathOrKey))
+            {
+                try
+                {
+                    ProcessLauncherService.LaunchTargetAsync(row.Candidate.FullPathOrKey, null, runAsAdmin: true, displayName: row.Candidate.DisplayName);
+                    Close();
+                    ShellHideRequested?.Invoke(this, EventArgs.Empty);
+                }
+                catch (Exception ex)
+                {
+                    Safe.Log("AllAppsDrawer.SearchFileRunAsAdmin", ex);
+                }
+            }
+        }
+
+        private void OnFileContextMenuOpenTerminalClick(object sender, RoutedEventArgs e)
+        {
+            var row = _activeSearchFileItem ?? (sender as FrameworkElement)?.DataContext as SearchItemRowViewModel;
+            if (row != null && !string.IsNullOrWhiteSpace(row.Candidate.FullPathOrKey))
+            {
+                string folder = row.Candidate.FullPathOrKey;
+                if (Directory.Exists(folder))
+                {
+                    try
+                    {
+                        Process.Start(new ProcessStartInfo("wt.exe") { WorkingDirectory = folder, UseShellExecute = true });
+                    }
+                    catch
+                    {
+                        try
+                        {
+                            Process.Start(new ProcessStartInfo("powershell.exe", "-NoExit") { WorkingDirectory = folder, UseShellExecute = true });
+                        }
+                        catch
+                        {
+                            Process.Start(new ProcessStartInfo("cmd.exe", "/K") { WorkingDirectory = folder, UseShellExecute = true });
+                        }
+                    }
+                }
+            }
+        }
+
+        private void OnFileContextMenuPinToMetroHubClick(object sender, RoutedEventArgs e)
+        {
+            var row = _activeSearchFileItem ?? (sender as FrameworkElement)?.DataContext as SearchItemRowViewModel;
+            if (row != null && !string.IsNullOrWhiteSpace(row.Candidate.FullPathOrKey))
+            {
+                string path = row.Candidate.FullPathOrKey;
+                bool isPinned = IsFilePinnedPredicate?.Invoke(path) ?? false;
+                if (isPinned)
+                {
+                    FileUnpinRequested?.Invoke(this, path);
+                }
+                else
+                {
+                    FilePinRequested?.Invoke(this, path);
+                }
+            }
+        }
+
+        private void OnFileContextMenuPinToSidebarClick(object sender, RoutedEventArgs e)
+        {
+            var row = _activeSearchFileItem ?? (sender as FrameworkElement)?.DataContext as SearchItemRowViewModel;
+            if (row != null && !string.IsNullOrWhiteSpace(row.Candidate.FullPathOrKey))
+            {
+                var rail = CanvasMessenger.GetSidebarRail();
+                if (rail != null)
+                {
+                    string path = row.Candidate.FullPathOrKey;
+                    if (SidebarPinningService.IsPathPinnedToSidebar(rail, path))
+                    {
+                        SidebarPinningService.UnpinPathFromSidebar(rail, path);
+                    }
+                    else
+                    {
+                        bool isFolder = row.IsFolder;
+                        string title = row.Candidate.DisplayName;
+                        string smartIcon = isFolder
+                            ? SidebarShortcutItem.DetectSmartIcon(path)
+                            : SidebarPinningService.GetDefaultFileSymbol(Path.GetExtension(path).ToLowerInvariant());
+                        string? iconPath = null;
+                        if (!isFolder)
+                        {
+                            try
+                            {
+                                iconPath = IconExtractorService.ExtractAndCacheIcon(path);
+                            }
+                            catch { }
+                        }
+
+                        var shortcut = new SidebarShortcutItem
+                        {
+                            Title = title,
+                            Target = path,
+                            TargetType = isFolder ? SidebarShortcutType.CustomFolder : SidebarShortcutType.Application,
+                            IconSymbol = smartIcon,
+                            CustomIconPath = iconPath,
+                            SortOrder = rail.Shortcuts.Count,
+                            IsRemovable = true
+                        };
+                        rail.AddShortcutItem(shortcut);
+                    }
+                }
+            }
+        }
+
         private void OpenContextMenuForRow(SearchItemRowViewModel row, UIElement target)
         {
             if (row == null) return;
@@ -1337,6 +1462,7 @@ namespace MetroHub.Presentation.Controls
                     fileMenu.HorizontalOffset = 4;
                     fileMenu.VerticalOffset = 0;
                     fileMenu.DataContext = row;
+                    UpdateFilePinMenuItemState(fileMenu, row);
                     fileMenu.IsOpen = true;
 
                     Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Input, new Action(() =>
@@ -1427,6 +1553,19 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
+        private void OnFileContextMenuOpened(object sender, RoutedEventArgs e)
+        {
+            if (sender is ContextMenu menu)
+            {
+                var row = _activeSearchFileItem ?? menu.DataContext as SearchItemRowViewModel;
+                if (row != null)
+                {
+                    _activeSearchFileItem = row;
+                    UpdateFilePinMenuItemState(menu, row);
+                }
+            }
+        }
+
         private void OnAppContextMenuPreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Left)
@@ -1472,11 +1611,11 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
-        private static MenuItem? FindPinMenuItem(ContextMenu menu)
+        private static MenuItem? FindMenuItemByName(ContextMenu menu, string name)
         {
             foreach (var item in menu.Items)
             {
-                if (item is MenuItem mi && (mi.Name == "PinMenuItem" || mi.Header?.ToString()?.Contains("Pin") == true))
+                if (item is MenuItem mi && (mi.Name == name || mi.Header?.ToString()?.Equals(name, StringComparison.OrdinalIgnoreCase) == true))
                 {
                     return mi;
                 }
@@ -1484,31 +1623,123 @@ namespace MetroHub.Presentation.Controls
             return null;
         }
 
+        private static MenuItem? FindPinMenuItem(ContextMenu menu)
+        {
+            return FindMenuItemByName(menu, "PinMenuItem");
+        }
+
         private void UpdatePinMenuItemState(ContextMenu menu, CatalogItemModel item)
         {
             var pinItem = FindPinMenuItem(menu);
-            if (pinItem == null) return;
-
-            bool isPinned = IsAppPinned(item);
-            if (isPinned)
+            if (pinItem != null)
             {
-                pinItem.Header = "Unpin from Start";
-                if (pinItem.Icon is Wpf.Ui.Controls.SymbolIcon sym)
+                bool isPinned = IsAppPinned(item);
+                if (isPinned)
                 {
-                    sym.Symbol = Wpf.Ui.Controls.SymbolRegular.PinOff24;
-                    sym.Foreground = UnpinRedBrush;
+                    pinItem.Header = "Unpin from MetroHub";
+                    if (pinItem.Icon is Wpf.Ui.Controls.SymbolIcon sym)
+                    {
+                        sym.Symbol = Wpf.Ui.Controls.SymbolRegular.PinOff24;
+                        sym.Foreground = UnpinRedBrush;
+                    }
+                    pinItem.Foreground = UnpinRedBrush;
                 }
-                pinItem.Foreground = UnpinRedBrush;
+                else
+                {
+                    pinItem.Header = "Pin to MetroHub";
+                    if (pinItem.Icon is Wpf.Ui.Controls.SymbolIcon sym)
+                    {
+                        sym.Symbol = Wpf.Ui.Controls.SymbolRegular.Pin24;
+                        sym.ClearValue(Wpf.Ui.Controls.SymbolIcon.ForegroundProperty);
+                    }
+                    pinItem.ClearValue(MenuItem.ForegroundProperty);
+                }
             }
-            else
+
+            var pinSidebarItem = FindMenuItemByName(menu, "PinSidebarMenuItem");
+            if (pinSidebarItem != null)
             {
-                pinItem.Header = "Pin to Start";
-                if (pinItem.Icon is Wpf.Ui.Controls.SymbolIcon sym)
+                var rail = CanvasMessenger.GetSidebarRail();
+                bool isPinnedSidebar = SidebarPinningService.IsCatalogItemPinnedToSidebar(rail, item);
+                if (isPinnedSidebar)
                 {
-                    sym.Symbol = Wpf.Ui.Controls.SymbolRegular.Pin24;
-                    sym.ClearValue(Wpf.Ui.Controls.SymbolIcon.ForegroundProperty);
+                    pinSidebarItem.Header = "Unpin from Sidebar";
+                    if (pinSidebarItem.Icon is Wpf.Ui.Controls.SymbolIcon sym)
+                    {
+                        sym.Symbol = Wpf.Ui.Controls.SymbolRegular.PinOff24;
+                        sym.Foreground = UnpinRedBrush;
+                    }
+                    pinSidebarItem.Foreground = UnpinRedBrush;
                 }
-                pinItem.ClearValue(MenuItem.ForegroundProperty);
+                else
+                {
+                    pinSidebarItem.Header = "Pin to Sidebar";
+                    if (pinSidebarItem.Icon is Wpf.Ui.Controls.SymbolIcon sym)
+                    {
+                        sym.Symbol = Wpf.Ui.Controls.SymbolRegular.Pin24;
+                        sym.ClearValue(Wpf.Ui.Controls.SymbolIcon.ForegroundProperty);
+                    }
+                    pinSidebarItem.ClearValue(MenuItem.ForegroundProperty);
+                }
+            }
+        }
+
+        private void UpdateFilePinMenuItemState(ContextMenu menu, SearchItemRowViewModel row)
+        {
+            if (row == null || string.IsNullOrWhiteSpace(row.Candidate.FullPathOrKey)) return;
+
+            string path = row.Candidate.FullPathOrKey;
+            var pinItem = FindMenuItemByName(menu, "FilePinMenuItem");
+            if (pinItem != null)
+            {
+                bool isPinned = IsFilePinnedPredicate?.Invoke(path) ?? false;
+                if (isPinned)
+                {
+                    pinItem.Header = "Unpin from MetroHub";
+                    if (pinItem.Icon is Wpf.Ui.Controls.SymbolIcon sym)
+                    {
+                        sym.Symbol = Wpf.Ui.Controls.SymbolRegular.PinOff24;
+                        sym.Foreground = UnpinRedBrush;
+                    }
+                    pinItem.Foreground = UnpinRedBrush;
+                }
+                else
+                {
+                    pinItem.Header = "Pin to MetroHub";
+                    if (pinItem.Icon is Wpf.Ui.Controls.SymbolIcon sym)
+                    {
+                        sym.Symbol = Wpf.Ui.Controls.SymbolRegular.Pin24;
+                        sym.ClearValue(Wpf.Ui.Controls.SymbolIcon.ForegroundProperty);
+                    }
+                    pinItem.ClearValue(MenuItem.ForegroundProperty);
+                }
+            }
+
+            var pinSidebarItem = FindMenuItemByName(menu, "FilePinSidebarMenuItem");
+            if (pinSidebarItem != null)
+            {
+                var rail = CanvasMessenger.GetSidebarRail();
+                bool isPinnedSidebar = SidebarPinningService.IsPathPinnedToSidebar(rail, path);
+                if (isPinnedSidebar)
+                {
+                    pinSidebarItem.Header = "Unpin from Sidebar";
+                    if (pinSidebarItem.Icon is Wpf.Ui.Controls.SymbolIcon sym)
+                    {
+                        sym.Symbol = Wpf.Ui.Controls.SymbolRegular.PinOff24;
+                        sym.Foreground = UnpinRedBrush;
+                    }
+                    pinSidebarItem.Foreground = UnpinRedBrush;
+                }
+                else
+                {
+                    pinSidebarItem.Header = "Pin to Sidebar";
+                    if (pinSidebarItem.Icon is Wpf.Ui.Controls.SymbolIcon sym)
+                    {
+                        sym.Symbol = Wpf.Ui.Controls.SymbolRegular.Pin24;
+                        sym.ClearValue(Wpf.Ui.Controls.SymbolIcon.ForegroundProperty);
+                    }
+                    pinSidebarItem.ClearValue(MenuItem.ForegroundProperty);
+                }
             }
         }
 
@@ -1607,6 +1838,25 @@ namespace MetroHub.Presentation.Controls
             else
             {
                 AppPinRequested?.Invoke(this, item);
+            }
+        }
+
+        private void OnContextMenuPinToSidebarClick(object sender, RoutedEventArgs e)
+        {
+            var item = _activeContextMenuItem ?? GetCatalogItemFromMenu(sender);
+            if (item == null) return;
+
+            var rail = CanvasMessenger.GetSidebarRail();
+            if (rail != null)
+            {
+                if (SidebarPinningService.IsCatalogItemPinnedToSidebar(rail, item))
+                {
+                    SidebarPinningService.UnpinCatalogItemFromSidebar(rail, item);
+                }
+                else
+                {
+                    SidebarPinningService.PinCatalogItem(rail, item);
+                }
             }
         }
 

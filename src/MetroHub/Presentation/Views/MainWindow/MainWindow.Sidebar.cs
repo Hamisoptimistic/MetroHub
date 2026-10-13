@@ -336,6 +336,29 @@ public partial class MainWindow
         PinCatalogItem(item, null);
     }
 
+    private void OnDrawerFilePinRequested(object? sender, string filePath)
+    {
+        if (!string.IsNullOrWhiteSpace(filePath))
+        {
+            AddFileAsTile(filePath, 0, 0, recordHistory: true);
+        }
+    }
+
+    private void OnDrawerFileUnpinRequested(object? sender, string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath)) return;
+        string norm = SidebarPinningService.NormalizeTarget(filePath);
+        var matched = Tiles.Where(tile =>
+            !string.IsNullOrEmpty(tile.TargetPath) &&
+            string.Equals(SidebarPinningService.NormalizeTarget(tile.TargetPath), norm, StringComparison.OrdinalIgnoreCase)
+        ).ToList();
+
+        if (matched.Count > 0)
+        {
+            BatchUnpinTiles(matched);
+        }
+    }
+
     private void OnDrawerAppUnpinRequested(object? sender, CatalogItemModel item)
     {
         if (item == null) return;
@@ -361,6 +384,15 @@ public partial class MainWindow
         return Tiles.Any(tile =>
             (!string.IsNullOrEmpty(item.TargetPath) && string.Equals(tile.TargetPath, item.TargetPath, StringComparison.OrdinalIgnoreCase)) ||
             (!string.IsNullOrEmpty(item.Name) && string.Equals(tile.Title, item.Name, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private bool IsFilePathPinned(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath)) return false;
+        string norm = SidebarPinningService.NormalizeTarget(filePath);
+        return Tiles.Any(tile =>
+            !string.IsNullOrEmpty(tile.TargetPath) &&
+            string.Equals(SidebarPinningService.NormalizeTarget(tile.TargetPath), norm, StringComparison.OrdinalIgnoreCase));
     }
 
     private void OnDrawerAppLaunchRequested(object? sender, CatalogItemModel item)

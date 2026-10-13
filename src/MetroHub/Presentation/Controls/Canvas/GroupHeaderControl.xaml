@@ -109,6 +109,12 @@
                     </MenuItem>
                 </MenuItem>
 
+                <MenuItem x:Name="LockMenuItem" Header="Lock Group" Click="OnLockClick">
+                    <MenuItem.Icon>
+                        <ui:SymbolIcon x:Name="LockMenuIcon" Symbol="LockClosed24" FontSize="18" />
+                    </MenuItem.Icon>
+                </MenuItem>
+
                 <Separator />
 
                 <MenuItem x:Name="UngroupMenuItem" Header="Ungroup Tiles" Click="OnUngroupClick">

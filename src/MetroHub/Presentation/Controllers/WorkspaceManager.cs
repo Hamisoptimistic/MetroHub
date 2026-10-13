@@ -88,7 +88,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
         {
             if (param is string id) DeleteWorkspace(id);
             else if (param is WorkspaceModel model) DeleteWorkspace(model.Id);
-        });
+        }, param => Workspaces.Count > 1);
 
         RequestDeleteWorkspaceCommand = new RelayCommand<object>(param =>
         {
@@ -107,7 +107,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
                     DeleteWorkspace(ws.Id);
                 }
             }
-        });
+        }, param => Workspaces.Count > 1);
 
         RequestRenameWorkspaceCommand = new RelayCommand<object>(param =>
         {
@@ -118,6 +118,13 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
                 if (ws != null) RequestRename?.Invoke(ws);
             }
         });
+
+        Workspaces.CollectionChanged += (s, e) =>
+        {
+            ((IRelayCommand)RequestDeleteWorkspaceCommand).NotifyCanExecuteChanged();
+            ((IRelayCommand)DeleteWorkspaceCommand).NotifyCanExecuteChanged();
+            ((IRelayCommand)CreateWorkspaceCommand).NotifyCanExecuteChanged();
+        };
     }
 
     /// <summary>
