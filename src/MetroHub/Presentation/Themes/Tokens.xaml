@@ -76,8 +76,8 @@
     <SolidColorBrush x:Key="ContentDialogSeparatorBorderBrush" Color="#18FFFFFF" />
     <SolidColorBrush x:Key="ContentDialogTopOverlay" Color="#08FFFFFF" />
     <CornerRadius x:Key="DialogOverlayCornerRadius">10,10,0,0</CornerRadius>
-    <CornerRadius x:Key="DialogFooterCornerRadius">0,0,10,10</CornerRadius>
-    <SolidColorBrush x:Key="DialogPanelBackground" Color="#232323" />
+    <!-- Tier 2 Obsidian Deck Tint (calibrated translucent acrylic tint matching SettingsWindow) -->
+    <SolidColorBrush x:Key="DialogPanelBackground" Color="#280D0D11" />
     <SolidColorBrush x:Key="DialogShellBackground" Color="#202020" />
     <SolidColorBrush x:Key="DialogShellBorderBrush" Color="#33FFFFFF" />
 

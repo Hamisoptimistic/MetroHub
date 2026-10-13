@@ -110,6 +110,7 @@
             <Button Content="Add Shortcut"
                     Style="{DynamicResource AccentButtonStyle}"
                     HorizontalAlignment="Right"
+                    IsDefault="True"
                     Click="OnAddWebLinkClick" />
         </Grid>
     </Grid>

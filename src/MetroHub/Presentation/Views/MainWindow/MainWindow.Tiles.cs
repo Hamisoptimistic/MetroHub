@@ -245,11 +245,11 @@ public partial class MainWindow
         }
     }
 
-    public void ShowAddWebLinkDialog(string? initialUrl = null)
+    public void ShowAddWebLinkDialog(string? initialUrl = null, string? initialTitle = null, bool defaultCanvasOnly = false)
     {
         using (EnterDialogScope())
         {
-            var result = WebLinkDialog.Show(this, initialUrl);
+            var result = WebLinkDialog.Show(this, initialUrl, initialTitle, defaultCanvasOnly);
             if (result != null)
             {
                 OnWebLinkCreated(this, result);
@@ -727,6 +727,31 @@ public partial class MainWindow
             var specs = await CanvasPasteService.ExtractPasteItemsAsync().ConfigureAwait(true);
             if (specs != null && specs.Count > 0)
             {
+                // If a single web link was pasted, open the dedicated WebLinkDialog with the URL prefilled
+                // and Title input focused/selected, allowing instant Enter confirmation or custom title editing.
+                if (specs.Count == 1 && specs[0].TileType == TileType.WebUrl)
+                {
+                    if (anchorPoint.HasValue)
+                    {
+                        _canvasRightClickPoint = anchorPoint.Value;
+                    }
+                    else if (TilesListBox != null)
+                    {
+                        Point p = Mouse.GetPosition(TilesListBox);
+                        if (p.X >= 0 && p.Y >= 0)
+                        {
+                            _canvasRightClickPoint = p;
+                        }
+                        else if (ContentScrollViewer != null)
+                        {
+                            _canvasRightClickPoint = new Point(0, Math.Max(0, ContentScrollViewer.VerticalOffset));
+                        }
+                    }
+
+                    ShowAddWebLinkDialog(specs[0].TargetPath, specs[0].Title, defaultCanvasOnly: true);
+                    return;
+                }
+
                 TileManager.BatchAddPastedTiles(specs, anchorPoint);
             }
         }

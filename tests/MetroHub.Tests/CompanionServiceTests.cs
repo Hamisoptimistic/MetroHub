@@ -501,7 +501,7 @@ public sealed class CompanionServiceTests : IAsyncLifetime
             var tile = tiles[0];
             Assert.Equal(result.TileId, tile.Id);
             Assert.Equal("https://www.youtube.com/watch?v=dQw4w9WgXcQ", tile.TargetPath);
-            Assert.Equal("YouTube", tile.Title);
+            Assert.Equal("Youtube", tile.Title);
             Assert.Equal(TileType.WebUrl, tile.TileType);
             Assert.Equal(2, tile.SpanX);
             Assert.Equal(2, tile.SpanY);

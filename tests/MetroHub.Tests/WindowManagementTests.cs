@@ -88,4 +88,34 @@ public class WindowManagementTests
     {
         Assert.Equal(3, NativeMethods.DWMWA_TRANSITIONS_FORCEDISABLED);
     }
+
+    [Fact]
+    public void WebLinkDialog_Setup_PopulatesFieldsAndDestinationCorrectly()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var dialog = new WebLinkDialog();
+            dialog.Setup("https://github.com", "My GitHub", defaultCanvasOnly: true);
+
+            Assert.Equal("https://github.com", dialog.WebLinkUrlInput.Text);
+            Assert.Equal("My GitHub", dialog.WebLinkTitleInput.Text);
+            Assert.True(dialog.WebLinkDestCanvasRadio.IsChecked);
+            Assert.False(dialog.WebLinkDestBothRadio.IsChecked);
+        });
+    }
+
+    [Fact]
+    public void WebLinkDialog_Setup_DefaultsToBothWhenNotCanvasOnly()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var dialog = new WebLinkDialog();
+            dialog.Setup("https://github.com");
+
+            Assert.Equal("https://github.com", dialog.WebLinkUrlInput.Text);
+            Assert.Equal("Github", dialog.WebLinkTitleInput.Text);
+            Assert.True(dialog.WebLinkDestBothRadio.IsChecked);
+            Assert.False(dialog.WebLinkDestCanvasRadio.IsChecked);
+        });
+    }
 }

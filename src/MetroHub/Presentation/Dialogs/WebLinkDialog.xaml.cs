@@ -28,7 +28,7 @@ public partial class WebLinkDialog : MetroDialog
         InitializeComponent();
     }
 
-    public void Setup(string? initialUrl = null)
+    public void Setup(string? initialUrl = null, string? initialTitle = null, bool defaultCanvasOnly = false)
     {
         _userManuallyEditedTitle = false;
         _resolvedIconPath = null;
@@ -38,11 +38,23 @@ public partial class WebLinkDialog : MetroDialog
         WebLinkFaviconImage.Visibility = Visibility.Collapsed;
         WebLinkFallbackIcon.Visibility = Visibility.Visible;
         WebLinkSidebarSpinner.Visibility = Visibility.Collapsed;
-        WebLinkDestBothRadio.IsChecked = true;
+
+        if (defaultCanvasOnly)
+        {
+            WebLinkDestCanvasRadio.IsChecked = true;
+        }
+        else
+        {
+            WebLinkDestBothRadio.IsChecked = true;
+        }
 
         if (!string.IsNullOrWhiteSpace(initialUrl))
         {
             WebLinkUrlInput.Text = initialUrl;
+            if (!string.IsNullOrWhiteSpace(initialTitle))
+            {
+                WebLinkTitleInput.Text = initialTitle;
+            }
         }
         else
         {
@@ -232,13 +244,17 @@ public partial class WebLinkDialog : MetroDialog
         Close();
     }
 
-    public static WebLinkCreatedEventArgs? Show(Window? owner, string? initialUrl = null)
+    public static WebLinkCreatedEventArgs? Show(
+        Window? owner,
+        string? initialUrl = null,
+        string? initialTitle = null,
+        bool defaultCanvasOnly = false)
     {
         var dlg = new WebLinkDialog
         {
             Owner = owner
         };
-        dlg.Setup(initialUrl);
+        dlg.Setup(initialUrl, initialTitle, defaultCanvasOnly);
         return dlg.ShowDialog() == true ? dlg.WebLinkResult : null;
     }
 }

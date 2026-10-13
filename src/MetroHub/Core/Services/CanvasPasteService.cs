@@ -376,18 +376,25 @@ public static class CanvasPasteService
         {
             domainCandidate = domainCandidate.Substring(0, slashIdx);
         }
-        int colonIdx = domainCandidate.IndexOf(':');
-        if (colonIdx > 0 && !hasHttp)
-        {
-            domainCandidate = domainCandidate.Substring(0, colonIdx);
-        }
+        // Accept if explicit http/https, starts with www., or looks like a valid hostname with domain suffix
+        bool looksLikeDomain = domainCandidate.Contains('.') &&
+                               !domainCandidate.StartsWith('.') &&
+                               !domainCandidate.EndsWith('.') &&
+                               Uri.CheckHostName(domainCandidate) is UriHostNameType.Dns;
 
-        bool isKnownBrand = WebFaviconService.KnownBrands.ContainsKey(domainCandidate);
-
-        // Only accept if explicit http/https, starts with www., or belongs to KnownBrands
-        if (!hasHttp && !hasWww && !isKnownBrand)
+        if (!hasHttp && !hasWww)
         {
-            return false;
+            if (!looksLikeDomain) return false;
+
+            int dotIdx = domainCandidate.LastIndexOf('.');
+            if (dotIdx > 0 && dotIdx < domainCandidate.Length - 1)
+            {
+                string ext = domainCandidate.Substring(dotIdx + 1);
+                if (int.TryParse(ext, out _) || IsCommonFileExtension(ext))
+                {
+                    return false;
+                }
+            }
         }
 
         string normalized = hasHttp
@@ -439,4 +446,7 @@ public static class CanvasPasteService
 
         return urlFilePath;
     }
+
+    private static bool IsCommonFileExtension(string ext) =>
+        ext is "txt" or "md" or "doc" or "docx" or "pdf" or "log" or "cs" or "cpp" or "h" or "c" or "py" or "java" or "json" or "xml" or "zip" or "tar" or "gz" or "7z" or "rar" or "exe" or "dll" or "bin" or "png" or "jpg" or "jpeg" or "gif" or "bmp" or "svg";
 }
