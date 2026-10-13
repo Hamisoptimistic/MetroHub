@@ -35,8 +35,8 @@ public sealed class BackdropManager
     private readonly Action<string, bool> _toastAction;
     private readonly Action? _updateMenuChecksAction;
 
-    private int _wallpaperLoadGeneration = 0;
-    private string? _currentLoadedWallpaperPath = null;
+    private int _wallpaperLoadGeneration;
+    private string? _currentLoadedWallpaperPath;
     private CancellationTokenSource? _wallpaperCts;
 
     public string? CurrentLoadedWallpaperPath => _currentLoadedWallpaperPath;
@@ -69,7 +69,7 @@ public sealed class BackdropManager
         _updateMenuChecksAction = updateMenuChecksAction;
     }
 
-    private bool _isBackdropConfigured = false;
+    private bool _isBackdropConfigured;
 
     public void InvalidateBackdrop()
     {

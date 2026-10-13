@@ -225,15 +225,15 @@
 
             <Separator />
 
-            <!-- Browse Local Folder -->
-            <MenuItem Header="Browse Local Folder..." Click="OnBrowseLocalFolderClick">
+            <!-- Add Folder -->
+            <MenuItem Header="Add Folder..." Click="OnBrowseLocalFolderClick">
                 <MenuItem.Icon>
                     <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" />
                 </MenuItem.Icon>
             </MenuItem>
 
-            <!-- Browse Application -->
-            <MenuItem Header="Browse Application..." Click="OnBrowseAppClick">
+            <!-- Add App from File -->
+            <MenuItem Header="Add App from File..." Click="OnBrowseAppClick">
                 <MenuItem.Icon>
                     <ui:SymbolIcon Symbol="AppGeneric24" FontSize="16" />
                 </MenuItem.Icon>
@@ -251,7 +251,7 @@
             <!-- Add Divider -->
             <MenuItem Header="Add Divider" Click="OnAddSeparatorClick">
                 <MenuItem.Icon>
-                    <ui:SymbolIcon Symbol="LineHorizontal124" FontSize="16" />
+                    <ui:SymbolIcon Symbol="Subtract24" FontSize="16" />
                 </MenuItem.Icon>
             </MenuItem>
         </ContextMenu>

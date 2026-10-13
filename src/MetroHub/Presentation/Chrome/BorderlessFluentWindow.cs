@@ -112,7 +112,7 @@ public class BorderlessFluentWindow : FluentWindow
         ApplyBorderlessAttributes();
     }
 
-    public bool IsDismissing { get; set; } = false;
+    public bool IsDismissing { get; set; }
 
     private IntPtr HwndMessageHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {

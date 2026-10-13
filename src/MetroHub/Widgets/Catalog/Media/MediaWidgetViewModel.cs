@@ -171,24 +171,20 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
 
     public IEnumerable<Control> GetContextMenuItems()
     {
-        var zuneActionItem = new MenuItem
+        yield return WidgetMenu.Item(
+            IsPlaying ? "Pause" : "Play",
+            IsPlaying ? SymbolRegular.Pause24 : SymbolRegular.Play24,
+            () => TogglePlayPauseCommand.Execute(null));
+        yield return WidgetMenu.Item("Next Track", SymbolRegular.Next24, () => SkipNextCommand.Execute(null));
+        yield return WidgetMenu.Item("Previous Track", SymbolRegular.Previous24, () => SkipPreviousCommand.Execute(null));
+        yield return WidgetMenu.Divider();
+        yield return WidgetMenu.Item("Copy Track Info", SymbolRegular.Copy24, () =>
         {
-            Header = IsZuneMode ? "Switch to Standard Player (8x4)" : "Switch to Zune Player (4x6)",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
+            if (!string.IsNullOrWhiteSpace(Title) && Title != "No media playing")
             {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.MusicNote224,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
+                Clipboard.SetText($"{Title} - {Artist}");
             }
-        };
-        zuneActionItem.Click += (s, ev) =>
-        {
-            int targetX = IsZuneMode ? 8 : 4;
-            int targetY = IsZuneMode ? 4 : 6;
-            WeakReferenceMessenger.Default.Send(new TileBatchResizeMessage(targetX, targetY, Model));
-        };
-
-        yield return zuneActionItem;
+        });
     }
 
     public double AlbumArtSize => Model.SpanY switch

@@ -430,6 +430,21 @@ public partial class MainWindow
             CreateGroupCanvasMenuItem.Visibility = isInsideGroup ? Visibility.Collapsed : Visibility.Visible;
         }
 
+        if (GlobalSettingsSeparator != null)
+        {
+            GlobalSettingsSeparator.Visibility = isInsideGroup ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        if (BackgroundCanvasMenuItem != null)
+        {
+            BackgroundCanvasMenuItem.Visibility = isInsideGroup ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        if (TileCornersCanvasMenuItem != null)
+        {
+            TileCornersCanvasMenuItem.Visibility = isInsideGroup ? Visibility.Collapsed : Visibility.Visible;
+        }
+
         if (!_isAppsLoaded && !_isLoadingApps)
         {
             _ = LoadAppsSubmenuAsync();

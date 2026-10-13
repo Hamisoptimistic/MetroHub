@@ -13,7 +13,7 @@ public sealed class AppSettings
     public double WallpaperDimOpacity { get; set; } = 0.50; // 0.35, 0.50, 0.65
     public bool WallpaperParallax { get; set; } = true;
     
-    public bool LaunchAtStartup { get; set; } = false;
+    public bool LaunchAtStartup { get; set; }
     public bool CloseOnLaunch { get; set; } = true;
     public string Orientation { get; set; } = "Vertical"; // Vertical, Horizontal
 
@@ -24,7 +24,7 @@ public sealed class AppSettings
     public int TileCornerRadius { get; set; } = 2; // 0 (Metro Sharp), 2 (Subtle Edge), 4 (Medium), 8 (Fluent Rounded)
 
     public bool SidebarAutoHide { get; set; } = true;
-    public bool SidebarPinned { get; set; } = false;
+    public bool SidebarPinned { get; set; }
     public List<SidebarShortcutItem> SidebarShortcuts { get; set; } = SidebarShortcutItem.CreateDefaultList();
 
     public bool BrowserExtensionCompanionEnabled { get; set; } = true;

@@ -307,9 +307,7 @@
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="PaintBucket24" FontSize="20" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </MenuItem.Icon>
-                            <MenuItem Header="None (Transparent)" Tag="None" Click="OnCanvasGroupTintColorSelectClick">
-                                <MenuItem.Icon><Border Width="12" Height="12" BorderThickness="1" BorderBrush="#80FFFFFF" Background="Transparent" CornerRadius="{DynamicResource ControlCornerRadius}"/></MenuItem.Icon>
-                            </MenuItem>
+                            <MenuItem Header="None" Tag="None" Click="OnCanvasGroupTintColorSelectClick" />
                             <MenuItem Header="Fluent Sky Blue" Tag="#60CDFF" Click="OnCanvasGroupTintColorSelectClick">
                                 <MenuItem.Icon><Ellipse Width="12" Height="12" Fill="{DynamicResource GroupBrushSkyBlue}"/></MenuItem.Icon>
                             </MenuItem>
@@ -367,9 +365,9 @@
                             </MenuItem.Icon>
                         </MenuItem>
 
-                        <Separator />
+                        <Separator x:Name="GlobalSettingsSeparator" />
 
-                        <MenuItem Header="Background">
+                        <MenuItem x:Name="BackgroundCanvasMenuItem" Header="Background">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="PaintBucket24" FontSize="20" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </MenuItem.Icon>
@@ -391,7 +389,7 @@
                             </MenuItem>
                         </MenuItem>
 
-                        <MenuItem Header="Tile Corners">
+                        <MenuItem x:Name="TileCornersCanvasMenuItem" Header="Tile Corners">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="Shapes24" FontSize="20" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </MenuItem.Icon>

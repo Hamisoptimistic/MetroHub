@@ -230,149 +230,31 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
 
     public IEnumerable<Control> GetContextMenuItems()
     {
-        // 1. Open in Windows Photos
-        var openPhotoItem = new MenuItem
+        if (!IsEmpty)
         {
-            Header = "Open in Windows Photos",
-            IsEnabled = !IsEmpty,
-            Icon = new Wpf.Ui.Controls.SymbolIcon
+            yield return WidgetMenu.Item("Open Photo", SymbolRegular.Image24, OpenCurrentPhoto);
+            yield return WidgetMenu.Item("Open Containing Folder", SymbolRegular.FolderOpenVertical20, () =>
             {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Image24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        openPhotoItem.Click += (s, ev) => OpenCurrentPhoto();
+                if (!string.IsNullOrWhiteSpace(CurrentPhotoPath) && File.Exists(CurrentPhotoPath))
+                {
+                    try { System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{CurrentPhotoPath}\""); } catch { }
+                }
+            });
+            yield return WidgetMenu.Item("Next Photo", SymbolRegular.ArrowRight24, () => _ = NextPhoto());
+            yield return WidgetMenu.Divider();
+        }
 
-        // 2. Choose Photos Folder
-        var chooseFolderItem = new MenuItem
-        {
-            Header = "Choose Photo Stream Folder...",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.FolderOpen24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        chooseFolderItem.Click += (s, ev) => ChooseFolder();
-
-        // 3. Stream Interval Submenu
-        var intervalItem = new MenuItem
-        {
-            Header = "Photo Stream Interval",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Timer24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-
-        var item10s = new MenuItem
-        {
-            Header = "10 Seconds",
-            IsCheckable = true,
-            IsChecked = IntervalSeconds == 10
-        };
-        item10s.Click += (s, ev) => SetInterval(10);
-
-        var item30s = new MenuItem
-        {
-            Header = "30 Seconds (Default)",
-            IsCheckable = true,
-            IsChecked = IntervalSeconds == 30
-        };
-        item30s.Click += (s, ev) => SetInterval(30);
-
-        var item1m = new MenuItem
-        {
-            Header = "1 Minute",
-            IsCheckable = true,
-            IsChecked = IntervalSeconds == 60
-        };
-        item1m.Click += (s, ev) => SetInterval(60);
-
-        var item5m = new MenuItem
-        {
-            Header = "5 Minutes",
-            IsCheckable = true,
-            IsChecked = IntervalSeconds == 300
-        };
-        item5m.Click += (s, ev) => SetInterval(300);
-
-        intervalItem.Items.Add(item10s);
-        intervalItem.Items.Add(item30s);
-        intervalItem.Items.Add(item1m);
-        intervalItem.Items.Add(item5m);
-
-        // 4. Shuffle Stream Toggle
-        var shuffleItem = new MenuItem
-        {
-            Header = "Shuffle Photo Stream",
-            IsCheckable = true,
-            IsChecked = Shuffle,
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.ArrowShuffle24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        shuffleItem.Click += (s, ev) => ToggleShuffle();
-
-        // 5. Include Subfolders Toggle
-        var subfoldersItem = new MenuItem
-        {
-            Header = "Include Subfolders",
-            IsCheckable = true,
-            IsChecked = IncludeSubfolders,
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Folder24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        subfoldersItem.Click += (s, ev) => ToggleIncludeSubfolders();
-
-        // 6. Fit Mode Submenu
-        var fitModeItem = new MenuItem
-        {
-            Header = "Photo Stream Fit",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.SlideSize24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-
-        var itemSmartFit = new MenuItem
-        {
-            Header = "Smart Fit (With Backdrop)",
-            IsCheckable = true,
-            IsChecked = FitMode == "FitWithBlur"
-        };
-        itemSmartFit.Click += (s, ev) => SetFitMode("FitWithBlur");
-
-        var itemFill = new MenuItem
-        {
-            Header = "Fill Tile (Crop)",
-            IsCheckable = true,
-            IsChecked = FitMode == "Fill"
-        };
-        itemFill.Click += (s, ev) => SetFitMode("Fill");
-
-        fitModeItem.Items.Add(itemSmartFit);
-        fitModeItem.Items.Add(itemFill);
-
-        yield return openPhotoItem;
-        yield return chooseFolderItem;
-        yield return intervalItem;
-        yield return shuffleItem;
-        yield return subfoldersItem;
-        yield return fitModeItem;
+        yield return WidgetMenu.Item("Select Photos Folder...", SymbolRegular.FolderOpen24, ChooseFolder);
+        yield return WidgetMenu.Submenu("Slide Interval", SymbolRegular.Timer24,
+            WidgetMenu.Item("10 Seconds", () => SetInterval(10), isCheckable: true, isChecked: IntervalSeconds == 10),
+            WidgetMenu.Item("30 Seconds (Default)", () => SetInterval(30), isCheckable: true, isChecked: IntervalSeconds == 30),
+            WidgetMenu.Item("1 Minute", () => SetInterval(60), isCheckable: true, isChecked: IntervalSeconds == 60),
+            WidgetMenu.Item("5 Minutes", () => SetInterval(300), isCheckable: true, isChecked: IntervalSeconds == 300));
+        yield return WidgetMenu.Item("Shuffle Photos", SymbolRegular.ArrowShuffle24, ToggleShuffle, isCheckable: true, isChecked: Shuffle);
+        yield return WidgetMenu.Item("Include Subfolders", SymbolRegular.Folder24, ToggleIncludeSubfolders, isCheckable: true, isChecked: IncludeSubfolders);
+        yield return WidgetMenu.Submenu("Aspect Ratio & Fit", SymbolRegular.SlideSize24,
+            WidgetMenu.Item("Smart Fit (With Backdrop)", () => SetFitMode("FitWithBlur"), isCheckable: true, isChecked: FitMode == "FitWithBlur"),
+            WidgetMenu.Item("Fill Tile (Crop)", () => SetFitMode("Fill"), isCheckable: true, isChecked: FitMode == "Fill"));
     }
 
     public void SetHovered(bool hovered)

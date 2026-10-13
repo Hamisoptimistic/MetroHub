@@ -157,16 +157,28 @@
                                         PreviewKeyDown="DayButton_PreviewKeyDown">
                                     <Button.ContextMenu>
                                         <ContextMenu>
-                                            <MenuItem Header="Mark Done ✓"
+                                            <MenuItem Header="Mark Done"
                                                       Command="{Binding PlacementTarget.Tag.ToggleDayCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                            <MenuItem Header="Mark Failed ✕"
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Checkmark24" FontSize="16" Foreground="{DynamicResource StatusSuccessBrush}" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+                                            <MenuItem Header="Mark Missed"
                                                       Command="{Binding PlacementTarget.Tag.MarkDayFailedCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="Dismiss24" FontSize="16" Foreground="{DynamicResource StatusErrorBrush}" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
                                             <Separator />
-                                            <MenuItem Header="Clear / Reset"
+                                            <MenuItem Header="Reset Day"
                                                       Command="{Binding PlacementTarget.Tag.ClearDayCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                      CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                                <MenuItem.Icon>
+                                                    <ui:SymbolIcon Symbol="ArrowReset24" FontSize="16" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                </MenuItem.Icon>
+                                            </MenuItem>
                                         </ContextMenu>
                                     </Button.ContextMenu>
 

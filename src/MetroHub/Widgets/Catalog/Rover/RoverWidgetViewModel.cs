@@ -470,78 +470,20 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetA
 
     public IEnumerable<Control> GetContextMenuItems()
     {
-        var petItem = new MenuItem
-        {
-            Header = "Pet Rover 🐾",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
+        yield return WidgetMenu.Item("Pet Rover", SymbolRegular.Heart24, Pet);
+        yield return WidgetMenu.Item("Do a Trick", SymbolRegular.Sparkle24, DoTrick);
+        yield return WidgetMenu.Item(
+            IsSleeping ? "Wake Up" : "Take a Nap",
+            IsSleeping ? SymbolRegular.WeatherSunny24 : SymbolRegular.WeatherMoon24,
+            () =>
             {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Heart24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        petItem.Click += (s, ev) => Pet();
-
-        var trickItem = new MenuItem
-        {
-            Header = "Do a Trick 🌟",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Sparkle24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        trickItem.Click += (s, ev) => DoTrick();
-
-        var sleepItem = new MenuItem
-        {
-            Header = IsSleeping ? "Wake Up ⚡" : "Take a Nap 💤",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = IsSleeping ? Wpf.Ui.Controls.SymbolRegular.WeatherSunny24 : Wpf.Ui.Controls.SymbolRegular.WeatherMoon24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        sleepItem.Click += (s, ev) =>
-        {
-            if (IsSleeping) WakeUp();
-            else TakeNap();
-        };
-
-        var muteItem = new MenuItem
-        {
-            Header = IsMuted ? "Unmute Sound 🔊" : "Mute Sound 🔇",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = IsMuted ? Wpf.Ui.Controls.SymbolRegular.Speaker224 : Wpf.Ui.Controls.SymbolRegular.SpeakerOff24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        muteItem.Click += (s, ev) => ToggleMute();
-
-        var themeItem = new MenuItem
-        {
-            Header = IsXPBliss ? "Style: Fluent Glass 🪟" : "Style: XP Bliss Hill 🌄",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Color24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        themeItem.Click += (s, ev) =>
-        {
-            BackgroundStyle = IsXPBliss ? "FluentGlass" : "XPBliss";
-        };
-
-        yield return petItem;
-        yield return trickItem;
-        yield return sleepItem;
-        yield return muteItem;
-        yield return themeItem;
+                if (IsSleeping) WakeUp();
+                else TakeNap();
+            });
+        yield return WidgetMenu.Item("Mute Sound", SymbolRegular.SpeakerOff24, ToggleMute, isCheckable: true, isChecked: IsMuted);
+        yield return WidgetMenu.Submenu("Style", SymbolRegular.Color24,
+            WidgetMenu.Item("Fluent Glass", () => BackgroundStyle = "FluentGlass", isCheckable: true, isChecked: !IsXPBliss),
+            WidgetMenu.Item("XP Bliss Hill", () => BackgroundStyle = "XPBliss", isCheckable: true, isChecked: IsXPBliss));
     }
 
     /// <summary>

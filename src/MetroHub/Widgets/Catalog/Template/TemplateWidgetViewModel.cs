@@ -141,31 +141,8 @@ public sealed partial class TemplateWidgetViewModel : WidgetViewModelBase, IWidg
     /// </summary>
     public IEnumerable<Control> GetContextMenuItems()
     {
-        var configItem = new MenuItem
-        {
-            Header = "Configure Widget...",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Settings24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        configItem.Click += (s, ev) => Configure();
-        yield return configItem;
-
-        var resetItem = new MenuItem
-        {
-            Header = "Reset Template Counter",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.ArrowReset24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        resetItem.Click += (s, ev) => ResetCounter();
-        yield return resetItem;
+        yield return WidgetMenu.Item("Configure Widget...", SymbolRegular.Settings24, Configure);
+        yield return WidgetMenu.Item("Reset Template Counter", SymbolRegular.ArrowReset24, ResetCounter);
     }
 
     /// <summary>

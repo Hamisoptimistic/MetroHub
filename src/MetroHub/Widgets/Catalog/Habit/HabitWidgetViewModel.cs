@@ -646,53 +646,11 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase, IWidgetContextM
 
     public IEnumerable<Control> GetContextMenuItems()
     {
-        var editHabitItem = new MenuItem
-        {
-            Header = "Edit Habit...",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Edit24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        editHabitItem.Click += (s, ev) => EditHabit();
-
-        var markTodayItem = new MenuItem
-        {
-            Header = "Toggle Today (Done / Unmarked)",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.CheckmarkCircle24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        markTodayItem.Click += (s, ev) => ToggleToday();
-
-        var jumpCurrentMonthItem = new MenuItem
-        {
-            Header = "Jump to Current Month",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.CalendarToday24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        jumpCurrentMonthItem.Click += (s, ev) => JumpToCurrentMonth();
-
-        var resetItem = new MenuItem
-        {
-            Header = "Reset All Habit Data...",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Delete24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        resetItem.Click += (s, ev) =>
+        yield return WidgetMenu.Item("Edit Habit...", SymbolRegular.Edit24, EditHabit);
+        yield return WidgetMenu.Item("Mark Today as Done", SymbolRegular.CheckmarkCircle24, ToggleToday);
+        yield return WidgetMenu.Item("Go to Current Month", SymbolRegular.CalendarToday24, JumpToCurrentMonth);
+        yield return WidgetMenu.Divider();
+        yield return WidgetMenu.Item("Reset Habit Data...", SymbolRegular.Delete24, () =>
         {
             bool confirmed = MetroDialog.Confirm(
                 owner: Application.Current?.MainWindow,
@@ -708,12 +666,7 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase, IWidgetContextM
             {
                 ResetAllData();
             }
-        };
-
-        yield return editHabitItem;
-        yield return markTodayItem;
-        yield return jumpCurrentMonthItem;
-        yield return resetItem;
+        }, isDestructive: true);
     }
 
     protected override void Dispose(bool disposing)

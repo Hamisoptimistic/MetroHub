@@ -202,12 +202,12 @@ public sealed class DinoAudioService : IDisposable
         int chunkSize = 36 + subChunk2Size;
 
         // RIFF header
-        bw.Write(new[] { 'R', 'I', 'F', 'F' });
+        bw.Write("RIFF"u8);
         bw.Write(chunkSize);
-        bw.Write(new[] { 'W', 'A', 'V', 'E' });
+        bw.Write("WAVE"u8);
 
         // fmt subchunk
-        bw.Write(new[] { 'f', 'm', 't', ' ' });
+        bw.Write("fmt "u8);
         bw.Write(16); // SubChunk1Size (16 for PCM)
         bw.Write((short)1); // AudioFormat (1 for PCM)
         bw.Write((short)1); // NumChannels (1 for Mono)
@@ -217,7 +217,7 @@ public sealed class DinoAudioService : IDisposable
         bw.Write((short)16); // BitsPerSample
 
         // data subchunk
-        bw.Write(new[] { 'd', 'a', 't', 'a' });
+        bw.Write("data"u8);
         bw.Write(subChunk2Size);
 
         for (int i = 0; i < samples.Length; i++)

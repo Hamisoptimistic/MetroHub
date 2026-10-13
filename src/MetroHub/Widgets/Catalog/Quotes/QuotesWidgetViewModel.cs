@@ -351,124 +351,18 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidgetActionH
 
     public IEnumerable<Control> GetContextMenuItems()
     {
-        var nextQuoteItem = new MenuItem
-        {
-            Header = "Next Quote",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.ArrowShuffle24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        nextQuoteItem.Click += (s, ev) => NextQuote();
-
-        var copyQuoteItem = new MenuItem
-        {
-            Header = "Copy Quote",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Copy24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        copyQuoteItem.Click += (s, ev) => CopyQuote();
-
-        var fontMenuItem = new MenuItem
-        {
-            Header = "Font",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.TextFont24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-
-        var itemMerriweather = new MenuItem
-        {
-            Header = "Merriweather",
-            IsCheckable = true,
-            IsChecked = SelectedFont == QuoteFontFamilyChoice.Merriweather
-        };
-        itemMerriweather.Click += (s, ev) => SetFont(QuoteFontFamilyChoice.Merriweather);
-
-        var itemQuintessential = new MenuItem
-        {
-            Header = "Quintessential",
-            IsCheckable = true,
-            IsChecked = SelectedFont == QuoteFontFamilyChoice.Quintessential
-        };
-        itemQuintessential.Click += (s, ev) => SetFont(QuoteFontFamilyChoice.Quintessential);
-
-        var itemGeorgia = new MenuItem
-        {
-            Header = "Georgia",
-            IsCheckable = true,
-            IsChecked = SelectedFont == QuoteFontFamilyChoice.Georgia
-        };
-        itemGeorgia.Click += (s, ev) => SetFont(QuoteFontFamilyChoice.Georgia);
-
-        var itemPalatino = new MenuItem
-        {
-            Header = "Palatino Linotype",
-            IsCheckable = true,
-            IsChecked = SelectedFont == QuoteFontFamilyChoice.Palatino
-        };
-        itemPalatino.Click += (s, ev) => SetFont(QuoteFontFamilyChoice.Palatino);
-
-        var itemSegoe = new MenuItem
-        {
-            Header = "Segoe UI",
-            IsCheckable = true,
-            IsChecked = SelectedFont == QuoteFontFamilyChoice.SegoeUI
-        };
-        itemSegoe.Click += (s, ev) => SetFont(QuoteFontFamilyChoice.SegoeUI);
-
-        fontMenuItem.Items.Add(itemMerriweather);
-        fontMenuItem.Items.Add(itemQuintessential);
-        fontMenuItem.Items.Add(itemGeorgia);
-        fontMenuItem.Items.Add(itemPalatino);
-        fontMenuItem.Items.Add(itemSegoe);
-
-        fontMenuItem.Items.Add(new Separator());
-
-        var styleSubItem = new MenuItem
-        {
-            Header = "Style",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.TextItalic24,
-                FontSize = 18,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-
-        var itemRegular = new MenuItem
-        {
-            Header = "Regular",
-            IsCheckable = true,
-            IsChecked = SelectedStyle == QuoteFontStyleChoice.Regular
-        };
-        itemRegular.Click += (s, ev) => SetStyle(QuoteFontStyleChoice.Regular);
-
-        var itemItalic = new MenuItem
-        {
-            Header = "Italic",
-            IsCheckable = true,
-            IsChecked = SelectedStyle == QuoteFontStyleChoice.Italic
-        };
-        itemItalic.Click += (s, ev) => SetStyle(QuoteFontStyleChoice.Italic);
-
-        styleSubItem.Items.Add(itemRegular);
-        styleSubItem.Items.Add(itemItalic);
-
-        fontMenuItem.Items.Add(styleSubItem);
-
-        yield return nextQuoteItem;
-        yield return copyQuoteItem;
-        yield return fontMenuItem;
+        yield return WidgetMenu.Item("Next Quote", SymbolRegular.ArrowRight24, NextQuote);
+        yield return WidgetMenu.Item("Copy Quote", SymbolRegular.Copy24, CopyQuote);
+        yield return WidgetMenu.Submenu("Font", SymbolRegular.TextFont24,
+            WidgetMenu.Item("Merriweather", () => SetFont(QuoteFontFamilyChoice.Merriweather), isCheckable: true, isChecked: SelectedFont == QuoteFontFamilyChoice.Merriweather),
+            WidgetMenu.Item("Quintessential", () => SetFont(QuoteFontFamilyChoice.Quintessential), isCheckable: true, isChecked: SelectedFont == QuoteFontFamilyChoice.Quintessential),
+            WidgetMenu.Item("Georgia", () => SetFont(QuoteFontFamilyChoice.Georgia), isCheckable: true, isChecked: SelectedFont == QuoteFontFamilyChoice.Georgia),
+            WidgetMenu.Item("Palatino Linotype", () => SetFont(QuoteFontFamilyChoice.Palatino), isCheckable: true, isChecked: SelectedFont == QuoteFontFamilyChoice.Palatino),
+            WidgetMenu.Item("Segoe UI", () => SetFont(QuoteFontFamilyChoice.SegoeUI), isCheckable: true, isChecked: SelectedFont == QuoteFontFamilyChoice.SegoeUI),
+            WidgetMenu.Divider(),
+            WidgetMenu.Submenu("Style", SymbolRegular.TextItalic24,
+                WidgetMenu.Item("Regular", () => SetStyle(QuoteFontStyleChoice.Regular), isCheckable: true, isChecked: SelectedStyle == QuoteFontStyleChoice.Regular),
+                WidgetMenu.Item("Italic", () => SetStyle(QuoteFontStyleChoice.Italic), isCheckable: true, isChecked: SelectedStyle == QuoteFontStyleChoice.Italic)));
     }
 
     [RelayCommand]

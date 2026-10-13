@@ -20,7 +20,7 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
     private TileType _tileType = TileType.App;
     private string? _category;
     private ImageSource? _icon;
-    private bool _isIconLoading = false;
+    private bool _isIconLoading;
 
     private int _spanX = 2;
     private int _spanY = 2;

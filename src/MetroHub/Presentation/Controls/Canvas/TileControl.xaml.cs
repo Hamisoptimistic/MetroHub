@@ -48,17 +48,6 @@ public partial class TileControl : UserControl
     }
 
 
-
-    private static readonly Brush MenuIconForegroundBrush = ThemeTokens.MenuIconForegroundBrush;
-    private static readonly Brush RedMutedBrush = ThemeTokens.StatusErrorBrush;
-
-    private static Brush CreateFrozenBrush(Color c)
-    {
-        var b = new SolidColorBrush(c);
-        b.Freeze();
-        return b;
-    }
-
     public static readonly List<TileControl> ActiveTiles = new();
 
     private static DispatcherTimer? _revealSettleTimer;
@@ -496,6 +485,41 @@ public partial class TileControl : UserControl
     private static Wpf.Ui.Controls.SymbolIcon? s_pinToSidebarIcon;
     private static MenuItem? s_unpinMenuItem;
 
+    private static MenuItem CreateMenuItem(
+        string header,
+        SymbolRegular symbol,
+        RoutedEventHandler? onClick = null,
+        bool isCheckable = false,
+        bool isDestructive = false,
+        Wpf.Ui.Controls.SymbolIcon? icon = null)
+    {
+        icon ??= new Wpf.Ui.Controls.SymbolIcon
+        {
+            Symbol = symbol,
+            FontSize = 18
+        };
+        icon.SetResourceReference(Control.ForegroundProperty, isDestructive ? "StatusErrorBrush" : "TextSecondaryBrush");
+
+        var item = new MenuItem
+        {
+            Header = header,
+            Icon = icon,
+            IsCheckable = isCheckable
+        };
+
+        if (isDestructive)
+        {
+            item.SetResourceReference(Control.ForegroundProperty, "StatusErrorBrush");
+        }
+
+        if (onClick != null)
+        {
+            item.Click += onClick;
+        }
+
+        return item;
+    }
+
     private static ContextMenu GetOrCreateSharedContextMenu()
     {
         if (s_sharedContextMenu != null) return s_sharedContextMenu;
@@ -503,155 +527,36 @@ public partial class TileControl : UserControl
         s_sharedContextMenu = new ContextMenu();
         s_sharedContextMenu.Closed += OnSharedContextMenuClosed;
 
-        s_resizeMenuItem = new MenuItem { Header = "Resize" };
-        var resizeIcon = new Wpf.Ui.Controls.SymbolIcon
-        {
-            Symbol = Wpf.Ui.Controls.SymbolRegular.ResizeLarge16,
-            FontSize = 18
-        };
-        resizeIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
-        s_resizeMenuItem.Icon = resizeIcon;
+        s_resizeMenuItem = CreateMenuItem("Resize", SymbolRegular.ResizeLarge16);
 
-        s_styleMenuItem = new MenuItem { Header = "Style" };
-        var styleIcon = new Wpf.Ui.Controls.SymbolIcon
-        {
-            Symbol = Wpf.Ui.Controls.SymbolRegular.PaintBrush16,
-            FontSize = 18
-        };
-        styleIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
-        s_styleMenuItem.Icon = styleIcon;
-
-        s_styleDefaultMenuItem = new MenuItem
-        {
-            Header = "Default",
-            IsCheckable = true
-        };
+        s_styleDefaultMenuItem = new MenuItem { Header = "Default", IsCheckable = true };
         s_styleDefaultMenuItem.Click += OnSharedStyleDefaultClick;
 
-        s_styleColourfulMenuItem = new MenuItem
-        {
-            Header = "Colourful",
-            IsCheckable = true
-        };
+        s_styleColourfulMenuItem = new MenuItem { Header = "Colourful", IsCheckable = true };
         s_styleColourfulMenuItem.Click += OnSharedStyleColourfulClick;
 
+        s_styleMenuItem = CreateMenuItem("Style", SymbolRegular.PaintBrush16);
         s_styleMenuItem.Items.Add(s_styleDefaultMenuItem);
         s_styleMenuItem.Items.Add(s_styleColourfulMenuItem);
 
-        s_groupMenuItem = new MenuItem { Header = "Create Group from Tiles" };
-        var groupIcon = new Wpf.Ui.Controls.SymbolIcon
-        {
-            Symbol = Wpf.Ui.Controls.SymbolRegular.FolderAdd24,
-            FontSize = 18
-        };
-        groupIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
-        s_groupMenuItem.Icon = groupIcon;
-        s_groupMenuItem.Click += OnSharedGroupTilesClick;
-
-        s_addToGroupMenuItem = new MenuItem { Header = "Add to Group" };
-        var addToGroupIcon = new Wpf.Ui.Controls.SymbolIcon
-        {
-            Symbol = Wpf.Ui.Controls.SymbolRegular.FolderArrowRight24,
-            FontSize = 18
-        };
-        addToGroupIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
-        s_addToGroupMenuItem.Icon = addToGroupIcon;
-
-        s_moveToWorkspaceMenuItem = new MenuItem { Header = "Move to Workspace" };
-        var moveToWsIcon = new Wpf.Ui.Controls.SymbolIcon
-        {
-            Symbol = Wpf.Ui.Controls.SymbolRegular.ArrowRight24,
-            FontSize = 18
-        };
-        moveToWsIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
-        s_moveToWorkspaceMenuItem.Icon = moveToWsIcon;
-
+        s_groupMenuItem = CreateMenuItem("Create Group from Tiles", SymbolRegular.FolderAdd24, OnSharedGroupTilesClick);
+        s_addToGroupMenuItem = CreateMenuItem("Add to Group", SymbolRegular.FolderArrowRight24);
+        s_moveToWorkspaceMenuItem = CreateMenuItem("Move to Workspace", SymbolRegular.ArrowRight24);
         s_singleAppSeparator = new Separator();
-
-        s_editMenuItem = new MenuItem { Header = "Edit..." };
-        var editIcon = new Wpf.Ui.Controls.SymbolIcon
-        {
-            Symbol = Wpf.Ui.Controls.SymbolRegular.Edit24,
-            FontSize = 18
-        };
-        editIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
-        s_editMenuItem.Icon = editIcon;
-        s_editMenuItem.Click += OnSharedEditClick;
-
-        s_copyLinkOrTextMenuItem = new MenuItem { Header = "Copy Link" };
-        var copyIcon = new Wpf.Ui.Controls.SymbolIcon
-        {
-            Symbol = Wpf.Ui.Controls.SymbolRegular.Copy24,
-            FontSize = 18
-        };
-        copyIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
-        s_copyLinkOrTextMenuItem.Icon = copyIcon;
-        s_copyLinkOrTextMenuItem.Click += OnSharedCopyLinkOrTextClick;
-
-        s_runAdminMenuItem = new MenuItem { Header = "Run as Administrator" };
-        var runAdminIcon = new Wpf.Ui.Controls.SymbolIcon
-        {
-            Symbol = Wpf.Ui.Controls.SymbolRegular.Shield32,
-            FontSize = 18
-        };
-        runAdminIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
-        s_runAdminMenuItem.Icon = runAdminIcon;
-        s_runAdminMenuItem.Click += OnSharedRunAsAdminClick;
-
-        s_openLocationMenuItem = new MenuItem { Header = "Open File Location" };
-        var openLocationIcon = new Wpf.Ui.Controls.SymbolIcon
-        {
-            Symbol = Wpf.Ui.Controls.SymbolRegular.FolderOpenVertical20,
-            FontSize = 18
-        };
-        openLocationIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
-        s_openLocationMenuItem.Icon = openLocationIcon;
-        s_openLocationMenuItem.Click += OnSharedOpenFileLocationClick;
-
-        var shareIcon = new Wpf.Ui.Controls.SymbolIcon
-        {
-            Symbol = Wpf.Ui.Controls.SymbolRegular.Share24,
-            FontSize = 18
-        };
-        shareIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
-        s_shareMenuItem = new MenuItem
-        {
-            Header = "Share...",
-            Visibility = Visibility.Collapsed,
-            Icon = shareIcon
-        };
-        s_shareMenuItem.Click += OnSharedShareClick;
+        s_editMenuItem = CreateMenuItem("Edit...", SymbolRegular.Edit24, OnSharedEditClick);
+        s_copyLinkOrTextMenuItem = CreateMenuItem("Copy Link", SymbolRegular.Copy24, OnSharedCopyLinkOrTextClick);
+        s_runAdminMenuItem = CreateMenuItem("Run as Administrator", SymbolRegular.Shield32, OnSharedRunAsAdminClick);
+        s_openLocationMenuItem = CreateMenuItem("Open File Location", SymbolRegular.FolderOpenVertical20, OnSharedOpenFileLocationClick);
+        s_shareMenuItem = CreateMenuItem("Share...", SymbolRegular.Share24, OnSharedShareClick);
+        s_shareMenuItem.Visibility = Visibility.Collapsed;
 
         s_unpinSeparator = new Separator();
 
-        s_pinToSidebarIcon = new Wpf.Ui.Controls.SymbolIcon
-        {
-            Symbol = Wpf.Ui.Controls.SymbolRegular.Pin24,
-            FontSize = 18
-        };
+        s_pinToSidebarIcon = new Wpf.Ui.Controls.SymbolIcon { Symbol = SymbolRegular.Pin24, FontSize = 18 };
         s_pinToSidebarIcon.SetResourceReference(Control.ForegroundProperty, "TextSecondaryBrush");
+        s_pinToSidebarMenuItem = CreateMenuItem("Pin to Sidebar", SymbolRegular.Pin24, OnSharedPinToSidebarClick, icon: s_pinToSidebarIcon);
 
-        s_pinToSidebarMenuItem = new MenuItem
-        {
-            Header = "Pin to Sidebar",
-            Icon = s_pinToSidebarIcon
-        };
-        s_pinToSidebarMenuItem.Click += OnSharedPinToSidebarClick;
-
-        var unpinIcon = new Wpf.Ui.Controls.SymbolIcon
-        {
-            Symbol = Wpf.Ui.Controls.SymbolRegular.PinOff24,
-            FontSize = 18
-        };
-        unpinIcon.SetResourceReference(Control.ForegroundProperty, "StatusErrorBrush");
-
-        s_unpinMenuItem = new MenuItem
-        {
-            Header = "Unpin from MetroHub",
-            Icon = unpinIcon
-        };
-        s_unpinMenuItem.SetResourceReference(Control.ForegroundProperty, "StatusErrorBrush");
-        s_unpinMenuItem.Click += OnSharedUnpinClick;
+        s_unpinMenuItem = CreateMenuItem("Unpin from MetroHub", SymbolRegular.PinOff24, OnSharedUnpinClick, isDestructive: true);
 
         s_sharedContextMenu.Items.Add(s_resizeMenuItem);
         s_sharedContextMenu.Items.Add(s_styleMenuItem);
@@ -710,7 +615,19 @@ public partial class TileControl : UserControl
             }
         }
 
-        if (s_activeTargetTile != null)
+        if (sender is ContextMenu cm && cm.PlacementTarget is FrameworkElement pt)
+        {
+            if (s_activeTargetTile != null && ReferenceEquals(pt, s_activeTargetTile.RootBorder))
+            {
+                s_activeTargetTile.RootBorder.ContextMenu = null;
+                s_activeTargetTile = null;
+            }
+            else
+            {
+                pt.ContextMenu = null;
+            }
+        }
+        else if (s_activeTargetTile != null)
         {
             s_activeTargetTile.RootBorder.ContextMenu = null;
             s_activeTargetTile = null;
@@ -811,7 +728,7 @@ public partial class TileControl : UserControl
             if (s_singleAppSeparator != null) s_singleAppSeparator.Visibility = Visibility.Collapsed;
             if (s_shareMenuItem != null) s_shareMenuItem.Visibility = Visibility.Collapsed;
             if (s_styleMenuItem != null) s_styleMenuItem.Visibility = Visibility.Collapsed;
-            if (s_unpinSeparator != null) s_unpinSeparator.Visibility = Visibility.Collapsed;
+            if (s_unpinSeparator != null) s_unpinSeparator.Visibility = Visibility.Visible;
             if (s_groupMenuItem != null) s_groupMenuItem.Visibility = Visibility.Collapsed;
 
             if (tile.TileContent is IWidgetContextMenuProvider menuProvider && s_sharedContextMenu != null)
@@ -1021,7 +938,7 @@ public partial class TileControl : UserControl
 
             if (group.IsLocked)
             {
-                var redBrush = RedMutedBrush;
+                var redBrush = ThemeTokens.StatusErrorBrush;
 
                 var headerBlock = new TextBlock
                 {

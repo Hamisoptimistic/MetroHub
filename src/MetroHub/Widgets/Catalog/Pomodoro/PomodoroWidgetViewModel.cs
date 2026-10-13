@@ -314,46 +314,17 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase, IWidg
 
     public IEnumerable<Control> GetContextMenuItems()
     {
-        var presetItem = new MenuItem
-        {
-            Header = "Focus Duration",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Timer24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-
-        var item25 = new MenuItem
-        {
-            Header = "25m Focus / 5m Break (Classic)",
-            IsCheckable = true,
-            IsChecked = FocusMinutes == 25
-        };
-        item25.Click += (s, ev) => SetPreset(25, 5, 15);
-
-        var item50 = new MenuItem
-        {
-            Header = "50m Focus / 10m Break (Deep Work)",
-            IsCheckable = true,
-            IsChecked = FocusMinutes == 50
-        };
-        item50.Click += (s, ev) => SetPreset(50, 10, 30);
-
-        var item15 = new MenuItem
-        {
-            Header = "15m Focus / 3m Break (Sprint)",
-            IsCheckable = true,
-            IsChecked = FocusMinutes == 15
-        };
-        item15.Click += (s, ev) => SetPreset(15, 3, 10);
-
-        presetItem.Items.Add(item25);
-        presetItem.Items.Add(item50);
-        presetItem.Items.Add(item15);
-
-        yield return presetItem;
+        yield return WidgetMenu.Item(
+            IsRunning ? "Pause" : "Start Focus",
+            IsRunning ? SymbolRegular.Pause24 : SymbolRegular.Play24,
+            TogglePlayPause);
+        yield return WidgetMenu.Item("Reset Timer", SymbolRegular.ArrowReset24, Reset);
+        yield return WidgetMenu.Item("Skip Phase", SymbolRegular.Next24, () => AdvancePhase(isNaturalCompletion: false));
+        yield return WidgetMenu.Divider();
+        yield return WidgetMenu.Submenu("Focus Duration", SymbolRegular.Timer24,
+            WidgetMenu.Item("25m Focus / 5m Break (Classic)", () => SetPreset(25, 5, 15), isCheckable: true, isChecked: FocusMinutes == 25),
+            WidgetMenu.Item("50m Focus / 10m Break (Deep Work)", () => SetPreset(50, 10, 30), isCheckable: true, isChecked: FocusMinutes == 50),
+            WidgetMenu.Item("15m Focus / 3m Break (Sprint)", () => SetPreset(15, 3, 10), isCheckable: true, isChecked: FocusMinutes == 15));
     }
 
     private void UpdateVisualState()

@@ -225,104 +225,16 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase, IWidgetA
 
     public IEnumerable<Control> GetContextMenuItems()
     {
-        var timeFormatItem = new MenuItem
-        {
-            Header = "Time Format",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Clock24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-
-        var item12Hr = new MenuItem
-        {
-            Header = "12 Hours",
-            IsCheckable = true,
-            IsChecked = !Is24HourFormat
-        };
-        item12Hr.Click += (s, ev) => SetTimeFormat(false);
-
-        var item24Hr = new MenuItem
-        {
-            Header = "24 Hours",
-            IsCheckable = true,
-            IsChecked = Is24HourFormat
-        };
-        item24Hr.Click += (s, ev) => SetTimeFormat(true);
-
-        timeFormatItem.Items.Add(item12Hr);
-        timeFormatItem.Items.Add(item24Hr);
-
-        var fontItem = new MenuItem
-        {
-            Header = "Font",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.TextFont24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-
-        var itemSegoe = new MenuItem
-        {
-            Header = "Segoe UI Variable",
-            IsCheckable = true,
-            IsChecked = FontFace == ClockFontFace.SegoeUI
-        };
-        itemSegoe.Click += (s, ev) => SetFontFace(ClockFontFace.SegoeUI);
-
-        var itemMonoton = new MenuItem
-        {
-            Header = "Monoton",
-            IsCheckable = true,
-            IsChecked = FontFace == ClockFontFace.Monoton
-        };
-        itemMonoton.Click += (s, ev) => SetFontFace(ClockFontFace.Monoton);
-
-        var itemDigital7 = new MenuItem
-        {
-            Header = "Digital-7",
-            IsCheckable = true,
-            IsChecked = FontFace == ClockFontFace.Digital7
-        };
-        itemDigital7.Click += (s, ev) => SetFontFace(ClockFontFace.Digital7);
-
-        var itemFffForward = new MenuItem
-        {
-            Header = "FFF Forward",
-            IsCheckable = true,
-            IsChecked = FontFace == ClockFontFace.FffForward
-        };
-        itemFffForward.Click += (s, ev) => SetFontFace(ClockFontFace.FffForward);
-
-        var itemKarnivore = new MenuItem
-        {
-            Header = "Karnivore Digit",
-            IsCheckable = true,
-            IsChecked = FontFace == ClockFontFace.KarnivoreDigit
-        };
-        itemKarnivore.Click += (s, ev) => SetFontFace(ClockFontFace.KarnivoreDigit);
-
-        var itemNow = new MenuItem
-        {
-            Header = "Now",
-            IsCheckable = true,
-            IsChecked = FontFace == ClockFontFace.Now
-        };
-        itemNow.Click += (s, ev) => SetFontFace(ClockFontFace.Now);
-
-        fontItem.Items.Add(itemSegoe);
-        fontItem.Items.Add(itemMonoton);
-        fontItem.Items.Add(itemDigital7);
-        fontItem.Items.Add(itemFffForward);
-        fontItem.Items.Add(itemKarnivore);
-        fontItem.Items.Add(itemNow);
-
-        yield return timeFormatItem;
-        yield return fontItem;
+        yield return WidgetMenu.Submenu("Time Format", SymbolRegular.Clock24,
+            WidgetMenu.Item("12-Hour Clock", () => SetTimeFormat(false), isCheckable: true, isChecked: !Is24HourFormat),
+            WidgetMenu.Item("24-Hour Clock", () => SetTimeFormat(true), isCheckable: true, isChecked: Is24HourFormat));
+        yield return WidgetMenu.Submenu("Font", SymbolRegular.TextFont24,
+            WidgetMenu.Item("Segoe UI Variable", () => SetFontFace(ClockFontFace.SegoeUI), isCheckable: true, isChecked: FontFace == ClockFontFace.SegoeUI),
+            WidgetMenu.Item("Monoton", () => SetFontFace(ClockFontFace.Monoton), isCheckable: true, isChecked: FontFace == ClockFontFace.Monoton),
+            WidgetMenu.Item("Digital-7", () => SetFontFace(ClockFontFace.Digital7), isCheckable: true, isChecked: FontFace == ClockFontFace.Digital7),
+            WidgetMenu.Item("FFF Forward", () => SetFontFace(ClockFontFace.FffForward), isCheckable: true, isChecked: FontFace == ClockFontFace.FffForward),
+            WidgetMenu.Item("Karnivore Digit", () => SetFontFace(ClockFontFace.KarnivoreDigit), isCheckable: true, isChecked: FontFace == ClockFontFace.KarnivoreDigit),
+            WidgetMenu.Item("Now", () => SetFontFace(ClockFontFace.Now), isCheckable: true, isChecked: FontFace == ClockFontFace.Now));
     }
 
     protected override void Dispose(bool disposing)

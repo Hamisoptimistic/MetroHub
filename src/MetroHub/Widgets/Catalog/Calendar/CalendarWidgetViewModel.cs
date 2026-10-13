@@ -212,20 +212,7 @@ public sealed partial class CalendarWidgetViewModel : WidgetViewModelBase, IWidg
 
     public IEnumerable<Control> GetContextMenuItems()
     {
-        if (!IsFullSize) yield break;
-
-        var todayItem = new MenuItem
-        {
-            Header = "Go to Today",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.CalendarToday24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        todayItem.Click += (s, ev) => ResetToToday();
-        yield return todayItem;
+        yield return WidgetMenu.Item("Go to Today", SymbolRegular.CalendarToday24, ResetToToday);
     }
 
     [RelayCommand]

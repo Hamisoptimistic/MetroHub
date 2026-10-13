@@ -194,77 +194,13 @@ public sealed partial class DinoWidgetViewModel : WidgetViewModelBase, IWidgetCo
 
     public IEnumerable<Control> GetContextMenuItems()
     {
-        // 1. Mute Sound Toggle
-        var muteItem = new MenuItem
-        {
-            Header = "Mute Sound",
-            IsCheckable = true,
-            IsChecked = IsMuted,
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = IsMuted ? Wpf.Ui.Controls.SymbolRegular.SpeakerOff24 : Wpf.Ui.Controls.SymbolRegular.Speaker224,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        muteItem.Click += (s, ev) => ToggleMute();
-
-        // 2. Reduced Motion Submenu
-        var motionItem = new MenuItem
-        {
-            Header = "Reduced Motion",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.Accessibility24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-
-        var autoMotionItem = new MenuItem
-        {
-            Header = "Follow Windows Setting",
-            IsCheckable = true,
-            IsChecked = ReducedMotion == null
-        };
-        autoMotionItem.Click += (s, ev) => SetReducedMotion(null);
-
-        var onMotionItem = new MenuItem
-        {
-            Header = "Enabled (Low Motion)",
-            IsCheckable = true,
-            IsChecked = ReducedMotion == true
-        };
-        onMotionItem.Click += (s, ev) => SetReducedMotion(true);
-
-        var offMotionItem = new MenuItem
-        {
-            Header = "Disabled (Full Animation)",
-            IsCheckable = true,
-            IsChecked = ReducedMotion == false
-        };
-        offMotionItem.Click += (s, ev) => SetReducedMotion(false);
-
-        motionItem.Items.Add(autoMotionItem);
-        motionItem.Items.Add(onMotionItem);
-        motionItem.Items.Add(offMotionItem);
-
-        // 3. Reset High Score
-        var resetScoreItem = new MenuItem
-        {
-            Header = "Reset High Score",
-            Icon = new Wpf.Ui.Controls.SymbolIcon
-            {
-                Symbol = Wpf.Ui.Controls.SymbolRegular.ArrowReset24,
-                FontSize = 20,
-                Foreground = ThemeTokens.MenuIconForegroundBrush
-            }
-        };
-        resetScoreItem.Click += (s, ev) => ResetHighScore();
-
-        yield return muteItem;
-        yield return motionItem;
-        yield return resetScoreItem;
+        yield return WidgetMenu.Item("Mute Sound", IsMuted ? SymbolRegular.SpeakerOff24 : SymbolRegular.Speaker224, ToggleMute, isCheckable: true, isChecked: IsMuted);
+        yield return WidgetMenu.Submenu("Reduced Motion", SymbolRegular.Accessibility24,
+            WidgetMenu.Item("Follow Windows Setting", () => SetReducedMotion(null), isCheckable: true, isChecked: ReducedMotion == null),
+            WidgetMenu.Item("Enabled (Low Motion)", () => SetReducedMotion(true), isCheckable: true, isChecked: ReducedMotion == true),
+            WidgetMenu.Item("Disabled (Full Animation)", () => SetReducedMotion(false), isCheckable: true, isChecked: ReducedMotion == false));
+        yield return WidgetMenu.Divider();
+        yield return WidgetMenu.Item("Reset High Score", SymbolRegular.ArrowReset24, ResetHighScore);
     }
 
     public override void Pause()

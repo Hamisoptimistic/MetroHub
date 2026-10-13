@@ -53,28 +53,9 @@ public sealed class EthernetInfo : ObservableObject
         return $"{FormatBytes(total)} (↓ {FormatBytes(rx)}  ↑ {FormatBytes(tx)})";
     }
 
-    public static string FormatBytes(ulong bytes)
-    {
-        if (bytes >= 1024UL * 1024 * 1024 * 1024)
-            return $"{(double)bytes / (1024UL * 1024 * 1024 * 1024):0.00} TB";
-        if (bytes >= 1024UL * 1024 * 1024)
-            return $"{(double)bytes / (1024UL * 1024 * 1024):0.00} GB";
-        if (bytes >= 1024UL * 1024)
-            return $"{(double)bytes / (1024UL * 1024):0.0} MB";
-        if (bytes >= 1024UL)
-            return $"{(double)bytes / 1024UL:0} KB";
-        return $"{bytes} B";
-    }
+    public static string FormatBytes(ulong bytes) => MetroHub.Core.Common.FormatUtils.FormatBytes(bytes);
 
-    public static string FormatDuration(TimeSpan duration)
-    {
-        if (duration <= TimeSpan.Zero) return "00:00:00";
-        if (duration.TotalDays >= 1)
-        {
-            return $"{(int)duration.TotalDays}d {duration.Hours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}";
-        }
-        return $"{duration.Hours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}";
-    }
+    public static string FormatDuration(TimeSpan duration) => MetroHub.Core.Common.FormatUtils.FormatDuration(duration);
 }
 
 public sealed class WifiNetworkItem : ObservableObject
