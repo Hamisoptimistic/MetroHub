@@ -9,7 +9,7 @@ public enum WeatherBackgroundStyle
 
 public class WeatherWidgetSettings
 {
-    public bool IsFahrenheit { get; set; } = false;
+    public bool IsFahrenheit { get; set; }
     public bool IsAutoLocation { get; set; } = true;
     public string? CustomCity { get; set; }
     public double? CustomLatitude { get; set; }

@@ -13,7 +13,6 @@ using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Dialogs;
-using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Habit;

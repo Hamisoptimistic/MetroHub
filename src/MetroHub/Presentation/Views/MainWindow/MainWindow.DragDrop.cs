@@ -1316,8 +1316,7 @@ public partial class MainWindow
                 current is ContextMenu ||
                 current is Presentation.Controls.WidgetVolumeSlider ||
                 current is Widgets.WidgetTiles ||
-                current is Widgets.WidgetTile ||
-                current is Presentation.Controls.WidgetTabStrip)
+                current is Widgets.WidgetTile)
             {
                 return true;
             }

@@ -1,5 +1,4 @@
 using System;
-using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MetroHub.Widgets.Catalog.Habit;
@@ -13,7 +12,6 @@ public partial class HabitDayViewModel : ObservableObject
     public DateTime Date { get; }
     public int DateKey { get; }
     public int DayNumber => Date.Day;
-    public string DayText => Date.Day.ToString();
     public bool IsCurrentMonth { get; }
 
     [ObservableProperty]
@@ -33,7 +31,7 @@ public partial class HabitDayViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsFailed))]
     [NotifyPropertyChangedFor(nameof(IsTodayUnmarked))]
     [NotifyPropertyChangedFor(nameof(ToolTipText))]
-    private HabitDayState _state = HabitDayState.Unmarked;
+    private HabitDayState _state;
 
 
     public bool IsDone => State == HabitDayState.Done;

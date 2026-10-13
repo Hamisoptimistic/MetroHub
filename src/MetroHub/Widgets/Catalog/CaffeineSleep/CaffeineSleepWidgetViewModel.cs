@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
@@ -31,10 +30,6 @@ public sealed partial class CaffeineSleepWidgetViewModel : WidgetViewModelBase
 
     #region Frozen Indicator Brushes (Freezable Hygiene)
 
-    private static readonly Brush ActiveScreenOffBrush = CreateFrozenBrush(Color.FromRgb(0x38, 0xBD, 0xF8));   // Electric Sky Blue (#38BDF8)
-    private static readonly Brush ActiveCaffeineBrush = ThemeTokens.StatusSuccessBrush;                         // Pre-frozen #00E676
-    private static readonly Brush ActiveNightLightBrush = ThemeTokens.StatusWarningBrush;                       // Pre-frozen #FFB900
-    private static readonly Brush InactiveTileBrush = CreateFrozenBrush(Color.FromArgb(0x38, 0xFF, 0xFF, 0xFF)); // Subtle Translucent
     private static readonly Brush WhiteIndicatorBrush = CreateFrozenBrush(Color.FromRgb(0xFF, 0xFF, 0xFF));     // Solid Crisp White
 
     private static SolidColorBrush CreateFrozenBrush(Color color)

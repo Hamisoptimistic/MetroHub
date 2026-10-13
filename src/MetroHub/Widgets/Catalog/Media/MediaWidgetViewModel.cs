@@ -76,20 +76,6 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
     private bool _hasThumbnail;
 
     /// <summary>
-    /// Alias for Thumbnail to match widget naming standards.
-    /// Setting this also updates HasThumbnail automatically.
-    /// </summary>
-    public ImageSource? AlbumArtSource
-    {
-        get => Thumbnail;
-        set
-        {
-            Thumbnail = value;
-            HasThumbnail = value != null;
-        }
-    }
-
-    /// <summary>
     /// Cap for the resident artwork byte cache: originals larger than this
     /// (e.g. 3000px Apple Music art) are re-encoded once at display size so
     /// the cache stays compact.

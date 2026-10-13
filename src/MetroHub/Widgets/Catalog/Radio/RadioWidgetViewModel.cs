@@ -9,7 +9,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
 using MetroHub.Core.Radio;
-using MetroHub.Presentation.Controls;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Radio;

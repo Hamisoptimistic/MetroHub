@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -15,7 +14,6 @@ using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services.Catalog.Weather;
 using MetroHub.Presentation.Messaging;
-using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Weather;
@@ -47,22 +45,11 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
 
     public ImageSource WeatherIconSource => WeatherIcons.Get(WeatherIconName);
 
-    public ImageSource UvIndexIconSource => WeatherIcons.Get("uv-index");
-
-    [ObservableProperty]
-    private string _weatherGlyph = "\uE9C5";
-
     [ObservableProperty]
     private string _temperatureText = "--°";
 
     [ObservableProperty]
-    private string _feelsLikeText = "--°";
-
-    [ObservableProperty]
     private string _feelsLikeShortText = "--°";
-
-    [ObservableProperty]
-    private string _highLowText = "--° / --°";
 
     [ObservableProperty]
     private string _humidityText = "--%";
@@ -82,14 +69,6 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
     [ObservableProperty]
     private SolidColorBrush _aqiBrush = WeatherPalettes.AqiPalette[AqiCategory.Good].Brush;
 
-    [ObservableProperty]
-    private string _pm25Text = "-- µg/m³";
-
-    [ObservableProperty]
-    private string _pm10Text = "-- µg/m³";
-
-    [ObservableProperty]
-    private string _ozoneText = "-- µg/m³";
 
     [ObservableProperty]
     private string _highTempText = "--°";
@@ -138,7 +117,6 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
     public bool IsHorizonAuraEnabled => _settings.BackgroundStyle == WeatherBackgroundStyle.HorizonAura;
 
     // Responsive sizing flags
-    public bool IsCompact => false;
     public bool IsWide => Model.SpanX <= 4 && Model.SpanY <= 2;
     public bool IsSquareLarge => Model.SpanX == 4 && Model.SpanY >= 3;
     public bool IsBanner => Model.SpanX == 8 && Model.SpanY == 2;
@@ -174,7 +152,6 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
     {
         if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
         {
-            OnPropertyChanged(nameof(IsCompact));
             OnPropertyChanged(nameof(IsWide));
             OnPropertyChanged(nameof(IsSquareLarge));
             OnPropertyChanged(nameof(IsBanner));
@@ -510,14 +487,12 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
             // Condition info, Ambient glow & Horizon aura
             var info = WeatherPalettes.GetConditionInfo(current.WeatherCode, current.IsDay == 1, current.Temperature);
             WeatherIconName = info.IconName;
-            WeatherGlyph = info.FallbackGlyph;
             ConditionText = info.Description;
             AmbientGlowBrush = IsAmbientGlowEnabled ? info.Glow : System.Windows.Media.Brushes.Transparent;
             HorizonAuraBrush = IsHorizonAuraEnabled ? info.HorizonAura : System.Windows.Media.Brushes.Transparent;
 
             // Temperature & Feels-Like
             TemperatureText = FormatTemp(current.Temperature);
-            FeelsLikeText = $"Feels like {FormatTemp(current.ApparentTemperature)}";
             FeelsLikeShortText = FormatTemp(current.ApparentTemperature);
 
             // Details
@@ -541,7 +516,6 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
         {
             HighTempText = FormatTemp(daily.TemperatureMax[0]);
             LowTempText = FormatTemp(daily.TemperatureMin[0]);
-            HighLowText = $"H: {HighTempText}  L: {LowTempText}";
         }
 
         // AQI
@@ -554,10 +528,6 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
             AqiText = score.ToString(CultureInfo.InvariantCulture);
             AqiCategoryText = $"AQI {score} · {info.Label}";
             AqiBrush = info.Brush;
-
-            Pm25Text = aqi.Pm25.HasValue ? $"{aqi.Pm25.Value:F1} µg/m³" : "--";
-            Pm10Text = aqi.Pm10.HasValue ? $"{aqi.Pm10.Value:F1} µg/m³" : "--";
-            OzoneText = aqi.Ozone.HasValue ? $"{aqi.Ozone.Value:F1} µg/m³" : "--";
         }
         else
         {

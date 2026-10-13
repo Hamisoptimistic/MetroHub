@@ -67,8 +67,6 @@ public static class DinoTuning
     // --- Player Physics ---
     public const double Gravity = 2000.0;       // px/s²
     public const double JumpVelocity = 560.0;    // px/s (upward v0)
-    public const double JumpApexHeight = 78.4;   // px above ground (v0² / 2g)
-    public const double AirTime = 0.56;          // seconds (2 * v0 / g)
     public const double JumpBufferSeconds = 0.080; // 80ms jump buffer before landing
     public const double LegSwapInterval = 0.083;   // 83ms run-cycle leg swap (~12 Hz)
     public const double BirdFlapInterval = 0.160;  // 160ms wing flap toggle (~6 Hz)
@@ -118,13 +116,11 @@ public static class DinoTuning
     public static readonly Color DayBackgroundColor = Color.FromRgb(0xF7, 0xF7, 0xF7);
     public static readonly Color DayForegroundColor = Color.FromRgb(0x53, 0x53, 0x53);
     public static readonly Color DaySecondaryColor = Color.FromRgb(0x73, 0x73, 0x73);
-    public static readonly Color DayCloudColor = Color.FromRgb(0xC8, 0xC8, 0xC8);
 
     // Night Palette Colors
     public static readonly Color NightBackgroundColor = Color.FromRgb(0x20, 0x21, 0x24);
     public static readonly Color NightForegroundColor = Color.FromRgb(0xE8, 0xEA, 0xED);
     public static readonly Color NightSecondaryColor = Color.FromRgb(0x9A, 0xA0, 0xA6);
-    public static readonly Color NightMoonColor = Color.FromRgb(0xF1, 0xF3, 0xF4);
 
     // Day & Night Frozen Brushes
     public static readonly SolidColorBrush DayBackgroundBrush = CreateFrozenBrush(DayBackgroundColor);

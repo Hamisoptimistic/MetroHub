@@ -9,10 +9,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
-using MetroHub.Presentation.Themes;
-using MetroHub.Widgets.Messaging;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Pomodoro;
@@ -59,7 +56,7 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase, IWidg
     private PomodoroPhase _phase = PomodoroPhase.Focus;
 
     [ObservableProperty]
-    private bool _isRunning = false;
+    private bool _isRunning;
 
     [ObservableProperty]
     private string _phaseTitle = "Focus";
@@ -68,7 +65,7 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase, IWidg
     private string _timeString = "25:00";
 
     [ObservableProperty]
-    private double _progressRatio = 0.0;
+    private double _progressRatio;
 
     [ObservableProperty]
     private int _currentRound = 1;
@@ -80,19 +77,19 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase, IWidg
     private string _statusString = "⏱ Round 1 of 4 • 🔥 1 Streak";
 
     [ObservableProperty]
-    private int _completedInCycle = 0;
+    private int _completedInCycle;
 
     [ObservableProperty]
-    private bool _cycleDot1Filled = false;
+    private bool _cycleDot1Filled;
 
     [ObservableProperty]
-    private bool _cycleDot2Filled = false;
+    private bool _cycleDot2Filled;
 
     [ObservableProperty]
-    private bool _cycleDot3Filled = false;
+    private bool _cycleDot3Filled;
 
     [ObservableProperty]
-    private bool _cycleDot4Filled = false;
+    private bool _cycleDot4Filled;
 
     [ObservableProperty]
     private Color _glowColor = PhaseThemes[PomodoroPhase.Focus].GlowColor;
@@ -114,8 +111,8 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase, IWidg
     public bool SoundEnabled { get; set; } = true;
 
     // Stats
-    public int CompletedSessions { get; set; } = 0;
-    public int TotalFocusMinutes { get; set; } = 0;
+    public int CompletedSessions { get; set; }
+    public int TotalFocusMinutes { get; set; }
     public int CurrentStreak { get; set; } = 1;
 
     public bool IsRingOnly => Model.SpanX <= 4 && Model.SpanY <= 2;

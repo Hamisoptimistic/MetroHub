@@ -7,12 +7,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
-using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Messaging;
 using MetroHub.Widgets.Serialization;
 
@@ -30,7 +27,7 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
     private int _currentIndex = -1;
     private System.Threading.Timer? _slideshowTimer;
     private bool _isHubVisible = true;
-    private bool _isTransitioning = false;
+    private bool _isTransitioning;
     private readonly Random _random = new();
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
@@ -86,7 +83,7 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
     private bool _shuffle = true;
 
     [ObservableProperty]
-    private bool _includeSubfolders = false;
+    private bool _includeSubfolders;
 
     [ObservableProperty]
     private string _fitMode = "FitWithBlur";
@@ -371,12 +368,6 @@ public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidget
             CurrentPhotoName = Path.GetFileNameWithoutExtension(filePath);
             UpdateCounter();
         }
-    }
-
-    private async void OnSlideshowTimerTick(object? sender, EventArgs e)
-    {
-        if (!_isHubVisible || _isHovered || PhotoCount <= 1 || _isTransitioning) return;
-        await TransitionToNextPhotoAsync(forward: true);
     }
 
     [RelayCommand]

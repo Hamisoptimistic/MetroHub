@@ -6,7 +6,6 @@ using System.Windows.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
-using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Template;
@@ -34,7 +33,7 @@ public sealed partial class TemplateWidgetViewModel : WidgetViewModelBase, IWidg
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SettingsSummary))]
-    private int _counter = 0;
+    private int _counter;
 
     [ObservableProperty]
     private bool _isFeatureEnabled = true;

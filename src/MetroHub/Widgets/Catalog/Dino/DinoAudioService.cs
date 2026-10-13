@@ -25,10 +25,10 @@ public sealed class DinoAudioService : IDisposable
     private MemoryStream? _gameOverStream;
 
     private bool _audioAvailable = true;
-    private long _protectedUntilTimestamp = 0; // Stopwatch ticks
+    private long _protectedUntilTimestamp; // Stopwatch ticks
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
 
-    public bool IsMuted { get; set; } = false;
+    public bool IsMuted { get; set; }
 
     public DinoAudioService(bool isMuted = false)
     {

@@ -79,11 +79,11 @@ public class SpeedometerArcControl : FrameworkElement
         set => SetValue(IsActiveProperty, value);
     }
 
-    private double _targetProgress = 0.0;
-    private double _currentProgress = 0.0;
-    private bool _isAnimating = false;
+    private double _targetProgress;
+    private double _currentProgress;
+    private bool _isAnimating;
     private bool _isHubVisible = true;
-    private long _lastRenderTimestamp = 0;
+    private long _lastRenderTimestamp;
 
     private Pen _cachedActivePen = DefaultActivePen;
     private Pen _cachedGlowPen = DefaultGlowPen;

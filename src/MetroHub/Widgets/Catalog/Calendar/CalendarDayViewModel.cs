@@ -10,7 +10,6 @@ public partial class CalendarDayViewModel : ObservableObject
 {
     public DateTime Date { get; }
 
-    public int DayNumber => Date.Day;
     public string DayText => Date.Day.ToString();
 
     public bool IsCurrentMonth { get; }

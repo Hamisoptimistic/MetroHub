@@ -288,13 +288,6 @@
         <Setter Property="UseLayoutRounding" Value="True" />
     </Style>
 
-    <!-- Universal 1px Vertical Hairline Divider -->
-    <Style x:Key="WidgetVerticalHairlineDividerStyle" TargetType="Border">
-        <Setter Property="Width" Value="1" />
-        <Setter Property="Background" Value="{DynamicResource WidgetDividerBrush}" />
-        <Setter Property="SnapsToDevicePixels" Value="True" />
-        <Setter Property="UseLayoutRounding" Value="True" />
-    </Style>
 
     <!-- Universal 7px Round Indicator Dot (Pomodoro cycles, Network status, Activity pips) -->
     <Style x:Key="WidgetIndicatorDotStyle" TargetType="Border">

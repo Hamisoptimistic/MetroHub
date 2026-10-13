@@ -1,5 +1,3 @@
-using System;
-
 namespace MetroHub.Widgets.Catalog.Network;
 
 public class NetworkWidgetSettings

@@ -5,12 +5,9 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
-using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Messaging;
 using MetroHub.Widgets.Serialization;
 
@@ -43,16 +40,13 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase, IWidgetA
     private string _timeString = string.Empty;
 
     [ObservableProperty]
-    private string _amPmString = string.Empty;
-
-    [ObservableProperty]
     private string _fullDateString = string.Empty;
 
     [ObservableProperty]
     private string _dayOfWeekString = string.Empty;
 
     [ObservableProperty]
-    private bool _is24HourFormat = false;
+    private bool _is24HourFormat;
 
     [ObservableProperty]
     private ClockFontFace _fontFace = ClockFontFace.SegoeUI;
@@ -151,7 +145,6 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase, IWidgetA
 
         MinutesString = now.ToString("mm", CultureInfo.InvariantCulture);
         TimeString = $"{HoursString}:{MinutesString}";
-        AmPmString = string.Empty;
         FullDateString = now.ToString("dddd, d MMMM", CultureInfo.InvariantCulture);
         DayOfWeekString = now.ToString("dddd", CultureInfo.InvariantCulture);
     }

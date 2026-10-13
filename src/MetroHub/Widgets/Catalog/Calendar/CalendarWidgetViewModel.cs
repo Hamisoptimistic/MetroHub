@@ -4,13 +4,9 @@ using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
-using MetroHub.Presentation.Themes;
-using MetroHub.Widgets.Messaging;
 
 namespace MetroHub.Widgets.Catalog.Calendar;
 

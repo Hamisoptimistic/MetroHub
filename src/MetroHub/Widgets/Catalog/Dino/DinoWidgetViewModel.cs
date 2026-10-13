@@ -4,10 +4,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using CommunityToolkit.Mvvm.ComponentModel;
 using MetroHub.Core.Models;
-using MetroHub.Presentation.Themes;
-using MetroHub.Widgets.Catalog.Dino;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Dino;

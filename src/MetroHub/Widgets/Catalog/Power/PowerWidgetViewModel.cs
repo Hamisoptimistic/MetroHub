@@ -88,12 +88,6 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
 
     public bool IsCompactMode => Model.SpanY <= 1;
 
-    public double IconFontSize => 24.0;
-
-    public double HeaderFontSize => 11.5;
-
-    public Thickness IconMargin => IsCompactMode ? new Thickness(0) : new Thickness(0, 0, 0, 5);
-
     public Visibility TextVisibility => IsCompactMode ? Visibility.Collapsed : Visibility.Visible;
 
     public PowerWidgetViewModel(TileModel model) : base(model)
@@ -288,9 +282,6 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
         if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
         {
             OnPropertyChanged(nameof(IsCompactMode));
-            OnPropertyChanged(nameof(IconFontSize));
-            OnPropertyChanged(nameof(HeaderFontSize));
-            OnPropertyChanged(nameof(IconMargin));
             OnPropertyChanged(nameof(TextVisibility));
         }
     }

@@ -11,11 +11,7 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
-using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Serialization;
-using Wpf.Ui.Controls;
-using MenuItem = System.Windows.Controls.MenuItem;
-using Separator = System.Windows.Controls.Separator;
 
 namespace MetroHub.Widgets.Catalog.Quotes;
 
@@ -46,7 +42,7 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidgetActionH
     private string _revealedText = string.Empty;
 
     [ObservableProperty]
-    private double _cursorOpacity = 0.0;
+    private double _cursorOpacity;
 
     [ObservableProperty]
     private bool _isAuthorVisible = true;
