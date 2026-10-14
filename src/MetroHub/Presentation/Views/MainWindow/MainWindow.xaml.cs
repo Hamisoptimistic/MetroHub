@@ -32,6 +32,7 @@ using TextBlock = System.Windows.Controls.TextBlock;
 
 namespace MetroHub;
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF Window lifecycle manages disposable fields via OnClosed and App teardown.")]
 public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 {
     private ObservableCollection<TileModel> _tiles = new();

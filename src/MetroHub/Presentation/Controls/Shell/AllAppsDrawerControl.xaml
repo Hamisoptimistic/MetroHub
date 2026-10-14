@@ -13,8 +13,8 @@
              ClipToBounds="False"
              Visibility="Collapsed"
              Background="Transparent"
-             TextOptions.TextFormattingMode="Display"
-             TextOptions.TextRenderingMode="ClearType"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="Auto"
              UseLayoutRounding="True"
 >
 
@@ -428,26 +428,29 @@
             </Grid.RowDefinitions>
 
             <Grid x:Name="DrawerHeaderGrid" Grid.Row="0" Margin="{StaticResource DrawerGutterHeaderMargin}">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <ui:SymbolIcon Symbol="AppsListDetail24" FontSize="18" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0" VerticalAlignment="Center" />
-                    <TextBlock Text="All apps"
-                               FontSize="{DynamicResource TypeHeaderFontSize}"
-                               FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                               FontFamily="{DynamicResource AppFontFamily}"
-                               Foreground="{DynamicResource TextPrimaryBrush}"
-                               VerticalAlignment="Center" />
-                </StackPanel>
+                <!-- Left-aligned Title flush to 12px baseline -->
+                <TextBlock Text="All apps"
+                           FontSize="{DynamicResource TypeHeaderFontSize}"
+                           FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                           FontFamily="{DynamicResource AppFontFamily}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Left" />
                 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button x:Name="RefreshButton"
-                            Style="{StaticResource MiniPinButtonStyle}"
+                            Style="{StaticResource SubtleButtonStyle}"
+                            Width="32"
+                            Height="32"
+                            Padding="0"
+                            Focusable="False"
                             ToolTip="Refresh installed apps"
-                            Margin="0,0,4,0"
+                            Margin="0,0,2,0"
                             Click="OnRefreshClick">
                         <ui:SymbolIcon x:Name="RefreshIcon"
                                        Symbol="ArrowClockwise24"
-                                       FontSize="14"
-                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       FontSize="16"
+                                       Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
                                        RenderTransformOrigin="0.5,0.5">
                             <ui:SymbolIcon.RenderTransform>
                                 <RotateTransform x:Name="RefreshIconRotation" Angle="0" />
@@ -455,10 +458,16 @@
                         </ui:SymbolIcon>
                     </Button>
                     <Button x:Name="CloseButton"
-                            Style="{StaticResource MiniPinButtonStyle}"
+                            Style="{StaticResource SubtleButtonStyle}"
+                            Width="32"
+                            Height="32"
+                            Padding="0"
+                            Focusable="False"
                             ToolTip="Close"
                             Click="OnCloseClick">
-                        <ui:SymbolIcon Symbol="Dismiss20" FontSize="14" Foreground="{DynamicResource TextMutedBrush}" />
+                        <ui:SymbolIcon Symbol="Dismiss24"
+                                       FontSize="16"
+                                       Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" />
                     </Button>
                 </StackPanel>
             </Grid>
@@ -653,14 +662,81 @@
                         </Style>
                     </ScrollViewer.Style>
                     <StackPanel>
-                        <TextBlock x:Name="NoResultsTextBlock"
-                                   Text="No apps found"
-                                   FontSize="{DynamicResource TypeBodyFontSize}"
-                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                   Foreground="{DynamicResource TextSubtleBrush}"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,32,0,0"
-                                   Visibility="Collapsed" />
+                        <!-- Dedicated Fluent Empty Search Placeholder -->
+                        <Grid x:Name="NoResultsPanel"
+                              Visibility="Collapsed"
+                              HorizontalAlignment="Center"
+                              Margin="16,48,16,24">
+                            <Grid.RenderTransform>
+                                <TranslateTransform Y="0" />
+                            </Grid.RenderTransform>
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Style.Triggers>
+                                        <Trigger Property="Visibility" Value="Visible">
+                                            <Trigger.EnterActions>
+                                                <BeginStoryboard>
+                                                    <Storyboard>
+                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                         From="0.0" To="1.0"
+                                                                         Duration="0:0:0.15">
+                                                            <DoubleAnimation.EasingFunction>
+                                                                <CubicEase EasingMode="EaseOut" />
+                                                            </DoubleAnimation.EasingFunction>
+                                                        </DoubleAnimation>
+                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                                         From="6.0" To="0.0"
+                                                                         Duration="0:0:0.15">
+                                                            <DoubleAnimation.EasingFunction>
+                                                                <CubicEase EasingMode="EaseOut" />
+                                                            </DoubleAnimation.EasingFunction>
+                                                        </DoubleAnimation>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </Trigger.EnterActions>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+                            <StackPanel HorizontalAlignment="Center">
+                                <!-- Ambient Icon Badge with SearchInfo24 -->
+                                <Border Width="52"
+                                        Height="52"
+                                        CornerRadius="26"
+                                        HorizontalAlignment="Center"
+                                        Background="{DynamicResource WidgetDividerBrush}"
+                                        BorderBrush="{DynamicResource WidgetBorderBrush}"
+                                        BorderThickness="1">
+                                    <ui:SymbolIcon Symbol="SearchInfo24"
+                                                   FontSize="22"
+                                                   Foreground="{DynamicResource TextSubtleBrush}"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center" />
+                                </Border>
+
+                                <!-- Title: 16px SemiBold -->
+                                <TextBlock Text="No results found"
+                                           FontSize="{DynamicResource TypeHeaderFontSize}"
+                                           FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                           FontFamily="{DynamicResource AppFontFamily}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,14,0,6" />
+
+                                <!-- Query-aware Detail / Hint: 14px Regular -->
+                                <TextBlock x:Name="NoResultsDetailTextBlock"
+                                           Text="Check your spelling or try another search term."
+                                           FontSize="{DynamicResource TypeBodyFontSize}"
+                                           FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                           FontFamily="{DynamicResource AppFontFamily}"
+                                           Foreground="{DynamicResource TextSubtleBrush}"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center"
+                                           HorizontalAlignment="Center"
+                                           MaxWidth="250"
+                                           LineHeight="18" />
+                            </StackPanel>
+                        </Grid>
 
                         <ListBox x:Name="SearchResultsListBox"
                                  Background="Transparent"

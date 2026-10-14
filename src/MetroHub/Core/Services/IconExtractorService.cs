@@ -155,7 +155,10 @@ public static class IconExtractorService
                 hr = AssocQueryString(ASSOCF_NONE, ASSOCSTR_EXECUTABLE, ext, null, sb, ref cch);
                 if (hr == 0 && sb.Length > 0)
                 {
-                    return sb.ToString().Trim('"', ' ', '\t').ToLowerInvariant();
+                    string result = sb.ToString().Replace("\"", "").Trim();
+                    int argIdx = result.IndexOf('%');
+                    if (argIdx > 0) result = result[..argIdx].Trim();
+                    return result.ToLowerInvariant();
                 }
             }
 
@@ -167,7 +170,10 @@ public static class IconExtractorService
                 hr = AssocQueryString(ASSOCF_NONE, ASSOCSTR_PROGID, ext, null, sb, ref cch);
                 if (hr == 0 && sb.Length > 0)
                 {
-                    return sb.ToString().Trim('"', ' ', '\t').ToLowerInvariant();
+                    string result = sb.ToString().Replace("\"", "").Trim();
+                    int argIdx = result.IndexOf('%');
+                    if (argIdx > 0) result = result[..argIdx].Trim();
+                    return result.ToLowerInvariant();
                 }
             }
         }

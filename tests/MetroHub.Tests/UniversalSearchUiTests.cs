@@ -172,4 +172,16 @@ public sealed class UniversalSearchUiTests
             Assert.False(drawer.IsOpen);
         });
     }
+
+    [Fact]
+    public void AllAppsDrawerControl_NoResultsPanel_InitializedCollapsed()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var drawer = new AllAppsDrawerControl();
+            Assert.NotNull(drawer.NoResultsPanelControl);
+            Assert.Equal(System.Windows.Visibility.Collapsed, drawer.NoResultsPanelControl.Visibility);
+        });
+    }
 }
+

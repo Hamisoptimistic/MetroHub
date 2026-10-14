@@ -1643,9 +1643,8 @@ public static class GridPlacementService
                         if (neededRow > oPos.Row)
                         {
                             proposedGroupPositions[otherG] = (oPos.Col, neededRow);
-                            if (!inGroupQueue.Contains(otherG))
+                            if (inGroupQueue.Add(otherG))
                             {
-                                inGroupQueue.Add(otherG);
                                 groupQueue.Enqueue(otherG);
                             }
                         }
@@ -1663,9 +1662,8 @@ public static class GridPlacementService
                             if (neededRow > oPos.Row)
                             {
                                 proposedTilePositions[ut] = (oPos.Col, neededRow);
-                                if (!inTileQueue.Contains(ut))
+                                if (inTileQueue.Add(ut))
                                 {
-                                    inTileQueue.Add(ut);
                                     tileQueue.Enqueue(ut);
                                 }
                             }
@@ -1691,9 +1689,8 @@ public static class GridPlacementService
                             if (neededRow > oPos.Row)
                             {
                                 proposedTilePositions[otherT] = (oPos.Col, neededRow);
-                                if (!inTileQueue.Contains(otherT))
+                                if (inTileQueue.Add(otherT))
                                 {
-                                    inTileQueue.Add(otherT);
                                     tileQueue.Enqueue(otherT);
                                 }
                             }
@@ -1717,9 +1714,8 @@ public static class GridPlacementService
                         if (neededRow > oPos.Row)
                         {
                             proposedGroupPositions[otherG] = (oPos.Col, neededRow);
-                            if (!inGroupQueue.Contains(otherG))
+                            if (inGroupQueue.Add(otherG))
                             {
-                                inGroupQueue.Add(otherG);
                                 groupQueue.Enqueue(otherG);
                             }
                         }
@@ -1981,9 +1977,8 @@ public static class GridPlacementService
                         if (neededRow > oPos.Row)
                         {
                             proposedGroupPositions[otherG] = (oPos.Col, neededRow);
-                            if (!inGroupQueue.Contains(otherG))
+                            if (inGroupQueue.Add(otherG))
                             {
-                                inGroupQueue.Add(otherG);
                                 groupQueue.Enqueue(otherG);
                             }
                         }
@@ -2004,9 +1999,8 @@ public static class GridPlacementService
                         if (neededRow > oPos.Row)
                         {
                             proposedTilePositions[ut] = (oPos.Col, neededRow);
-                            if (!inTileQueue.Contains(ut))
+                            if (inTileQueue.Add(ut))
                             {
-                                inTileQueue.Add(ut);
                                 tileQueue.Enqueue(ut);
                             }
                         }
@@ -2035,9 +2029,8 @@ public static class GridPlacementService
                         if (neededRow > oPos.Row)
                         {
                             proposedTilePositions[otherT] = (oPos.Col, neededRow);
-                            if (!inTileQueue.Contains(otherT))
+                            if (inTileQueue.Add(otherT))
                             {
-                                inTileQueue.Add(otherT);
                                 tileQueue.Enqueue(otherT);
                             }
                         }
@@ -2063,9 +2056,8 @@ public static class GridPlacementService
                         if (neededRow > oPos.Row)
                         {
                             proposedGroupPositions[otherG] = (oPos.Col, neededRow);
-                            if (!inGroupQueue.Contains(otherG))
+                            if (inGroupQueue.Add(otherG))
                             {
-                                inGroupQueue.Add(otherG);
                                 groupQueue.Enqueue(otherG);
                             }
                         }
@@ -2212,9 +2204,8 @@ public static class GridPlacementService
                         if (neededRow > oPos.Row)
                         {
                             proposedGroupPositions[otherG] = (oPos.Col, neededRow);
-                            if (!inGroupQueue.Contains(otherG))
+                            if (inGroupQueue.Add(otherG))
                             {
-                                inGroupQueue.Add(otherG);
                                 groupQueue.Enqueue(otherG);
                             }
                         }
@@ -2231,9 +2222,8 @@ public static class GridPlacementService
                         if (neededRow > oPos.Row)
                         {
                             proposedTilePositions[ut] = (oPos.Col, neededRow);
-                            if (!inTileQueue.Contains(ut))
+                            if (inTileQueue.Add(ut))
                             {
-                                inTileQueue.Add(ut);
                                 tileQueue.Enqueue(ut);
                             }
                         }
@@ -2258,9 +2248,8 @@ public static class GridPlacementService
                         if (neededRow > oPos.Row)
                         {
                             proposedTilePositions[otherT] = (oPos.Col, neededRow);
-                            if (!inTileQueue.Contains(otherT))
+                            if (inTileQueue.Add(otherT))
                             {
-                                inTileQueue.Add(otherT);
                                 tileQueue.Enqueue(otherT);
                             }
                         }
@@ -2281,9 +2270,8 @@ public static class GridPlacementService
                         if (neededRow > oPos.Row)
                         {
                             proposedGroupPositions[otherG] = (oPos.Col, neededRow);
-                            if (!inGroupQueue.Contains(otherG))
+                            if (inGroupQueue.Add(otherG))
                             {
-                                inGroupQueue.Add(otherG);
                                 groupQueue.Enqueue(otherG);
                             }
                         }

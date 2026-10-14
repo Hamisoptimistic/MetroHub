@@ -14,8 +14,8 @@ namespace MetroHub.Widgets.Catalog.Rover;
 /// </summary>
 public sealed class RoverAudioService : IDisposable
 {
-    [DllImport("winmm.dll", EntryPoint = "mciSendStringW", CharSet = CharSet.Unicode)]
-    private static extern int mciSendString(string command, StringBuilder? buffer, int bufferSize, IntPtr hwndCallback);
+    [DllImport("winmm.dll", EntryPoint = "mciSendStringW", CharSet = CharSet.Unicode, ExactSpelling = true)]
+    private static extern int mciSendString(string command, IntPtr buffer, int bufferSize, IntPtr hwndCallback);
 
     private readonly ConcurrentDictionary<string, string> _soundPaths = new(StringComparer.OrdinalIgnoreCase);
     private bool _isMuted;
@@ -154,13 +154,13 @@ public sealed class RoverAudioService : IDisposable
                 int count = System.Threading.Interlocked.Increment(ref _playCounter) % 4;
                 string alias = $"rv_snd_{count}";
 
-                mciSendString($"close {alias}", null, 0, IntPtr.Zero);
-                int openRes = mciSendString($"open \"{filePath}\" type mpegvideo alias {alias}", null, 0, IntPtr.Zero);
+                _ = mciSendString($"close {alias}", IntPtr.Zero, 0, IntPtr.Zero);
+                int openRes = mciSendString($"open \"{filePath}\" type mpegvideo alias {alias}", IntPtr.Zero, 0, IntPtr.Zero);
                 if (openRes == 0)
                 {
                     int vol = (int)(_volume * 1000);
-                    mciSendString($"setaudio {alias} volume to {vol}", null, 0, IntPtr.Zero);
-                    mciSendString($"play {alias} from 0", null, 0, IntPtr.Zero);
+                    _ = mciSendString($"setaudio {alias} volume to {vol}", IntPtr.Zero, 0, IntPtr.Zero);
+                    _ = mciSendString($"play {alias} from 0", IntPtr.Zero, 0, IntPtr.Zero);
                 }
             }
             catch
@@ -174,7 +174,7 @@ public sealed class RoverAudioService : IDisposable
     {
         for (int i = 0; i < 4; i++)
         {
-            mciSendString($"close rv_snd_{i}", null, 0, IntPtr.Zero);
+            _ = mciSendString($"close rv_snd_{i}", IntPtr.Zero, 0, IntPtr.Zero);
         }
     }
 

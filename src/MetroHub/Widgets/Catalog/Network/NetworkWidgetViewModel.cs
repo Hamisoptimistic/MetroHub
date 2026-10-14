@@ -1900,35 +1900,39 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             }
         }
 
-        if (targetItem == null) return;
-
-        if (securePassword == null || securePassword.Length == 0)
+        if (targetItem == null)
         {
-            targetItem.HasConnectionError = true;
-            targetItem.ConnectionErrorMessage = "Password cannot be empty.";
+            securePassword?.Dispose();
             return;
         }
-
-        if (targetItem.IsSecured && securePassword.Length < 8)
-        {
-            targetItem.HasConnectionError = true;
-            targetItem.ConnectionErrorMessage = "Password must be at least 8 characters.";
-            return;
-        }
-
-        // Memory hardening: Immediately clear password from UI and ViewModel
-        if (parameter is Wpf.Ui.Controls.PasswordBox clearUiPb) clearUiPb.Clear();
-        else if (parameter is System.Windows.Controls.PasswordBox clearPb) clearPb.Clear();
-        targetItem.PasswordText = string.Empty;
 
         try
         {
+            if (securePassword == null || securePassword.Length == 0)
+            {
+                targetItem.HasConnectionError = true;
+                targetItem.ConnectionErrorMessage = "Password cannot be empty.";
+                return;
+            }
+
+            if (targetItem.IsSecured && securePassword.Length < 8)
+            {
+                targetItem.HasConnectionError = true;
+                targetItem.ConnectionErrorMessage = "Password must be at least 8 characters.";
+                return;
+            }
+
+            // Memory hardening: Immediately clear password from UI and ViewModel
+            if (parameter is Wpf.Ui.Controls.PasswordBox clearUiPb) clearUiPb.Clear();
+            else if (parameter is System.Windows.Controls.PasswordBox clearPb) clearPb.Clear();
+            targetItem.PasswordText = string.Empty;
+
             await ExecuteWifiConnectAsync(targetItem, securePassword);
         }
         finally
         {
             // Memory hardening: Immediately zero unmanaged DPAPI buffer
-            securePassword.Dispose();
+            securePassword?.Dispose();
         }
 
         if (!targetItem.HasConnectionError && targetItem.IsConnected)

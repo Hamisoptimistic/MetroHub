@@ -206,6 +206,7 @@ namespace MetroHub.Presentation.Controls
         public ScrollViewer? GroupedScrollViewerControl => GroupedScrollViewer;
         public ScrollViewer? SearchResultsScrollViewerControl => SearchResultsScrollViewer;
         public ListBox? RecentSuggestionsListBoxControl => RecentSuggestionsListBox;
+        public Grid? NoResultsPanelControl => NoResultsPanel;
         public const int MaxZeroStateSuggestions = 15;
         public const int MaxGridZeroStateSuggestions = 15;
         public const int MaxListZeroStateSuggestions = 6;
@@ -557,7 +558,7 @@ namespace MetroHub.Presentation.Controls
                 GroupedScrollViewer.Visibility = Visibility.Visible;
                 SearchResultsScrollViewer.Visibility = Visibility.Collapsed;
                 SearchResultsListBox.ItemsSource = null;
-                NoResultsTextBlock.Visibility = Visibility.Collapsed;
+                if (NoResultsPanel != null) NoResultsPanel.Visibility = Visibility.Collapsed;
                 RefreshRecentSuggestions(MaxZeroStateSuggestions);
             }
             else
@@ -577,12 +578,13 @@ namespace MetroHub.Presentation.Controls
                     if (string.IsNullOrWhiteSpace(SearchBox.Text))
                     {
                         SearchResultsListBox.ItemsSource = null;
-                        NoResultsTextBlock.Visibility = Visibility.Collapsed;
+                        if (NoResultsPanel != null) NoResultsPanel.Visibility = Visibility.Collapsed;
                     }
                     else if (snapshot.IsFinal)
                     {
                         SearchResultsListBox.ItemsSource = null;
-                        NoResultsTextBlock.Visibility = Visibility.Visible;
+                        UpdateNoResultsText(SearchBox.Text);
+                        if (NoResultsPanel != null) NoResultsPanel.Visibility = Visibility.Visible;
                     }
                     return;
                 }
@@ -607,7 +609,15 @@ namespace MetroHub.Presentation.Controls
                 string? selectedId = (SearchResultsListBox.SelectedItem as SearchItemRowViewModel)?.Candidate.Id;
 
                 SearchResultsListBox.ItemsSource = flatRows;
-                NoResultsTextBlock.Visibility = (flatRows.Count == 0 && snapshot.IsFinal) ? Visibility.Visible : Visibility.Collapsed;
+                bool showNoResults = flatRows.Count == 0 && snapshot.IsFinal;
+                if (showNoResults)
+                {
+                    UpdateNoResultsText(SearchBox.Text);
+                }
+                if (NoResultsPanel != null)
+                {
+                    NoResultsPanel.Visibility = showNoResults ? Visibility.Visible : Visibility.Collapsed;
+                }
 
                 if (flatRows.Count > 0)
                 {
@@ -620,6 +630,22 @@ namespace MetroHub.Presentation.Controls
                     SearchResultsListBox.SelectedIndex = newIndex >= 0 ? newIndex : 0;
                 }
             });
+        }
+
+        private void UpdateNoResultsText(string? query)
+        {
+            if (NoResultsDetailTextBlock == null) return;
+
+            string trimmed = query?.Trim() ?? string.Empty;
+            if (string.IsNullOrEmpty(trimmed))
+            {
+                NoResultsDetailTextBlock.Text = "Check your spelling or try another search term.";
+            }
+            else
+            {
+                string displayQuery = trimmed.Length > 24 ? $"{trimmed[..24]}..." : trimmed;
+                NoResultsDetailTextBlock.Text = $"No matches found for \"{displayQuery}\". Check your spelling or try another keyword.";
+            }
         }
 
         private void LaunchSearchItem(SearchItemRowViewModel row)
@@ -657,7 +683,7 @@ namespace MetroHub.Presentation.Controls
             {
                 if (string.IsNullOrEmpty(SearchBox.Text))
                 {
-                    if (RecentSuggestionsListBox != null && RecentSuggestionsListBox.Items.Count > 0)
+                    if (RecentSuggestionsListBox != null && RecentSuggestionsListBox.Items.Count > 0 && RecentSuggestionsPanel.Visibility == Visibility.Visible)
                     {
                         int targetIndex = RecentSuggestionsListBox.SelectedIndex;
                         if (targetIndex < 0)
@@ -670,10 +696,18 @@ namespace MetroHub.Presentation.Controls
                         }
                         else
                         {
-                            targetIndex = 0;
+                            GroupedScrollViewer?.LineDown();
+                            e.Handled = true;
+                            return;
                         }
 
                         FocusRecentSuggestionItem(targetIndex);
+                        e.Handled = true;
+                        return;
+                    }
+                    else
+                    {
+                        GroupedScrollViewer?.LineDown();
                         e.Handled = true;
                         return;
                     }
@@ -702,7 +736,7 @@ namespace MetroHub.Presentation.Controls
             {
                 if (string.IsNullOrEmpty(SearchBox.Text))
                 {
-                    if (RecentSuggestionsListBox != null && RecentSuggestionsListBox.Items.Count > 0)
+                    if (RecentSuggestionsListBox != null && RecentSuggestionsListBox.Items.Count > 0 && RecentSuggestionsPanel.Visibility == Visibility.Visible)
                     {
                         int targetIndex = RecentSuggestionsListBox.SelectedIndex;
                         if (targetIndex <= 0)
@@ -715,6 +749,12 @@ namespace MetroHub.Presentation.Controls
                         }
 
                         FocusRecentSuggestionItem(targetIndex);
+                        e.Handled = true;
+                        return;
+                    }
+                    else
+                    {
+                        GroupedScrollViewer?.LineUp();
                         e.Handled = true;
                         return;
                     }
@@ -735,6 +775,22 @@ namespace MetroHub.Presentation.Controls
                     e.Handled = true;
                 }
             }
+            else if (e.Key == Key.PageDown)
+            {
+                if (string.IsNullOrEmpty(SearchBox.Text))
+                {
+                    GroupedScrollViewer?.PageDown();
+                    e.Handled = true;
+                }
+            }
+            else if (e.Key == Key.PageUp)
+            {
+                if (string.IsNullOrEmpty(SearchBox.Text))
+                {
+                    GroupedScrollViewer?.PageUp();
+                    e.Handled = true;
+                }
+            }
             else if (e.Key == Key.Enter)
             {
                 if (string.IsNullOrEmpty(SearchBox.Text))
@@ -745,7 +801,7 @@ namespace MetroHub.Presentation.Controls
                         e.Handled = true;
                         return;
                     }
-                    else if (RecentSuggestionsListBox != null && RecentSuggestionsListBox.Items.Count > 0)
+                    else if (RecentSuggestionsListBox != null && RecentSuggestionsListBox.Items.Count > 0 && RecentSuggestionsPanel.Visibility == Visibility.Visible)
                     {
                         RecentSuggestionsListBox.SelectedIndex = 0;
                         if (RecentSuggestionsListBox.SelectedItem is SearchItemRowViewModel topRecent)
@@ -754,6 +810,14 @@ namespace MetroHub.Presentation.Controls
                             e.Handled = true;
                             return;
                         }
+                    }
+                    else if (_allApps.Count > 0)
+                    {
+                        AppLaunchRequested?.Invoke(this, _allApps[0]);
+                        Close();
+                        ShellHideRequested?.Invoke(this, EventArgs.Empty);
+                        e.Handled = true;
+                        return;
                     }
                 }
                 else if (SearchResultsListBox.SelectedItem is SearchItemRowViewModel row)
@@ -865,6 +929,11 @@ namespace MetroHub.Presentation.Controls
                     SearchBox.CaretIndex = SearchBox.Text.Length;
                     e.Handled = true;
                 }
+                else if (e.Key == Key.Down && RecentSuggestionsListBox.SelectedIndex >= RecentSuggestionsListBox.Items.Count - 1)
+                {
+                    GroupedScrollViewer?.LineDown();
+                    e.Handled = true;
+                }
                 else if (e.Key == Key.Back)
                 {
                     SearchBox.Focus();
@@ -881,6 +950,11 @@ namespace MetroHub.Presentation.Controls
                 if (e.Key == Key.Apps || (e.Key == Key.F10 && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift))
                 {
                     OpenContextMenuForRecentSuggestionItem();
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.Down && RecentSuggestionsListBox.SelectedIndex >= RecentSuggestionsListBox.Items.Count - 5)
+                {
+                    GroupedScrollViewer?.LineDown();
                     e.Handled = true;
                 }
                 else if (e.Key == Key.Up && RecentSuggestionsListBox.SelectedIndex >= 0 && RecentSuggestionsListBox.SelectedIndex < 5)
@@ -1017,7 +1091,7 @@ namespace MetroHub.Presentation.Controls
             GroupedScrollViewer.Visibility = Visibility.Visible;
             SearchResultsScrollViewer.Visibility = Visibility.Collapsed;
             SearchResultsListBox.ItemsSource = null;
-            NoResultsTextBlock.Visibility = Visibility.Collapsed;
+            if (NoResultsPanel != null) NoResultsPanel.Visibility = Visibility.Collapsed;
             RefreshRecentSuggestions(MaxZeroStateSuggestions);
         }
 

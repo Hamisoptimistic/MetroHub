@@ -208,7 +208,10 @@ public sealed partial class CalendarWidgetViewModel : WidgetViewModelBase, IWidg
 
     public IEnumerable<Control> GetContextMenuItems()
     {
-        yield return WidgetMenu.Item("Go to Today", SymbolRegular.CalendarToday24, ResetToToday);
+        if (IsFullSize)
+        {
+            yield return WidgetMenu.Item("Go to Today", SymbolRegular.CalendarToday24, ResetToToday);
+        }
     }
 
     [RelayCommand]

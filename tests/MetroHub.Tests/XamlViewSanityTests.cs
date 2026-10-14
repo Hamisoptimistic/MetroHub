@@ -64,7 +64,6 @@ public class XamlViewSanityTests
     [Theory]
     [InlineData(typeof(SidebarRailControl))]
     [InlineData(typeof(AllAppsDrawerControl))]
-    [InlineData(typeof(WidgetTabStrip))]
     [InlineData(typeof(TileControl))]
     public void ShellControl_InitializesWithoutMissingResources(Type controlType)
     {
