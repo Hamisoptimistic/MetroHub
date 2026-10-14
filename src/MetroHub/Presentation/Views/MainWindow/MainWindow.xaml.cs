@@ -1116,6 +1116,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     public void HideScreen(bool restorePreviousFocus = true)
     {
         if (_isDismissing || !IsVisible) return;
+        DismissOpenDialogs();
         _isDismissing = true;
 
         if (restorePreviousFocus && _previousForegroundWindow != IntPtr.Zero)
