@@ -1,0 +1,164 @@
+<UserControl x:Class="MetroHub.Presentation.Views.Settings.Pages.SettingsDetailLayout"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:MetroHub.Presentation.Views.Settings.ViewModels"
+             d:DataContext="{d:DesignInstance vm:SettingsDetailLayoutViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             Background="Transparent">
+
+    <!-- Master Two-Pane Grid: Shared Rows link Left Rail & Right Viewport to the exact same baseline -->
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <!-- Column 0: 240px Frosted Acrylic Rail -->
+            <ColumnDefinition Width="240" />
+            <!-- Column 1: Right Obsidian Content Viewport -->
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <!-- Row 0: Top Navigation Band (Back button on left, caption clearance on right) -->
+            <RowDefinition Height="Auto" />
+            <!-- Row 1: Shared Content Area (ListView on left, Viewport Content on right) -->
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ========================================================================= -->
+        <!-- BACKGROUND PLATES (FULL-BLEED Y=0..640 SPANNING BOTH ROWS)                -->
+        <!-- ========================================================================= -->
+        <!-- Column 0: Left Rail Hairline Right Divider -->
+        <Border Grid.Row="0"
+                Grid.RowSpan="2"
+                Grid.Column="0"
+                Background="Transparent"
+                BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}"
+                BorderThickness="0,0,1,0" />
+
+        <!-- Column 1: Full-Bleed Obsidian Deck -->
+        <Border Grid.Row="0"
+                Grid.RowSpan="2"
+                Grid.Column="1"
+                Background="{DynamicResource DialogPanelBackground}" />
+
+        <!-- ========================================================================= -->
+        <!-- ROW 0: TOP NAVIGATION BAND                                                -->
+        <!-- ========================================================================= -->
+        <!-- Column 0: Standalone [ ← ] Button + Static "Settings" Header -->
+        <Grid Grid.Row="0"
+              Grid.Column="0"
+              Height="38"
+              Margin="12,8,12,8"
+              VerticalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <!-- Column 0: Isolated Square Back Button [ ← ] -->
+                <ColumnDefinition Width="Auto" />
+                <!-- Column 1: Static Title "Settings" -->
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Standalone Square Back Button (Hover isolated to button, backed by Tokens.xaml) -->
+            <Button Grid.Column="0"
+                    Command="{Binding BackToHomeCommand}"
+                    Style="{DynamicResource SubtleButtonStyle}"
+                    Width="34"
+                    Height="34"
+                    Margin="4,0,0,0"
+                    Padding="0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    ToolTip="Return to Settings Overview">
+                <ui:SymbolIcon Symbol="ArrowLeft24"
+                               FontSize="18"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+            </Button>
+
+            <!-- Static Section Header (Decoupled from Button Hover) -->
+            <TextBlock Grid.Column="1"
+                       Text="Settings"
+                       FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
+                       Margin="10,0,0,0"
+                       VerticalAlignment="Center" />
+        </Grid>
+
+        <!-- ========================================================================= -->
+        <!-- ROW 1: SHARED CONTENT AREA (PERFECT HORIZONTAL ALIGNMENT AT Y = 56px)     -->
+        <!-- ========================================================================= -->
+        <!-- Column 0: Vertical Category Selector (WPF-UI Native ListView) -->
+        <ui:ListView Grid.Row="1"
+                     Grid.Column="0"
+                     ItemsSource="{Binding Categories}"
+                     SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                     Margin="12,0,12,12"
+                     Padding="0"
+                     BorderThickness="0"
+                     Background="Transparent">
+            <ui:ListView.ItemContainerStyle>
+                <Style TargetType="{x:Type ui:ListViewItem}" BasedOn="{StaticResource {x:Type ui:ListViewItem}}">
+                    <Setter Property="Height" Value="38" />
+                    <Setter Property="Margin" Value="0,2" />
+                    <Setter Property="Padding" Value="12,0" />
+                </Style>
+            </ui:ListView.ItemContainerStyle>
+            <ui:ListView.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:SettingsCategoryItem}">
+                    <Grid Height="38" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ui:SymbolIcon Symbol="{Binding Symbol}"
+                                       FontSize="18"
+                                       Margin="0,0,12,0"
+                                       VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Title}"
+                                   FontSize="{DynamicResource TypeBodyFontSize}"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                </DataTemplate>
+            </ui:ListView.ItemTemplate>
+        </ui:ListView>
+
+        <!-- Column 1: Right Viewport Deck (Header + Content Host) -->
+        <Grid Grid.Row="1"
+              Grid.Column="1">
+            <Grid.RowDefinitions>
+                <!-- Row 0: Sticky Category Header (Title + Subtitle) -->
+                <RowDefinition Height="Auto" />
+                <!-- Row 1: Scrollable Settings Deck -->
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Sticky Header: Locked to Y = 56px, aligning perfectly with the first ListView item -->
+            <StackPanel Grid.Row="0"
+                        Margin="36,2,36,20"
+                        VerticalAlignment="Top">
+                <TextBlock Text="{Binding SelectedCategory.Title}"
+                           FontSize="{DynamicResource TypeHeaderFontSize}"
+                           FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                <TextBlock Text="{Binding SelectedCategory.Description}"
+                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           Margin="0,3,0,0"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- Dynamic Content Host (ScrollViewer with 4px Floating Scrollbar) -->
+            <ScrollViewer Grid.Row="1"
+                          Style="{DynamicResource WidgetFloatingScrollViewerStyle}"
+                          Padding="36,0,36,24"
+                          HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
+                <ContentControl Content="{Binding CurrentPageViewModel}"
+                                Focusable="False" />
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl>

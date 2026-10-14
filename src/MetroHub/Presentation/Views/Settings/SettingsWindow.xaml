@@ -1,7 +1,6 @@
 <views:BorderlessFluentWindow x:Class="MetroHub.Presentation.Views.Settings.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
         xmlns:views="clr-namespace:MetroHub.Presentation.Views"
         xmlns:vm="clr-namespace:MetroHub.Presentation.Views.Settings.ViewModels"
         xmlns:pages="clr-namespace:MetroHub.Presentation.Views.Settings.Pages"
@@ -26,12 +25,12 @@
         UseLayoutRounding="True">
 
     <Window.Resources>
-        <!-- Tier 2: Calibrated Obsidian Deck Tint (16% delta tint over MainWindow's 60% Acrylic) -->
-        <SolidColorBrush x:Key="SettingsTier2ObsidianBrush" Color="#280D0D11" po:Freeze="True" />
-
         <!-- View Model DataTemplates -->
         <DataTemplate DataType="{x:Type vm:SettingsHomeViewModel}">
             <pages:SettingsHomeView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SettingsDetailLayoutViewModel}">
+            <pages:SettingsDetailLayout />
         </DataTemplate>
     </Window.Resources>
 
@@ -39,51 +38,25 @@
     <Border Background="Transparent"
             BorderBrush="{DynamicResource SurfaceBorderBrush}"
             BorderThickness="1"
-            CornerRadius="2"
+            CornerRadius="{DynamicResource TileCornerRadius}"
             SnapsToDevicePixels="True">
-        <!-- Master Layout Grid (Tier 1: Uniform MetroDialog Frosted Acrylic) -->
+        <!-- Master Layout Grid (Full-Bleed Viewport with Floating Titlebar Overlay) -->
         <Grid Background="Transparent">
-            <Grid.RowDefinitions>
-                <!-- Row 0: Custom Titlebar Drag Strip & Close [X] (36px) -->
-                <RowDefinition Height="36" />
-                <!-- Row 1: Content Host (CurrentView) -->
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-
-            <!-- ========================================================================= -->
-            <!-- ROW 0: CLEAN TITLEBAR (DRAG STRIP + CLOSE BUTTON ONLY)                   -->
-            <!-- ========================================================================= -->
-            <Grid Grid.Row="0" Background="Transparent">
-                <Grid.ColumnDefinitions>
-                    <!-- Column 0: Full Drag Area (No text/icons) -->
-                    <ColumnDefinition Width="*" />
-                    <!-- Column 1: Close [X] Button -->
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <!-- Invisible Drag Strip -->
-                <Border Grid.Column="0"
-                        Background="Transparent"
-                        MouseLeftButtonDown="OnTitleBarMouseDown" />
-
-                <!-- Top-Right Close Button -->
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            VerticalAlignment="Center"
-                            Margin="0,0,10,0">
-                    <Button x:Name="CloseButton"
-                            Style="{DynamicResource ModalDismissButtonStyle}"
-                            Click="OnCloseButtonClick"
-                            ToolTip="Close (Esc)" />
-                </StackPanel>
-            </Grid>
-
-            <!-- ========================================================================= -->
-            <!-- ROW 1: CONTENT VIEWPORT HOST                                             -->
-            <!-- ========================================================================= -->
-            <ContentControl Grid.Row="1"
-                            Content="{Binding CurrentView}"
+            <!-- Full-Bleed Content Host (CurrentView covers all window bounds Y=0..640) -->
+            <ContentControl Content="{Binding CurrentView}"
                             Focusable="False" />
+
+            <!-- ========================================================================= -->
+            <!-- TOP-RIGHT CLOSE [X] BUTTON (NON-DRAGGABLE WINDOW)                         -->
+            <!-- ========================================================================= -->
+            <StackPanel HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="0,8,10,0">
+                <Button x:Name="CloseButton"
+                        Style="{DynamicResource ModalDismissButtonStyle}"
+                        Click="OnCloseButtonClick"
+                        ToolTip="Close (Esc)" />
+            </StackPanel>
         </Grid>
     </Border>
 </views:BorderlessFluentWindow>

@@ -12,10 +12,15 @@ public partial class SettingsShellViewModel : ObservableObject
     [ObservableProperty]
     private object _currentView;
 
+    private readonly SettingsHomeViewModel _homeViewModel;
+
     public SettingsShellViewModel()
     {
-        _currentView = new SettingsHomeViewModel(this);
+        _homeViewModel = new SettingsHomeViewModel(this);
+        _currentView = _homeViewModel;
     }
+
+    public bool IsInDetailView => CurrentView is not SettingsHomeViewModel;
 
     public void NavigateTo(object view)
     {
@@ -24,6 +29,11 @@ public partial class SettingsShellViewModel : ObservableObject
 
     public void NavigateHome()
     {
-        CurrentView = new SettingsHomeViewModel(this);
+        CurrentView = _homeViewModel;
+    }
+
+    public void NavigateToCategory(SettingsCategoryItem category)
+    {
+        CurrentView = new SettingsDetailLayoutViewModel(this, _homeViewModel.Categories, category);
     }
 }

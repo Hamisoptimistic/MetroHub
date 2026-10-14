@@ -32,47 +32,71 @@ public partial class SettingsHomeViewModel : ObservableObject
         {
             Id = "General",
             Title = "General",
-            Description = "Startup, window behavior, system tray",
+            Description = "Startup, window behavior, tray",
             Symbol = SymbolRegular.Power24
         });
 
         Categories.Add(new SettingsCategoryItem
         {
-            Id = "Personalization",
-            Title = "Personalization",
-            Description = "Themes, Wallpapers, Animations",
+            Id = "Appearance",
+            Title = "Appearance",
+            Description = "Themes, materials, wallpapers",
             Symbol = SymbolRegular.PaintBucket24
         });
 
         Categories.Add(new SettingsCategoryItem
         {
-            Id = "Canvas",
-            Title = "Workspaces & Sidebar",
-            Description = "Canvas layout, rail behavior, scroll",
+            Id = "Workspaces",
+            Title = "Workspaces & Canvas",
+            Description = "Layout orientation, groups, grid",
             Symbol = SymbolRegular.Grid24
         });
 
         Categories.Add(new SettingsCategoryItem
         {
-            Id = "Shortcuts",
-            Title = "Keyboard Shortcuts",
-            Description = "Global hotkey, navigation Shortcuts",
-            Symbol = SymbolRegular.Keyboard24
+            Id = "Sidebar",
+            Title = "Sidebar & Apps",
+            Description = "Navigation rail, quick links, drawer",
+            Symbol = SymbolRegular.AppsListDetail24
+        });
+
+        Categories.Add(new SettingsCategoryItem
+        {
+            Id = "Search",
+            Title = "Search & Indexing",
+            Description = "Everything engine, FZF, sources",
+            Symbol = SymbolRegular.Search24
         });
 
         Categories.Add(new SettingsCategoryItem
         {
             Id = "Widgets",
             Title = "Widgets",
-            Description = "Widget Defaults",
+            Description = "Clock, weather, calendar, refresh",
             Symbol = SymbolRegular.AppGeneric24
         });
 
         Categories.Add(new SettingsCategoryItem
         {
+            Id = "Integrations",
+            Title = "Integrations & Companion",
+            Description = "Browser extension, media, port",
+            Symbol = SymbolRegular.AppsAddIn24
+        });
+
+        Categories.Add(new SettingsCategoryItem
+        {
+            Id = "Shortcuts",
+            Title = "Shortcuts & Hotkeys",
+            Description = "Global hotkey, workspace jumps",
+            Symbol = SymbolRegular.Keyboard24
+        });
+
+        Categories.Add(new SettingsCategoryItem
+        {
             Id = "About",
-            Title = "About",
-            Description = "App updates",
+            Title = "About & Maintenance",
+            Description = "Updates, version, logs, backup",
             Symbol = SymbolRegular.Info24
         });
     }
@@ -80,7 +104,7 @@ public partial class SettingsHomeViewModel : ObservableObject
     [RelayCommand]
     private void SelectCategory(SettingsCategoryItem? category)
     {
-        if (category == null) return;
-        // Phase 2 will navigate to detail view for this category
+        if (category == null || _shell == null) return;
+        _shell.NavigateToCategory(category);
     }
 }

@@ -1080,4 +1080,87 @@
         </Setter>
     </Style>
 
+    <!-- ========================================================================= -->
+    <!-- 6. METROHUB UNIVERSAL SETTINGS CARD SYSTEM (WPF-UI 3.1.1)                 -->
+    <!-- Authentic 2px tile corners, translucent obsidian dark-glass plate,        -->
+    <!-- and smooth hover pre-glow matching MetroHub reveal DNA.                   -->
+    <!-- ========================================================================= -->
+
+    <!-- Standard Settings Row: ui:CardControl -->
+    <Style x:Key="MetroSettingsCardStyle" TargetType="{x:Type ui:CardControl}" BasedOn="{StaticResource {x:Type ui:CardControl}}">
+        <Setter Property="Background" Value="{DynamicResource DialogPanelBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderSubtleBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource TileCornerRadius}" />
+        <Setter Property="Margin" Value="0,0,0,6" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource FluentHoverBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.4" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Expandable Grouped Card: ui:CardExpander -->
+    <Style x:Key="MetroSettingsExpanderStyle" TargetType="{x:Type ui:CardExpander}" BasedOn="{StaticResource {x:Type ui:CardExpander}}">
+        <Setter Property="Background" Value="{DynamicResource DialogPanelBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderSubtleBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource TileCornerRadius}" />
+        <Setter Property="Margin" Value="0,0,0,6" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="ContentPadding" Value="14,10,14,12" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.4" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Clickable Action Trigger: ui:CardAction -->
+    <Style x:Key="MetroSettingsActionCardStyle" TargetType="{x:Type ui:CardAction}" BasedOn="{StaticResource {x:Type ui:CardAction}}">
+        <Setter Property="Background" Value="{DynamicResource DialogPanelBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderSubtleBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Margin" Value="0,0,0,6" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="IsChevronVisible" Value="True" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource FluentHoverBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+                <Setter Property="Background" Value="{DynamicResource FluentPressedBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource ContentDialogBorderBrush}" />
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.4" />
+                <Setter Property="Cursor" Value="Arrow" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Implicit Default Styles: All bare CardControl, CardExpander, and CardAction automatically inherit these -->
+    <Style TargetType="{x:Type ui:CardControl}" BasedOn="{StaticResource MetroSettingsCardStyle}" />
+    <Style TargetType="{x:Type ui:CardExpander}" BasedOn="{StaticResource MetroSettingsExpanderStyle}" />
+    <Style TargetType="{x:Type ui:CardAction}" BasedOn="{StaticResource MetroSettingsActionCardStyle}" />
+
 </ResourceDictionary>

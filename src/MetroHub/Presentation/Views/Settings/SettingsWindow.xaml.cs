@@ -89,26 +89,48 @@ public partial class SettingsWindow : BorderlessFluentWindow
     {
         if (e.Key == Key.Escape)
         {
+            // If in detail view, Esc steps back to Home first; a second Esc closes the window.
+            if (DataContext is SettingsShellViewModel shell && shell.IsInDetailView)
+            {
+                shell.NavigateHome();
+                e.Handled = true;
+                return;
+            }
+
             Dismiss();
             e.Handled = true;
             return;
         }
 
+        // Standard Windows navigation: Alt+Left or BrowserBack navigates back to Home
+        if ((e.Key == Key.Left && (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt) ||
+            e.Key == Key.BrowserBack)
+        {
+            if (DataContext is SettingsShellViewModel shell && shell.IsInDetailView)
+            {
+                shell.NavigateHome();
+                e.Handled = true;
+                return;
+            }
+        }
+
         base.OnPreviewKeyDown(e);
     }
 
-    private void OnTitleBarMouseDown(object sender, MouseButtonEventArgs e)
+    protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
     {
-        if (e.LeftButton == MouseButtonState.Pressed)
+        // Mouse Back button (XButton1) navigates back to Home
+        if (e.ChangedButton == MouseButton.XButton1)
         {
-            try
+            if (DataContext is SettingsShellViewModel shell && shell.IsInDetailView)
             {
-                DragMove();
-            }
-            catch (InvalidOperationException)
-            {
+                shell.NavigateHome();
+                e.Handled = true;
+                return;
             }
         }
+
+        base.OnPreviewMouseDown(e);
     }
 
     private void OnCloseButtonClick(object sender, RoutedEventArgs e)
