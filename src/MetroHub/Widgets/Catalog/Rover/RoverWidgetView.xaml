@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:rover="clr-namespace:MetroHub.Widgets.Catalog.Rover"
+             xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=rover:RoverWidgetViewModel}"
              Focusable="False"
@@ -13,7 +14,7 @@
     <UserControl.Resources>
 
         <!-- Nostalgic XP Bliss Grass Accent Gradient -->
-        <LinearGradientBrush x:Key="XpBlissBackground" StartPoint="0,0" EndPoint="0,1">
+        <LinearGradientBrush x:Key="XpBlissBackground" StartPoint="0,0" EndPoint="0,1" po:Freeze="True">
             <GradientStop Color="#1E3A8A" Offset="0.0" />
             <GradientStop Color="#0284C7" Offset="0.45" />
             <GradientStop Color="#15803D" Offset="0.85" />
