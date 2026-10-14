@@ -464,41 +464,6 @@ public partial class MainWindow
         }
     }
 
-    private void StartBackgroundAppWarmup()
-    {
-        Task.Run(async () =>
-        {
-            try
-            {
-                var apps = InstalledAppsService.GetInstalledApps(forceRefresh: false);
-                if (apps == null || apps.Count == 0) return;
-
-                var groups = Presentation.Controls.AllAppsDrawerControl.CreateAlphabeticalGroups(apps);
-                var ordered = apps.OrderBy(i => i.Name, StringComparer.OrdinalIgnoreCase).ToList();
-
-                await Dispatcher.InvokeAsync(() =>
-                {
-                    AllAppsDrawer?.SetPreloadedApps(apps, groups);
-                    if (AppsMenuItem != null)
-                    {
-                        AppsMenuItem.ItemsSource = null;
-                        AppsMenuItem.Items.Clear();
-                        AppsMenuItem.ItemsSource = ordered;
-                    }
-                    _isAppsLoaded = true;
-                }, DispatcherPriority.ApplicationIdle);
-
-                // Defer non-critical icon prewarming by 500ms so startup completes with 0% CPU/disk contention
-                await Task.Delay(500);
-                CatalogItemModel.PrewarmMemoryCache(apps);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[AppWarmup] Background warmup error: {ex.Message}");
-            }
-        });
-    }
-
     private void StartBackgroundMaintenance()
     {
         Task.Run(async () =>

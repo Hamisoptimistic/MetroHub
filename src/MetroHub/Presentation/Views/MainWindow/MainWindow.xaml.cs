@@ -285,7 +285,6 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         };
 
         InstalledAppsService.AppsCatalogChanged += OnAppsCatalogChanged;
-        StartBackgroundAppWarmup();
         StartBackgroundMaintenance();
         InitializeKeepWarmTimer();
 

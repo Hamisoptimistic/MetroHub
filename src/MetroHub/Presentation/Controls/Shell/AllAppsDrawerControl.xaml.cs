@@ -424,14 +424,6 @@ namespace MetroHub.Presentation.Controls
                 .ToList();
         }
 
-        public void SetPreloadedApps(List<CatalogItemModel> apps, List<AlphabeticalAppGroup> groupedApps)
-        {
-            _allApps = apps.OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase).ToList();
-            GroupedItemsControl.ItemsSource = groupedApps;
-            _isAppsLoaded = true;
-            RefreshRecentSuggestions(MaxZeroStateSuggestions);
-        }
-
         public void LoadApps(List<CatalogItemModel>? preloaded = null)
         {
             try
