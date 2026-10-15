@@ -16,6 +16,7 @@ using MetroHub.Core.Models;
 using MetroHub.Core.Messaging;
 using MetroHub.Core.Services;
 using MetroHub.Core.Services.Catalog;
+using MetroHub.Core.Services.MobileBridge;
 using MetroHub.Presentation.Controls;
 using MetroHub.Presentation.Views;
 using MetroHub.Presentation.Messaging;
@@ -351,6 +352,68 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         if (Settings.BrowserExtensionCompanionEnabled)
         {
             _ = service.StartAsync();
+        }
+
+        InitializeMobileBridge();
+    }
+
+    /// <summary>
+    /// Wires the opt-in LAN phone bridge. Tile placement reuses the same companion handlers,
+    /// so the only extra wiring here is the local-image path used by phone photo uploads.
+    /// </summary>
+    private void InitializeMobileBridge()
+    {
+        var bridge = MobileBridgeService.Instance;
+
+        bridge.PreferredPort = Settings.PhoneBridgePort > 0
+            ? Settings.PhoneBridgePort
+            : MobileBridgeService.DefaultPort;
+
+        bridge.AllowPushToPhone = Settings.PhoneBridgeAllowPushToPhone;
+
+        bridge.LocalImagePinHandler = (path, title, workspaceId, spanX, spanY, ct) =>
+            TileManager.PinLocalImageFromBridgeAsync(path, title, workspaceId, spanX, spanY, ct);
+
+        // The hub owns AppSettings. The Phone Bridge widget only drives the service, and the
+        // preference is persisted here from the resulting status change, so there is exactly
+        // one writer of the settings file.
+        bridge.StatusChanged += OnMobileBridgeStatusChanged;
+
+        if (Settings.PhoneBridgeEnabled)
+        {
+            _ = StartMobileBridgeSafeAsync();
+        }
+    }
+
+    private void OnMobileBridgeStatusChanged()
+    {
+        Dispatcher.InvokeAsync(() =>
+        {
+            bool running = MobileBridgeService.Instance.IsRunning;
+            if (Settings.PhoneBridgeEnabled == running)
+            {
+                return;
+            }
+
+            Settings.PhoneBridgeEnabled = running;
+            StorageService.SaveSettings(Settings);
+        });
+    }
+
+    private async Task StartMobileBridgeSafeAsync()
+    {
+        try
+        {
+            var bridge = MobileBridgeService.Instance;
+            var result = await bridge.StartAsync(bridge.PreferredPort).ConfigureAwait(false);
+            if (!result.Started)
+            {
+                Serilog.Log.Warning("[MobileBridge] Not started: {Message}", result.Message);
+            }
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Warning(ex, "[MobileBridge] Failed to start the phone bridge");
         }
     }
 
@@ -995,7 +1058,9 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         _keepWarmTimer = null;
         CancelPendingWallpaperLoad();
         TeardownWallpaperVideo();
+        MobileBridgeService.Instance.StatusChanged -= OnMobileBridgeStatusChanged;
         _ = LocalCompanionService.Instance.StopAsync();
+        _ = MobileBridgeService.Instance.StopAsync();
         base.OnClosed(e);
     }
 

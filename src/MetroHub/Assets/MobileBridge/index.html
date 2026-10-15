@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0f1115" />
+<meta name="color-scheme" content="dark light" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="stylesheet" href="app.css" />
+<title>MetroHub</title>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <span class="pill" id="statusPill"><span class="pill-dot" aria-hidden="true"></span><span id="statusText">Connecting</span></span>
+    <span class="pc-name" id="pcName">MetroHub</span>
+    <button class="icon-btn" id="moreBtn" type="button" aria-label="Settings">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path fill="currentColor" d="M12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm7.4-2.6.1-.9-.1-.9 1.8-1.4-1.7-3-2.2.8a7.3 7.3 0 0 0-1.6-.9L15.4 4h-3.5l-.3 2.3c-.6.2-1.1.5-1.6.9l-2.2-.8-1.7 3 1.8 1.4-.1.9.1.9-1.8 1.4 1.7 3 2.2-.8c.5.4 1 .7 1.6.9l.3 2.3h3.5l.3-2.3c.6-.2 1.1-.5 1.6-.9l2.2.8 1.7-3-1.8-1.4Z"/>
+      </svg>
+    </button>
+  </header>
+
+  <div class="banner" id="banner" hidden>
+    <span id="bannerText">Cannot reach your PC.</span>
+    <button class="banner-btn" id="bannerRetry" type="button">Retry</button>
+  </div>
+
+  <main class="content">
+
+    <section class="card pair-card" id="pairCard" hidden>
+      <h2>This phone is not paired</h2>
+      <p>Open MetroHub on your PC and scan the QR code on the Phone Bridge tile. You only have to do that once.</p>
+      <button class="btn btn-primary" id="pairCheckBtn" type="button">I have paired — check again</button>
+    </section>
+
+    <section class="actions" id="actions">
+      <button class="action" type="button" data-action="link">
+        <span class="action-icon" aria-hidden="true">🔗</span>
+        <span class="action-text">
+          <strong>Send a link</strong>
+          <small>Pin a web page to the canvas</small>
+        </span>
+        <span class="action-chevron" aria-hidden="true">›</span>
+      </button>
+      <button class="action" type="button" data-action="note">
+        <span class="action-icon" aria-hidden="true">📝</span>
+        <span class="action-text">
+          <strong>Write a note</strong>
+          <small>Type anything and it lands as a tile</small>
+        </span>
+        <span class="action-chevron" aria-hidden="true">›</span>
+      </button>
+      <button class="action" type="button" data-action="photo">
+        <span class="action-icon" aria-hidden="true">🖼</span>
+        <span class="action-text">
+          <strong>Send a photo</strong>
+          <small>Camera or gallery, up to 32 MB</small>
+        </span>
+        <span class="action-chevron" aria-hidden="true">›</span>
+      </button>
+    </section>
+
+    <div class="card options" id="options">
+      <label class="field field-inline">
+        <span class="field-label">Tile size</span>
+        <select id="sizeSelect"></select>
+      </label>
+      <label class="field field-inline">
+        <span class="field-label">Workspace</span>
+        <select id="workspaceSelect"></select>
+      </label>
+    </div>
+
+    <section class="feed-section" id="feedSection">
+      <div class="feed-head">
+        <h2>Recent</h2>
+        <button class="link-btn" id="refreshBtn" type="button">Refresh</button>
+      </div>
+      <ul class="feed" id="feedList"></ul>
+      <p class="feed-empty" id="feedEmpty">Nothing has been sent yet.</p>
+    </section>
+
+  </main>
+
+  <!-- Composer: one focused action at a time -->
+  <div class="sheet" id="composerSheet" hidden>
+    <div class="sheet-backdrop" id="composerBackdrop"></div>
+    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="composerTitle">
+      <div class="sheet-grip" aria-hidden="true"></div>
+      <h2 id="composerTitle">Send a link</h2>
+
+      <section class="composer" id="linkForm">
+        <label class="field">
+          <span class="field-label">Web address</span>
+          <input id="linkUrl" type="url" inputmode="url" autocomplete="off" autocapitalize="off"
+                 spellcheck="false" placeholder="example.com/read-later" />
+        </label>
+        <label class="field">
+          <span class="field-label">Title <span class="optional">optional</span></span>
+          <input id="linkTitle" type="text" autocomplete="off" placeholder="Read later" />
+        </label>
+        <button class="btn btn-primary" id="linkSend" type="button">Send link</button>
+      </section>
+
+      <section class="composer" id="noteForm" hidden>
+        <label class="field">
+          <span class="field-label">Note</span>
+          <textarea id="noteText" rows="5" placeholder="Anything you want waiting on the canvas"></textarea>
+        </label>
+        <label class="field">
+          <span class="field-label">Title <span class="optional">optional</span></span>
+          <input id="noteTitle" type="text" autocomplete="off" placeholder="Note" />
+        </label>
+        <button class="btn btn-primary" id="noteSend" type="button">Send note</button>
+      </section>
+
+      <section class="composer" id="photoForm" hidden>
+        <input id="photoInput" type="file" accept="image/*" hidden />
+        <button class="drop" id="photoPick" type="button">
+          <img id="photoPreview" alt="" hidden />
+          <span id="photoPickText">
+            <strong>Choose a photo</strong>
+            <small>Camera or gallery · up to 32 MB</small>
+          </span>
+        </button>
+        <label class="field">
+          <span class="field-label">Title <span class="optional">optional</span></span>
+          <input id="photoTitle" type="text" autocomplete="off" placeholder="Photo" />
+        </label>
+        <button class="btn btn-primary" id="photoSend" type="button" disabled>Send photo</button>
+      </section>
+
+      <button class="btn btn-ghost btn-block" id="composerClose" type="button">Close</button>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="sheet" id="sheet" hidden>
+    <div class="sheet-backdrop" id="sheetBackdrop"></div>
+    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+      <div class="sheet-grip" aria-hidden="true"></div>
+      <h2 id="sheetTitle">Settings</h2>
+
+      <dl class="facts">
+        <div><dt>This phone</dt><dd id="factPaired">—</dd></div>
+        <div><dt>PC</dt><dd id="factPc">—</dd></div>
+        <div><dt>Address</dt><dd id="factAddress">—</dd></div>
+        <div><dt>Connection</dt><dd id="factSecure">—</dd></div>
+      </dl>
+
+      <section class="install-card" id="installCard">
+        <h3 id="installTitle">Install as an app</h3>
+        <p id="installBody"></p>
+        <div class="install-actions">
+          <button class="btn btn-primary" id="installBtn" type="button" hidden>Install App</button>
+        </div>
+      </section>
+
+      <button class="btn btn-danger" id="unpairBtn" type="button">Unpair this phone</button>
+      <button class="btn btn-ghost btn-block" id="closeSheetBtn" type="button">Done</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>

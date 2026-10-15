@@ -34,6 +34,7 @@ namespace MetroHub.Widgets.Serialization;
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Radio.RadioWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Quotes.QuotesWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Weather.WeatherWidgetSettings))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.PhoneBridge.PhoneBridgeWidgetSettings))]
 public partial class WidgetJsonContext : JsonSerializerContext
 {
 }

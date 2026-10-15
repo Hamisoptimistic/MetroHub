@@ -20,6 +20,7 @@
     <PackageReference Include="ManagedBass" Version="4.1.0-prerelease" />
     <PackageReference Include="ManagedBass.Fx" Version="4.0.2" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.158" />
+    <PackageReference Include="QRCoder" Version="1.8.1" />
     <PackageReference Include="Serilog" Version="4.4.0" />
     <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
@@ -42,6 +43,7 @@
 
   <ItemGroup>
     <None Remove="Assets\**" />
+    <EmbeddedResource Include="Assets\MobileBridge\**\*" />
     <Resource Include="Assets\app.ico" />
     <Resource Include="Assets\Fonts\**\*.ttf" />
     <Resource Include="Assets\Weather\Glassmorphic\*.png" />

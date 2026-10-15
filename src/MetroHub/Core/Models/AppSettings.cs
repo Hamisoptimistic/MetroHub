@@ -28,6 +28,12 @@ public sealed class AppSettings
     public List<SidebarShortcutItem> SidebarShortcuts { get; set; } = SidebarShortcutItem.CreateDefaultList();
 
     public bool BrowserExtensionCompanionEnabled { get; set; } = true;
+
+    /// <summary>Opt-in LAN bridge that lets a phone send links, notes, and photos to the canvas. Off by default.</summary>
+    public bool PhoneBridgeEnabled { get; set; }
+    public int PhoneBridgePort { get; set; } = 48850;
+    public bool PhoneBridgeAllowPushToPhone { get; set; } = true;
+
     public bool EnableGroupOpenAllButton { get; set; } = true;
     public RecentItemsViewMode RecentViewMode { get; set; } = RecentItemsViewMode.Grid;
 }

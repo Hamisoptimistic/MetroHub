@@ -10,6 +10,7 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
+using MetroHub.Core.Services.MobileBridge;
 using MetroHub.Presentation.Controllers;
 using MetroHub.Presentation.Dialogs;
 using MetroHub.Presentation.Messaging;
@@ -477,6 +478,7 @@ public partial class TileControl : UserControl
     private static Separator? s_singleAppSeparator;
     private static MenuItem? s_editMenuItem;
     private static MenuItem? s_copyLinkOrTextMenuItem;
+    private static MenuItem? s_sendToPhoneMenuItem;
     private static MenuItem? s_runAdminMenuItem;
     private static MenuItem? s_openLocationMenuItem;
     private static MenuItem? s_shareMenuItem;
@@ -545,6 +547,8 @@ public partial class TileControl : UserControl
         s_singleAppSeparator = new Separator();
         s_editMenuItem = CreateMenuItem("Edit...", SymbolRegular.Edit24, OnSharedEditClick);
         s_copyLinkOrTextMenuItem = CreateMenuItem("Copy Link", SymbolRegular.Copy24, OnSharedCopyLinkOrTextClick);
+        s_sendToPhoneMenuItem = CreateMenuItem("Send to Phone", SymbolRegular.PhoneLaptop24, OnSharedSendToPhoneClick);
+        s_sendToPhoneMenuItem.Visibility = Visibility.Collapsed;
         s_runAdminMenuItem = CreateMenuItem("Run as Administrator", SymbolRegular.Shield32, OnSharedRunAsAdminClick);
         s_openLocationMenuItem = CreateMenuItem("Open File Location", SymbolRegular.FolderOpenVertical20, OnSharedOpenFileLocationClick);
         s_shareMenuItem = CreateMenuItem("Share...", SymbolRegular.Share24, OnSharedShareClick);
@@ -566,6 +570,7 @@ public partial class TileControl : UserControl
         s_sharedContextMenu.Items.Add(s_singleAppSeparator);
         s_sharedContextMenu.Items.Add(s_editMenuItem);
         s_sharedContextMenu.Items.Add(s_copyLinkOrTextMenuItem);
+        s_sharedContextMenu.Items.Add(s_sendToPhoneMenuItem);
         s_sharedContextMenu.Items.Add(s_runAdminMenuItem);
         s_sharedContextMenu.Items.Add(s_openLocationMenuItem);
         s_sharedContextMenu.Items.Add(s_shareMenuItem);
@@ -723,6 +728,7 @@ public partial class TileControl : UserControl
         {
             if (s_editMenuItem != null) s_editMenuItem.Visibility = Visibility.Collapsed;
             if (s_copyLinkOrTextMenuItem != null) s_copyLinkOrTextMenuItem.Visibility = Visibility.Collapsed;
+            if (s_sendToPhoneMenuItem != null) s_sendToPhoneMenuItem.Visibility = Visibility.Collapsed;
             if (s_runAdminMenuItem != null) s_runAdminMenuItem.Visibility = Visibility.Collapsed;
             if (s_openLocationMenuItem != null) s_openLocationMenuItem.Visibility = Visibility.Collapsed;
             if (s_singleAppSeparator != null) s_singleAppSeparator.Visibility = Visibility.Collapsed;
@@ -768,6 +774,15 @@ public partial class TileControl : UserControl
                     else if (isNote) s_copyLinkOrTextMenuItem.Header = "Copy Text";
                 }
 
+                if (s_sendToPhoneMenuItem != null)
+                {
+                    bool sendable = MobileBridgePushComposer.ClassifyTile(
+                        MobileBridgeService.Instance.IsRunning,
+                        isWebUrl,
+                        isNote) != PhonePushKind.None;
+                    s_sendToPhoneMenuItem.Visibility = sendable ? Visibility.Visible : Visibility.Collapsed;
+                }
+
                 if (s_singleAppSeparator != null) s_singleAppSeparator.Visibility = Visibility.Visible;
                 if (s_runAdminMenuItem != null) s_runAdminMenuItem.Visibility = isSpecialItem ? Visibility.Collapsed : Visibility.Visible;
                 if (s_openLocationMenuItem != null) s_openLocationMenuItem.Visibility = isWebUrl ? Visibility.Collapsed : Visibility.Visible;
@@ -780,6 +795,7 @@ public partial class TileControl : UserControl
             {
                 if (s_editMenuItem != null) s_editMenuItem.Visibility = Visibility.Collapsed;
                 if (s_copyLinkOrTextMenuItem != null) s_copyLinkOrTextMenuItem.Visibility = Visibility.Collapsed;
+                if (s_sendToPhoneMenuItem != null) s_sendToPhoneMenuItem.Visibility = Visibility.Collapsed;
                 if (s_singleAppSeparator != null) s_singleAppSeparator.Visibility = Visibility.Collapsed;
                 if (s_runAdminMenuItem != null) s_runAdminMenuItem.Visibility = Visibility.Collapsed;
                 if (s_openLocationMenuItem != null) s_openLocationMenuItem.Visibility = Visibility.Collapsed;
@@ -1238,6 +1254,46 @@ public partial class TileControl : UserControl
                     Safe.Log(ex, "TileControl: Failed to launch note in editor");
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Pushes the tile to every connected phone. Only shown while the bridge runs; links and notes
+    /// qualify, everything else is filtered out by the composer.
+    /// </summary>
+    private static void OnSharedSendToPhoneClick(object sender, RoutedEventArgs e)
+    {
+        if (s_activeTargetTile?.DataContext is not TileModel tile) return;
+
+        try
+        {
+            var bridge = MobileBridgeService.Instance;
+            PhonePushKind kind = MobileBridgePushComposer.ClassifyTile(
+                bridge.IsRunning,
+                tile.TileType == TileType.WebUrl,
+                tile.IsNote);
+
+            switch (kind)
+            {
+                case PhonePushKind.Link:
+                    bridge.PublishToPhone(tile.Title, tile.TargetPath, null);
+                    break;
+
+                case PhonePushKind.NoteFile:
+                    if (File.Exists(tile.TargetPath))
+                    {
+                        bridge.PublishToPhone(tile.Title, null, File.ReadAllText(tile.TargetPath));
+                    }
+
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "TileControl: Failed to send tile to phone");
         }
     }
 

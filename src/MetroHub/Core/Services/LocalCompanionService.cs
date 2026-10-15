@@ -643,102 +643,24 @@ public sealed class LocalCompanionService : IDisposable
             return;
         }
 
-        if (pinRequest == null || (string.IsNullOrWhiteSpace(pinRequest.Url) && string.IsNullOrWhiteSpace(pinRequest.Note) && string.IsNullOrWhiteSpace(pinRequest.ThumbnailUrl)))
+        // Validation and normalisation live in CompanionPinValidator so the LAN phone bridge
+        // enforces byte-for-byte the same scheme allow-list, span clamp, truncation, and workspace checks.
+        var validation = CompanionPinValidator.Validate(
+            pinRequest,
+            WorkspacesHandler != null ? WorkspacesHandler : GetDefaultWorkspaces);
+
+        if (validation.Request == null)
         {
-            await SendJsonAsync(response, 400, new CompanionErrorResponse("Missing required 'url', 'note', or 'thumbnailUrl' field."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
+            await SendJsonAsync(
+                response,
+                validation.StatusCode,
+                new CompanionErrorResponse(validation.Error ?? "Invalid pin request."),
+                CompanionJsonContext.Default.CompanionErrorResponse,
+                ct).ConfigureAwait(false);
             return;
         }
 
-        string rawUrl = pinRequest.Url?.Trim() ?? string.Empty;
-        if (!string.IsNullOrEmpty(rawUrl))
-        {
-            if (!rawUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-                !rawUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-            {
-                await SendJsonAsync(response, 400, new CompanionErrorResponse("Only standard websites can be pinned."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
-                return;
-            }
-
-            if (!Uri.TryCreate(rawUrl, UriKind.Absolute, out Uri? parsedUri) ||
-                (parsedUri.Scheme != Uri.UriSchemeHttp && parsedUri.Scheme != Uri.UriSchemeHttps))
-            {
-                await SendJsonAsync(response, 400, new CompanionErrorResponse("Malformed URL."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
-                return;
-            }
-        }
-
-        // Validate ThumbnailUrl scheme if provided
-        if (!string.IsNullOrWhiteSpace(pinRequest.ThumbnailUrl))
-        {
-            string rawThumb = pinRequest.ThumbnailUrl.Trim();
-            if (!rawThumb.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-                !rawThumb.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-            {
-                await SendJsonAsync(response, 400, new CompanionErrorResponse("Invalid thumbnailUrl scheme: only http and https are permitted."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
-                return;
-            }
-            if (!Uri.TryCreate(rawThumb, UriKind.Absolute, out Uri? parsedThumb) ||
-                (parsedThumb.Scheme != Uri.UriSchemeHttp && parsedThumb.Scheme != Uri.UriSchemeHttps))
-            {
-                await SendJsonAsync(response, 400, new CompanionErrorResponse("Malformed thumbnailUrl."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
-                return;
-            }
-        }
-
-        // Clamping & dimensions validation (only 2x2 or 4x2 permitted)
-        int spanX = pinRequest.SpanX ?? 2;
-        int spanY = pinRequest.SpanY ?? 2;
-        if (!((spanX == 2 && spanY == 2) || (spanX == 4 && spanY == 2)))
-        {
-            await SendJsonAsync(response, 400, new CompanionErrorResponse("Invalid span dimensions. Allowed tile dimensions are 2x2 or 4x2."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
-            return;
-        }
-
-        // Truncate fields
-        string title = pinRequest.Title?.Trim() ?? string.Empty;
-        if (title.Length > 256)
-        {
-            title = title.Substring(0, 256);
-        }
-
-        string note = pinRequest.Note?.Trim() ?? string.Empty;
-        if (note.Length > 4096)
-        {
-            note = note.Substring(0, 4096);
-        }
-
-        string sanitizedUrl = !string.IsNullOrEmpty(rawUrl) ? SanitizeUrl(rawUrl) : string.Empty;
-
-        var sanitizedRequest = new CompanionPinRequest(
-            Url: sanitizedUrl,
-            Title: title,
-            Note: note,
-            WorkspaceId: pinRequest.WorkspaceId,
-            SpanX: spanX,
-            SpanY: spanY,
-            ThumbnailUrl: pinRequest.ThumbnailUrl
-        );
-
-        // Validate workspace if explicitly specified
-        if (!string.IsNullOrWhiteSpace(sanitizedRequest.WorkspaceId))
-        {
-            var workspaces = WorkspacesHandler != null ? WorkspacesHandler() : GetDefaultWorkspaces();
-            bool exists = false;
-            foreach (var ws in workspaces)
-            {
-                if (ws.Id.Equals(sanitizedRequest.WorkspaceId, StringComparison.OrdinalIgnoreCase))
-                {
-                    exists = true;
-                    break;
-                }
-            }
-
-            if (!exists)
-            {
-                await SendJsonAsync(response, 404, new CompanionErrorResponse($"Workspace '{sanitizedRequest.WorkspaceId}' not found."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
-                return;
-            }
-        }
+        var sanitizedRequest = validation.Request;
 
         // Dispatcher invocation with 2.0s cancellation token
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);

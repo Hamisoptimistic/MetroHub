@@ -338,6 +338,23 @@ public static class WidgetRegistry
             Category: "Quick Actions"
         ));
 
+        // Register Phone Bridge (LAN pairing surface for the phone companion) widget
+        Register(new WidgetDefinition(
+            Id: "phone_bridge",
+            DisplayName: "Phone Bridge",
+            Description: "Scan a QR code with your phone to send links, notes, and photos straight to the canvas",
+            Icon: SymbolRegular.PhoneLaptop24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.SquareLarge // 6x6 — single supported size for the pairing surface
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.PhoneBridge.PhoneBridgeWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.PhoneBridge.PhoneBridgeWidgetView),
+            DefaultSize: WidgetSize.SquareLarge,
+            Factory: model => new MetroHub.Widgets.Catalog.PhoneBridge.PhoneBridgeWidgetViewModel(model),
+            Category: "Productivity"
+        ));
+
         // Register Rover (Windows XP Dog Companion) widget
         Register(new WidgetDefinition(
             Id: "rover",

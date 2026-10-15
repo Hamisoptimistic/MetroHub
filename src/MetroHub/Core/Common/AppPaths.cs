@@ -75,6 +75,14 @@ public static class AppPaths
     public static string PastedImagesDir => Path.Combine(DataDir, "pasted_images");
     public static string PastedNotesDir => Path.Combine(DataDir, "pasted_notes");
 
+    // ── Phone LAN bridge ─────────────────────────────────────
+    /// <summary>Root for everything the phone bridge owns: pairings and its local certificates.</summary>
+    public static string PhoneBridgeDir => Path.Combine(DataDir, "phone_bridge");
+    /// <summary>Paired phones that may reconnect without a new QR scan. Stores token hashes only.</summary>
+    public static string PairedPhonesPath => Path.Combine(PhoneBridgeDir, "paired_phones.json");
+    /// <summary>Local certificate authority used to serve the bridge over HTTPS.</summary>
+    public static string PhoneBridgeCertsDir => Path.Combine(PhoneBridgeDir, "certs");
+
     // ── Widget state (per-tile autosave mirrors) ─────────────
     /// <summary>Root for widget-owned state files: config\widgets\{widgetId}\{tileId}.json.</summary>
     public static string WidgetStateDir => Path.Combine(ConfigDir, "widgets");

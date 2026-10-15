@@ -1,0 +1,140 @@
+<UserControl x:Class="MetroHub.Widgets.Catalog.PhoneBridge.PhoneBridgeWidgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:widgets="clr-namespace:MetroHub.Widgets"
+             xmlns:phonebridge="clr-namespace:MetroHub.Widgets.Catalog.PhoneBridge"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=phonebridge:PhoneBridgeWidgetViewModel}"
+             Focusable="False"
+             FocusVisualStyle="{x:Null}"
+             ClipToBounds="True"
+             FontFamily="{DynamicResource AppFontFamily}">
+
+    <widgets:WidgetCard Padding="14,12,14,12">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Header: live status dot, title, pair actions -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Ellipse Width="8"
+                         Height="8"
+                         Margin="0,0,8,0"
+                         VerticalAlignment="Center"
+                         Fill="{Binding StatusBrush}" />
+
+                <TextBlock Grid.Column="1"
+                           Text="Phone Bridge"
+                           FontSize="{DynamicResource TypeHeaderFontSize}"
+                           FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" />
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Style="{StaticResource WidgetMicroButtonStyle}"
+                            Command="{Binding SendClipboardToPhoneCommand}"
+                            ToolTip="Send clipboard to phone"
+                            Margin="0,0,4,0">
+                        <ui:SymbolIcon Symbol="Share24" FontSize="14" />
+                    </Button>
+                    <Button Style="{StaticResource WidgetMicroButtonStyle}"
+                            Command="{Binding CopyLinkCommand}"
+                            ToolTip="Copy pairing link"
+                            Margin="0,0,4,0">
+                        <ui:SymbolIcon Symbol="Copy24" FontSize="14" />
+                    </Button>
+                    <Button Style="{StaticResource WidgetMicroButtonStyle}"
+                            Command="{Binding ToggleBridgeCommand}"
+                            ToolTip="{Binding ToggleToolTip}">
+                        <ui:SymbolIcon Symbol="Power24" FontSize="14" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- Body: QR when running, explainer when off -->
+            <Grid Grid.Row="1" Margin="0,10,0,8">
+
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Visibility="{Binding HasQrCode, Converter={StaticResource BoolToVis}}">
+                    <Image Source="{Binding QrImage}"
+                           MaxWidth="180"
+                           MaxHeight="180"
+                           Stretch="Uniform"
+                           HorizontalAlignment="Center"
+                           SnapsToDevicePixels="True"
+                           RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                    <TextBlock Text="{Binding HintText}"
+                               Margin="0,8,0,0"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Foreground="{DynamicResource TextMutedBrush}" />
+                </StackPanel>
+
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Visibility="{Binding IsOffline, Converter={StaticResource BoolToVis}}">
+                    <ui:SymbolIcon Symbol="PhoneLaptop24"
+                                   FontSize="30"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource TextSubtleBrush}" />
+                    <TextBlock Text="{Binding HintText}"
+                               Margin="0,10,0,0"
+                               MaxWidth="220"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding StatusText}"
+                               TextAlignment="Center"
+                               FontSize="{DynamicResource TypeSubtitleFontSize}"
+                               FontWeight="{DynamicResource TypeSubtitleFontWeight}"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="2"
+                    Style="{StaticResource WidgetHairlineDividerStyle}"
+                    Margin="0,0,0,8" />
+
+            <!-- Footer: endpoint + connection state + pairing -->
+            <DockPanel Grid.Row="3" LastChildFill="False">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding StatusText}"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                    <TextBlock Text="{Binding AddressText}"
+                               Margin="0,1,0,0"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Foreground="{DynamicResource TextSubtleBrush}"
+                               Visibility="{Binding ShowAddress, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Text="{Binding PairedText}"
+                               Margin="0,1,0,0"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Foreground="{DynamicResource TextSubtleBrush}"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </DockPanel>
+        </Grid>
+    </widgets:WidgetCard>
+</UserControl>

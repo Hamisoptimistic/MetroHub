@@ -1539,6 +1539,136 @@ public sealed class TileManager
     }
 
     /// <summary>
+    /// Places an already-spooled local image file (uploaded from a phone over the LAN bridge) as a tile.
+    /// Mirrors the image branch of <see cref="PinWebLinkFromCompanionAsync"/> but never performs a
+    /// network fetch: the file is already on disk and content-addressed, so a re-send deduplicates.
+    /// </summary>
+    public async Task<CompanionPinResult> PinLocalImageFromBridgeAsync(
+        string filePath,
+        string? title,
+        string? workspaceId,
+        int spanX,
+        int spanY,
+        CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+        {
+            return new CompanionPinResult(false, false, null, 0, 0, "The uploaded image was not found on disk.");
+        }
+
+        string resolvedTitle = string.IsNullOrWhiteSpace(title)
+            ? $"Photo {DateTime.Now:yyyy-MM-dd HH.mm}"
+            : title;
+
+        return await RunOnDispatcherAsync(() =>
+        {
+            var wm = WorkspaceManager.Instance;
+
+            WorkspaceModel? targetWorkspace;
+            if (!string.IsNullOrWhiteSpace(workspaceId))
+            {
+                targetWorkspace = wm.Workspaces.FirstOrDefault(
+                    w => w.Id.Equals(workspaceId, StringComparison.OrdinalIgnoreCase));
+
+                if (targetWorkspace == null)
+                {
+                    return new CompanionPinResult(false, false, null, 0, 0, $"Workspace '{workspaceId}' not found");
+                }
+            }
+            else
+            {
+                targetWorkspace = wm.ActiveWorkspace;
+            }
+
+            bool isActiveWorkspace = targetWorkspace == null || targetWorkspace.Id == wm.ActiveWorkspace?.Id;
+            var targetTiles = isActiveWorkspace ? _tilesProvider() : targetWorkspace!.Tiles;
+            var targetGroups = isActiveWorkspace ? _groupsProvider() : targetWorkspace!.Groups;
+
+            var existing = targetTiles.FirstOrDefault(t =>
+                string.Equals(t.TargetPath, filePath, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(t.IconPath, filePath, StringComparison.OrdinalIgnoreCase));
+
+            if (existing != null)
+            {
+                return new CompanionPinResult(
+                    Success: true,
+                    Duplicate: true,
+                    TileId: existing.Id,
+                    Col: existing.Col,
+                    Row: existing.Row,
+                    Message: "Photo already exists in workspace");
+            }
+
+            int resolvedSpanX = spanX is 2 or 4 ? spanX : 2;
+            int resolvedSpanY = spanY == 2 ? spanY : 2;
+            int maxCols = GridPlacementService.GetMaxCols(_windowWidthProvider());
+
+            var (freeCol, freeRow) = GridPlacementService.FindNearestAvailableSlot(
+                0, 1, resolvedSpanX, resolvedSpanY, targetTiles, null, maxCols, targetGroups);
+
+            var tile = new TileModel
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                Title = resolvedTitle,
+                TargetPath = filePath,
+                Arguments = filePath,
+                IconPath = filePath,
+                TileType = TileType.App,
+                SpanX = resolvedSpanX,
+                SpanY = resolvedSpanY,
+                Col = freeCol,
+                Row = freeRow,
+                X = GridPlacementService.PixelXFromCol(freeCol),
+                Y = GridPlacementService.PixelYFromRow(freeRow)
+            };
+
+            targetTiles.Add(tile);
+
+            if (isActiveWorkspace)
+            {
+                var mod = new List<TileModel> { tile };
+                if (targetGroups.Count > 0)
+                {
+                    var looseTiles = targetTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+                    var pushed = GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, targetGroups, targetTiles);
+                    foreach (var pt in pushed)
+                    {
+                        if (!mod.Contains(pt)) mod.Add(pt);
+                    }
+                    _compactGroupGapsAction();
+                }
+
+                _animateModifiedTilesAction(mod);
+                _updateGroupHeaderPositionsAction();
+                _saveGroupsAndLayoutAction();
+                SaveLayoutAndWorkspace(targetTiles);
+                _updateCanvasHeightAction();
+                _updateExposedAddSlotsAction();
+            }
+            else
+            {
+                if (targetGroups.Count > 0)
+                {
+                    var looseTiles = targetTiles.Where(t => string.IsNullOrEmpty(t.Group)).ToList();
+                    GridPlacementService.PushGroupsDownFromLooseTiles(looseTiles, targetGroups, targetTiles);
+                    StorageService.SaveWorkspaceGroups(targetWorkspace!.Id, targetGroups);
+                }
+                StorageService.SaveWorkspaceLayout(targetWorkspace!.Id, targetTiles);
+                targetWorkspace.IsDirty = true;
+            }
+
+            return new CompanionPinResult(
+                Success: true,
+                Duplicate: false,
+                TileId: tile.Id,
+                Col: freeCol,
+                Row: freeRow);
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Creates a dedicated TileGroupModel on the target workspace for an entire browser tab session.
     /// Deduplicates URLs, arranges member tiles in a standard 2x2 grid within the group track,
     /// resolves collisions with existing groups/tiles, updates canvas height, saves state,
