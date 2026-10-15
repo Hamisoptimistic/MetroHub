@@ -18,10 +18,20 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MetroHub.Presentation.Controls
 {
-    public class AlphabeticalAppGroup : ObservableObject
+    public abstract class DrawerItem
     {
-        public string Header { get; set; } = string.Empty;
-        public List<CatalogItemModel> Items { get; set; } = new();
+        public virtual bool IsHeader => false;
+    }
+
+    public sealed class DrawerGroupHeader(string letter) : DrawerItem
+    {
+        public override bool IsHeader => true;
+        public string Header => letter;
+    }
+
+    public sealed class DrawerAppRow(CatalogItemModel app) : DrawerItem
+    {
+        public CatalogItemModel App => app;
     }
 
     public class SearchItemRowViewModel : ObservableObject
@@ -203,7 +213,47 @@ namespace MetroHub.Presentation.Controls
             return b;
         }
 
+        private ScrollViewer? _groupedScrollViewer;
         public ScrollViewer? GroupedScrollViewerControl => GroupedScrollViewer;
+        private ScrollViewer? GroupedScrollViewer
+        {
+            get
+            {
+                if (_groupedScrollViewer != null) return _groupedScrollViewer;
+                if (GroupedItemsControl == null) return null;
+                GroupedItemsControl.ApplyTemplate();
+                _groupedScrollViewer = FindVisualChild<ScrollViewer>(GroupedItemsControl);
+                if (_groupedScrollViewer != null)
+                {
+                    AutoHideScrollBehavior.SetIsEnabled(_groupedScrollViewer, true);
+                }
+                return _groupedScrollViewer;
+            }
+        }
+
+        private static T? FindVisualChild<T>(DependencyObject? parent) where T : DependencyObject
+        {
+            if (parent == null) return null;
+            int childCount = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < childCount; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typedChild) return typedChild;
+                var result = FindVisualChild<T>(child);
+                if (result != null) return result;
+            }
+            return null;
+        }
+
+        private void OnRecentSuggestionsPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (GroupedScrollViewer is { } sv)
+            {
+                double newOffset = Math.Clamp(sv.VerticalOffset - e.Delta, 0, sv.ScrollableHeight);
+                sv.ScrollToVerticalOffset(newOffset);
+                e.Handled = true;
+            }
+        }
         public ScrollViewer? SearchResultsScrollViewerControl => SearchResultsScrollViewer;
         public ListBox? RecentSuggestionsListBoxControl => RecentSuggestionsListBox;
         public Grid? NoResultsPanelControl => NoResultsPanel;
@@ -293,6 +343,7 @@ namespace MetroHub.Presentation.Controls
 
             Opened?.Invoke(this, EventArgs.Empty);
             SearchBox.Focus();
+            _ = GroupedScrollViewer;
         }
 
         public void Close()
@@ -394,7 +445,7 @@ namespace MetroHub.Presentation.Controls
             SearchBox.CaretIndex = SearchBox.Text.Length;
         }
 
-        public static List<AlphabeticalAppGroup> CreateAlphabeticalGroups(IEnumerable<CatalogItemModel> apps)
+        public static List<DrawerItem> CreateFlattenedDrawerItems(IEnumerable<CatalogItemModel> apps)
         {
             var orderedApps = apps.OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase).ToList();
             var groups = new Dictionary<string, List<CatalogItemModel>>(StringComparer.OrdinalIgnoreCase);
@@ -408,20 +459,23 @@ namespace MetroHub.Presentation.Controls
 
                 if (!groups.TryGetValue(header, out var list))
                 {
-                    list = new List<CatalogItemModel>();
+                    list = [];
                     groups[header] = list;
                 }
                 list.Add(app);
             }
 
-            return groups
-                .OrderBy(g => g.Key == "#" ? "!" : g.Key)
-                .Select(g => new AlphabeticalAppGroup
+            var result = new List<DrawerItem>(orderedApps.Count + groups.Count);
+            foreach (var group in groups.OrderBy(g => g.Key == "#" ? "!" : g.Key))
+            {
+                result.Add(new DrawerGroupHeader(group.Key));
+                foreach (var app in group.Value)
                 {
-                    Header = g.Key,
-                    Items = g.Value
-                })
-                .ToList();
+                    result.Add(new DrawerAppRow(app));
+                }
+            }
+
+            return result;
         }
 
         public void LoadApps(List<CatalogItemModel>? preloaded = null)
@@ -430,9 +484,9 @@ namespace MetroHub.Presentation.Controls
             {
                 var apps = preloaded ?? InstalledAppsService.GetInstalledApps(forceRefresh: false);
                 _allApps = apps.OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase).ToList();
-                var orderedGroups = CreateAlphabeticalGroups(_allApps);
+                var flatItems = CreateFlattenedDrawerItems(_allApps);
 
-                GroupedItemsControl.ItemsSource = orderedGroups;
+                GroupedItemsControl.ItemsSource = flatItems;
                 _isAppsLoaded = true;
 
                 // Prewarm icons in memory background
@@ -547,7 +601,7 @@ namespace MetroHub.Presentation.Controls
             if (!hasText)
             {
                 _searchOrchestrator.SetQuery(string.Empty);
-                GroupedScrollViewer.Visibility = Visibility.Visible;
+                GroupedViewContainer.Visibility = Visibility.Visible;
                 SearchResultsScrollViewer.Visibility = Visibility.Collapsed;
                 SearchResultsListBox.ItemsSource = null;
                 if (NoResultsPanel != null) NoResultsPanel.Visibility = Visibility.Collapsed;
@@ -555,7 +609,7 @@ namespace MetroHub.Presentation.Controls
             }
             else
             {
-                GroupedScrollViewer.Visibility = Visibility.Collapsed;
+                GroupedViewContainer.Visibility = Visibility.Collapsed;
                 SearchResultsScrollViewer.Visibility = Visibility.Visible;
                 _searchOrchestrator.SetQuery(query);
             }
@@ -1080,7 +1134,7 @@ namespace MetroHub.Presentation.Controls
             SearchBox.Text = string.Empty;
             _searchOrchestrator?.SetQuery(string.Empty);
             UpdatePlaceholderVisibility();
-            GroupedScrollViewer.Visibility = Visibility.Visible;
+            GroupedViewContainer.Visibility = Visibility.Visible;
             SearchResultsScrollViewer.Visibility = Visibility.Collapsed;
             SearchResultsListBox.ItemsSource = null;
             if (NoResultsPanel != null) NoResultsPanel.Visibility = Visibility.Collapsed;
@@ -1091,6 +1145,7 @@ namespace MetroHub.Presentation.Controls
         {
             _dragStartPoint = e.GetPosition(this);
             _draggedItem = (sender as FrameworkElement)?.Tag as CatalogItemModel 
+                           ?? ((sender as FrameworkElement)?.DataContext as DrawerAppRow)?.App
                            ?? (sender as FrameworkElement)?.DataContext as CatalogItemModel;
             _isAppDragPotential = _draggedItem != null;
         }
@@ -1128,6 +1183,7 @@ namespace MetroHub.Presentation.Controls
         {
             e.Handled = true;
             var item = (sender as FrameworkElement)?.Tag as CatalogItemModel
+                       ?? ((sender as FrameworkElement)?.DataContext as DrawerAppRow)?.App
                        ?? (sender as FrameworkElement)?.DataContext as CatalogItemModel;
 
             if (item != null)
@@ -1595,6 +1651,7 @@ namespace MetroHub.Presentation.Controls
             if (Resources["AppItemContextMenu"] is ContextMenu menu)
             {
                 var item = (sender as FrameworkElement)?.Tag as CatalogItemModel
+                           ?? ((sender as FrameworkElement)?.DataContext as DrawerAppRow)?.App
                            ?? (sender as FrameworkElement)?.DataContext as CatalogItemModel
                            ?? (SearchResultsListBox.SelectedItem as SearchItemRowViewModel)?.AppModel;
                 if (item != null)

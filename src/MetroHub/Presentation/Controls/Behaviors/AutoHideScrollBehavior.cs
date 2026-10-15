@@ -70,10 +70,22 @@ public static class AutoHideScrollBehavior
 
     private static void AttachToChildScrollViewer(FrameworkElement parent)
     {
+        parent.ApplyTemplate();
         var sv = FindChild<ScrollViewer>(parent);
         if (sv != null)
         {
             ApplyToScrollViewer(sv, true);
+        }
+        else
+        {
+            parent.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+            {
+                var deferredSv = FindChild<ScrollViewer>(parent);
+                if (deferredSv != null)
+                {
+                    ApplyToScrollViewer(deferredSv, true);
+                }
+            });
         }
     }
 
@@ -164,6 +176,7 @@ public static class AutoHideScrollBehavior
         {
             if (_verticalScrollBar != null) return;
 
+            _scrollViewer.ApplyTemplate();
             _verticalScrollBar = _scrollViewer.Template?.FindName("PART_VerticalScrollBar", _scrollViewer) as ScrollBar;
             if (_verticalScrollBar == null)
             {
