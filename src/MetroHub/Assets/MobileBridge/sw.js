@@ -2,7 +2,7 @@
  *
  * Handles PWA caching and Web Share Target Level 2 for photos, links, and text.
  */
-const CACHE = "metrohub-shell-v3";
+const CACHE = "metrohub-shell-v4";
 const SHELL = [
   "./",
   "app.css",

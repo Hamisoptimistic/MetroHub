@@ -16,7 +16,7 @@
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "share_target": {
-    "action": "share-target",
+    "action": "https://hamisoptimistic.github.io/MetroHub/phone/share-target",
     "method": "POST",
     "enctype": "multipart/form-data",
     "params": {
@@ -26,7 +26,7 @@
       "files": [
         {
           "name": "photos",
-          "accept": ["image/*"]
+          "accept": ["image/*", ".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"]
         }
       ]
     }
