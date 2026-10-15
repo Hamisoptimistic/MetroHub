@@ -7,9 +7,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
-    <!-- Performance & Footprint Flags -->
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <TieredPGO>true</TieredPGO>
+    <PublishReadyToRun>true</PublishReadyToRun>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
   </PropertyGroup>
 
