@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -162,6 +163,35 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
 
         ActiveWorkspace = active;
         OnPropertyChanged(nameof(CanCreateWorkspace));
+
+        CleanUnmanifestedWorkspaces(manifest.Workspaces.Select(w => w.Id));
+    }
+
+    private static void CleanUnmanifestedWorkspaces(IEnumerable<string> validIds)
+    {
+        Safe.Try(() =>
+        {
+            if (!Directory.Exists(AppPaths.WorkspacesDir)) return;
+            var validSet = new HashSet<string>(validIds, StringComparer.OrdinalIgnoreCase);
+
+            foreach (string dir in Directory.EnumerateDirectories(AppPaths.WorkspacesDir))
+            {
+                string dirName = Path.GetFileName(dir);
+                if (validSet.Contains(dirName)) continue;
+
+                string layoutPath = Path.Combine(dir, "layout.json");
+                bool isEmptyOrCorrupt = !File.Exists(layoutPath) || new FileInfo(layoutPath).Length <= 2;
+
+                if (isEmptyOrCorrupt)
+                {
+                    Safe.Try(() => Directory.Delete(dir, recursive: true), context: $"WorkspaceManager.CleanEmptyZombie({dirName})");
+                }
+                else
+                {
+                    StorageService.DeleteWorkspaceStorage(dirName);
+                }
+            }
+        }, context: "WorkspaceManager.CleanUnmanifestedWorkspaces");
     }
 
     /// <summary>

@@ -141,6 +141,17 @@ public sealed class WidgetStateStore : IWidgetStateStore
                 if (knownTileIds.Contains(stem)) continue;
                 Delete(widgetId, stem);
             }
+
+            if (!Directory.EnumerateFileSystemEntries(dir).Any())
+            {
+                Safe.Try(() => Directory.Delete(dir), context: $"WidgetStateStore.PruneEmptyDir({widgetId})");
+            }
+
+            string bakDir = Path.Combine(BakRootDir, Sanitize(widgetId));
+            if (Directory.Exists(bakDir) && !Directory.EnumerateFileSystemEntries(bakDir).Any())
+            {
+                Safe.Try(() => Directory.Delete(bakDir), context: $"WidgetStateStore.PruneEmptyBakDir({widgetId})");
+            }
         }, context: $"WidgetStateStore.PruneExcept({widgetId})");
     }
 

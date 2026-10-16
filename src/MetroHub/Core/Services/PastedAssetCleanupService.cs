@@ -195,6 +195,23 @@ public static class PastedAssetCleanupService
             }
         }
 
+        // 6. Trashed workspace disk layouts (workspaces_trash/{trashDir}/layout.json and .bak)
+        if (Directory.Exists(AppPaths.WorkspacesTrashDir))
+        {
+            try
+            {
+                foreach (string trashDir in Directory.EnumerateDirectories(AppPaths.WorkspacesTrashDir))
+                {
+                    InspectLayoutFile(Path.Combine(trashDir, "layout.json"));
+                    InspectLayoutFile(Path.Combine(trashDir, "layout.json.bak"));
+                }
+            }
+            catch (Exception ex)
+            {
+                Safe.Logger(ex, "PastedAssetCleanupService.EnumerateTrash: Failed to enumerate trash");
+            }
+        }
+
         referenced = set;
         return true;
 

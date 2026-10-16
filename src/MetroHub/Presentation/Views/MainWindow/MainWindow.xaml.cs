@@ -573,7 +573,6 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             {
                 t.Row += 1;
             }
-            StorageService.SaveLayout(Tiles);
             StorageService.SaveWorkspaceLayout(activeWs.Id, Tiles);
         }
 
@@ -1350,7 +1349,6 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         _widgetSettingsSaveTimer?.Stop();
         Safe.Try(() =>
         {
-            StorageService.SaveLayout(Tiles);
             var activeWs = WorkspaceManager.Instance.ActiveWorkspace;
             if (activeWs != null)
             {

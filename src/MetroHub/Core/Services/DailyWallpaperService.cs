@@ -28,6 +28,7 @@ public sealed class DailyWallpaperService
     private DailyWallpaperService()
     {
         EnsureCacheDirectory();
+        PruneOldCacheFiles();
     }
 
     private static void EnsureCacheDirectory()

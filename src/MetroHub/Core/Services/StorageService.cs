@@ -1160,9 +1160,28 @@ public sealed class StorageService
                     AppPaths.EnsureDirectory(Path.Combine(trashDir, "dummy.txt"));
                     string destDir = Path.Combine(trashDir, $"{workspaceId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}");
                     Directory.Move(srcDir, destDir);
+                    PruneTrash(trashDir, maxKeep: 10);
                 }, context: $"StorageService.DeleteWorkspaceStorage({workspaceId})");
             }
         }
+    }
+
+    private static void PruneTrash(string trashDir, int maxKeep = 10)
+    {
+        Safe.Try(() =>
+        {
+            if (!Directory.Exists(trashDir)) return;
+            var dirInfo = new DirectoryInfo(trashDir);
+            var subdirs = dirInfo.GetDirectories()
+                                 .OrderByDescending(d => d.CreationTimeUtc)
+                                 .ToList();
+
+            for (int i = maxKeep; i < subdirs.Count; i++)
+            {
+                var dirToDelete = subdirs[i];
+                Safe.Try(() => dirToDelete.Delete(recursive: true), context: $"StorageService.PruneTrash.Delete({dirToDelete.FullName})");
+            }
+        }, context: "StorageService.PruneTrash");
     }
 
     // ────────────────────────────────────────────────────────

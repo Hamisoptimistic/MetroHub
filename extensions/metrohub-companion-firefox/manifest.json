@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MetroHub Companion",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Send links directly to your MetroHub desktop canvas as customizable tiles.",
   "permissions": [
     "activeTab",

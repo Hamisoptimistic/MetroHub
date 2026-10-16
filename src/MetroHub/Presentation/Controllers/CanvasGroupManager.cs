@@ -456,8 +456,6 @@ public sealed class CanvasGroupManager
     {
         var tiles = _tilesProvider();
         var groups = _groupsProvider();
-        StorageService.SaveLayout(tiles);
-        StorageService.SaveGroups(groups);
 
         var activeWs = WorkspaceManager.Instance.ActiveWorkspace;
         if (activeWs != null)

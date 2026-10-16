@@ -1233,7 +1233,6 @@ public sealed class TileManager
 
     private static void SaveLayoutAndWorkspace(ObservableCollection<TileModel> tiles)
     {
-        StorageService.SaveLayout(tiles);
         var activeWs = WorkspaceManager.Instance.ActiveWorkspace;
         if (activeWs != null)
         {

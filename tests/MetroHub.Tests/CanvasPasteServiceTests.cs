@@ -746,6 +746,39 @@ public sealed class CanvasPasteServiceTests : IDisposable
         Assert.Equal(0, run2.DeletedCount);
     }
 
+    [Fact]
+    public void PastedAssetCleanupService_ProtectsAssetsInTrashedWorkspaces()
+    {
+        string trashDir = Path.Combine(AppPaths.WorkspacesTrashDir, "ws_test_trash_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(trashDir);
+        string trashLayoutPath = Path.Combine(trashDir, "layout.json");
+
+        string imagesDir = AppPaths.PastedImagesDir;
+        Directory.CreateDirectory(imagesDir);
+        string referencedImage = Path.Combine(imagesDir, "img_trash_protected.png");
+        File.WriteAllText(referencedImage, "test payload");
+
+        string json = @"[{""Id"":""tile_trash"",""Title"":""Trash Tile"",""TargetPath"":""" + referencedImage.Replace("\\", "\\\\") + @"""}]";
+        File.WriteAllText(trashLayoutPath, json);
+
+        try
+        {
+            bool success = PastedAssetCleanupService.TryCollectReferencedPastedAssets(
+                activeTiles: null,
+                historySnapshots: null,
+                out var referenced);
+
+            Assert.True(success);
+            Assert.NotNull(referenced);
+            Assert.Contains(referencedImage, referenced);
+        }
+        finally
+        {
+            try { Directory.Delete(trashDir, recursive: true); } catch { }
+            try { if (File.Exists(referencedImage)) File.Delete(referencedImage); } catch { }
+        }
+    }
+
     // ── 13. Image File Icon Passthrough & Association Cache Tests ───────────
 
     [Fact]
