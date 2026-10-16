@@ -1,9 +1,8 @@
 {
   "manifest_version": 3,
   "name": "MetroHub Companion",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Send links directly to your MetroHub desktop canvas as customizable tiles.",
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4a8NwE8C+SVuTDeHcRdkU1Bj6uVJeJ03/tzX/FVW118nKcyIXBxs4YwlJVydPr0iESQBQsc9WaX023o0TA8HNm7BEEkOtu0VJMhQQMizoEjN+88lBfdO6Wk23Xus+GX4AJg3tRduGCXum9uxHK5ssVM192CmXwvHqnyQhhKm+2H4CNaIVV03OA2FgJ1n4XEtCreMEk+6KodA1xw7krjGcTTgIqFZp7nTdfr3IYI5b/iZVA9GtrFOHLR2qK05SdNkxcqz1Fn88Zk/otR8IgZ5lAqrIlnmZnYQsOoRJsZ06bWYQo3jv2rvO+OXIORcyuU6UPw97dDfkBqpfCfk4OCZEQIDAQAB",
   "permissions": [
     "activeTab",
     "contextMenus",
