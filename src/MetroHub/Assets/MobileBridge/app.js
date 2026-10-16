@@ -17,7 +17,12 @@
     events: "/m/api/events"
   };
 
-  const ICONS = { link: "🔗", note: "📝", photo: "🖼", text: "💬" };
+  const SVG_ICONS = {
+    photo: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>',
+    link: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+    note: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+    text: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
+  };
   const PREFS = {
     workspace: "metrohub.workspace",
     size: "metrohub.size",
@@ -338,8 +343,20 @@
           ? "Not paired"
           : (state.live ? "Live" : (state.events ? "Reconnecting" : "Connecting…"))));
 
+    if (el.radarSubtext) {
+      if (!state.paired) {
+        el.radarSubtext.textContent = "Not paired · Scan QR or enter IP below";
+      } else if (offline) {
+        el.radarSubtext.textContent = "PC unreachable · Check same Wi-Fi";
+      } else if (live) {
+        el.radarSubtext.textContent = "Ready to receive · Tap to drop";
+      } else {
+        el.radarSubtext.textContent = "Connecting to desktop…";
+      }
+    }
+
     el.pairCard.hidden = state.paired;
-    el.actions.hidden = !state.paired;
+    el.actions.hidden = false;
     el.options.hidden = !state.paired;
     el.feedSection.hidden = !state.paired;
 
@@ -367,7 +384,7 @@
 
     const kind = document.createElement("span");
     kind.className = "kind";
-    kind.textContent = ICONS[item.kind] || ICONS.text;
+    kind.innerHTML = SVG_ICONS[item.kind] || SVG_ICONS.text;
 
     const body = document.createElement("div");
     body.className = "body";
@@ -486,6 +503,11 @@
   }
 
   async function sendPin({ url = null, title = null, note = null }, button, busyLabel) {
+    if (!state.paired) {
+      toast("Pair with your PC first.", "error");
+      return;
+    }
+
     const span = currentSpan();
 
     await withBusy(button, busyLabel, async () => {
@@ -554,37 +576,105 @@
     await sendPin({ note, title: el.noteTitle.value.trim() || null }, el.noteSend, "Sending…");
   }
 
+  async function preparePhoto(file) {
+    if (!file) return null;
+    let type = (file.type || "").toLowerCase();
+
+    // Deduce type from file name extension if MIME type is missing
+    if (!type && file.name) {
+      const ext = file.name.split(".").pop().toLowerCase();
+      if (ext === "jpg" || ext === "jpeg") type = "image/jpeg";
+      else if (ext === "png") type = "image/png";
+      else if (ext === "webp") type = "image/webp";
+      else if (ext === "gif") type = "image/gif";
+      else if (ext === "bmp") type = "image/bmp";
+    }
+
+    const isStandard = SUPPORTED_IMAGE_TYPES.has(type);
+    const isHuge = file.size > 10 * 1024 * 1024; // > 10 MB
+
+    if (!isStandard || isHuge) {
+      try {
+        const bmp = await createImageBitmap(file);
+        const maxDim = 2560;
+        let width = bmp.width;
+        let height = bmp.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(bmp, 0, 0, width, height);
+        bmp.close?.();
+
+        const blob = await new Promise((res) => canvas.toBlob(res, "image/jpeg", 0.90));
+        if (blob) {
+          const baseName = (file.name || "photo").replace(/\.[^.]+$/, "");
+          return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
+        }
+      } catch {
+        // Fall back to original file if canvas decoding is not supported
+      }
+    }
+
+    if (!file.type && type) {
+      return new File([file], file.name || "photo.jpg", { type });
+    }
+
+    return file;
+  }
+
   async function sendPhoto() {
+    if (!state.paired) {
+      toast("Pair with your PC first.", "error");
+      return;
+    }
+
     if (!state.file) {
       toast("Choose a photo first.", "error");
       return;
     }
 
-    const type = (state.file.type || "").toLowerCase();
-    if (!SUPPORTED_IMAGE_TYPES.has(type)) {
-      toast("That image type is not supported. Send JPEG, PNG, WebP, GIF, or BMP.", "error");
-      return;
-    }
+    await withBusy(el.photoSend, "Optimizing…", async () => {
+      const file = await preparePhoto(state.file);
+      if (!file) {
+        toast("Could not process this photo.", "error");
+        return;
+      }
 
-    const limit = state.context?.maxUploadBytes ?? 0;
-    if (limit > 0 && state.file.size > limit) {
-      toast(`That photo is ${formatSize(state.file.size)}; the limit is ${formatSize(limit)}.`, "error");
-      return;
-    }
+      const type = (file.type || "").toLowerCase();
+      if (!SUPPORTED_IMAGE_TYPES.has(type)) {
+        toast("Unsupported image format. Send JPEG, PNG, or WebP.", "error");
+        return;
+      }
 
-    const file = state.file;
-    const span = currentSpan();
-    const params = new URLSearchParams();
+      const limit = state.context?.maxUploadBytes ?? 0;
+      if (limit > 0 && file.size > limit) {
+        toast(`Photo is ${formatSize(file.size)}; limit is ${formatSize(limit)}.`, "error");
+        return;
+      }
 
-    const title = el.photoTitle.value.trim() || file.name || "";
-    if (title) params.set("name", title);
-    if (state.workspaceId) params.set("workspaceId", state.workspaceId);
-    if (span) {
-      params.set("spanX", String(span.spanX));
-      params.set("spanY", String(span.spanY));
-    }
+      el.photoSend.textContent = "Uploading…";
 
-    await withBusy(el.photoSend, "Uploading…", async () => {
+      const span = currentSpan();
+      const params = new URLSearchParams();
+
+      const title = el.photoTitle.value.trim() || file.name || "";
+      if (title) params.set("name", title);
+      if (state.workspaceId) params.set("workspaceId", state.workspaceId);
+      if (span) {
+        params.set("spanX", String(span.spanX));
+        params.set("spanY", String(span.spanY));
+      }
+
       const response = await request(`${ROUTES.upload}?${params.toString()}`, {
         method: "POST",
         headers: { "Content-Type": file.type || "image/jpeg" },
@@ -602,7 +692,7 @@
         return;
       }
 
-      toast(result.duplicate ? "That photo is already on the canvas." : "Photo pinned to the canvas.", "ok");
+      toast(result.duplicate ? "Photo is already on the canvas." : "Dropped photo to PC.", "ok");
       resetPhoto();
       closeComposer();
       state.reachable = true;
@@ -852,7 +942,8 @@
       "photoPreview", "photoPickText", "photoTitle", "photoSend", "options", "sizeSelect",
       "workspaceSelect", "feedSection", "feedList", "feedEmpty", "refreshBtn", "sheet",
       "sheetBackdrop", "closeSheetBtn", "factPaired", "factPc", "factAddress", "factSecure",
-      "installCard", "installTitle", "installBody", "installBtn", "unpairBtn", "toast"
+      "installCard", "installTitle", "installBody", "installBtn", "unpairBtn", "toast",
+      "manualHostInput", "manualConnectBtn", "radarSubtext", "radarTarget", "radarHero"
     ];
 
     for (const id of ids) {
@@ -868,6 +959,39 @@
     el.refreshBtn.addEventListener("click", () => refresh());
     el.pairCheckBtn.addEventListener("click", () => refresh());
     el.bannerRetry.addEventListener("click", () => refresh());
+
+    if (el.manualConnectBtn && el.manualHostInput) {
+      const handleManualConnect = () => {
+        let host = el.manualHostInput.value.trim();
+        if (!host) {
+          toast("Enter PC address (e.g. 192.168.1.5:48850)", "error");
+          return;
+        }
+        host = host.replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+        store(PREFS.host, host);
+        state.host = host;
+        toast(`Connecting to ${host}…`, "info");
+        refresh();
+      };
+
+      el.manualConnectBtn.addEventListener("click", handleManualConnect);
+      el.manualHostInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          handleManualConnect();
+        }
+      });
+    }
+
+    if (el.radarTarget) {
+      el.radarTarget.addEventListener("click", () => {
+        if (!state.paired) {
+          el.manualHostInput?.focus();
+        } else {
+          openComposer("photo");
+        }
+      });
+    }
 
     el.actions.addEventListener("click", (event) => {
       const action = event.target.closest(".action");

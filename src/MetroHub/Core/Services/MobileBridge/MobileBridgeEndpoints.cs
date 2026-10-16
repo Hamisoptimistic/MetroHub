@@ -376,6 +376,15 @@ public sealed class MobileBridgeEndpoints
     private async Task HandleUploadAsync(MobileHttpRequest request, MobileHttpResponse response, CancellationToken ct)
     {
         string? contentType = request.Header("Content-Type");
+        if (contentType != null)
+        {
+            int semi = contentType.IndexOf(';');
+            if (semi >= 0)
+            {
+                contentType = contentType[..semi].Trim();
+            }
+        }
+
         string? extension = contentType != null && ImageExtensions.TryGetValue(contentType, out string? ext) ? ext : null;
         if (extension == null)
         {

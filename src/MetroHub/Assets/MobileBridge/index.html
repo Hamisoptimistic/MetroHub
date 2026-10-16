@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#0f1115" />
-<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" content="#050507" />
+<meta name="color-scheme" content="dark" />
 <meta name="robots" content="noindex, nofollow" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -13,21 +13,27 @@
 <link rel="icon" href="icon-192.png" />
 <link rel="apple-touch-icon" href="icon-192.png" />
 <link rel="stylesheet" href="app.css" />
-<title>MetroHub</title>
+<title>MetroHub Direct</title>
 </head>
 <body>
 <div class="app">
 
+  <!-- Top bar -->
   <header class="topbar">
-    <span class="pill" id="statusPill"><span class="pill-dot" aria-hidden="true"></span><span id="statusText">Connecting</span></span>
-    <span class="pc-name" id="pcName">MetroHub</span>
+    <div class="pill" id="statusPill">
+      <span class="pill-dot" aria-hidden="true"></span>
+      <span id="statusText">Connecting</span>
+    </div>
+    <span class="app-title">MetroHub Drop</span>
     <button class="icon-btn" id="moreBtn" type="button" aria-label="Settings">
-      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-        <path fill="currentColor" d="M12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Zm7.4-2.6.1-.9-.1-.9 1.8-1.4-1.7-3-2.2.8a7.3 7.3 0 0 0-1.6-.9L15.4 4h-3.5l-.3 2.3c-.6.2-1.1.5-1.6.9l-2.2-.8-1.7 3 1.8 1.4-.1.9.1.9-1.8 1.4 1.7 3 2.2-.8c.5.4 1 .7 1.6.9l.3 2.3h3.5l.3-2.3c.6-.2 1.1-.5 1.6-.9l2.2.8 1.7-3-1.8-1.4Z"/>
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
       </svg>
     </button>
   </header>
 
+  <!-- Network Banner -->
   <div class="banner" id="banner" hidden>
     <span id="bannerText">Cannot reach your PC.</span>
     <button class="banner-btn" id="bannerRetry" type="button">Retry</button>
@@ -35,42 +41,101 @@
 
   <main class="content">
 
+    <!-- AirDrop Hero: Target PC & Concentric Radar Waves -->
+    <section class="airdrop-radar" id="radarHero">
+      <div class="radar-rings" aria-hidden="true">
+        <div class="radar-ring"></div>
+        <div class="radar-ring"></div>
+        <div class="radar-ring"></div>
+      </div>
+      <div class="radar-target" id="radarTarget">
+        <div class="radar-avatar">
+          <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="3" width="20" height="14" rx="3"/>
+            <line x1="8" y1="21" x2="16" y2="21"/>
+            <line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        </div>
+        <h1 class="radar-device-name" id="pcName">MetroHub</h1>
+        <p class="radar-subtext" id="radarSubtext">Connecting over Wi-Fi…</p>
+      </div>
+    </section>
+
+    <!-- Unpaired Guidance Card -->
     <section class="card pair-card" id="pairCard" hidden>
-      <h2>This phone is not paired</h2>
-      <p>Open MetroHub on your PC and scan the QR code on the Phone Bridge tile. You only have to do that once.</p>
-      <button class="btn btn-primary" id="pairCheckBtn" type="button">I have paired — check again</button>
+      <div class="pair-card-header">
+        <div class="pair-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <rect x="7" y="7" width="3" height="3"/>
+            <rect x="14" y="7" width="3" height="3"/>
+            <rect x="7" y="14" width="3" height="3"/>
+            <path d="M14 14h3v3h-3z"/>
+          </svg>
+        </div>
+        <div>
+          <h2>Pair with your PC</h2>
+          <p>Scan the QR code on your MetroHub desktop tile, or enter the PC address below.</p>
+        </div>
+      </div>
+
+      <div class="manual-pair-form">
+        <input id="manualHostInput" type="text" placeholder="e.g. 192.168.1.5:48850" spellcheck="false" autocomplete="off" autocapitalize="off" />
+        <button class="btn btn-primary btn-sm" id="manualConnectBtn" type="button">Connect</button>
+      </div>
+
+      <button class="btn btn-ghost btn-block" id="pairCheckBtn" type="button">I scanned the QR code — check</button>
     </section>
 
+    <!-- Quick Drop Action Dock -->
     <section class="actions" id="actions">
-      <button class="action" type="button" data-action="link">
-        <span class="action-icon" aria-hidden="true">🔗</span>
-        <span class="action-text">
-          <strong>Send a link</strong>
-          <small>Pin a web page to the canvas</small>
-        </span>
-        <span class="action-chevron" aria-hidden="true">›</span>
-      </button>
-      <button class="action" type="button" data-action="note">
-        <span class="action-icon" aria-hidden="true">📝</span>
-        <span class="action-text">
-          <strong>Write a note</strong>
-          <small>Type anything and it lands as a tile</small>
-        </span>
-        <span class="action-chevron" aria-hidden="true">›</span>
-      </button>
       <button class="action" type="button" data-action="photo">
-        <span class="action-icon" aria-hidden="true">🖼</span>
-        <span class="action-text">
-          <strong>Send a photo</strong>
-          <small>Camera or gallery, up to 32 MB</small>
-        </span>
-        <span class="action-chevron" aria-hidden="true">›</span>
+        <div class="action-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="4"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="m21 15-5-5L5 21"/>
+          </svg>
+        </div>
+        <div class="action-text">
+          <strong>Photo</strong>
+          <small>Camera or gallery</small>
+        </div>
+      </button>
+
+      <button class="action" type="button" data-action="link">
+        <div class="action-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        </div>
+        <div class="action-text">
+          <strong>Link</strong>
+          <small>Pin web page</small>
+        </div>
+      </button>
+
+      <button class="action" type="button" data-action="note">
+        <div class="action-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </div>
+        <div class="action-text">
+          <strong>Note</strong>
+          <small>Desktop memo</small>
+        </div>
       </button>
     </section>
 
+    <!-- Placement Segment Options -->
     <div class="card options" id="options">
       <label class="field field-inline">
-        <span class="field-label">Tile size</span>
+        <span class="field-label">Tile Size</span>
         <select id="sizeSelect"></select>
       </label>
       <label class="field field-inline">
@@ -79,70 +144,78 @@
       </label>
     </div>
 
+    <!-- Recent Activity Feed -->
     <section class="feed-section" id="feedSection">
       <div class="feed-head">
-        <h2>Recent</h2>
+        <h2>Recent Transfers</h2>
         <button class="link-btn" id="refreshBtn" type="button">Refresh</button>
       </div>
       <ul class="feed" id="feedList"></ul>
-      <p class="feed-empty" id="feedEmpty">Nothing has been sent yet.</p>
+      <p class="feed-empty" id="feedEmpty">No transfers yet.</p>
     </section>
 
   </main>
 
-  <!-- Composer: one focused action at a time -->
+  <!-- Composer: Native Bottom Sheet -->
   <div class="sheet" id="composerSheet" hidden>
     <div class="sheet-backdrop" id="composerBackdrop"></div>
     <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="composerTitle">
       <div class="sheet-grip" aria-hidden="true"></div>
-      <h2 id="composerTitle">Send a link</h2>
+      <h2 id="composerTitle">Drop to PC</h2>
 
       <section class="composer" id="linkForm">
         <label class="field">
-          <span class="field-label">Web address</span>
+          <span class="field-label">URL</span>
           <input id="linkUrl" type="url" inputmode="url" autocomplete="off" autocapitalize="off"
-                 spellcheck="false" placeholder="example.com/read-later" />
+                 spellcheck="false" placeholder="https://example.com" />
         </label>
         <label class="field">
-          <span class="field-label">Title <span class="optional">optional</span></span>
-          <input id="linkTitle" type="text" autocomplete="off" placeholder="Read later" />
+          <span class="field-label">Label <span class="optional">optional</span></span>
+          <input id="linkTitle" type="text" autocomplete="off" placeholder="Title" />
         </label>
-        <button class="btn btn-primary" id="linkSend" type="button">Send link</button>
+        <button class="btn btn-primary" id="linkSend" type="button">Drop Link</button>
       </section>
 
       <section class="composer" id="noteForm" hidden>
         <label class="field">
           <span class="field-label">Note</span>
-          <textarea id="noteText" rows="5" placeholder="Anything you want waiting on the canvas"></textarea>
+          <textarea id="noteText" rows="4" placeholder="Write anything to pin on your desktop"></textarea>
         </label>
         <label class="field">
           <span class="field-label">Title <span class="optional">optional</span></span>
-          <input id="noteTitle" type="text" autocomplete="off" placeholder="Note" />
+          <input id="noteTitle" type="text" autocomplete="off" placeholder="Title" />
         </label>
-        <button class="btn btn-primary" id="noteSend" type="button">Send note</button>
+        <button class="btn btn-primary" id="noteSend" type="button">Drop Note</button>
       </section>
 
       <section class="composer" id="photoForm" hidden>
         <input id="photoInput" type="file" accept="image/*" hidden />
         <button class="drop" id="photoPick" type="button">
           <img id="photoPreview" alt="" hidden />
-          <span id="photoPickText">
+          <div id="photoPickText" class="drop-empty">
+            <div class="drop-icon">
+              <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="4"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="m21 15-5-5L5 21"/>
+              </svg>
+            </div>
             <strong>Choose a photo</strong>
-            <small>Camera or gallery · up to 32 MB</small>
-          </span>
+            <small>Tap to select or take a photo</small>
+          </div>
         </button>
         <label class="field">
           <span class="field-label">Title <span class="optional">optional</span></span>
-          <input id="photoTitle" type="text" autocomplete="off" placeholder="Photo" />
+          <input id="photoTitle" type="text" autocomplete="off" placeholder="Photo caption" />
         </label>
-        <button class="btn btn-primary" id="photoSend" type="button" disabled>Send photo</button>
+        <button class="btn btn-primary" id="photoSend" type="button" disabled>Drop Photo</button>
       </section>
 
-      <button class="btn btn-ghost btn-block" id="composerClose" type="button">Close</button>
+      <button class="btn btn-ghost btn-block" id="composerClose" type="button">Cancel</button>
     </div>
   </div>
 
-  <!-- Settings -->
+  <!-- Settings Sheet -->
   <div class="sheet" id="sheet" hidden>
     <div class="sheet-backdrop" id="sheetBackdrop"></div>
     <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
@@ -152,19 +225,19 @@
       <dl class="facts">
         <div><dt>This phone</dt><dd id="factPaired">—</dd></div>
         <div><dt>PC</dt><dd id="factPc">—</dd></div>
-        <div><dt>Address</dt><dd id="factAddress">—</dd></div>
+        <div><dt>LAN Address</dt><dd id="factAddress">—</dd></div>
         <div><dt>Connection</dt><dd id="factSecure">—</dd></div>
       </dl>
 
       <section class="install-card" id="installCard">
-        <h3 id="installTitle">Install as an app</h3>
+        <h3 id="installTitle">Install as App</h3>
         <p id="installBody"></p>
         <div class="install-actions">
           <button class="btn btn-primary" id="installBtn" type="button" hidden>Install App</button>
         </div>
       </section>
 
-      <button class="btn btn-danger" id="unpairBtn" type="button">Unpair this phone</button>
+      <button class="btn btn-danger" id="unpairBtn" type="button">Unpair this Phone</button>
       <button class="btn btn-ghost btn-block" id="closeSheetBtn" type="button">Done</button>
     </div>
   </div>
