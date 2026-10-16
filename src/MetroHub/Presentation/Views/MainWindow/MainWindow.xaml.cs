@@ -292,17 +292,12 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         PreviewMouseDown += OnWindowPreviewMouseDown;
         ContentScrollViewer.ScrollChanged += OnContentScrollViewerScrollChanged;
 
-        // Auto-persist layout in background when any widget notifies of settings changes
+        // Auto-persist layout in background when any widget notifies of settings changes (debounced to avoid UI stutter on rapid changes)
         WeakReferenceMessenger.Default.Register<MainWindow, WidgetSettingsChangedMessage>(
             this,
             (r, msg) =>
             {
-                StorageService.SaveLayout(r.Tiles);
-                var activeWs = WorkspaceManager.Instance.ActiveWorkspace;
-                if (activeWs != null)
-                {
-                    StorageService.SaveWorkspaceLayout(activeWs.Id, r.Tiles);
-                }
+                r.DebounceLayoutPersistence();
             });
 
         WeakReferenceMessenger.Default.Register<MainWindow, TargetLaunchFailedMessage>(
@@ -562,6 +557,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         Settings = StorageService.LoadSettings();
         SystemAccentColorService.SetStyleMode(Settings.AccentStyle);
         Application.Current.Resources["TileCornerRadius"] = new CornerRadius(Settings.TileCornerRadius);
+        Application.Current.Resources["ControlCornerRadius"] = new CornerRadius(Settings.TileCornerRadius <= 2 ? Settings.TileCornerRadius : (Settings.TileCornerRadius == 4 ? 4 : 6));
         WorkspaceManager.Instance.Initialize();
         var activeWs = WorkspaceManager.Instance.ActiveWorkspace;
         Tiles = activeWs.Tiles;
@@ -1157,6 +1153,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         FocusManager.SetFocusedElement(this, this);
         MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(false));
         WidgetHeartbeatService.SetHubVisibility(false);
+        FlushWidgetSettingsPersistence();
         Safe.Try(SaveGroupsAndLayout, "MainWindow.HideScreen.SaveGroupsAndLayout");
         if (!Settings.SidebarPinned)
         {
@@ -1327,8 +1324,46 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         }
     }
 
+    private DispatcherTimer? _widgetSettingsSaveTimer;
+
+    private void DebounceLayoutPersistence()
+    {
+        if (_widgetSettingsSaveTimer == null)
+        {
+            _widgetSettingsSaveTimer = new DispatcherTimer(DispatcherPriority.Background)
+            {
+                Interval = TimeSpan.FromMilliseconds(500)
+            };
+            _widgetSettingsSaveTimer.Tick += (s, e) =>
+            {
+                _widgetSettingsSaveTimer.Stop();
+                FlushWidgetSettingsPersistence();
+            };
+        }
+
+        _widgetSettingsSaveTimer.Stop();
+        _widgetSettingsSaveTimer.Start();
+    }
+
+    private void FlushWidgetSettingsPersistence()
+    {
+        _widgetSettingsSaveTimer?.Stop();
+        Safe.Try(() =>
+        {
+            StorageService.SaveLayout(Tiles);
+            var activeWs = WorkspaceManager.Instance.ActiveWorkspace;
+            if (activeWs != null)
+            {
+                StorageService.SaveWorkspaceLayout(activeWs.Id, Tiles);
+            }
+        }, "MainWindow.FlushWidgetSettingsPersistence");
+    }
+
     private void CleanupEventSubscriptions()
     {
+        FlushWidgetSettingsPersistence();
+        _widgetSettingsSaveTimer = null;
+
         if (SidebarRail != null)
         {
             SidebarRail.PinToggled -= OnSidebarPinToggled;
@@ -1347,6 +1382,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
+        FlushWidgetSettingsPersistence();
         Safe.Try(SaveGroupsAndLayout, "MainWindow.OnClosing.SaveGroupsAndLayout");
 
         if (!_isClosingToExit)
@@ -1370,6 +1406,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     public void ExitApplication()
     {
         _isClosingToExit = true;
+        FlushWidgetSettingsPersistence();
         Safe.Try(SaveGroupsAndLayout, "MainWindow.ExitApplication.SaveGroupsAndLayout");
         Safe.Try(() => WorkspaceManager.Instance.FlushSync(), "MainWindow.ExitApplication.WorkspaceFlush");
         Safe.Try(StorageService.Flush, "MainWindow.ExitApplication.StorageFlush");

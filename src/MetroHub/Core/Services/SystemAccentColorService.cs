@@ -214,6 +214,7 @@ public static class SystemAccentColorService
         res["SystemAccentColor"] = accent;
         res["SystemAccentColorBrush"] = primaryBrush;
         res["SystemAccentColorPrimaryBrush"] = primaryBrush;
+        res["SystemAccentColorSolidBrush"] = CreateFrozenBrush(accent);
         res["SystemAccentColorSecondaryBrush"] = secondaryBrush;
         res["SystemAccentColorTertiaryBrush"] = tertiaryBrush;
         res["SystemAccentGlassBorderBrush"] = glassBorderBrush;

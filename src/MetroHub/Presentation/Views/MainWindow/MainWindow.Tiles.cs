@@ -716,6 +716,7 @@ public partial class MainWindow
         Settings.TileCornerRadius = radius;
         StorageService.SaveSettings(Settings);
         Application.Current.Resources["TileCornerRadius"] = new CornerRadius(radius);
+        Application.Current.Resources["ControlCornerRadius"] = new CornerRadius(radius <= 2 ? radius : (radius == 4 ? 4 : 6));
         UpdateTileCornerMenuChecks();
     }
 

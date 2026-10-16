@@ -12,6 +12,7 @@ using MetroHub.Widgets.Catalog.Dino;
 using MetroHub.Widgets.Catalog.Habit;
 using MetroHub.Widgets.Catalog.Media;
 using MetroHub.Widgets.Catalog.Network;
+using MetroHub.Widgets.Catalog.Notepad;
 using MetroHub.Widgets.Catalog.Photos;
 using MetroHub.Widgets.Catalog.Pomodoro;
 using MetroHub.Widgets.Catalog.Power;
@@ -42,6 +43,7 @@ public class XamlViewSanityTests
     [InlineData(typeof(HabitWidgetView))]
     [InlineData(typeof(MediaWidgetView))]
     [InlineData(typeof(NetworkWidgetView))]
+    [InlineData(typeof(NotepadWidgetView))]
     [InlineData(typeof(PhotosWidgetView))]
     [InlineData(typeof(PomodoroWidgetView))]
     [InlineData(typeof(PowerWidgetView))]

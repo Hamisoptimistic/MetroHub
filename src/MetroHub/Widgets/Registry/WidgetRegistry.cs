@@ -355,6 +355,25 @@ public static class WidgetRegistry
             Category: "Lifestyle"
         ));
 
+        // Register Notepad & Todo widget
+        Register(new WidgetDefinition(
+            Id: "notepad",
+            DisplayName: "Notepad & Tasks",
+            Description: "Rich scratchpad and task checklist with history",
+            Icon: SymbolRegular.Notepad24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Huge,     // 8x6 (Default)
+                WidgetSize.Canvas,   // 8x8
+                WidgetSize.Full      // 8x10
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetView),
+            DefaultSize: WidgetSize.Huge,
+            Factory: model => new MetroHub.Widgets.Catalog.Notepad.NotepadWidgetViewModel(model),
+            Category: "Productivity"
+        ));
+
     }
 
     public static void Register(WidgetDefinition definition)

@@ -15,6 +15,7 @@ namespace MetroHub.Widgets.Serialization;
 [JsonSourceGenerationOptions(
     WriteIndented = false,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    PropertyNameCaseInsensitive = true,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(TemplateWidgetSettings))]
 [JsonSerializable(typeof(ClockWidgetSettings))]
@@ -34,6 +35,10 @@ namespace MetroHub.Widgets.Serialization;
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Radio.RadioWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Quotes.QuotesWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Weather.WeatherWidgetSettings))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetSettings))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.Notepad.NotepadTodoItem))]
+[JsonSerializable(typeof(System.Collections.Generic.List<MetroHub.Widgets.Catalog.Notepad.NotepadTodoItem>))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.Notepad.NotepadMode))]
 public partial class WidgetJsonContext : JsonSerializerContext
 {
 }

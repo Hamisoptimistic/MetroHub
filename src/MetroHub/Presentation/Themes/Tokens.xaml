@@ -157,6 +157,7 @@
     <Color x:Key="SystemAccentColor">#4CC2FF</Color>
     <SolidColorBrush x:Key="SystemAccentColorBrush" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
     <SolidColorBrush x:Key="SystemAccentColorPrimaryBrush" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
+    <SolidColorBrush x:Key="SystemAccentColorSolidBrush" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
     <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="#60CDFF" po:Freeze="True" />
     <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="#2886C8" po:Freeze="True" />
     <SolidColorBrush x:Key="SystemAccentColorForegroundBrush" Color="#FFFFFF" po:Freeze="True" />
