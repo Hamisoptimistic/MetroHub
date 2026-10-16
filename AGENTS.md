@@ -1,6 +1,6 @@
 # MetroHub — Agent Notes
 
-Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via CommunityToolkit.Mvvm, WPF-UI). One app project + one xunit test project. The owner's detailed standards live in `.agents/rules/*.md` and `docs/*.md`; this file carries only what those don't make obvious.
+Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via CommunityToolkit.Mvvm, WPF-UI). One app project + one xunit test project. The owner's detailed standards live in `docs/*.md`; this file carries only what those don't make obvious.
 
 ## Owner rules (non-negotiable)
 
@@ -8,8 +8,15 @@ Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via
 - **Never edit code without explicit permission.** A question, a "check this", or a clarification request is not permission to change anything.
 - **Never publish while the app is running.** `MetroHub.dll` stays locked and MSBuild fails with MSB3026/MSB3027/MSB3021. Kill it first:
   `Stop-Process -Name MetroHub -Force -ErrorAction SilentlyContinue`
-- Reply concisely in simplified technical English; no mermaid diagrams.
+- Reply concisely in simplified technical English. Use Unicode box-drawing text flowcharts for flows and design explanations (no Mermaid or SVG).
 - `.agents/rules/` docs are partly stale — trust `src/` over them. Known drift: `BUG_FIXING_PROTOCOL.md` §7.2b describes `MediaPlaybackClock`/`MediaSyncTraceLogger`, and `WIDGET_ONBOARDING_CHECKLIST.md` lists `Core/Serialization/MetroHubJsonContext.cs` plus hardcoded DataTemplates; none of these exist anymore (see Widgets below).
+
+## Code Style & Planning
+
+- **Research First:** Search GitHub, WPF-UI, Stack Overflow, and Microsoft official documentation before finalizing plans.
+- **Reuse & Optimize:** Inspect current implementations first. Prioritize reuse of existing controls and services.
+- **Language Standards:** Use C# 14 and latest language features.
+- **No Dead Code:** Clean up dead code immediately; do not keep unused legacy code.
 
 ## Commands
 
@@ -37,6 +44,18 @@ Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via
   2. Add `[JsonSerializable(typeof(<Name>WidgetSettings))]` to `Widgets/Serialization/WidgetJsonContext.cs`. Settings persist through `WidgetSerializer`, which is source-generated only.
 - Context-menu items: implement `IWidgetContextMenuProvider` on the VM; `TileControl.xaml.cs` (Canvas folder) merges them into the shared menu. Tile click / press-down hooks (`LaunchTile`, `AnimatePressDown`) live in that same file.
 - Lifecycle rules are enforced, not optional: override `Dispose(bool)`, stop/null timers, unhook OS events, `.Freeze()` brushes, no `GC.Collect()`/`EmptyWorkingSet()`, never hardcode `IsIndeterminate="True"`. Full checklist: `docs/WIDGET_LIFECYCLE_STANDARDS.md`.
+
+## Design System & UI Invariants (Full Spec: docs/DESIGN_SYSTEM.md)
+
+When creating or modifying XAML views, widgets, or dialogs, adhere strictly to these rules:
+- **Mandatory Reference:** Read `docs/DESIGN_SYSTEM.md` for exact XML snippets and subpixel layout math before creating new UI.
+- **Scrollbars:** Never show permanent scrollbars. Always set `controls:AutoHideScrollBehavior.IsEnabled="True"`.
+- **Corner Radii Hierarchy:** Window = `0`, Tiles = `2`, Inputs/Hover Rows = `4`, Menus/Dialogs = `8`.
+- **Accent Colors:** Never hardcode hex codes for accents. Always bind to `{DynamicResource SystemAccentColorPrimaryBrush}` and `{DynamicResource SystemAccentColorForegroundBrush}`.
+- **Hairline Dividers:** Never use solid grey. Use 2px hairline `Background="#14FFFFFF"` with `CornerRadius="1"` edge-to-edge.
+- **Docked Bottom Containers:** Use `Background="#14000000"`, `BorderThickness="0"`, `CornerRadius="0,0,2,2"`, and `Padding="20,0,20,0"`.
+- **Typography:** Use `Segoe UI Variable Text` (14px main, 12px tile labels, 18px display headers).
+- **Tile Grid Math:** Unit cell = 60px, gap = 4px (Small: 60x60, Med: 124x124, Wide: 252x124, Large: 252x252).
 
 ## Architecture & Concurrency
 
