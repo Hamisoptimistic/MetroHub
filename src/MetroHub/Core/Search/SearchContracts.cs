@@ -86,6 +86,41 @@ public sealed record SearchQuery(
 }
 
 /// <summary>
+/// Possible outcome after executing a candidate action.
+/// </summary>
+public enum ActionOutcome
+{
+    DismissDrawer,
+    StayOpenAndRefresh,
+    ShowMessage,
+    RequireConfirmation
+}
+
+/// <summary>
+/// Result returned by a candidate action execution.
+/// </summary>
+public readonly record struct ActionResult(
+    ActionOutcome Outcome,
+    string? Message = null);
+
+/// <summary>
+/// Context passed into a candidate action upon invocation.
+/// </summary>
+public sealed record ActionContext(CancellationToken CancellationToken)
+{
+    public bool Confirmed { get; init; }
+}
+
+/// <summary>
+/// Action that can be executed on a candidate.
+/// </summary>
+public sealed record CandidateAction(
+    string Id,
+    string Title,
+    string? KeyGestureHint,
+    Func<ActionContext, Task<ActionResult>> ExecuteAsync);
+
+/// <summary>
 /// Lightweight candidate produced by an ISearchSource.
 /// </summary>
 public sealed record Candidate(
@@ -104,6 +139,9 @@ public sealed record Candidate(
 
     public string NormalizedDisplayName => _normalizedDisplayName ??= SearchRanker.NormalizeText(DisplayName);
     public string NormalizedPath => _normalizedPath ??= SearchRanker.NormalizeText(FullPathOrKey);
+
+    public CandidateAction? PrimaryAction { get; init; }
+    public IReadOnlyList<CandidateAction>? SecondaryActions { get; init; }
 }
 
 /// <summary>

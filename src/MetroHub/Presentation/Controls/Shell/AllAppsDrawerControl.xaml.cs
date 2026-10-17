@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -39,10 +41,25 @@ namespace MetroHub.Presentation.Controls
         public Candidate Candidate { get; }
         public string DisplayName => Candidate.DisplayName;
 
+        private string? _overrideSubtitle;
+        public string? OverrideSubtitle
+        {
+            get => _overrideSubtitle;
+            set
+            {
+                if (SetProperty(ref _overrideSubtitle, value))
+                {
+                    OnPropertyChanged(nameof(Subtitle));
+                    OnPropertyChanged(nameof(SubtitleVisibility));
+                }
+            }
+        }
+
         public string Subtitle
         {
             get
             {
+                if (!string.IsNullOrEmpty(_overrideSubtitle)) return _overrideSubtitle;
                 if (Candidate.Category == SearchCategory.Apps) return string.Empty;
                 if (!Candidate.IsFolder)
                 {
@@ -593,6 +610,7 @@ namespace MetroHub.Presentation.Controls
 
         private void OnSearchBoxTextChanged(object sender, TextChangedEventArgs e)
         {
+            _pendingConfirm = null;
             string query = SearchBox.Text.Trim();
             bool hasText = !string.IsNullOrEmpty(query);
 
@@ -694,9 +712,19 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
+        private (string Id, long ExpiresAt)? _pendingConfirm;
+
+        internal (string Id, long ExpiresAt)? PendingConfirm => _pendingConfirm;
+
         private void LaunchSearchItem(SearchItemRowViewModel row)
         {
             StorageService.RecordSearchLaunch(row.Candidate.Id);
+
+            if (row.Candidate.PrimaryAction is { } primary)
+            {
+                _ = ExecuteCandidateActionAsync(row.Candidate.Id, primary.ExecuteAsync);
+                return;
+            }
 
             if (row.IsApp && row.AppModel != null)
             {
@@ -720,6 +748,74 @@ namespace MetroHub.Presentation.Controls
                 {
                     Safe.Log("AllAppsDrawer.LaunchSearchItem", ex);
                 }
+            }
+        }
+
+        internal async Task ExecuteCandidateActionAsync(string candidateId, Func<ActionContext, Task<ActionResult>> action)
+        {
+            var confirmed = _pendingConfirm is { } p && p.Id == candidateId && Environment.TickCount64 < p.ExpiresAt;
+            _pendingConfirm = null;
+
+            try
+            {
+                var result = await action(new ActionContext(CancellationToken.None) { Confirmed = confirmed });
+                HandleActionResult(candidateId, result);
+            }
+            catch (Win32Exception ex) when (ex.NativeErrorCode == 1223)
+            {
+                // User cancelled UAC elevation. Normal user action, not an error.
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                Safe.Log(ex, "SearchActionRunner");
+                ShowActionMessage("That action failed.");
+            }
+        }
+
+        internal void HandleActionResult(string candidateId, ActionResult result)
+        {
+            switch (result.Outcome)
+            {
+                case ActionOutcome.DismissDrawer:
+                    Close();
+                    ShellHideRequested?.Invoke(this, EventArgs.Empty);
+                    break;
+
+                case ActionOutcome.StayOpenAndRefresh:
+                    if (SearchBox != null)
+                    {
+                        _searchOrchestrator?.SetQuery(SearchBox.Text.Trim());
+                    }
+                    break;
+
+                case ActionOutcome.ShowMessage:
+                    if (!string.IsNullOrEmpty(result.Message))
+                    {
+                        ShowActionMessage(result.Message);
+                    }
+                    break;
+
+                case ActionOutcome.RequireConfirmation:
+                    _pendingConfirm = (candidateId, Environment.TickCount64 + 4000);
+                    if (!string.IsNullOrEmpty(result.Message))
+                    {
+                        ShowActionMessage(result.Message);
+                    }
+                    break;
+            }
+        }
+
+        internal void ShowActionMessage(string message)
+        {
+            if (SearchResultsListBox?.SelectedItem is SearchItemRowViewModel row)
+            {
+                row.OverrideSubtitle = message;
+            }
+            else if (NoResultsDetailTextBlock != null)
+            {
+                NoResultsDetailTextBlock.Text = message;
+                if (NoResultsPanel != null) NoResultsPanel.Visibility = Visibility.Visible;
             }
         }
 
