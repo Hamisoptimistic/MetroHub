@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using MetroHub.Core.Audio;
 using MetroHub.Core.Search.Native;
 using MetroHub.Core.Services;
+using Wpf.Ui.Controls;
 
 namespace MetroHub.Core.Search;
 
@@ -193,9 +194,11 @@ public sealed class TerminalSource : ISearchSource
             Id: "terminal:" + (string.IsNullOrEmpty(cmd) ? "open" : cmd),
             DisplayName: displayName,
             FullPathOrKey: cmd,
-            Category: SearchCategory.Apps,
+            Category: SearchCategory.Actions,
             SourceId: SourceId)
         {
+            Icon = SymbolRegular.WindowConsole20,
+            KindLabel = "Terminal",
             PrimaryAction = action
         };
 
@@ -304,9 +307,11 @@ public sealed class WindowWalkerSource : ISearchSource
             Id: $"win:hwnd:0x{w.Hwnd.ToInt64():X}",
             DisplayName: w.Title,
             FullPathOrKey: $"{w.ProcessName} (PID {w.Pid})",
-            Category: SearchCategory.Apps,
+            Category: SearchCategory.Actions,
             SourceId: SourceId)
         {
+            Icon = SymbolRegular.Window24,
+            KindLabel = "Window",
             PrimaryAction = new CandidateAction(
                 Id: "switch_window",
                 Title: "Switch to window",
@@ -423,9 +428,11 @@ public sealed class ProcessKillerSource : ISearchSource
             Id: $"kill:{p.Pid}:{p.StartTime.Ticks}",
             DisplayName: $"Kill {p.ProcessName} (PID {p.Pid})",
             FullPathOrKey: $"Terminate {p.ProcessName}.exe and entire process tree",
-            Category: SearchCategory.Apps,
+            Category: SearchCategory.Actions,
             SourceId: SourceId)
         {
+            Icon = SymbolRegular.DismissCircle24,
+            KindLabel = "Process",
             PrimaryAction = new CandidateAction(
                 Id: "terminate_process",
                 Title: $"Terminate {p.ProcessName}",
@@ -517,9 +524,11 @@ public sealed class AudioSource : ISearchSource
                     Id: $"audio:volume:{level}",
                     DisplayName: $"Set volume to {level}%",
                     FullPathOrKey: $"Master Volume: {level}%",
-                    Category: SearchCategory.Apps,
+                    Category: SearchCategory.Actions,
                     SourceId: SourceId)
                 {
+                    Icon = SymbolRegular.Speaker224,
+                    KindLabel = "Volume",
                     PrimaryAction = action
                 };
 
@@ -556,9 +565,11 @@ public sealed class AudioSource : ISearchSource
                         Id: $"audio:device:{d.Id}",
                         DisplayName: $"{prefix}{d.Name}",
                         FullPathOrKey: d.Name,
-                        Category: SearchCategory.Apps,
+                        Category: SearchCategory.Actions,
                         SourceId: SourceId)
                     {
+                        Icon = SymbolRegular.Speaker224,
+                        KindLabel = "Audio",
                         PrimaryAction = action
                     };
 

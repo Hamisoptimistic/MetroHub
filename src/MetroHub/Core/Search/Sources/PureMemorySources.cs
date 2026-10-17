@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MetroHub.Core.Services;
+using Wpf.Ui.Controls;
 
 namespace MetroHub.Core.Search;
 
@@ -91,19 +92,23 @@ public sealed class TableSource : ISearchSource
         // 2. Additive Web Bangs (e.g. "g eazy", "gh metrohub", "yt lo-fi", "ddg privacy")
         if (route.IsAdditive)
         {
-            Candidate? bangCandidate = route.Kind switch
+            string? bangPrefix = route.Kind switch
             {
-                RouteKind.WebBangGoogle => CreateBangCandidate("Google", "https://www.google.com/search?q=", "https://www.google.com", query.RawText.Trim(), route.Remainder),
-                RouteKind.WebBangGitHub => CreateBangCandidate("GitHub", "https://github.com/search?q=", "https://github.com", query.RawText.Trim(), route.Remainder),
-                RouteKind.WebBangYouTube => CreateBangCandidate("YouTube", "https://www.youtube.com/results?search_query=", "https://www.youtube.com", query.RawText.Trim(), route.Remainder),
-                RouteKind.WebBangDuckDuckGo => CreateBangCandidate("DuckDuckGo", "https://duckduckgo.com/?q=", "https://duckduckgo.com", query.RawText.Trim(), route.Remainder),
+                RouteKind.WebBangGoogle => "g",
+                RouteKind.WebBangGitHub => "gh",
+                RouteKind.WebBangYouTube => "yt",
+                RouteKind.WebBangDuckDuckGo => "ddg",
                 _ => null
             };
 
-            if (bangCandidate != null)
+            if (bangPrefix != null)
             {
-                results.Add(bangCandidate);
-                return Task.FromResult<IReadOnlyList<Candidate>>(results);
+                var bangItem = PureMemoryData.WebBangs.FirstOrDefault(b => b.Prefix == bangPrefix);
+                if (bangItem != null)
+                {
+                    results.Add(CreateBangCandidate(bangItem, query.RawText.Trim(), route.Remainder));
+                    return Task.FromResult<IReadOnlyList<Candidate>>(results);
+                }
             }
         }
 
@@ -178,9 +183,11 @@ public sealed class TableSource : ISearchSource
             Id: "setting:" + item.Uri,
             DisplayName: item.Title,
             FullPathOrKey: item.Uri,
-            Category: SearchCategory.Apps,
+            Category: SearchCategory.Actions,
             SourceId: SourceId)
         {
+            Icon = item.Icon,
+            KindLabel = "Windows Setting",
             PrimaryAction = new CandidateAction(
                 Id: "open_setting",
                 Title: "Open Windows Setting",
@@ -199,9 +206,11 @@ public sealed class TableSource : ISearchSource
             Id: cmd.Id,
             DisplayName: cmd.Title,
             FullPathOrKey: cmd.Description,
-            Category: SearchCategory.Apps,
+            Category: SearchCategory.Actions,
             SourceId: SourceId)
         {
+            Icon = cmd.Icon,
+            KindLabel = "System",
             PrimaryAction = new CandidateAction(
                 Id: cmd.Id,
                 Title: cmd.Title,
@@ -210,27 +219,30 @@ public sealed class TableSource : ISearchSource
         };
     }
 
-    private Candidate CreateBangCandidate(string engine, string searchUrlPrefix, string homeUrl, string rawText, string queryText)
+    private Candidate CreateBangCandidate(WebBangItem bang, string rawText, string queryText)
     {
         string trimmedQuery = queryText.Trim();
+        string homeUrl = bang.HomeUrl ?? bang.UrlTemplate;
         string targetUrl = string.IsNullOrEmpty(trimmedQuery)
             ? homeUrl
-            : searchUrlPrefix + Uri.EscapeDataString(trimmedQuery);
+            : bang.UrlTemplate + Uri.EscapeDataString(trimmedQuery);
 
         string displayName = string.IsNullOrEmpty(trimmedQuery)
-            ? $"Search {engine}"
-            : $"{rawText} — Search {engine}";
+            ? $"Search {bang.Name}"
+            : $"{rawText} — Search {bang.Name}";
 
         return new Candidate(
-            Id: $"bang:{engine.ToLowerInvariant()}:{trimmedQuery}",
+            Id: $"bang:{bang.Name.ToLowerInvariant()}:{trimmedQuery}",
             DisplayName: displayName,
             FullPathOrKey: targetUrl,
-            Category: SearchCategory.Other,
+            Category: SearchCategory.Actions,
             SourceId: SourceId)
         {
+            Icon = bang.Icon,
+            KindLabel = "Web Search",
             PrimaryAction = new CandidateAction(
-                Id: $"search_{engine.ToLowerInvariant()}",
-                Title: $"Search {engine}",
+                Id: $"search_{bang.Name.ToLowerInvariant()}",
+                Title: $"Search {bang.Name}",
                 KeyGestureHint: "Enter",
                 ExecuteAsync: _ =>
                 {
@@ -287,9 +299,11 @@ public sealed class CalculatorSource : ISearchSource
             Id: "calc:" + formatted,
             DisplayName: $"= {formatted}",
             FullPathOrKey: $"{query.RawText.Trim()} = {formatted}",
-            Category: SearchCategory.Other,
+            Category: SearchCategory.Actions,
             SourceId: SourceId)
         {
+            Icon = SymbolRegular.Calculator24,
+            KindLabel = "Calculator",
             PrimaryAction = action
         };
 
@@ -758,9 +772,11 @@ public sealed class TextTransformSource : ISearchSource
             Id: $"trans:{label.ToLowerInvariant()}:{transformed}",
             DisplayName: $"{label}: {transformed}",
             FullPathOrKey: transformed,
-            Category: SearchCategory.Other,
+            Category: SearchCategory.Actions,
             SourceId: SourceId)
         {
+            Icon = SymbolRegular.TextField24,
+            KindLabel = "Transform",
             PrimaryAction = new CandidateAction(
                 Id: "copy_transformed",
                 Title: $"Copy {label}",

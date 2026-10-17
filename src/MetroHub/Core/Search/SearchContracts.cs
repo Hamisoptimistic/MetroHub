@@ -2,8 +2,32 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Wpf.Ui.Controls;
 
 namespace MetroHub.Core.Search;
+
+/// <summary>
+/// Representation of an explicit icon payload carried by a search candidate.
+/// </summary>
+public enum CandidateIconKind : byte
+{
+    None = 0,
+    Symbol,
+    ShellPath
+}
+
+/// <summary>
+/// Immutable descriptor for candidate icons.
+/// </summary>
+public readonly record struct CandidateIcon(
+    CandidateIconKind Kind,
+    SymbolRegular Symbol = SymbolRegular.Empty,
+    string? PathOrUri = null)
+{
+    public static CandidateIcon FromSymbol(SymbolRegular s) => new(CandidateIconKind.Symbol, s);
+    public static CandidateIcon FromShellPath(string p) => new(CandidateIconKind.ShellPath, PathOrUri: p);
+    public static implicit operator CandidateIcon(SymbolRegular s) => FromSymbol(s);
+}
 
 /// <summary>
 /// Operational mode detected from search prefix or path syntax.
@@ -28,6 +52,7 @@ public enum SearchCategory
     Images,
     Media,
     Code,
+    Actions,
     Other
 }
 
@@ -142,6 +167,8 @@ public sealed record Candidate(
 
     public CandidateAction? PrimaryAction { get; init; }
     public IReadOnlyList<CandidateAction>? SecondaryActions { get; init; }
+    public CandidateIcon Icon { get; init; }
+    public string? KindLabel { get; init; }
 }
 
 /// <summary>

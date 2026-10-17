@@ -163,6 +163,80 @@ public sealed class UniversalSearchUiTests
     }
 
     [Fact]
+    public void SearchItemRowViewModel_ActionCandidates_MapToFluentSymbolsAndSuppressFileIcon()
+    {
+        var clockCandidate = new Candidate(
+            Id: "time:tokyo",
+            DisplayName: "Tokyo, Japan: 11:42 PM",
+            FullPathOrKey: "Friday, October 16, 2026",
+            Category: SearchCategory.Actions,
+            SourceId: "world_clock")
+        {
+            Icon = Wpf.Ui.Controls.SymbolRegular.Clock24
+        };
+
+        var clockVm = new SearchItemRowViewModel(clockCandidate, "Actions");
+
+        Assert.Equal(Wpf.Ui.Controls.SymbolRegular.Clock24, clockVm.Symbol);
+        Assert.Null(clockVm.Icon);
+        Assert.Equal(Visibility.Collapsed, clockVm.CustomIconVisibility);
+        Assert.Equal(Visibility.Visible, clockVm.SymbolVisibility);
+
+        var calcCandidate = new Candidate(
+            Id: "calc:27.6",
+            DisplayName: "= 27.6",
+            FullPathOrKey: "24 * 1.15 = 27.6",
+            Category: SearchCategory.Actions,
+            SourceId: "calculator")
+        {
+            Icon = Wpf.Ui.Controls.SymbolRegular.Calculator24
+        };
+
+        var calcVm = new SearchItemRowViewModel(calcCandidate, "Actions");
+        Assert.Equal(Wpf.Ui.Controls.SymbolRegular.Calculator24, calcVm.Symbol);
+        Assert.Null(calcVm.Icon);
+
+        var termCandidate = new Candidate(
+            Id: "terminal:ping",
+            DisplayName: "> ping 1.1.1.1",
+            FullPathOrKey: "ping 1.1.1.1",
+            Category: SearchCategory.Actions,
+            SourceId: "terminal")
+        {
+            Icon = Wpf.Ui.Controls.SymbolRegular.WindowConsole20
+        };
+
+        var termVm = new SearchItemRowViewModel(termCandidate, "Actions");
+        Assert.Equal(Wpf.Ui.Controls.SymbolRegular.WindowConsole20, termVm.Symbol);
+        Assert.Null(termVm.Icon);
+    }
+
+    [Fact]
+    public void BuildSearchGroups_PlacesActionsAtTheVeryTopAboveAppsAndFiles()
+    {
+        var actionCand = new Candidate("1", "Tokyo: 11:42 PM", "Tokyo", SearchCategory.Actions, "world_clock");
+        var appCand = new Candidate("2", "Terminal", @"C:\wt.exe", SearchCategory.Apps, "installed_apps");
+        var docCand = new Candidate("3", "notes.txt", @"C:\notes.txt", SearchCategory.Documents, "everything");
+        var otherCand = new Candidate("4", "trace.etl", @"C:\trace.etl", SearchCategory.Other, "everything");
+
+        var scored = new List<ScoredResult>
+        {
+            new(docCand, 100, MatchKind.Exact),
+            new(otherCand, 90, MatchKind.Prefix),
+            new(appCand, 80, MatchKind.Prefix),
+            new(actionCand, 70, MatchKind.Contains)
+        };
+
+        var groups = SearchOrchestrator.BuildSearchGroups(scored, 10);
+
+        Assert.Equal(4, groups.Count);
+        Assert.Equal(SearchCategory.Actions, groups[0].Category);
+        Assert.Equal("Actions", groups[0].Title);
+        Assert.Equal(SearchCategory.Apps, groups[1].Category);
+        Assert.Equal("Apps", groups[1].Title);
+    }
+
+    [Fact]
     public void AllAppsDrawerControl_InstantiationInSta_Succeeds()
     {
         WpfTestHost.RunSta(() =>

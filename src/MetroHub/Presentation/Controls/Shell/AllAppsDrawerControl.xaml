@@ -237,6 +237,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="22" SharedSizeGroup="AppIconColumn" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
                             <!-- Left Icon or Category Symbol -->
@@ -275,6 +276,17 @@
                                            Margin="0,2,0,0"
                                            Visibility="{Binding SubtitleVisibility}" />
                             </StackPanel>
+
+                            <!-- Kind Badge: small right-aligned muted label -->
+                            <TextBlock Grid.Column="2"
+                                       Text="{Binding KindBadge}"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Opacity="0.55"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Right"
+                                       Margin="8,0,4,0"
+                                       Visibility="{Binding KindBadgeVisibility}" />
                         </Grid>
                     </Grid>
                 </Border>

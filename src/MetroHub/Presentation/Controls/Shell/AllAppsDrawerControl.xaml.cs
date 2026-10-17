@@ -16,6 +16,7 @@ using MetroHub.Core.Search;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Themes;
 using MetroHub.Presentation.Messaging;
+using MetroHub.Presentation.Search;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MetroHub.Presentation.Controls
@@ -116,6 +117,8 @@ namespace MetroHub.Presentation.Controls
         public Visibility SymbolVisibility => Icon is null ? Visibility.Visible : Visibility.Collapsed;
         public string CategoryHeader { get; set; } = string.Empty;
         public Visibility CategoryHeaderVisibility => !string.IsNullOrEmpty(CategoryHeader) ? Visibility.Visible : Visibility.Collapsed;
+        public string KindBadge { get; }
+        public Visibility KindBadgeVisibility => !string.IsNullOrEmpty(KindBadge) ? Visibility.Visible : Visibility.Collapsed;
 
         public bool IsApp => Candidate.Category == SearchCategory.Apps;
         public CatalogItemModel? AppModel => Candidate.Tag as CatalogItemModel;
@@ -124,16 +127,8 @@ namespace MetroHub.Presentation.Controls
         {
             Candidate = candidate;
             CategoryHeader = categoryHeader;
-            Symbol = candidate.Category switch
-            {
-                SearchCategory.Apps => Wpf.Ui.Controls.SymbolRegular.Apps24,
-                SearchCategory.Folders => Wpf.Ui.Controls.SymbolRegular.Folder24,
-                SearchCategory.Documents => Wpf.Ui.Controls.SymbolRegular.Document24,
-                SearchCategory.Images => Wpf.Ui.Controls.SymbolRegular.Image24,
-                SearchCategory.Media => Wpf.Ui.Controls.SymbolRegular.MusicNote224,
-                SearchCategory.Code => Wpf.Ui.Controls.SymbolRegular.Code24,
-                _ => candidate.IsFolder ? Wpf.Ui.Controls.SymbolRegular.Folder24 : Wpf.Ui.Controls.SymbolRegular.Document24
-            };
+            Symbol = SearchIconResolver.ResolveSymbol(candidate);
+            KindBadge = SearchIconResolver.ResolveKindBadge(candidate);
 
             if (candidate.Tag is CatalogItemModel appModel)
             {
@@ -141,7 +136,7 @@ namespace MetroHub.Presentation.Controls
                 // Kick off background extraction immediately if not already cached
                 _ = appModel.Icon;
             }
-            else
+            else if (candidate.Category != SearchCategory.Actions)
             {
                 // Resolve Shell file/extension icon (synchronous for extensions/folders, async update for executables)
                 _fileIcon = IconExtractorService.GetFileOrExtensionIcon(

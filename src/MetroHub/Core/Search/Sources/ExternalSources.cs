@@ -10,6 +10,7 @@ using System.Windows;
 using MetroHub.Core.Common;
 using MetroHub.Core.Search.Native;
 using MetroHub.Core.Services;
+using Wpf.Ui.Controls;
 
 namespace MetroHub.Core.Search;
 
@@ -121,13 +122,15 @@ public sealed class WorldClockSource : ISearchSource
                     Id: $"epoch:{ts}",
                     DisplayName: utcStr,
                     FullPathOrKey: $"Local: {localStr} • Timestamp: {ts}",
-                    Category: SearchCategory.Other,
+                    Category: SearchCategory.Actions,
                     SourceId: SourceId,
                     Modified: null,
                     Size: null,
                     IsFolder: false,
                     Tag: utcStr)
                 {
+                    Icon = SymbolRegular.Clock24,
+                    KindLabel = "World Clock",
                     PrimaryAction = new CandidateAction(
                         "copy_epoch",
                         "Copy UTC timestamp",
@@ -182,13 +185,15 @@ public sealed class WorldClockSource : ISearchSource
                 Id: "time:local",
                 DisplayName: $"Local Time: {localDisplay}",
                 FullPathOrKey: $"{localFull} • {TimeZoneInfo.Local.DisplayName}",
-                Category: SearchCategory.Other,
+                Category: SearchCategory.Actions,
                 SourceId: SourceId,
                 Modified: null,
                 Size: null,
                 IsFolder: false,
                 Tag: localDisplay)
             {
+                Icon = SymbolRegular.Clock24,
+                KindLabel = "World Clock",
                 PrimaryAction = new CandidateAction(
                     "copy_time_local",
                     "Copy local time",
@@ -205,13 +210,15 @@ public sealed class WorldClockSource : ISearchSource
                 Id: "time:utc",
                 DisplayName: $"UTC: {utcDisplay}",
                 FullPathOrKey: nowUtc.ToString("dddd, MMMM d, yyyy 'UTC'", CultureInfo.InvariantCulture),
-                Category: SearchCategory.Other,
+                Category: SearchCategory.Actions,
                 SourceId: SourceId,
                 Modified: null,
                 Size: null,
                 IsFolder: false,
                 Tag: utcDisplay)
             {
+                Icon = SymbolRegular.Clock24,
+                KindLabel = "World Clock",
                 PrimaryAction = new CandidateAction(
                     "copy_time_utc",
                     "Copy UTC time",
@@ -243,13 +250,15 @@ public sealed class WorldClockSource : ISearchSource
                 Id: $"time:{resolved.Zone.Id}",
                 DisplayName: fullDisplay,
                 FullPathOrKey: subtitle,
-                Category: SearchCategory.Other,
+                Category: SearchCategory.Actions,
                 SourceId: SourceId,
                 Modified: null,
                 Size: null,
                 IsFolder: false,
                 Tag: timeStr)
             {
+                Icon = SymbolRegular.Clock24,
+                KindLabel = "World Clock",
                 PrimaryAction = new CandidateAction(
                     "copy_time",
                     "Copy time",
@@ -369,13 +378,15 @@ public sealed class UnitConverterSource : ISearchSource
             Id: $"convert:{from}:{to}:{val}",
             DisplayName: display,
             FullPathOrKey: subtitle,
-            Category: SearchCategory.Other,
+            Category: SearchCategory.Actions,
             SourceId: SourceId,
             Modified: null,
             Size: null,
             IsFolder: false,
             Tag: resText)
         {
+            Icon = SymbolRegular.ArrowSwap24,
+            KindLabel = "Converter",
             PrimaryAction = new CandidateAction(
                 "copy_unit_result",
                 "Copy conversion result",
@@ -724,13 +735,15 @@ public sealed class ClipboardSource : ISearchSource, IDisposable
                 Id: $"clipboard:{item.Timestamp.ToUnixTimeMilliseconds()}:{item.Text.GetHashCode()}",
                 DisplayName: preview,
                 FullPathOrKey: subtitle,
-                Category: SearchCategory.Other,
+                Category: SearchCategory.Actions,
                 SourceId: SourceId,
                 Modified: item.Timestamp,
                 Size: item.Text.Length,
                 IsFolder: false,
                 Tag: item.Text)
             {
+                Icon = SymbolRegular.ClipboardPaste24,
+                KindLabel = "Clipboard",
                 PrimaryAction = new CandidateAction(
                     "paste_clipboard",
                     "Copy to clipboard",

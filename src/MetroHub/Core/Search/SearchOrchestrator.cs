@@ -421,6 +421,7 @@ public sealed class SearchOrchestrator : IDisposable
             var topItems = items.Take(maxPerGroup).ToList();
             string title = cat switch
             {
+                SearchCategory.Actions => "Actions",
                 SearchCategory.Apps => "Apps",
                 SearchCategory.Folders => "Folders",
                 SearchCategory.Documents => "Documents",
@@ -433,9 +434,12 @@ public sealed class SearchOrchestrator : IDisposable
             groups.Add(new SearchGroup(cat, title, topItems, items.Count, topScore));
         }
 
-        // Apps always comes first if present. Other categories ordered by TopScore descending.
+        // Actions always comes first, then Apps. Other categories ordered by TopScore descending.
         groups.Sort((a, b) =>
         {
+            if (a.Category == SearchCategory.Actions && b.Category != SearchCategory.Actions) return -1;
+            if (b.Category == SearchCategory.Actions && a.Category != SearchCategory.Actions) return 1;
+
             if (a.Category == SearchCategory.Apps && b.Category != SearchCategory.Apps) return -1;
             if (b.Category == SearchCategory.Apps && a.Category != SearchCategory.Apps) return 1;
 
