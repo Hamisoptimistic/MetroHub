@@ -671,6 +671,7 @@ namespace MetroHub.Presentation.Controls
                 }
 
                 string? selectedId = (SearchResultsListBox.SelectedItem as SearchItemRowViewModel)?.Candidate.Id;
+                int currentSelectedIndex = SearchResultsListBox.SelectedIndex;
 
                 SearchResultsListBox.ItemsSource = flatRows;
                 bool showNoResults = flatRows.Count == 0 && snapshot.IsFinal;
@@ -691,7 +692,18 @@ namespace MetroHub.Presentation.Controls
                         newIndex = flatRows.FindIndex(r => r.Candidate.Id == selectedId);
                     }
 
-                    SearchResultsListBox.SelectedIndex = newIndex >= 0 ? newIndex : 0;
+                    if (newIndex >= 0)
+                    {
+                        SearchResultsListBox.SelectedIndex = newIndex;
+                    }
+                    else if (currentSelectedIndex >= 0 && currentSelectedIndex < flatRows.Count)
+                    {
+                        SearchResultsListBox.SelectedIndex = currentSelectedIndex;
+                    }
+                    else
+                    {
+                        SearchResultsListBox.SelectedIndex = 0;
+                    }
                 }
             });
         }
@@ -785,7 +797,7 @@ namespace MetroHub.Presentation.Controls
                 case ActionOutcome.StayOpenAndRefresh:
                     if (SearchBox != null)
                     {
-                        _searchOrchestrator?.SetQuery(SearchBox.Text.Trim());
+                        _searchOrchestrator?.UpdateQuery(SearchBox.Text.Trim());
                     }
                     break;
 

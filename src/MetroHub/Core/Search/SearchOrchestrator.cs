@@ -85,6 +85,7 @@ public sealed class SearchOrchestrator : IDisposable
     private Timer? _debounceTimer;
     private CancellationTokenSource? _activeCts;
     private long _currentSessionId = 0;
+    private int _tier2InFlight = 0;
     private bool _isDisposed = false;
 
     public event Action<SearchSnapshot>? SnapshotUpdated;
@@ -116,9 +117,11 @@ public sealed class SearchOrchestrator : IDisposable
     {
         if (_isDisposed) return;
 
+        long sessionId = Interlocked.Increment(ref _currentSessionId);
+        Action<SearchSnapshot>? clearHandler = null;
+
         lock (_sessionLock)
         {
-            // Cancel any in-flight background query
             CancelActiveSession();
 
             if (string.IsNullOrWhiteSpace(text))
@@ -127,29 +130,49 @@ public sealed class SearchOrchestrator : IDisposable
                 _debounceTimer = null;
 
                 CurrentSnapshot = SearchSnapshot.Empty;
-                SnapshotUpdated?.Invoke(CurrentSnapshot);
-                return;
+                clearHandler = SnapshotUpdated;
             }
-
-            string capturedText = text;
-            _debounceTimer?.Dispose();
-            _debounceTimer = new Timer(_ =>
+            else
             {
-                TriggerSearchSession(capturedText);
-            }, null, _debounceMs, Timeout.Infinite);
+                string capturedText = text;
+                _debounceTimer?.Dispose();
+                _debounceTimer = new Timer(_ =>
+                {
+                    TriggerSearchSession(capturedText, sessionId);
+                }, null, _debounceMs, Timeout.Infinite);
+            }
         }
+
+        clearHandler?.Invoke(SearchSnapshot.Empty);
     }
 
-    private void TriggerSearchSession(string text)
+    /// <summary>
+    /// Forces an immediate refresh of the query without waiting for debounce.
+    /// </summary>
+    public void UpdateQuery(string? text)
     {
         if (_isDisposed) return;
 
-        long sessionId;
+        long sessionId = Interlocked.Increment(ref _currentSessionId);
+        lock (_sessionLock)
+        {
+            CancelActiveSession();
+            _debounceTimer?.Dispose();
+            _debounceTimer = null;
+        }
+
+        TriggerSearchSession(text ?? string.Empty, sessionId);
+    }
+
+    private void TriggerSearchSession(string text, long sessionId)
+    {
+        if (_isDisposed) return;
+        if (sessionId != Interlocked.Read(ref _currentSessionId)) return;
+
         CancellationToken ct;
 
         lock (_sessionLock)
         {
-            sessionId = Interlocked.Increment(ref _currentSessionId);
             _activeCts?.Dispose();
             _activeCts = new CancellationTokenSource();
             ct = _activeCts.Token;
@@ -211,27 +234,40 @@ public sealed class SearchOrchestrator : IDisposable
                 PublishIfCurrent(intermediateSnapshot, sessionId, ct);
             }
 
-            // 2. Tier 2: Everything File Search
-            for (int i = 0; i < _tier2Sources.Count; i++)
+            // 2. Tier 2: Everything File Search (Single-flight guarded)
+            if (_tier2Sources.Count > 0)
             {
-                if (ct.IsCancellationRequested) return;
-                var source = _tier2Sources[i];
-                sourceStates[source.SourceId] = source.State;
-
-                try
+                if (Interlocked.CompareExchange(ref _tier2InFlight, 1, 0) == 0)
                 {
-                    var batch = await source.SearchAsync(query, ct).ConfigureAwait(false);
-                    if (batch != null && batch.Count > 0)
+                    try
                     {
-                        candidates.AddRange(batch);
+                        for (int i = 0; i < _tier2Sources.Count; i++)
+                        {
+                            if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
+                            var source = _tier2Sources[i];
+                            sourceStates[source.SourceId] = source.State;
+
+                            try
+                            {
+                                var batch = await source.SearchAsync(query, ct).ConfigureAwait(false);
+                                if (batch != null && batch.Count > 0)
+                                {
+                                    candidates.AddRange(batch);
+                                }
+                            }
+                            catch (OperationCanceledException) { return; }
+                            catch (Exception ex)
+                            {
+                                sourceStates[source.SourceId] = new SourceState(SourceStateKind.Degraded, ex.Message);
+                            }
+                            sourceStates[source.SourceId] = source.State;
+                        }
+                    }
+                    finally
+                    {
+                        Interlocked.Exchange(ref _tier2InFlight, 0);
                     }
                 }
-                catch (OperationCanceledException) { return; }
-                catch (Exception ex)
-                {
-                    sourceStates[source.SourceId] = new SourceState(SourceStateKind.Degraded, ex.Message);
-                }
-                sourceStates[source.SourceId] = source.State;
             }
 
             if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
@@ -282,14 +318,16 @@ public sealed class SearchOrchestrator : IDisposable
 
     private void PublishIfCurrent(SearchSnapshot snapshot, long sessionId, CancellationToken ct)
     {
+        Action<SearchSnapshot>? handler = null;
         lock (_sessionLock)
         {
             if (sessionId == Interlocked.Read(ref _currentSessionId) && !ct.IsCancellationRequested)
             {
                 CurrentSnapshot = snapshot;
-                SnapshotUpdated?.Invoke(snapshot);
+                handler = SnapshotUpdated;
             }
         }
+        handler?.Invoke(snapshot);
     }
 
     internal static IReadOnlyList<SearchGroup> BuildSearchGroups(List<ScoredResult> results, int maxPerGroup)

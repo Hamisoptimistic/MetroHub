@@ -174,6 +174,7 @@ public sealed record SearchSnapshot(
     IReadOnlyDictionary<string, SourceState> SourceStates)
 {
     public bool IsEmpty => Groups == null || Groups.Count == 0;
+    public bool IsIntermediate => !IsFinal;
 
     public static readonly SearchSnapshot Empty = new(
         0,
