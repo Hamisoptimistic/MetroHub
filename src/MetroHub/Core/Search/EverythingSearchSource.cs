@@ -108,13 +108,13 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
         }
 
         // Blueprint 6.3: Do not run a file query for fewer than 2 characters unless prefix set
-        if (query.IsEmpty || (query.NormalizedText.Length < 2 && query.Mode == SearchMode.All && !query.RawText.StartsWith('>')))
+        if (query.IsEmpty || (query.NormalizedText.Length < 2 && query.Mode == SearchMode.All && !query.RawText.StartsWith("raw:", StringComparison.OrdinalIgnoreCase)))
         {
             return Array.Empty<Candidate>();
         }
 
-        // Apps-only mode skips Everything file searches
-        if (query.Mode == SearchMode.Apps)
+        // Terminal commands and apps-only mode skip Everything file searches
+        if (query.Mode == SearchMode.Apps || query.RawText.StartsWith('>'))
         {
             return Array.Empty<Candidate>();
         }
@@ -324,11 +324,7 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
     {
         string raw = query.RawText.Trim();
 
-        // 1. Power mode
-        if (raw.StartsWith('>'))
-        {
-            return raw[1..].Trim();
-        }
+        // 1. Raw power mode
         if (raw.StartsWith("raw:", StringComparison.OrdinalIgnoreCase))
         {
             return raw[4..].Trim();

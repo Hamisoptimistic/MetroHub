@@ -79,6 +79,7 @@ public sealed class SearchOrchestrator : IDisposable
 {
     private readonly List<ISearchSource> _tier1Sources = new();
     private readonly List<ISearchSource> _tier2Sources = new();
+    private readonly QueryRouter _router;
     private readonly object _sessionLock = new();
     private readonly int _debounceMs;
 
@@ -92,19 +93,23 @@ public sealed class SearchOrchestrator : IDisposable
 
     public SearchSnapshot CurrentSnapshot { get; private set; } = SearchSnapshot.Empty;
     public long CurrentSessionId => Interlocked.Read(ref _currentSessionId);
+    public QueryRouter Router => _router;
 
-    public SearchOrchestrator(int debounceMs = 150)
+    public SearchOrchestrator(int debounceMs = 150, QueryRouter? router = null)
     {
         _debounceMs = debounceMs;
-        // Default Tier 1: Installed Apps
+        _router = router ?? new QueryRouter();
+        // Default Tier 1: Installed Apps & Terminal
         _tier1Sources.Add(new AppSearchSource());
+        _tier1Sources.Add(new TerminalSource(_router));
         // Default Tier 2: Everything file search
         _tier2Sources.Add(new EverythingSearchSource());
     }
 
-    public SearchOrchestrator(IEnumerable<ISearchSource> tier1Sources, IEnumerable<ISearchSource>? tier2Sources = null, int debounceMs = 150)
+    public SearchOrchestrator(IEnumerable<ISearchSource> tier1Sources, IEnumerable<ISearchSource>? tier2Sources = null, int debounceMs = 150, QueryRouter? router = null)
     {
         _debounceMs = debounceMs;
+        _router = router ?? new QueryRouter();
         if (tier1Sources != null) _tier1Sources.AddRange(tier1Sources);
         if (tier2Sources != null) _tier2Sources.AddRange(tier2Sources);
     }
@@ -191,6 +196,51 @@ public sealed class SearchOrchestrator : IDisposable
 
             var query = SearchRanker.ParseQuery(rawText, sessionId);
             if (query.IsEmpty) return;
+
+            var route = _router.Route(rawText);
+            if (route.IsHardRoute)
+            {
+                var hardCandidates = new List<Candidate>();
+                var hardSourceStates = new Dictionary<string, SourceState>(StringComparer.OrdinalIgnoreCase);
+
+                for (int i = 0; i < _tier1Sources.Count; i++)
+                {
+                    if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
+                    var source = _tier1Sources[i];
+                    if (route.Kind == RouteKind.Terminal && source is not TerminalSource) continue;
+
+                    hardSourceStates[source.SourceId] = source.State;
+                    try
+                    {
+                        var batch = await source.SearchAsync(query, ct).ConfigureAwait(false);
+                        if (batch != null && batch.Count > 0)
+                        {
+                            hardCandidates.AddRange(batch);
+                        }
+                    }
+                    catch (OperationCanceledException) { return; }
+                    catch (Exception ex)
+                    {
+                        hardSourceStates[source.SourceId] = new SourceState(SourceStateKind.Degraded, ex.Message);
+                    }
+                }
+
+                if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
+
+                sw.Stop();
+                var hardScored = ScoreAndSort(hardCandidates, query, ct);
+                var hardGroups = BuildSearchGroups(hardScored, query.MaxPerCategory);
+
+                var hardSnapshot = new SearchSnapshot(
+                    SessionId: sessionId,
+                    Groups: hardGroups,
+                    IsFinal: true,
+                    ElapsedMs: sw.ElapsedMilliseconds,
+                    SourceStates: hardSourceStates);
+
+                PublishIfCurrent(hardSnapshot, sessionId, ct);
+                return;
+            }
 
             // 1. Tier 1: Fast In-Memory Sources (Apps)
             var candidates = new List<Candidate>();

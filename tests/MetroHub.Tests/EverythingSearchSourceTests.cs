@@ -81,7 +81,7 @@ public sealed class EverythingSearchSourceTests
     [Fact]
     public void BuildSearchText_PowerMode_PreservesRawText()
     {
-        var query = SearchRanker.ParseQuery(">ext:png size:>2mb", 1);
+        var query = SearchRanker.ParseQuery("raw:ext:png size:>2mb", 1);
         string text = EverythingSearchSource.BuildSearchText(query);
 
         Assert.Equal("ext:png size:>2mb", text);
