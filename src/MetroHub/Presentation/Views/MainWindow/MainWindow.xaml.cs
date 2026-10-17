@@ -549,14 +549,17 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
         if (IsVisible && !_isDismissing)
         {
-            DismissOpenDialogs();
-            HideScreen(restorePreviousFocus: false);
+            if (Settings.DismissOnDeactivate)
+            {
+                DismissOpenDialogs();
+                HideScreen(restorePreviousFocus: false);
+            }
         }
     }
 
     private void LoadData()
     {
-        Settings = StorageService.LoadSettings();
+        Settings = SettingsService.Instance.Current;
         SystemAccentColorService.SetStyleMode(Settings.AccentStyle);
         Application.Current.Resources["TileCornerRadius"] = new CornerRadius(Settings.TileCornerRadius);
         Application.Current.Resources["ControlCornerRadius"] = new CornerRadius(Settings.TileCornerRadius <= 2 ? Settings.TileCornerRadius : (Settings.TileCornerRadius == 4 ? 4 : 6));
@@ -680,8 +683,11 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             {
                 if (IsVisible && !_isDismissing)
                 {
-                    DismissOpenDialogs();
-                    HideScreen(restorePreviousFocus: false);
+                    if (Settings.DismissOnDeactivate)
+                    {
+                        DismissOpenDialogs();
+                        HideScreen(restorePreviousFocus: false);
+                    }
                 }
             });
         }

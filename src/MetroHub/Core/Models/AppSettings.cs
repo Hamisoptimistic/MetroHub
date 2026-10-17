@@ -14,7 +14,9 @@ public sealed class AppSettings
     public bool WallpaperParallax { get; set; } = true;
     
     public bool LaunchAtStartup { get; set; }
+    public bool StartMinimized { get; set; }
     public bool CloseOnLaunch { get; set; } = true;
+    public bool DismissOnDeactivate { get; set; } = true;
     public string Orientation { get; set; } = "Vertical"; // Vertical, Horizontal
 
     public int GridBaseSize { get; set; } = 64;

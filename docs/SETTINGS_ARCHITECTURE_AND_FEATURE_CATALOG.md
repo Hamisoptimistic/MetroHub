@@ -434,11 +434,11 @@ d:\MetroHub\src\MetroHub\
 - [x] Verify clean `dotnet build` and `dotnet publish` to `C:\Users\HamB\Desktop\MetroHubApp` with 0 warnings/errors.
 
 ### Phase 3: Modular Category Pages (Option C Hybrid)
-- [ ] **Step 3.1: General Settings (`GeneralPage.xaml` & `GeneralSettingsViewModel.cs`)**
-  - `LaunchAtStartup` (`ui:CardControl` + `ui:ToggleSwitch` + Registry Run key hook)
-  - `StartMinimized` (`ui:CardControl` + `ui:ToggleSwitch`)
-  - `CloseOnLaunch` (`ui:CardControl` + `ui:ToggleSwitch`)
-  - `DismissOnDeactivate` (`ui:CardControl` + `ui:ToggleSwitch`)
+- [x] **Step 3.1: General Settings (`GeneralPage.xaml` & `GeneralSettingsViewModel.cs`)**
+  - [x] `LaunchAtStartup` (`ui:CardControl` + `ui:ToggleSwitch` + Registry Run key hook)
+  - [x] `StartMinimized` (`ui:CardControl` + `ui:ToggleSwitch`)
+  - [x] `CloseOnLaunch` (`ui:CardControl` + `ui:ToggleSwitch`)
+  - [x] `DismissOnDeactivate` (`ui:CardControl` + `ui:ToggleSwitch`)
 - [ ] **Step 3.2: Appearance & Theming (`AppearancePage.xaml` & `AppearanceSettingsViewModel.cs`)**
   - Theme mode selector (`ComboBox`)
   - Material backdrop selector (`ComboBox`: Mica, Acrylic, DesktopWallpaper)

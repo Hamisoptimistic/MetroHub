@@ -21,6 +21,8 @@ public partial class SettingsDetailLayoutViewModel : ObservableObject
 
     public ObservableCollection<SettingsCategoryItem> Categories { get; }
 
+    private readonly System.Collections.Generic.Dictionary<string, object> _pageCache = new();
+
     public SettingsDetailLayoutViewModel(
         SettingsShellViewModel shell,
         ObservableCollection<SettingsCategoryItem> categories,
@@ -29,6 +31,10 @@ public partial class SettingsDetailLayoutViewModel : ObservableObject
         _shell = shell ?? throw new ArgumentNullException(nameof(shell));
         Categories = categories ?? throw new ArgumentNullException(nameof(categories));
         SelectedCategory = initialCategory ?? (categories.Count > 0 ? categories[0] : null);
+        if (SelectedCategory != null && CurrentPageViewModel == null)
+        {
+            LoadCategoryPage(SelectedCategory);
+        }
     }
 
     partial void OnSelectedCategoryChanged(SettingsCategoryItem? value)
@@ -39,8 +45,21 @@ public partial class SettingsDetailLayoutViewModel : ObservableObject
 
     private void LoadCategoryPage(SettingsCategoryItem category)
     {
-        // Category page view models will be mapped here as each page is added.
-        CurrentPageViewModel = null;
+        if (!_pageCache.TryGetValue(category.Id, out var vm))
+        {
+            vm = category.Id switch
+            {
+                "General" => new GeneralSettingsViewModel(),
+                _ => null
+            };
+
+            if (vm != null)
+            {
+                _pageCache[category.Id] = vm;
+            }
+        }
+
+        CurrentPageViewModel = vm;
     }
 
     [RelayCommand]

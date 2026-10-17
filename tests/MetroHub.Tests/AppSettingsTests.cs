@@ -28,6 +28,10 @@ public class AppSettingsTests
         Assert.Equal(8, settings.GroupColumnWidth);
         Assert.True(settings.SidebarAutoHide);
         Assert.False(settings.SidebarPinned);
+        Assert.True(settings.CloseOnLaunch);
+        Assert.True(settings.DismissOnDeactivate);
+        Assert.False(settings.StartMinimized);
+        Assert.False(settings.LaunchAtStartup);
         Assert.NotNull(settings.SidebarShortcuts);
         Assert.NotEmpty(settings.SidebarShortcuts);
     }
@@ -46,7 +50,9 @@ public class AppSettingsTests
             WallpaperDimOpacity = 0.65,
             WallpaperParallax = false,
             LaunchAtStartup = true,
+            StartMinimized = true,
             CloseOnLaunch = false,
+            DismissOnDeactivate = false,
             Orientation = "Horizontal",
             GridBaseSize = 72,
             TileGap = 12,
@@ -70,7 +76,9 @@ public class AppSettingsTests
         Assert.Equal(original.WallpaperDimOpacity, deserialized.WallpaperDimOpacity, 2);
         Assert.Equal(original.WallpaperParallax, deserialized.WallpaperParallax);
         Assert.Equal(original.LaunchAtStartup, deserialized.LaunchAtStartup);
+        Assert.Equal(original.StartMinimized, deserialized.StartMinimized);
         Assert.Equal(original.CloseOnLaunch, deserialized.CloseOnLaunch);
+        Assert.Equal(original.DismissOnDeactivate, deserialized.DismissOnDeactivate);
         Assert.Equal(original.Orientation, deserialized.Orientation);
         Assert.Equal(original.GridBaseSize, deserialized.GridBaseSize);
         Assert.Equal(original.TileGap, deserialized.TileGap);

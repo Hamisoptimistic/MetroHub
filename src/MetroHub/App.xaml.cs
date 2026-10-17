@@ -183,7 +183,10 @@ public partial class App : Application
         try
         {
             _mainWindow = new MainWindow();
-            _mainWindow.ShowScreen();
+            if (!_mainWindow.Settings.StartMinimized)
+            {
+                _mainWindow.ShowScreen();
+            }
         }
         catch (Exception ex)
         {

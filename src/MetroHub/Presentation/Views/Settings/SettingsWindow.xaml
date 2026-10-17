@@ -32,6 +32,9 @@
         <DataTemplate DataType="{x:Type vm:SettingsDetailLayoutViewModel}">
             <pages:SettingsDetailLayout />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:GeneralSettingsViewModel}">
+            <pages:GeneralPage />
+        </DataTemplate>
     </Window.Resources>
 
     <!-- Master Fluent Acrylic Shell with sharp Metro hairline border -->
