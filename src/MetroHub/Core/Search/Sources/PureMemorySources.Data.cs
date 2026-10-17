@@ -65,9 +65,9 @@ public static class PureMemoryData
             Keywords: ["lock", "lock workstation", "lock screen"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
-            ExecuteAsync: ctx =>
+            ExecuteAsync: _ =>
             {
-                CinematicFadeService.Instance.FadeAndExecuteAsync(() => CinematicFadeService.LockWorkStation());
+                _ = CinematicFadeService.Instance.FadeAndExecuteAsync(() => CinematicFadeService.LockWorkStation());
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             }),
 
@@ -78,9 +78,9 @@ public static class PureMemoryData
             Keywords: ["sleep", "suspend", "standby"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
-            ExecuteAsync: ctx =>
+            ExecuteAsync: _ =>
             {
-                CinematicFadeService.Instance.FadeAndExecuteAsync(() => CinematicFadeService.SetSuspendState(false, true, false));
+                _ = CinematicFadeService.Instance.FadeAndExecuteAsync(() => CinematicFadeService.SetSuspendState(false, true, false));
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             }),
 
@@ -145,7 +145,7 @@ public static class PureMemoryData
             Keywords: ["empty recycle bin", "recycle bin", "trash", "empty trash"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
-            ExecuteAsync: ctx =>
+            ExecuteAsync: _ =>
             {
                 try
                 {
@@ -165,4 +165,3 @@ public static class PureMemoryData
             })
     ];
 }
-
