@@ -99,10 +99,12 @@ public sealed class SearchOrchestrator : IDisposable
     {
         _debounceMs = debounceMs;
         _router = router ?? new QueryRouter();
-        // Default Tier 1: Installed Apps, Terminal & Table Source
+        // Default Tier 1: Installed Apps, Terminal, Table, Calculator & TextTransform
         _tier1Sources.Add(new AppSearchSource());
         _tier1Sources.Add(new TerminalSource(_router));
         _tier1Sources.Add(new TableSource(_router));
+        _tier1Sources.Add(new CalculatorSource());
+        _tier1Sources.Add(new TextTransformSource(_router));
         // Default Tier 2: Everything file search
         _tier2Sources.Add(new EverythingSearchSource());
     }
@@ -365,7 +367,7 @@ public sealed class SearchOrchestrator : IDisposable
             {
                 scoredResults.Add(scored);
             }
-            else if (isHardRoute)
+            else if (isHardRoute || c.SourceId is "calculator" or "text_transform")
             {
                 scoredResults.Add(new ScoredResult(c, 100, MatchKind.Exact));
             }

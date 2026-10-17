@@ -65,9 +65,9 @@ public static class PureMemoryData
             Keywords: ["lock", "lock workstation", "lock screen"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
-            ExecuteAsync: _ =>
+            ExecuteAsync: ctx =>
             {
-                _ = CinematicFadeService.Instance.FadeAndExecuteAsync(() => CinematicFadeService.LockWorkStation());
+                CinematicFadeService.Instance.FadeAndExecuteAsync(() => CinematicFadeService.LockWorkStation());
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             }),
 
@@ -78,9 +78,9 @@ public static class PureMemoryData
             Keywords: ["sleep", "suspend", "standby"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
-            ExecuteAsync: _ =>
+            ExecuteAsync: ctx =>
             {
-                _ = CinematicFadeService.Instance.FadeAndExecuteAsync(() => CinematicFadeService.SetSuspendState(false, true, false));
+                CinematicFadeService.Instance.FadeAndExecuteAsync(() => CinematicFadeService.SetSuspendState(false, true, false));
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             }),
 

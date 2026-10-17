@@ -23,7 +23,7 @@ public sealed class TableSourceTests
         var results = await _source.SearchAsync(query, CancellationToken.None);
 
         Assert.NotEmpty(results);
-        var item = Assert.Single(results.Where(r => r.DisplayName.Contains("Bluetooth", System.StringComparison.OrdinalIgnoreCase)));
+        var item = Assert.Single(results, r => r.DisplayName.Contains("Bluetooth", System.StringComparison.OrdinalIgnoreCase));
         Assert.Equal("ms-settings:bluetooth", item.FullPathOrKey);
         Assert.NotNull(item.PrimaryAction);
     }
@@ -46,7 +46,7 @@ public sealed class TableSourceTests
         var query = SearchRanker.ParseQuery("lock", 1);
         var results = await _source.SearchAsync(query, CancellationToken.None);
 
-        var lockItem = Assert.Single(results.Where(r => r.Id == "sys:lock"));
+        var lockItem = Assert.Single(results, r => r.Id == "sys:lock");
         Assert.Equal("Lock workstation", lockItem.DisplayName);
         Assert.NotNull(lockItem.PrimaryAction);
     }
@@ -57,7 +57,7 @@ public sealed class TableSourceTests
         var query = SearchRanker.ParseQuery("restart", 1);
         var results = await _source.SearchAsync(query, CancellationToken.None);
 
-        var restartItem = Assert.Single(results.Where(r => r.Id == "sys:restart"));
+        var restartItem = Assert.Single(results, r => r.Id == "sys:restart");
         Assert.NotNull(restartItem.PrimaryAction);
 
         // First Enter -> Needs confirmation
@@ -78,7 +78,7 @@ public sealed class TableSourceTests
         var query = SearchRanker.ParseQuery("shutdown", 1);
         var results = await _source.SearchAsync(query, CancellationToken.None);
 
-        var shutdownItem = Assert.Single(results.Where(r => r.Id == "sys:shutdown"));
+        var shutdownItem = Assert.Single(results, r => r.Id == "sys:shutdown");
         Assert.NotNull(shutdownItem.PrimaryAction);
 
         var unconfirmedCtx = new ActionContext(CancellationToken.None) { Confirmed = false };
@@ -93,7 +93,7 @@ public sealed class TableSourceTests
         var query = SearchRanker.ParseQuery("recycle bin", 1);
         var results = await _source.SearchAsync(query, CancellationToken.None);
 
-        var recycleItem = Assert.Single(results.Where(r => r.Id == "sys:recycle"));
+        var recycleItem = Assert.Single(results, r => r.Id == "sys:recycle");
         Assert.Equal("Empty Recycle Bin", recycleItem.DisplayName);
         Assert.NotNull(recycleItem.PrimaryAction);
     }
