@@ -43,6 +43,16 @@ public sealed record WebBangItem(
     string? HomeUrl = null);
 
 /// <summary>
+/// Definition of an interactive search capability hint or shortcut.
+/// </summary>
+public sealed record SearchTipItem(
+    string Prefix,
+    string Title,
+    string Description,
+    SymbolRegular Icon,
+    string[] Keywords);
+
+/// <summary>
 /// Static lookup tables for Windows settings, system commands, and web bang configurations.
 /// </summary>
 public static class PureMemoryData
@@ -76,6 +86,24 @@ public static class PureMemoryData
         new("yt", "YouTube", "https://www.youtube.com/results?search_query=", SymbolRegular.Play24, "https://www.youtube.com"),
         new("gh", "GitHub", "https://github.com/search?q=", SymbolRegular.Code24, "https://github.com"),
         new("ddg", "DuckDuckGo", "https://duckduckgo.com/?q=", SymbolRegular.GlobeSearch24, "https://duckduckgo.com")
+    ];
+
+    public static readonly SearchTipItem[] SearchTips =
+    [
+        new("> ", "> <command>", "Run command in terminal (e.g. '> ping 1.1.1.1')", SymbolRegular.WindowConsole20, ["terminal", "cmd", "powershell", "shell", "run", "command"]),
+        new("set: ", "set: <setting>", "Search Windows settings (e.g. 'set: bluetooth')", SymbolRegular.Settings24, ["settings", "windows settings", "preferences", "config", "control"]),
+        new("kill ", "kill <process>", "Terminate running process by name (e.g. 'kill notepad')", SymbolRegular.DismissCircle24, ["kill", "terminate", "close", "taskkill", "stop", "end process"]),
+        new("win ", "win <window>", "Switch to active window (e.g. 'win chrome')", SymbolRegular.Window24, ["window", "switch", "open windows", "active"]),
+        new("time ", "time <city>", "Show world clock for city (e.g. 'time tokyo')", SymbolRegular.Clock24, ["time", "clock", "world clock", "city", "timezone"]),
+        new("vol ", "vol <level>", "Set audio volume or mute (e.g. 'vol 50', 'vol mute')", SymbolRegular.Speaker224, ["volume", "sound", "audio", "speaker", "mute", "vol"]),
+        new("cb ", "cb <query>", "Search clipboard history (e.g. 'cb code')", SymbolRegular.ClipboardPaste24, ["clipboard", "copy", "paste", "history", "clip", "cb"]),
+        new("case ", "case <text>", "Convert text casing (e.g. 'case hello world')", SymbolRegular.TextCaseTitle24, ["case", "text", "uppercase", "lowercase", "camelcase", "slug"]),
+        new("calc ", "calc <math>", "Evaluate math expressions (e.g. '15 * 4.5 + 20')", SymbolRegular.Calculator24, ["calc", "math", "calculator", "formula", "eval"]),
+        new("conv ", "conv <units>", "Convert units / currencies (e.g. '50 kg to lbs', '100 eur to usd')", SymbolRegular.ArrowSwap24, ["convert", "units", "currency", "converter", "measurement"]),
+        new("g ", "g <query>", "Search with Google (e.g. 'g fluent ui')", SymbolRegular.Search24, ["google", "web search", "browse", "internet", "g"]),
+        new("yt ", "yt <query>", "Search YouTube (e.g. 'yt lofi hip hop')", SymbolRegular.Play24, ["youtube", "video", "music", "stream", "yt"]),
+        new("gh ", "gh <query>", "Search GitHub repositories (e.g. 'gh metrohub')", SymbolRegular.Code24, ["github", "git", "repo", "repository", "code", "gh"]),
+        new("ddg ", "ddg <query>", "Search DuckDuckGo (e.g. 'ddg privacy')", SymbolRegular.GlobeSearch24, ["duckduckgo", "ddg", "private search"]),
     ];
 
     public static readonly SystemCommandItem[] SystemCommands =

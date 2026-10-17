@@ -118,7 +118,8 @@ public enum ActionOutcome
     DismissDrawer,
     StayOpenAndRefresh,
     ShowMessage,
-    RequireConfirmation
+    RequireConfirmation,
+    PopulateSearchBox
 }
 
 /// <summary>

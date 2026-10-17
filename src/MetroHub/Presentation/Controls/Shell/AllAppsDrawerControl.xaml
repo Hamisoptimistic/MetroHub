@@ -512,7 +512,7 @@
                                    IsHitTestVisible="False" />
 
                     <TextBlock x:Name="SearchPlaceholder"
-                               Text="Type here to search..."
+                               Text="Type to search, or '?' for shortcuts..."
                                FontSize="{DynamicResource TypeBodyFontSize}"
                                FontWeight="{DynamicResource TypeBodyFontWeight}"
                                Foreground="{DynamicResource TextSubtleBrush}"

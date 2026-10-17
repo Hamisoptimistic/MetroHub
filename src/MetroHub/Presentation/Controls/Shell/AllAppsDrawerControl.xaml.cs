@@ -808,6 +808,15 @@ namespace MetroHub.Presentation.Controls
                         ShowActionMessage(result.Message);
                     }
                     break;
+
+                case ActionOutcome.PopulateSearchBox:
+                    if (SearchBox != null && !string.IsNullOrEmpty(result.Message))
+                    {
+                        SearchBox.Text = result.Message;
+                        SearchBox.CaretIndex = SearchBox.Text.Length;
+                        SearchBox.Focus();
+                    }
+                    break;
             }
         }
 

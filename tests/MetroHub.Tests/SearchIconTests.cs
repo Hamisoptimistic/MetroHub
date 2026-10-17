@@ -31,6 +31,12 @@ public sealed class SearchIconTests
         {
             Assert.NotEqual(SymbolRegular.Empty, bang.Icon);
         }
+
+        Assert.NotEmpty(PureMemoryData.SearchTips);
+        foreach (var tip in PureMemoryData.SearchTips)
+        {
+            Assert.NotEqual(SymbolRegular.Empty, tip.Icon);
+        }
     }
 
     [Fact]

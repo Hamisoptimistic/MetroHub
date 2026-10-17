@@ -61,6 +61,33 @@ public sealed class TableSource : ISearchSource
         var route = _router.Route(query.RawText);
         var results = new List<Candidate>();
 
+        // 0. Interactive Shortcuts & Help Route (e.g. "?", "help", "? vol")
+        if (route.Kind == RouteKind.Help)
+        {
+            string remainder = route.Remainder.Trim();
+            if (string.IsNullOrEmpty(remainder))
+            {
+                for (int i = 0; i < PureMemoryData.SearchTips.Length; i++)
+                {
+                    results.Add(CreateTipCandidate(PureMemoryData.SearchTips[i]));
+                }
+            }
+            else
+            {
+                string norm = SearchRanker.NormalizeText(remainder);
+                for (int i = 0; i < PureMemoryData.SearchTips.Length; i++)
+                {
+                    var tip = PureMemoryData.SearchTips[i];
+                    if (MatchesTip(tip, norm))
+                    {
+                        results.Add(CreateTipCandidate(tip));
+                    }
+                }
+            }
+
+            return Task.FromResult<IReadOnlyList<Candidate>>(results);
+        }
+
         // 1. Settings Hard Route (e.g. "set:bluetooth" or "set:")
         if (route.Kind == RouteKind.Settings)
         {
@@ -250,6 +277,41 @@ public sealed class TableSource : ISearchSource
                     return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
                 })
         };
+    }
+
+    private Candidate CreateTipCandidate(SearchTipItem tip)
+    {
+        return new Candidate(
+            Id: "tip:" + tip.Prefix.Trim(),
+            DisplayName: tip.Title,
+            FullPathOrKey: tip.Description,
+            Category: SearchCategory.Actions,
+            SourceId: SourceId)
+        {
+            Icon = tip.Icon,
+            KindLabel = "Shortcut",
+            PrimaryAction = new CandidateAction(
+                Id: "fill_shortcut",
+                Title: "Use shortcut",
+                KeyGestureHint: "Enter",
+                ExecuteAsync: _ => Task.FromResult(new ActionResult(ActionOutcome.PopulateSearchBox, tip.Prefix)))
+        };
+    }
+
+    private static bool MatchesTip(SearchTipItem tip, string normQuery)
+    {
+        string titleNorm = SearchRanker.NormalizeText(tip.Title);
+        if (titleNorm.Contains(normQuery, StringComparison.Ordinal)) return true;
+
+        string descNorm = SearchRanker.NormalizeText(tip.Description);
+        if (descNorm.Contains(normQuery, StringComparison.Ordinal)) return true;
+
+        for (int k = 0; k < tip.Keywords.Length; k++)
+        {
+            if (tip.Keywords[k].Contains(normQuery, StringComparison.OrdinalIgnoreCase)) return true;
+        }
+
+        return false;
     }
 }
 

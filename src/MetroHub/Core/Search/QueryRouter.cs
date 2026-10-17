@@ -21,7 +21,8 @@ public enum RouteKind
     WebBangGitHub,
     WebBangYouTube,
     WebBangDuckDuckGo,
-    Audio
+    Audio,
+    Help
 }
 
 /// <summary>
@@ -70,11 +71,33 @@ public sealed class QueryRouter
             s = _settings;
         }
 
+        // 0. Interactive Help / Shortcuts (e.g. "?", "help", "tips", "shortcuts")
+        if (raw.StartsWith('?') ||
+            string.Equals(raw, "help", StringComparison.OrdinalIgnoreCase) ||
+            raw.StartsWith("help ", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(raw, "tips", StringComparison.OrdinalIgnoreCase) ||
+            raw.StartsWith("tips ", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(raw, "shortcuts", StringComparison.OrdinalIgnoreCase) ||
+            raw.StartsWith("shortcuts ", StringComparison.OrdinalIgnoreCase))
+        {
+            string rem = raw.StartsWith('?')
+                ? raw[1..].TrimStart()
+                : raw.StartsWith("help ", StringComparison.OrdinalIgnoreCase) ? raw[5..].TrimStart()
+                : raw.StartsWith("tips ", StringComparison.OrdinalIgnoreCase) ? raw[5..].TrimStart()
+                : raw.StartsWith("shortcuts ", StringComparison.OrdinalIgnoreCase) ? raw[10..].TrimStart()
+                : string.Empty;
+            return new RouteResult(RouteKind.Help, rem, IsHardRoute: true, IsAdditive: false);
+        }
+
         // 1. Hard Symbolic Sigils (exclusively handled by designated source)
         string termPrefix = GetSafePrefix(s.TerminalPrefix, ">");
         if (raw.StartsWith(termPrefix, StringComparison.OrdinalIgnoreCase))
         {
             return new RouteResult(RouteKind.Terminal, raw[termPrefix.Length..].TrimStart(), IsHardRoute: true, IsAdditive: false);
+        }
+        if (raw.StartsWith("cmd ", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.Terminal, raw[4..].TrimStart(), IsHardRoute: true, IsAdditive: false);
         }
 
         string setPrefix = GetSafePrefix(s.SettingsPrefix, "set:");
@@ -89,11 +112,31 @@ public sealed class QueryRouter
         {
             return new RouteResult(RouteKind.ProcessKiller, raw[killPrefix.Length..].TrimStart(), IsHardRoute: false, IsAdditive: false);
         }
+        if (string.Equals(raw, "kill", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.ProcessKiller, string.Empty, IsHardRoute: false, IsAdditive: false);
+        }
+        if (raw.StartsWith("taskkill ", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.ProcessKiller, raw[9..].TrimStart(), IsHardRoute: false, IsAdditive: false);
+        }
 
         string winPrefix = GetSafePrefix(s.WindowWalkerPrefix, "win ");
         if (raw.StartsWith(winPrefix, StringComparison.OrdinalIgnoreCase))
         {
             return new RouteResult(RouteKind.WindowWalker, raw[winPrefix.Length..].TrimStart(), IsHardRoute: false, IsAdditive: false);
+        }
+        if (string.Equals(raw, "win", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.WindowWalker, string.Empty, IsHardRoute: false, IsAdditive: false);
+        }
+        if (raw.StartsWith("window ", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.WindowWalker, raw[7..].TrimStart(), IsHardRoute: false, IsAdditive: false);
+        }
+        if (raw.StartsWith("windows ", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.WindowWalker, raw[8..].TrimStart(), IsHardRoute: false, IsAdditive: false);
         }
 
         string volPrefix = GetSafePrefix(s.VolumePrefix, "vol ");
@@ -101,11 +144,23 @@ public sealed class QueryRouter
         {
             return new RouteResult(RouteKind.Volume, raw[volPrefix.Length..].TrimStart(), IsHardRoute: false, IsAdditive: false);
         }
+        if (string.Equals(raw, "vol", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.Volume, string.Empty, IsHardRoute: false, IsAdditive: false);
+        }
+        if (raw.StartsWith("volume ", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.Volume, raw[7..].TrimStart(), IsHardRoute: false, IsAdditive: false);
+        }
 
         string timePrefix = GetSafePrefix(s.WorldClockPrefix, "time ");
         if (raw.StartsWith(timePrefix, StringComparison.OrdinalIgnoreCase))
         {
             return new RouteResult(RouteKind.WorldClock, raw[timePrefix.Length..].TrimStart(), IsHardRoute: false, IsAdditive: false);
+        }
+        if (raw.StartsWith("clock ", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.WorldClock, raw[6..].TrimStart(), IsHardRoute: false, IsAdditive: false);
         }
 
         string casePrefix = GetSafePrefix(s.TextTransformPrefix, "case ");
@@ -118,6 +173,18 @@ public sealed class QueryRouter
         if (raw.StartsWith(cbPrefix, StringComparison.OrdinalIgnoreCase))
         {
             return new RouteResult(RouteKind.Clipboard, raw[cbPrefix.Length..].TrimStart(), IsHardRoute: false, IsAdditive: false);
+        }
+        if (string.Equals(raw, "cb", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.Clipboard, string.Empty, IsHardRoute: false, IsAdditive: false);
+        }
+        if (raw.StartsWith("clip ", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.Clipboard, raw[5..].TrimStart(), IsHardRoute: false, IsAdditive: false);
+        }
+        if (raw.StartsWith("clipboard ", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.Clipboard, raw[10..].TrimStart(), IsHardRoute: false, IsAdditive: false);
         }
 
         // 3. Additive Bang Triggers (augment universal results)

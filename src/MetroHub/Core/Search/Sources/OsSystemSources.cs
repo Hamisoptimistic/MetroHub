@@ -388,10 +388,22 @@ public sealed class ProcessKillerSource : ISearchSource
             return Task.FromResult<IReadOnlyList<Candidate>>(Array.Empty<Candidate>());
         }
 
+        int currentPid = Environment.ProcessId;
+        var processes = RunningSnapshot.GetProcesses();
+        var results = new List<Candidate>();
+
         string target = route.Remainder.Trim();
         if (string.IsNullOrEmpty(target))
         {
-            return Task.FromResult<IReadOnlyList<Candidate>>(Array.Empty<Candidate>());
+            for (int i = 0; i < processes.Count && results.Count < 15; i++)
+            {
+                if (cancellationToken.IsCancellationRequested) break;
+                var p = processes[i];
+                if (p.Pid == currentPid) continue;
+                if (Denylist.Contains(p.ProcessName)) continue;
+                results.Add(CreateProcessCandidate(p));
+            }
+            return Task.FromResult<IReadOnlyList<Candidate>>(results);
         }
 
         string normTarget = SearchRanker.NormalizeText(target);
@@ -399,10 +411,6 @@ public sealed class ProcessKillerSource : ISearchSource
         {
             return Task.FromResult<IReadOnlyList<Candidate>>(Array.Empty<Candidate>());
         }
-
-        int currentPid = Environment.ProcessId;
-        var processes = RunningSnapshot.GetProcesses();
-        var results = new List<Candidate>();
 
         for (int i = 0; i < processes.Count; i++)
         {

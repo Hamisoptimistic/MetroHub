@@ -200,5 +200,82 @@ public sealed class QueryRouterTests
         string text = EverythingSearchSource.BuildSearchText(query);
         Assert.Equal("*.xaml", text);
     }
+
+    [Theory]
+    [InlineData("?", "")]
+    [InlineData("? time", "time")]
+    [InlineData("help", "")]
+    [InlineData("help vol", "vol")]
+    [InlineData("tips", "")]
+    [InlineData("shortcuts", "")]
+    public void Router_HelpAndShortcutTriggers_RouteCorrectly(string input, string expectedRemainder)
+    {
+        var router = new QueryRouter();
+        var route = router.Route(input);
+
+        Assert.Equal(RouteKind.Help, route.Kind);
+        Assert.Equal(expectedRemainder, route.Remainder);
+        Assert.True(route.IsHardRoute);
+        Assert.False(route.IsAdditive);
+    }
+
+    [Theory]
+    [InlineData("cmd ping 1.1.1.1", RouteKind.Terminal, "ping 1.1.1.1", true)]
+    [InlineData("kill", RouteKind.ProcessKiller, "", false)]
+    [InlineData("taskkill notepad", RouteKind.ProcessKiller, "notepad", false)]
+    [InlineData("vol", RouteKind.Volume, "", false)]
+    [InlineData("volume 75", RouteKind.Volume, "75", false)]
+    [InlineData("clock tokyo", RouteKind.WorldClock, "tokyo", false)]
+    [InlineData("cb", RouteKind.Clipboard, "", false)]
+    [InlineData("clip password", RouteKind.Clipboard, "password", false)]
+    [InlineData("clipboard paste", RouteKind.Clipboard, "paste", false)]
+    [InlineData("win", RouteKind.WindowWalker, "", false)]
+    [InlineData("window visual studio", RouteKind.WindowWalker, "visual studio", false)]
+    public void Router_NaturalAliases_RouteCorrectly(string input, RouteKind expectedKind, string expectedRemainder, bool expectedHard)
+    {
+        var router = new QueryRouter();
+        var route = router.Route(input);
+
+        Assert.Equal(expectedKind, route.Kind);
+        Assert.Equal(expectedRemainder, route.Remainder);
+        Assert.Equal(expectedHard, route.IsHardRoute);
+    }
+
+    [Fact]
+    public async Task TableSource_HelpQuery_ReturnsShortcutsWithPopulateAction()
+    {
+        var router = new QueryRouter();
+        var tableSource = new TableSource(router);
+
+        var query = SearchRanker.ParseQuery("?", 1);
+        var results = await tableSource.SearchAsync(query, CancellationToken.None);
+
+        Assert.NotEmpty(results);
+        Assert.Equal(PureMemoryData.SearchTips.Length, results.Count);
+
+        foreach (var candidate in results)
+        {
+            Assert.Equal(SearchCategory.Actions, candidate.Category);
+            Assert.Equal("Shortcut", candidate.KindLabel);
+            Assert.NotNull(candidate.PrimaryAction);
+
+            var actionResult = await candidate.PrimaryAction.ExecuteAsync(new ActionContext(CancellationToken.None));
+            Assert.Equal(ActionOutcome.PopulateSearchBox, actionResult.Outcome);
+            Assert.False(string.IsNullOrEmpty(actionResult.Message));
+        }
+    }
+
+    [Fact]
+    public async Task TableSource_FilteredHelpQuery_ReturnsMatchingOnly()
+    {
+        var router = new QueryRouter();
+        var tableSource = new TableSource(router);
+
+        var query = SearchRanker.ParseQuery("? time", 1);
+        var results = await tableSource.SearchAsync(query, CancellationToken.None);
+
+        Assert.Single(results);
+        Assert.Contains("time", results[0].DisplayName, StringComparison.OrdinalIgnoreCase);
+    }
 }
 

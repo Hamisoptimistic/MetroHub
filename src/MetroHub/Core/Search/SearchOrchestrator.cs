@@ -218,6 +218,7 @@ public sealed class SearchOrchestrator : IDisposable
                     var source = _tier1Sources[i];
                     if (route.Kind == RouteKind.Terminal && source is not TerminalSource) continue;
                     if (route.Kind == RouteKind.Settings && source is not TableSource) continue;
+                    if (route.Kind == RouteKind.Help && source is not TableSource) continue;
 
                     hardSourceStates[source.SourceId] = source.State;
                     try
