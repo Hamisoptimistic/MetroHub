@@ -99,9 +99,10 @@ public sealed class SearchOrchestrator : IDisposable
     {
         _debounceMs = debounceMs;
         _router = router ?? new QueryRouter();
-        // Default Tier 1: Installed Apps & Terminal
+        // Default Tier 1: Installed Apps, Terminal & Table Source
         _tier1Sources.Add(new AppSearchSource());
         _tier1Sources.Add(new TerminalSource(_router));
+        _tier1Sources.Add(new TableSource(_router));
         // Default Tier 2: Everything file search
         _tier2Sources.Add(new EverythingSearchSource());
     }
@@ -208,6 +209,7 @@ public sealed class SearchOrchestrator : IDisposable
                     if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
                     var source = _tier1Sources[i];
                     if (route.Kind == RouteKind.Terminal && source is not TerminalSource) continue;
+                    if (route.Kind == RouteKind.Settings && source is not TableSource) continue;
 
                     hardSourceStates[source.SourceId] = source.State;
                     try
@@ -228,7 +230,10 @@ public sealed class SearchOrchestrator : IDisposable
                 if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
 
                 sw.Stop();
-                var hardScored = ScoreAndSort(hardCandidates, query, ct);
+                var hardQuery = string.IsNullOrWhiteSpace(route.Remainder)
+                    ? query
+                    : SearchRanker.ParseQuery(route.Remainder, sessionId, query.MaxPerCategory);
+                var hardScored = ScoreAndSort(hardCandidates, hardQuery, ct, isHardRoute: true);
                 var hardGroups = BuildSearchGroups(hardScored, query.MaxPerCategory);
 
                 var hardSnapshot = new SearchSnapshot(
@@ -344,7 +349,7 @@ public sealed class SearchOrchestrator : IDisposable
         }
     }
 
-    private static List<ScoredResult> ScoreAndSort(List<Candidate> candidates, SearchQuery query, CancellationToken ct)
+    private static List<ScoredResult> ScoreAndSort(List<Candidate> candidates, SearchQuery query, CancellationToken ct, bool isHardRoute = false)
     {
         var deduped = SearchRanker.Deduplicate(candidates);
         var usageCounts = StorageService.GetAllEffectiveOpenCounts();
@@ -359,6 +364,10 @@ public sealed class SearchOrchestrator : IDisposable
             if (scored.Score > 0)
             {
                 scoredResults.Add(scored);
+            }
+            else if (isHardRoute)
+            {
+                scoredResults.Add(new ScoredResult(c, 100, MatchKind.Exact));
             }
         }
 
