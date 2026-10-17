@@ -24,9 +24,9 @@
 
     <UserControl.Resources>
         <!-- Fluent Design System: Unified 12px Visual Gutter & Layout Tokens -->
-        <Thickness x:Key="DrawerGutterHeaderMargin">12,14,12,6</Thickness>
+        <Thickness x:Key="DrawerGutterHeaderMargin">12,2,12,0</Thickness>
         <Thickness x:Key="DrawerGutterSearchMargin">12,4,12,12</Thickness>
-        <Thickness x:Key="DrawerGutterSectionHeaderMargin">12,8,12,4</Thickness>
+        <Thickness x:Key="DrawerGutterSectionHeaderMargin">12,12,12,6</Thickness>
         <Thickness x:Key="DrawerGutterGroupHeaderMargin">12,12,12,4</Thickness>
         <Thickness x:Key="DrawerGutterRecentGridMargin">12,0,12,0</Thickness>
         <Thickness x:Key="DrawerGutterRecentTileMargin">0</Thickness>
@@ -194,7 +194,7 @@
             <StackPanel Margin="0">
                 <!-- Category Section Header: completely outside the row card with generous typography -->
                 <Border Visibility="{Binding CategoryHeaderVisibility}"
-                        Margin="{StaticResource DrawerGutterHeaderMargin}"
+                        Margin="{StaticResource DrawerGutterSectionHeaderMargin}"
                         Padding="0"
                         Focusable="False"
                         Background="Transparent"
@@ -449,7 +449,7 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Grid x:Name="DrawerHeaderGrid" Grid.Row="0" Margin="{StaticResource DrawerGutterHeaderMargin}">
+            <Grid x:Name="DrawerHeaderGrid" Grid.Row="0" Height="42" Margin="{StaticResource DrawerGutterHeaderMargin}">
                 <!-- Left-aligned Title flush to 12px baseline -->
                 <TextBlock Text="All apps"
                            FontSize="{DynamicResource TypeHeaderFontSize}"

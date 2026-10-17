@@ -6,12 +6,12 @@ public static class GridPlacementService
 {
     public const double GridStep = 64.0;
     public const double Gap = 8.0;
-    public const double OriginX = 10.0;
+    public const double OriginX = 12.0;
     public const double OriginY = 0.0;
     public const double HeaderRowHeight = 44.0;
     public const double MidCanvasHeaderOffset = 10.0;
     public const double GroupHeaderYOffset = 0.0;
-    public const double BaseSideMargin = 24.0;
+    public const double BaseSideMargin = 12.0;
     public const int GroupColWidth = 8;
     public const double ColumnGap = 0.0;
 
