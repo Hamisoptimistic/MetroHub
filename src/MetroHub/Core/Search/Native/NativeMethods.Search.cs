@@ -19,6 +19,7 @@ internal static class NativeMethodsSearch
     public const uint SMTO_ABORTIFHUNG = 0x0002;
     public const uint WM_GETTEXT = 0x000D;
     public const uint WM_GETTEXTLENGTH = 0x000E;
+    public const int WM_CLIPBOARDUPDATE = 0x031D;
 
     /// <summary>
     /// Empties the Windows Recycle Bin on all drives or a specific root.
@@ -52,4 +53,15 @@ internal static class NativeMethodsSearch
 
     [DllImport("dwmapi.dll")]
     public static extern int DwmGetWindowAttribute(IntPtr hwnd, int attr, out int attrValue, int attrSize);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool AddClipboardFormatListener(IntPtr hwnd);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool RemoveClipboardFormatListener(IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    public static extern uint GetClipboardSequenceNumber();
 }

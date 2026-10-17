@@ -21,6 +21,8 @@ using MetroHub.Presentation.Views;
 using MetroHub.Presentation.Messaging;
 using MetroHub.Presentation.Controllers;
 using MetroHub.Widgets.Messaging;
+using MetroHub.Core.Search;
+using MetroHub.Core.Search.Native;
 using CommunityToolkit.Mvvm.Messaging;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -617,6 +619,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
         var hwndSource = HwndSource.FromHwnd(hwnd);
         hwndSource?.AddHook(WndProc);
+        ClipboardSource.Instance?.AttachHwnd(hwnd);
 
         _hotkeyService.HotkeyPressed += OnHotkeyPressed;
         _hotkeyService.Register(hwnd, Settings);
@@ -854,6 +857,11 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             Dispatcher.Invoke(ShowScreen);
             handled = true;
         }
+        else if (msg == NativeMethodsSearch.WM_CLIPBOARDUPDATE)
+        {
+            ClipboardSource.Instance?.OnClipboardUpdate();
+            handled = true;
+        }
         else if (msg == WM_DISPLAYCHANGE)
         {
             Dispatcher.InvokeAsync(async () =>
@@ -990,6 +998,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         _keepWarmTimer = null;
         CancelPendingWallpaperLoad();
         TeardownWallpaperVideo();
+        ClipboardSource.Instance?.Dispose();
         _ = LocalCompanionService.Instance.StopAsync();
         base.OnClosed(e);
     }

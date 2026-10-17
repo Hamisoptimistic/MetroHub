@@ -332,9 +332,7 @@ namespace MetroHub.Presentation.Controls
             }
             catch { }
 
-            _searchOrchestrator = new SearchOrchestrator(
-                tier1Sources: new[] { new AppSearchSource(() => _allApps) },
-                tier2Sources: new[] { new EverythingSearchSource() });
+            _searchOrchestrator = new SearchOrchestrator(appsProvider: () => _allApps);
             _searchOrchestrator.SnapshotUpdated += OnSearchSnapshotUpdated;
             Unloaded += (s, e) => _searchOrchestrator.Dispose();
         }

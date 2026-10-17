@@ -95,12 +95,12 @@ public sealed class SearchOrchestrator : IDisposable
     public long CurrentSessionId => Interlocked.Read(ref _currentSessionId);
     public QueryRouter Router => _router;
 
-    public SearchOrchestrator(int debounceMs = 150, QueryRouter? router = null)
+    public SearchOrchestrator(int debounceMs = 150, QueryRouter? router = null, Func<List<CatalogItemModel>>? appsProvider = null)
     {
         _debounceMs = debounceMs;
         _router = router ?? new QueryRouter();
-        // Default Tier 1: Installed Apps, Terminal, Table, Calculator, TextTransform, WindowWalker, ProcessKiller & Audio
-        _tier1Sources.Add(new AppSearchSource());
+        // Default Tier 1: Installed Apps, Terminal, Table, Calculator, TextTransform, WindowWalker, ProcessKiller, Audio, WorldClock, UnitConverter & Clipboard
+        _tier1Sources.Add(new AppSearchSource(appsProvider));
         _tier1Sources.Add(new TerminalSource(_router));
         _tier1Sources.Add(new TableSource(_router));
         _tier1Sources.Add(new CalculatorSource());
@@ -108,6 +108,9 @@ public sealed class SearchOrchestrator : IDisposable
         _tier1Sources.Add(new WindowWalkerSource(_router));
         _tier1Sources.Add(new ProcessKillerSource(_router));
         _tier1Sources.Add(new AudioSource(_router));
+        _tier1Sources.Add(new WorldClockSource(_router));
+        _tier1Sources.Add(new UnitConverterSource());
+        _tier1Sources.Add(new ClipboardSource(_router));
         // Default Tier 2: Everything file search
         _tier2Sources.Add(new EverythingSearchSource());
     }
@@ -370,7 +373,7 @@ public sealed class SearchOrchestrator : IDisposable
             {
                 scoredResults.Add(scored);
             }
-            else if (isHardRoute || c.SourceId is "calculator" or "text_transform" or "window_walker" or "process_killer" or "audio")
+            else if (isHardRoute || c.SourceId is "calculator" or "text_transform" or "window_walker" or "process_killer" or "audio" or "world_clock" or "unit_converter" or "clipboard")
             {
                 scoredResults.Add(new ScoredResult(c, 100, MatchKind.Exact));
             }

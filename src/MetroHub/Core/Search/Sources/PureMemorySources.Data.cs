@@ -67,7 +67,7 @@ public static class PureMemoryData
             ConfirmPrompt: null,
             ExecuteAsync: ctx =>
             {
-                CinematicFadeService.Instance.FadeAndExecuteAsync(() => CinematicFadeService.LockWorkStation());
+                _ = CinematicFadeService.Instance.FadeAndExecuteAsync(() => CinematicFadeService.LockWorkStation());
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             }),
 
@@ -80,7 +80,7 @@ public static class PureMemoryData
             ConfirmPrompt: null,
             ExecuteAsync: ctx =>
             {
-                CinematicFadeService.Instance.FadeAndExecuteAsync(() => CinematicFadeService.SetSuspendState(false, true, false));
+                _ = CinematicFadeService.Instance.FadeAndExecuteAsync(() => CinematicFadeService.SetSuspendState(false, true, false));
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             }),
 
