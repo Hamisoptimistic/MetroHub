@@ -105,8 +105,13 @@ The settings engine follows a decoupled, three-tier architecture:
 >    * **Outer Viewport Side Padding**: `36px` uniform left and right margins.
 >    * **Inter-Card Group Spacing**: `16px` between distinct card groups / expanders.
 >    * **Intra-Card Element Spacing**: `8px - 12px` between adjacent cards.
->    * **Inside Card Padding**: `16px` horizontal, `12px` vertical.
 >    * **Navigation Row Heights**: Navigation items and Back buttons must be standardized at `38px` height with standard corner radii.
+> 
+> 6. **UI Naming & Copy Standard (Simple Plain English)**:
+>    * Always use short, simple, human-friendly names that users understand instantly.
+>    * Never use brackets, parentheses, or dual explanatory names (e.g. use `Follow Mouse`, NOT `Active Display (Follow Mouse)`).
+>    * Never use restrictive words like `Only` (e.g. use `Primary Display`, NOT `Primary Display Only`).
+>    * Place `ComboBox` dropdown selectors at the bottom of the card stack to prevent popup menus from obscuring adjacent cards.
 
 ---
 
@@ -237,9 +242,9 @@ The Settings experience uses a two-state flow:
 | Setting | Control Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `LaunchAtStartup` | `ui:ToggleSwitch` | `false` | Start MetroHub automatically on Windows sign-in (Registry Run key). |
-| `StartMinimized` | `ui:ToggleSwitch` | `false` | Launch directly to system tray in the background on startup. |
-| `CloseOnLaunch` | `ui:ToggleSwitch` | `true` | Hide MetroHub automatically when launching an application or file. |
-| `DismissOnDeactivate` | `ui:ToggleSwitch` | `true` | Hide MetroHub automatically when clicking outside its window. |
+| `StartMinimized` | `ui:ToggleSwitch` | `false` | Launch quietly in the background on startup. |
+| `ShowTrayIcon` | `ui:ToggleSwitch` | `true` | Display the MetroHub icon in the notification area. |
+| `TargetDisplay` | `ComboBox` | `Follow Mouse` | Choose which monitor MetroHub opens on (`Follow Mouse`, `Primary Display`). |
 
 ---
 
@@ -284,11 +289,13 @@ The Settings experience uses a two-state flow:
 
 | Setting | Control Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `SidebarAutoHide` | `ui:ToggleSwitch` | `true` | Auto-hide sidebar rail when mouse leaves the left screen edge. |
-| `SidebarPinned` | `ui:ToggleSwitch` | `false` | Lock sidebar rail permanently expanded on screen. |
-| `RecentViewMode` | 2-Step `MetroSegmentedTabStyle` | `Grid` | All-Apps drawer default layout mode: `Grid` (cards) or `List` (compact rows). |
-| **Quick Shortcuts Group** | `ui:CardExpander` | Group | Configure default folders and system icons shown in the sidebar rail: |
-| ↳ `SidebarShortcuts` | Checked List / Toggles | Default | Toggle visibility of Explorer, Downloads, Documents, Pictures, Music, Videos. |
+| `SidebarAutoHide` | `ui:ToggleSwitch` | `false` | Automatically hide sidebar until user hovers the left screen edge. |
+| `SidebarPinned` | Internal Sync | `true` | Inverted state of Auto-Hide (pinned open by default on clean install). |
+| `ShowWorkspacesButton`| `ui:ToggleSwitch` | `true` | Show workspace switcher button on the sidebar. |
+| `ShowAddShortcutButton`| `ui:ToggleSwitch` | `true` | Show add shortcut button on the bottom rail. |
+| `ShowPowerButton` | `ui:ToggleSwitch` | `true` | Show power options button on the bottom rail. |
+| `ShowRecentApps` | `ui:ToggleSwitch` | `true` | Show suggested and recent apps in the all-apps drawer. |
+| `RecentViewMode` | `ComboBox` | `Grid` | Choose grid cards or compact list rows in drawer (placed at bottom of card stack). |
 
 ---
 
@@ -435,10 +442,10 @@ d:\MetroHub\src\MetroHub\
 
 ### Phase 3: Modular Category Pages (Option C Hybrid)
 - [x] **Step 3.1: General Settings (`GeneralPage.xaml` & `GeneralSettingsViewModel.cs`)**
-  - [x] `LaunchAtStartup` (`ui:CardControl` + `ui:ToggleSwitch` + Registry Run key hook)
-  - [x] `StartMinimized` (`ui:CardControl` + `ui:ToggleSwitch`)
-  - [x] `CloseOnLaunch` (`ui:CardControl` + `ui:ToggleSwitch`)
-  - [x] `DismissOnDeactivate` (`ui:CardControl` + `ui:ToggleSwitch`)
+  - [x] `Start with Windows` (`ui:CardControl` + `ui:ToggleSwitch` + Registry Run key hook)
+  - [x] `Start Minimized` (`ui:CardControl` + `ui:ToggleSwitch`)
+  - [x] `System Tray Icon` (`ui:CardControl` + `ui:ToggleSwitch`)
+  - [x] `Display` (`ui:CardControl` + `ComboBox`: `Follow Mouse`, `Primary Display`)
 - [ ] **Step 3.2: Appearance & Theming (`AppearancePage.xaml` & `AppearanceSettingsViewModel.cs`)**
   - Theme mode selector (`ComboBox`)
   - Material backdrop selector (`ComboBox`: Mica, Acrylic, DesktopWallpaper)
@@ -448,10 +455,13 @@ d:\MetroHub\src\MetroHub\
   - Canvas orientation (`Vertical` / `Horizontal`)
   - Cyclic scroll toggle
   - Tile groups expander (`ShowGroupHeaders`, `EnableGroupOpenAllButton`)
-- [ ] **Step 3.4: Sidebar & Apps (`SidebarPage.xaml` & `SidebarSettingsViewModel.cs`)**
-  - Auto-hide rail toggle
-  - Pinned sidebar shortcut list expander
-  - All-Apps drawer layout mode (`Grid` / `List`)
+- [x] **Step 3.4: Sidebar & Apps (`SidebarPage.xaml` & `SidebarSettingsViewModel.cs`)**
+  - [x] `Auto-Hide Sidebar` (`ui:CardControl` + `ui:ToggleSwitch`, default Off / Pinned)
+  - [x] `Workspaces Button` (`ui:CardControl` + `ui:ToggleSwitch`)
+  - [x] `Add Button` (`ui:CardControl` + `ui:ToggleSwitch`)
+  - [x] `Power Button` (`ui:CardControl` + `ui:ToggleSwitch`)
+  - [x] `Recent Apps` (`ui:CardControl` + `ui:ToggleSwitch`)
+  - [x] `Recent Apps Layout` (`ui:CardControl` + `ComboBox`: `Grid`, `List` at bottom of card stack)
 - [ ] **Step 3.5: Search & Indexing (`SearchPage.xaml` & `SearchSettingsViewModel.cs`)**
   - Voidtools Everything integration expander
   - FZF fuzzy search algorithm sensitivity

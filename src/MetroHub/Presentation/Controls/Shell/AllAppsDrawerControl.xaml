@@ -240,12 +240,12 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <!-- Left Icon or Category Symbol -->
-                            <Grid Grid.Column="0" Width="22" Height="22" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <!-- Left Icon or Category Symbol (Centered optical axis) -->
+                            <Grid Grid.Column="0" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <Image Source="{Binding Icon, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
-                                       Width="22"
-                                       Height="22"
-                                       HorizontalAlignment="Left"
+                                       Width="20"
+                                       Height="20"
+                                       HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        Visibility="{Binding CustomIconVisibility}"
                                        RenderOptions.BitmapScalingMode="HighQuality" />
@@ -253,7 +253,7 @@
                                 <ui:SymbolIcon Symbol="{Binding Symbol}"
                                                FontSize="18"
                                                Foreground="{DynamicResource TextSecondaryBrush}"
-                                               HorizontalAlignment="Left"
+                                               HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
                                                Visibility="{Binding SymbolVisibility}" />
                             </Grid>
@@ -628,9 +628,9 @@
 
                                         <Image Grid.Column="0"
                                                Source="{Binding App.Icon, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
-                                               Width="22"
-                                               Height="22"
-                                               HorizontalAlignment="Left"
+                                               Width="20"
+                                               Height="20"
+                                               HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
                                                RenderOptions.BitmapScalingMode="HighQuality" />
 

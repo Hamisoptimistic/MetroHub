@@ -25,9 +25,14 @@ public sealed class AppSettings
     public int GroupColumnWidth { get; set; } = 8; // Fixed 8 units
     public int TileCornerRadius { get; set; } = 2; // 0 (Metro Sharp), 2 (Subtle Edge), 4 (Medium), 8 (Fluent Rounded)
 
-    public bool SidebarAutoHide { get; set; } = true;
-    public bool SidebarPinned { get; set; }
+    public bool SidebarAutoHide { get; set; }
+    public bool SidebarPinned { get; set; } = true;
     public List<SidebarShortcutItem> SidebarShortcuts { get; set; } = SidebarShortcutItem.CreateDefaultList();
+
+    public bool ShowWorkspacesButton { get; set; } = true;
+    public bool ShowAddShortcutButton { get; set; } = true;
+    public bool ShowPowerButton { get; set; } = true;
+    public bool ShowRecentApps { get; set; } = true;
 
     public bool BrowserExtensionCompanionEnabled { get; set; } = true;
     public bool EnableGroupOpenAllButton { get; set; } = true;

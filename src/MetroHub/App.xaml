@@ -6,7 +6,6 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
     <Application.Resources>
         <ResourceDictionary>
-            <conv:IconPathToBitmapConverter x:Key="IconConverter" />
             <ResourceDictionary.MergedDictionaries>
                 <ui:ThemesDictionary Theme="Dark" />
                 <ui:ControlsDictionary />
@@ -16,6 +15,17 @@
                 <ResourceDictionary Source="pack://application:,,,/MetroHub;component/Presentation/Dialogs/MetroDialog.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MetroHub;component/Widgets/WidgetStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <conv:IconPathToBitmapConverter x:Key="IconConverter" />
+
+            <!-- Global High-DPI Crisp Font Rendering Enforcement -->
+            <Style TargetType="{x:Type Window}">
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
+            </Style>
+            <Style TargetType="{x:Type TextBlock}">
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

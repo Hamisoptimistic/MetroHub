@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
@@ -19,10 +20,17 @@ public partial class GeneralSettingsViewModel : ObservableObject
     private bool _startMinimized;
 
     [ObservableProperty]
-    private bool _closeOnLaunch;
+    private bool _showTrayIcon = true;
 
+    // UI-only property with simple names (no brackets, no 'Only')
     [ObservableProperty]
-    private bool _dismissOnDeactivate;
+    private string _selectedTargetDisplay = "Follow Mouse";
+
+    public ObservableCollection<string> TargetDisplays { get; } = new()
+    {
+        "Follow Mouse",
+        "Primary Display"
+    };
 
     public GeneralSettingsViewModel(SettingsService? settingsService = null)
     {
@@ -41,8 +49,6 @@ public partial class GeneralSettingsViewModel : ObservableObject
 
             _launchAtStartup = current.LaunchAtStartup;
             _startMinimized = current.StartMinimized;
-            _closeOnLaunch = current.CloseOnLaunch;
-            _dismissOnDeactivate = current.DismissOnDeactivate;
         }
         finally
         {
@@ -64,19 +70,4 @@ public partial class GeneralSettingsViewModel : ObservableObject
         _settingsService.Current.StartMinimized = value;
         _settingsService.NotifyChanged(nameof(AppSettings.StartMinimized));
     }
-
-    partial void OnCloseOnLaunchChanged(bool value)
-    {
-        if (_isInitializing) return;
-        _settingsService.Current.CloseOnLaunch = value;
-        _settingsService.NotifyChanged(nameof(AppSettings.CloseOnLaunch));
-    }
-
-    partial void OnDismissOnDeactivateChanged(bool value)
-    {
-        if (_isInitializing) return;
-        _settingsService.Current.DismissOnDeactivate = value;
-        _settingsService.NotifyChanged(nameof(AppSettings.DismissOnDeactivate));
-    }
 }
-

@@ -281,7 +281,7 @@ public sealed class StorageService
         // get pushed to valid positions before any pixel-based arrangement.
         foreach (var tile in tiles)
         {
-            if (tile.Col < 0 || tile.Row < 1 || tile.Y < GridPlacementService.PixelYFromRow(1))
+            if (tile.Col < 0 || tile.Row < 1 || tile.Y < GridPlacementService.PixelYFromRow(1) || Math.Abs(tile.Y - GridPlacementService.PixelYFromRow(tile.Row)) > 0.5)
             {
                 tile.Col = Math.Max(0, tile.Col);
                 tile.Row = Math.Max(1, tile.Row);
@@ -660,12 +660,13 @@ public sealed class StorageService
         bool sanitized = false;
         foreach (var g in groups)
         {
-            if (g.Col < 0 || g.Row < 0 || g.Y < GridPlacementService.OriginY + 8)
+            double expectedY = GridPlacementService.GetGroupHeaderY(g.Row);
+            if (g.Col < 0 || g.Row < 0 || Math.Abs(g.Y - expectedY) > 0.5)
             {
                 g.Col = Math.Max(0, g.Col);
                 g.Row = Math.Max(0, g.Row);
                 g.X = GridPlacementService.PixelXFromCol(g.Col);
-                g.Y = GridPlacementService.PixelYFromRow(g.Row) + 8;
+                g.Y = expectedY;
                 sanitized = true;
             }
         }
@@ -1090,12 +1091,13 @@ public sealed class StorageService
         bool sanitized = false;
         foreach (var g in groups)
         {
-            if (g.Col < 0 || g.Row < 0 || g.Y < GridPlacementService.OriginY + 8)
+            double expectedY = GridPlacementService.GetGroupHeaderY(g.Row);
+            if (g.Col < 0 || g.Row < 0 || Math.Abs(g.Y - expectedY) > 0.5)
             {
                 g.Col = Math.Max(0, g.Col);
                 g.Row = Math.Max(0, g.Row);
                 g.X = GridPlacementService.PixelXFromCol(g.Col);
-                g.Y = GridPlacementService.PixelYFromRow(g.Row) + 8;
+                g.Y = expectedY;
                 sanitized = true;
             }
         }

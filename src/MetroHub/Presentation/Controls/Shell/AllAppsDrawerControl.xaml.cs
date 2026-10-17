@@ -21,7 +21,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MetroHub.Presentation.Controls
 {
-    public abstract class DrawerItem
+    public abstract class DrawerItem : ObservableObject
     {
         public virtual bool IsHeader => false;
     }
@@ -330,6 +330,23 @@ namespace MetroHub.Presentation.Controls
             _searchOrchestrator = new SearchOrchestrator(appsProvider: () => _allApps);
             _searchOrchestrator.SnapshotUpdated += OnSearchSnapshotUpdated;
             Unloaded += (s, e) => _searchOrchestrator.Dispose();
+
+            SettingsService.Instance.SettingChanged += prop =>
+            {
+                if (prop is nameof(AppSettings.RecentViewMode) or nameof(AppSettings.ShowRecentApps))
+                {
+                    Dispatcher.InvokeAsync(() =>
+                    {
+                        var s = SettingsService.Instance.Current;
+                        RecentViewMode = s.RecentViewMode;
+                        ApplyRecentViewMode(RecentViewMode);
+                        if (IsOpen)
+                        {
+                            RefreshRecentSuggestions();
+                        }
+                    });
+                }
+            };
         }
 
         public void Open()
@@ -514,6 +531,14 @@ namespace MetroHub.Presentation.Controls
         {
             try
             {
+                var currentSettings = SettingsService.Instance.Current;
+                if (!currentSettings.ShowRecentApps)
+                {
+                    RecentSuggestionsListBox.ItemsSource = null;
+                    RecentSuggestionsPanel.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
                 ApplyRecentViewMode(RecentViewMode);
 
                 int targetCount = (maxCount > 0 && maxCount != MaxZeroStateSuggestions)

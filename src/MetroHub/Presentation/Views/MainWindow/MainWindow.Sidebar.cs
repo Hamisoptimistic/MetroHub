@@ -31,6 +31,29 @@ public partial class MainWindow
             Interval = TimeSpan.FromMilliseconds(250)
         };
         _sidebarGraceTimer.Tick += OnSidebarGraceTimerTick;
+
+        SettingsService.Instance.SettingChanged += prop =>
+        {
+            if (prop is nameof(AppSettings.SidebarPinned) or nameof(AppSettings.SidebarAutoHide))
+            {
+                Dispatcher.InvokeAsync(() =>
+                {
+                    if (Settings.SidebarPinned)
+                    {
+                        ShowSidebarRail();
+                    }
+                    else if (AllAppsDrawer == null || !AllAppsDrawer.IsOpen)
+                    {
+                        Point mousePos = Mouse.GetPosition(this);
+                        bool isMouseOverRail = (SidebarRail != null && SidebarRail.IsMouseOver) || (mousePos.X >= 0 && mousePos.X <= 48);
+                        if (!isMouseOverRail)
+                        {
+                            HideSidebarRail(immediate: false, force: true);
+                        }
+                    }
+                });
+            }
+        };
     }
 
     private void UpdateSidebarVisibilityInitial()
@@ -40,29 +63,11 @@ public partial class MainWindow
         {
             SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, null);
             SidebarRailTranslate.X = 0;
-            SidebarRail.SetPinnedState(true);
         }
         else
         {
             SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, null);
             SidebarRailTranslate.X = -52;
-            SidebarRail.SetPinnedState(false);
-        }
-    }
-
-    private void OnSidebarPinToggled(object? sender, EventArgs e)
-    {
-        StorageService.SaveSettings(Settings);
-        if (Settings.SidebarPinned)
-        {
-            ShowSidebarRail();
-        }
-        else
-        {
-            if (SidebarRail != null && !SidebarRail.IsMouseOver && (AllAppsDrawer == null || !AllAppsDrawer.IsOpen))
-            {
-                _sidebarGraceTimer?.Start();
-            }
         }
     }
 
@@ -185,11 +190,11 @@ public partial class MainWindow
         SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
     }
 
-    public void HideSidebarRail(bool immediate = false)
+    public void HideSidebarRail(bool immediate = false, bool force = false)
     {
         if (Settings.SidebarPinned) return;
         if (AllAppsDrawer != null && AllAppsDrawer.IsOpen) return;
-        if (IsDialogOpen) return;
+        if (IsDialogOpen && !force) return;
         if (SidebarRail == null || SidebarRailTranslate == null) return;
 
         if (immediate)

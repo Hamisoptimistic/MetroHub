@@ -20,12 +20,9 @@ namespace MetroHub.Presentation.Controls;
 public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
 {
     public event EventHandler? AppsToggleRequested;
-    public event EventHandler? PinToggled;
     public event EventHandler? ShortcutsChanged;
     public event EventHandler<string?>? AddWebLinkRequested;
     public event EventHandler? SettingsRequested;
-
-    public bool IsPinned { get; private set; } = false;
 
     public ObservableCollection<SidebarShortcutItem> Shortcuts { get; } = new();
 
@@ -53,6 +50,17 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
                 _cachedShortcutApps = freshApps?.OrderBy(i => i.Name, StringComparer.OrdinalIgnoreCase).ToList();
             });
         };
+        SettingsService.Instance.SettingChanged += prop =>
+        {
+            if (prop is nameof(AppSettings.ShowWorkspacesButton) or
+                        nameof(AppSettings.ShowAddShortcutButton) or
+                        nameof(AppSettings.ShowPowerButton) or
+                        nameof(AppSettings.SidebarPinned) or
+                        nameof(AppSettings.SidebarAutoHide))
+            {
+                Dispatcher.InvokeAsync(ApplyButtonSettings);
+            }
+        };
     }
 
     private void OnWorkspaceChanged(WorkspaceModel incoming)
@@ -63,11 +71,21 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
         }
     }
 
+    public void ApplyButtonSettings()
+    {
+        var s = _settings ?? SettingsService.Instance.Current;
+        if (WorkspacesCapsule != null)
+            WorkspacesCapsule.Visibility = s.ShowWorkspacesButton ? Visibility.Visible : Visibility.Collapsed;
+        if (AddShortcutButton != null)
+            AddShortcutButton.Visibility = s.ShowAddShortcutButton ? Visibility.Visible : Visibility.Collapsed;
+        if (PowerButton != null)
+            PowerButton.Visibility = s.ShowPowerButton ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     public void InitializeSettings(AppSettings settings)
     {
         _settings = settings;
-        IsPinned = settings.SidebarPinned;
-        UpdatePinVisuals();
+        ApplyButtonSettings();
 
         Shortcuts.Clear();
         if (settings.SidebarShortcuts != null)
@@ -85,36 +103,6 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
         {
             AppsToggleButton.Tag = isActive ? "Active" : null;
         }
-    }
-
-    public void SetPinnedState(bool pinned)
-    {
-        IsPinned = pinned;
-        UpdatePinVisuals();
-        if (_settings != null)
-        {
-            _settings.SidebarPinned = pinned;
-            StorageService.SaveSettings(_settings);
-        }
-    }
-
-    private void UpdatePinVisuals()
-    {
-        if (PinButton != null)
-        {
-            PinButton.Tag = IsPinned ? "Active" : null;
-            PinButton.ToolTip = IsPinned ? "Unpin sidebar" : "Pin sidebar open";
-        }
-        if (PinIcon != null)
-        {
-            PinIcon.Symbol = IsPinned ? Wpf.Ui.Controls.SymbolRegular.PinOff24 : Wpf.Ui.Controls.SymbolRegular.Pin24;
-        }
-    }
-
-    private void OnPinToggleClick(object sender, RoutedEventArgs e)
-    {
-        SetPinnedState(!IsPinned);
-        PinToggled?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnAppsToggleClick(object sender, RoutedEventArgs e)

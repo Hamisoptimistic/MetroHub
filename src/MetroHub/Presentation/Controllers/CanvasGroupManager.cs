@@ -328,7 +328,7 @@ public sealed class CanvasGroupManager
         foreach (var group in groups)
         {
             group.X = GridPlacementService.PixelXFromCol(group.Col);
-            group.Y = GridPlacementService.PixelYFromRow(group.Row) + 8;
+            group.Y = GridPlacementService.GetGroupHeaderY(group.Row);
 
             var container = groupsListBox?.ItemContainerGenerator.ContainerFromItem(group) as ContentPresenter;
             if (container != null)

@@ -10,7 +10,9 @@
              mc:Ignorable="d" 
              Width="48"
              Focusable="False"
-             FontFamily="{DynamicResource AppFontFamily}">
+             FontFamily="{DynamicResource AppFontFamily}"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="Auto">
 
     <UserControl.Resources>
         <!-- Modern Windows 11 Fluent Rail Button Style with Widget-Style Borderless Sheen -->
@@ -19,7 +21,7 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Width" Value="48" />
             <Setter Property="Height" Value="42" />
-            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="Margin" Value="0,0,0,1" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
@@ -33,7 +35,7 @@
                         <Grid Background="Transparent">
                             <!-- Hover / Active Background Pill with Soft Rounded Sheen, Zero Box Borders -->
                             <Border x:Name="PillBorder"
-                                    Margin="4,2"
+                                    Margin="4,1,4,2"
                                     CornerRadius="{DynamicResource ControlCornerRadius}"
                                     Background="Transparent"
                                     BorderThickness="0"
@@ -267,24 +269,19 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- 1. Top Section: Pin & All Apps -->
-        <StackPanel Grid.Row="0" Margin="0,10,0,0">
-            <!-- Pin / Unpin Toggle -->
-            <Button x:Name="PinButton"
-                    Style="{StaticResource RailButtonStyle}"
-                    ToolTip="Pin sidebar open"
-                    Click="OnPinToggleClick">
-                <ui:SymbolIcon x:Name="PinIcon" Symbol="Pin24" FontSize="18"
-                               Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" />
-            </Button>
-
+        <!-- 1. Top Section: All Apps / Search -->
+        <StackPanel Grid.Row="0" Margin="0">
             <!-- All Apps Drawer Toggle Button -->
             <Button x:Name="AppsToggleButton"
                     Style="{StaticResource RailButtonStyle}"
-                    ToolTip="All apps"
+                    ToolTip="All apps and search"
                     Click="OnAppsToggleClick">
-                <ui:SymbolIcon Symbol="AppsListDetail24" FontSize="22"
-                               Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" />
+                <TextBlock Text="&#xF78B;"
+                           FontFamily="{DynamicResource AppIconFontFamily}"
+                           FontSize="20"
+                           Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
             </Button>
 
             <!-- Workspaces Unified Capsule Container (Option A) -->

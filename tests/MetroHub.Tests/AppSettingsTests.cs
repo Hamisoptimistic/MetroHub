@@ -26,8 +26,12 @@ public class AppSettingsTests
         Assert.Equal("System", settings.ThemeMode);
         Assert.Equal("Mica", settings.BackdropType);
         Assert.Equal(8, settings.GroupColumnWidth);
-        Assert.True(settings.SidebarAutoHide);
-        Assert.False(settings.SidebarPinned);
+        Assert.False(settings.SidebarAutoHide);
+        Assert.True(settings.SidebarPinned);
+        Assert.True(settings.ShowWorkspacesButton);
+        Assert.True(settings.ShowAddShortcutButton);
+        Assert.True(settings.ShowPowerButton);
+        Assert.True(settings.ShowRecentApps);
         Assert.True(settings.CloseOnLaunch);
         Assert.True(settings.DismissOnDeactivate);
         Assert.False(settings.StartMinimized);

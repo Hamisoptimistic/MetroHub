@@ -184,6 +184,15 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             if (!isOpen)
             {
                 try { win.Activate(); win.Focus(); Keyboard.Focus(win); } catch (Exception ex) { Safe.Log("MainWindow.Activate", ex); }
+                if (!win.Settings.SidebarPinned && (win.AllAppsDrawer == null || !win.AllAppsDrawer.IsOpen))
+                {
+                    Point mousePos = Mouse.GetPosition(win);
+                    bool isMouseOverRail = (win.SidebarRail != null && win.SidebarRail.IsMouseOver) || (mousePos.X >= 0 && mousePos.X <= 48);
+                    if (!isMouseOverRail)
+                    {
+                        win.HideSidebarRail();
+                    }
+                }
             }
         };
 
@@ -260,7 +269,6 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         SetupSidebarTimers();
 
         SidebarRail.InitializeSettings(Settings);
-        SidebarRail.PinToggled += OnSidebarPinToggled;
         SidebarRail.ShortcutsChanged += OnSidebarShortcutsChanged;
         UpdateSidebarVisibilityInitial();
 
@@ -1379,7 +1387,6 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
         if (SidebarRail != null)
         {
-            SidebarRail.PinToggled -= OnSidebarPinToggled;
             SidebarRail.ShortcutsChanged -= OnSidebarShortcutsChanged;
         }
 

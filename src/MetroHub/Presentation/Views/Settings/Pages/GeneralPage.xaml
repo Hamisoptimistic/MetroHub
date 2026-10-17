@@ -21,7 +21,7 @@
                                FontSize="{DynamicResource TypeBodyFontSize}"
                                FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
-                    <TextBlock Text="Launch MetroHub automatically when you sign in to Windows"
+                    <TextBlock Text="Launch MetroHub automatically when you sign in"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                Margin="0,2,0,0" />
@@ -41,7 +41,7 @@
                                FontSize="{DynamicResource TypeBodyFontSize}"
                                FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
-                    <TextBlock Text="Launch quietly in the background without opening the main window on startup"
+                    <TextBlock Text="Launch quietly in the background on startup"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                Margin="0,2,0,0" />
@@ -50,45 +50,46 @@
             <ui:ToggleSwitch IsChecked="{Binding StartMinimized, Mode=TwoWay}" />
         </ui:CardControl>
 
-        <!-- Card 3: Close on App Launch -->
+        <!-- Card 3: System Tray Icon -->
         <ui:CardControl>
             <ui:CardControl.Icon>
-                <ui:SymbolIcon Symbol="Dismiss24" FontSize="18" />
+                <ui:SymbolIcon Symbol="AppGeneric24" FontSize="18" />
             </ui:CardControl.Icon>
             <ui:CardControl.Header>
                 <StackPanel>
-                    <TextBlock Text="Close on App Launch"
+                    <TextBlock Text="System Tray Icon"
                                FontSize="{DynamicResource TypeBodyFontSize}"
                                FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
-                    <TextBlock Text="Hide MetroHub automatically when an application, file, or shortcut is opened"
+                    <TextBlock Text="Display the MetroHub icon in the notification area"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                Margin="0,2,0,0" />
                 </StackPanel>
             </ui:CardControl.Header>
-            <ui:ToggleSwitch IsChecked="{Binding CloseOnLaunch, Mode=TwoWay}" />
+            <ui:ToggleSwitch IsChecked="{Binding ShowTrayIcon, Mode=TwoWay}" />
         </ui:CardControl>
 
-        <!-- Card 4: Dismiss on Outside Click -->
+        <!-- Card 4: Display (Placed at bottom to prevent dropdown overlap) -->
         <ui:CardControl>
             <ui:CardControl.Icon>
                 <ui:SymbolIcon Symbol="Desktop24" FontSize="18" />
             </ui:CardControl.Icon>
             <ui:CardControl.Header>
                 <StackPanel>
-                    <TextBlock Text="Dismiss on Outside Click"
+                    <TextBlock Text="Display"
                                FontSize="{DynamicResource TypeBodyFontSize}"
                                FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                Foreground="{DynamicResource TextPrimaryBrush}" />
-                    <TextBlock Text="Hide MetroHub automatically when clicking outside the window or switching apps"
+                    <TextBlock Text="Choose which monitor MetroHub opens on"
                                FontSize="{DynamicResource TypeCaptionFontSize}"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                Margin="0,2,0,0" />
                 </StackPanel>
             </ui:CardControl.Header>
-            <ui:ToggleSwitch IsChecked="{Binding DismissOnDeactivate, Mode=TwoWay}" />
+            <ComboBox MinWidth="160"
+                      ItemsSource="{Binding TargetDisplays}"
+                      SelectedItem="{Binding SelectedTargetDisplay, Mode=TwoWay}" />
         </ui:CardControl>
     </StackPanel>
 </UserControl>
-

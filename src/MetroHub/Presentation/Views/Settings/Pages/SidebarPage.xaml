@@ -1,0 +1,150 @@
+<UserControl x:Class="MetroHub.Presentation.Views.Settings.Pages.SidebarPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:vm="clr-namespace:MetroHub.Presentation.Views.Settings.ViewModels"
+             d:DataContext="{d:DesignInstance vm:SidebarSettingsViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             Background="Transparent">
+
+    <StackPanel>
+        <!-- Section 1: Sidebar Rail -->
+        <TextBlock Text="Sidebar Rail"
+                   FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                   Foreground="{DynamicResource TextPrimaryBrush}"
+                   Margin="0,0,0,8" />
+
+        <!-- Card 1: Auto-Hide Sidebar -->
+        <ui:CardControl>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="Pin24" FontSize="18" />
+            </ui:CardControl.Icon>
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <TextBlock Text="Auto-Hide Sidebar"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Automatically hide sidebar until you hover the left screen edge"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,2,0,0" />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:ToggleSwitch IsChecked="{Binding AutoHideSidebar, Mode=TwoWay}" />
+        </ui:CardControl>
+
+        <!-- Card 2: Workspaces Button -->
+        <ui:CardControl>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="Desktop24" FontSize="18" />
+            </ui:CardControl.Icon>
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <TextBlock Text="Workspaces Button"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Show the workspace switcher button on the sidebar"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,2,0,0" />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:ToggleSwitch IsChecked="{Binding ShowWorkspacesButton, Mode=TwoWay}" />
+        </ui:CardControl>
+
+        <!-- Card 3: Add Button -->
+        <ui:CardControl>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="Add24" FontSize="18" />
+            </ui:CardControl.Icon>
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <TextBlock Text="Add Button"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Show the add shortcut button on the bottom rail"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,2,0,0" />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:ToggleSwitch IsChecked="{Binding ShowAddShortcutButton, Mode=TwoWay}" />
+        </ui:CardControl>
+
+        <!-- Card 4: Power Button -->
+        <ui:CardControl>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="Power24" FontSize="18" />
+            </ui:CardControl.Icon>
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <TextBlock Text="Power Button"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Show the power options button on the bottom rail"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,2,0,0" />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:ToggleSwitch IsChecked="{Binding ShowPowerButton, Mode=TwoWay}" />
+        </ui:CardControl>
+
+        <!-- Section 2: All Apps Drawer -->
+        <TextBlock Text="All Apps Drawer"
+                   FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                   Foreground="{DynamicResource TextPrimaryBrush}"
+                   Margin="0,16,0,8" />
+
+        <!-- Card 5: Recent Apps -->
+        <ui:CardControl>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="History24" FontSize="18" />
+            </ui:CardControl.Icon>
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <TextBlock Text="Recent Apps"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Show suggested and recent apps in the drawer"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,2,0,0" />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ui:ToggleSwitch IsChecked="{Binding ShowRecentApps, Mode=TwoWay}" />
+        </ui:CardControl>
+
+        <!-- Card 6: Recent Apps Layout (Placed at bottom to prevent dropdown overlap) -->
+        <ui:CardControl>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="AppsListDetail24" FontSize="18" />
+            </ui:CardControl.Icon>
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <TextBlock Text="Recent Apps Layout"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Choose grid cards or a compact list in the drawer"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,2,0,0" />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ComboBox MinWidth="160"
+                      ItemsSource="{Binding RecentLayouts}"
+                      SelectedItem="{Binding SelectedRecentLayout, Mode=TwoWay}" />
+        </ui:CardControl>
+    </StackPanel>
+</UserControl>
+

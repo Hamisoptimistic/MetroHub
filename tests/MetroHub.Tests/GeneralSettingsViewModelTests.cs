@@ -13,36 +13,32 @@ public class GeneralSettingsViewModelTests
         var vm = new GeneralSettingsViewModel();
 
         Assert.Equal(SettingsService.Instance.Current.StartMinimized, vm.StartMinimized);
-        Assert.Equal(SettingsService.Instance.Current.CloseOnLaunch, vm.CloseOnLaunch);
-        Assert.Equal(SettingsService.Instance.Current.DismissOnDeactivate, vm.DismissOnDeactivate);
+        Assert.Equal("Follow Mouse", vm.SelectedTargetDisplay);
+        Assert.True(vm.ShowTrayIcon);
+        Assert.Contains("Follow Mouse", vm.TargetDisplays);
+        Assert.Contains("Primary Display", vm.TargetDisplays);
     }
 
     [Fact]
     public void GeneralSettingsViewModel_MutatingProperties_UpdatesUnderlyingSettings()
     {
         var vm = new GeneralSettingsViewModel();
-        bool initialClose = vm.CloseOnLaunch;
         bool initialMinimized = vm.StartMinimized;
-        bool initialDismiss = vm.DismissOnDeactivate;
 
         try
         {
-            vm.CloseOnLaunch = !initialClose;
-            Assert.Equal(!initialClose, SettingsService.Instance.Current.CloseOnLaunch);
-
             vm.StartMinimized = !initialMinimized;
             Assert.Equal(!initialMinimized, SettingsService.Instance.Current.StartMinimized);
 
-            vm.DismissOnDeactivate = !initialDismiss;
-            Assert.Equal(!initialDismiss, SettingsService.Instance.Current.DismissOnDeactivate);
+            vm.SelectedTargetDisplay = "Primary Display";
+            Assert.Equal("Primary Display", vm.SelectedTargetDisplay);
+
+            vm.ShowTrayIcon = false;
+            Assert.False(vm.ShowTrayIcon);
         }
         finally
         {
-            // Restore original state
-            vm.CloseOnLaunch = initialClose;
             vm.StartMinimized = initialMinimized;
-            vm.DismissOnDeactivate = initialDismiss;
         }
     }
 }
-

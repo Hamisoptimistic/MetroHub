@@ -429,7 +429,7 @@ public partial class MainWindow
 
         if (_isGroupDrag && _draggedGroupModel != null)
         {
-            double minGroupAnchorY = GridPlacementService.OriginY + 8 - _draggedGroupOffsetY;
+            double minGroupAnchorY = GridPlacementService.GetGroupHeaderY(0) - _draggedGroupOffsetY;
             minAllowedAnchorY = Math.Max(minAllowedAnchorY, minGroupAnchorY);
         }
 
@@ -493,7 +493,7 @@ public partial class MainWindow
         if (_isGroupDrag && _draggedGroupModel != null)
         {
             _draggedGroupModel.X = clampedAnchorX + _draggedGroupOffsetX;
-            _draggedGroupModel.Y = Math.Max(GridPlacementService.OriginY + 8, clampedAnchorY + _draggedGroupOffsetY);
+            _draggedGroupModel.Y = Math.Max(GridPlacementService.GetGroupHeaderY(0), clampedAnchorY + _draggedGroupOffsetY);
 
             var gContainer = GroupsListBox?.ItemContainerGenerator.ContainerFromItem(_draggedGroupModel) as ContentPresenter;
             if (gContainer != null)
@@ -533,7 +533,7 @@ public partial class MainWindow
             int targetRow = Math.Max(0, rawGroupRow);
 
             double colLeft = GridPlacementService.PixelXFromCol(targetCol + minLeftDelta);
-            double insertionY = GridPlacementService.PixelYFromRow(targetRow) - 2;
+            double insertionY = GridPlacementService.GetGroupHeaderY(targetRow) - 2;
 
             _groupDragTargetCol = targetCol;
             _groupDragTargetColIndex = targetCol;
@@ -543,7 +543,7 @@ public partial class MainWindow
             {
                 GroupInsertionLine.Width = colWidth;
                 Canvas.SetLeft(GroupInsertionLine, colLeft);
-                Canvas.SetTop(GroupInsertionLine, Math.Max(GridPlacementService.OriginY + 6, insertionY));
+                Canvas.SetTop(GroupInsertionLine, Math.Max(GridPlacementService.OriginY, insertionY));
                 GroupInsertionLine.Visibility = Visibility.Visible;
             }
         }
@@ -1760,7 +1760,7 @@ public partial class MainWindow
             int gCol = group.Col >= 0 ? group.Col : GridPlacementService.GetColumnStartCol(group.ColumnIndex);
             int gRow = Math.Max(0, group.Row);
             double gX = GridPlacementService.PixelXFromCol(gCol);
-            double gY = GridPlacementService.PixelYFromRow(gRow) + 8;
+            double gY = GridPlacementService.GetGroupHeaderY(gRow);
 
             _dragOriginalCol = gCol;
             _dragOriginalRow = gRow;

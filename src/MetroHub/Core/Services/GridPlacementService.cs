@@ -7,7 +7,10 @@ public static class GridPlacementService
     public const double GridStep = 64.0;
     public const double Gap = 8.0;
     public const double OriginX = 10.0;
-    public const double OriginY = 10.0;
+    public const double OriginY = 0.0;
+    public const double HeaderRowHeight = 44.0;
+    public const double MidCanvasHeaderOffset = 16.0;
+    public const double GroupHeaderYOffset = 0.0;
     public const double BaseSideMargin = 24.0;
     public const int GroupColWidth = 8;
     public const double ColumnGap = 0.0;
@@ -55,7 +58,8 @@ public static class GridPlacementService
 
     public static int RowFromPixel(double y)
     {
-        return Math.Max(0, (int)Math.Round((y - OriginY) / GridStep));
+        if (y <= OriginY + (HeaderRowHeight * 0.5)) return 0;
+        return 1 + Math.Max(0, (int)Math.Round((y - OriginY - HeaderRowHeight) / GridStep));
     }
 
     public static double PixelXFromCol(int col)
@@ -66,7 +70,14 @@ public static class GridPlacementService
 
     public static double PixelYFromRow(int row)
     {
-        return OriginY + (row * GridStep);
+        if (row <= 0) return OriginY;
+        return OriginY + HeaderRowHeight + ((row - 1) * GridStep);
+    }
+
+    public static double GetGroupHeaderY(int row)
+    {
+        if (row <= 0) return OriginY;
+        return PixelYFromRow(row) + MidCanvasHeaderOffset;
     }
 
     public static int SnapColToValidTrackSlot(int col, int spanX, int maxCols, double pixelX = 0)
@@ -86,7 +97,7 @@ public static class GridPlacementService
     public static int GetRow(TileModel tile)
     {
         if (tile.Row > 0) return tile.Row;
-        if (tile.Row == 0 && tile.Y > 50) return RowFromPixel(tile.Y);
+        if (tile.Row == 0 && tile.Y > 30) return RowFromPixel(tile.Y);
         return Math.Max(0, tile.Row);
     }
 
@@ -1537,7 +1548,7 @@ public static class GridPlacementService
                 {
                     int delta = maxRequiredRow - g.Row;
                     g.Row = maxRequiredRow;
-                    g.Y = PixelYFromRow(g.Row) + 8;
+                    g.Y = GetGroupHeaderY(g.Row);
 
                     var gMembers = allTiles.Where(t => t.Group == g.Id).ToList();
                     foreach (var m in gMembers)
@@ -1733,7 +1744,7 @@ public static class GridPlacementService
             if (deltaGRow == 0) continue;
 
             g.Row = newGRow;
-            g.Y = PixelYFromRow(g.Row) + 8;
+            g.Y = GetGroupHeaderY(g.Row);
 
             var gTiles = allTiles.Where(t => t.Group == g.Id).ToList();
             foreach (var t in gTiles)
@@ -1825,7 +1836,7 @@ public static class GridPlacementService
         foreach (var g in lowerGroups)
         {
             g.Row -= pullUpDelta;
-            g.Y = PixelYFromRow(g.Row) + 8;
+            g.Y = GetGroupHeaderY(g.Row);
 
             var gMembers = allTiles.Where(t => t.Group == g.Id).ToList();
             foreach (var t in gMembers)
@@ -2115,7 +2126,7 @@ public static class GridPlacementService
         draggedGroup.Col = targetColStart;
         draggedGroup.Row = targetRow;
         draggedGroup.X = PixelXFromCol(targetColStart);
-        draggedGroup.Y = PixelYFromRow(targetRow) + 8;
+        draggedGroup.Y = GetGroupHeaderY(targetRow);
 
         // 2. Move member tiles rigidly preserving relative positions
         var memberTiles = allTiles.Where(t => t.Group == draggedGroup.Id).ToList();
@@ -2291,7 +2302,7 @@ public static class GridPlacementService
             int deltaGRow = newGRow - oldGRow;
 
             g.Row = newGRow;
-            g.Y = PixelYFromRow(g.Row) + 8;
+            g.Y = GetGroupHeaderY(g.Row);
 
             var gTiles = allTiles.Where(t => t.Group == g.Id).ToList();
             foreach (var t in gTiles)

@@ -35,6 +35,9 @@
         <DataTemplate DataType="{x:Type vm:GeneralSettingsViewModel}">
             <pages:GeneralPage />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SidebarSettingsViewModel}">
+            <pages:SidebarPage />
+        </DataTemplate>
     </Window.Resources>
 
     <!-- Master Fluent Acrylic Shell with sharp Metro hairline border -->
