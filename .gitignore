@@ -57,3 +57,4 @@ extensions/*.zip
 extensions/*.xpi
 extensions/*.png
 extensions/signed/
+extensions/.amo-credentials.json
