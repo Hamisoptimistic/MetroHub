@@ -231,8 +231,8 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
             if (outgoing.IsDirty)
             {
                 outgoing.IsDirty = false;
-                StorageService.SaveWorkspaceLayoutSync(outgoing.Id, outgoing.Tiles);
-                StorageService.SaveWorkspaceGroupsSync(outgoing.Id, outgoing.Groups);
+                StorageService.SaveWorkspaceLayout(outgoing.Id, outgoing.Tiles);
+                StorageService.SaveWorkspaceGroups(outgoing.Id, outgoing.Groups);
             }
             outgoing.IsActive = false;
         }
@@ -381,17 +381,22 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
 
     private void AttachWorkspaceTracking(WorkspaceModel ws)
     {
+        void BindTile(TileModel tile)
+        {
+            tile.PropertyChanged += (sender, args) => OnTilePropertyChanged(ws, args);
+            if (tile.TileType == TileType.Widget)
+            {
+                tile.EnsureViewModelCreated();
+            }
+        }
+
         ws.Tiles.CollectionChanged += (s, e) =>
         {
             if (e.NewItems != null)
             {
                 foreach (TileModel tile in e.NewItems)
                 {
-                    tile.PropertyChanged += (sender, args) => OnTilePropertyChanged(ws, args);
-                    if (tile.TileType == TileType.Widget)
-                    {
-                        tile.EnsureViewModelCreated();
-                    }
+                    BindTile(tile);
                 }
             }
             MarkDirty(ws);
@@ -401,11 +406,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
 
         foreach (var tile in ws.Tiles)
         {
-            tile.PropertyChanged += (sender, args) => OnTilePropertyChanged(ws, args);
-            if (tile.TileType == TileType.Widget)
-            {
-                tile.EnsureViewModelCreated();
-            }
+            BindTile(tile);
         }
     }
 
