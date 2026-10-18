@@ -73,6 +73,13 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
     public event Action<WorkspaceModel>? WorkspaceChanged;
     public event Action<WorkspaceModel>? RequestRename;
     public event Action<WorkspaceModel>? RequestDelete;
+    public event Action<string>? WorkspacePrewarmRequested;
+
+    public void RequestPrewarm(string workspaceId)
+    {
+        if (string.IsNullOrWhiteSpace(workspaceId)) return;
+        WorkspacePrewarmRequested?.Invoke(workspaceId);
+    }
     public event Action? TileMoved;
 
     public WorkspaceManager()
@@ -265,7 +272,8 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
             Order = nextOrder,
             IconSymbol = wsIcon,
             CreatedUtc = DateTime.UtcNow,
-            IsDirty = true
+            IsDirty = true,
+            IsLayoutDirty = true
         };
 
         AttachWorkspaceTracking(ws);
@@ -354,6 +362,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
         // 1. Remove from source
         ActiveWorkspace.Tiles.Remove(tile);
         ActiveWorkspace.IsDirty = true;
+        ActiveWorkspace.IsLayoutDirty = true;
 
         // 2. Cleanse source-specific references and position cleanly in target
         tile.Group = null;
@@ -372,6 +381,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
         // 3. Add to target
         target.Tiles.Add(tile);
         target.IsDirty = true;
+        target.IsLayoutDirty = true;
 
         // 4. Invalidate source undo stack
         TileMoved?.Invoke();
@@ -426,6 +436,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
     public void MarkDirty(WorkspaceModel ws)
     {
         ws.IsDirty = true;
+        ws.IsLayoutDirty = true;
         ScheduleBackgroundFlush();
     }
 

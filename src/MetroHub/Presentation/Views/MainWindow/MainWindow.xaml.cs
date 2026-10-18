@@ -288,6 +288,16 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             UpdateLayoutMetrics();
             UpdateCanvasHeight();
             UpdateExposedAddSlots();
+            if (e.WidthChanged)
+            {
+                foreach (var ws in WorkspaceManager.Instance.Workspaces)
+                {
+                    if (ws != WorkspaceManager.Instance.ActiveWorkspace)
+                    {
+                        ws.IsLayoutDirty = true;
+                    }
+                }
+            }
             if (AllAppsDrawer != null && AllAppsDrawer.IsOpen && _canvasScissorTranslate != null)
             {
                 _canvasScissorTranslate.X = (AllAppsDrawer.DrawerWidth > 0 ? AllAppsDrawer.DrawerWidth : 320.0);
@@ -614,6 +624,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         _activeCanvas = canvas;
         UpdateCanvasHeight();
         UpdateExposedAddSlots();
+        activeWs.IsLayoutDirty = false;
     }
 
     private void OnSourceInitialized(object sender, EventArgs e)
@@ -1002,6 +1013,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
     protected override void OnClosed(EventArgs e)
     {
+        CancelWorkspaceTransition();
         _keepWarmTimer?.Dispose();
         _keepWarmTimer = null;
         CancelPendingWallpaperLoad();

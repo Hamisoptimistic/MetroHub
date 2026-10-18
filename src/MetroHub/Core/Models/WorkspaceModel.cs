@@ -81,6 +81,9 @@ public sealed class WorkspaceModel : INotifyPropertyChanged
     }
 
     [JsonIgnore]
+    public bool IsLayoutDirty { get; set; } = true;
+
+    [JsonIgnore]
     public ObservableCollection<TileModel> Tiles { get; } = new();
 
     [JsonIgnore]

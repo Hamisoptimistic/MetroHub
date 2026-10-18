@@ -7,8 +7,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Diagnostics;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
@@ -49,23 +49,82 @@ public partial class MainWindow
     {
         if (_canvasPool.Remove(workspaceId, out var canvas))
         {
+            _activeStrip.RemoveAll(item => item.Canvas == canvas);
             CanvasHostPanel?.Children.Remove(canvas);
             canvas.DataContext = null;
         }
     }
 
-    private bool _isWorkspaceTransitionRunning;
+    private sealed class ActiveStripItem
+    {
+        public WorkspaceCanvasControl Canvas { get; }
+        public TranslateTransform Transform { get; }
+        public double SlotX { get; set; }
+
+        public ActiveStripItem(WorkspaceCanvasControl canvas, TranslateTransform transform, double slotX)
+        {
+            Canvas = canvas;
+            Transform = transform;
+            SlotX = slotX;
+        }
+    }
+
+    private readonly List<ActiveStripItem> _activeStrip = new(capacity: 6);
+    private double _cameraX;
+    private double _cameraVelocity;
+    private double _targetCameraX;
+    private bool _isTransitionAnimating;
+    private long _lastTransitionTimestamp;
+    private TimeSpan _lastTransitionRenderTime = TimeSpan.MinValue;
+    private WorkspaceCanvasControl? _transitionTargetCanvas;
+    private WorkspaceModel? _transitionTargetModel;
     private WorkspaceModel? _lastOutgoingWorkspace;
+
+    private const double TransitionSpringOmega = 22.0;
+    private const double TransitionRestPosThreshold = 0.5;
+    private const double TransitionRestVelThreshold = 5.0;
 
     private void InitializeWorkspaces()
     {
         var wm = WorkspaceManager.Instance;
         wm.WorkspaceChanging += OnWorkspaceChanging;
         wm.WorkspaceChanged += OnWorkspaceChanged;
+        wm.WorkspacePrewarmRequested += OnWorkspacePrewarmRequested;
         wm.RequestRename += OnWorkspaceRequestRename;
         wm.RequestDelete += OnWorkspaceRequestDelete;
         wm.TileMoved += OnWorkspaceTileMoved;
         PreviewKeyDown += OnWorkspacesPreviewKeyDown;
+    }
+
+    private void OnWorkspacePrewarmRequested(string workspaceId)
+    {
+        if (string.Equals(_activeCanvas?.Workspace?.Id, workspaceId, StringComparison.OrdinalIgnoreCase)) return;
+        var ws = WorkspaceManager.Instance.Workspaces.FirstOrDefault(w => string.Equals(w.Id, workspaceId, StringComparison.OrdinalIgnoreCase));
+        if (ws == null) return;
+        var canvas = GetOrCreateCanvas(ws);
+        PrewarmCanvasCache(canvas);
+    }
+
+    private void PrewarmCanvasCache(WorkspaceCanvasControl canvas)
+    {
+        if (canvas.CacheMode != null) return;
+        double dpiScale = 1.0;
+        try
+        {
+            dpiScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
+            if (dpiScale <= 0) dpiScale = 1.0;
+        }
+        catch
+        {
+            dpiScale = 1.0;
+        }
+
+        canvas.CacheMode = new BitmapCache
+        {
+            RenderAtScale = dpiScale,
+            EnableClearType = true,
+            SnapsToDevicePixels = true
+        };
     }
 
     private void OnWorkspaceRequestRename(WorkspaceModel ws)
@@ -139,171 +198,223 @@ public partial class MainWindow
             return;
         }
 
-        var outgoingCanvas = _activeCanvas;
         var incomingCanvas = GetOrCreateCanvas(target);
 
-        // If same canvas or no outgoing canvas, swap immediately
-        if (outgoingCanvas == null || outgoingCanvas == incomingCanvas)
+        // If same canvas as active and not animating, nothing to transition
+        if (!_isTransitionAnimating && (_activeCanvas == null || _activeCanvas == incomingCanvas))
         {
             ApplyWorkspaceData(target);
             return;
         }
 
-        // Cancel any in-flight transition and reset clocks immediately
-        if (_isWorkspaceTransitionRunning)
+        // If already heading to this exact workspace during animation, no-op
+        if (_isTransitionAnimating && _transitionTargetCanvas == incomingCanvas)
         {
-            CleanupTransitionState();
+            return;
         }
 
-        _isWorkspaceTransitionRunning = true;
-
-        // Determine spatial direction based on workspace rail order
-        var wm = WorkspaceManager.Instance;
-        int outgoingIndex = _lastOutgoingWorkspace != null ? wm.Workspaces.IndexOf(_lastOutgoingWorkspace) : -1;
-        int incomingIndex = wm.Workspaces.IndexOf(target);
-        bool movingForward = incomingIndex >= outgoingIndex;
-
-        // Full-screen contiguous slide distance (true Windows 11 Virtual Desktop push)
         double hostWidth = CanvasHostPanel.ActualWidth;
         double slideDistance = hostWidth > 100.0 ? hostWidth : Math.Max(800.0, ActualWidth);
-        double exitX = movingForward ? -slideDistance : slideDistance;
-        double enterStartX = movingForward ? slideDistance : -slideDistance;
 
-        // Layer order: incoming on top
-        Panel.SetZIndex(incomingCanvas, 1);
-        Panel.SetZIndex(outgoingCanvas, 0);
+        var wm = WorkspaceManager.Instance;
+        PrewarmCanvasCache(incomingCanvas);
 
-        var outgoingTransform = new TranslateTransform(0, 0);
-        var incomingTransform = new TranslateTransform(enterStartX, 0);
-
-        outgoingCanvas.RenderTransform = outgoingTransform;
-        incomingCanvas.RenderTransform = incomingTransform;
-
-        // 100% Solid Opacity - Zero fading, Zero font antialiasing snapping, Zero ghosting
-        outgoingCanvas.Opacity = 1.0;
-        incomingCanvas.Opacity = 1.0;
-        incomingCanvas.Visibility = Visibility.Visible;
-        outgoingCanvas.Visibility = Visibility.Visible;
-
-        // High-DPI physical texture caching with sub-pixel ClearType enabled for locked 120 FPS
-        double dpiScale = 1.0;
-        try
+        if (!_isTransitionAnimating)
         {
-            dpiScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
-            if (dpiScale <= 0) dpiScale = 1.0;
+            var outgoingCanvas = _activeCanvas ?? incomingCanvas;
+            PrewarmCanvasCache(outgoingCanvas);
+
+            int outgoingIndex = _lastOutgoingWorkspace != null ? wm.Workspaces.IndexOf(_lastOutgoingWorkspace) : -1;
+            int incomingIndex = wm.Workspaces.IndexOf(target);
+            double direction = incomingIndex >= outgoingIndex ? 1.0 : -1.0;
+
+            _activeStrip.Clear();
+            _cameraX = 0.0;
+            _cameraVelocity = 0.0;
+
+            var outTransform = new TranslateTransform(0, 0);
+            outgoingCanvas.RenderTransform = outTransform;
+            outgoingCanvas.Opacity = 1.0;
+            outgoingCanvas.Visibility = Visibility.Visible;
+            Panel.SetZIndex(outgoingCanvas, 0);
+            _activeStrip.Add(new ActiveStripItem(outgoingCanvas, outTransform, 0.0));
+
+            double enterSlotX = direction * slideDistance;
+            var inTransform = new TranslateTransform(enterSlotX, 0);
+            incomingCanvas.RenderTransform = inTransform;
+            incomingCanvas.Opacity = 1.0;
+            incomingCanvas.Visibility = Visibility.Visible;
+            Panel.SetZIndex(incomingCanvas, 1);
+            _activeStrip.Add(new ActiveStripItem(incomingCanvas, inTransform, enterSlotX));
+
+            _targetCameraX = enterSlotX;
+            _transitionTargetCanvas = incomingCanvas;
+            _transitionTargetModel = target;
+
+            ApplyWorkspaceData(target, skipCanvasVisibility: true);
+
+            StartTransitionLoop();
         }
-        catch
+        else
         {
-            dpiScale = 1.0;
-        }
+            // Rapid multi-click interruption: continuous momentum preservation on virtual strip
+            int currentTargetIndex = _transitionTargetModel != null ? wm.Workspaces.IndexOf(_transitionTargetModel) : -1;
+            int newTargetIndex = wm.Workspaces.IndexOf(target);
+            double direction = newTargetIndex >= currentTargetIndex ? 1.0 : -1.0;
 
-        outgoingCanvas.CacheMode = new BitmapCache
-        {
-            RenderAtScale = dpiScale,
-            EnableClearType = true,
-            SnapsToDevicePixels = true
-        };
-        incomingCanvas.CacheMode = new BitmapCache
-        {
-            RenderAtScale = dpiScale,
-            EnableClearType = true,
-            SnapsToDevicePixels = true
-        };
-
-        // Apply target model metadata, placement, and metrics immediately
-        ApplyWorkspaceData(target, skipCanvasVisibility: true);
-
-        // Standard Fluent 2 Deceleration Curve (EaseOut) across 280 ms
-        var easeOut = new CubicEase { EasingMode = EasingMode.EaseOut };
-        var duration = TimeSpan.FromMilliseconds(280);
-
-        var outgoingSlide = new DoubleAnimation
-        {
-            To = exitX,
-            Duration = duration,
-            EasingFunction = easeOut
-        };
-        Timeline.SetDesiredFrameRate(outgoingSlide, 120);
-
-        var incomingSlide = new DoubleAnimation
-        {
-            To = 0.0,
-            Duration = duration,
-            EasingFunction = easeOut
-        };
-        Timeline.SetDesiredFrameRate(incomingSlide, 120);
-
-        EventHandler? onCompleted = null;
-        onCompleted = (s, e) =>
-        {
-            incomingSlide.Completed -= onCompleted;
-            CompleteTransition(outgoingCanvas, incomingCanvas, target);
-        };
-
-        incomingSlide.Completed += onCompleted;
-
-        // Hardware-composite both contiguous canvases at 120 FPS
-        outgoingTransform.BeginAnimation(TranslateTransform.XProperty, outgoingSlide);
-        incomingTransform.BeginAnimation(TranslateTransform.XProperty, incomingSlide);
-    }
-
-    private void CompleteTransition(WorkspaceCanvasControl outgoingCanvas, WorkspaceCanvasControl incomingCanvas, WorkspaceModel target)
-    {
-        _isWorkspaceTransitionRunning = false;
-
-        // Teardown outgoing canvas: detach animation clocks and collapse
-        outgoingCanvas.Visibility = Visibility.Collapsed;
-        outgoingCanvas.CacheMode = null;
-        if (outgoingCanvas.RenderTransform is TranslateTransform outTt)
-        {
-            outTt.BeginAnimation(TranslateTransform.XProperty, null);
-        }
-        outgoingCanvas.RenderTransform = null;
-
-        // Teardown incoming canvas: detach animation clocks and restore clean vector state
-        incomingCanvas.CacheMode = null;
-        if (incomingCanvas.RenderTransform is TranslateTransform inTt)
-        {
-            inTt.BeginAnimation(TranslateTransform.XProperty, null);
-        }
-        incomingCanvas.RenderTransform = null;
-        incomingCanvas.Visibility = Visibility.Visible;
-
-        _activeCanvas = incomingCanvas;
-
-        // Deferred wake-up of active widgets
-        Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
-        {
-            InvokeOnAwakened(target.Tiles);
-        });
-    }
-
-    private void CleanupTransitionState()
-    {
-        _isWorkspaceTransitionRunning = false;
-        if (CanvasHostPanel != null)
-        {
-            foreach (UIElement child in CanvasHostPanel.Children)
+            var existingItem = _activeStrip.FirstOrDefault(item => item.Canvas == incomingCanvas);
+            if (existingItem != null)
             {
-                if (child is WorkspaceCanvasControl canvas)
-                {
-                    canvas.CacheMode = null;
-                    if (canvas.RenderTransform is TranslateTransform tt)
-                    {
-                        tt.BeginAnimation(TranslateTransform.XProperty, null);
-                    }
-                    canvas.RenderTransform = null;
-                    if (canvas != _activeCanvas)
-                    {
-                        canvas.Visibility = Visibility.Collapsed;
-                    }
-                    else
-                    {
-                        canvas.Visibility = Visibility.Visible;
-                    }
-                }
+                _targetCameraX = existingItem.SlotX;
+            }
+            else
+            {
+                double nextSlotX = _targetCameraX + (direction * slideDistance);
+                var inTransform = new TranslateTransform(nextSlotX - _cameraX, 0);
+                incomingCanvas.RenderTransform = inTransform;
+                incomingCanvas.Opacity = 1.0;
+                incomingCanvas.Visibility = Visibility.Visible;
+                Panel.SetZIndex(incomingCanvas, _activeStrip.Count + 1);
+                _activeStrip.Add(new ActiveStripItem(incomingCanvas, inTransform, nextSlotX));
+                _targetCameraX = nextSlotX;
+            }
+
+            _transitionTargetCanvas = incomingCanvas;
+            _transitionTargetModel = target;
+
+            ApplyWorkspaceData(target, skipCanvasVisibility: true);
+        }
+    }
+
+    private void StartTransitionLoop()
+    {
+        if (_isTransitionAnimating) return;
+        _isTransitionAnimating = true;
+        _lastTransitionTimestamp = Stopwatch.GetTimestamp();
+        _lastTransitionRenderTime = TimeSpan.MinValue;
+        CompositionTarget.Rendering += OnTransitionRendering;
+    }
+
+    private void OnTransitionRendering(object? sender, EventArgs e)
+    {
+        if (e is RenderingEventArgs renderingArgs)
+        {
+            if (renderingArgs.RenderingTime == _lastTransitionRenderTime) return;
+            _lastTransitionRenderTime = renderingArgs.RenderingTime;
+        }
+
+        long now = Stopwatch.GetTimestamp();
+        double dt = (now - _lastTransitionTimestamp) / (double)Stopwatch.Frequency;
+        _lastTransitionTimestamp = now;
+
+        if (dt <= 0.0001 || dt > 0.05)
+        {
+            dt = 1.0 / 120.0;
+        }
+
+        double displacement = _cameraX - _targetCameraX;
+        double exp = Math.Exp(-TransitionSpringOmega * dt);
+        double temp = (_cameraVelocity + TransitionSpringOmega * displacement) * dt;
+
+        _cameraX = _targetCameraX + (displacement + temp) * exp;
+        _cameraVelocity = (_cameraVelocity - TransitionSpringOmega * temp) * exp;
+
+        bool isAtRest = Math.Abs(_cameraX - _targetCameraX) < TransitionRestPosThreshold
+                     && Math.Abs(_cameraVelocity) < TransitionRestVelThreshold;
+
+        if (isAtRest)
+        {
+            _cameraX = _targetCameraX;
+            _cameraVelocity = 0.0;
+        }
+
+        for (int i = 0; i < _activeStrip.Count; i++)
+        {
+            var item = _activeStrip[i];
+            item.Transform.X = item.SlotX - _cameraX;
+        }
+
+        if (isAtRest)
+        {
+            CompleteTransition();
+        }
+    }
+
+    private void CompleteTransition()
+    {
+        if (!_isTransitionAnimating) return;
+        _isTransitionAnimating = false;
+        CompositionTarget.Rendering -= OnTransitionRendering;
+
+        var winnerCanvas = _transitionTargetCanvas;
+        var winnerModel = _transitionTargetModel;
+
+        for (int i = 0; i < _activeStrip.Count; i++)
+        {
+            var item = _activeStrip[i];
+            if (item.Canvas != winnerCanvas)
+            {
+                item.Canvas.Visibility = Visibility.Collapsed;
+                item.Canvas.CacheMode = null;
+                item.Canvas.RenderTransform = null;
             }
         }
+
+        _activeStrip.Clear();
+
+        if (winnerCanvas != null && winnerModel != null)
+        {
+            winnerCanvas.RenderTransform = null;
+            winnerCanvas.Visibility = Visibility.Visible;
+            Panel.SetZIndex(winnerCanvas, 0);
+            _activeCanvas = winnerCanvas;
+
+            UpdateCanvasHeight();
+
+            // Restore ClearType on stationary active canvas
+            Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, () =>
+            {
+                if (!_isTransitionAnimating && _activeCanvas == winnerCanvas)
+                {
+                    winnerCanvas.CacheMode = null;
+                    InvokeOnAwakened(winnerModel.Tiles);
+                }
+            });
+        }
+
+        _transitionTargetCanvas = null;
+        _transitionTargetModel = null;
+    }
+
+    internal void CancelWorkspaceTransition()
+    {
+        if (!_isTransitionAnimating) return;
+        _isTransitionAnimating = false;
+        CompositionTarget.Rendering -= OnTransitionRendering;
+
+        var fallback = _transitionTargetCanvas ?? _activeCanvas;
+        if (fallback != null)
+        {
+            fallback.RenderTransform = null;
+            fallback.CacheMode = null;
+            fallback.Visibility = Visibility.Visible;
+            _activeCanvas = fallback;
+        }
+
+        for (int i = 0; i < _activeStrip.Count; i++)
+        {
+            var item = _activeStrip[i];
+            if (item.Canvas != fallback)
+            {
+                item.Canvas.Visibility = Visibility.Collapsed;
+                item.Canvas.CacheMode = null;
+                item.Canvas.RenderTransform = null;
+            }
+        }
+
+        _activeStrip.Clear();
+        _transitionTargetCanvas = null;
+        _transitionTargetModel = null;
     }
 
     private void ApplyWorkspaceData(WorkspaceModel target, bool skipCanvasVisibility = false)
@@ -327,13 +438,17 @@ public partial class MainWindow
         _historyService.SwitchWorkspace(target.Id);
         ClearTileSelection();
 
-        DiscoverGroupsFromTiles();
-        EnsureGroupIndices();
-        MigrateGroupColumnOffsets();
-        UpdateLayoutMetrics();
-        UpdateGroupHeaderPositions();
-        UpdateCanvasHeight();
-        UpdateExposedAddSlots();
+        if (target.IsLayoutDirty)
+        {
+            DiscoverGroupsFromTiles();
+            EnsureGroupIndices();
+            MigrateGroupColumnOffsets();
+            UpdateLayoutMetrics();
+            UpdateGroupHeaderPositions();
+            UpdateCanvasHeight();
+            UpdateExposedAddSlots();
+            target.IsLayoutDirty = false;
+        }
     }
 
     private static void InvokeOnDormant(IEnumerable<TileModel> tiles)

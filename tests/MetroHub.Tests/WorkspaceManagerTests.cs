@@ -518,5 +518,51 @@ public sealed class WorkspaceManagerTests : IDisposable
             Assert.Contains(onDiskTiles, t => t.Title == "Test Web Link");
         });
     }
+
+    [Fact]
+    public void WorkspaceModel_IsLayoutDirty_DefaultsTrue_AndCanBeCleared()
+    {
+        var ws = new WorkspaceModel { Id = "test-ws" };
+        Assert.True(ws.IsLayoutDirty);
+
+        ws.IsLayoutDirty = false;
+        Assert.False(ws.IsLayoutDirty);
+    }
+
+    [Fact]
+    public void WorkspaceManager_RequestPrewarm_FiresWorkspacePrewarmRequestedEvent()
+    {
+        string? receivedId = null;
+        WorkspaceManager.Instance.WorkspacePrewarmRequested += id => receivedId = id;
+
+        WorkspaceManager.Instance.RequestPrewarm("target-ws-123");
+        Assert.Equal("target-ws-123", receivedId);
+
+        // Whitespace / null check
+        receivedId = null;
+        WorkspaceManager.Instance.RequestPrewarm("   ");
+        Assert.Null(receivedId);
+    }
+
+    [Fact]
+    public void WorkspaceManager_MoveTileToWorkspace_MarksBothWorkspacesLayoutDirty()
+    {
+        WorkspaceManager.Instance.Initialize();
+        var ws1 = WorkspaceManager.Instance.ActiveWorkspace;
+        var ws2 = WorkspaceManager.Instance.CreateWorkspace("Target Layout Dirty WS");
+        Assert.NotNull(ws2);
+
+        WorkspaceManager.Instance.SwitchWorkspace(ws1.Id);
+        var tile = new TileModel { Id = "tile-dirty-test", Row = 1, Col = 0, SpanX = 1, SpanY = 1 };
+        ws1.Tiles.Add(tile);
+
+        ws1.IsLayoutDirty = false;
+        ws2.IsLayoutDirty = false;
+
+        WorkspaceManager.Instance.MoveTileToWorkspace(tile, ws2.Id);
+
+        Assert.True(ws1.IsLayoutDirty);
+        Assert.True(ws2.IsLayoutDirty);
+    }
 }
 

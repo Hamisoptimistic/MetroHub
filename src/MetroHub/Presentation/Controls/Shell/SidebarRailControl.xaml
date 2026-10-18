@@ -376,6 +376,7 @@
                                         <DataTemplate DataType="{x:Type models:WorkspaceModel}">
                                             <Button Style="{StaticResource WorkspaceRailItemStyle}"
                                                     Tag="{Binding}"
+                                                    MouseEnter="OnWorkspaceButtonMouseEnter"
                                                     Command="{Binding Path=SwitchWorkspaceCommand, Source={x:Static controllers:WorkspaceManager.Instance}}"
                                                     CommandParameter="{Binding Id}"
                                                     ToolTip="{Binding TooltipText}">
