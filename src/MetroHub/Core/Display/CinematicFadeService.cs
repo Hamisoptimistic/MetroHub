@@ -37,7 +37,11 @@ public sealed class CinematicFadeService
     public static extern bool LockWorkStation();
 
     [DllImport("powrprof.dll", SetLastError = true)]
-    public static extern bool SetSuspendState(bool hibernate, bool forceCritical, bool disableWakeEvent);
+    [return: MarshalAs(UnmanagedType.I1)]
+    public static extern bool SetSuspendState(
+        [MarshalAs(UnmanagedType.I1)] bool hibernate,
+        [MarshalAs(UnmanagedType.I1)] bool forceCritical,
+        [MarshalAs(UnmanagedType.I1)] bool disableWakeEvent);
 
     private const int HWND_BROADCAST = 0xFFFF;
     private const uint WM_SYSCOMMAND = 0x0112;
@@ -174,8 +178,9 @@ public sealed class CinematicFadeService
                     {
                         try
                         {
-                            // Screen is now 100% black: execute target power/session action
-                            action();
+                            // Screen is now 100% black: execute target power/session action off the UI thread
+                            // to ensure the WPF Dispatcher continues pumping messages during OS power transitions
+                            await Task.Run(action).ConfigureAwait(true);
 
                             if (holdDurationMs > 0)
                             {

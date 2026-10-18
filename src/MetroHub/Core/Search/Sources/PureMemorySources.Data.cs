@@ -110,7 +110,7 @@ public static class PureMemoryData
     [
         new(
             Id: "sys:lock",
-            Title: "Lock",
+            Title: "Lock workstation",
             Description: "Lock current Windows user session",
             Keywords: ["lock", "lock workstation", "lock screen"],
             RequiresConfirm: false,
