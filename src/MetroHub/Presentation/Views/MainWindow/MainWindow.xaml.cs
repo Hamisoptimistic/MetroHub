@@ -607,13 +607,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         MigrateGroupColumnOffsets();
         CompactGroupGaps();
         UpdateLayoutMetrics();
-        bool anyCleaned = GridPlacementService.CleanEmptyGroups(Groups, Tiles);
         UpdateGroupHeaderPositions();
-
-        if (anyCleaned)
-        {
-            SaveGroupsAndLayout();
-        }
 
         var canvas = GetOrCreateCanvas(activeWs);
         canvas.Visibility = Visibility.Visible;

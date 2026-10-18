@@ -330,9 +330,7 @@ public partial class MainWindow
         DiscoverGroupsFromTiles();
         EnsureGroupIndices();
         MigrateGroupColumnOffsets();
-        CompactGroupGaps();
         UpdateLayoutMetrics();
-        GridPlacementService.CleanEmptyGroups(Groups, Tiles);
         UpdateGroupHeaderPositions();
         UpdateCanvasHeight();
         UpdateExposedAddSlots();

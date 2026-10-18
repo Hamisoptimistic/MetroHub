@@ -309,5 +309,92 @@ public class TileManagerAndCanvasTests
             Assert.Null(tile1.RootBorder.ContextMenu);
         });
     }
+
+    [Fact]
+    public void PullLowerGroupsUp_DoesNotPullLooseTilesBelowGroup()
+    {
+        var group = new TileGroupModel
+        {
+            Id = "grp1",
+            Col = 0,
+            Row = 0,
+            Title = "Top Group"
+        };
+        var groupMember = new TileModel
+        {
+            Id = "member1",
+            Group = "grp1",
+            Col = 0,
+            Row = 1,
+            SpanX = 2,
+            SpanY = 2
+        };
+        var looseTile = new TileModel
+        {
+            Id = "bleachbit",
+            Group = null,
+            Col = 0,
+            Row = 15,
+            SpanX = 2,
+            SpanY = 2,
+            Y = GridPlacementService.PixelYFromRow(15)
+        };
+
+        var groups = new List<TileGroupModel> { group };
+        var allTiles = new List<TileModel> { groupMember, looseTile };
+
+        // Even with maxPullUpRows = null (unbounded pull as in CompactGroupGaps),
+        // loose tiles must remain at their explicit user-placed coordinates.
+        var modified = GridPlacementService.PullLowerGroupsUp(group, groups, allTiles);
+
+        Assert.Equal(15, looseTile.Row);
+        Assert.DoesNotContain(looseTile, modified);
+    }
+
+    [Fact]
+    public void PullLowerGroupsUp_PullsLowerGroupsWhenUpperGroupShrinks()
+    {
+        var upperGroup = new TileGroupModel
+        {
+            Id = "grpUpper",
+            Col = 0,
+            Row = 0,
+            Title = "Upper Group"
+        };
+        var upperMember = new TileModel
+        {
+            Id = "upperMember",
+            Group = "grpUpper",
+            Col = 0,
+            Row = 1,
+            SpanX = 2,
+            SpanY = 2
+        };
+        var lowerGroup = new TileGroupModel
+        {
+            Id = "grpLower",
+            Col = 0,
+            Row = 8,
+            Title = "Lower Group"
+        };
+        var lowerMember = new TileModel
+        {
+            Id = "lowerMember",
+            Group = "grpLower",
+            Col = 0,
+            Row = 9,
+            SpanX = 2,
+            SpanY = 2
+        };
+
+        var groups = new List<TileGroupModel> { upperGroup, lowerGroup };
+        var allTiles = new List<TileModel> { upperMember, lowerMember };
+
+        var modified = GridPlacementService.PullLowerGroupsUp(upperGroup, groups, allTiles, maxPullUpRows: 3);
+
+        Assert.Equal(5, lowerGroup.Row);
+        Assert.Equal(6, lowerMember.Row);
+        Assert.Contains(lowerMember, modified);
+    }
 }
 
