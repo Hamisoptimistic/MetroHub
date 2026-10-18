@@ -12,6 +12,7 @@ publish_release/
 .vs/
 .idea/
 .vscode/
+.sharplsp/
 *.user
 *.suo
 *.cache
@@ -33,6 +34,9 @@ diagnostics/
 *.nettrace
 *.speedscope.json
 *.speedscope
+*.cpuprofile
+*.heapprofile
+*.heapgraph.json
 *.etl
 *.dmp
 *.diagsession
