@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Display;
 using MetroHub.Core.Models;
+using MetroHub.Core.Services;
 using MetroHub.Widgets;
 using MetroHub.Presentation.Themes;
 using Wpf.Ui.Controls;
@@ -237,31 +238,19 @@ public sealed partial class PowerWidgetViewModel : WidgetViewModelBase
             switch (action)
             {
                 case "Lock":
-                    await CinematicFadeService.Instance.FadeAndExecuteAsync(() =>
-                    {
-                        CinematicFadeService.LockWorkStation();
-                    }, fadeDurationMs: 450, holdDurationMs: 50);
+                    await PowerService.ExecuteLockAsync();
                     break;
 
                 case "Sleep":
-                    await CinematicFadeService.Instance.FadeAndExecuteAsync(() =>
-                    {
-                        CinematicFadeService.SetSuspendState(false, false, false);
-                    }, fadeDurationMs: 600, holdDurationMs: 250);
+                    await PowerService.ExecuteSleepAsync();
                     break;
 
                 case "Restart":
-                    await CinematicFadeService.Instance.FadeAndExecuteAsync(() =>
-                    {
-                        Process.Start(new ProcessStartInfo("shutdown.exe", "/r /t 0") { CreateNoWindow = true, UseShellExecute = false });
-                    }, fadeDurationMs: 650, holdDurationMs: 300);
+                    await PowerService.ExecuteRestartAsync();
                     break;
 
                 case "Shutdown":
-                    await CinematicFadeService.Instance.FadeAndExecuteAsync(() =>
-                    {
-                        Process.Start(new ProcessStartInfo("shutdown.exe", "/s /t 0") { CreateNoWindow = true, UseShellExecute = false });
-                    }, fadeDurationMs: 650, holdDurationMs: 300);
+                    await PowerService.ExecuteShutdownAsync();
                     break;
             }
         }

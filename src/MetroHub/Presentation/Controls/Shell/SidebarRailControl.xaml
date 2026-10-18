@@ -851,6 +851,15 @@
                                 <ui:SymbolIcon Symbol="WeatherMoon24" FontSize="18" />
                             </MenuItem.Icon>
                         </MenuItem>
+                        <MenuItem x:Name="HibernateMenuItem" Header="Hibernate" Click="OnHibernateClick">
+                            <MenuItem.Icon>
+                                <TextBlock Text="&#xE823;"
+                                           FontFamily="{DynamicResource AppIconFontFamily}"
+                                           FontSize="16"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center" />
+                            </MenuItem.Icon>
+                        </MenuItem>
                         <MenuItem Header="Shut down" Click="OnShutdownClick">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="Power24" FontSize="18" />

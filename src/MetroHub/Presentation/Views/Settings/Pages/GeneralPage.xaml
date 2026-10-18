@@ -70,6 +70,33 @@
             <ui:ToggleSwitch IsChecked="{Binding ShowTrayIcon, Mode=TwoWay}" />
         </ui:CardControl>
 
+        <!-- Card: Windows Hibernation -->
+        <ui:CardControl>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="WeatherMoon24" FontSize="18" />
+            </ui:CardControl.Icon>
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <TextBlock Text="Windows Hibernation"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="{Binding HibernateStatusDescription}"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,2,0,0" />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="{Binding HibernateToggleLabel}"
+                           FontSize="{DynamicResource TypeBodyFontSize}"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           VerticalAlignment="Center"
+                           Margin="0,0,10,0" />
+                <ui:ToggleSwitch IsChecked="{Binding IsHibernateEnabled, Mode=TwoWay}" />
+            </StackPanel>
+        </ui:CardControl>
+
         <!-- Card 4: Display (Placed at bottom to prevent dropdown overlap) -->
         <ui:CardControl>
             <ui:CardControl.Icon>

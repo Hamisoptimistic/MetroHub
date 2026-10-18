@@ -110,14 +110,14 @@ public static class PureMemoryData
     [
         new(
             Id: "sys:lock",
-            Title: "Lock workstation",
+            Title: "Lock",
             Description: "Lock current Windows user session",
             Keywords: ["lock", "lock workstation", "lock screen"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
             ExecuteAsync: ctx =>
             {
-                _ = CinematicFadeService.Instance.FadeAndExecuteAsync(() => CinematicFadeService.LockWorkStation());
+                _ = PowerService.ExecuteLockAsync();
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             },
             Icon: SymbolRegular.LockClosed24),
@@ -131,14 +131,33 @@ public static class PureMemoryData
             ConfirmPrompt: null,
             ExecuteAsync: ctx =>
             {
-                _ = CinematicFadeService.Instance.FadeAndExecuteAsync(() => CinematicFadeService.SetSuspendState(false, true, false));
+                _ = PowerService.ExecuteSleepAsync();
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             },
             Icon: SymbolRegular.WeatherMoon24),
 
         new(
+            Id: "sys:hibernate",
+            Title: "Hibernate",
+            Description: "Save session to disk and power off computer",
+            Keywords: ["hibernate", "hibernation", "deep sleep"],
+            RequiresConfirm: true,
+            ConfirmPrompt: "Press Enter again to hibernate",
+            ExecuteAsync: ctx =>
+            {
+                if (!ctx.Confirmed)
+                {
+                    return Task.FromResult(new ActionResult(ActionOutcome.RequireConfirmation, "Press Enter again to hibernate"));
+                }
+
+                _ = PowerService.ExecuteHibernateAsync();
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Pause24),
+
+        new(
             Id: "sys:restart",
-            Title: "Restart computer",
+            Title: "Restart",
             Description: "Reboot Windows operating system",
             Keywords: ["restart", "reboot"],
             RequiresConfirm: true,
@@ -150,14 +169,14 @@ public static class PureMemoryData
                     return Task.FromResult(new ActionResult(ActionOutcome.RequireConfirmation, "Press Enter again to restart"));
                 }
 
-                ProcessLauncherService.LaunchTarget("shutdown.exe", "/r /t 0");
+                _ = PowerService.ExecuteRestartAsync();
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             },
             Icon: SymbolRegular.ArrowCounterclockwise24),
 
         new(
             Id: "sys:shutdown",
-            Title: "Shut down computer",
+            Title: "Shut down",
             Description: "Power off Windows operating system",
             Keywords: ["shutdown", "shut down", "power off", "turn off"],
             RequiresConfirm: true,
@@ -169,7 +188,7 @@ public static class PureMemoryData
                     return Task.FromResult(new ActionResult(ActionOutcome.RequireConfirmation, "Press Enter again to shut down"));
                 }
 
-                ProcessLauncherService.LaunchTarget("shutdown.exe", "/s /t 0");
+                _ = PowerService.ExecuteShutdownAsync();
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             },
             Icon: SymbolRegular.Power24),
@@ -188,7 +207,7 @@ public static class PureMemoryData
                     return Task.FromResult(new ActionResult(ActionOutcome.RequireConfirmation, "Press Enter again to sign out"));
                 }
 
-                ProcessLauncherService.LaunchTarget("shutdown.exe", "/l");
+                _ = PowerService.ExecuteSignOutAsync();
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             },
             Icon: SymbolRegular.SignOut24),

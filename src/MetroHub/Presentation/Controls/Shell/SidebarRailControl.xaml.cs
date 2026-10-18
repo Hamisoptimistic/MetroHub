@@ -1180,59 +1180,22 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
     {
         if (PowerButton.ContextMenu != null)
         {
+            HibernateMenuItem.Visibility = PowerService.IsHibernateSupported() ? Visibility.Visible : Visibility.Collapsed;
             PowerButton.ContextMenu.PlacementTarget = PowerButton;
             PowerButton.ContextMenu.Placement = PlacementMode.Right;
             PowerButton.ContextMenu.IsOpen = true;
         }
     }
 
-    private void OnSleepClick(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo("rundll32.exe", "powrprof.dll,SetSuspendState 0,1,0") { UseShellExecute = true });
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Failed to suspend: {ex.Message}");
-        }
-    }
+    private void OnHibernateClick(object sender, RoutedEventArgs e) => _ = PowerService.ExecuteHibernateAsync();
 
-    private void OnShutdownClick(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo("shutdown.exe", "/s /t 0") { CreateNoWindow = true, UseShellExecute = false });
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Failed to shutdown: {ex.Message}");
-        }
-    }
+    private void OnSleepClick(object sender, RoutedEventArgs e) => _ = PowerService.ExecuteSleepAsync();
 
-    private void OnRestartClick(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo("shutdown.exe", "/r /t 0") { CreateNoWindow = true, UseShellExecute = false });
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Failed to restart: {ex.Message}");
-        }
-    }
+    private void OnShutdownClick(object sender, RoutedEventArgs e) => _ = PowerService.ExecuteShutdownAsync();
 
-    private void OnLockClick(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo("rundll32.exe", "user32.dll,LockWorkStation") { UseShellExecute = true });
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Failed to lock workstation: {ex.Message}");
-        }
-    }
+    private void OnRestartClick(object sender, RoutedEventArgs e) => _ = PowerService.ExecuteRestartAsync();
+
+    private void OnLockClick(object sender, RoutedEventArgs e) => _ = PowerService.ExecuteLockAsync();
 
     private void OnSettingsClick(object sender, RoutedEventArgs e)
     {
