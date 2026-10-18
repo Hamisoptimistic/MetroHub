@@ -112,5 +112,21 @@ public sealed class SmoothPhysicsScrollBehaviorTests
             Assert.False(SmoothPhysicsScrollBehavior.GetIsEnabled(sv));
         });
     }
+
+    [Fact]
+    public void EvaluateKineticFriction_DecaysVelocitySmoothly()
+    {
+        double v = 1000.0;
+        const double friction = 0.91;
+        const double dt = 1.0 / 120.0;
+
+        for (int i = 0; i < 60; i++)
+        {
+            v = SmoothPhysicsScrollBehavior.EvaluateKineticFriction(v, friction, dt);
+        }
+
+        Assert.True(v < 100.0, $"Velocity did not decay properly: v = {v}");
+        Assert.True(v > 0.0, "Velocity should remain positive during decay");
+    }
 }
 
