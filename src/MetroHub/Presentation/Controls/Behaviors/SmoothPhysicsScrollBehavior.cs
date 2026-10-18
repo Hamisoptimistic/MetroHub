@@ -8,10 +8,9 @@ using System.Windows.Media;
 namespace MetroHub.Presentation.Controls;
 
 /// <summary>
-/// Attached behavior for ScrollViewer providing true WinUI 3 kinetic friction scrolling.
-/// Features aerodynamic kinetic friction deceleration, cadence-based flick acceleration,
-/// elastic boundary rubber-band bounce, sub-pixel layout rounding suppression,
-/// and automated precision trackpad detection.
+/// Resolution-, DPI-, and refresh-rate-invariant WinUI 3 smooth scroll behavior.
+/// Uses an impulse-assisted critically damped spring in device-independent pixels (DIPs)
+/// paired with per-monitor physical pixel snapping and GPU sub-pixel interpolation.
 /// </summary>
 public static class SmoothPhysicsScrollBehavior
 {
@@ -24,6 +23,34 @@ public static class SmoothPhysicsScrollBehavior
 
     public static bool GetIsEnabled(DependencyObject obj) => (bool)obj.GetValue(IsEnabledProperty);
     public static void SetIsEnabled(DependencyObject obj, bool value) => obj.SetValue(IsEnabledProperty, value);
+
+    /// <summary>
+    /// Distance in DIPs (1/96 inch) per standard 3-line mouse wheel notch.
+    /// Default is 76.0 DIPs (independent of window size, resolution, or DPI scale).
+    /// </summary>
+    public static readonly DependencyProperty StepSizeProperty =
+        DependencyProperty.RegisterAttached(
+            "StepSize",
+            typeof(double),
+            typeof(SmoothPhysicsScrollBehavior),
+            new PropertyMetadata(76.0));
+
+    public static double GetStepSize(DependencyObject obj) => (double)obj.GetValue(StepSizeProperty);
+    public static void SetStepSize(DependencyObject obj, double value) => obj.SetValue(StepSizeProperty, value);
+
+    /// <summary>
+    /// Critically damped spring natural frequency (omega in rad/s).
+    /// Default is 15.8 (balanced between 12.5 heavy and 19.5 fast).
+    /// </summary>
+    public static readonly DependencyProperty SmoothnessProperty =
+        DependencyProperty.RegisterAttached(
+            "Smoothness",
+            typeof(double),
+            typeof(SmoothPhysicsScrollBehavior),
+            new PropertyMetadata(15.8));
+
+    public static double GetSmoothness(DependencyObject obj) => (double)obj.GetValue(SmoothnessProperty);
+    public static void SetSmoothness(DependencyObject obj, double value) => obj.SetValue(SmoothnessProperty, value);
 
     private static readonly DependencyProperty ControllerProperty =
         DependencyProperty.RegisterAttached(
@@ -76,6 +103,7 @@ public static class SmoothPhysicsScrollBehavior
         var sv = AutoHideScrollBehavior.FindChild<ScrollViewer>(parent);
         if (sv != null)
         {
+            InheritTuningProperties(parent, sv);
             ApplyToScrollViewer(sv, true);
         }
         else
@@ -85,9 +113,22 @@ public static class SmoothPhysicsScrollBehavior
                 var deferredSv = AutoHideScrollBehavior.FindChild<ScrollViewer>(parent);
                 if (deferredSv != null)
                 {
+                    InheritTuningProperties(parent, deferredSv);
                     ApplyToScrollViewer(deferredSv, true);
                 }
             });
+        }
+    }
+
+    private static void InheritTuningProperties(DependencyObject parent, ScrollViewer childSv)
+    {
+        if (parent.ReadLocalValue(StepSizeProperty) != DependencyProperty.UnsetValue)
+        {
+            SetStepSize(childSv, GetStepSize(parent));
+        }
+        if (parent.ReadLocalValue(SmoothnessProperty) != DependencyProperty.UnsetValue)
+        {
+            SetSmoothness(childSv, GetSmoothness(parent));
         }
     }
 
@@ -111,10 +152,6 @@ public static class SmoothPhysicsScrollBehavior
         }
     }
 
-    /// <summary>
-    /// Immediately halts any in-progress smooth scroll momentum on the given ScrollViewer.
-    /// Freezes the viewport at the current visual pixel without snapping.
-    /// </summary>
     public static void CancelMomentum(ScrollViewer sv)
     {
         if (sv.GetValue(ControllerProperty) is PhysicsScrollController controller)
@@ -123,19 +160,12 @@ public static class SmoothPhysicsScrollBehavior
         }
     }
 
-    /// <summary>
-    /// Frame-rate invariant exponential friction decay (WinUI 3 kinetic model).
-    /// </summary>
     public static double EvaluateKineticFriction(double velocity, double frictionBase, double dt)
     {
         if (dt <= 0.0) return velocity;
         return velocity * Math.Pow(frictionBase, dt * 60.0);
     }
 
-    /// <summary>
-    /// Closed-form analytical solution for a 1D critically damped harmonic oscillator (zeta = 1.0).
-    /// Used for the elastic boundary overscroll rubber-band return.
-    /// </summary>
     public static (double xNew, double vNew) EvaluateCriticallyDampedSpring(double x0, double v0, double omega, double dt)
     {
         if (dt <= 0.0) return (x0, v0);
@@ -149,26 +179,35 @@ public static class SmoothPhysicsScrollBehavior
     private sealed class PhysicsScrollController : IDisposable
     {
         private readonly ScrollViewer _scrollViewer;
-        private readonly TranslateTransform _overscrollTransform = new();
+        private readonly TranslateTransform _subPixelAndOverscrollTransform = new();
 
-        // WinUI 3 Kinetic Tuning Constants:
-        private const double InBoundsFriction = 0.88;      // Aerodynamic kinetic friction decay per 16.6ms
-        private const double BoundaryOmega = 10.0;        // Soft damped spring frequency for edge rubber-band (rad/s)
-        private const double MaxOverscrollDistance = 16.0; // Subtle boundary stretch clamp (px)
-        private const double RestVelocityThreshold = 2.0;  // px/sec (< 0.017px per frame at 120Hz)
+        // Impulse-assisted spring constants (all distances in resolution-independent DIPs):
+        private const double InitialVelocityKickRatio = 0.35; // Eliminates start-up lag on Frame 1
+        private const double BoundarySpringOmega = 14.0;      // Edge bounce-back stiffness (rad/s)
+        private const double MaxOverscrollDistance = 15.0;    // Max edge stretch in DIPs
+        private const double RestPositionThreshold = 0.03;    // Sub-pixel convergence threshold (DIPs)
+        private const double RestVelocityThreshold = 1.2;     // Velocity convergence threshold (DIPs/sec)
 
         private double _currentOffset;
+        private double _targetOffset;
         private double _velocity;
+        private double _lastSnappedScrollOffset = double.NaN;
 
         private bool _isRenderingHooked;
-        private bool _wasOverscrolled;
-        private TimeSpan _lastRenderTime = TimeSpan.Zero;
+        private bool _isInternalScrollUpdate;
+        private TimeSpan _lastRenderArgsTime = TimeSpan.Zero;
+        private long _lastFrameTimestamp;
         private long _lastWheelTimestamp;
         private bool _isTouchpadGestureActive;
 
         public PhysicsScrollController(ScrollViewer scrollViewer)
         {
             _scrollViewer = scrollViewer;
+
+            if (ScrollViewer.GetCanContentScroll(_scrollViewer))
+            {
+                ScrollViewer.SetCanContentScroll(_scrollViewer, false);
+            }
 
             _scrollViewer.PreviewMouseWheel += OnPreviewMouseWheel;
             _scrollViewer.PreviewMouseLeftButtonDown += OnPreviewMouseLeftButtonDown;
@@ -181,9 +220,10 @@ public static class SmoothPhysicsScrollBehavior
             if (!_isRenderingHooked) return;
 
             _velocity = 0.0;
-            _wasOverscrolled = false;
             _currentOffset = Math.Clamp(_currentOffset, 0.0, _scrollViewer.ScrollableHeight);
-            DetachRenderLoop(snapToIntegerPixel: false);
+            _targetOffset = _currentOffset;
+            ApplyViewportOffset(_currentOffset, _scrollViewer.ScrollableHeight);
+            DetachRenderLoop(snapToDevicePixel: false);
         }
 
         private void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -196,34 +236,36 @@ public static class SmoothPhysicsScrollBehavior
 
         private void OnExternalScrollChanged(object sender, ScrollChangedEventArgs e)
         {
+            if (_isInternalScrollUpdate) return;
+
             if (!_isRenderingHooked && e.VerticalChange != 0)
             {
                 _currentOffset = _scrollViewer.VerticalOffset;
+                _targetOffset = _currentOffset;
+                _lastSnappedScrollOffset = _currentOffset;
+            }
+            else if (_isRenderingHooked && e.ExtentHeightChange != 0)
+            {
+                double maxScroll = _scrollViewer.ScrollableHeight;
+                _targetOffset = Math.Clamp(_targetOffset, 0.0, maxScroll);
             }
         }
 
-        private double CalculateBaseNotchImpulse()
+        private double CalculateNotchStepInDips()
         {
-            double lines = Math.Max(1.0, SystemParameters.WheelScrollLines);
-            double viewport = _scrollViewer.ViewportHeight;
-            if (viewport <= 100.0)
-            {
-                viewport = _scrollViewer.ActualHeight > 100.0 ? _scrollViewer.ActualHeight : 800.0;
-            }
-
-            // Target travel distance per standard 3-line notch: ~10% of viewport,
-            // clamped between 60 DIPs (1 small tile) and 130 DIPs (1 medium tile + gap).
-            double targetDistance = Math.Clamp(viewport * 0.10, 60.0, 130.0) * (lines / 3.0);
-
-            // Under kinetic friction base 0.88, decay constant lambda = -60 * ln(0.88) ~= 7.6704 s^-1
-            // Total travel distance D = impulse / lambda => impulse = D * lambda
-            const double decayRate = 7.6704;
-            return targetDistance * decayRate;
+            // Fixed physical DIPs per wheel notch (1 DIP = 1/96 inch).
+            // Automatically scales with OS DPI (100%-250%) and user's Windows WheelScrollLines setting,
+            // and never changes when the window or monitor resolution changes.
+            int sysLines = SystemParameters.WheelScrollLines;
+            double lineFactor = sysLines > 0 ? (sysLines / 3.0) : 1.0;
+            double configuredStep = Math.Max(16.0, GetStepSize(_scrollViewer));
+            return configuredStep * lineFactor;
         }
 
         private void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            if (e.Handled || _scrollViewer.ScrollableHeight <= 0) return;
+            double maxScroll = _scrollViewer.ScrollableHeight;
+            if (e.Handled || maxScroll <= 0) return;
 
             long now = Stopwatch.GetTimestamp();
             double elapsedMs = _lastWheelTimestamp == 0
@@ -231,8 +273,7 @@ public static class SmoothPhysicsScrollBehavior
                 : (now - _lastWheelTimestamp) * 1000.0 / Stopwatch.Frequency;
             _lastWheelTimestamp = now;
 
-            // Precision Touchpad detection:
-            // Touchpads send fractional deltas (not multiples of 120) or continuous rapid events (< 20ms apart).
+            // Precision Touchpad sends non-120 multiples
             bool isSubDetent = (Math.Abs(e.Delta) % Mouse.MouseWheelDeltaForOneLine) != 0;
             if (isSubDetent)
             {
@@ -246,56 +287,100 @@ public static class SmoothPhysicsScrollBehavior
             if (!_isRenderingHooked)
             {
                 _currentOffset = _scrollViewer.VerticalOffset;
+                _targetOffset = _currentOffset;
                 _velocity = 0.0;
+                _lastSnappedScrollOffset = _currentOffset;
             }
 
             if (_isTouchpadGestureActive)
             {
-                // Touchpad: 1:1 direct tracking with boundary resistance
-                double step = e.Delta * 0.85;
-                if ((_currentOffset <= 0.0 && step > 0.0) || (_currentOffset >= _scrollViewer.ScrollableHeight && step < 0.0))
+                // 1:1 direct DIP tracking for Precision Touchpad
+                double step = -e.Delta * 0.80;
+                bool pushingTop = _currentOffset <= 0.0 && step < 0.0;
+                bool pushingBottom = _currentOffset >= maxScroll && step > 0.0;
+
+                if (pushingTop || pushingBottom)
                 {
-                    double currentStretch = _currentOffset <= 0.0
-                        ? Math.Abs(_currentOffset)
-                        : Math.Abs(_currentOffset - _scrollViewer.ScrollableHeight);
-                    double resistance = Math.Clamp(1.0 - (currentStretch / MaxOverscrollDistance), 0.1, 0.5);
+                    double stretch = pushingTop ? Math.Abs(_currentOffset) : Math.Abs(_currentOffset - maxScroll);
+                    double resistance = Math.Clamp(1.0 - (stretch / MaxOverscrollDistance), 0.05, 0.45);
                     step *= resistance;
                 }
-                _currentOffset -= step;
+
+                _currentOffset = Math.Clamp(_currentOffset + step, -MaxOverscrollDistance, maxScroll + MaxOverscrollDistance);
+                _targetOffset = Math.Clamp(_currentOffset, 0.0, maxScroll);
                 _velocity = 0.0;
+
+                ApplyViewportOffset(_currentOffset, maxScroll);
+
+                if (_currentOffset < 0.0 || _currentOffset > maxScroll)
+                {
+                    AttachRenderLoop();
+                }
+
+                e.Handled = true;
+                return;
+            }
+
+            // Mouse Wheel: Cadence boost up to 1.30x on fast flicks (< 50ms between notches)
+            double cadenceMultiplier = 1.0;
+            if (elapsedMs < 50.0)
+            {
+                cadenceMultiplier = Math.Min(1.30, 1.0 + (((50.0 - elapsedMs) / 50.0) * 0.30));
+            }
+
+            double direction = -Math.Sign(e.Delta);
+            double notchCount = Math.Abs(e.Delta) / (double)Mouse.MouseWheelDeltaForOneLine;
+            double deltaOffset = direction * CalculateNotchStepInDips() * notchCount * cadenceMultiplier;
+
+            double pendingRemaining = _targetOffset - _currentOffset;
+            if (Math.Sign(deltaOffset) != 0 && Math.Sign(pendingRemaining) != 0 && Math.Sign(deltaOffset) != Math.Sign(pendingRemaining))
+            {
+                // Instant direction reversal
+                _targetOffset = Math.Clamp(_currentOffset, 0.0, maxScroll);
+                _velocity = 0.0;
+            }
+
+            double omega = Math.Clamp(GetSmoothness(_scrollViewer), 8.0, 30.0);
+            double proposedTarget = _targetOffset + deltaOffset;
+
+            if (proposedTarget < 0.0 || proposedTarget > maxScroll)
+            {
+                double clampedTarget = Math.Clamp(proposedTarget, 0.0, maxScroll);
+                double overflow = proposedTarget - clampedTarget;
+                double inBoundsTravel = clampedTarget - _targetOffset;
+                _targetOffset = clampedTarget;
+
+                // Apply initial kick for the in-bounds portion
+                _velocity += inBoundsTravel * omega * InitialVelocityKickRatio;
+
+                // Convert boundary overflow into an elastic overscroll kick
+                double currentStretch = _currentOffset < 0.0
+                    ? Math.Abs(_currentOffset)
+                    : (_currentOffset > maxScroll ? Math.Abs(_currentOffset - maxScroll) : 0.0);
+
+                double resistance = Math.Clamp(1.0 - (currentStretch / MaxOverscrollDistance), 0.05, 0.38);
+                double desiredStretchIncrement = Math.Clamp(overflow * 0.10 * resistance, -5.0, 5.0);
+                double velocityKick = desiredStretchIncrement * BoundarySpringOmega * Math.E;
+
+                double maxBoundaryVelocity = MaxOverscrollDistance * BoundarySpringOmega * Math.E;
+                _velocity = Math.Clamp(_velocity + velocityKick, -maxBoundaryVelocity, maxBoundaryVelocity);
             }
             else
             {
-                // Mouse Wheel: Viewport-Adaptive Kinetic Impulse with Tamed Flick Acceleration
-                double cadenceMultiplier = 1.0;
-                if (elapsedMs < 50.0)
-                {
-                    cadenceMultiplier = Math.Min(1.35, 1.0 + (((50.0 - elapsedMs) / 50.0) * 0.35));
-                }
+                // Cap maximum pending lead at 8x step size (~600 DIPs) regardless of viewport height
+                double maxLead = CalculateNotchStepInDips() * 8.0;
+                double newTarget = Math.Clamp(proposedTarget, _currentOffset - maxLead, _currentOffset + maxLead);
+                newTarget = Math.Clamp(newTarget, 0.0, maxScroll);
 
-                double direction = -Math.Sign(e.Delta);
-                double notchCount = Math.Abs(e.Delta) / (double)Mouse.MouseWheelDeltaForOneLine;
-                double baseImpulse = CalculateBaseNotchImpulse();
-                double impulse = direction * baseImpulse * notchCount * cadenceMultiplier;
+                double effectiveDelta = newTarget - _targetOffset;
+                _targetOffset = newTarget;
 
-                // Dynamic max velocity scaled to viewport to avoid runaway scrolling on any display
-                double viewport = _scrollViewer.ViewportHeight > 100.0 ? _scrollViewer.ViewportHeight : 800.0;
-                double maxVelocity = Math.Max(1800.0, viewport * 2.5);
-
-                // High boundary resistance when pushing further into an already overscrolled edge
-                bool scrollingIntoTopWall = _currentOffset <= 0.0 && direction < 0.0;
-                bool scrollingIntoBottomWall = _currentOffset >= _scrollViewer.ScrollableHeight && direction > 0.0;
-                if (scrollingIntoTopWall || scrollingIntoBottomWall)
-                {
-                    double currentStretch = scrollingIntoTopWall
-                        ? Math.Abs(_currentOffset)
-                        : Math.Abs(_currentOffset - _scrollViewer.ScrollableHeight);
-                    double resistance = Math.Clamp(1.0 - (currentStretch / MaxOverscrollDistance), 0.05, 0.35);
-                    impulse *= resistance;
-                }
-
-                // Accumulate velocity with dynamic speed cap
-                _velocity = Math.Clamp(_velocity + impulse, -maxVelocity, maxVelocity);
+                // Immediate velocity kick eliminates the 80ms spring ramp-up delay
+                double maxInBoundsVelocity = maxLead * omega;
+                _velocity = Math.Clamp(
+                    _velocity + (effectiveDelta * omega * InitialVelocityKickRatio),
+                    -maxInBoundsVelocity,
+                    maxInBoundsVelocity);
             }
 
             AttachRenderLoop();
@@ -306,85 +391,59 @@ public static class SmoothPhysicsScrollBehavior
         {
             if (e is not RenderingEventArgs renderingArgs) return;
 
-            // Deduplicate multiple CompositionTarget.Rendering events fired in the same VSync
-            if (renderingArgs.RenderingTime == _lastRenderTime)
-            {
-                return;
-            }
+            if (renderingArgs.RenderingTime == _lastRenderArgsTime) return;
+            _lastRenderArgsTime = renderingArgs.RenderingTime;
 
-            double dt = _lastRenderTime == TimeSpan.Zero
-                ? (1.0 / 120.0)
-                : (renderingArgs.RenderingTime - _lastRenderTime).TotalSeconds;
+            long now = Stopwatch.GetTimestamp();
+            double dt = (now - _lastFrameTimestamp) / (double)Stopwatch.Frequency;
+            _lastFrameTimestamp = now;
 
-            _lastRenderTime = renderingArgs.RenderingTime;
-
-            // Clamp dt to [0.001s, 0.1s] to avoid runaway jumps if thread was suspended
-            if (dt <= 0.0 || dt > 0.1)
+            if (dt <= 0.0001 || dt > 0.05)
             {
                 dt = 1.0 / 120.0;
             }
 
             double maxScroll = _scrollViewer.ScrollableHeight;
+            _targetOffset = Math.Clamp(_targetOffset, 0.0, maxScroll);
 
-            // 1. Check whether in-bounds or overscrolled
-            bool isOverscrolledTop = _currentOffset < 0.0;
-            bool isOverscrolledBottom = _currentOffset > maxScroll;
-            bool isOverscrolled = isOverscrolledTop || isOverscrolledBottom;
-
-            if (isOverscrolled)
+            if (_isTouchpadGestureActive)
             {
-                // Soft foam bumper: absorb 70% of kinetic energy on initial boundary contact
-                if (!_wasOverscrolled)
+                double msSinceWheel = (now - _lastWheelTimestamp) * 1000.0 / Stopwatch.Frequency;
+                if (msSinceWheel < 45.0)
                 {
-                    _velocity *= 0.30;
-                }
-                _wasOverscrolled = true;
-
-                // 2. Over-bounds: Apply critically damped spring pulling back to boundary
-                double boundary = isOverscrolledTop ? 0.0 : maxScroll;
-                double x0 = _currentOffset - boundary;
-
-                var (xNew, vNew) = EvaluateCriticallyDampedSpring(x0, _velocity, BoundaryOmega, dt);
-                _currentOffset = boundary + xNew;
-                _velocity = vNew;
-
-                // Extra boundary damping to prevent oscillation
-                _velocity *= Math.Pow(0.80, dt * 60.0);
-
-                // Soft clamp max overscroll stretch
-                if (Math.Abs(xNew) > MaxOverscrollDistance)
-                {
-                    _currentOffset = boundary + (Math.Sign(xNew) * MaxOverscrollDistance);
-                    _velocity = 0.0;
-                }
-
-                // Rest condition at boundary
-                if (Math.Abs(xNew) < 0.05 && Math.Abs(_velocity) < RestVelocityThreshold)
-                {
-                    _currentOffset = boundary;
-                    _velocity = 0.0;
-                    _wasOverscrolled = false;
-                    ApplyViewportOffset(_currentOffset, maxScroll);
-                    DetachRenderLoop(snapToIntegerPixel: true);
                     return;
                 }
+                _isTouchpadGestureActive = false;
             }
-            else
+
+            bool isOverscrolled = _currentOffset < -0.01 || _currentOffset > maxScroll + 0.01;
+            double wheelOmega = Math.Clamp(GetSmoothness(_scrollViewer), 8.0, 30.0);
+            double omega = isOverscrolled ? BoundarySpringOmega : wheelOmega;
+
+            double displacement = _currentOffset - _targetOffset;
+            var (xNew, vNew) = EvaluateCriticallyDampedSpring(displacement, _velocity, omega, dt);
+
+            _currentOffset = _targetOffset + xNew;
+            _velocity = vNew;
+
+            if (_currentOffset < -MaxOverscrollDistance)
             {
-                _wasOverscrolled = false;
+                _currentOffset = -MaxOverscrollDistance;
+                if (_velocity < 0.0) _velocity = 0.0;
+            }
+            else if (_currentOffset > maxScroll + MaxOverscrollDistance)
+            {
+                _currentOffset = maxScroll + MaxOverscrollDistance;
+                if (_velocity > 0.0) _velocity = 0.0;
+            }
 
-                // 3. In-bounds: Apply aerodynamic kinetic friction decay
-                _velocity = EvaluateKineticFriction(_velocity, InBoundsFriction, dt);
-                _currentOffset += _velocity * dt;
-
-                // Rest condition in-bounds
-                if (Math.Abs(_velocity) < RestVelocityThreshold)
-                {
-                    _velocity = 0.0;
-                    ApplyViewportOffset(_currentOffset, maxScroll);
-                    DetachRenderLoop(snapToIntegerPixel: true);
-                    return;
-                }
+            if (Math.Abs(xNew) < RestPositionThreshold && Math.Abs(_velocity) < RestVelocityThreshold)
+            {
+                _currentOffset = _targetOffset;
+                _velocity = 0.0;
+                ApplyViewportOffset(_currentOffset, maxScroll);
+                DetachRenderLoop(snapToDevicePixel: true);
+                return;
             }
 
             ApplyViewportOffset(_currentOffset, maxScroll);
@@ -395,21 +454,44 @@ public static class SmoothPhysicsScrollBehavior
             double inBounds = Math.Clamp(offset, 0.0, maxScroll);
             double overscroll = offset - inBounds;
 
-            _scrollViewer.ScrollToVerticalOffset(inBounds);
+            // Per-monitor DPI scale (e.g. 1.0 at 100%, 1.25 at 125%, 1.5 at 150%, 2.0 at 200%)
+            double dpiY = VisualTreeHelper.GetDpi(_scrollViewer).DpiScaleY;
+            if (dpiY <= 0.0) dpiY = 1.0;
 
-            // Elastic rubber-band visual displacement on overscroll
+            // Snap ScrollViewer layout offset to physical monitor pixels,
+            // and let the GPU TranslateTransform render the sub-pixel fraction.
+            double snappedInBounds = Math.Round(inBounds * dpiY) / dpiY;
+            double subPixelRemainder = inBounds - snappedInBounds;
+
+            if (double.IsNaN(_lastSnappedScrollOffset) || Math.Abs(snappedInBounds - _lastSnappedScrollOffset) > 1e-4)
+            {
+                _isInternalScrollUpdate = true;
+                try
+                {
+                    _scrollViewer.ScrollToVerticalOffset(snappedInBounds);
+                    _lastSnappedScrollOffset = snappedInBounds;
+                }
+                finally
+                {
+                    _isInternalScrollUpdate = false;
+                }
+            }
+
+            double totalVisualShift = subPixelRemainder + overscroll;
+
             if (_scrollViewer.Content is UIElement content)
             {
-                if (Math.Abs(overscroll) > 0.05)
+                if (Math.Abs(totalVisualShift) > 0.005)
                 {
-                    if (content.RenderTransform != _overscrollTransform)
+                    if (content.RenderTransform != _subPixelAndOverscrollTransform)
                     {
-                        content.RenderTransform = _overscrollTransform;
+                        content.RenderTransform = _subPixelAndOverscrollTransform;
                     }
-                    _overscrollTransform.Y = -overscroll;
+                    _subPixelAndOverscrollTransform.Y = -totalVisualShift;
                 }
-                else if (content.RenderTransform == _overscrollTransform)
+                else if (content.RenderTransform == _subPixelAndOverscrollTransform)
                 {
+                    _subPixelAndOverscrollTransform.Y = 0.0;
                     content.RenderTransform = null;
                 }
             }
@@ -419,45 +501,46 @@ public static class SmoothPhysicsScrollBehavior
         {
             if (_isRenderingHooked) return;
 
-            _lastRenderTime = TimeSpan.Zero;
-
-            // Suppress layout rounding to eliminate sub-pixel stair-stepping,
-            // and set animated text hinting mode to prevent DirectWrite glyph re-hint stalls.
-            _scrollViewer.UseLayoutRounding = false;
-            if (_scrollViewer.Content is UIElement content)
-            {
-                TextOptions.SetTextHintingMode(content, TextHintingMode.Animated);
-            }
+            _lastRenderArgsTime = TimeSpan.Zero;
+            _lastFrameTimestamp = Stopwatch.GetTimestamp();
 
             CompositionTarget.Rendering += OnRendering;
             _isRenderingHooked = true;
         }
 
-        private void DetachRenderLoop(bool snapToIntegerPixel)
+        private void DetachRenderLoop(bool snapToDevicePixel)
         {
             if (!_isRenderingHooked) return;
 
             CompositionTarget.Rendering -= OnRendering;
             _isRenderingHooked = false;
-            _wasOverscrolled = false;
-            _lastRenderTime = TimeSpan.Zero;
+            _lastRenderArgsTime = TimeSpan.Zero;
 
-            if (_scrollViewer.Content is UIElement content && content.RenderTransform == _overscrollTransform)
+            if (_scrollViewer.Content is UIElement content && content.RenderTransform == _subPixelAndOverscrollTransform)
             {
+                _subPixelAndOverscrollTransform.Y = 0.0;
                 content.RenderTransform = null;
             }
 
-            if (snapToIntegerPixel)
+            if (snapToDevicePixel)
             {
-                _currentOffset = Math.Round(Math.Clamp(_currentOffset, 0.0, _scrollViewer.ScrollableHeight));
-                _scrollViewer.ScrollToVerticalOffset(_currentOffset);
-            }
+                double dpiY = VisualTreeHelper.GetDpi(_scrollViewer).DpiScaleY;
+                if (dpiY <= 0.0) dpiY = 1.0;
 
-            // Restore crisp pixel snapping and static text rendering at rest (0% idle CPU)
-            _scrollViewer.UseLayoutRounding = true;
-            if (_scrollViewer.Content is UIElement c)
-            {
-                TextOptions.SetTextHintingMode(c, TextHintingMode.Auto);
+                double maxScroll = _scrollViewer.ScrollableHeight;
+                _currentOffset = Math.Round(Math.Clamp(_currentOffset, 0.0, maxScroll) * dpiY) / dpiY;
+                _targetOffset = _currentOffset;
+
+                _isInternalScrollUpdate = true;
+                try
+                {
+                    _scrollViewer.ScrollToVerticalOffset(_currentOffset);
+                    _lastSnappedScrollOffset = _currentOffset;
+                }
+                finally
+                {
+                    _isInternalScrollUpdate = false;
+                }
             }
         }
 
@@ -468,7 +551,7 @@ public static class SmoothPhysicsScrollBehavior
 
         public void Dispose()
         {
-            DetachRenderLoop(snapToIntegerPixel: false);
+            DetachRenderLoop(snapToDevicePixel: false);
             _scrollViewer.PreviewMouseWheel -= OnPreviewMouseWheel;
             _scrollViewer.PreviewMouseLeftButtonDown -= OnPreviewMouseLeftButtonDown;
             _scrollViewer.ScrollChanged -= OnExternalScrollChanged;
