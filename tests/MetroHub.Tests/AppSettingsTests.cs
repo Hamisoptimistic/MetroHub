@@ -25,6 +25,7 @@ public class AppSettingsTests
         Assert.Equal(0.85, settings.AcrylicOpacity, 2);
         Assert.Equal("System", settings.ThemeMode);
         Assert.Equal("Mica", settings.BackdropType);
+        Assert.Equal("None", settings.WallpaperEffect);
         Assert.Equal(8, settings.GroupColumnWidth);
         Assert.False(settings.SidebarAutoHide);
         Assert.True(settings.SidebarPinned);
@@ -51,8 +52,9 @@ public class AppSettingsTests
             ThemeMode = "Dark",
             BackdropType = "Acrylic",
             CustomWallpaperPath = @"C:\Wallpapers\custom.png",
-            WallpaperDimOpacity = 0.65,
+            WallpaperDimOpacity = 0.85,
             WallpaperParallax = false,
+            WallpaperEffect = "Dither",
             LaunchAtStartup = true,
             StartMinimized = true,
             CloseOnLaunch = false,
@@ -79,6 +81,7 @@ public class AppSettingsTests
         Assert.Equal(original.CustomWallpaperPath, deserialized.CustomWallpaperPath);
         Assert.Equal(original.WallpaperDimOpacity, deserialized.WallpaperDimOpacity, 2);
         Assert.Equal(original.WallpaperParallax, deserialized.WallpaperParallax);
+        Assert.Equal(original.WallpaperEffect, deserialized.WallpaperEffect);
         Assert.Equal(original.LaunchAtStartup, deserialized.LaunchAtStartup);
         Assert.Equal(original.StartMinimized, deserialized.StartMinimized);
         Assert.Equal(original.CloseOnLaunch, deserialized.CloseOnLaunch);
@@ -115,6 +118,7 @@ public class AppSettingsTests
         Assert.Equal(8, settings.TileGap);
         Assert.Equal(2, settings.TileCornerRadius);
         Assert.Equal(0.85, settings.AcrylicOpacity, 2);
+        Assert.Equal("None", settings.WallpaperEffect);
         Assert.NotNull(settings.SidebarShortcuts);
     }
 

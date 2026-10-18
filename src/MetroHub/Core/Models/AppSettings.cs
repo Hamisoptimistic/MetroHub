@@ -10,8 +10,9 @@ public sealed class AppSettings
     public AccentStyleMode AccentStyle { get; set; } = AccentStyleMode.Flat; // Flat, StudioGlass
     public string BackdropType { get; set; } = "Mica"; // Mica, MicaAlt, Acrylic, DesktopWallpaper, Wallpaper, BingDaily, SpotlightDaily
     public string? CustomWallpaperPath { get; set; }
-    public double WallpaperDimOpacity { get; set; } = 0.50; // 0.35, 0.50, 0.65
+    public double WallpaperDimOpacity { get; set; } = 0.70; // 0.50 (Light), 0.70 (Balanced), 0.85 (Heavy)
     public bool WallpaperParallax { get; set; } = true;
+    public string WallpaperEffect { get; set; } = "None"; // None, Dither, Ascii, Halftone, Scanlines, Blur
     
     public bool LaunchAtStartup { get; set; }
     public bool StartMinimized { get; set; }

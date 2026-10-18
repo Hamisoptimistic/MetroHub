@@ -95,11 +95,26 @@ public partial class MainWindow
         }
     }
 
-    private void OnWallpaperDimLightClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.35);
-    private void OnWallpaperDimBalancedClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.50);
-    private void OnWallpaperDimHeavyClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.65);
+    private void OnWallpaperDimLightClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.50);
+    private void OnWallpaperDimBalancedClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.70);
+    private void OnWallpaperDimHeavyClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.85);
 
     private void SetWallpaperDim(double opacity) => BackdropManager.SetWallpaperDim(opacity);
+
+    private void OnWallpaperEffectNoneClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("None");
+    private void OnWallpaperEffectDitherClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Dither");
+    private void OnWallpaperEffectAsciiClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Ascii");
+    private void OnWallpaperEffectHalftoneClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Halftone");
+    private void OnWallpaperEffectScanlinesClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Scanlines");
+    private void OnWallpaperEffectBlurClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Blur");
+
+    private void SetWallpaperEffect(string effect)
+    {
+        Settings.WallpaperEffect = effect;
+        StorageService.SaveSettings(Settings);
+        UpdateBackdropMenuChecks();
+        ApplyConfiguredBackdrop();
+    }
 
     private void OnParallaxEnabledClick(object sender, RoutedEventArgs e)
     {
@@ -186,9 +201,9 @@ public partial class MainWindow
             BackdropCustomImageItem.IsChecked = string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase);
 
         double dim = Settings.WallpaperDimOpacity;
-        if (DimLightItem != null) DimLightItem.IsChecked = Math.Abs(dim - 0.35) < 0.05;
-        if (DimBalancedItem != null) DimBalancedItem.IsChecked = Math.Abs(dim - 0.50) < 0.05;
-        if (DimHeavyItem != null) DimHeavyItem.IsChecked = Math.Abs(dim - 0.65) < 0.05;
+        if (DimLightItem != null) DimLightItem.IsChecked = Math.Abs(dim - 0.50) < 0.05;
+        if (DimBalancedItem != null) DimBalancedItem.IsChecked = Math.Abs(dim - 0.70) < 0.05;
+        if (DimHeavyItem != null) DimHeavyItem.IsChecked = Math.Abs(dim - 0.85) < 0.05;
 
         bool isWallpaper = IsWallpaperBackdrop(Settings.BackdropType);
 
@@ -202,5 +217,15 @@ public partial class MainWindow
             ParallaxDisabledItem.IsChecked = !Settings.WallpaperParallax;
             ParallaxDisabledItem.IsEnabled = isWallpaper;
         }
+
+        string currentEffect = Settings.WallpaperEffect ?? "None";
+        if (EffectNoneItem != null) EffectNoneItem.IsChecked = string.Equals(currentEffect, "None", StringComparison.OrdinalIgnoreCase);
+        if (EffectDitherItem != null) EffectDitherItem.IsChecked = string.Equals(currentEffect, "Dither", StringComparison.OrdinalIgnoreCase);
+        if (EffectAsciiItem != null) EffectAsciiItem.IsChecked = string.Equals(currentEffect, "Ascii", StringComparison.OrdinalIgnoreCase);
+        if (EffectHalftoneItem != null) EffectHalftoneItem.IsChecked = string.Equals(currentEffect, "Halftone", StringComparison.OrdinalIgnoreCase);
+        if (EffectScanlinesItem != null) EffectScanlinesItem.IsChecked = string.Equals(currentEffect, "Scanlines", StringComparison.OrdinalIgnoreCase);
+        if (EffectBlurItem != null) EffectBlurItem.IsChecked = string.Equals(currentEffect, "Blur", StringComparison.OrdinalIgnoreCase);
+
+        if (WallpaperEffectsMenu != null) WallpaperEffectsMenu.IsEnabled = isWallpaper;
     }
 }

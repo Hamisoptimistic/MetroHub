@@ -88,6 +88,9 @@ public static class AppPaths
     public static string PrimaryWallpapersDir => Path.Combine(CacheDir, "WallpapersCache");
     public static string LegacyWallpapersDir => Path.Combine(AppDataDir, "WallpapersCache");
 
+    public static string PrimaryWallpaperEffectsDir => Path.Combine(CacheDir, "WallpaperEffects");
+    public static string LegacyWallpaperEffectsDir => Path.Combine(AppDataDir, "WallpaperEffects");
+
     public static string PrimaryRoverSoundsDir => Path.Combine(CacheDir, "RoverSounds");
     public static string LegacyRoverSoundsDir => Path.Combine(AppDataDir, "RoverSounds");
 
@@ -182,6 +185,10 @@ public static class AppPaths
     public static string WallpapersCacheDir => ResolveDirectoryPath(
         PrimaryWallpapersDir,
         LegacyWallpapersDir);
+
+    public static string WallpaperEffectsCacheDir => ResolveDirectoryPath(
+        PrimaryWallpaperEffectsDir,
+        LegacyWallpaperEffectsDir);
 
     public static string RoverSoundsDir => ResolveDirectoryPath(
         PrimaryRoverSoundsDir,
