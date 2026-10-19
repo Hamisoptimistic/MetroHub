@@ -177,8 +177,7 @@
             Height="{Binding SpanY, Converter={StaticResource SpanConverter}}"
             RenderTransformOrigin="0.5,0.5"
             RenderOptions.ClearTypeHint="Enabled"
-            ContextMenuOpening="OnContextMenuOpening"
-            PreviewMouseRightButtonDown="OnPreviewMouseRightButtonDown">
+            ContextMenuOpening="OnContextMenuOpening">
 
         <Border.Style>
             <Style TargetType="Border">

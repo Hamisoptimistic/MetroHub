@@ -158,7 +158,7 @@
                                     <Button.ContextMenu>
                                         <ContextMenu>
                                             <MenuItem Header="Mark Done"
-                                                      Command="{Binding PlacementTarget.Tag.ToggleDayCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                                      Command="{Binding PlacementTarget.Tag.MarkDayDoneCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                                       CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                                 <MenuItem.Icon>
                                                     <ui:SymbolIcon Symbol="Checkmark24" FontSize="16" Foreground="{DynamicResource StatusSuccessBrush}" />

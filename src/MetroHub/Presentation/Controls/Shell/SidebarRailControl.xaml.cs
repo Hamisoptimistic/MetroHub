@@ -1176,6 +1176,11 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
         }
     }
 
+    private void OnPowerContextMenuOpened(object sender, RoutedEventArgs e)
+    {
+        HibernateMenuItem.Visibility = PowerService.IsHibernateSupported() ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     private void OnPowerClick(object sender, RoutedEventArgs e)
     {
         if (PowerButton.ContextMenu != null)

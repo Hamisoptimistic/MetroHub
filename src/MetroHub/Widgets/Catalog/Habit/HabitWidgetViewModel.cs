@@ -540,6 +540,13 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase, IWidgetContextM
     }
 
     [RelayCommand]
+    public void MarkDayDone(HabitDayViewModel? day)
+    {
+        if (day == null || !day.IsClickable) return;
+        SetDayState(day, HabitDayState.Done);
+    }
+
+    [RelayCommand]
     public void MarkDayFailed(HabitDayViewModel? day)
     {
         if (day == null || !day.IsClickable) return;

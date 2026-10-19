@@ -237,6 +237,7 @@ public partial class App : Application
                 string? exe = Environment.ProcessPath;
                 if (!string.IsNullOrEmpty(exe))
                 {
+                    ReleaseSingleInstanceMutex();
                     Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
                 }
             }
@@ -346,6 +347,15 @@ public partial class App : Application
             _wakeEvent = null;
         }
 
+        ReleaseSingleInstanceMutex();
+
+        LoggingService.Shutdown();
+
+        base.OnExit(e);
+    }
+
+    private void ReleaseSingleInstanceMutex()
+    {
         if (_singleInstanceMutex != null)
         {
             if (_ownsMutex)
@@ -359,13 +369,10 @@ public partial class App : Application
                     // Mutex was already released or not owned on this thread
                     Serilog.Log.Debug(ex, "Mutex was not owned or already released on exit");
                 }
+                _ownsMutex = false;
             }
             _singleInstanceMutex.Dispose();
             _singleInstanceMutex = null;
         }
-
-        LoggingService.Shutdown();
-
-        base.OnExit(e);
     }
 }

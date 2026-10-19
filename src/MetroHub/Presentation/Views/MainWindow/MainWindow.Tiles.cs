@@ -197,10 +197,6 @@ public partial class MainWindow
     {
     }
 
-    private void OnCanvasContextMenuClosed(object sender, RoutedEventArgs e)
-    {
-    }
-
     public void PromptAddTile()
     {
         IsDialogOpen = true;

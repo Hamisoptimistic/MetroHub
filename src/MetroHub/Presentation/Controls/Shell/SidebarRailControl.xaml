@@ -846,7 +846,7 @@
                 <ui:SymbolIcon Symbol="Power24" FontSize="19"
                                Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" />
                 <Button.ContextMenu>
-                    <ContextMenu x:Name="PowerContextMenu">
+                    <ContextMenu x:Name="PowerContextMenu" Opened="OnPowerContextMenuOpened">
                         <MenuItem Header="Sleep" Click="OnSleepClick">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="WeatherMoon24" FontSize="18" />

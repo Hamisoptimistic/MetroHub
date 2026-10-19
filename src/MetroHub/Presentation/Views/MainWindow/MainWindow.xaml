@@ -148,8 +148,7 @@
                   PreviewMouseRightButtonDown="OnCanvasPreviewMouseRightButtonDown">
                 <Grid.ContextMenu>
                     <ContextMenu x:Name="CanvasContextMenu"
-                                 Opened="OnCanvasContextMenuOpened"
-                                 Closed="OnCanvasContextMenuClosed">
+                                 Opened="OnCanvasContextMenuOpened">
                         <ContextMenu.Resources>
                             <!-- Cap submenu flyouts to exactly ~15 visible items (460px) with smooth scrolling -->
                             <Style TargetType="{x:Type ScrollViewer}" BasedOn="{StaticResource FloatingScrollViewerStyle}">
