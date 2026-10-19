@@ -357,7 +357,7 @@ public sealed class TableSource : ISearchSource
             FullPathOrKey: tip.Description,
             Category: SearchCategory.Actions,
             SourceId: SourceId,
-            Tag: tip.Keywords)
+            Tag: tip)
         {
             Icon = tip.Icon,
             KindLabel = "Shortcut",
@@ -376,6 +376,9 @@ public sealed class TableSource : ISearchSource
 
         string descNorm = SearchRanker.NormalizeText(tip.Description);
         if (descNorm.Contains(normQuery, StringComparison.Ordinal)) return true;
+
+        string sectionNorm = SearchRanker.NormalizeText(tip.Section);
+        if (sectionNorm.Contains(normQuery, StringComparison.Ordinal)) return true;
 
         for (int k = 0; k < tip.Keywords.Length; k++)
         {

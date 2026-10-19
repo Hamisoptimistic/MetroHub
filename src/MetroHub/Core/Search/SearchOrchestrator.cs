@@ -242,11 +242,14 @@ public sealed class SearchOrchestrator : IDisposable
                 if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
 
                 sw.Stop();
+                int hardMaxPerGroup = route.Kind is RouteKind.Help or RouteKind.Settings ? 100 : query.MaxPerCategory;
                 var hardQuery = string.IsNullOrWhiteSpace(route.Remainder)
                     ? query
-                    : SearchRanker.ParseQuery(route.Remainder, sessionId, query.MaxPerCategory);
+                    : SearchRanker.ParseQuery(route.Remainder, sessionId, hardMaxPerGroup);
                 var hardScored = ScoreAndSort(hardCandidates, hardQuery, ct, isHardRoute: true);
-                var hardGroups = BuildSearchGroups(hardScored, query.MaxPerCategory);
+                var hardGroups = route.Kind == RouteKind.Help
+                    ? BuildHelpSearchGroups(hardScored)
+                    : BuildSearchGroups(hardScored, hardMaxPerGroup);
 
                 var hardSnapshot = new SearchSnapshot(
                     SessionId: sessionId,
@@ -452,6 +455,52 @@ public sealed class SearchOrchestrator : IDisposable
 
             return a.Category.CompareTo(b.Category);
         });
+        return groups;
+    }
+
+    internal static IReadOnlyList<SearchGroup> BuildHelpSearchGroups(List<ScoredResult> results)
+    {
+        if (results.Count == 0) return Array.Empty<SearchGroup>();
+
+        // Canonical display order for Cheat Sheet sections
+        var sectionOrder = new[]
+        {
+            "Windows & System Tools",
+            "Everyday Math & Units",
+            "Developer Utilities",
+            "Web Search Bangs"
+        };
+
+        var map = new Dictionary<string, List<ScoredResult>>(StringComparer.OrdinalIgnoreCase);
+        for (int s = 0; s < sectionOrder.Length; s++)
+        {
+            map[sectionOrder[s]] = new List<ScoredResult>();
+        }
+
+        const string fallbackSection = "Shortcuts & Tips";
+
+        for (int i = 0; i < results.Count; i++)
+        {
+            var res = results[i];
+            string section = (res.Candidate.Tag as SearchTipItem)?.Section ?? res.Candidate.KindLabel ?? fallbackSection;
+            if (!map.TryGetValue(section, out var list))
+            {
+                list = new List<ScoredResult>();
+                map[section] = list;
+            }
+            list.Add(res);
+        }
+
+        var groups = new List<SearchGroup>();
+        foreach (var (secName, items) in map)
+        {
+            if (items.Count > 0)
+            {
+                int topScore = items[0].Score;
+                groups.Add(new SearchGroup(SearchCategory.Actions, secName, items, items.Count, topScore));
+            }
+        }
+
         return groups;
     }
 

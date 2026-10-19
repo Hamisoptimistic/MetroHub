@@ -53,7 +53,8 @@ public sealed record SearchTipItem(
     string Title,
     string Description,
     SymbolRegular Icon,
-    string[] Keywords);
+    string[] Keywords,
+    string Section = "Shortcuts & Tips");
 
 /// <summary>
 /// Static lookup tables for Windows settings, system commands, and web bang configurations.
@@ -106,34 +107,41 @@ public static class PureMemoryData
 
     public static readonly SearchTipItem[] SearchTips =
     [
-        new("> ", "> <command>", "Run command in terminal (e.g. '> ping 1.1.1.1')", SymbolRegular.WindowConsole20, ["terminal", "cmd", "powershell", "shell", "run", "command"]),
-        new("set: ", "set: <setting>", "Search Windows settings (e.g. 'set: bluetooth')", SymbolRegular.Settings24, ["settings", "windows settings", "preferences", "config", "control"]),
-        new("kill ", "kill <process>", "Terminate running process by name (e.g. 'kill notepad')", SymbolRegular.DismissCircle24, ["kill", "terminate", "close", "taskkill", "stop", "end process"]),
-        new("win ", "win <window>", "Switch to active window (e.g. 'win chrome')", SymbolRegular.Window24, ["window", "switch", "open windows", "active"]),
-        new("time ", "time <city>", "Show world clock for city (e.g. 'time tokyo')", SymbolRegular.Clock24, ["time", "clock", "world clock", "city", "timezone"]),
-        new("vol ", "vol <level>", "Set audio volume or mute (e.g. 'vol 50', 'vol mute')", SymbolRegular.Speaker224, ["volume", "sound", "audio", "speaker", "mute", "vol"]),
-        new("cb ", "cb <query>", "Search clipboard history (e.g. 'cb code')", SymbolRegular.ClipboardPaste24, ["clipboard", "copy", "paste", "history", "clip", "cb"]),
-        new("case ", "case <text>", "Convert text casing (e.g. 'case hello world')", SymbolRegular.TextCaseTitle24, ["case", "text", "uppercase", "lowercase", "camelcase", "slug"]),
-        new("calc ", "calc <math>", "Evaluate math expressions (e.g. '15 * 4.5 + 20', '20% of 150')", SymbolRegular.Calculator24, ["calc", "math", "calculator", "formula", "eval", "percentage"]),
-        new("conv ", "conv <units>", "Convert units / currencies (e.g. '50 kg to lbs', '100 f to c')", SymbolRegular.ArrowSwap24, ["convert", "units", "currency", "converter", "measurement"]),
-        new("guid", "guid", "Generate new UUID / GUID in multiple formats", SymbolRegular.Code24, ["guid", "uuid", "id", "random"]),
-        new("b64 ", "b64 <text>", "Base64 encode or decode text (e.g. 'b64 encode hello')", SymbolRegular.Code24, ["base64", "b64", "encode", "decode"]),
-        new("url ", "url <text>", "URL encode or decode text", SymbolRegular.Globe24, ["url", "uri", "encode", "decode", "escape"]),
-        new("hash ", "hash <text>", "Compute MD5, SHA-1, SHA-256 hashes", SymbolRegular.Shield32, ["hash", "md5", "sha256", "sha1", "crypto"]),
-        new("color ", "#RRGGBB", "Convert HEX, RGB, HSL colors (e.g. '#0078D7')", SymbolRegular.Color24, ["color", "hex", "rgb", "hsl", "brush"]),
-        new("w ", "w <query>", "Search Wikipedia (e.g. 'w quantum computing')", SymbolRegular.Book24, ["wikipedia", "wiki", "w", "encyclopedia"]),
-        new("r ", "r <query>", "Search Reddit (e.g. 'r mechanical keyboards')", SymbolRegular.Globe24, ["reddit", "r", "community"]),
-        new("so ", "so <query>", "Search StackOverflow (e.g. 'so wpf virtualizing wrap panel')", SymbolRegular.Code24, ["stackoverflow", "so", "questions", "dev"]),
-        new("npm ", "npm <package>", "Search npm packages (e.g. 'npm express')", SymbolRegular.Cube24, ["npm", "package", "node", "javascript"]),
-        new("nuget ", "nuget <package>", "Search NuGet packages (e.g. 'nuget communitytoolkit')", SymbolRegular.Cube24, ["nuget", "package", "dotnet", "c#"]),
-        new("crates ", "crates <crate>", "Search Rust crates (e.g. 'crates tokio')", SymbolRegular.Cube24, ["crates", "rust", "package"]),
-        new("maps ", "maps <location>", "Search Google Maps (e.g. 'maps tokyo tower')", SymbolRegular.Location24, ["maps", "google maps", "directions", "location"]),
-        new("amz ", "amz <query>", "Search Amazon (e.g. 'amz usb-c cable')", SymbolRegular.Briefcase24, ["amazon", "amz", "shopping", "buy"]),
-        new("ai ", "ai <prompt>", "Ask AI / ChatGPT (e.g. 'ai explain recursion')", SymbolRegular.Sparkle24, ["ai", "chatgpt", "claude", "prompt"]),
-        new("g ", "g <query>", "Search with Google (e.g. 'g fluent ui')", SymbolRegular.Search24, ["google", "web search", "browse", "internet", "g"]),
-        new("yt ", "yt <query>", "Search YouTube (e.g. 'yt lofi hip hop')", SymbolRegular.Play24, ["youtube", "video", "music", "stream", "yt"]),
-        new("gh ", "gh <query>", "Search GitHub repositories (e.g. 'gh metrohub')", SymbolRegular.Code24, ["github", "git", "repo", "repository", "code", "gh"]),
-        new("ddg ", "ddg <query>", "Search DuckDuckGo (e.g. 'ddg privacy')", SymbolRegular.GlobeSearch24, ["duckduckgo", "ddg", "private search"])
+        // 1. Windows & System Tools
+        new("> ", "> ping 1.1.1.1", "Run in Command Prompt or PowerShell", SymbolRegular.WindowConsole20, ["terminal", "cmd", "powershell", "shell", "run", "command"], "Windows & System Tools"),
+        new("set: ", "set: bluetooth", "Open Windows settings or control panel", SymbolRegular.Settings24, ["settings", "windows settings", "preferences", "config", "control"], "Windows & System Tools"),
+        new("kill ", "kill notepad", "Force close a running app or process", SymbolRegular.DismissCircle24, ["kill", "terminate", "close", "taskkill", "stop", "end process"], "Windows & System Tools"),
+        new("win ", "win chrome", "Switch to an open window", SymbolRegular.Window24, ["window", "switch", "open windows", "active"], "Windows & System Tools"),
+        new("time ", "time tokyo", "Check current time in any world city", SymbolRegular.Clock24, ["time", "clock", "world clock", "city", "timezone"], "Windows & System Tools"),
+        new("vol ", "vol 50", "Set volume level or mute audio", SymbolRegular.Speaker224, ["volume", "sound", "audio", "speaker", "mute", "vol"], "Windows & System Tools"),
+        new("cb ", "cb search", "Search and paste clipboard history", SymbolRegular.ClipboardPaste24, ["clipboard", "copy", "paste", "history", "clip", "cb"], "Windows & System Tools"),
+
+        // 2. Everyday Math & Units
+        new("150 + 18%", "150 + 18%", "Calculate math, percentages, and formulas", SymbolRegular.Calculator24, ["calc", "math", "calculator", "formula", "eval", "percentage"], "Everyday Math & Units"),
+        new("100 f to c", "100 f to c", "Convert temperature, weight, length, or speed", SymbolRegular.ArrowSwap24, ["convert", "units", "currency", "converter", "measurement"], "Everyday Math & Units"),
+
+        // 3. Developer Utilities
+        new("case ", "case myVariable", "Convert to camelCase, snake_case, kebab-case", SymbolRegular.TextCaseTitle24, ["case", "text", "uppercase", "lowercase", "camelcase", "slug"], "Developer Utilities"),
+        new("guid", "guid", "Generate and copy a new UUID", SymbolRegular.Code24, ["guid", "uuid", "id", "random"], "Developer Utilities"),
+        new("b64 ", "b64 encode hello", "Encode or decode Base64 text", SymbolRegular.Code24, ["base64", "b64", "encode", "decode"], "Developer Utilities"),
+        new("url ", "url encode hello", "Escape or unescape URL characters", SymbolRegular.Globe24, ["url", "uri", "encode", "decode", "escape"], "Developer Utilities"),
+        new("sha256 ", "sha256 password", "Generate SHA-256, SHA-1, or MD5 hash", SymbolRegular.Shield32, ["hash", "md5", "sha256", "sha1", "crypto"], "Developer Utilities"),
+        new("#0078D7", "#0078D7", "Convert color to HEX, RGB, HSL, and XAML", SymbolRegular.Color24, ["color", "hex", "rgb", "hsl", "brush"], "Developer Utilities"),
+
+        // 4. Web Search Bangs
+        new("w ", "w space station", "Search Wikipedia", SymbolRegular.Book24, ["wikipedia", "wiki", "w", "encyclopedia"], "Web Search Bangs"),
+        new("r ", "r mechanical keyboards", "Search Reddit communities", SymbolRegular.Globe24, ["reddit", "r", "community"], "Web Search Bangs"),
+        new("so ", "so wpf data binding", "Search StackOverflow answers", SymbolRegular.Code24, ["stackoverflow", "so", "questions", "dev"], "Web Search Bangs"),
+        new("npm ", "npm express", "Search npm package registry", SymbolRegular.Cube24, ["npm", "package", "node", "javascript"], "Web Search Bangs"),
+        new("nuget ", "nuget communitytoolkit", "Search NuGet packages", SymbolRegular.Cube24, ["nuget", "package", "dotnet", "c#"], "Web Search Bangs"),
+        new("crates ", "crates tokio", "Search Rust crates", SymbolRegular.Cube24, ["crates", "rust", "package"], "Web Search Bangs"),
+        new("maps ", "maps tokyo tower", "Search Google Maps locations", SymbolRegular.Location24, ["maps", "google maps", "directions", "location"], "Web Search Bangs"),
+        new("amz ", "amz usb-c cable", "Search products on Amazon", SymbolRegular.Briefcase24, ["amazon", "amz", "shopping", "buy"], "Web Search Bangs"),
+        new("ai ", "ai explain recursion", "Ask ChatGPT or AI assistant", SymbolRegular.Sparkle24, ["ai", "chatgpt", "claude", "prompt"], "Web Search Bangs"),
+        new("g ", "g fluent design", "Search Google on the web", SymbolRegular.Search24, ["google", "web search", "browse", "internet", "g"], "Web Search Bangs"),
+        new("yt ", "yt lofi hip hop", "Search videos and music on YouTube", SymbolRegular.Play24, ["youtube", "video", "music", "stream", "yt"], "Web Search Bangs"),
+        new("gh ", "gh metrohub", "Search code repositories on GitHub", SymbolRegular.Code24, ["github", "git", "repo", "repository", "code", "gh"], "Web Search Bangs"),
+        new("ddg ", "ddg privacy mode", "Search privately with DuckDuckGo", SymbolRegular.GlobeSearch24, ["duckduckgo", "ddg", "private search"], "Web Search Bangs")
     ];
 
     public static readonly SystemCommandItem[] SystemCommands =

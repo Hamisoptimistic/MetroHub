@@ -118,7 +118,17 @@ namespace MetroHub.Presentation.Controls
         public string CategoryHeader { get; set; } = string.Empty;
         public Visibility CategoryHeaderVisibility => !string.IsNullOrEmpty(CategoryHeader) ? Visibility.Visible : Visibility.Collapsed;
         public string KindBadge { get; }
-        public Visibility KindBadgeVisibility => !string.IsNullOrEmpty(KindBadge) ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility KindBadgeVisibility
+        {
+            get
+            {
+                // Only show badge for diverse Actions (e.g. Window, Calculator, Setting) where context is needed.
+                // Hide for standard categories (Apps, Images, Code, etc.) and Cheat Sheet tips to eliminate clutter.
+                if (Candidate.Category != SearchCategory.Actions) return Visibility.Collapsed;
+                if (Candidate.Id.StartsWith("tip:", StringComparison.OrdinalIgnoreCase)) return Visibility.Collapsed;
+                return !string.IsNullOrEmpty(KindBadge) ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
 
         public bool IsApp => Candidate.Category == SearchCategory.Apps;
         public CatalogItemModel? AppModel => Candidate.Tag as CatalogItemModel;

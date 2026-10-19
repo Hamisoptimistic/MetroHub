@@ -377,8 +377,14 @@ public static class SearchRanker
             }
         }
 
-        // Action Keyword Matching (e.g. "trash" -> Empty Recycle Bin, "env" -> System Properties, "wifi" -> Network Connections)
-        if (candidate.Tag is string[] keywords)
+        // Action Keyword Matching (e.g. "trash" -> Empty Recycle Bin, "env" -> System Properties, "wifi" -> Network Connections, or SearchTips)
+        string[]? keywords = candidate.Tag switch
+        {
+            string[] kw => kw,
+            SearchTipItem tip => tip.Keywords,
+            _ => null
+        };
+        if (keywords != null)
         {
             for (int k = 0; k < keywords.Length; k++)
             {
