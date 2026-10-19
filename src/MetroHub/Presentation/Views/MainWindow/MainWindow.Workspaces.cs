@@ -216,6 +216,7 @@ public partial class MainWindow
             UpdateCanvasHeight();
             if (ContentScrollViewer != null)
             {
+                ContentScrollViewer.UpdateLayout();
                 SmoothPhysicsScrollBehavior.ResetOffset(ContentScrollViewer, target.ScrollOffset);
             }
             return;
@@ -401,12 +402,13 @@ public partial class MainWindow
                 MainCanvasGrid.MinHeight = Math.Max(MainCanvasGrid.MinHeight, targetMaxBottom);
             }
 
+            UpdateCanvasHeight();
+
             if (ContentScrollViewer != null)
             {
+                ContentScrollViewer.UpdateLayout();
                 SmoothPhysicsScrollBehavior.ResetOffset(ContentScrollViewer, winnerModel.ScrollOffset);
             }
-
-            UpdateCanvasHeight();
 
             // Restore ClearType on stationary active canvas
             Dispatcher.BeginInvoke(DispatcherPriority.ContextIdle, () =>
@@ -461,11 +463,12 @@ public partial class MainWindow
             {
                 MainCanvasGrid.MinHeight = Math.Max(MainCanvasGrid.MinHeight, targetMaxBottom);
             }
+            UpdateCanvasHeight();
             if (ContentScrollViewer != null)
             {
+                ContentScrollViewer.UpdateLayout();
                 SmoothPhysicsScrollBehavior.ResetOffset(ContentScrollViewer, fallbackModel.ScrollOffset);
             }
-            UpdateCanvasHeight();
         }
     }
 

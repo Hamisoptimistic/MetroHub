@@ -632,6 +632,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             {
                 if (ContentScrollViewer != null)
                 {
+                    ContentScrollViewer.UpdateLayout();
                     SmoothPhysicsScrollBehavior.ResetOffset(ContentScrollViewer, activeWs.ScrollOffset);
                 }
             });
@@ -1193,6 +1194,10 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(false));
         WidgetHeartbeatService.SetHubVisibility(false);
         FlushWidgetSettingsPersistence();
+        if (WorkspaceManager.Instance.ActiveWorkspace is { } activeWs && ContentScrollViewer != null)
+        {
+            activeWs.ScrollOffset = ContentScrollViewer.VerticalOffset;
+        }
         Safe.Try(SaveGroupsAndLayout, "MainWindow.HideScreen.SaveGroupsAndLayout");
         if (!Settings.SidebarPinned)
         {
@@ -1429,6 +1434,10 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         }
         else
         {
+            if (WorkspaceManager.Instance.ActiveWorkspace is { } activeWs && ContentScrollViewer != null)
+            {
+                activeWs.ScrollOffset = ContentScrollViewer.VerticalOffset;
+            }
             CleanupEventSubscriptions();
             Safe.Try(() => WorkspaceManager.Instance.FlushSync(), "MainWindow.OnClosing.WorkspaceFlush");
             Safe.Try(StorageService.Flush, "MainWindow.OnClosing.StorageFlush");
@@ -1444,6 +1453,10 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     {
         _isClosingToExit = true;
         FlushWidgetSettingsPersistence();
+        if (WorkspaceManager.Instance.ActiveWorkspace is { } activeWs && ContentScrollViewer != null)
+        {
+            activeWs.ScrollOffset = ContentScrollViewer.VerticalOffset;
+        }
         Safe.Try(SaveGroupsAndLayout, "MainWindow.ExitApplication.SaveGroupsAndLayout");
         Safe.Try(() => WorkspaceManager.Instance.FlushSync(), "MainWindow.ExitApplication.WorkspaceFlush");
         Safe.Try(StorageService.Flush, "MainWindow.ExitApplication.StorageFlush");

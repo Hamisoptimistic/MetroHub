@@ -111,6 +111,9 @@ public sealed class SearchOrchestrator : IDisposable
         _tier1Sources.Add(new WorldClockSource(_router));
         _tier1Sources.Add(new UnitConverterSource());
         _tier1Sources.Add(new ClipboardSource(_router));
+        _tier1Sources.Add(new QuickAccessSource());
+        _tier1Sources.Add(new DevUtilitySource());
+        _tier1Sources.Add(new ColorConverterSource());
         // Default Tier 2: Everything file search
         _tier2Sources.Add(new EverythingSearchSource());
     }
@@ -374,7 +377,7 @@ public sealed class SearchOrchestrator : IDisposable
             {
                 scoredResults.Add(scored);
             }
-            else if (isHardRoute || c.SourceId is "calculator" or "text_transform" or "window_walker" or "process_killer" or "audio" or "world_clock" or "unit_converter" or "clipboard")
+            else if (isHardRoute || c.SourceId is "calculator" or "text_transform" or "window_walker" or "process_killer" or "audio" or "world_clock" or "unit_converter" or "clipboard" or "dev_utility" or "color_converter" or "quick_access")
             {
                 scoredResults.Add(new ScoredResult(c, 100, MatchKind.Exact));
             }

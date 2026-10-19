@@ -64,4 +64,10 @@ internal static class NativeMethodsSearch
 
     [DllImport("user32.dll")]
     public static extern uint GetClipboardSequenceNumber();
+
+    public const uint SHCNE_ASSOCCHANGED = 0x08000000;
+    public const uint SHCNF_IDLIST = 0x0000;
+
+    [DllImport("shell32.dll")]
+    public static extern void SHChangeNotify(uint wEventId, uint uFlags, IntPtr dwItem1, IntPtr dwItem2);
 }

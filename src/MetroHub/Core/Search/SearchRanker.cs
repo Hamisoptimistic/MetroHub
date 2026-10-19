@@ -377,6 +377,37 @@ public static class SearchRanker
             }
         }
 
+        // Action Keyword Matching (e.g. "trash" -> Empty Recycle Bin, "env" -> System Properties, "wifi" -> Network Connections)
+        if (candidate.Tag is string[] keywords)
+        {
+            for (int k = 0; k < keywords.Length; k++)
+            {
+                string kw = keywords[k];
+                if (string.Equals(kw, q, StringComparison.OrdinalIgnoreCase))
+                {
+                    matchKind = MatchKind.Exact;
+                    matchScore = weights.Exact;
+                    break;
+                }
+                if (kw.StartsWith(q, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (matchKind < MatchKind.Prefix)
+                    {
+                        matchKind = MatchKind.Prefix;
+                        matchScore = weights.Prefix;
+                    }
+                }
+                else if (kw.Contains(q, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (matchKind < MatchKind.WordPrefix)
+                    {
+                        matchKind = MatchKind.WordPrefix;
+                        matchScore = weights.WordPrefix;
+                    }
+                }
+            }
+        }
+
         if (matchKind == MatchKind.None)
         {
             return new ScoredResult(candidate, 0, MatchKind.None);

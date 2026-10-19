@@ -21,6 +21,7 @@ public enum RouteKind
     WebBangGitHub,
     WebBangYouTube,
     WebBangDuckDuckGo,
+    WebBangGeneric,
     Audio,
     Help
 }
@@ -32,7 +33,8 @@ public readonly record struct RouteResult(
     RouteKind Kind,
     string Remainder,
     bool IsHardRoute,
-    bool IsAdditive);
+    bool IsAdditive,
+    string? Extra = null);
 
 /// <summary>
 /// Fast zero-allocation prefix router driven by modular SearchSettings.
@@ -191,25 +193,36 @@ public sealed class QueryRouter
         string gBang = GetSafePrefix(s.GoogleBang, "g ");
         if (raw.StartsWith(gBang, StringComparison.OrdinalIgnoreCase))
         {
-            return new RouteResult(RouteKind.WebBangGoogle, raw[gBang.Length..].TrimStart(), IsHardRoute: false, IsAdditive: true);
+            return new RouteResult(RouteKind.WebBangGoogle, raw[gBang.Length..].TrimStart(), IsHardRoute: false, IsAdditive: true, Extra: "g");
         }
 
         string ghBang = GetSafePrefix(s.GitHubBang, "gh ");
         if (raw.StartsWith(ghBang, StringComparison.OrdinalIgnoreCase))
         {
-            return new RouteResult(RouteKind.WebBangGitHub, raw[ghBang.Length..].TrimStart(), IsHardRoute: false, IsAdditive: true);
+            return new RouteResult(RouteKind.WebBangGitHub, raw[ghBang.Length..].TrimStart(), IsHardRoute: false, IsAdditive: true, Extra: "gh");
         }
 
         string ytBang = GetSafePrefix(s.YouTubeBang, "yt ");
         if (raw.StartsWith(ytBang, StringComparison.OrdinalIgnoreCase))
         {
-            return new RouteResult(RouteKind.WebBangYouTube, raw[ytBang.Length..].TrimStart(), IsHardRoute: false, IsAdditive: true);
+            return new RouteResult(RouteKind.WebBangYouTube, raw[ytBang.Length..].TrimStart(), IsHardRoute: false, IsAdditive: true, Extra: "yt");
         }
 
         string ddgBang = GetSafePrefix(s.DuckDuckGoBang, "ddg ");
         if (raw.StartsWith(ddgBang, StringComparison.OrdinalIgnoreCase))
         {
-            return new RouteResult(RouteKind.WebBangDuckDuckGo, raw[ddgBang.Length..].TrimStart(), IsHardRoute: false, IsAdditive: true);
+            return new RouteResult(RouteKind.WebBangDuckDuckGo, raw[ddgBang.Length..].TrimStart(), IsHardRoute: false, IsAdditive: true, Extra: "ddg");
+        }
+
+        // Generic table-driven bangs (e.g. "w ", "r ", "so ", "npm ", "nuget ", "crates ", "maps ", "amz ", "ai ")
+        for (int b = 0; b < PureMemoryData.WebBangs.Length; b++)
+        {
+            var bang = PureMemoryData.WebBangs[b];
+            string bangSigil = bang.Prefix + " ";
+            if (raw.StartsWith(bangSigil, StringComparison.OrdinalIgnoreCase))
+            {
+                return new RouteResult(RouteKind.WebBangGeneric, raw[bangSigil.Length..].TrimStart(), IsHardRoute: false, IsAdditive: true, Extra: bang.Prefix);
+            }
         }
 
         string audioTrig = GetSafePrefix(s.AudioTrigger, "audio");
