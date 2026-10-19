@@ -314,7 +314,11 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
                 Modified: r.DateModified,
                 Size: (long?)r.Size,
                 IsFolder: r.IsFolder,
-                Tag: r));
+                Tag: r)
+            {
+                PrimaryAction = FileActionProvider.CreateOpenAction(fullPath),
+                ActionProvider = FileActionProvider.GetActions
+            });
         }
 
         return candidates;

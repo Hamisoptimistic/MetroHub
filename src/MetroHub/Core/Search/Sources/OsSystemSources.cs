@@ -316,11 +316,34 @@ public sealed class WindowWalkerSource : ISearchSource
                 Id: "switch_window",
                 Title: "Switch to window",
                 KeyGestureHint: "Enter",
+                Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.Window24),
                 ExecuteAsync: _ =>
                 {
                     ActivateWindow(w.Hwnd);
                     return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
-                })
+                }),
+            SecondaryActions = new[]
+            {
+                new CandidateAction(
+                    Id: "close_window",
+                    Title: "Close window",
+                    KeyGestureHint: null,
+                    Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.Dismiss24),
+                    IsDestructive: true,
+                    BeginGroup: true,
+                    ExecuteAsync: _ =>
+                    {
+                        try
+                        {
+                            NativeMethods.PostMessage(w.Hwnd, 0x0010 /* WM_CLOSE */, IntPtr.Zero, IntPtr.Zero);
+                        }
+                        catch (Exception ex)
+                        {
+                            Safe.Log("WindowWalker.CloseWindow", ex);
+                        }
+                        return Task.FromResult(new ActionResult(ActionOutcome.StayOpenAndRefresh));
+                    })
+            }
         };
     }
 
@@ -445,13 +468,41 @@ public sealed class ProcessKillerSource : ISearchSource
                 Id: "terminate_process",
                 Title: $"Terminate {p.ProcessName}",
                 KeyGestureHint: "Enter",
+                Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.DismissCircle24),
+                IsDestructive: true,
                 ExecuteAsync: _ =>
                 {
                     bool killed = KillProcessSafely(p.Pid, p.StartTime);
                     RunningSnapshot.Invalidate();
                     string msg = killed ? $"Killed {p.ProcessName} (PID {p.Pid})" : $"Failed to kill {p.ProcessName}";
                     return Task.FromResult(new ActionResult(ActionOutcome.StayOpenAndRefresh, msg));
-                })
+                }),
+            SecondaryActions = new[]
+            {
+                new CandidateAction(
+                    Id: "open_proc_location",
+                    Title: "Open executable location",
+                    KeyGestureHint: null,
+                    Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.FolderOpen24),
+                    BeginGroup: true,
+                    ExecuteAsync: _ =>
+                    {
+                        try
+                        {
+                            using var proc = Process.GetProcessById(p.Pid);
+                            string? mainModule = proc.MainModule?.FileName;
+                            if (!string.IsNullOrEmpty(mainModule) && File.Exists(mainModule))
+                            {
+                                Process.Start("explorer.exe", $"/select,\"{mainModule}\"");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Safe.Log("ProcessKiller.OpenLocation", ex);
+                        }
+                        return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+                    })
+            }
         };
     }
 

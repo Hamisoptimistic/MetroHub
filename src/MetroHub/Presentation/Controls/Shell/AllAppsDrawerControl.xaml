@@ -144,50 +144,6 @@
             </MenuItem>
         </ContextMenu>
 
-        <!-- Modern File/Folder Context Menu for Universal Search Results -->
-        <ContextMenu x:Key="FileItemContextMenu"
-                     Opened="OnFileContextMenuOpened"
-                     PreviewKeyDown="OnAppContextMenuPreviewKeyDown">
-            <MenuItem Header="Open" Click="OnFileContextMenuOpenClick">
-                <MenuItem.Icon>
-                    <ui:SymbolIcon Symbol="ArrowRight24" FontSize="18" />
-                </MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="Run as administrator" Click="OnFileContextMenuRunAsAdminClick"
-                      Visibility="{Binding IsExecutableOrScript, Converter={StaticResource BoolToVis}}">
-                <MenuItem.Icon>
-                    <ui:SymbolIcon Symbol="Shield24" FontSize="18" Foreground="{DynamicResource TextSecondaryBrush}" />
-                </MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="Open in Terminal" Click="OnFileContextMenuOpenTerminalClick"
-                      Visibility="{Binding IsFolder, Converter={StaticResource BoolToVis}}">
-                <MenuItem.Icon>
-                    <ui:SymbolIcon Symbol="Code24" FontSize="18" />
-                </MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="Open file location" Click="OnFileContextMenuOpenLocationClick">
-                <MenuItem.Icon>
-                    <ui:SymbolIcon Symbol="FolderOpen24" FontSize="18" />
-                </MenuItem.Icon>
-            </MenuItem>
-            <Separator />
-            <MenuItem x:Name="FilePinMenuItem" Header="Pin to MetroHub" Click="OnFileContextMenuPinToMetroHubClick">
-                <MenuItem.Icon>
-                    <ui:SymbolIcon Symbol="Pin24" FontSize="18" />
-                </MenuItem.Icon>
-            </MenuItem>
-            <MenuItem x:Name="FilePinSidebarMenuItem" Header="Pin to Sidebar" Click="OnFileContextMenuPinToSidebarClick">
-                <MenuItem.Icon>
-                    <ui:SymbolIcon Symbol="Pin24" FontSize="18" />
-                </MenuItem.Icon>
-            </MenuItem>
-            <Separator />
-            <MenuItem Header="Copy path" Click="OnFileContextMenuCopyPathClick">
-                <MenuItem.Icon>
-                    <ui:SymbolIcon Symbol="Copy24" FontSize="18" />
-                </MenuItem.Icon>
-            </MenuItem>
-        </ContextMenu>
 
         <!-- Shared Search and Recent Suggestion Item Row Template -->
         <DataTemplate x:Key="SearchItemRowTemplate">

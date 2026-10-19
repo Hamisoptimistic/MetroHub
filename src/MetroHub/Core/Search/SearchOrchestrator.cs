@@ -63,7 +63,11 @@ public sealed class AppSearchSource : ISearchSource
                 Modified: null,
                 Size: null,
                 IsFolder: false,
-                Tag: app));
+                Tag: app)
+            {
+                PrimaryAction = AppActionProvider.CreateOpenAction(app),
+                ActionProvider = AppActionProvider.GetActions
+            });
         }
 
         return Task.FromResult<IReadOnlyList<Candidate>>(candidates);
@@ -586,7 +590,11 @@ public sealed class SearchOrchestrator : IDisposable
                         Modified: null,
                         Size: null,
                         IsFolder: false,
-                        Tag: matchingApp));
+                        Tag: matchingApp)
+                    {
+                        PrimaryAction = AppActionProvider.CreateOpenAction(matchingApp),
+                        ActionProvider = AppActionProvider.GetActions
+                    });
                     continue;
                 }
 
@@ -623,7 +631,15 @@ public sealed class SearchOrchestrator : IDisposable
                             Modified: null,
                             Size: null,
                             IsFolder: folder,
-                            Tag: model));
+                            Tag: model)
+                        {
+                            PrimaryAction = model != null
+                                ? AppActionProvider.CreateOpenAction(model)
+                                : FileActionProvider.CreateOpenAction(key),
+                            ActionProvider = model != null
+                                ? AppActionProvider.GetActions
+                                : FileActionProvider.GetActions
+                        });
                     }
                 }
                 catch
@@ -653,7 +669,11 @@ public sealed class SearchOrchestrator : IDisposable
                         Modified: null,
                         Size: null,
                         IsFolder: false,
-                        Tag: app));
+                        Tag: app)
+                    {
+                        PrimaryAction = AppActionProvider.CreateOpenAction(app),
+                        ActionProvider = AppActionProvider.GetActions
+                    });
                 }
             }
         }

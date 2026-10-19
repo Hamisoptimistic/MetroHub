@@ -144,7 +144,10 @@ public sealed record CandidateAction(
     string Id,
     string Title,
     string? KeyGestureHint,
-    Func<ActionContext, Task<ActionResult>> ExecuteAsync);
+    Func<ActionContext, Task<ActionResult>> ExecuteAsync,
+    CandidateIcon Icon = default,
+    bool IsDestructive = false,
+    bool BeginGroup = false);
 
 /// <summary>
 /// Lightweight candidate produced by an ISearchSource.
@@ -168,8 +171,36 @@ public sealed record Candidate(
 
     public CandidateAction? PrimaryAction { get; init; }
     public IReadOnlyList<CandidateAction>? SecondaryActions { get; init; }
+    public Func<Candidate, IReadOnlyList<CandidateAction>>? ActionProvider { get; init; }
     public CandidateIcon Icon { get; init; }
     public string? KindLabel { get; init; }
+
+    /// <summary>
+    /// Evaluates all available actions for this candidate.
+    /// ActionProvider is evaluated lazily at execution/menu time to capture real-time system and pin state.
+    /// </summary>
+    public IReadOnlyList<CandidateAction> GetAllActions()
+    {
+        if (ActionProvider != null)
+        {
+            return ActionProvider(this);
+        }
+
+        if (PrimaryAction == null && (SecondaryActions == null || SecondaryActions.Count == 0))
+        {
+            return Array.Empty<CandidateAction>();
+        }
+
+        if (PrimaryAction != null && (SecondaryActions == null || SecondaryActions.Count == 0))
+        {
+            return [PrimaryAction];
+        }
+
+        var list = new List<CandidateAction>(1 + (SecondaryActions?.Count ?? 0));
+        if (PrimaryAction != null) list.Add(PrimaryAction);
+        if (SecondaryActions != null) list.AddRange(SecondaryActions);
+        return list;
+    }
 }
 
 /// <summary>

@@ -288,11 +288,26 @@ public sealed class TableSource : ISearchSource
                 Id: "open_setting",
                 Title: "Open Windows Setting",
                 KeyGestureHint: "Enter",
+                Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.Settings24),
                 ExecuteAsync: _ =>
                 {
                     ProcessLauncherService.LaunchTarget(item.Uri);
                     return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
-                })
+                }),
+            SecondaryActions = new[]
+            {
+                new CandidateAction(
+                    Id: "copy_setting_uri",
+                    Title: $"Copy URI ({item.Uri})",
+                    KeyGestureHint: "Ctrl+Shift+C",
+                    Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.Copy24),
+                    BeginGroup: true,
+                    ExecuteAsync: _ =>
+                    {
+                        ClipboardHelper.SetClipboardText(item.Uri);
+                        return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+                    })
+            }
         };
     }
 
@@ -312,7 +327,22 @@ public sealed class TableSource : ISearchSource
                 Id: cmd.Id,
                 Title: cmd.Title,
                 KeyGestureHint: "Enter",
-                ExecuteAsync: cmd.ExecuteAsync)
+                Icon: cmd.Icon,
+                ExecuteAsync: cmd.ExecuteAsync),
+            SecondaryActions = new[]
+            {
+                new CandidateAction(
+                    Id: cmd.Id + "_copy",
+                    Title: $"Copy command ({cmd.Description})",
+                    KeyGestureHint: "Ctrl+Shift+C",
+                    Icon: SymbolRegular.Copy24,
+                    BeginGroup: true,
+                    ExecuteAsync: _ =>
+                    {
+                        ClipboardHelper.SetClipboardText(cmd.Description);
+                        return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+                    })
+            }
         };
     }
 
@@ -341,11 +371,26 @@ public sealed class TableSource : ISearchSource
                 Id: $"search_{bang.Name.ToLowerInvariant()}",
                 Title: $"Search {bang.Name}",
                 KeyGestureHint: "Enter",
+                Icon: bang.Icon,
                 ExecuteAsync: _ =>
                 {
                     ProcessLauncherService.LaunchTarget(targetUrl);
                     return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
-                })
+                }),
+            SecondaryActions = new[]
+            {
+                new CandidateAction(
+                    Id: $"copy_bang_{bang.Name.ToLowerInvariant()}",
+                    Title: "Copy search URL",
+                    KeyGestureHint: "Ctrl+Shift+C",
+                    Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.Copy24),
+                    BeginGroup: true,
+                    ExecuteAsync: _ =>
+                    {
+                        ClipboardHelper.SetClipboardText(targetUrl);
+                        return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+                    })
+            }
         };
     }
 
@@ -435,7 +480,21 @@ public sealed class CalculatorSource : ISearchSource
             {
                 Icon = SymbolRegular.Calculator24,
                 KindLabel = "Calculator",
-                PrimaryAction = action
+                PrimaryAction = action,
+                SecondaryActions = new[]
+                {
+                    new CandidateAction(
+                        Id: "copy_calc_base_input",
+                        Title: $"Copy input ({query.RawText.Trim()})",
+                        KeyGestureHint: "Ctrl+Shift+C",
+                        Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.Copy24),
+                        BeginGroup: true,
+                        ExecuteAsync: _ =>
+                        {
+                            ClipboardHelper.SetClipboardText(query.RawText.Trim());
+                            return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+                        })
+                }
             };
 
             return Task.FromResult<IReadOnlyList<Candidate>>(new[] { cand });
@@ -462,6 +521,7 @@ public sealed class CalculatorSource : ISearchSource
             Id: "copy_calc_result",
             Title: "Copy result to clipboard",
             KeyGestureHint: "Enter",
+            Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.Copy24),
             ExecuteAsync: _ =>
             {
                 ClipboardHelper.SetClipboardText(formatted);
@@ -479,7 +539,21 @@ public sealed class CalculatorSource : ISearchSource
         {
             Icon = SymbolRegular.Calculator24,
             KindLabel = "Calculator",
-            PrimaryAction = primaryAction
+            PrimaryAction = primaryAction,
+            SecondaryActions = new[]
+            {
+                new CandidateAction(
+                    Id: "copy_calc_formula",
+                    Title: $"Copy formula ({query.RawText.Trim()})",
+                    KeyGestureHint: "Ctrl+Shift+C",
+                    Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.Copy24),
+                    BeginGroup: true,
+                    ExecuteAsync: _ =>
+                    {
+                        ClipboardHelper.SetClipboardText(query.RawText.Trim());
+                        return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+                    })
+            }
         });
 
         // If trig function without explicit deg/rad units was computed, also output radians candidate
@@ -491,6 +565,7 @@ public sealed class CalculatorSource : ISearchSource
                 Id: "copy_calc_rad",
                 Title: "Copy radians result to clipboard",
                 KeyGestureHint: "Enter",
+                Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.Copy24),
                 ExecuteAsync: _ =>
                 {
                     ClipboardHelper.SetClipboardText(radFormatted);
@@ -506,7 +581,21 @@ public sealed class CalculatorSource : ISearchSource
             {
                 Icon = SymbolRegular.Calculator24,
                 KindLabel = "Calculator",
-                PrimaryAction = radAction
+                PrimaryAction = radAction,
+                SecondaryActions = new[]
+                {
+                    new CandidateAction(
+                        Id: "copy_calc_rad_formula",
+                        Title: $"Copy formula ({query.RawText.Trim()})",
+                        KeyGestureHint: "Ctrl+Shift+C",
+                        Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.Copy24),
+                        BeginGroup: true,
+                        ExecuteAsync: _ =>
+                        {
+                            ClipboardHelper.SetClipboardText(query.RawText.Trim());
+                            return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+                        })
+                }
             });
         }
 
@@ -1484,13 +1573,28 @@ public sealed class UnitConverterSource : ISearchSource
             KindLabel = "Converter",
             PrimaryAction = new CandidateAction(
                 "copy_unit_result",
-                "Copy conversion result",
+                "Copy result",
                 "Enter",
                 _ =>
                 {
                     ClipboardHelper.SetClipboardText(resText);
                     return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
-                })
+                },
+                Icon: SymbolRegular.Copy24),
+            SecondaryActions = new[]
+            {
+                new CandidateAction(
+                    "copy_unit_equation",
+                    "Copy full equation",
+                    "Ctrl+C",
+                    _ =>
+                    {
+                        ClipboardHelper.SetClipboardText(subtitle);
+                        return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+                    },
+                    Icon: SymbolRegular.ClipboardTextEdit24,
+                    BeginGroup: true)
+            }
         };
 
         return Task.FromResult<IReadOnlyList<Candidate>>(new[] { candidate });
@@ -1900,7 +2004,8 @@ public sealed class DevUtilitySource : ISearchSource
                 {
                     ClipboardHelper.SetClipboardText(toCopy);
                     return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
-                })
+                },
+                Icon: SymbolRegular.Copy24)
         };
     }
 }
@@ -1941,14 +2046,24 @@ public sealed class ColorConverterSource : ISearchSource
         RgbToHsl(r, g, b, out int h, out int s, out int l);
         string hslStr = $"hsl({h}, {s}%, {l}%)";
 
+        var allFormats = new (string Key, string Label, string Value)[]
+        {
+            ("hex", "Copy HEX", hexRgb),
+            ("hex_argb", "Copy HEX + Alpha", hexArgb),
+            ("rgb", "Copy CSS RGB", rgbStr),
+            ("hsl", "Copy HSL", hslStr),
+            ("xaml", "Copy XAML Brush", xamlStr),
+            ("csharp", "Copy C# Color", csharpStr)
+        };
+
         var list = new List<Candidate>
         {
-            CreateColorCandidate("hex", hexRgb, $"HEX Color • RGB({r}, {g}, {b})", hexRgb),
-            CreateColorCandidate("hex_argb", hexArgb, $"HEX with Alpha • {hexArgb}", hexArgb),
-            CreateColorCandidate("rgb", rgbStr, $"CSS RGB • {rgbStr}", rgbStr),
-            CreateColorCandidate("hsl", hslStr, $"HSL Color • {hslStr}", hslStr),
-            CreateColorCandidate("xaml", xamlStr, $"XAML SolidColorBrush • {hexArgb}", xamlStr),
-            CreateColorCandidate("csharp", csharpStr, $"C# Color.FromArgb • {csharpStr}", csharpStr)
+            CreateColorCandidate("hex", hexRgb, $"HEX Color • RGB({r}, {g}, {b})", hexRgb, allFormats),
+            CreateColorCandidate("hex_argb", hexArgb, $"HEX with Alpha • {hexArgb}", hexArgb, allFormats),
+            CreateColorCandidate("rgb", rgbStr, $"CSS RGB • {rgbStr}", rgbStr, allFormats),
+            CreateColorCandidate("hsl", hslStr, $"HSL Color • {hslStr}", hslStr, allFormats),
+            CreateColorCandidate("xaml", xamlStr, $"XAML SolidColorBrush • {hexArgb}", xamlStr, allFormats),
+            CreateColorCandidate("csharp", csharpStr, $"C# Color.FromArgb • {csharpStr}", csharpStr, allFormats)
         };
 
         return Task.FromResult<IReadOnlyList<Candidate>>(list);
@@ -2050,8 +2165,32 @@ public sealed class ColorConverterSource : ISearchSource
         l = (int)Math.Round(lum * 100.0);
     }
 
-    private Candidate CreateColorCandidate(string id, string text, string desc, string toCopy)
+    private Candidate CreateColorCandidate(
+        string id,
+        string text,
+        string desc,
+        string toCopy,
+        (string Key, string Label, string Value)[] allFormats)
     {
+        var secondary = new List<CandidateAction>(allFormats.Length - 1);
+        bool first = true;
+        foreach (var (key, label, val) in allFormats)
+        {
+            if (string.Equals(key, id, StringComparison.Ordinal)) continue;
+            secondary.Add(new CandidateAction(
+                Id: "copy_color_" + key,
+                Title: label,
+                KeyGestureHint: null,
+                ExecuteAsync: _ =>
+                {
+                    ClipboardHelper.SetClipboardText(val);
+                    return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+                },
+                Icon: SymbolRegular.Copy24,
+                BeginGroup: first));
+            first = false;
+        }
+
         return new Candidate(
             Id: "color:" + id + ":" + toCopy,
             DisplayName: text,
@@ -2070,7 +2209,9 @@ public sealed class ColorConverterSource : ISearchSource
                 {
                     ClipboardHelper.SetClipboardText(toCopy);
                     return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
-                })
+                },
+                Icon: SymbolRegular.Copy24),
+            SecondaryActions = secondary
         };
     }
 }
@@ -2122,7 +2263,22 @@ public sealed class QuickAccessSource : ISearchSource
                         {
                             ProcessLauncherService.LaunchTarget(expanded);
                             return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
-                        })
+                        },
+                        Icon: SymbolRegular.FolderOpen24),
+                    SecondaryActions = new[]
+                    {
+                        new CandidateAction(
+                            Id: "copy_env_path",
+                            Title: "Copy path",
+                            KeyGestureHint: "Ctrl+C",
+                            ExecuteAsync: _ =>
+                            {
+                                ClipboardHelper.SetClipboardText(expanded);
+                                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+                            },
+                            Icon: SymbolRegular.Copy24,
+                            BeginGroup: true)
+                    }
                 });
                 return Task.FromResult<IReadOnlyList<Candidate>>(results);
             }
@@ -2166,7 +2322,22 @@ public sealed class QuickAccessSource : ISearchSource
                         {
                             ProcessLauncherService.LaunchTarget(targetUrl);
                             return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
-                        })
+                        },
+                        Icon: SymbolRegular.Globe24),
+                    SecondaryActions = new[]
+                    {
+                        new CandidateAction(
+                            Id: "copy_url",
+                            Title: "Copy URL",
+                            KeyGestureHint: "Ctrl+C",
+                            ExecuteAsync: _ =>
+                            {
+                                ClipboardHelper.SetClipboardText(targetUrl);
+                                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+                            },
+                            Icon: SymbolRegular.Copy24,
+                            BeginGroup: true)
+                    }
                 });
                 return Task.FromResult<IReadOnlyList<Candidate>>(results);
             }
@@ -2192,15 +2363,8 @@ public sealed class QuickAccessSource : ISearchSource
                 {
                     Icon = isDir ? SymbolRegular.FolderOpen24 : SymbolRegular.Document24,
                     KindLabel = isDir ? "Folder" : "File",
-                    PrimaryAction = new CandidateAction(
-                        Id: "open_path",
-                        Title: "Open target",
-                        KeyGestureHint: "Enter",
-                        ExecuteAsync: _ =>
-                        {
-                            ProcessLauncherService.LaunchTarget(raw);
-                            return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
-                        })
+                    PrimaryAction = FileActionProvider.CreateOpenAction(raw),
+                    ActionProvider = FileActionProvider.GetActions
                 });
                 return Task.FromResult<IReadOnlyList<Candidate>>(results);
             }
