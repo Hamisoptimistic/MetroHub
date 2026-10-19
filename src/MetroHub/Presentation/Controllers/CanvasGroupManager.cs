@@ -460,6 +460,10 @@ public sealed class CanvasGroupManager
         var activeWs = WorkspaceManager.Instance.ActiveWorkspace;
         if (activeWs != null)
         {
+            if (_contentScrollViewerProvider() is ScrollViewer sv)
+            {
+                activeWs.ScrollOffset = sv.VerticalOffset;
+            }
             StorageService.SaveWorkspaceLayout(activeWs.Id, tiles);
             StorageService.SaveWorkspaceGroups(activeWs.Id, groups);
         }

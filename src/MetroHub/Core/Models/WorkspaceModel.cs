@@ -64,6 +64,13 @@ public sealed class WorkspaceModel : INotifyPropertyChanged
         set => SetField(ref _createdUtc, value);
     }
 
+    private double _scrollOffset;
+    public double ScrollOffset
+    {
+        get => _scrollOffset;
+        set => SetField(ref _scrollOffset, value);
+    }
+
     // ── Runtime state (Excluded from JSON manifest) ───────────
 
     [JsonIgnore]

@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -160,10 +161,69 @@ public static class SmoothPhysicsScrollBehavior
         }
     }
 
-    public static double EvaluateKineticFriction(double velocity, double frictionBase, double dt)
+    public static void ResetOffset(ScrollViewer sv, double offset)
     {
-        if (dt <= 0.0) return velocity;
-        return velocity * Math.Pow(frictionBase, dt * 60.0);
+        if (sv.GetValue(ControllerProperty) is PhysicsScrollController controller)
+        {
+            controller.ResetOffset(offset);
+        }
+        else
+        {
+            sv.ScrollToVerticalOffset(offset);
+        }
+    }
+
+    internal static bool IsOverNestedScrollContainer(DependencyObject? source, ScrollViewer parent)
+    {
+        DependencyObject? current = source;
+
+        while (current != null && current != parent)
+        {
+            // 1. ScrollViewer (Radio, Network, and standard lists)
+            if (current is ScrollViewer nestedSv && nestedSv.Visibility == Visibility.Visible)
+            {
+                if (nestedSv.ScrollableHeight > 0.5 || nestedSv.ScrollableWidth > 0.5)
+                {
+                    return true;
+                }
+            }
+            // 2. TextBoxBase (Notepad RichTextBox and multiline text editors)
+            else if (current is TextBoxBase tb && tb.Visibility == Visibility.Visible)
+            {
+                if (tb.ExtentHeight > tb.ViewportHeight + 0.5 ||
+                    tb.ExtentWidth > tb.ViewportWidth + 0.5 ||
+                    tb.VerticalScrollBarVisibility != ScrollBarVisibility.Disabled)
+                {
+                    return true;
+                }
+            }
+
+            DependencyObject? next = null;
+            if (current is Visual or System.Windows.Media.Media3D.Visual3D)
+            {
+                next = VisualTreeHelper.GetParent(current);
+            }
+
+            if (next == null)
+            {
+                if (current is FrameworkContentElement fce)
+                {
+                    next = fce.Parent;
+                }
+                else if (current is FrameworkElement fe)
+                {
+                    next = fe.Parent ?? LogicalTreeHelper.GetParent(current);
+                }
+                else
+                {
+                    next = LogicalTreeHelper.GetParent(current);
+                }
+            }
+
+            current = next;
+        }
+
+        return false;
     }
 
     public static (double xNew, double vNew) EvaluateCriticallyDampedSpring(double x0, double v0, double omega, double dt)
@@ -210,6 +270,7 @@ public static class SmoothPhysicsScrollBehavior
             }
 
             _scrollViewer.PreviewMouseWheel += OnPreviewMouseWheel;
+            _scrollViewer.MouseWheel += OnMouseWheel;
             _scrollViewer.PreviewMouseLeftButtonDown += OnPreviewMouseLeftButtonDown;
             _scrollViewer.ScrollChanged += OnExternalScrollChanged;
             _scrollViewer.Unloaded += OnUnloaded;
@@ -224,6 +285,33 @@ public static class SmoothPhysicsScrollBehavior
             _targetOffset = _currentOffset;
             ApplyViewportOffset(_currentOffset, _scrollViewer.ScrollableHeight);
             DetachRenderLoop(snapToDevicePixel: false);
+        }
+
+        public void ResetOffset(double offset)
+        {
+            DetachRenderLoop(snapToDevicePixel: false);
+            _velocity = 0.0;
+            double maxScroll = _scrollViewer.ScrollableHeight;
+            double clamped = maxScroll > 0 ? Math.Clamp(offset, 0.0, maxScroll) : Math.Max(0.0, offset);
+            _currentOffset = clamped;
+            _targetOffset = clamped;
+            _lastSnappedScrollOffset = clamped;
+
+            _isInternalScrollUpdate = true;
+            try
+            {
+                _scrollViewer.ScrollToVerticalOffset(clamped);
+            }
+            finally
+            {
+                _isInternalScrollUpdate = false;
+            }
+
+            if (_scrollViewer.Content is UIElement content && content.RenderTransform == _subPixelAndOverscrollTransform)
+            {
+                _subPixelAndOverscrollTransform.Y = 0.0;
+                content.RenderTransform = null;
+            }
         }
 
         private void OnPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -266,6 +354,15 @@ public static class SmoothPhysicsScrollBehavior
         {
             double maxScroll = _scrollViewer.ScrollableHeight;
             if (e.Handled || maxScroll <= 0) return;
+
+            // Do not intercept if Ctrl is pressed (e.g. zoom in Notepad / Photos)
+            if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control) return;
+
+            // Do not intercept if cursor is over a nested scroll container (e.g. Radio, Notepad, Network)
+            if (IsOverNestedScrollContainer(e.OriginalSource as DependencyObject, _scrollViewer))
+            {
+                return;
+            }
 
             long now = Stopwatch.GetTimestamp();
             double elapsedMs = _lastWheelTimestamp == 0
@@ -385,6 +482,16 @@ public static class SmoothPhysicsScrollBehavior
 
             AttachRenderLoop();
             e.Handled = true;
+        }
+
+        private void OnMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // If the mouse is over any scrollable widget, swallow the bubbled event
+            // so the canvas never scrolls even when the inner scrollbar reaches the bottom or top.
+            if (IsOverNestedScrollContainer(e.OriginalSource as DependencyObject, _scrollViewer))
+            {
+                e.Handled = true;
+            }
         }
 
         private void OnRendering(object? sender, EventArgs e)
@@ -553,6 +660,7 @@ public static class SmoothPhysicsScrollBehavior
         {
             DetachRenderLoop(snapToDevicePixel: false);
             _scrollViewer.PreviewMouseWheel -= OnPreviewMouseWheel;
+            _scrollViewer.MouseWheel -= OnMouseWheel;
             _scrollViewer.PreviewMouseLeftButtonDown -= OnPreviewMouseLeftButtonDown;
             _scrollViewer.ScrollChanged -= OnExternalScrollChanged;
             _scrollViewer.Unloaded -= OnUnloaded;

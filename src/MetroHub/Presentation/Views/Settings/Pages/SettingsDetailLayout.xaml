@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:vm="clr-namespace:MetroHub.Presentation.Views.Settings.ViewModels"
+             xmlns:behaviors="clr-namespace:MetroHub.Presentation.Controls.Behaviors"
              d:DataContext="{d:DesignInstance vm:SettingsDetailLayoutViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -157,6 +158,7 @@
                           HorizontalScrollBarVisibility="Disabled"
                           VerticalScrollBarVisibility="Auto">
                 <ContentControl Content="{Binding CurrentPageViewModel}"
+                                behaviors:FluentTransitionBehavior.Mode="VerticalDrillIn"
                                 Focusable="False" />
             </ScrollViewer>
         </Grid>

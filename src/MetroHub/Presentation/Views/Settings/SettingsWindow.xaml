@@ -4,6 +4,7 @@
         xmlns:views="clr-namespace:MetroHub.Presentation.Views"
         xmlns:vm="clr-namespace:MetroHub.Presentation.Views.Settings.ViewModels"
         xmlns:pages="clr-namespace:MetroHub.Presentation.Views.Settings.Pages"
+        xmlns:behaviors="clr-namespace:MetroHub.Presentation.Controls.Behaviors"
         Title="Settings"
         Width="960" Height="640"
         MinWidth="720" MinHeight="460"
@@ -50,6 +51,7 @@
         <Grid Background="Transparent">
             <!-- Full-Bleed Content Host (CurrentView covers all window bounds Y=0..640) -->
             <ContentControl Content="{Binding CurrentView}"
+                            behaviors:FluentTransitionBehavior.Mode="HorizontalSlide"
                             Focusable="False" />
 
             <!-- ========================================================================= -->

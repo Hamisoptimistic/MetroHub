@@ -13,6 +13,7 @@ using System.Windows.Threading;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Controllers;
+using MetroHub.Presentation.Controls;
 using MetroHub.Presentation.Controls.Canvas;
 using MetroHub.Presentation.Dialogs;
 
@@ -73,6 +74,7 @@ public partial class MainWindow
     private double _cameraX;
     private double _cameraVelocity;
     private double _targetCameraX;
+    private double _baseScrollOffset;
     private bool _isTransitionAnimating;
     private long _lastTransitionTimestamp;
     private TimeSpan _lastTransitionRenderTime = TimeSpan.MinValue;
@@ -83,6 +85,13 @@ public partial class MainWindow
     private const double TransitionSpringOmega = 22.0;
     private const double TransitionRestPosThreshold = 0.5;
     private const double TransitionRestVelThreshold = 5.0;
+
+    private static double CalculateWorkspaceMaxBottom(WorkspaceModel ws)
+    {
+        double maxTileBottom = ws.Tiles.Count > 0 ? ws.Tiles.Max(t => t.Y + t.HeightPixels) + 120 : 600;
+        double maxGroupBottom = ws.Groups.Count > 0 ? ws.Groups.Max(g => g.Y + 120) : 600;
+        return Math.Max(maxTileBottom, maxGroupBottom);
+    }
 
     private void InitializeWorkspaces()
     {
@@ -178,6 +187,10 @@ public partial class MainWindow
         _lastOutgoingWorkspace = outgoing;
         if (outgoing != null)
         {
+            if (ContentScrollViewer != null)
+            {
+                outgoing.ScrollOffset = ContentScrollViewer.VerticalOffset;
+            }
             InvokeOnDormant(outgoing.Tiles);
         }
     }
@@ -191,10 +204,20 @@ public partial class MainWindow
     {
         if (target == null) return;
 
+        if (_activeCanvas?.Workspace is { } outgoingWs && ContentScrollViewer != null)
+        {
+            outgoingWs.ScrollOffset = ContentScrollViewer.VerticalOffset;
+        }
+
         // If window is not yet loaded or not visible, perform instant swap
         if (!IsLoaded || !IsVisible || CanvasHostPanel == null)
         {
             ApplyWorkspaceData(target);
+            UpdateCanvasHeight();
+            if (ContentScrollViewer != null)
+            {
+                SmoothPhysicsScrollBehavior.ResetOffset(ContentScrollViewer, target.ScrollOffset);
+            }
             return;
         }
 
@@ -231,6 +254,7 @@ public partial class MainWindow
             _activeStrip.Clear();
             _cameraX = 0.0;
             _cameraVelocity = 0.0;
+            _baseScrollOffset = ContentScrollViewer?.VerticalOffset ?? 0.0;
 
             var outTransform = new TranslateTransform(0, 0);
             outgoingCanvas.RenderTransform = outTransform;
@@ -240,7 +264,8 @@ public partial class MainWindow
             _activeStrip.Add(new ActiveStripItem(outgoingCanvas, outTransform, 0.0));
 
             double enterSlotX = direction * slideDistance;
-            var inTransform = new TranslateTransform(enterSlotX, 0);
+            double enterOffsetY = _baseScrollOffset - target.ScrollOffset;
+            var inTransform = new TranslateTransform(enterSlotX, enterOffsetY);
             incomingCanvas.RenderTransform = inTransform;
             incomingCanvas.Opacity = 1.0;
             incomingCanvas.Visibility = Visibility.Visible;
@@ -251,9 +276,9 @@ public partial class MainWindow
             _transitionTargetCanvas = incomingCanvas;
             _transitionTargetModel = target;
 
-            ApplyWorkspaceData(target, skipCanvasVisibility: true);
-
             StartTransitionLoop();
+
+            ApplyWorkspaceData(target, skipCanvasVisibility: true);
         }
         else
         {
@@ -270,7 +295,8 @@ public partial class MainWindow
             else
             {
                 double nextSlotX = _targetCameraX + (direction * slideDistance);
-                var inTransform = new TranslateTransform(nextSlotX - _cameraX, 0);
+                double enterOffsetY = _baseScrollOffset - target.ScrollOffset;
+                var inTransform = new TranslateTransform(nextSlotX - _cameraX, enterOffsetY);
                 incomingCanvas.RenderTransform = inTransform;
                 incomingCanvas.Opacity = 1.0;
                 incomingCanvas.Visibility = Visibility.Visible;
@@ -369,6 +395,17 @@ public partial class MainWindow
             Panel.SetZIndex(winnerCanvas, 0);
             _activeCanvas = winnerCanvas;
 
+            double targetMaxBottom = CalculateWorkspaceMaxBottom(winnerModel);
+            if (MainCanvasGrid != null)
+            {
+                MainCanvasGrid.MinHeight = Math.Max(MainCanvasGrid.MinHeight, targetMaxBottom);
+            }
+
+            if (ContentScrollViewer != null)
+            {
+                SmoothPhysicsScrollBehavior.ResetOffset(ContentScrollViewer, winnerModel.ScrollOffset);
+            }
+
             UpdateCanvasHeight();
 
             // Restore ClearType on stationary active canvas
@@ -393,6 +430,7 @@ public partial class MainWindow
         CompositionTarget.Rendering -= OnTransitionRendering;
 
         var fallback = _transitionTargetCanvas ?? _activeCanvas;
+        var fallbackModel = _transitionTargetModel ?? fallback?.Workspace;
         if (fallback != null)
         {
             fallback.RenderTransform = null;
@@ -415,6 +453,20 @@ public partial class MainWindow
         _activeStrip.Clear();
         _transitionTargetCanvas = null;
         _transitionTargetModel = null;
+
+        if (fallbackModel != null)
+        {
+            double targetMaxBottom = CalculateWorkspaceMaxBottom(fallbackModel);
+            if (MainCanvasGrid != null)
+            {
+                MainCanvasGrid.MinHeight = Math.Max(MainCanvasGrid.MinHeight, targetMaxBottom);
+            }
+            if (ContentScrollViewer != null)
+            {
+                SmoothPhysicsScrollBehavior.ResetOffset(ContentScrollViewer, fallbackModel.ScrollOffset);
+            }
+            UpdateCanvasHeight();
+        }
     }
 
     private void ApplyWorkspaceData(WorkspaceModel target, bool skipCanvasVisibility = false)

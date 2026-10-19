@@ -13,6 +13,7 @@ public partial class SettingsShellViewModel : ObservableObject
     private object _currentView;
 
     private readonly SettingsHomeViewModel _homeViewModel;
+    private SettingsDetailLayoutViewModel? _detailViewModel;
 
     public SettingsShellViewModel()
     {
@@ -34,6 +35,8 @@ public partial class SettingsShellViewModel : ObservableObject
 
     public void NavigateToCategory(SettingsCategoryItem category)
     {
-        CurrentView = new SettingsDetailLayoutViewModel(this, _homeViewModel.Categories, category);
+        _detailViewModel ??= new SettingsDetailLayoutViewModel(this, _homeViewModel.Categories, category);
+        _detailViewModel.SelectedCategory = category;
+        CurrentView = _detailViewModel;
     }
 }

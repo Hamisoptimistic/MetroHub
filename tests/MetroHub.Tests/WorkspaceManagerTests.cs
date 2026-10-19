@@ -564,5 +564,31 @@ public sealed class WorkspaceManagerTests : IDisposable
         Assert.True(ws1.IsLayoutDirty);
         Assert.True(ws2.IsLayoutDirty);
     }
+
+    [Fact]
+    public void WorkspaceModel_ScrollOffset_PreservesAndSerializes()
+    {
+        var manifest = new WorkspacesManifest
+        {
+            ActiveWorkspaceId = "ws_scroll_test",
+            Workspaces = new System.Collections.Generic.List<WorkspaceModel>
+            {
+                new()
+                {
+                    Id = "ws_scroll_test",
+                    Name = "Scroll Test WS",
+                    Order = 0,
+                    ScrollOffset = 840.5
+                }
+            }
+        };
+
+        StorageService.SaveWorkspacesSync(manifest);
+
+        var loaded = StorageService.LoadWorkspaces();
+        Assert.NotNull(loaded);
+        var ws = Assert.Single(loaded.Workspaces);
+        Assert.Equal(840.5, ws.ScrollOffset);
+    }
 }
 

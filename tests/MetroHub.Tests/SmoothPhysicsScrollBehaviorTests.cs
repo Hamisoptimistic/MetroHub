@@ -1,4 +1,5 @@
 using System;
+using System.Windows;
 using System.Windows.Controls;
 using MetroHub.Presentation.Controls;
 using Xunit;
@@ -114,19 +115,91 @@ public sealed class SmoothPhysicsScrollBehaviorTests
     }
 
     [Fact]
-    public void EvaluateKineticFriction_DecaysVelocitySmoothly()
+    public void IsOverNestedScrollContainer_DetectsScrollViewerAndTextBoxBase_OnSta()
     {
-        double v = 1000.0;
-        const double friction = 0.91;
-        const double dt = 1.0 / 120.0;
-
-        for (int i = 0; i < 60; i++)
+        WpfTestHost.RunSta(() =>
         {
-            v = SmoothPhysicsScrollBehavior.EvaluateKineticFriction(v, friction, dt);
-        }
+            var parentSv = new ScrollViewer { Width = 300, Height = 300 };
+            var childSv = new ScrollViewer
+            {
+                Width = 100,
+                Height = 100,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+            };
+            var innerChild = new Border { Width = 100, Height = 400 };
 
-        Assert.True(v < 100.0, $"Velocity did not decay properly: v = {v}");
-        Assert.True(v > 0.0, "Velocity should remain positive during decay");
+            childSv.Content = innerChild;
+            childSv.ApplyTemplate();
+            childSv.Measure(new System.Windows.Size(100, 100));
+            childSv.Arrange(new System.Windows.Rect(0, 0, 100, 100));
+            childSv.UpdateLayout();
+
+            parentSv.Content = childSv;
+            parentSv.ApplyTemplate();
+            parentSv.Measure(new System.Windows.Size(300, 300));
+            parentSv.Arrange(new System.Windows.Rect(0, 0, 300, 300));
+            parentSv.UpdateLayout();
+
+            // Inner child of ScrollViewer is detected as being inside a scroll container
+            bool isOverChildSv = SmoothPhysicsScrollBehavior.IsOverNestedScrollContainer(innerChild, parentSv);
+            Assert.True(isOverChildSv);
+
+            // RichTextBox (Notepad editor) inside parentSv is detected as a scroll container
+            var richTextBox = new RichTextBox
+            {
+                Width = 100,
+                Height = 100,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+            };
+            parentSv.Content = richTextBox;
+            bool isOverRichText = SmoothPhysicsScrollBehavior.IsOverNestedScrollContainer(richTextBox, parentSv);
+            Assert.True(isOverRichText);
+
+            // Element with no nested scrollable container returns false
+            var outsideElement = new Border();
+            parentSv.Content = outsideElement;
+            bool noNestedScroll = SmoothPhysicsScrollBehavior.IsOverNestedScrollContainer(outsideElement, parentSv);
+            Assert.False(noNestedScroll);
+        });
+    }
+
+    [Fact]
+    public void ResetOffset_SetsScrollOffsetAndCancelsMomentum_OnSta()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var sv = new ScrollViewer { Width = 300, Height = 300 };
+            var content = new Border { Width = 300, Height = 1000 };
+            sv.Content = content;
+
+            var window = new Window
+            {
+                Width = 300,
+                Height = 300,
+                Content = sv
+            };
+            window.Show();
+            window.UpdateLayout();
+
+            try
+            {
+                SmoothPhysicsScrollBehavior.SetIsEnabled(sv, true);
+
+                SmoothPhysicsScrollBehavior.ResetOffset(sv, 250.0);
+                sv.UpdateLayout();
+                Assert.Equal(250.0, sv.VerticalOffset);
+
+                SmoothPhysicsScrollBehavior.ResetOffset(sv, 0.0);
+                sv.UpdateLayout();
+                Assert.Equal(0.0, sv.VerticalOffset);
+
+                SmoothPhysicsScrollBehavior.SetIsEnabled(sv, false);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
     }
 }
 

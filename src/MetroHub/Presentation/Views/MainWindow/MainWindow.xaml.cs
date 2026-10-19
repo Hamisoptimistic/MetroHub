@@ -625,6 +625,17 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         UpdateCanvasHeight();
         UpdateExposedAddSlots();
         activeWs.IsLayoutDirty = false;
+
+        if (activeWs.ScrollOffset > 0 && ContentScrollViewer != null)
+        {
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+            {
+                if (ContentScrollViewer != null)
+                {
+                    SmoothPhysicsScrollBehavior.ResetOffset(ContentScrollViewer, activeWs.ScrollOffset);
+                }
+            });
+        }
     }
 
     private void OnSourceInitialized(object sender, EventArgs e)

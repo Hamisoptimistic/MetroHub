@@ -38,7 +38,19 @@ public partial class MainWindow
 
     private void UpdateLayoutMetrics() => CanvasGroupManager.UpdateLayoutMetrics();
 
-    private void UpdateCanvasHeight() => CanvasGroupManager.UpdateCanvasHeight();
+    private void UpdateCanvasHeight()
+    {
+        CanvasGroupManager.UpdateCanvasHeight();
+        if (_isTransitionAnimating && ContentScrollViewer != null && MainCanvasGrid != null)
+        {
+            double viewportHeight = ContentScrollViewer.ActualHeight > 0 ? ContentScrollViewer.ActualHeight : 600;
+            double safeMin = ContentScrollViewer.VerticalOffset + viewportHeight;
+            if (MainCanvasGrid.MinHeight < safeMin)
+            {
+                MainCanvasGrid.MinHeight = safeMin;
+            }
+        }
+    }
 
     private void DiscoverGroupsFromTiles() => CanvasGroupManager.DiscoverGroupsFromTiles();
 
