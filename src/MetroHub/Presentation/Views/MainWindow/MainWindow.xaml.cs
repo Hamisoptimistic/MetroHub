@@ -265,7 +265,6 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         AddHandler(TileControl.TileUnpinnedEvent, new RoutedEventHandler(OnTileUnpinned));
         AddHandler(TileControl.TileModifiedEvent, new RoutedEventHandler(OnTileModified));
 
-        SetupAutoScrollTimer();
         SetupSidebarTimers();
 
         SidebarRail.InitializeSettings(Settings);

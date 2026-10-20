@@ -64,10 +64,6 @@ public partial class MainWindow
     private (int MinRelCol, int MaxRelCol, int MinRelRow, int MaxRelRow) _clusterRelGridBounds;
     private bool _dragBeganWithSelection;
 
-    private void SetupAutoScrollTimer()
-    {
-        // Auto-scroll loop is now driven by VSync via CompositionTarget.Rendering
-    }
 
     private void StartDragRenderLoop()
     {
@@ -222,11 +218,17 @@ public partial class MainWindow
             for (int i = 0; i < _draggedCluster.Count; i++)
             {
                 var cTile = _draggedCluster[i];
-                var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as UIElement;
-                if (container != null && !_cachedDragContainers.Contains(container))
+                // TileControl.AnimateElevationLift() already caches RootBorder with ClearType and drop shadow.
+                // Only attach BitmapCache at container level if no active TileControl was resolved.
+                bool hasTileControl = Presentation.Controls.TileControl.ActiveTiles.Any(tc => ReferenceEquals(tc.DataContext, cTile));
+                if (!hasTileControl)
                 {
-                    container.CacheMode = new BitmapCache(dpiScale) { SnapsToDevicePixels = true, EnableClearType = false };
-                    _cachedDragContainers.Add(container);
+                    var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as UIElement;
+                    if (container != null && !_cachedDragContainers.Contains(container))
+                    {
+                        container.CacheMode = new BitmapCache(dpiScale) { SnapsToDevicePixels = true, EnableClearType = true };
+                        _cachedDragContainers.Add(container);
+                    }
                 }
             }
         }

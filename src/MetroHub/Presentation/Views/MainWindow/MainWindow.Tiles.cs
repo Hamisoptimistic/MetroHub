@@ -27,11 +27,11 @@ public partial class MainWindow
 {
     private static readonly Brush WidgetCategoryHeaderBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0x90, 0xFF, 0xFF, 0xFF));
     private static readonly Brush WidgetItemIconBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF));
-    private static readonly CubicEase SharedTileSlideEase = CreateFrozenTileSlideEase();
+    private static readonly CircleEase SharedTileSlideEase = CreateFrozenTileSlideEase();
 
-    private static CubicEase CreateFrozenTileSlideEase()
+    private static CircleEase CreateFrozenTileSlideEase()
     {
-        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var ease = new CircleEase { EasingMode = EasingMode.EaseOut };
         ease.Freeze();
         return ease;
     }
@@ -218,7 +218,7 @@ public partial class MainWindow
 
             if (Math.Abs(deltaX) > 0.5)
             {
-                var animX = new DoubleAnimation(deltaX, 0.0, TimeSpan.FromMilliseconds(220))
+                var animX = new DoubleAnimation(deltaX, 0.0, TimeSpan.FromMilliseconds(200))
                 {
                     EasingFunction = SharedTileSlideEase
                 };
@@ -232,7 +232,7 @@ public partial class MainWindow
 
             if (Math.Abs(deltaY) > 0.5)
             {
-                var animY = new DoubleAnimation(deltaY, 0.0, TimeSpan.FromMilliseconds(220))
+                var animY = new DoubleAnimation(deltaY, 0.0, TimeSpan.FromMilliseconds(200))
                 {
                     EasingFunction = SharedTileSlideEase
                 };

@@ -50,6 +50,30 @@ public partial class TileControl : UserControl
 
     public static readonly List<TileControl> ActiveTiles = new();
 
+    private static readonly QuadraticEase SharedTilePressEase = CreateFrozenQuadraticEase();
+    private static readonly DropShadowEffect SharedElevationShadow = CreateFrozenElevationShadow();
+
+    private static QuadraticEase CreateFrozenQuadraticEase()
+    {
+        var ease = new QuadraticEase { EasingMode = EasingMode.EaseOut };
+        ease.Freeze();
+        return ease;
+    }
+
+    private static DropShadowEffect CreateFrozenElevationShadow()
+    {
+        var shadow = new DropShadowEffect
+        {
+            BlurRadius = 24,
+            ShadowDepth = 6,
+            Direction = 270,
+            Opacity = 0.45,
+            Color = Colors.Black
+        };
+        shadow.Freeze();
+        return shadow;
+    }
+
     private static DispatcherTimer? _revealSettleTimer;
 
     /// <summary>
@@ -230,7 +254,7 @@ public partial class TileControl : UserControl
 
         var anim = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(220))
         {
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            EasingFunction = SharedTilePressEase
         };
         RevealEdgeBorder?.BeginAnimation(UIElement.OpacityProperty, anim);
     }
@@ -258,7 +282,7 @@ public partial class TileControl : UserControl
         }
         var anim = new DoubleAnimation(targetOpacity, TimeSpan.FromMilliseconds(durationMs))
         {
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            EasingFunction = SharedTilePressEase
         };
         RevealFillBorder?.BeginAnimation(UIElement.OpacityProperty, anim);
     }
@@ -349,7 +373,7 @@ public partial class TileControl : UserControl
 
         var anim = new DoubleAnimation(TileScale.ScaleX, 0.95, TimeSpan.FromMilliseconds(50))
         {
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            EasingFunction = SharedTilePressEase
         };
         TileScale.BeginAnimation(ScaleTransform.ScaleXProperty, anim);
         TileScale.BeginAnimation(ScaleTransform.ScaleYProperty, anim);
@@ -359,19 +383,11 @@ public partial class TileControl : UserControl
     {
         var anim = new DoubleAnimation(TileScale.ScaleX, 1.04, TimeSpan.FromMilliseconds(120))
         {
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            EasingFunction = SharedTilePressEase
         };
         TileScale.BeginAnimation(ScaleTransform.ScaleXProperty, anim);
         TileScale.BeginAnimation(ScaleTransform.ScaleYProperty, anim);
 
-        var shadow = new DropShadowEffect
-        {
-            BlurRadius = 24,
-            ShadowDepth = 6,
-            Direction = 270,
-            Opacity = 0.45,
-            Color = Colors.Black
-        };
         // Rasterise the in-flight tile at the monitor's true DPI scale with ClearType enabled.
         // A plain BitmapCache renders at 1x with ClearType off, so on a scaled display the
         // cached text and icons get upscaled and read as pixelated for the whole drag.
@@ -382,18 +398,18 @@ public partial class TileControl : UserControl
             EnableClearType = true,
             SnapsToDevicePixels = true
         };
-        RootBorder.Effect = shadow;
+        RootBorder.Effect = SharedElevationShadow;
     }
 
     public void AnimateRelease(Action? onCompleted = null)
     {
         var animX = new DoubleAnimation(TileScale.ScaleX, 1.0, TimeSpan.FromMilliseconds(80))
         {
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            EasingFunction = SharedTilePressEase
         };
         var animY = new DoubleAnimation(TileScale.ScaleY, 1.0, TimeSpan.FromMilliseconds(80))
         {
-            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+            EasingFunction = SharedTilePressEase
         };
 
         bool completedFired = false;
@@ -456,7 +472,7 @@ public partial class TileControl : UserControl
             {
                 To = targetColor,
                 Duration = TimeSpan.FromMilliseconds(150),
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
+                EasingFunction = SharedTilePressEase
             };
             currentBrush.BeginAnimation(SolidColorBrush.ColorProperty, anim);
         }
