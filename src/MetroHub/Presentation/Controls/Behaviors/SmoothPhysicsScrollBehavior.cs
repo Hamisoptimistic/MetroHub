@@ -255,6 +255,7 @@ public static class SmoothPhysicsScrollBehavior
         private const double RestVelocityThreshold = 3.5;     // Velocity cutoff (<0.025 DIPs/frame at 144Hz)
 
         private double _currentOffset;
+        private double _rawTargetOffset;
         private double _targetOffset;
         private double _velocity;
 
@@ -274,6 +275,7 @@ public static class SmoothPhysicsScrollBehavior
             }
 
             _currentOffset = _scrollViewer.VerticalOffset;
+            _rawTargetOffset = _currentOffset;
             _targetOffset = _currentOffset;
 
             _scrollViewer.PreviewMouseWheel += OnPreviewMouseWheel;
@@ -290,6 +292,7 @@ public static class SmoothPhysicsScrollBehavior
             _velocity = 0.0;
             double maxScroll = _scrollViewer.ScrollableHeight;
             _currentOffset = Math.Clamp(_currentOffset, 0.0, maxScroll);
+            _rawTargetOffset = _currentOffset;
             _targetOffset = _currentOffset;
             ApplyViewportOffset(_currentOffset, maxScroll);
             DetachRenderLoop();
@@ -302,6 +305,7 @@ public static class SmoothPhysicsScrollBehavior
             double maxScroll = _scrollViewer.ScrollableHeight;
             double clamped = maxScroll > 0 ? Math.Clamp(offset, 0.0, maxScroll) : Math.Max(0.0, offset);
             _currentOffset = clamped;
+            _rawTargetOffset = clamped;
             _targetOffset = clamped;
 
             _isInternalScrollUpdate = true;
@@ -314,10 +318,14 @@ public static class SmoothPhysicsScrollBehavior
                 _isInternalScrollUpdate = false;
             }
 
-            if (_scrollViewer.Content is UIElement content && content.RenderTransform == _overscrollTransform)
+            if (_scrollViewer.Content is UIElement content)
             {
-                _overscrollTransform.Y = 0.0;
-                content.RenderTransform = null;
+                content.CacheMode = null;
+                if (content.RenderTransform == _overscrollTransform)
+                {
+                    _overscrollTransform.Y = 0.0;
+                    content.RenderTransform = null;
+                }
             }
         }
 
@@ -336,11 +344,13 @@ public static class SmoothPhysicsScrollBehavior
             if (!_isRenderingHooked && e.VerticalChange != 0)
             {
                 _currentOffset = _scrollViewer.VerticalOffset;
+                _rawTargetOffset = _currentOffset;
                 _targetOffset = _currentOffset;
             }
             else if (_isRenderingHooked && e.ExtentHeightChange != 0)
             {
                 double maxScroll = _scrollViewer.ScrollableHeight;
+                _rawTargetOffset = Math.Clamp(_rawTargetOffset, 0.0, maxScroll);
                 _targetOffset = Math.Clamp(_targetOffset, 0.0, maxScroll);
             }
         }
@@ -390,6 +400,7 @@ public static class SmoothPhysicsScrollBehavior
             if (!_isRenderingHooked)
             {
                 _currentOffset = _scrollViewer.VerticalOffset;
+                _rawTargetOffset = _currentOffset;
                 _targetOffset = _currentOffset;
                 _velocity = 0.0;
             }
@@ -409,7 +420,8 @@ public static class SmoothPhysicsScrollBehavior
                 }
 
                 _currentOffset = Math.Clamp(_currentOffset + step, -MaxOverscrollDistance, maxScroll + MaxOverscrollDistance);
-                _targetOffset = Math.Clamp(_currentOffset, 0.0, maxScroll);
+                _rawTargetOffset = Math.Clamp(_currentOffset, 0.0, maxScroll);
+                _targetOffset = _rawTargetOffset;
                 _velocity = 0.0;
 
                 ApplyViewportOffset(_currentOffset, maxScroll);
@@ -431,21 +443,22 @@ public static class SmoothPhysicsScrollBehavior
             double notchCount = Math.Abs(e.Delta) / (double)Mouse.MouseWheelDeltaForOneLine;
             double deltaOffset = direction * CalculateNotchStepInDips() * notchCount * cadenceMultiplier;
 
-            double pendingRemaining = _targetOffset - _currentOffset;
+            double pendingRemaining = _rawTargetOffset - _currentOffset;
             if (Math.Sign(deltaOffset) != 0 && Math.Sign(pendingRemaining) != 0 && Math.Sign(deltaOffset) != Math.Sign(pendingRemaining))
             {
                 // Instant direction reversal
-                _targetOffset = Math.Clamp(_currentOffset, 0.0, maxScroll);
+                _rawTargetOffset = Math.Clamp(_currentOffset, 0.0, maxScroll);
+                _targetOffset = _rawTargetOffset;
                 _velocity = 0.0;
             }
 
-            double proposedTarget = _targetOffset + deltaOffset;
+            double proposedTarget = _rawTargetOffset + deltaOffset;
 
             if (proposedTarget < 0.0 || proposedTarget > maxScroll)
             {
                 double clampedTarget = Math.Clamp(proposedTarget, 0.0, maxScroll);
                 double overflow = proposedTarget - clampedTarget;
-                _targetOffset = clampedTarget;
+                _rawTargetOffset = clampedTarget;
 
                 // Convert boundary overflow into an elastic overscroll kick
                 double currentStretch = _currentOffset < 0.0
@@ -466,7 +479,7 @@ public static class SmoothPhysicsScrollBehavior
                 double newTarget = Math.Clamp(proposedTarget, _currentOffset - maxLead, _currentOffset + maxLead);
                 newTarget = Math.Clamp(newTarget, 0.0, maxScroll);
 
-                _targetOffset = newTarget;
+                _rawTargetOffset = newTarget;
             }
 
             AttachRenderLoop();
@@ -506,17 +519,21 @@ public static class SmoothPhysicsScrollBehavior
             }
 
             double maxScroll = _scrollViewer.ScrollableHeight;
-            _targetOffset = Math.Clamp(_targetOffset, 0.0, maxScroll);
+            _rawTargetOffset = Math.Clamp(_rawTargetOffset, 0.0, maxScroll);
 
-            if (_isTouchpadGestureActive)
+            // Stage 1: Smoothly chase raw wheel target to absorb 8ms-16ms USB polling jitter
+            if (!_isTouchpadGestureActive)
             {
-                long now = Stopwatch.GetTimestamp();
-                double msSinceWheel = (now - _lastWheelTimestamp) * 1000.0 / Stopwatch.Frequency;
-                if (msSinceWheel < 45.0)
+                double filterFactor = 1.0 - Math.Exp(-35.0 * dt);
+                _targetOffset += (_rawTargetOffset - _targetOffset) * filterFactor;
+                if (Math.Abs(_rawTargetOffset - _targetOffset) < 0.05)
                 {
-                    return;
+                    _targetOffset = _rawTargetOffset;
                 }
-                _isTouchpadGestureActive = false;
+            }
+            else
+            {
+                _targetOffset = _rawTargetOffset;
             }
 
             bool isOverscrolled = _currentOffset < -0.01 || _currentOffset > maxScroll + 0.01;
@@ -540,9 +557,10 @@ public static class SmoothPhysicsScrollBehavior
                 if (_velocity > 0.0) _velocity = 0.0;
             }
 
-            if (Math.Abs(xNew) < RestPositionThreshold && Math.Abs(_velocity) < RestVelocityThreshold)
+            if (Math.Abs(_rawTargetOffset - _currentOffset) < RestPositionThreshold && Math.Abs(_velocity) < RestVelocityThreshold)
             {
-                _currentOffset = _targetOffset;
+                _currentOffset = _rawTargetOffset;
+                _targetOffset = _rawTargetOffset;
                 _velocity = 0.0;
                 ApplyViewportOffset(_currentOffset, maxScroll);
                 DetachRenderLoop();
@@ -594,6 +612,9 @@ public static class SmoothPhysicsScrollBehavior
             if (_scrollViewer.Content is UIElement content)
             {
                 content.IsHitTestVisible = false;
+                double dpiY = VisualTreeHelper.GetDpi(_scrollViewer).DpiScaleY;
+                if (dpiY <= 0.0) dpiY = 1.0;
+                content.CacheMode = new BitmapCache(dpiY) { SnapsToDevicePixels = true, EnableClearType = false };
             }
 
             _lastRenderArgsTime = TimeSpan.Zero;
@@ -612,6 +633,7 @@ public static class SmoothPhysicsScrollBehavior
 
             if (_scrollViewer.Content is UIElement content)
             {
+                content.CacheMode = null;
                 content.IsHitTestVisible = true;
                 if (content.RenderTransform == _overscrollTransform)
                 {
@@ -638,6 +660,7 @@ public static class SmoothPhysicsScrollBehavior
             IsScrolling = false;
             if (_scrollViewer.Content is UIElement content)
             {
+                content.CacheMode = null;
                 content.IsHitTestVisible = true;
                 if (content.RenderTransform == _overscrollTransform)
                 {
