@@ -11,6 +11,7 @@ public enum RouteKind
     Universal,
     Terminal,
     Settings,
+    ControlPanel,
     ProcessKiller,
     WindowWalker,
     WorldClock,
@@ -102,10 +103,44 @@ public sealed class QueryRouter
             return new RouteResult(RouteKind.Terminal, raw[4..].TrimStart(), IsHardRoute: true, IsAdditive: false);
         }
 
-        string setPrefix = GetSafePrefix(s.SettingsPrefix, "set:");
-        if (raw.StartsWith(setPrefix, StringComparison.OrdinalIgnoreCase))
+        string setPrefix = GetSafePrefix(s.SettingsPrefix, "set ");
+        if (raw.StartsWith(setPrefix, StringComparison.OrdinalIgnoreCase) ||
+            raw.StartsWith("set:", StringComparison.OrdinalIgnoreCase) ||
+            raw.StartsWith("set ", StringComparison.OrdinalIgnoreCase))
         {
-            return new RouteResult(RouteKind.Settings, raw[setPrefix.Length..].TrimStart(), IsHardRoute: true, IsAdditive: false);
+            int prefixLen = raw.StartsWith("set:", StringComparison.OrdinalIgnoreCase) ? 4
+                : raw.StartsWith(setPrefix, StringComparison.OrdinalIgnoreCase) ? setPrefix.Length
+                : 4;
+            return new RouteResult(RouteKind.Settings, raw[prefixLen..].TrimStart(), IsHardRoute: true, IsAdditive: false);
+        }
+        if (string.Equals(raw, "set", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.Settings, string.Empty, IsHardRoute: true, IsAdditive: false);
+        }
+
+        string cpPrefix = GetSafePrefix(s.ControlPanelPrefix, "cp ");
+        if (raw.StartsWith(cpPrefix, StringComparison.OrdinalIgnoreCase) ||
+            raw.StartsWith("cp:", StringComparison.OrdinalIgnoreCase) ||
+            raw.StartsWith("cp ", StringComparison.OrdinalIgnoreCase))
+        {
+            int prefixLen = raw.StartsWith("cp:", StringComparison.OrdinalIgnoreCase) ? 3
+                : raw.StartsWith(cpPrefix, StringComparison.OrdinalIgnoreCase) ? cpPrefix.Length
+                : 3;
+            return new RouteResult(RouteKind.ControlPanel, raw[prefixLen..].TrimStart(), IsHardRoute: true, IsAdditive: false);
+        }
+        if (string.Equals(raw, "cp", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.ControlPanel, string.Empty, IsHardRoute: true, IsAdditive: false);
+        }
+
+        if (raw.StartsWith("cpl ", StringComparison.OrdinalIgnoreCase) ||
+            raw.StartsWith("cpl:", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.ControlPanel, raw[4..].TrimStart(), IsHardRoute: true, IsAdditive: false);
+        }
+        if (string.Equals(raw, "cpl", StringComparison.OrdinalIgnoreCase))
+        {
+            return new RouteResult(RouteKind.ControlPanel, string.Empty, IsHardRoute: true, IsAdditive: false);
         }
 
         // 2. Soft-Exclusive Word Triggers (attempted first; fall through to universal if 0 results)

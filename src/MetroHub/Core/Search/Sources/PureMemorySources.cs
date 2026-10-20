@@ -120,6 +120,39 @@ public sealed class TableSource : ISearchSource
             return Task.FromResult<IReadOnlyList<Candidate>>(results);
         }
 
+        // 1b. Control Panel Hard Route (e.g. "cp:mouse" or "cp:" or "cpl:")
+        if (route.Kind == RouteKind.ControlPanel)
+        {
+            string remainder = route.Remainder.Trim();
+            if (string.IsNullOrEmpty(remainder))
+            {
+                for (int i = 0; i < PureMemoryData.SystemCommands.Length; i++)
+                {
+                    var cmd = PureMemoryData.SystemCommands[i];
+                    if (string.Equals(cmd.KindLabel, "Control Panel", StringComparison.OrdinalIgnoreCase))
+                    {
+                        results.Add(CreateCommandCandidate(cmd));
+                    }
+                }
+            }
+            else
+            {
+                string norm = SearchRanker.NormalizeText(remainder);
+                var tokens = SearchRanker.Tokenize(remainder);
+                for (int i = 0; i < PureMemoryData.SystemCommands.Length; i++)
+                {
+                    var cmd = PureMemoryData.SystemCommands[i];
+                    if (string.Equals(cmd.KindLabel, "Control Panel", StringComparison.OrdinalIgnoreCase) &&
+                        MatchesCommand(cmd, norm, tokens))
+                    {
+                        results.Add(CreateCommandCandidate(cmd));
+                    }
+                }
+            }
+
+            return Task.FromResult<IReadOnlyList<Candidate>>(results);
+        }
+
         // 2. Additive Web Bangs (e.g. "g query", "gh query", "w query", "so query", "npm query")
         if (route.IsAdditive)
         {
@@ -337,7 +370,7 @@ public sealed class TableSource : ISearchSource
         {
             Subtitle = cmd.Description,
             Icon = cmd.Icon,
-            KindLabel = "System",
+            KindLabel = cmd.KindLabel,
             PrimaryAction = new CandidateAction(
                 Id: cmd.Id,
                 Title: cmd.Title,

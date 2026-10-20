@@ -175,5 +175,94 @@ public sealed class TableSourceTests
         var resDynamic = await _source.SearchAsync(qDynamic, CancellationToken.None);
         Assert.DoesNotContain(resDynamic, r => r.DisplayName == "Microphone Permissions");
     }
+
+    [Fact]
+    public async Task SearchAsync_ControlPanelHardRoute_EmptyRemainder_ReturnsOnlyControlPanelApplets()
+    {
+        var query = SearchRanker.ParseQuery("cp:", 1);
+        var results = await _source.SearchAsync(query, CancellationToken.None);
+
+        Assert.NotEmpty(results);
+        Assert.True(results.Count >= 10);
+        Assert.All(results, r => Assert.Equal("Control Panel", r.KindLabel));
+        Assert.Contains(results, r => r.DisplayName == "Control Panel");
+        Assert.Contains(results, r => r.DisplayName == "Internet Options");
+    }
+
+    [Fact]
+    public async Task SearchAsync_ControlPanelHardRoute_Specific_ReturnsMatchingApplet()
+    {
+        var query = SearchRanker.ParseQuery("cpl:mouse", 1);
+        var results = await _source.SearchAsync(query, CancellationToken.None);
+
+        var mouse = Assert.Single(results, r => r.DisplayName == "Mouse Properties (Classic)");
+        Assert.Equal("Control Panel", mouse.KindLabel);
+        Assert.Equal("Pointer precision and speed", mouse.Subtitle);
+    }
+
+    [Fact]
+    public async Task SearchAsync_UniversalQuery_ReturnsBothSettingsAndClassic_WithDistinctBadges()
+    {
+        var query = SearchRanker.ParseQuery("mouse", 1);
+        var results = await _source.SearchAsync(query, CancellationToken.None);
+
+        var modern = Assert.Single(results, r => r.DisplayName == "Mouse & Touchpad");
+        var classic = Assert.Single(results, r => r.DisplayName == "Mouse Properties (Classic)");
+
+        Assert.Equal("Windows Setting", modern.KindLabel);
+        Assert.Equal("Control Panel", classic.KindLabel);
+
+        // Verify ranking prioritization: Windows Setting scores higher than Control Panel on query match
+        var scoredModern = SearchRanker.ScoreCandidate(modern, query);
+        var scoredClassic = SearchRanker.ScoreCandidate(classic, query);
+        Assert.True(scoredModern.Score > scoredClassic.Score, "Modern settings should rank higher on tie");
+    }
+
+    [Fact]
+    public async Task SearchAsync_SpaceDelimitedPrefixes_WorkIdenticalToColon()
+    {
+        // 1. "set bluetooth" (space)
+        var qSetSpace = SearchRanker.ParseQuery("set bluetooth", 1);
+        var resSet = await _source.SearchAsync(qSetSpace, CancellationToken.None);
+        var itemSet = Assert.Single(resSet, r => r.DisplayName.Contains("Bluetooth", System.StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("ms-settings:bluetooth", itemSet.FullPathOrKey);
+
+        // 2. "set" alone
+        var qSetAlone = SearchRanker.ParseQuery("set", 1);
+        var resSetAlone = await _source.SearchAsync(qSetAlone, CancellationToken.None);
+        Assert.True(resSetAlone.Count >= 5);
+
+        // 3. "cp mouse" (space)
+        var qCpSpace = SearchRanker.ParseQuery("cp mouse", 1);
+        var resCp = await _source.SearchAsync(qCpSpace, CancellationToken.None);
+        var itemMouse = Assert.Single(resCp, r => r.DisplayName == "Mouse Properties (Classic)");
+        Assert.Equal("Control Panel", itemMouse.KindLabel);
+
+        // 4. "cp" alone
+        var qCpAlone = SearchRanker.ParseQuery("cp", 1);
+        var resCpAlone = await _source.SearchAsync(qCpAlone, CancellationToken.None);
+        Assert.True(resCpAlone.Count >= 10);
+        Assert.All(resCpAlone, r => Assert.Equal("Control Panel", r.KindLabel));
+
+        // 5. "cpl joy" (space)
+        var qCplSpace = SearchRanker.ParseQuery("cpl joy", 1);
+        var resCpl = await _source.SearchAsync(qCplSpace, CancellationToken.None);
+        Assert.Contains(resCpl, r => r.DisplayName == "Game Controllers (Classic)");
+
+        // 6. Category filters in SearchRanker with space
+        var qApp = SearchRanker.ParseQuery("app chrome", 1);
+        Assert.Equal(SearchMode.Apps, qApp.Mode);
+        Assert.Equal(SearchCategory.Apps, qApp.CategoryFilter);
+        Assert.Equal("chrome", qApp.NormalizedText);
+
+        var qFile = SearchRanker.ParseQuery("file report.pdf", 1);
+        Assert.Equal(SearchMode.Files, qFile.Mode);
+        Assert.Equal("report.pdf", qFile.NormalizedText);
+
+        var qFolder = SearchRanker.ParseQuery("folder documents", 1);
+        Assert.Equal(SearchMode.Folders, qFolder.Mode);
+        Assert.Equal(SearchCategory.Folders, qFolder.CategoryFilter);
+        Assert.Equal("documents", qFolder.NormalizedText);
+    }
 }
 

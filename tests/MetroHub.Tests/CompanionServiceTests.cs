@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -23,6 +23,7 @@ public sealed class CompanionServiceTests : IAsyncLifetime
     private LocalCompanionService? _service;
     private HttpClient? _client;
     private int _port;
+    private const string TestChromeOrigin = "chrome-extension://eacfogjghpoogfdmpggaoohcmjmickfp";
 
     public async Task InitializeAsync()
     {
@@ -54,7 +55,7 @@ public sealed class CompanionServiceTests : IAsyncLifetime
         }
     }
 
-    private HttpRequestMessage CreateRequest(HttpMethod method, string path, string? origin = LocalCompanionService.PinnedChromeOrigin, bool includeClientHeader = true)
+    private HttpRequestMessage CreateRequest(HttpMethod method, string path, string? origin = TestChromeOrigin, bool includeClientHeader = true)
     {
         var request = new HttpRequestMessage(method, path);
         if (origin != null)
@@ -71,13 +72,13 @@ public sealed class CompanionServiceTests : IAsyncLifetime
     #region Security & Origin Tests
 
     [Fact]
-    public async Task Origin_PinnedChromeExtension_Allowed()
+    public async Task Origin_SampleChromeExtension_Allowed()
     {
-        using var request = CreateRequest(HttpMethod.Get, "/api/health", origin: LocalCompanionService.PinnedChromeOrigin);
+        using var request = CreateRequest(HttpMethod.Get, "/api/health", origin: TestChromeOrigin);
         using var response = await _client!.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains(LocalCompanionService.PinnedChromeOrigin, response.Headers.GetValues("Access-Control-Allow-Origin"));
+        Assert.Contains(TestChromeOrigin, response.Headers.GetValues("Access-Control-Allow-Origin"));
     }
 
     [Fact]
@@ -120,12 +121,14 @@ public sealed class CompanionServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Origin_UnauthorizedChromeExtension_RejectedWith403()
+    public async Task Origin_ChromeExtension_Allowed()
     {
-        using var request = CreateRequest(HttpMethod.Get, "/api/health", origin: "chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        string chromeOrigin = "chrome-extension://ckcdlfaeldikcojhijmfipocmkmjihli";
+        using var request = CreateRequest(HttpMethod.Get, "/api/health", origin: chromeOrigin);
         using var response = await _client!.SendAsync(request);
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains(chromeOrigin, response.Headers.GetValues("Access-Control-Allow-Origin"));
     }
 
     #endregion
@@ -159,7 +162,7 @@ public sealed class CompanionServiceTests : IAsyncLifetime
     [Fact]
     public async Task OptionsPreflight_ExemptFromCustomHeader_Returns204WithCors()
     {
-        using var request = CreateRequest(HttpMethod.Options, "/api/tiles", origin: LocalCompanionService.PinnedChromeOrigin, includeClientHeader: false);
+        using var request = CreateRequest(HttpMethod.Options, "/api/tiles", origin: TestChromeOrigin, includeClientHeader: false);
         using var response = await _client!.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
@@ -191,19 +194,19 @@ public sealed class CompanionServiceTests : IAsyncLifetime
     [Fact]
     public async Task CorsHeaders_PresentOnGetAndPostResponses()
     {
-        using var getReq = CreateRequest(HttpMethod.Get, "/api/health", origin: LocalCompanionService.PinnedChromeOrigin);
+        using var getReq = CreateRequest(HttpMethod.Get, "/api/health", origin: TestChromeOrigin);
         using var getRes = await _client!.SendAsync(getReq);
 
         Assert.Equal(HttpStatusCode.OK, getRes.StatusCode);
-        Assert.Contains(LocalCompanionService.PinnedChromeOrigin, getRes.Headers.GetValues("Access-Control-Allow-Origin"));
+        Assert.Contains(TestChromeOrigin, getRes.Headers.GetValues("Access-Control-Allow-Origin"));
         Assert.Contains("Origin", getRes.Headers.GetValues("Vary"));
 
-        using var postReq = CreateRequest(HttpMethod.Post, "/api/tiles", origin: LocalCompanionService.PinnedChromeOrigin);
+        using var postReq = CreateRequest(HttpMethod.Post, "/api/tiles", origin: TestChromeOrigin);
         postReq.Content = new StringContent("{\"url\":\"https://example.com\"}", Encoding.UTF8, "application/json");
         using var postRes = await _client!.SendAsync(postReq);
 
         Assert.Equal(HttpStatusCode.OK, postRes.StatusCode);
-        Assert.Contains(LocalCompanionService.PinnedChromeOrigin, postRes.Headers.GetValues("Access-Control-Allow-Origin"));
+        Assert.Contains(TestChromeOrigin, postRes.Headers.GetValues("Access-Control-Allow-Origin"));
         Assert.Contains("Origin", postRes.Headers.GetValues("Vary"));
     }
 

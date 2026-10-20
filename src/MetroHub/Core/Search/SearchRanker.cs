@@ -20,6 +20,7 @@ public sealed record RankingWeights
     public int Fuzzy2 { get; init; } = 20;
 
     public int AppSingleTokenBoost { get; init; } = 10;
+    public int WindowsSettingBoost { get; init; } = 5;
     public int FolderPathBoost { get; init; } = 5;
     public int UserLocationBoost { get; init; } = 15;
     public int MaxUsageBoost { get; init; } = 25;
@@ -90,18 +91,21 @@ public static class SearchRanker
         string textToProcess = trimmed;
 
         // Prefix mode detection
-        if (textToProcess.StartsWith("app:", StringComparison.OrdinalIgnoreCase))
+        if (textToProcess.StartsWith("app:", StringComparison.OrdinalIgnoreCase) ||
+            textToProcess.StartsWith("app ", StringComparison.OrdinalIgnoreCase))
         {
             mode = SearchMode.Apps;
             categoryFilter = SearchCategory.Apps;
             textToProcess = textToProcess[4..].TrimStart();
         }
-        else if (textToProcess.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
+        else if (textToProcess.StartsWith("file:", StringComparison.OrdinalIgnoreCase) ||
+                 textToProcess.StartsWith("file ", StringComparison.OrdinalIgnoreCase))
         {
             mode = SearchMode.Files;
             textToProcess = textToProcess[5..].TrimStart();
         }
-        else if (textToProcess.StartsWith("folder:", StringComparison.OrdinalIgnoreCase))
+        else if (textToProcess.StartsWith("folder:", StringComparison.OrdinalIgnoreCase) ||
+                 textToProcess.StartsWith("folder ", StringComparison.OrdinalIgnoreCase))
         {
             mode = SearchMode.Folders;
             categoryFilter = SearchCategory.Folders;
@@ -425,6 +429,11 @@ public static class SearchRanker
         if (candidate.Category == SearchCategory.Apps && query.Tokens.Count == 1 && matchKind >= MatchKind.Prefix)
         {
             totalScore += weights.AppSingleTokenBoost;
+        }
+
+        if (string.Equals(candidate.KindLabel, "Windows Setting", StringComparison.Ordinal))
+        {
+            totalScore += weights.WindowsSettingBoost;
         }
 
         if (query.Mode == SearchMode.Path && candidate.IsFolder)

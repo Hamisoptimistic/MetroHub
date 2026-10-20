@@ -33,7 +33,8 @@ public sealed record SystemCommandItem(
     bool RequiresConfirm,
     string? ConfirmPrompt,
     Func<ActionContext, Task<ActionResult>> ExecuteAsync,
-    SymbolRegular Icon = SymbolRegular.Power24);
+    SymbolRegular Icon = SymbolRegular.Power24,
+    string KindLabel = "System");
 
 /// <summary>
 /// Definition of a web search bang navigation target.
@@ -145,7 +146,8 @@ public static class PureMemoryData
     [
         // 1. Windows & System Tools
         new("> ", "> ping 1.1.1.1", "Run in Command Prompt or PowerShell", SymbolRegular.WindowConsole20, ["terminal", "cmd", "powershell", "shell", "run", "command"], "Windows & System Tools"),
-        new("set: ", "set: bluetooth", "Open Windows settings or control panel", SymbolRegular.Settings24, ["settings", "windows settings", "preferences", "config", "control"], "Windows & System Tools"),
+        new("set ", "set bluetooth", "Open Windows settings", SymbolRegular.Settings24, ["settings", "windows settings", "preferences", "config", "control", "set"], "Windows & System Tools"),
+        new("cp ", "cp mouse", "Open classic Control Panel applets", SymbolRegular.Settings24, ["control panel", "cpl", "classic", "cp", "legacy"], "Windows & System Tools"),
         new("kill ", "kill notepad", "Force close a running app or process", SymbolRegular.DismissCircle24, ["kill", "terminate", "close", "taskkill", "stop", "end process"], "Windows & System Tools"),
         new("win ", "win chrome", "Switch to an open window", SymbolRegular.Window24, ["window", "switch", "open windows", "active"], "Windows & System Tools"),
         new("time ", "time tokyo", "Check current time in any world city", SymbolRegular.Clock24, ["time", "clock", "world clock", "city", "timezone"], "Windows & System Tools"),
@@ -488,7 +490,8 @@ public static class PureMemoryData
                 ProcessLauncherService.LaunchTarget("ncpa.cpl");
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             },
-            Icon: SymbolRegular.Wifi124),
+            Icon: SymbolRegular.Wifi124,
+            KindLabel: "Control Panel"),
 
         new(
             Id: "tool:sysdm",
@@ -502,7 +505,8 @@ public static class PureMemoryData
                 ProcessLauncherService.LaunchTarget("sysdm.cpl");
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             },
-            Icon: SymbolRegular.Settings24),
+            Icon: SymbolRegular.Settings24,
+            KindLabel: "Control Panel"),
 
         new(
             Id: "tool:appwiz",
@@ -516,7 +520,8 @@ public static class PureMemoryData
                 ProcessLauncherService.LaunchTarget("appwiz.cpl");
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             },
-            Icon: SymbolRegular.Apps24),
+            Icon: SymbolRegular.Apps24,
+            KindLabel: "Control Panel"),
 
         new(
             Id: "tool:mmsys",
@@ -530,7 +535,8 @@ public static class PureMemoryData
                 ProcessLauncherService.LaunchTarget("mmsys.cpl");
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             },
-            Icon: SymbolRegular.Speaker224),
+            Icon: SymbolRegular.Speaker224,
+            KindLabel: "Control Panel"),
 
         new(
             Id: "tool:devmgmt",
@@ -670,7 +676,8 @@ public static class PureMemoryData
                 ProcessLauncherService.LaunchTarget("firewall.cpl");
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             },
-            Icon: SymbolRegular.Shield32),
+            Icon: SymbolRegular.Shield32,
+            KindLabel: "Control Panel"),
 
         new(
             Id: "tool:powercfg",
@@ -684,7 +691,8 @@ public static class PureMemoryData
                 ProcessLauncherService.LaunchTarget("powercfg.cpl");
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             },
-            Icon: SymbolRegular.BatteryCharge24),
+            Icon: SymbolRegular.BatteryCharge24,
+            KindLabel: "Control Panel"),
 
         new(
             Id: "tool:msconfig",
@@ -712,6 +720,217 @@ public static class PureMemoryData
                 ProcessLauncherService.LaunchTarget("dxdiag.exe");
                 return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
             },
-            Icon: SymbolRegular.Desktop24)
+            Icon: SymbolRegular.Desktop24),
+
+        // Classic Control Panel Applets (.cpl & control.exe tools)
+        new(
+            Id: "tool:control",
+            Title: "Control Panel",
+            Description: "Classic Windows Control Panel",
+            Keywords: ["control panel", "classic control panel", "settings classic", "cpl"],
+            RequiresConfirm: false,
+            ConfirmPrompt: null,
+            ExecuteAsync: _ =>
+            {
+                ProcessLauncherService.LaunchTarget("control.exe");
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Settings24,
+            KindLabel: "Control Panel"),
+
+        new(
+            Id: "tool:mouse",
+            Title: "Mouse Properties (Classic)",
+            Description: "Pointer precision and speed",
+            Keywords: ["main.cpl", "mouse properties", "pointer speed", "mouse sensitivity", "pointer precision", "pointer trails", "mouse buttons"],
+            RequiresConfirm: false,
+            ConfirmPrompt: null,
+            ExecuteAsync: _ =>
+            {
+                ProcessLauncherService.LaunchTarget("main.cpl");
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Desktop24,
+            KindLabel: "Control Panel"),
+
+        new(
+            Id: "tool:keyboard",
+            Title: "Keyboard Properties (Classic)",
+            Description: "Repeat rate and delay",
+            Keywords: ["keyboard properties", "repeat rate", "repeat delay", "cursor blink", "keyboard speed"],
+            RequiresConfirm: false,
+            ConfirmPrompt: null,
+            ExecuteAsync: _ =>
+            {
+                ProcessLauncherService.LaunchTarget("control.exe", "keyboard");
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Keyboard24,
+            KindLabel: "Control Panel"),
+
+        new(
+            Id: "tool:joy",
+            Title: "Game Controllers (Classic)",
+            Description: "Calibrate gamepads and sticks",
+            Keywords: ["joy.cpl", "game controllers", "controller drift", "joystick calibration", "gamepad test", "usb controller"],
+            RequiresConfirm: false,
+            ConfirmPrompt: null,
+            ExecuteAsync: _ =>
+            {
+                ProcessLauncherService.LaunchTarget("joy.cpl");
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Games24,
+            KindLabel: "Control Panel"),
+
+        new(
+            Id: "tool:inetcpl",
+            Title: "Internet Options",
+            Description: "Proxy, TLS, and certificates",
+            Keywords: ["inetcpl.cpl", "internet options", "certificates", "tls", "lan settings", "ssl proxy", "trusted sites"],
+            RequiresConfirm: false,
+            ConfirmPrompt: null,
+            ExecuteAsync: _ =>
+            {
+                ProcessLauncherService.LaunchTarget("inetcpl.cpl");
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Globe24,
+            KindLabel: "Control Panel"),
+
+        new(
+            Id: "tool:intl",
+            Title: "Region (Classic)",
+            Description: "Formats and language admin",
+            Keywords: ["intl.cpl", "region classic", "number formats", "non-unicode", "date format classic", "system locale"],
+            RequiresConfirm: false,
+            ConfirmPrompt: null,
+            ExecuteAsync: _ =>
+            {
+                ProcessLauncherService.LaunchTarget("intl.cpl");
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Globe24,
+            KindLabel: "Control Panel"),
+
+        new(
+            Id: "tool:folders",
+            Title: "File Explorer Options",
+            Description: "Folder view and options",
+            Keywords: ["folder options", "file explorer options", "show hidden folders", "file extensions", "folder view"],
+            RequiresConfirm: false,
+            ConfirmPrompt: null,
+            ExecuteAsync: _ =>
+            {
+                ProcessLauncherService.LaunchTarget("control.exe", "folders");
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Folder24,
+            KindLabel: "Control Panel"),
+
+        new(
+            Id: "tool:srchadmin",
+            Title: "Indexing Options",
+            Description: "Windows search indexing",
+            Keywords: ["indexing options", "rebuild index", "search indexing", "index locations", "search speed"],
+            RequiresConfirm: false,
+            ConfirmPrompt: null,
+            ExecuteAsync: _ =>
+            {
+                ProcessLauncherService.LaunchTarget("control.exe", "srchadmin.dll");
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Search24,
+            KindLabel: "Control Panel"),
+
+        new(
+            Id: "tool:credmgr",
+            Title: "Credential Manager",
+            Description: "Saved passwords and credentials",
+            Keywords: ["credential manager", "saved passwords", "git credentials", "network logins", "web credentials", "windows credentials"],
+            RequiresConfirm: false,
+            ConfirmPrompt: null,
+            ExecuteAsync: _ =>
+            {
+                ProcessLauncherService.LaunchTarget("control.exe", "keymgr.dll");
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Key24,
+            KindLabel: "Control Panel"),
+
+        new(
+            Id: "tool:netplwiz",
+            Title: "User Accounts (Netplwiz)",
+            Description: "Advanced user accounts",
+            Keywords: ["netplwiz", "netplwiz.exe", "auto login", "user accounts classic", "user groups", "passwords2"],
+            RequiresConfirm: false,
+            ConfirmPrompt: null,
+            ExecuteAsync: _ =>
+            {
+                ProcessLauncherService.LaunchTarget("netplwiz.exe");
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Person24,
+            KindLabel: "Control Panel"),
+
+        new(
+            Id: "tool:colorcpl",
+            Title: "Color Management",
+            Description: "Display color profiles (ICC)",
+            Keywords: ["colorcpl", "colorcpl.exe", "color management", "icc profile", "monitor calibration", "display profile", "color calibration"],
+            RequiresConfirm: false,
+            ConfirmPrompt: null,
+            ExecuteAsync: _ =>
+            {
+                ProcessLauncherService.LaunchTarget("colorcpl.exe");
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Color24,
+            KindLabel: "Control Panel"),
+
+        new(
+            Id: "tool:uac",
+            Title: "UAC Settings",
+            Description: "User Account Control slider",
+            Keywords: ["uac", "user account control", "admin popup", "uac slider", "security prompt", "uac settings"],
+            RequiresConfirm: false,
+            ConfirmPrompt: null,
+            ExecuteAsync: _ =>
+            {
+                ProcessLauncherService.LaunchTarget("UserAccountControlSettings.exe");
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Shield24,
+            KindLabel: "Control Panel"),
+
+        new(
+            Id: "tool:autoplay",
+            Title: "AutoPlay",
+            Description: "USB and drive defaults",
+            Keywords: ["autoplay", "usb defaults", "removable drive actions", "memory card autoplay"],
+            RequiresConfirm: false,
+            ConfirmPrompt: null,
+            ExecuteAsync: _ =>
+            {
+                ProcessLauncherService.LaunchTarget("control.exe", "/name Microsoft.AutoPlay");
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Play24,
+            KindLabel: "Control Panel"),
+
+        new(
+            Id: "tool:printers",
+            Title: "Devices and Printers",
+            Description: "Classic printers and devices",
+            Keywords: ["devices and printers", "printers classic", "print queue", "printer properties"],
+            RequiresConfirm: false,
+            ConfirmPrompt: null,
+            ExecuteAsync: _ =>
+            {
+                ProcessLauncherService.LaunchTarget("control.exe", "printers");
+                return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
+            },
+            Icon: SymbolRegular.Document24,
+            KindLabel: "Control Panel")
     ];
 }

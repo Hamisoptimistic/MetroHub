@@ -6,7 +6,8 @@ namespace MetroHub.Core.Models;
 public sealed class SearchSettings
 {
     public string TerminalPrefix { get; set; } = ">";
-    public string SettingsPrefix { get; set; } = "set:";
+    public string SettingsPrefix { get; set; } = "set ";
+    public string ControlPanelPrefix { get; set; } = "cp ";
     public string ProcessKillerPrefix { get; set; } = "kill ";
     public string WindowWalkerPrefix { get; set; } = "win ";
     public string WorldClockPrefix { get; set; } = "time ";

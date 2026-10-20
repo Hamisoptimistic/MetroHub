@@ -224,7 +224,7 @@ public sealed class SearchOrchestrator : IDisposable
                     if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
                     var source = _tier1Sources[i];
                     if (route.Kind == RouteKind.Terminal && source is not TerminalSource) continue;
-                    if (route.Kind == RouteKind.Settings && source is not TableSource) continue;
+                    if ((route.Kind == RouteKind.Settings || route.Kind == RouteKind.ControlPanel) && source is not TableSource) continue;
                     if (route.Kind == RouteKind.Help && source is not TableSource) continue;
 
                     hardSourceStates[source.SourceId] = source.State;
@@ -246,7 +246,7 @@ public sealed class SearchOrchestrator : IDisposable
                 if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
 
                 sw.Stop();
-                int hardMaxPerGroup = route.Kind is RouteKind.Help or RouteKind.Settings ? 100 : query.MaxPerCategory;
+                int hardMaxPerGroup = route.Kind is RouteKind.Help or RouteKind.Settings or RouteKind.ControlPanel ? 100 : query.MaxPerCategory;
                 var hardQuery = string.IsNullOrWhiteSpace(route.Remainder)
                     ? query
                     : SearchRanker.ParseQuery(route.Remainder, sessionId, hardMaxPerGroup);

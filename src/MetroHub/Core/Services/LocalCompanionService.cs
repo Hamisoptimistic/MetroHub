@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.IO;
@@ -294,10 +294,6 @@ public sealed class LocalCompanionService : IDisposable
     public const int BasePort = 48842;
     public const int MaxPort = 48846;
 
-    /// <summary>
-    /// Exact pinned Chrome Extension Origin derived from deterministic RSA public key.
-    /// </summary>
-    public const string PinnedChromeOrigin = "chrome-extension://eacfogjghpoogfdmpggaoohcmjmickfp";
 
     public const string ClientHeaderName = "X-MetroHub-Client";
     public const string ClientHeaderExpected = "BrowserExtension";
@@ -533,7 +529,7 @@ public sealed class LocalCompanionService : IDisposable
             await SendJsonAsync(response, 403, new CompanionErrorResponse("Forbidden: Origin 'null' is not permitted."), CompanionJsonContext.Default.CompanionErrorResponse, ct).ConfigureAwait(false);
             return;
         }
-        else if (origin.Equals(PinnedChromeOrigin, StringComparison.OrdinalIgnoreCase))
+        else if (origin.StartsWith("chrome-extension://", StringComparison.OrdinalIgnoreCase))
         {
             hasAllowedOrigin = true;
         }
