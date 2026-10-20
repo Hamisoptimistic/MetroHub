@@ -52,11 +52,7 @@
                            Width="14" Height="14"
                            RenderOptions.BitmapScalingMode="HighQuality"
                            SnapsToDevicePixels="True"
-                           ToolTip="{Binding Arguments}">
-                        <Image.Effect>
-                            <DropShadowEffect BlurRadius="4" ShadowDepth="1" Direction="270" Opacity="0.5" Color="#000000" />
-                        </Image.Effect>
-                    </Image>
+                           ToolTip="{Binding Arguments}" />
                 </Grid>
 
                 <!-- 2x2 Medium Tile Layout (120x120) -->
@@ -91,11 +87,7 @@
                            Width="18" Height="18"
                            RenderOptions.BitmapScalingMode="HighQuality"
                            SnapsToDevicePixels="True"
-                           ToolTip="{Binding Arguments}">
-                        <Image.Effect>
-                            <DropShadowEffect BlurRadius="4" ShadowDepth="1" Direction="270" Opacity="0.5" Color="#000000" />
-                        </Image.Effect>
-                    </Image>
+                           ToolTip="{Binding Arguments}" />
 
                     <!-- Label: DirectWrite Ideal typography rendering -->
                     <TextBlock Text="{Binding Title}"
@@ -145,11 +137,7 @@
                            Width="18" Height="18"
                            RenderOptions.BitmapScalingMode="HighQuality"
                            SnapsToDevicePixels="True"
-                           ToolTip="{Binding Arguments}">
-                        <Image.Effect>
-                            <DropShadowEffect BlurRadius="4" ShadowDepth="1" Direction="270" Opacity="0.5" Color="#000000" />
-                        </Image.Effect>
-                    </Image>
+                           ToolTip="{Binding Arguments}" />
 
                     <TextBlock Text="{Binding Title}"
                                VerticalAlignment="Bottom"
@@ -172,7 +160,7 @@
     <Border x:Name="RootBorder"
             Background="Transparent"
             CornerRadius="{DynamicResource TileCornerRadius}"
-            ClipToBounds="True"
+            ClipToBounds="False"
             Width="{Binding SpanX, Converter={StaticResource SpanConverter}}"
             Height="{Binding SpanY, Converter={StaticResource SpanConverter}}"
             RenderTransformOrigin="0.5,0.5"

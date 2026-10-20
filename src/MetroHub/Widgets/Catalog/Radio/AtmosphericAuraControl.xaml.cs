@@ -191,6 +191,7 @@ public partial class AtmosphericAuraControl : UserControl
     private void OnRendering(object? sender, EventArgs e)
     {
         if (!IsVisible) return;
+        if (MetroHub.Presentation.Controls.SmoothPhysicsScrollBehavior.IsScrolling) return;
 
         if (_isBatterySaver)
         {

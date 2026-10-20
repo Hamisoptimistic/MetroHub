@@ -235,47 +235,8 @@ namespace MetroHub.Presentation.Controls
             return b;
         }
 
-        private ScrollViewer? _groupedScrollViewer;
         public ScrollViewer? GroupedScrollViewerControl => GroupedScrollViewer;
-        private ScrollViewer? GroupedScrollViewer
-        {
-            get
-            {
-                if (_groupedScrollViewer != null) return _groupedScrollViewer;
-                if (GroupedItemsControl == null) return null;
-                GroupedItemsControl.ApplyTemplate();
-                _groupedScrollViewer = FindVisualChild<ScrollViewer>(GroupedItemsControl);
-                if (_groupedScrollViewer != null)
-                {
-                    AutoHideScrollBehavior.SetIsEnabled(_groupedScrollViewer, true);
-                }
-                return _groupedScrollViewer;
-            }
-        }
-
-        private static T? FindVisualChild<T>(DependencyObject? parent) where T : DependencyObject
-        {
-            if (parent == null) return null;
-            int childCount = VisualTreeHelper.GetChildrenCount(parent);
-            for (int i = 0; i < childCount; i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T typedChild) return typedChild;
-                var result = FindVisualChild<T>(child);
-                if (result != null) return result;
-            }
-            return null;
-        }
-
-        private void OnRecentSuggestionsPreviewMouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            if (GroupedScrollViewer is { } sv)
-            {
-                double newOffset = Math.Clamp(sv.VerticalOffset - e.Delta, 0, sv.ScrollableHeight);
-                sv.ScrollToVerticalOffset(newOffset);
-                e.Handled = true;
-            }
-        }
+        private ScrollViewer? GroupedScrollViewer => GroupedViewContainer;
         public ScrollViewer? SearchResultsScrollViewerControl => SearchResultsScrollViewer;
         public ListBox? RecentSuggestionsListBoxControl => RecentSuggestionsListBox;
         public Grid? NoResultsPanelControl => NoResultsPanel;
@@ -398,7 +359,7 @@ namespace MetroHub.Presentation.Controls
 
             Opened?.Invoke(this, EventArgs.Empty);
             SearchBox.Focus();
-            _ = GroupedScrollViewer;
+            GroupedScrollViewer?.ScrollToTop();
         }
 
         public void Close()

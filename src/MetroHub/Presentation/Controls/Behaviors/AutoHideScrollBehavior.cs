@@ -141,6 +141,7 @@ public static class AutoHideScrollBehavior
         private ScrollBar? _verticalScrollBar;
         private readonly DispatcherTimer _hideTimer;
         private bool _isDisposed;
+        private bool _isShowing;
 
         public ScrollStateHolder(ScrollViewer scrollViewer)
         {
@@ -198,8 +199,9 @@ public static class AutoHideScrollBehavior
         private void OnScrollBarMouseEnter(object sender, MouseEventArgs e)
         {
             _hideTimer.Stop();
-            if (_verticalScrollBar != null && _verticalScrollBar.Opacity < 0.99)
+            if (!_isShowing)
             {
+                _isShowing = true;
                 AnimateOpacity(1.0, 100);
             }
         }
@@ -225,8 +227,9 @@ public static class AutoHideScrollBehavior
                 if (_verticalScrollBar != null && _scrollViewer.ComputedVerticalScrollBarVisibility == Visibility.Visible)
                 {
                     _hideTimer.Stop();
-                    if (_verticalScrollBar.Opacity < 0.99)
+                    if (!_isShowing)
                     {
+                        _isShowing = true;
                         AnimateOpacity(1.0, 100);
                     }
                     _hideTimer.Start();
@@ -247,8 +250,9 @@ public static class AutoHideScrollBehavior
                 return;
             }
 
-            if (_verticalScrollBar.Opacity > 0.01)
+            if (_isShowing)
             {
+                _isShowing = false;
                 AnimateOpacity(0.0, 300);
             }
         }

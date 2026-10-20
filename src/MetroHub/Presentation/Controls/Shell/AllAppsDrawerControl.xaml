@@ -502,108 +502,103 @@
             <!-- Mode 1 & 2: Staggered Content Host -->
             <Grid Grid.Row="2" x:Name="AppsContentHostGrid">
 
-                <!-- Mode 1: Alphabetical Grouped Apps List with Breathing Room -->
-                <Grid x:Name="GroupedViewContainer"
-                      Visibility="Visible">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+                <!-- Mode 1: Alphabetical Grouped Apps List with Unified Scrolling -->
+                <ScrollViewer x:Name="GroupedViewContainer"
+                              Grid.IsSharedSizeScope="True"
+                              Style="{StaticResource FloatingScrollViewerStyle}"
+                              controls:AutoHideScrollBehavior.IsEnabled="True"
+                              Visibility="Visible"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Focusable="False"
+                              Background="Transparent"
+                              Padding="0,2,0,16">
+                    <StackPanel>
+                        <!-- Mode 1A: Zero-State Suggestions (Recent Apps & Files on Empty Search, Up to 15 Items) -->
+                        <StackPanel x:Name="RecentSuggestionsPanel"
+                                    Margin="0,0,0,10"
+                                    Visibility="Collapsed">
+                            <Border Margin="{StaticResource DrawerGutterSectionHeaderMargin}">
+                                <TextBlock Text="Recent"
+                                           FontSize="18"
+                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                           FontFamily="{DynamicResource AppFontFamily}"
+                                           Foreground="{DynamicResource TextSubtleBrush}" />
+                            </Border>
 
-                    <!-- Mode 1A: Zero-State Suggestions (Recent Apps & Files on Empty Search, Up to 15 Items) -->
-                    <StackPanel Grid.Row="0"
-                                x:Name="RecentSuggestionsPanel"
-                                Margin="0,0,0,10"
-                                Visibility="Collapsed"
-                                PreviewMouseWheel="OnRecentSuggestionsPreviewMouseWheel">
-                        <Border Margin="{StaticResource DrawerGutterSectionHeaderMargin}">
-                            <TextBlock Text="Recent"
-                                       FontSize="18"
-                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       FontFamily="{DynamicResource AppFontFamily}"
-                                       Foreground="{DynamicResource TextSubtleBrush}" />
-                        </Border>
+                            <ListBox x:Name="RecentSuggestionsListBox"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Margin="{StaticResource DrawerGutterRecentGridMargin}"
+                                     Padding="0"
+                                     FocusVisualStyle="{x:Null}"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                     ItemContainerStyle="{StaticResource FluentSearchListBoxItemStyle}"
+                                     ItemTemplate="{StaticResource RecentGridTileTemplate}"
+                                     ItemsPanel="{StaticResource RecentGridItemsPanelTemplate}"
+                                     KeyDown="OnRecentSuggestionsKeyDown"
+                                     PreviewKeyDown="OnRecentSuggestionsPreviewKeyDown"
+                                     PreviewTextInput="OnRecentSuggestionsPreviewTextInput" />
+                        </StackPanel>
 
-                        <ListBox x:Name="RecentSuggestionsListBox"
+                        <!-- Mode 1B: Alphabetical Grouped Apps -->
+                        <ListBox x:Name="GroupedItemsControl"
+                                 Grid.IsSharedSizeScope="True"
                                  Background="Transparent"
                                  BorderThickness="0"
-                                 Margin="{StaticResource DrawerGutterRecentGridMargin}"
                                  Padding="0"
                                  FocusVisualStyle="{x:Null}"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                  ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                                 ItemContainerStyle="{StaticResource FluentSearchListBoxItemStyle}"
-                                 ItemTemplate="{StaticResource RecentGridTileTemplate}"
-                                 ItemsPanel="{StaticResource RecentGridItemsPanelTemplate}"
-                                 KeyDown="OnRecentSuggestionsKeyDown"
-                                 PreviewKeyDown="OnRecentSuggestionsPreviewKeyDown"
-                                 PreviewTextInput="OnRecentSuggestionsPreviewTextInput" />
-                    </StackPanel>
+                                 ItemContainerStyle="{StaticResource DrawerListBoxItemStyle}">
+                            <ListBox.Resources>
+                                <DataTemplate DataType="{x:Type controls:DrawerGroupHeader}">
+                                    <TextBlock Text="{Binding Header}"
+                                               FontSize="18"
+                                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                               FontFamily="{DynamicResource AppFontFamily}"
+                                               Foreground="{DynamicResource TextSubtleBrush}"
+                                               Margin="{StaticResource DrawerGutterGroupHeaderMargin}" />
+                                </DataTemplate>
 
-                    <!-- Mode 1B: Alphabetical Grouped Apps (Virtualized) -->
-                    <ListBox Grid.Row="1"
-                             x:Name="GroupedItemsControl"
-                             Grid.IsSharedSizeScope="True"
-                             controls:AutoHideScrollBehavior.IsEnabled="True"
-                             Background="Transparent"
-                             BorderThickness="0"
-                             Padding="0,2,0,16"
-                             FocusVisualStyle="{x:Null}"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                             ScrollViewer.CanContentScroll="True"
-                             VirtualizingPanel.IsVirtualizing="True"
-                             VirtualizingPanel.VirtualizationMode="Recycling"
-                             VirtualizingPanel.ScrollUnit="Pixel"
-                             ItemContainerStyle="{StaticResource DrawerListBoxItemStyle}">
-                        <ListBox.Resources>
-                            <Style TargetType="{x:Type ScrollViewer}" BasedOn="{StaticResource FloatingScrollViewerStyle}" />
+                                <DataTemplate DataType="{x:Type controls:DrawerAppRow}">
+                                    <Border Style="{StaticResource AppRowContainerStyle}"
+                                            Tag="{Binding App}"
+                                            PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
+                                            PreviewMouseMove="OnAppRowPreviewMouseMove"
+                                            MouseLeftButtonUp="OnAppRowMouseLeftButtonUp"
+                                            ContextMenu="{StaticResource AppItemContextMenu}"
+                                            ContextMenuOpening="OnAppContextMenuOpening">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="22" SharedSizeGroup="AppIconColumn" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
 
-                            <DataTemplate DataType="{x:Type controls:DrawerGroupHeader}">
-                                <TextBlock Text="{Binding Header}"
-                                           FontSize="18"
-                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                           FontFamily="{DynamicResource AppFontFamily}"
-                                           Foreground="{DynamicResource TextSubtleBrush}"
-                                           Margin="{StaticResource DrawerGutterGroupHeaderMargin}" />
-                            </DataTemplate>
-
-                            <DataTemplate DataType="{x:Type controls:DrawerAppRow}">
-                                <Border Style="{StaticResource AppRowContainerStyle}"
-                                        Tag="{Binding App}"
-                                        PreviewMouseLeftButtonDown="OnAppRowPreviewMouseLeftButtonDown"
-                                        PreviewMouseMove="OnAppRowPreviewMouseMove"
-                                        MouseLeftButtonUp="OnAppRowMouseLeftButtonUp"
-                                        ContextMenu="{StaticResource AppItemContextMenu}"
-                                        ContextMenuOpening="OnAppContextMenuOpening">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="22" SharedSizeGroup="AppIconColumn" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <Image Grid.Column="0"
-                                               Source="{Binding App.Icon, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
-                                               Width="20"
-                                               Height="20"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               RenderOptions.BitmapScalingMode="HighQuality" />
-
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding App.Name}"
-                                                   FontSize="{DynamicResource TypeBodyFontSize}"
-                                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                            <Image Grid.Column="0"
+                                                   Source="{Binding App.Icon, TargetNullValue={x:Null}, FallbackValue={x:Null}}"
+                                                   Width="20"
+                                                   Height="20"
+                                                   HorizontalAlignment="Center"
                                                    VerticalAlignment="Center"
-                                                   Margin="8,0,8,0"
-                                                   TextTrimming="CharacterEllipsis" />
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ListBox.Resources>
-                    </ListBox>
-                </Grid>
+                                                   RenderOptions.BitmapScalingMode="HighQuality" />
+
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding App.Name}"
+                                                       FontSize="{DynamicResource TypeBodyFontSize}"
+                                                       FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="8,0,8,0"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.Resources>
+                        </ListBox>
+                    </StackPanel>
+                </ScrollViewer>
 
                 <!-- Mode 2: Search Results Flat List with Breathing Room -->
                 <ScrollViewer x:Name="SearchResultsScrollViewer"
