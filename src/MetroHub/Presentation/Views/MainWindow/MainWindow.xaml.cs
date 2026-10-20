@@ -1198,7 +1198,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         {
             activeWs.ScrollOffset = ContentScrollViewer.VerticalOffset;
         }
-        Safe.Try(SaveGroupsAndLayout, "MainWindow.HideScreen.SaveGroupsAndLayout");
+        Safe.Try(() => SaveGroupsAndLayout(immediate: true), "MainWindow.HideScreen.SaveGroupsAndLayout");
         if (!Settings.SidebarPinned)
         {
             HideSidebarRail(immediate: true);
@@ -1425,7 +1425,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
         FlushWidgetSettingsPersistence();
-        Safe.Try(SaveGroupsAndLayout, "MainWindow.OnClosing.SaveGroupsAndLayout");
+        Safe.Try(() => SaveGroupsAndLayout(immediate: true), "MainWindow.OnClosing.SaveGroupsAndLayout");
 
         if (!_isClosingToExit)
         {
@@ -1457,7 +1457,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         {
             activeWs.ScrollOffset = ContentScrollViewer.VerticalOffset;
         }
-        Safe.Try(SaveGroupsAndLayout, "MainWindow.ExitApplication.SaveGroupsAndLayout");
+        Safe.Try(() => SaveGroupsAndLayout(immediate: true), "MainWindow.ExitApplication.SaveGroupsAndLayout");
         Safe.Try(() => WorkspaceManager.Instance.FlushSync(), "MainWindow.ExitApplication.WorkspaceFlush");
         Safe.Try(StorageService.Flush, "MainWindow.ExitApplication.StorageFlush");
 

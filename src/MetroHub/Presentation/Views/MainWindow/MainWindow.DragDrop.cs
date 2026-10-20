@@ -18,8 +18,13 @@ namespace MetroHub;
 
 public partial class MainWindow
 {
-    private DispatcherTimer? _autoScrollTimer;
+    private bool _isDragRenderHooked;
+    private TimeSpan _lastDragRenderTime;
+    private bool _hasPendingMouseMove;
+    private Point _latestCanvasMouse;
     private double _autoScrollVelocityY;
+    private readonly List<UIElement> _cachedDragContainers = new();
+    private readonly List<TileModel> _highlightMembersBuffer = new(64);
     private string? _preDragLayoutSnapshot;
 
     private TileModel? _draggedTile;
@@ -61,27 +66,41 @@ public partial class MainWindow
 
     private void SetupAutoScrollTimer()
     {
-        _autoScrollTimer = new DispatcherTimer(DispatcherPriority.Render)
+        // Auto-scroll loop is now driven by VSync via CompositionTarget.Rendering
+    }
+
+    private void StartDragRenderLoop()
+    {
+        if (!_isDragRenderHooked)
         {
-            Interval = TimeSpan.FromMilliseconds(16)
-        };
-        _autoScrollTimer.Tick += OnAutoScrollTick;
+            _isDragRenderHooked = true;
+            _lastDragRenderTime = TimeSpan.Zero;
+            _autoScrollVelocityY = 0;
+            CompositionTarget.Rendering += OnDragRenderTick;
+        }
+    }
+
+    private void StopDragRenderLoop()
+    {
+        if (_isDragRenderHooked)
+        {
+            _isDragRenderHooked = false;
+            CompositionTarget.Rendering -= OnDragRenderTick;
+        }
+        _autoScrollVelocityY = 0;
+        _hasPendingMouseMove = false;
     }
 
     private void StopAutoScroll()
     {
         _autoScrollVelocityY = 0;
-        if (_autoScrollTimer != null && _autoScrollTimer.IsEnabled)
-        {
-            _autoScrollTimer.Stop();
-        }
     }
 
-    private void UpdateAutoScrollVelocity()
+    private void UpdateAutoScrollVelocity(double dt)
     {
         if (!_isDragging || ContentScrollViewer == null)
         {
-            StopAutoScroll();
+            _autoScrollVelocityY = 0;
             return;
         }
 
@@ -89,72 +108,140 @@ public partial class MainWindow
         double svHeight = ContentScrollViewer.ActualHeight;
         if (svHeight <= 0)
         {
-            StopAutoScroll();
+            _autoScrollVelocityY = 0;
             return;
         }
 
         const double edgeThreshold = 80.0;
-        const double maxVelocity = 24.0;
+        const double maxVelocity = 28.0;
+        double targetVelocityY = 0;
 
         if (svMouse.Y > svHeight - edgeThreshold && svMouse.Y <= svHeight + 120)
         {
             double excess = svMouse.Y - (svHeight - edgeThreshold);
             double fraction = Math.Clamp(excess / edgeThreshold, 0.15, 2.0);
-            _autoScrollVelocityY = fraction * maxVelocity;
-            if (_autoScrollTimer != null && !_autoScrollTimer.IsEnabled)
-            {
-                _autoScrollTimer.Start();
-            }
+            targetVelocityY = fraction * maxVelocity;
         }
         else if (svMouse.Y < edgeThreshold && svMouse.Y >= -120)
         {
             double excess = edgeThreshold - svMouse.Y;
             double fraction = Math.Clamp(excess / edgeThreshold, 0.15, 2.0);
-            _autoScrollVelocityY = -fraction * maxVelocity;
-            if (_autoScrollTimer != null && !_autoScrollTimer.IsEnabled)
-            {
-                _autoScrollTimer.Start();
-            }
+            targetVelocityY = -fraction * maxVelocity;
         }
-        else
+
+        double smoothFactor = 1.0 - Math.Exp(-16.0 * dt);
+        _autoScrollVelocityY += (targetVelocityY - _autoScrollVelocityY) * smoothFactor;
+        if (Math.Abs(_autoScrollVelocityY) < 0.05 && Math.Abs(targetVelocityY) < 0.05)
         {
-            StopAutoScroll();
+            _autoScrollVelocityY = 0;
         }
     }
 
-    private void OnAutoScrollTick(object? sender, EventArgs e)
+    private void OnDragRenderTick(object? sender, EventArgs e)
     {
-        if (!_isDragging || ContentScrollViewer == null || Math.Abs(_autoScrollVelocityY) < 0.1)
+        if (!_isDragging || (_draggedTile == null && (!_isGroupDrag || _draggedGroupModel == null)))
         {
-            StopAutoScroll();
+            StopDragRenderLoop();
             return;
         }
 
-        UpdateAutoScrollVelocity();
-        if (Math.Abs(_autoScrollVelocityY) < 0.1) return;
-
-        if (_autoScrollVelocityY > 0 && MainCanvasGrid != null)
+        double dt = 1.0 / 60.0;
+        if (e is RenderingEventArgs renderArgs)
         {
-            double currentBottom = ContentScrollViewer.VerticalOffset + ContentScrollViewer.ActualHeight;
-            if (currentBottom + 300 > MainCanvasGrid.MinHeight)
+            if (_lastDragRenderTime != TimeSpan.Zero)
             {
-                MainCanvasGrid.MinHeight = currentBottom + 600;
+                dt = (renderArgs.RenderingTime - _lastDragRenderTime).TotalSeconds;
+                if (dt <= 0 || dt > 0.1) dt = 1.0 / 60.0;
+            }
+            _lastDragRenderTime = renderArgs.RenderingTime;
+        }
+
+        UpdateAutoScrollVelocity(dt);
+
+        if (ContentScrollViewer != null && Math.Abs(_autoScrollVelocityY) > 0.05)
+        {
+            if (_autoScrollVelocityY > 0 && MainCanvasGrid != null)
+            {
+                double currentBottom = ContentScrollViewer.VerticalOffset + ContentScrollViewer.ActualHeight;
+                if (currentBottom + 300 > MainCanvasGrid.MinHeight)
+                {
+                    MainCanvasGrid.MinHeight = currentBottom + 600;
+                }
+            }
+
+            double oldOffset = ContentScrollViewer.VerticalOffset;
+            double newOffset = Math.Clamp(
+                oldOffset + _autoScrollVelocityY,
+                0,
+                Math.Max(0, ContentScrollViewer.ScrollableHeight));
+
+            if (Math.Abs(newOffset - oldOffset) > 0.01)
+            {
+                ContentScrollViewer.ScrollToVerticalOffset(newOffset);
                 ContentScrollViewer.UpdateLayout();
+
+                _latestCanvasMouse = TilesListBox != null 
+                    ? Mouse.GetPosition(TilesListBox) 
+                    : (MainCanvasGrid != null ? Mouse.GetPosition(MainCanvasGrid) : Mouse.GetPosition(this));
+                _hasPendingMouseMove = true;
             }
         }
 
-        double newOffset = Math.Clamp(
-            ContentScrollViewer.VerticalOffset + _autoScrollVelocityY,
-            0,
-            Math.Max(0, ContentScrollViewer.ScrollableHeight));
+        if (_hasPendingMouseMove)
+        {
+            _hasPendingMouseMove = false;
+            ProcessDragMovement(_latestCanvasMouse);
+        }
+    }
 
-        ContentScrollViewer.ScrollToVerticalOffset(newOffset);
-        ContentScrollViewer.UpdateLayout();
+    private void ApplyDragBitmapCache()
+    {
+        ClearDragBitmapCache();
+        var dpi = VisualTreeHelper.GetDpi(this);
+        double dpiScale = Math.Max(1.0, dpi.DpiScaleX);
 
-        Point currentCanvasMouse = TilesListBox != null 
-            ? Mouse.GetPosition(TilesListBox) 
-            : (MainCanvasGrid != null ? Mouse.GetPosition(MainCanvasGrid) : Mouse.GetPosition(this));
-        ProcessDragMovement(currentCanvasMouse);
+        if (_isGroupDrag && _draggedGroupModel != null)
+        {
+            var gContainer = GroupsListBox?.ItemContainerGenerator.ContainerFromItem(_draggedGroupModel) as UIElement;
+            if (gContainer != null)
+            {
+                gContainer.CacheMode = new BitmapCache(dpiScale) { SnapsToDevicePixels = true, EnableClearType = false };
+                _cachedDragContainers.Add(gContainer);
+            }
+
+            var plateContainer = GroupTintBackplates?.ItemContainerGenerator.ContainerFromItem(_draggedGroupModel) as UIElement;
+            if (plateContainer != null)
+            {
+                plateContainer.CacheMode = new BitmapCache(dpiScale) { SnapsToDevicePixels = true, EnableClearType = false };
+                _cachedDragContainers.Add(plateContainer);
+            }
+        }
+
+        if (_draggedCluster != null)
+        {
+            for (int i = 0; i < _draggedCluster.Count; i++)
+            {
+                var cTile = _draggedCluster[i];
+                var container = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as UIElement;
+                if (container != null && !_cachedDragContainers.Contains(container))
+                {
+                    container.CacheMode = new BitmapCache(dpiScale) { SnapsToDevicePixels = true, EnableClearType = false };
+                    _cachedDragContainers.Add(container);
+                }
+            }
+        }
+    }
+
+    private void ClearDragBitmapCache()
+    {
+        if (_cachedDragContainers.Count > 0)
+        {
+            for (int i = 0; i < _cachedDragContainers.Count; i++)
+            {
+                _cachedDragContainers[i].CacheMode = null;
+            }
+            _cachedDragContainers.Clear();
+        }
     }
 
     private void OnCanvasPreviewMouseDown(object sender, MouseButtonEventArgs e)
@@ -369,6 +456,9 @@ public partial class MainWindow
                         }
                     }
 
+                    ApplyDragBitmapCache();
+                    StartDragRenderLoop();
+
                     DropSlotIndicator.Width = Math.Max(56, _clusterRelBounds.MaxRelX - _clusterRelBounds.MinRelX);
                     DropSlotIndicator.Height = Math.Max(56, _clusterRelBounds.MaxRelY - _clusterRelBounds.MinRelY);
                     DropSlotIndicator.Visibility = Visibility.Visible;
@@ -396,8 +486,8 @@ public partial class MainWindow
 
             if (_draggedTile != null || (_isGroupDrag && _draggedGroupModel != null))
             {
-                UpdateAutoScrollVelocity();
-                ProcessDragMovement(canvasMouse);
+                _latestCanvasMouse = canvasMouse;
+                _hasPendingMouseMove = true;
             }
             else
             {
@@ -640,6 +730,15 @@ public partial class MainWindow
 
         if (_isDragging)
         {
+            if (_hasPendingMouseMove)
+            {
+                _hasPendingMouseMove = false;
+                ProcessDragMovement(_latestCanvasMouse);
+            }
+
+            StopDragRenderLoop();
+            ClearDragBitmapCache();
+
             if (_draggedTile != null && (e.GetPosition(this).X <= 54 || (SidebarRail != null && SidebarRail.IsMouseOver)))
             {
                 var tilesToPin = _draggedCluster.Count > 0 ? _draggedCluster.ToList() : new List<TileModel> { _draggedTile };
@@ -651,7 +750,6 @@ public partial class MainWindow
                 }
             }
 
-            StopAutoScroll();
             _isDragging = false;
             _isPotentialDrag = false;
             DropSlotIndicator.Visibility = Visibility.Collapsed;
@@ -1182,7 +1280,8 @@ public partial class MainWindow
             if (gc != null) Panel.SetZIndex(gc, 0);
         }
 
-        StopAutoScroll();
+        StopDragRenderLoop();
+        ClearDragBitmapCache();
         _draggedCluster.Clear();
         _dragClusterOriginals.Clear();
         _isDragging = false;
@@ -1360,41 +1459,95 @@ public partial class MainWindow
         Rect bestGroupRect = Rect.Empty;
 
         string? originGroupId = _draggedTile?.Group;
-        bool isClusterFromOriginGroup = originGroupId != null &&
-                                        (_draggedCluster.Count == 0 ||
-                                         _draggedCluster.All(t => t.Group == originGroupId));
+        bool isClusterFromOriginGroup = originGroupId != null;
+        if (isClusterFromOriginGroup && _draggedCluster.Count > 0)
+        {
+            for (int i = 0; i < _draggedCluster.Count; i++)
+            {
+                if (_draggedCluster[i].Group != originGroupId)
+                {
+                    isClusterFromOriginGroup = false;
+                    break;
+                }
+            }
+        }
 
-        var sortedGroups = isClusterFromOriginGroup
-            ? Groups.OrderByDescending(g => g.Id == originGroupId).ToList()
-            : Groups.ToList();
+        int groupCount = Groups.Count;
+        if (groupCount == 0)
+        {
+            HideGroupDropHighlight();
+            return;
+        }
+
+        TileGroupModel? originGroup = null;
+        if (isClusterFromOriginGroup)
+        {
+            for (int i = 0; i < groupCount; i++)
+            {
+                if (Groups[i].Id == originGroupId)
+                {
+                    originGroup = Groups[i];
+                    break;
+                }
+            }
+        }
 
         int mouseCol = GridPlacementService.ColFromPixel(mousePos.X);
         int mouseRow = GridPlacementService.RowFromPixel(mousePos.Y);
 
-        foreach (var group in sortedGroups)
+        for (int gi = -1; gi < groupCount; gi++)
         {
-            var allMembers = Tiles.Where(t => t.Group == group.Id).ToList();
-            if (allMembers.Count == 0 && string.IsNullOrWhiteSpace(group.Title)) continue;
+            TileGroupModel group;
+            if (gi == -1)
+            {
+                if (originGroup == null) continue;
+                group = originGroup;
+            }
+            else
+            {
+                group = Groups[gi];
+                if (group == originGroup) continue;
+            }
 
-            // Bounded to actual member tiles so adjacent canvas is free for loose tiles
-            int gMinC = allMembers.Count > 0 ? Math.Min(group.Col, allMembers.Min(t => t.Col)) : group.Col;
-            int gMaxC = allMembers.Count > 0 ? allMembers.Max(t => t.Col + t.SpanX) : group.Col + 2;
+            _highlightMembersBuffer.Clear();
+            int minCol = int.MaxValue;
+            int maxCol = int.MinValue;
+            int minRow = int.MaxValue;
+            int maxRow = int.MinValue;
+            double memberMaxY = double.MinValue;
+
+            for (int ti = 0; ti < Tiles.Count; ti++)
+            {
+                var t = Tiles[ti];
+                if (t.Group == group.Id)
+                {
+                    _highlightMembersBuffer.Add(t);
+                    if (t.Col < minCol) minCol = t.Col;
+                    int rCol = t.Col + t.SpanX;
+                    if (rCol > maxCol) maxCol = rCol;
+                    if (t.Row < minRow) minRow = t.Row;
+                    int bRow = t.Row + t.SpanY;
+                    if (bRow > maxRow) maxRow = bRow;
+                    double bY = t.Y + t.HeightPixels;
+                    if (bY > memberMaxY) memberMaxY = bY;
+                }
+            }
+
+            int memberCount = _highlightMembersBuffer.Count;
+            if (memberCount == 0 && string.IsNullOrWhiteSpace(group.Title)) continue;
+
+            int gMinC = memberCount > 0 ? Math.Min(group.Col, minCol) : group.Col;
+            int gMaxC = memberCount > 0 ? maxCol : group.Col + 2;
             int groupSpan = Math.Max(1, gMaxC - gMinC);
             double blockWidth = (groupSpan * GridPlacementService.GridStep) - GridPlacementService.Gap;
             double minX = GridPlacementService.PixelXFromCol(gMinC);
 
             int gMinR = group.Row;
-            int gMaxR = allMembers.Count > 0 ? allMembers.Max(t => t.Row + t.SpanY) : group.Row + 1;
+            int gMaxR = memberCount > 0 ? maxRow : group.Row + 1;
+            if (memberCount == 0) memberMaxY = group.Y + 60;
 
-            // 1. Strict column and gap guard:
-            // Mouse MUST be within the group's boundary [gMinC, gMaxC - 1].
-            // Any mouse position outside this column range is open canvas.
             if (mouseCol < gMinC || mouseCol >= gMaxC) continue;
 
-            // 2. Vertical row and gap guard:
-            // For locked groups, strictly bound to member tiles [gMinR, gMaxR - 1] (or group.Row + 2 if empty).
-            // For unlocked groups, allow hover detection down into the append zone (gMaxR + tileSpanY) so the tint
-            // can smoothly expand vertically to accommodate new rows, while preserving exact horizontal and top sensitivity.
             int tileSpanY = _draggedTile != null
                 ? _draggedTile.SpanY
                 : Math.Max(1, _clusterRelGridBounds.MaxRelRow - _clusterRelGridBounds.MinRelRow + 1);
@@ -1403,14 +1556,11 @@ public partial class MainWindow
                 : Math.Max(60, _clusterRelBounds.MaxRelY - _clusterRelBounds.MinRelY);
 
             int effectiveMaxRow = group.IsLocked
-                ? (allMembers.Count > 0 ? gMaxR : group.Row + 2)
-                : (allMembers.Count > 0 ? (gMaxR + tileSpanY + 1) : (group.Row + 1 + tileSpanY + 1));
+                ? (memberCount > 0 ? gMaxR : group.Row + 2)
+                : (memberCount > 0 ? (gMaxR + tileSpanY + 1) : (group.Row + 1 + tileSpanY + 1));
             if (mouseRow < gMinR || mouseRow >= effectiveMaxRow) continue;
 
-            // 3. Pixel-exact boundary check:
             double minY = group.PlateHeight > 0 ? Math.Min(group.Y, group.PlateY) : group.Y;
-
-            double memberMaxY = allMembers.Count > 0 ? allMembers.Max(t => t.Y + t.HeightPixels) : group.Y + 60;
             if (group.PlateHeight > 0)
             {
                 memberMaxY = Math.Max(memberMaxY, group.PlateY + group.PlateHeight);
@@ -1418,22 +1568,16 @@ public partial class MainWindow
 
             double detectMaxY = group.IsLocked
                 ? memberMaxY
-                : (allMembers.Count > 0 ? (memberMaxY + tileHeight) : (group.Y + 60 + tileHeight));
+                : (memberCount > 0 ? (memberMaxY + tileHeight) : (group.Y + 60 + tileHeight));
 
-            // Bounded to group interior and append area - zero outward pad into adjacent column tracks
             Rect groupDetectRect = new Rect(minX, minY, blockWidth, Math.Max(60, detectMaxY - minY));
 
             if (groupDetectRect.Contains(mousePos))
             {
                 targetGroup = group;
 
-                if (allMembers.Count > 0)
+                if (memberCount > 0)
                 {
-                    int minCol = allMembers.Min(t => t.Col);
-                    int maxCol = allMembers.Max(t => t.Col + t.SpanX);
-                    int minRow = allMembers.Min(t => t.Row);
-                    int maxRow = allMembers.Max(t => t.Row + t.SpanY);
-
                     if (_draggedTile != null && !group.IsLocked)
                     {
                         int rawCol = GridPlacementService.ColFromPixel(anchorX);
@@ -1561,12 +1705,25 @@ public partial class MainWindow
 
             if (GroupDropFloatingBadge != null)
             {
+                bool isAllClusterInTarget = _draggedCluster.Count > 0;
+                if (isAllClusterInTarget)
+                {
+                    for (int i = 0; i < _draggedCluster.Count; i++)
+                    {
+                        if (_draggedCluster[i].Group != targetGroup.Id)
+                        {
+                            isAllClusterInTarget = false;
+                            break;
+                        }
+                    }
+                }
+
                 if (GroupDropBadgeIcon != null)
                 {
                     GroupDropBadgeIcon.Foreground = solidBrush;
                     GroupDropBadgeIcon.Symbol = isLocked
                         ? Wpf.Ui.Controls.SymbolRegular.LockClosed24
-                        : (_draggedCluster.Count > 0 && _draggedCluster.All(t => t.Group == targetGroup.Id)
+                        : (isAllClusterInTarget
                             ? Wpf.Ui.Controls.SymbolRegular.ReOrder24
                             : Wpf.Ui.Controls.SymbolRegular.Add24);
                 }
@@ -1575,7 +1732,7 @@ public partial class MainWindow
                 {
                     GroupDropBadgeText.Text = isLocked
                         ? "🔒 Locked (Drop Denied)"
-                        : (_draggedCluster.Count > 0 && _draggedCluster.All(t => t.Group == targetGroup.Id)
+                        : (isAllClusterInTarget
                             ? $"Reorder in {targetGroup.Title}"
                             : $"Add to {targetGroup.Title}");
                 }
@@ -1784,7 +1941,8 @@ public partial class MainWindow
             _draggedPlateOffsetY = 0;
             group.IsBeingDragged = true;
 
-            UpdateAutoScrollVelocity();
+            ApplyDragBitmapCache();
+            StartDragRenderLoop();
             RootGrid.CaptureMouse();
             DropSlotIndicator.Visibility = Visibility.Collapsed;
             if (GroupInsertionLine != null)
@@ -1867,7 +2025,8 @@ public partial class MainWindow
         _draggedPlateOffsetY = group.PlateY - anchor.Y;
         group.IsBeingDragged = true;
 
-        UpdateAutoScrollVelocity();
+        ApplyDragBitmapCache();
+        StartDragRenderLoop();
         RootGrid.CaptureMouse();
         DropSlotIndicator.Visibility = Visibility.Collapsed;
         if (GroupInsertionLine != null)

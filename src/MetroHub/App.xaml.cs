@@ -315,7 +315,7 @@ public partial class App : Application
 
     protected override void OnSessionEnding(SessionEndingCancelEventArgs e)
     {
-        Safe.Try(() => _mainWindow?.SaveGroupsAndLayout(), "App.OnSessionEnding.SaveGroupsAndLayout");
+        Safe.Try(() => _mainWindow?.SaveGroupsAndLayout(immediate: true), "App.OnSessionEnding.SaveGroupsAndLayout");
         Safe.Try(() => WorkspaceManager.Instance.FlushSync(), "App.OnSessionEnding.WorkspaceFlush");
         Safe.Try(StorageService.Flush, "App.OnSessionEnding.StorageFlush");
         LoggingService.Shutdown();
@@ -325,7 +325,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        Safe.Try(() => _mainWindow?.SaveGroupsAndLayout(), "App.OnExit.SaveGroupsAndLayout");
+        Safe.Try(() => _mainWindow?.SaveGroupsAndLayout(immediate: true), "App.OnExit.SaveGroupsAndLayout");
         Safe.Try(() => WorkspaceManager.Instance.FlushSync(), "App.OnExit.WorkspaceFlush");
         Safe.Try(StorageService.Flush, "App.OnExit.StorageFlush");
 

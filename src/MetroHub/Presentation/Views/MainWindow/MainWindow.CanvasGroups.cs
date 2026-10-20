@@ -66,7 +66,8 @@ public partial class MainWindow
 
     public void UpdateGroupHeaderPositions(bool animate = false) => CanvasGroupManager.UpdateGroupHeaderPositions(animate);
 
-    public void SaveGroupsAndLayout() => CanvasGroupManager.SaveGroupsAndLayout();
+    public void SaveGroupsAndLayout() => CanvasGroupManager.SaveGroupsAndLayout(false);
+    public void SaveGroupsAndLayout(bool immediate) => CanvasGroupManager.SaveGroupsAndLayout(immediate);
 
     public void CreateGroupFromSelectedTiles(TileModel anchorTile) => CanvasGroupManager.CreateGroupFromSelectedTiles(anchorTile);
 

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 
@@ -452,7 +453,44 @@ public sealed class CanvasGroupManager
         }
     }
 
-    public void SaveGroupsAndLayout()
+    private DispatcherTimer? _saveDebounceTimer;
+
+    public void SaveGroupsAndLayout() => SaveGroupsAndLayout(false);
+
+    public void SaveGroupsAndLayout(bool immediate)
+    {
+        var groups = _groupsProvider();
+        GridPlacementService.SetActiveGroups(groups);
+        UpdateCanvasHeight();
+
+        if (immediate)
+        {
+            _saveDebounceTimer?.Stop();
+            ExecuteSave();
+            return;
+        }
+
+        if (_saveDebounceTimer == null)
+        {
+            _saveDebounceTimer = new DispatcherTimer(DispatcherPriority.Background)
+            {
+                Interval = TimeSpan.FromMilliseconds(250)
+            };
+            _saveDebounceTimer.Tick += (s, e) =>
+            {
+                _saveDebounceTimer.Stop();
+                ExecuteSave();
+            };
+        }
+        else
+        {
+            _saveDebounceTimer.Stop();
+        }
+
+        _saveDebounceTimer.Start();
+    }
+
+    private void ExecuteSave()
     {
         var tiles = _tilesProvider();
         var groups = _groupsProvider();
@@ -463,9 +501,6 @@ public sealed class CanvasGroupManager
             StorageService.SaveWorkspaceLayout(activeWs.Id, tiles);
             StorageService.SaveWorkspaceGroups(activeWs.Id, groups);
         }
-
-        GridPlacementService.SetActiveGroups(groups);
-        UpdateCanvasHeight();
     }
 
     public void CreateGroupFromSelectedTiles(TileModel anchorTile)
