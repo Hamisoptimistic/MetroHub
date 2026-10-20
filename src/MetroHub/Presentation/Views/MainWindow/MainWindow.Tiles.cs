@@ -27,6 +27,14 @@ public partial class MainWindow
 {
     private static readonly Brush WidgetCategoryHeaderBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0x90, 0xFF, 0xFF, 0xFF));
     private static readonly Brush WidgetItemIconBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xD0, 0xFF, 0xFF, 0xFF));
+    private static readonly CubicEase SharedTileSlideEase = CreateFrozenTileSlideEase();
+
+    private static CubicEase CreateFrozenTileSlideEase()
+    {
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        ease.Freeze();
+        return ease;
+    }
     private Point _canvasRightClickPoint;
     private bool _isAppsLoaded = false;
     private bool _isLoadingApps = false;
@@ -140,48 +148,100 @@ public partial class MainWindow
         }
     }
 
+    private static TranslateTransform GetOrCreateTranslateTransform(UIElement element)
+    {
+        if (element.RenderTransform is TranslateTransform tt)
+        {
+            return tt;
+        }
+        if (element.RenderTransform is TransformGroup tg)
+        {
+            for (int i = 0; i < tg.Children.Count; i++)
+            {
+                if (tg.Children[i] is TranslateTransform existingTt)
+                {
+                    return existingTt;
+                }
+            }
+            var newTt = new TranslateTransform(0, 0);
+            tg.Children.Add(newTt);
+            return newTt;
+        }
+        if (element.RenderTransform == null || element.RenderTransform == Transform.Identity)
+        {
+            var newTt = new TranslateTransform(0, 0);
+            element.RenderTransform = newTt;
+            return newTt;
+        }
+
+        var existing = element.RenderTransform;
+        var group = new TransformGroup();
+        group.Children.Add(existing);
+        var appendTt = new TranslateTransform(0, 0);
+        group.Children.Add(appendTt);
+        element.RenderTransform = group;
+        return appendTt;
+    }
+
     private void AnimateModifiedTiles(IList<TileModel> modified)
     {
-        if (TilesListBox == null) return;
+        if (TilesListBox == null || modified.Count == 0) return;
 
-        foreach (var t in modified)
+        for (int i = 0; i < modified.Count; i++)
         {
+            var t = modified[i];
             var container = TilesListBox.ItemContainerGenerator.ContainerFromItem(t) as ContentPresenter;
-            if (container != null)
-            {
-                double currentLeft = Canvas.GetLeft(container);
-                double currentTop = Canvas.GetTop(container);
-                if (double.IsNaN(currentLeft)) currentLeft = t.X;
-                if (double.IsNaN(currentTop)) currentTop = t.Y;
+            if (container == null) continue;
 
-                if (Math.Abs(currentLeft - t.X) > 0.5 || Math.Abs(currentTop - t.Y) > 0.5)
+            var translate = GetOrCreateTranslateTransform(container);
+
+            double oldCanvasLeft = Canvas.GetLeft(container);
+            double oldCanvasTop = Canvas.GetTop(container);
+            if (double.IsNaN(oldCanvasLeft)) oldCanvasLeft = t.X;
+            if (double.IsNaN(oldCanvasTop)) oldCanvasTop = t.Y;
+
+            // Calculate true visual position before committing layout coordinates (folding in-flight motion)
+            double currentVisualX = oldCanvasLeft + translate.X;
+            double currentVisualY = oldCanvasTop + translate.Y;
+
+            // Clear legacy DependencyProperty layout animations if any exist
+            container.BeginAnimation(Canvas.LeftProperty, null);
+            container.BeginAnimation(Canvas.TopProperty, null);
+
+            // Commit model coordinates once
+            Canvas.SetLeft(container, t.X);
+            Canvas.SetTop(container, t.Y);
+
+            // Invert offset
+            double deltaX = currentVisualX - t.X;
+            double deltaY = currentVisualY - t.Y;
+
+            if (Math.Abs(deltaX) > 0.5)
+            {
+                var animX = new DoubleAnimation(deltaX, 0.0, TimeSpan.FromMilliseconds(220))
                 {
-                    var animX = new DoubleAnimation(currentLeft, t.X, TimeSpan.FromMilliseconds(220))
-                    {
-                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-                    };
-                    var animY = new DoubleAnimation(currentTop, t.Y, TimeSpan.FromMilliseconds(220))
-                    {
-                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-                    };
-                    animX.Completed += (s, ev) =>
-                    {
-                        Canvas.SetLeft(container, t.X);
-                        container.BeginAnimation(Canvas.LeftProperty, null);
-                    };
-                    animY.Completed += (s, ev) =>
-                    {
-                        Canvas.SetTop(container, t.Y);
-                        container.BeginAnimation(Canvas.TopProperty, null);
-                    };
-                    container.BeginAnimation(Canvas.LeftProperty, animX);
-                    container.BeginAnimation(Canvas.TopProperty, animY);
-                }
-                else
+                    EasingFunction = SharedTileSlideEase
+                };
+                translate.BeginAnimation(TranslateTransform.XProperty, animX, HandoffBehavior.SnapshotAndReplace);
+            }
+            else
+            {
+                translate.BeginAnimation(TranslateTransform.XProperty, null);
+                translate.X = 0;
+            }
+
+            if (Math.Abs(deltaY) > 0.5)
+            {
+                var animY = new DoubleAnimation(deltaY, 0.0, TimeSpan.FromMilliseconds(220))
                 {
-                    Canvas.SetLeft(container, t.X);
-                    Canvas.SetTop(container, t.Y);
-                }
+                    EasingFunction = SharedTileSlideEase
+                };
+                translate.BeginAnimation(TranslateTransform.YProperty, animY, HandoffBehavior.SnapshotAndReplace);
+            }
+            else
+            {
+                translate.BeginAnimation(TranslateTransform.YProperty, null);
+                translate.Y = 0;
             }
         }
 

@@ -244,6 +244,31 @@ public partial class MainWindow
         }
     }
 
+    private static void ResetTranslateTransform(UIElement element)
+    {
+        if (element.RenderTransform is TranslateTransform tt)
+        {
+            tt.BeginAnimation(TranslateTransform.XProperty, null);
+            tt.BeginAnimation(TranslateTransform.YProperty, null);
+            tt.X = 0;
+            tt.Y = 0;
+        }
+        else if (element.RenderTransform is TransformGroup tg)
+        {
+            for (int i = 0; i < tg.Children.Count; i++)
+            {
+                if (tg.Children[i] is TranslateTransform childTt)
+                {
+                    childTt.BeginAnimation(TranslateTransform.XProperty, null);
+                    childTt.BeginAnimation(TranslateTransform.YProperty, null);
+                    childTt.X = 0;
+                    childTt.Y = 0;
+                    break;
+                }
+            }
+        }
+    }
+
     private void OnCanvasPreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
         if (_isDragging)
@@ -453,6 +478,7 @@ public partial class MainWindow
                         if (container != null)
                         {
                             Panel.SetZIndex(container, 9999);
+                            ResetTranslateTransform(container);
                         }
                     }
 
@@ -1187,6 +1213,7 @@ public partial class MainWindow
                         var c = TilesListBox?.ItemContainerGenerator.ContainerFromItem(t) as ContentPresenter;
                         if (c != null)
                         {
+                            ResetTranslateTransform(c);
                             Canvas.SetLeft(c, t.X);
                             Canvas.SetTop(c, t.Y);
                             Panel.SetZIndex(c, 0);
@@ -1231,6 +1258,7 @@ public partial class MainWindow
                 var c = TilesListBox?.ItemContainerGenerator.ContainerFromItem(t) as ContentPresenter;
                 if (c != null)
                 {
+                    ResetTranslateTransform(c);
                     Canvas.SetLeft(c, t.X);
                     Canvas.SetTop(c, t.Y);
                     Panel.SetZIndex(c, 0);
@@ -1244,7 +1272,11 @@ public partial class MainWindow
             var control = Presentation.Controls.TileControl.ActiveTiles.FirstOrDefault(tc => ReferenceEquals(tc.DataContext, cTile));
             control?.AnimateRelease();
             var c = TilesListBox?.ItemContainerGenerator.ContainerFromItem(cTile) as ContentPresenter;
-            if (c != null) Panel.SetZIndex(c, 0);
+            if (c != null)
+            {
+                ResetTranslateTransform(c);
+                Panel.SetZIndex(c, 0);
+            }
         }
 
         if (_draggedTile != null)
@@ -1990,6 +2022,7 @@ public partial class MainWindow
             if (container != null)
             {
                 Panel.SetZIndex(container, 9999);
+                ResetTranslateTransform(container);
             }
 
             int cCol = GridPlacementService.ColFromPixel(cTile.X);
