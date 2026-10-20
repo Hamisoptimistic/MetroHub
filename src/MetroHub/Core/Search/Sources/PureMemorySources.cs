@@ -180,6 +180,33 @@ public sealed class TableSource : ISearchSource
         return Task.FromResult<IReadOnlyList<Candidate>>(results);
     }
 
+    private static bool MatchesKeyword(string keyword, string query)
+    {
+        if (string.Equals(keyword, query, StringComparison.OrdinalIgnoreCase)) return true;
+
+        // Keyword starts with query (e.g. query "ref" matches "refresh rate")
+        if (query.Length >= 2 && keyword.StartsWith(query, StringComparison.OrdinalIgnoreCase)) return true;
+
+        // Multi-word keyword: any individual word in keyword starts with query (e.g. query "rate" matches "refresh rate")
+        if (query.Length >= 3 && keyword.IndexOf(' ') >= 0)
+        {
+            int idx = 0;
+            while (idx < keyword.Length)
+            {
+                int nextSpace = keyword.IndexOf(' ', idx);
+                int len = (nextSpace >= 0 ? nextSpace : keyword.Length) - idx;
+                if (len >= query.Length && keyword.AsSpan(idx, len).StartsWith(query, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+                if (nextSpace < 0) break;
+                idx = nextSpace + 1;
+            }
+        }
+
+        return false;
+    }
+
     private static bool MatchesSetting(SettingsItem setting, string normQuery, IReadOnlyList<string> tokens)
     {
         string titleNorm = SearchRanker.NormalizeText(setting.Title);
@@ -187,9 +214,7 @@ public sealed class TableSource : ISearchSource
 
         for (int k = 0; k < setting.Keywords.Length; k++)
         {
-            string kw = setting.Keywords[k];
-            if (kw.Contains(normQuery, StringComparison.OrdinalIgnoreCase) ||
-                normQuery.Contains(kw, StringComparison.OrdinalIgnoreCase))
+            if (MatchesKeyword(setting.Keywords[k], normQuery))
             {
                 return true;
             }
@@ -197,7 +222,6 @@ public sealed class TableSource : ISearchSource
 
         if (tokens.Count > 1)
         {
-            bool allFound = true;
             for (int t = 0; t < tokens.Count; t++)
             {
                 string tok = tokens[t];
@@ -207,20 +231,16 @@ public sealed class TableSource : ISearchSource
                 {
                     for (int k = 0; k < setting.Keywords.Length; k++)
                     {
-                        if (setting.Keywords[k].Contains(tok, StringComparison.OrdinalIgnoreCase))
+                        if (MatchesKeyword(setting.Keywords[k], tok))
                         {
                             tokMatched = true;
                             break;
                         }
                     }
                 }
-                if (!tokMatched)
-                {
-                    allFound = false;
-                    break;
-                }
+                if (!tokMatched) return false;
             }
-            if (allFound) return true;
+            return true;
         }
 
         return false;
@@ -233,9 +253,7 @@ public sealed class TableSource : ISearchSource
 
         for (int k = 0; k < cmd.Keywords.Length; k++)
         {
-            string kw = cmd.Keywords[k];
-            if (kw.Contains(normQuery, StringComparison.OrdinalIgnoreCase) ||
-                normQuery.Contains(kw, StringComparison.OrdinalIgnoreCase))
+            if (MatchesKeyword(cmd.Keywords[k], normQuery))
             {
                 return true;
             }
@@ -243,7 +261,6 @@ public sealed class TableSource : ISearchSource
 
         if (tokens.Count > 1)
         {
-            bool allFound = true;
             for (int t = 0; t < tokens.Count; t++)
             {
                 string tok = tokens[t];
@@ -253,20 +270,16 @@ public sealed class TableSource : ISearchSource
                 {
                     for (int k = 0; k < cmd.Keywords.Length; k++)
                     {
-                        if (cmd.Keywords[k].Contains(tok, StringComparison.OrdinalIgnoreCase))
+                        if (MatchesKeyword(cmd.Keywords[k], tok))
                         {
                             tokMatched = true;
                             break;
                         }
                     }
                 }
-                if (!tokMatched)
-                {
-                    allFound = false;
-                    break;
-                }
+                if (!tokMatched) return false;
             }
-            if (allFound) return true;
+            return true;
         }
 
         return false;
@@ -282,6 +295,7 @@ public sealed class TableSource : ISearchSource
             SourceId: SourceId,
             Tag: item.Keywords)
         {
+            Subtitle = item.Description,
             Icon = item.Icon,
             KindLabel = "Windows Setting",
             PrimaryAction = new CandidateAction(
@@ -321,6 +335,7 @@ public sealed class TableSource : ISearchSource
             SourceId: SourceId,
             Tag: cmd.Keywords)
         {
+            Subtitle = cmd.Description,
             Icon = cmd.Icon,
             KindLabel = "System",
             PrimaryAction = new CandidateAction(

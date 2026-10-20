@@ -151,5 +151,29 @@ public sealed class TableSourceTests
 
         Assert.Contains(results, r => r.FullPathOrKey == "ms-settings:display");
     }
+
+    [Fact]
+    public async Task SearchAsync_RefreshRate_MatchesAdvancedDisplay_AndGuardsFalsePositives()
+    {
+        // "refresh rate" matches Advanced Display
+        var qRefresh = SearchRanker.ParseQuery("refresh rate", 1);
+        var resRefresh = await _source.SearchAsync(qRefresh, CancellationToken.None);
+        Assert.Contains(resRefresh, r => r.DisplayName == "Advanced Display");
+
+        // "hz" matches Advanced Display
+        var qHz = SearchRanker.ParseQuery("hz", 1);
+        var resHz = await _source.SearchAsync(qHz, CancellationToken.None);
+        Assert.Contains(resHz, r => r.DisplayName == "Advanced Display");
+
+        // "startup" matches Startup Apps
+        var qStartup = SearchRanker.ParseQuery("startup", 1);
+        var resStartup = await _source.SearchAsync(qStartup, CancellationToken.None);
+        Assert.Contains(resStartup, r => r.DisplayName == "Startup Apps");
+
+        // "dynamic" does NOT trigger Microphone Permissions (false-positive prevention)
+        var qDynamic = SearchRanker.ParseQuery("dynamic", 1);
+        var resDynamic = await _source.SearchAsync(qDynamic, CancellationToken.None);
+        Assert.DoesNotContain(resDynamic, r => r.DisplayName == "Microphone Permissions");
+    }
 }
 

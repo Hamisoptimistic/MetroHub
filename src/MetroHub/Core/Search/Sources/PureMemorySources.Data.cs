@@ -63,29 +63,65 @@ public static class PureMemoryData
 {
     public static readonly SettingsItem[] WindowsSettings =
     [
-        new("Bluetooth & devices", "ms-settings:bluetooth", "Manage Bluetooth and paired devices", ["bluetooth", "devices", "pair", "wireless"], SymbolRegular.Bluetooth24),
-        new("Wi-Fi & Network", "ms-settings:network-wifi", "Manage wireless networks and connections", ["wifi", "wi-fi", "internet", "wireless", "network"], SymbolRegular.Wifi124),
-        new("Ethernet Network", "ms-settings:network-ethernet", "Manage wired network connections", ["ethernet", "lan", "network", "internet"], SymbolRegular.Wifi124),
-        new("Display Settings", "ms-settings:display", "Resolution, scale, multiple displays", ["display", "resolution", "scale", "monitor", "screen", "brightness"], SymbolRegular.Desktop24),
-        new("Sound & Audio", "ms-settings:sound", "Volume levels, output and input devices", ["sound", "audio", "volume", "speakers", "microphone", "headphones"], SymbolRegular.Speaker224),
-        new("Windows Update", "ms-settings:windowsupdate", "Check for system and driver updates", ["windows update", "updates", "patch", "install updates"], SymbolRegular.Settings24),
-        new("Installed Apps", "ms-settings:appsfeatures", "Manage and uninstall applications", ["apps", "installed apps", "uninstall", "programs", "applications"], SymbolRegular.Apps24),
-        new("Storage & Disks", "ms-settings:storagesense", "Storage usage and cleanup recommendations", ["storage", "disk", "free space", "drive", "cleanup"], SymbolRegular.Folder24),
-        new("Background & Wallpaper", "ms-settings:personalization-background", "Desktop background, slideshow, colors", ["background", "wallpaper", "theme", "personalization"], SymbolRegular.Image24),
-        new("Colors & Themes", "ms-settings:personalization-colors", "Accent color, light and dark mode", ["color", "accent", "dark mode", "light mode", "theme"], SymbolRegular.Color24),
-        new("Power & Battery", "ms-settings:powersleep", "Sleep timing, battery saver, power modes", ["power", "sleep", "battery", "energy", "screen off"], SymbolRegular.BatteryCharge24),
-        new("Taskbar & Navigation", "ms-settings:taskbar", "Taskbar behaviors, icons, alignment", ["taskbar", "dock", "icons"], SymbolRegular.Desktop24),
-        new("Notifications & Focus", "ms-settings:notifications", "Notification banners and focus assist", ["notifications", "focus assist", "alerts", "do not disturb"], SymbolRegular.DismissCircle24),
-        new("Date & Time", "ms-settings:dateandtime", "Time zones, clock synchronization", ["date", "time", "clock", "timezone", "sync clock"], SymbolRegular.Clock24),
-        new("Mouse & Touchpad", "ms-settings:mousetouchpad", "Pointer speed, scrolling, gestures", ["mouse", "touchpad", "cursor", "pointer"], SymbolRegular.Desktop24),
-        new("Printers & Scanners", "ms-settings:printers", "Manage printers and scanners", ["printers", "scanners", "print"], SymbolRegular.Document24),
-        new("Default Apps", "ms-settings:defaultapps", "Default browser, mail, media players", ["default apps", "defaults", "file associations"], SymbolRegular.Apps24),
-        new("Privacy & Security", "ms-settings:privacy", "App permissions, camera, microphone", ["privacy", "security", "permissions", "camera", "microphone"], SymbolRegular.Shield32),
-        new("Windows Security", "ms-settings:windowsdefender", "Antivirus, firewall, device health", ["security", "defender", "antivirus", "firewall"], SymbolRegular.Shield32),
-        new("Developer Settings", "ms-settings:developers", "Developer mode, remote desktop, device discovery", ["developer", "developer mode", "dev", "sideload"], SymbolRegular.Code24),
-        new("Optional Features", "ms-settings:optionalfeatures", "Manage Windows optional features and capabilities", ["optional features", "features", "wsl", "hyper-v"], SymbolRegular.Settings24),
-        new("Activation", "ms-settings:activation", "Windows activation state and product key", ["activation", "license", "product key", "windows key"], SymbolRegular.CheckmarkCircle24),
-        new("About System", "ms-settings:about", "Device specifications, processor, RAM, OS build", ["about", "specs", "system info", "device specifications", "ram"], SymbolRegular.Info24)
+        // Network & Connectivity
+        new("Wi-Fi & Network", "ms-settings:network-wifi", "Manage Wi-Fi connections", ["wifi", "wi-fi", "wireless network", "internet connection"], SymbolRegular.Wifi124),
+        new("Ethernet Network", "ms-settings:network-ethernet", "Wired network settings", ["ethernet", "lan", "wired network", "local area network"], SymbolRegular.Wifi124),
+        new("Airplane Mode", "ms-settings:network-airplanemode", "Turn off wireless connections", ["airplane mode", "flight mode", "offline mode", "disable wireless"], SymbolRegular.Airplane24),
+        new("Data Usage", "ms-settings:datausage", "Monitor internet data usage", ["data usage", "bandwidth", "internet data", "wifi data", "data limit"], SymbolRegular.DataUsage24),
+        new("Proxy Settings", "ms-settings:network-proxy", "Network proxy configuration", ["proxy", "network proxy", "manual proxy", "pac script", "vpn proxy"], SymbolRegular.Globe24),
+
+        // Bluetooth & Devices
+        new("Bluetooth & devices", "ms-settings:bluetooth", "Manage wireless devices", ["bluetooth", "pair device", "wireless devices", "bluetooth devices"], SymbolRegular.Bluetooth24),
+        new("Printers & Scanners", "ms-settings:printers", "Manage printers and scanners", ["printers", "scanners", "print", "add printer"], SymbolRegular.Document24),
+        new("Mouse & Touchpad", "ms-settings:mousetouchpad", "Cursor speed and scrolling", ["mouse", "touchpad", "cursor", "pointer speed", "trackpad"], SymbolRegular.Desktop24),
+
+        // Display & Visuals
+        new("Display Settings", "ms-settings:display", "Brightness and resolution", ["display", "resolution", "scale", "monitor", "screen brightness"], SymbolRegular.Desktop24),
+        new("Advanced Display", "ms-settings:display-advanced", "Refresh rate and display info", ["refresh rate", "refresh rates", "hz", "144hz", "60hz", "240hz", "120hz", "monitor hz", "advanced display", "fps"], SymbolRegular.Desktop24),
+        new("Night Light", "ms-settings:nightlight", "Blue light filter", ["night light", "blue light", "warm screen", "reading mode", "eye comfort"], SymbolRegular.WeatherMoon24),
+
+        // Sound & Audio
+        new("Sound & Audio", "ms-settings:sound", "Speakers and microphone", ["sound", "audio", "volume", "speakers", "headphones"], SymbolRegular.Speaker224),
+        new("Volume Mixer", "ms-settings:apps-volume", "Per-app volume levels", ["volume mixer", "mixer", "app volume", "sound mixer", "audio levels"], SymbolRegular.Speaker224),
+
+        // Apps & Startup
+        new("Startup Apps", "ms-settings:startupapps", "Manage startup apps", ["startup", "startup apps", "boot apps", "autostart", "start with windows"], SymbolRegular.Apps24),
+        new("Installed Apps", "ms-settings:appsfeatures", "Uninstall or manage apps", ["installed apps", "uninstall", "programs", "applications", "remove apps"], SymbolRegular.Apps24),
+        new("Default Apps", "ms-settings:defaultapps", "Choose default apps", ["default apps", "default browser", "file associations", "default programs"], SymbolRegular.Apps24),
+        new("Optional Features", "ms-settings:optionalfeatures", "Extra Windows features", ["optional features", "windows features", "wsl", "hyper-v"], SymbolRegular.Settings24),
+
+        // Personalization
+        new("Background & Wallpaper", "ms-settings:personalization-background", "Change desktop wallpaper", ["background", "wallpaper", "desktop background", "desktop picture"], SymbolRegular.Image24),
+        new("Colors", "ms-settings:personalization-colors", "Dark mode and colors", ["colors", "accent color", "dark mode", "light mode", "color theme"], SymbolRegular.Color24),
+        new("Themes", "ms-settings:themes", "Desktop themes and sounds", ["themes", "desktop theme", "sound scheme", "cursors theme"], SymbolRegular.Color24),
+        new("Lock Screen", "ms-settings:lockscreen", "Lock screen wallpaper", ["lock screen", "lockscreen", "screen saver", "lock picture"], SymbolRegular.LockClosed24),
+        new("Taskbar & Navigation", "ms-settings:taskbar", "Customize the taskbar", ["taskbar", "taskbar icons", "dock alignment", "taskbar settings"], SymbolRegular.Desktop24),
+        new("Start Menu", "ms-settings:personalization-start", "Customize Start menu layout", ["start menu", "start layout", "pinned apps", "start folders"], SymbolRegular.Apps24),
+
+        // Gaming
+        new("Game Mode", "ms-settings:gaming-gamemode", "Optimize PC for games", ["game mode", "gaming", "game optimization", "fps boost"], SymbolRegular.Games24),
+        new("Xbox Game Bar", "ms-settings:gaming-gamebar", "Game overlay and clips", ["game bar", "xbox", "gamebar", "overlay", "win+g"], SymbolRegular.Games24),
+
+        // Security & Privacy
+        new("Sign-in Options", "ms-settings:signinoptions", "PIN, password, fingerprint", ["sign in", "signin", "pin", "password", "windows hello", "fingerprint", "login options"], SymbolRegular.Key24),
+        new("Windows Security", "ms-settings:windowsdefender", "Antivirus and protection", ["windows security", "defender", "antivirus", "firewall protection"], SymbolRegular.Shield32),
+        new("Privacy & Security", "ms-settings:privacy", "App permissions and privacy", ["privacy", "security permissions", "app permissions", "camera mic"], SymbolRegular.Shield32),
+        new("Microphone Permissions", "ms-settings:privacy-microphone", "Microphone app permissions", ["microphone", "mic permission", "microphone permissions", "mic access", "voice privacy"], SymbolRegular.Mic24),
+
+        // System & Performance
+        new("Power & Battery", "ms-settings:powersleep", "Sleep and battery settings", ["power", "sleep timer", "battery saver", "energy mode"], SymbolRegular.BatteryCharge24),
+        new("Storage & Disks", "ms-settings:storagesense", "Check free disk space", ["storage", "disk space", "free space", "drive cleanup", "clean disk"], SymbolRegular.Folder24),
+        new("Notifications & Focus", "ms-settings:notifications", "Manage alerts and focus", ["notifications", "focus assist", "alerts", "do not disturb"], SymbolRegular.DismissCircle24),
+        new("Windows Update", "ms-settings:windowsupdate", "Check for updates", ["windows update", "updates", "patch", "check updates"], SymbolRegular.Settings24),
+        new("Delivery Optimization", "ms-settings:delivery-optimization", "Update download limits", ["delivery optimization", "bandwidth limits", "download speed", "update bandwidth"], SymbolRegular.ArrowDownload24),
+        new("Activation", "ms-settings:activation", "Windows license status", ["activation", "windows license", "product key", "windows key"], SymbolRegular.CheckmarkCircle24),
+        new("About System", "ms-settings:about", "PC specs and Windows info", ["about", "pc specs", "system specs", "device specifications", "ram processor"], SymbolRegular.Info24),
+        new("Developer Settings", "ms-settings:developers", "Developer tools and options", ["developer settings", "developer mode", "sideload", "remote desktop dev"], SymbolRegular.Code24),
+
+        // Time, Language & Accessibility
+        new("Date & Time", "ms-settings:dateandtime", "Time zone and clock", ["date", "time", "clock", "timezone", "sync clock"], SymbolRegular.Clock24),
+        new("Language & Region", "ms-settings:regionlanguage", "Display language and region", ["language", "region", "keyboard layout", "country", "system language"], SymbolRegular.Globe24),
+        new("Live Captions", "ms-settings:easeofaccess-closedcaptioning", "Automatic audio subtitles", ["live captions", "captions", "subtitles", "closed captions", "speech to text"], SymbolRegular.ClosedCaption24)
     ];
 
     public static readonly WebBangItem[] WebBangs =
@@ -149,7 +185,7 @@ public static class PureMemoryData
         new(
             Id: "sys:lock",
             Title: "Lock workstation",
-            Description: "Lock current Windows user session",
+            Description: "Lock your PC",
             Keywords: ["lock", "lock workstation", "lock screen"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -163,7 +199,7 @@ public static class PureMemoryData
         new(
             Id: "sys:sleep",
             Title: "Sleep",
-            Description: "Suspend computer and put to low power mode",
+            Description: "Put PC to sleep",
             Keywords: ["sleep", "suspend", "standby"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -177,7 +213,7 @@ public static class PureMemoryData
         new(
             Id: "sys:hibernate",
             Title: "Hibernate",
-            Description: "Save session to disk and power off computer",
+            Description: "Save session and power off",
             Keywords: ["hibernate", "hibernation", "deep sleep"],
             RequiresConfirm: true,
             ConfirmPrompt: "Press Enter again to hibernate",
@@ -196,7 +232,7 @@ public static class PureMemoryData
         new(
             Id: "sys:restart",
             Title: "Restart",
-            Description: "Reboot Windows operating system",
+            Description: "Restart your PC",
             Keywords: ["restart", "reboot"],
             RequiresConfirm: true,
             ConfirmPrompt: "Press Enter again to restart",
@@ -215,7 +251,7 @@ public static class PureMemoryData
         new(
             Id: "sys:shutdown",
             Title: "Shut down",
-            Description: "Power off Windows operating system",
+            Description: "Turn off your PC",
             Keywords: ["shutdown", "shut down", "power off", "turn off"],
             RequiresConfirm: true,
             ConfirmPrompt: "Press Enter again to shut down",
@@ -234,7 +270,7 @@ public static class PureMemoryData
         new(
             Id: "sys:signout",
             Title: "Sign out",
-            Description: "Close current session and sign out",
+            Description: "Sign out of Windows",
             Keywords: ["sign out", "signout", "log off", "logoff"],
             RequiresConfirm: true,
             ConfirmPrompt: "Press Enter again to sign out",
@@ -253,7 +289,7 @@ public static class PureMemoryData
         new(
             Id: "sys:recycle",
             Title: "Empty Recycle Bin",
-            Description: "Permanently delete files in the Recycle Bin",
+            Description: "Empty the trash",
             Keywords: ["empty recycle bin", "recycle bin", "trash", "empty trash", "recycle", "bin", "trash bin", "rubbish"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -280,7 +316,7 @@ public static class PureMemoryData
         new(
             Id: "sys:flushdns",
             Title: "Flush DNS Cache",
-            Description: "Clear and reset the Windows DNS client resolver cache (ipconfig /flushdns)",
+            Description: "Reset network cache",
             Keywords: ["flush dns", "flushdns", "ipconfig /flushdns", "dns cache", "clear dns", "dns"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -310,7 +346,7 @@ public static class PureMemoryData
         new(
             Id: "sys:restart_explorer",
             Title: "Restart Windows Explorer",
-            Description: "Terminate and restart explorer.exe process to refresh desktop & taskbar",
+            Description: "Refresh desktop and taskbar",
             Keywords: ["restart explorer", "restart windows explorer", "explorer.exe", "restart taskbar", "reload explorer", "kill explorer"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -337,7 +373,7 @@ public static class PureMemoryData
         new(
             Id: "sys:copy_ipv4",
             Title: "Copy Local IPv4 Address",
-            Description: "Detect active local network IP address and copy to clipboard",
+            Description: "Copy local IP address",
             Keywords: ["copy ip", "ip address", "local ip", "ipv4", "my ip", "what is my ip"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -383,7 +419,7 @@ public static class PureMemoryData
         new(
             Id: "sys:open_hosts",
             Title: "Open Hosts File as Administrator",
-            Description: "Open C:\\Windows\\System32\\drivers\\etc\\hosts in Notepad with admin privileges",
+            Description: "Edit hosts file",
             Keywords: ["hosts", "hosts file", "edit hosts", "open hosts", "etc/hosts"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -406,7 +442,7 @@ public static class PureMemoryData
         new(
             Id: "sys:toggle_hidden_files",
             Title: "Toggle Hidden Files & File Extensions",
-            Description: "Show or hide hidden files, folders, and extensions in File Explorer",
+            Description: "Show or hide hidden files",
             Keywords: ["hidden files", "show hidden files", "hide hidden files", "toggle hidden files", "file extensions", "show extensions"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -443,7 +479,7 @@ public static class PureMemoryData
         new(
             Id: "tool:ncpa",
             Title: "Network Connections (ncpa.cpl)",
-            Description: "Manage network adapters, Ethernet, Wi-Fi, and IP settings",
+            Description: "Manage network adapters",
             Keywords: ["ncpa.cpl", "network", "adapters", "ethernet", "wifi", "network connections", "ip address", "lan", "nic"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -457,7 +493,7 @@ public static class PureMemoryData
         new(
             Id: "tool:sysdm",
             Title: "System Properties & Environment Variables (sysdm.cpl)",
-            Description: "Advanced system settings, environment variables, computer name",
+            Description: "Advanced system settings",
             Keywords: ["sysdm.cpl", "system properties", "environment variables", "env", "path", "computer name", "advanced system settings"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -471,7 +507,7 @@ public static class PureMemoryData
         new(
             Id: "tool:appwiz",
             Title: "Programs and Features (appwiz.cpl)",
-            Description: "Classic Windows add or remove programs and uninstall panel",
+            Description: "Uninstall desktop programs",
             Keywords: ["appwiz.cpl", "programs and features", "uninstall", "add remove programs", "control panel", "installed apps"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -485,7 +521,7 @@ public static class PureMemoryData
         new(
             Id: "tool:mmsys",
             Title: "Sound Control Panel (mmsys.cpl)",
-            Description: "Classic playback, recording, and communication audio devices",
+            Description: "Classic audio settings",
             Keywords: ["mmsys.cpl", "sound control panel", "audio devices", "playback", "recording", "microphone", "sound settings"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -499,7 +535,7 @@ public static class PureMemoryData
         new(
             Id: "tool:devmgmt",
             Title: "Device Manager (devmgmt.msc)",
-            Description: "Manage hardware devices, display adapters, and device drivers",
+            Description: "Hardware and drivers",
             Keywords: ["devmgmt.msc", "device manager", "devices", "drivers", "hardware", "peripherals"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -513,7 +549,7 @@ public static class PureMemoryData
         new(
             Id: "tool:diskmgmt",
             Title: "Disk Management (diskmgmt.msc)",
-            Description: "Create, format, and manage hard disk drives and partitions",
+            Description: "Manage drives and partitions",
             Keywords: ["diskmgmt.msc", "disk management", "partitions", "format disk", "drives", "volumes", "ssd", "hdd"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -527,7 +563,7 @@ public static class PureMemoryData
         new(
             Id: "tool:services",
             Title: "Services (services.msc)",
-            Description: "Start, stop, and configure Windows background services and daemons",
+            Description: "Manage background tasks",
             Keywords: ["services.msc", "services", "windows services", "daemons", "background services"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -541,7 +577,7 @@ public static class PureMemoryData
         new(
             Id: "tool:eventvwr",
             Title: "Event Viewer (eventvwr.msc)",
-            Description: "View application errors, system event logs, and security audits",
+            Description: "System logs and errors",
             Keywords: ["eventvwr.msc", "event viewer", "logs", "error logs", "crash log", "system log", "diagnostics"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -555,7 +591,7 @@ public static class PureMemoryData
         new(
             Id: "tool:taskschd",
             Title: "Task Scheduler (taskschd.msc)",
-            Description: "Schedule automated tasks, jobs, and batch scripts",
+            Description: "Automate tasks and timers",
             Keywords: ["taskschd.msc", "task scheduler", "schedule", "cron", "automated tasks", "jobs"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -569,7 +605,7 @@ public static class PureMemoryData
         new(
             Id: "tool:resmon",
             Title: "Resource Monitor (resmon)",
-            Description: "Detailed real-time CPU, Memory, Disk, and Network monitoring",
+            Description: "Live CPU and RAM usage",
             Keywords: ["resmon", "resource monitor", "resmon.exe", "perf", "performance", "cpu ram disk network"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -583,7 +619,7 @@ public static class PureMemoryData
         new(
             Id: "tool:perfmon_rel",
             Title: "Reliability Monitor (perfmon /rel)",
-            Description: "View stability history, application crashes, and Windows update records",
+            Description: "System crash history",
             Keywords: ["perfmon /rel", "reliability monitor", "reliability", "crash history", "stability index", "perfmon"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -597,7 +633,7 @@ public static class PureMemoryData
         new(
             Id: "tool:regedit",
             Title: "Registry Editor (regedit)",
-            Description: "Browse and edit Windows Registry keys and values",
+            Description: "Advanced system registry",
             Keywords: ["regedit", "regedit.exe", "registry", "registry editor", "hkey"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -611,7 +647,7 @@ public static class PureMemoryData
         new(
             Id: "tool:cleanmgr",
             Title: "Disk Cleanup (cleanmgr)",
-            Description: "Clean temporary files, recycle bins, and system caches",
+            Description: "Delete temporary files",
             Keywords: ["cleanmgr", "cleanmgr.exe", "disk cleanup", "clean disk", "free space"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -625,7 +661,7 @@ public static class PureMemoryData
         new(
             Id: "tool:firewall",
             Title: "Windows Defender Firewall (firewall.cpl)",
-            Description: "Manage incoming and outgoing network ports and firewall rules",
+            Description: "App internet access",
             Keywords: ["firewall.cpl", "firewall", "windows firewall", "ports", "inbound rules", "security"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -639,7 +675,7 @@ public static class PureMemoryData
         new(
             Id: "tool:powercfg",
             Title: "Power Options (powercfg.cpl)",
-            Description: "Classic control panel for Windows power plans and sleep timing",
+            Description: "Manage power plans",
             Keywords: ["powercfg.cpl", "power options", "power plans", "high performance", "sleep settings"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -653,7 +689,7 @@ public static class PureMemoryData
         new(
             Id: "tool:msconfig",
             Title: "System Configuration (msconfig)",
-            Description: "Configure Windows boot parameters, startup services, and tools",
+            Description: "Startup and boot options",
             Keywords: ["msconfig", "msconfig.exe", "system configuration", "boot options", "startup services"],
             RequiresConfirm: false,
             ConfirmPrompt: null,
@@ -667,7 +703,7 @@ public static class PureMemoryData
         new(
             Id: "tool:dxdiag",
             Title: "DirectX Diagnostic Tool (dxdiag)",
-            Description: "Display detailed system hardware, GPU specifications, and DirectX drivers",
+            Description: "Graphics and audio specs",
             Keywords: ["dxdiag", "dxdiag.exe", "directx", "gpu specs", "graphics card", "display drivers"],
             RequiresConfirm: false,
             ConfirmPrompt: null,

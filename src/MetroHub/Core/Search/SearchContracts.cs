@@ -169,6 +169,7 @@ public sealed record Candidate(
     public string NormalizedDisplayName => _normalizedDisplayName ??= SearchRanker.NormalizeText(DisplayName);
     public string NormalizedPath => _normalizedPath ??= SearchRanker.NormalizeText(FullPathOrKey);
 
+    public string? Subtitle { get; init; }
     public CandidateAction? PrimaryAction { get; init; }
     public IReadOnlyList<CandidateAction>? SecondaryActions { get; init; }
     public Func<Candidate, IReadOnlyList<CandidateAction>>? ActionProvider { get; init; }

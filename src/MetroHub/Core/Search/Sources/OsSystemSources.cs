@@ -310,6 +310,7 @@ public sealed class WindowWalkerSource : ISearchSource
             Category: SearchCategory.Actions,
             SourceId: SourceId)
         {
+            Subtitle = "Switch to window",
             Icon = SymbolRegular.Window24,
             KindLabel = "Window",
             PrimaryAction = new CandidateAction(
@@ -462,6 +463,7 @@ public sealed class ProcessKillerSource : ISearchSource
             Category: SearchCategory.Actions,
             SourceId: SourceId)
         {
+            Subtitle = "Force close app",
             Icon = SymbolRegular.DismissCircle24,
             KindLabel = "Process",
             PrimaryAction = new CandidateAction(
@@ -586,6 +588,7 @@ public sealed class AudioSource : ISearchSource
                     Category: SearchCategory.Actions,
                     SourceId: SourceId)
                 {
+                    Subtitle = $"Set volume to {level}%",
                     Icon = SymbolRegular.Speaker224,
                     KindLabel = "Volume",
                     PrimaryAction = action

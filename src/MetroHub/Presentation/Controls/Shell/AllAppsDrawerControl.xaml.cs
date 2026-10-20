@@ -61,6 +61,7 @@ namespace MetroHub.Presentation.Controls
             get
             {
                 if (!string.IsNullOrEmpty(_overrideSubtitle)) return _overrideSubtitle;
+                if (!string.IsNullOrEmpty(Candidate.Subtitle)) return Candidate.Subtitle;
                 if (Candidate.Category == SearchCategory.Apps) return string.Empty;
                 if (!Candidate.IsFolder)
                 {
