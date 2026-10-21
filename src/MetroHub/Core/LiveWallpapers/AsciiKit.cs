@@ -89,5 +89,24 @@ public static class AsciiKit
 
         return value;
     }
+
+    /// <summary>
+    /// Computes Fractal Brownian Motion with a seed offset.
+    /// </summary>
+    public static float Fbm(float x, float y, int octaves, float seed)
+    {
+        return Fbm(x + (seed * 13.17f), y + (seed * 17.23f), octaves);
+    }
+
+    /// <summary>
+    /// 2D Noise helper with seed offset, normalized roughly to [0..1].
+    /// </summary>
+    public static float Noise2(float x, float y, float seed = 0f)
+    {
+        return (Perlin2D(x + (seed * 13.17f), y + (seed * 17.23f)) + 1f) * 0.5f;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static float Clamp(float v, float min = 0f, float max = 1f) => Math.Clamp(v, min, max);
 }
 

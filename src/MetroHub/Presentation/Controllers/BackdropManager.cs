@@ -109,7 +109,7 @@ public sealed class BackdropManager : IDisposable
             {
                 _rootGrid.Background = System.Windows.Media.Brushes.Transparent;
             }
-            string scene = !string.IsNullOrEmpty(settings.LiveWallpaperSceneId) ? settings.LiveWallpaperSceneId : "ocean_dolphins";
+            string scene = !string.IsNullOrEmpty(settings.LiveWallpaperSceneId) ? settings.LiveWallpaperSceneId : "campfire_stars";
             ApplyLiveWallpaper(_customWallpaperHost as Panel, scene);
         }
         else

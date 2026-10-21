@@ -367,16 +367,18 @@
 
                         <Separator x:Name="GlobalSettingsSeparator" />
 
-                        <MenuItem x:Name="BackgroundCanvasMenuItem" Header="Background">
+                        <MenuItem x:Name="BackgroundCanvasMenuItem" Header="Background" SubmenuOpened="OnBackgroundMenuSubmenuOpened">
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="PaintBucket24" FontSize="20" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </MenuItem.Icon>
-                            <MenuItem x:Name="BackdropMicaItem" Header="Mica (Windows 11)" IsCheckable="True" Click="OnBackdropMicaClick" />
-                            <MenuItem x:Name="BackdropAcrylicItem" Header="Acrylic Obsidian" IsCheckable="True" Click="OnBackdropAcrylicClick" />
-                            <MenuItem x:Name="BackdropDesktopWallpaperItem" Header="Current Desktop Wallpaper" IsCheckable="True" Click="OnBackdropDesktopWallpaperClick" />
-                            <MenuItem x:Name="BackdropBingDailyItem" Header="Bing Wallpaper of the Day" IsCheckable="True" Click="OnBackdropBingDailyClick" />
-                            <MenuItem x:Name="BackdropSpotlightDailyItem" Header="Windows Spotlight Image" IsCheckable="True" Click="OnBackdropSpotlightDailyClick" />
-                            <MenuItem x:Name="BackdropCustomImageItem" Header="Custom Picture or Video..." IsCheckable="True" Click="OnBackdropCustomImageClick" />
+                            <MenuItem x:Name="BackdropMicaItem" Header="Mica" IsCheckable="True" Click="OnBackdropMicaClick" />
+                            <MenuItem x:Name="BackdropAcrylicItem" Header="Acrylic" IsCheckable="True" Click="OnBackdropAcrylicClick" />
+                            <MenuItem x:Name="BackdropLiveScenesItem" Header="Live Scenes" />
+                            <Separator />
+                            <MenuItem x:Name="BackdropDesktopWallpaperItem" Header="Desktop" IsCheckable="True" Click="OnBackdropDesktopWallpaperClick" />
+                            <MenuItem x:Name="BackdropBingDailyItem" Header="Bing Daily" IsCheckable="True" Click="OnBackdropBingDailyClick" />
+                            <MenuItem x:Name="BackdropSpotlightDailyItem" Header="Windows Spotlight" IsCheckable="True" Click="OnBackdropSpotlightDailyClick" />
+                            <MenuItem x:Name="BackdropCustomImageItem" Header="Choose Media..." IsCheckable="True" Click="OnBackdropCustomImageClick" />
                             <Separator />
                             <MenuItem Header="Wallpaper Parallax">
                                 <MenuItem x:Name="ParallaxEnabledItem" Header="Enabled" IsCheckable="True" Click="OnParallaxEnabledClick" />

@@ -185,6 +185,42 @@ public partial class MainWindow
 
     public void TeardownWallpaperVideo() => BackdropManager.TeardownWallpaperVideo();
 
+    private void OnBackgroundMenuSubmenuOpened(object sender, RoutedEventArgs e)
+    {
+        PopulateLiveScenesMenu();
+    }
+
+    private void PopulateLiveScenesMenu()
+    {
+        if (BackdropLiveScenesItem == null) return;
+
+        bool isLive = string.Equals(Settings.BackdropType, "LiveWallpaper", StringComparison.OrdinalIgnoreCase);
+        string currentScene = Settings.LiveWallpaperSceneId ?? "campfire_stars";
+
+        BackdropLiveScenesItem.Items.Clear();
+
+        foreach (var def in Core.LiveWallpapers.AsciiWallpaperRegistry.All)
+        {
+            var item = new MenuItem
+            {
+                Header = def.DisplayName,
+                IsCheckable = true,
+                IsChecked = isLive && string.Equals(currentScene, def.Id, StringComparison.OrdinalIgnoreCase),
+                Tag = def.Id
+            };
+
+            item.Click += (s, ev) =>
+            {
+                Settings.BackdropType = "LiveWallpaper";
+                Settings.LiveWallpaperSceneId = def.Id;
+                StorageService.SaveSettings(Settings);
+                ApplyConfiguredBackdrop();
+            };
+
+            BackdropLiveScenesItem.Items.Add(item);
+        }
+    }
+
     private void UpdateBackdropMenuChecks()
     {
         if (BackdropMicaItem != null)
@@ -199,6 +235,24 @@ public partial class MainWindow
             BackdropSpotlightDailyItem.IsChecked = string.Equals(Settings.BackdropType, "SpotlightDaily", StringComparison.OrdinalIgnoreCase);
         if (BackdropCustomImageItem != null)
             BackdropCustomImageItem.IsChecked = string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase);
+
+        bool isLiveWallpaper = string.Equals(Settings.BackdropType, "LiveWallpaper", StringComparison.OrdinalIgnoreCase);
+        string currentSceneId = Settings.LiveWallpaperSceneId ?? "campfire_stars";
+        if (BackdropLiveScenesItem != null)
+        {
+            if (BackdropLiveScenesItem.Items.Count == 0)
+            {
+                PopulateLiveScenesMenu();
+            }
+            else
+            {
+                foreach (var item in BackdropLiveScenesItem.Items)
+                {
+                    if (item is MenuItem mi)
+                        mi.IsChecked = isLiveWallpaper && string.Equals(currentSceneId, mi.Tag as string, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+        }
 
         double dim = Settings.WallpaperDimOpacity;
         if (DimLightItem != null) DimLightItem.IsChecked = Math.Abs(dim - 0.50) < 0.05;
