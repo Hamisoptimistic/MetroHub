@@ -166,8 +166,10 @@ public sealed class HalftonePainter
             }
         }
 
-        low = Percentile(0.04f, maximum, count);
-        high = Math.Max(Percentile(0.985f, maximum, count), low + 1e-4f);
+        float lowQuantile = _tuning.ToneLow > 0f ? _tuning.ToneLow : 0.04f;
+        float highQuantile = _tuning.ToneHigh > 0f ? _tuning.ToneHigh : 0.985f;
+        low = Percentile(lowQuantile, maximum, count);
+        high = Math.Max(Percentile(highQuantile, maximum, count), low + 1e-4f);
         return true;
     }
 
