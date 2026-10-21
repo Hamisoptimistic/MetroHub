@@ -22,7 +22,8 @@ publish_release/
 .gemini/
 scratch_*
 
-# Node tooling (tools/ascii-pack)
+# Offline ASCII packer tooling (local development only)
+tools/ascii-pack/
 node_modules/
 
 # Python artifacts

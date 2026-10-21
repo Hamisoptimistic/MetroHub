@@ -14,15 +14,50 @@ namespace MetroHub.Core.AsciiArt;
 /// </summary>
 public readonly record struct AsciiPackInfo(string Slug, string Name);
 
+/// <summary>How a pack draws one frame.</summary>
+public enum AsciiRenderMode : byte
+{
+    /// <summary>Monospace glyphs from the glyph table.</summary>
+    Glyphs = 0,
+
+    /// <summary>Halftone dots on a density grid, sized by cell brightness.</summary>
+    Halftone = 1,
+}
+
+/// <summary>How a pack wraps from its last frame back to the first.</summary>
+public enum AsciiLoopMode : byte
+{
+    /// <summary>Frame N-1 is followed by frame 0.</summary>
+    Loop = 0,
+
+    /// <summary>Play 0..N-1 then back to 1, so the wrap never jumps or repeats a frame.</summary>
+    PingPong = 1,
+}
+
+/// <summary>
+/// Halftone tuning baked into a v2 pack by <c>tools/ascii-pack</c>, taken from
+/// the piece's <c>meta.dots</c> and the ascii-magic-art engine defaults.
+/// </summary>
+public readonly record struct AsciiHalftoneOptions(
+    float Density,
+    float DotScale,
+    float ToneLow,
+    float ToneHigh,
+    float ToneCurve,
+    float Saturation);
+
 /// <summary>
 /// Reads a <c>.mhp</c> frame pack written by <c>tools/ascii-pack</c>.
 /// A pack holds every frame of one ascii-magic piece as glyph ids and palette ids.
-/// No JavaScript is involved at run time.
+/// Version 2 packs declare a render mode: text glyphs, or halftone dots with
+/// baked tuning (<see cref="AsciiHalftoneOptions"/>). Version 3 adds a loop mode
+/// (<see cref="AsciiLoopMode"/>). No JavaScript is involved at run time.
 /// </summary>
 public sealed class AsciiPack
 {
     private const uint Magic = 0x3150484D; // "MHP1", little-endian
-    private const ushort FormatVersion = 1;
+    private const ushort MinFormatVersion = 1;
+    private const ushort FormatVersion = 3;
     private const int MaxCells = 65535;
     private const int MaxDecodedBytes = 64 * 1024 * 1024;
 
@@ -34,6 +69,15 @@ public sealed class AsciiPack
     public int Rows { get; private init; }
     public int Fps { get; private init; }
     public int FrameCount { get; private init; }
+
+    /// <summary>How the pack renders: text glyphs, or halftone dots.</summary>
+    public AsciiRenderMode RenderMode { get; private init; }
+
+    /// <summary>How playback wraps from the last frame back to the first.</summary>
+    public AsciiLoopMode LoopMode { get; private init; }
+
+    /// <summary>Halftone tuning, only meaningful when <see cref="RenderMode"/> is halftone.</summary>
+    public AsciiHalftoneOptions HalftoneOptions { get; private init; }
 
     /// <summary>Cell height divided by cell width. 1.661 for text pieces, 1.0 for photo pieces.</summary>
     public double CellAspect { get; private init; } = 1.0;
@@ -50,6 +94,26 @@ public sealed class AsciiPack
     public byte[] ColorIds { get; private init; } = [];
 
     public int Cells => Cols * Rows;
+
+    /// <summary>
+    /// Maps a monotonically increasing playback tick to a frame index. A forward
+    /// loop wraps N-1 to 0; a ping-pong pack plays 0..N-1 then back to 1, so the
+    /// wrap never jumps or shows the same frame twice.
+    /// </summary>
+    public static int GetPlaybackFrame(long tick, int frameCount, AsciiLoopMode loopMode)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(frameCount, 1);
+        ArgumentOutOfRangeException.ThrowIfNegative(tick);
+
+        if (loopMode != AsciiLoopMode.PingPong || frameCount <= 2)
+        {
+            return (int)(tick % frameCount);
+        }
+
+        int period = (frameCount * 2) - 2;
+        int position = (int)(tick % period);
+        return position < frameCount ? position : period - position;
+    }
 
     /// <summary>Folder that holds the shipped packs, next to the app executable.</summary>
     public static string PackDirectory => Path.Combine(AppContext.BaseDirectory, "Assets", "AsciiArt");
@@ -88,7 +152,7 @@ public sealed class AsciiPack
         using FileStream file = File.OpenRead(path);
         using BinaryReader reader = new(file, Encoding.UTF8, leaveOpen: false);
 
-        ReadCoreHeader(reader, path, out int cols, out int rows, out int fps, out int frameCount, out int aspectMilli);
+        _ = ReadCoreHeader(reader, path);
 
         int paletteCount = reader.ReadUInt16();
         reader.BaseStream.Seek(paletteCount * 3L, SeekOrigin.Current);
@@ -106,7 +170,7 @@ public sealed class AsciiPack
         using FileStream file = File.OpenRead(path);
         using BinaryReader reader = new(file, Encoding.UTF8, leaveOpen: false);
 
-        ReadCoreHeader(reader, path, out int cols, out int rows, out int fps, out int frameCount, out int aspectMilli);
+        CoreHeader header = ReadCoreHeader(reader, path);
 
         int paletteCount = reader.ReadUInt16();
         if (paletteCount > 255)
@@ -173,8 +237,8 @@ public sealed class AsciiPack
             }
         }
 
-        int cells = cols * rows;
-        long totalBytes = (long)cells * frameCount;
+        int cells = header.Cols * header.Rows;
+        long totalBytes = (long)cells * header.FrameCount;
         if (totalBytes > MaxDecodedBytes)
         {
             throw new InvalidDataException($"{path}: decoded frames are too large ({totalBytes} bytes).");
@@ -182,17 +246,20 @@ public sealed class AsciiPack
 
         byte[] glyphIds = new byte[(int)totalBytes];
         byte[] colorIds = new byte[(int)totalBytes];
-        DecodeFrames(body, cells, frameCount, glyphIds, colorIds);
+        DecodeFrames(body, cells, header.FrameCount, glyphIds, colorIds);
 
         return new AsciiPack
         {
             Slug = slug,
             Name = name,
-            Cols = cols,
-            Rows = rows,
-            Fps = fps,
-            FrameCount = frameCount,
-            CellAspect = aspectMilli / 1000.0,
+            Cols = header.Cols,
+            Rows = header.Rows,
+            Fps = header.Fps,
+            FrameCount = header.FrameCount,
+            CellAspect = header.AspectMilli / 1000.0,
+            RenderMode = header.RenderMode,
+            LoopMode = header.LoopMode,
+            HalftoneOptions = header.HalftoneOptions,
             Colors = colors,
             Glyphs = glyphs,
             GlyphIds = glyphIds,
@@ -200,14 +267,7 @@ public sealed class AsciiPack
         };
     }
 
-    private static void ReadCoreHeader(
-        BinaryReader reader,
-        string path,
-        out int cols,
-        out int rows,
-        out int fps,
-        out int frameCount,
-        out int aspectMilli)
+    private static CoreHeader ReadCoreHeader(BinaryReader reader, string path)
     {
         if (reader.ReadUInt32() != Magic)
         {
@@ -215,16 +275,45 @@ public sealed class AsciiPack
         }
 
         ushort version = reader.ReadUInt16();
-        if (version != FormatVersion)
+        if (version is < MinFormatVersion or > FormatVersion)
         {
             throw new InvalidDataException($"{path}: unsupported pack version {version}.");
         }
 
-        cols = reader.ReadUInt16();
-        rows = reader.ReadUInt16();
-        fps = reader.ReadUInt16();
-        frameCount = reader.ReadUInt16();
-        aspectMilli = reader.ReadUInt16();
+        AsciiRenderMode renderMode = AsciiRenderMode.Glyphs;
+        AsciiHalftoneOptions halftone = default;
+        if (version >= 2)
+        {
+            byte rawMode = reader.ReadByte();
+            if (rawMode > (byte)AsciiRenderMode.Halftone)
+            {
+                throw new InvalidDataException($"{path}: unknown render mode {rawMode}.");
+            }
+
+            renderMode = (AsciiRenderMode)rawMode;
+            if (renderMode == AsciiRenderMode.Halftone)
+            {
+                halftone = ReadHalftoneOptions(reader, path);
+            }
+        }
+
+        AsciiLoopMode loopMode = AsciiLoopMode.Loop;
+        if (version >= 3)
+        {
+            byte rawLoop = reader.ReadByte();
+            if (rawLoop > (byte)AsciiLoopMode.PingPong)
+            {
+                throw new InvalidDataException($"{path}: unknown loop mode {rawLoop}.");
+            }
+
+            loopMode = (AsciiLoopMode)rawLoop;
+        }
+
+        int cols = reader.ReadUInt16();
+        int rows = reader.ReadUInt16();
+        int fps = reader.ReadUInt16();
+        int frameCount = reader.ReadUInt16();
+        int aspectMilli = reader.ReadUInt16();
 
         if (cols < 1 || rows < 1 || cols * rows > MaxCells)
         {
@@ -242,7 +331,41 @@ public sealed class AsciiPack
         {
             throw new InvalidDataException($"{path}: invalid cell aspect {aspectMilli}.");
         }
+
+        return new CoreHeader(cols, rows, fps, frameCount, aspectMilli, renderMode, halftone, loopMode);
     }
+
+    private static AsciiHalftoneOptions ReadHalftoneOptions(BinaryReader reader, string path)
+    {
+        float density = reader.ReadUInt16() / 100f;
+        float dotScale = reader.ReadUInt16() / 1000f;
+        float toneLow = reader.ReadUInt16() / 1000f;
+        float toneHigh = reader.ReadUInt16() / 1000f;
+        float toneCurve = reader.ReadUInt16() / 100f;
+        float saturation = reader.ReadUInt16() / 1000f;
+
+        if (density is < 0.3f or > 4f
+            || dotScale is < 0f or > 3f
+            || toneLow is < 0f or > 1f
+            || toneHigh is < 0f or > 1f
+            || toneCurve is < 0.1f or > 4f
+            || saturation is < 0f or > 2f)
+        {
+            throw new InvalidDataException($"{path}: halftone tuning is out of range.");
+        }
+
+        return new AsciiHalftoneOptions(density, dotScale, toneLow, toneHigh, toneCurve, saturation);
+    }
+
+    private readonly record struct CoreHeader(
+        int Cols,
+        int Rows,
+        int Fps,
+        int FrameCount,
+        int AspectMilli,
+        AsciiRenderMode RenderMode,
+        AsciiHalftoneOptions HalftoneOptions,
+        AsciiLoopMode LoopMode);
 
     private static string ReadShortString(BinaryReader reader, string path)
     {

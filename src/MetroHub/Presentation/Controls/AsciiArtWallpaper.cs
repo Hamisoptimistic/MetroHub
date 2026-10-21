@@ -11,11 +11,12 @@ using MetroHub.Core.AsciiArt;
 namespace MetroHub.Presentation.Controls;
 
 /// <summary>
-/// Draws an <see cref="AsciiPack"/> as animated text. One glyph atlas and one
-/// pixel buffer are built per size, then each frame only writes pixels. The
-/// bitmap is presented through a child <see cref="DrawingVisual"/>, so stopping
-/// playback releases the surface synchronously. The element has no JavaScript,
-/// no video decoder, and no child window.
+/// Draws an <see cref="AsciiPack"/> as animated text or halftone dots. One
+/// glyph atlas and one bitmap are built per size, then each frame paints
+/// straight into the bitmap's back buffer. The bitmap is presented through a
+/// child <see cref="DrawingVisual"/>, so stopping playback releases the surface
+/// synchronously. The element has no JavaScript, no video decoder, and no child
+/// window.
 /// </summary>
 public sealed class AsciiArtWallpaper : FrameworkElement
 {
@@ -34,19 +35,19 @@ public sealed class AsciiArtWallpaper : FrameworkElement
     private AsciiPack? _pack;
     private DispatcherTimer? _timer;
     private WriteableBitmap? _bitmap;
+    private HalftonePainter? _halftone;
 
-    private byte[] _pixels = [];
     private byte[] _atlas = [];
     private uint[] _colorLookup = [];
     private int _cellWidth;
     private int _cellHeight;
     private int _pixelWidth;
     private int _pixelHeight;
-    private int _stride;
     private double _drawWidth;
     private double _drawHeight;
     private double _offsetX;
     private double _offsetY;
+    private long _frameTick;
     private int _frameIndex;
 
     public AsciiArtWallpaper()
@@ -68,6 +69,7 @@ public sealed class AsciiArtWallpaper : FrameworkElement
         AsciiPack pack = AsciiPack.Load(path);
         Unload();
         _pack = pack;
+        _frameTick = 0;
         _frameIndex = 0;
         RebuildSurface();
         StartClock();
@@ -79,18 +81,18 @@ public sealed class AsciiArtWallpaper : FrameworkElement
         StopClock();
         _pack = null;
         _bitmap = null;
-        _pixels = [];
+        _halftone = null;
         _atlas = [];
         _colorLookup = [];
         _cellWidth = 0;
         _cellHeight = 0;
         _pixelWidth = 0;
         _pixelHeight = 0;
-        _stride = 0;
         _drawWidth = 0;
         _drawHeight = 0;
         _offsetX = 0;
         _offsetY = 0;
+        _frameTick = 0;
         _frameIndex = 0;
         PresentScene();
     }
@@ -197,16 +199,16 @@ public sealed class AsciiArtWallpaper : FrameworkElement
             return;
         }
 
-        _frameIndex = (_frameIndex + 1) % pack.FrameCount;
+        _frameIndex = AsciiPack.GetPlaybackFrame(++_frameTick, pack.FrameCount, pack.LoopMode);
         RenderFrame();
     }
 
-    /// <summary>Sizes the bitmap to whole device pixels and rebuilds the glyph atlas.</summary>
+    /// <summary>Sizes the bitmap to whole device pixels and rebuilds the frame renderer.</summary>
     private void RebuildSurface()
     {
         AsciiPack? pack = _pack;
         _bitmap = null;
-        _pixels = [];
+        _halftone = null;
         _atlas = [];
         _colorLookup = [];
         PresentScene();
@@ -234,8 +236,6 @@ public sealed class AsciiArtWallpaper : FrameworkElement
         _cellHeight = cellHeight;
         _pixelWidth = cellWidth * pack.Cols;
         _pixelHeight = cellHeight * pack.Rows;
-        _stride = _pixelWidth * 4;
-        _pixels = new byte[_stride * _pixelHeight];
         _bitmap = new WriteableBitmap(_pixelWidth, _pixelHeight, 96, 96, PixelFormats.Pbgra32, null);
 
         double bitmapW = _pixelWidth / dpi.DpiScaleX;
@@ -246,8 +246,16 @@ public sealed class AsciiArtWallpaper : FrameworkElement
         _offsetX = Math.Round((ActualWidth - _drawWidth) / 2.0, 2);
         _offsetY = Math.Round((ActualHeight - _drawHeight) / 2.0, 2);
 
-        BuildAtlas(pack, cellWidth, cellHeight);
-        BuildColorLookup(pack);
+        if (pack.RenderMode == AsciiRenderMode.Halftone)
+        {
+            _halftone = new HalftonePainter(pack, cellWidth, cellHeight);
+        }
+        else
+        {
+            BuildAtlas(pack, cellWidth, cellHeight);
+            BuildColorLookup(pack);
+        }
+
         RenderFrame();
         PresentScene();
     }
@@ -334,29 +342,51 @@ public sealed class AsciiArtWallpaper : FrameworkElement
         }
     }
 
-    /// <summary>Paints one frame into the pixel buffer and uploads it.</summary>
-    private void RenderFrame()
+    /// <summary>Paints one frame straight into the bitmap's back buffer.</summary>
+    private unsafe void RenderFrame()
     {
         AsciiPack? pack = _pack;
         WriteableBitmap? bitmap = _bitmap;
-        if (pack is null || bitmap is null || _pixels.Length == 0)
+        if (pack is null || bitmap is null)
         {
             return;
         }
 
-        byte[] pixels = _pixels;
+        bitmap.Lock();
+        try
+        {
+            Span<uint> target = new(bitmap.BackBuffer.ToPointer(), _pixelWidth * _pixelHeight);
+            target.Fill(CanvasPixel);
+
+            HalftonePainter? halftone = _halftone;
+            if (halftone is not null)
+            {
+                halftone.Render(target, _frameIndex);
+            }
+            else
+            {
+                DrawGlyphs(pack, target);
+            }
+
+            bitmap.AddDirtyRect(new Int32Rect(0, 0, _pixelWidth, _pixelHeight));
+        }
+        finally
+        {
+            bitmap.Unlock();
+        }
+    }
+
+    /// <summary>Blits every cell of the current frame from the atlas and colour lookup.</summary>
+    private void DrawGlyphs(AsciiPack pack, Span<uint> target)
+    {
         byte[] atlas = _atlas;
         uint[] lookup = _colorLookup;
-        int stride = _stride;
         int rowStride = _pixelWidth;
         int cellWidth = _cellWidth;
         int cellHeight = _cellHeight;
         int cellArea = cellWidth * cellHeight;
         int frameBase = _frameIndex * pack.Cells;
         int colorCount = pack.Colors.Length;
-
-        Span<uint> target = MemoryMarshal.Cast<byte, uint>(pixels.AsSpan());
-        target.Fill(CanvasPixel);
         ref uint targetRef = ref MemoryMarshal.GetReference(target);
 
         for (int row = 0; row < pack.Rows; row++)
@@ -399,7 +429,5 @@ public sealed class AsciiArtWallpaper : FrameworkElement
                 }
             }
         }
-
-        bitmap.WritePixels(new Int32Rect(0, 0, _pixelWidth, _pixelHeight), pixels, stride, 0);
     }
 }
