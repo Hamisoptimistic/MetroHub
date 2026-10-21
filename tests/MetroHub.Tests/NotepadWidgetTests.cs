@@ -434,6 +434,125 @@ public class NotepadWidgetTests
             Assert.DoesNotContain("Text for Instance A", stateB);
         });
     }
+
+    [Fact]
+    public void BeginEditTodo_SetsIsEditing_AndSavesOriginalText()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+
+            vm.NewTodoText = "Original Task";
+            vm.AddTodo();
+            var task = vm.ActiveTodos[0];
+
+            Assert.False(task.IsEditing);
+
+            vm.BeginEditTodo(task);
+            Assert.True(task.IsEditing);
+            Assert.Equal("Original Task", task.OriginalText);
+        });
+    }
+
+    [Fact]
+    public void CommitEditTodo_PersistsNewText_AndClearsEditing()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using (var vm = new NotepadWidgetViewModel(tile))
+            {
+                vm.NewTodoText = "Original Task";
+                vm.AddTodo();
+                var task = vm.ActiveTodos[0];
+
+                vm.BeginEditTodo(task);
+                task.Text = "Corrected Task Spelling";
+                vm.CommitEditTodo(task);
+
+                Assert.False(task.IsEditing);
+                Assert.Equal("Corrected Task Spelling", task.Text);
+            }
+
+            // Verify persisted in new instance
+            using (var vm2 = new NotepadWidgetViewModel(tile))
+            {
+                Assert.Single(vm2.ActiveTodos);
+                Assert.Equal("Corrected Task Spelling", vm2.ActiveTodos[0].Text);
+                Assert.False(vm2.ActiveTodos[0].IsEditing);
+            }
+        });
+    }
+
+    [Fact]
+    public void CommitEditTodo_WithWhitespaceOrEmpty_RestoresOriginalText()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+
+            vm.NewTodoText = "Important Task";
+            vm.AddTodo();
+            var task = vm.ActiveTodos[0];
+
+            vm.BeginEditTodo(task);
+            task.Text = "   ";
+            vm.CommitEditTodo(task);
+
+            Assert.False(task.IsEditing);
+            Assert.Equal("Important Task", task.Text);
+        });
+    }
+
+    [Fact]
+    public void CancelEditTodo_RevertsTextToOriginal_AndClearsEditing()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+
+            vm.NewTodoText = "Do not lose this";
+            vm.AddTodo();
+            var task = vm.ActiveTodos[0];
+
+            vm.BeginEditTodo(task);
+            task.Text = "Changed my mind";
+            vm.CancelEditTodo(task);
+
+            Assert.False(task.IsEditing);
+            Assert.Equal("Do not lose this", task.Text);
+        });
+    }
+
+    [Fact]
+    public void BeginEditTodo_AutoCommitsPreviousEditingItem()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+
+            vm.NewTodoText = "Task 1";
+            vm.AddTodo();
+            vm.NewTodoText = "Task 2";
+            vm.AddTodo();
+
+            var task1 = vm.ActiveTodos[0];
+            var task2 = vm.ActiveTodos[1];
+
+            vm.BeginEditTodo(task1);
+            Assert.True(task1.IsEditing);
+            task1.Text = "Task 1 Renamed";
+
+            vm.BeginEditTodo(task2);
+            Assert.False(task1.IsEditing);
+            Assert.Equal("Task 1 Renamed", task1.Text);
+            Assert.True(task2.IsEditing);
+        });
+    }
 }
 
 

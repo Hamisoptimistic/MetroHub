@@ -5,7 +5,6 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
-using MetroHub.Core.Services;
 using MetroHub.Presentation.Themes;
 
 namespace MetroHub.Presentation.Controls.Behaviors;
@@ -13,44 +12,32 @@ namespace MetroHub.Presentation.Controls.Behaviors;
 public enum FluentTransitionMode
 {
     None,
-    VerticalDrillIn,   // Flow B: Y: +14 -> 0 (180ms)
-    HorizontalSlide    // Flow A: X: +24 -> 0 (Drill In) or -24 -> 0 (Back to Home) (220ms)
+    VerticalDrillIn,   // Flow B: Y: +10 -> 0 (140ms)
+    HorizontalSlide    // Flow A: X: +12 -> 0 (Drill In) or -12 -> 0 (Back to Home) (150ms)
 }
 
 /// <summary>
 /// Production-grade Fluent entrance transition behavior for ContentControl.
-/// Eliminates start layout stalls, child-Loaded frame drops, and end-of-animation pixel snapping.
+/// Uses transient GPU BitmapCache during animation for locked 144Hz motion without per-frame re-rasterization.
 /// </summary>
 public static class FluentTransitionBehavior
 {
-    // ExponentialEase (Exponent 4.5) matches WinUI 3's cubic-bezier(0.1, 0.9, 0.2, 1.0)
-    // and feathers to 0.0 much more smoothly than CubicEase on 120Hz+ displays.
+    // CircleEase (EaseOut) provides snappy Fluent entrance with smooth deceleration without subpixel crawl.
     private static readonly IEasingFunction FluentTransformEasing = CreateTransformEasing();
     private static readonly IEasingFunction FluentOpacityEasing = CreateOpacityEasing();
-    private static int _cachedRefreshRate;
 
     private static IEasingFunction CreateTransformEasing()
     {
-        var ease = new ExponentialEase { EasingMode = EasingMode.EaseOut, Exponent = 4.5 };
+        var ease = new CircleEase { EasingMode = EasingMode.EaseOut };
         ease.Freeze();
         return ease;
     }
 
     private static IEasingFunction CreateOpacityEasing()
     {
-        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var ease = new CircleEase { EasingMode = EasingMode.EaseOut };
         ease.Freeze();
         return ease;
-    }
-
-    private static int GetTargetFrameRate()
-    {
-        if (_cachedRefreshRate <= 0)
-        {
-            int rate = NativeMethods.GetScreenRefreshRate();
-            _cachedRefreshRate = rate > 0 ? rate : 120;
-        }
-        return _cachedRefreshRate;
     }
 
     #region Attached Properties
@@ -121,6 +108,7 @@ public static class FluentTransitionBehavior
         if (sender is ContentControl control)
         {
             control.SetValue(HasRenderedInitialViewProperty, false);
+            control.CacheMode = null;
 
             var descriptor = DependencyPropertyDescriptor.FromProperty(
                 ContentControl.ContentProperty, typeof(ContentControl));
@@ -169,18 +157,18 @@ public static class FluentTransitionBehavior
 
         double offsetX = 0.0;
         double offsetY = 0.0;
-        int durationMs = 180;
+        int durationMs = 150;
 
         if (mode == FluentTransitionMode.HorizontalSlide)
         {
             bool isReturningHome = IsHomeState(control.Content);
-            offsetX = isReturningHome ? -24.0 : 24.0;
-            durationMs = 220;
+            offsetX = isReturningHome ? -12.0 : 12.0;
+            durationMs = 150;
         }
         else if (mode == FluentTransitionMode.VerticalDrillIn)
         {
-            offsetY = 14.0;
-            durationMs = 180;
+            offsetY = 10.0;
+            durationMs = 140;
         }
 
         // 1. Synchronously clear active clocks and pre-position at the starting offset
@@ -188,6 +176,7 @@ public static class FluentTransitionBehavior
         control.BeginAnimation(UIElement.OpacityProperty, null);
         transform.BeginAnimation(TranslateTransform.XProperty, null);
         transform.BeginAnimation(TranslateTransform.YProperty, null);
+        control.CacheMode = null;
 
         control.Opacity = 0.0;
         transform.X = offsetX;
@@ -226,9 +215,19 @@ public static class FluentTransitionBehavior
             return;
         }
 
-        int refreshRate = GetTargetFrameRate();
+        // Transient GPU hardware surface: eliminates per-frame CPU vector re-rasterization.
+        // SnapsToDevicePixels is intentionally false during movement so the GPU uses smooth
+        // floating-point bilinear subpixel interpolation instead of jumping between physical pixels.
+        var dpi = VisualTreeHelper.GetDpi(target);
+        double dpiScale = Math.Max(1.0, dpi.DpiScaleX);
+        target.CacheMode = new BitmapCache(dpiScale)
+        {
+            SnapsToDevicePixels = false,
+            EnableClearType = false
+        };
+
         var translateDuration = new Duration(TimeSpan.FromMilliseconds(durationMs));
-        var opacityDuration = new Duration(TimeSpan.FromMilliseconds(Math.Min(130, durationMs)));
+        var opacityDuration = new Duration(TimeSpan.FromMilliseconds(Math.Min(120, durationMs)));
 
         // Set resting base values before applying HoldEnd/Stop clocks
         target.Opacity = 1.0;
@@ -240,7 +239,6 @@ public static class FluentTransitionBehavior
             EasingFunction = FluentOpacityEasing,
             FillBehavior = FillBehavior.Stop
         };
-        Timeline.SetDesiredFrameRate(animOpacity, refreshRate);
 
         double startOffset = mode == FluentTransitionMode.HorizontalSlide ? offsetX : offsetY;
         var animTranslate = new DoubleAnimation(startOffset, 0.0, translateDuration)
@@ -248,7 +246,6 @@ public static class FluentTransitionBehavior
             EasingFunction = FluentTransformEasing,
             FillBehavior = FillBehavior.Stop
         };
-        Timeline.SetDesiredFrameRate(animTranslate, refreshRate);
 
         DependencyProperty translateProp = mode == FluentTransitionMode.HorizontalSlide
             ? TranslateTransform.XProperty
@@ -258,9 +255,8 @@ public static class FluentTransitionBehavior
         {
             if ((int)target.GetValue(AnimationVersionProperty) != expectedVersion) return;
 
-            // Because FillBehavior.Stop automatically reverts to the base values (Opacity=1, X=0, Y=0)
-            // and we keep the persistent identity TranslateTransform attached, zero layout or visual
-            // tree mutations occur here—eliminating the end-of-animation snap.
+            // Immediately discard GPU texture cache so text returns to 100% crisp native ClearType at rest
+            target.CacheMode = null;
             target.BeginAnimation(UIElement.OpacityProperty, null);
             transform.BeginAnimation(translateProp, null);
         };
@@ -271,6 +267,7 @@ public static class FluentTransitionBehavior
 
     private static void ResetToRestingState(UIElement target, TranslateTransform transform)
     {
+        target.CacheMode = null;
         target.BeginAnimation(UIElement.OpacityProperty, null);
         transform.BeginAnimation(TranslateTransform.XProperty, null);
         transform.BeginAnimation(TranslateTransform.YProperty, null);

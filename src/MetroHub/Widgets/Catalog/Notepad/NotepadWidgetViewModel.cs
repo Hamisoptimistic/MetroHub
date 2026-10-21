@@ -200,6 +200,44 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
         SaveSettings();
     }
 
+    [RelayCommand]
+    public void BeginEditTodo(NotepadTodoItem item)
+    {
+        if (item == null) return;
+
+        foreach (var t in ActiveTodos)
+        {
+            if (t != item && t.IsEditing)
+            {
+                t.CommitEdit();
+            }
+        }
+        foreach (var t in CompletedTodos)
+        {
+            if (t != item && t.IsEditing)
+            {
+                t.CommitEdit();
+            }
+        }
+
+        item.BeginEdit();
+    }
+
+    [RelayCommand]
+    public void CommitEditTodo(NotepadTodoItem item)
+    {
+        if (item == null || !item.IsEditing) return;
+        item.CommitEdit();
+        SaveSettings();
+    }
+
+    [RelayCommand]
+    public void CancelEditTodo(NotepadTodoItem item)
+    {
+        if (item == null || !item.IsEditing) return;
+        item.CancelEdit();
+    }
+
     private CancellationTokenSource? _saveStatusCts;
 
     [RelayCommand]
@@ -286,6 +324,15 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
     public override void SaveSettings()
     {
         RequestDocumentSync?.Invoke();
+
+        foreach (var t in ActiveTodos)
+        {
+            if (t.IsEditing) t.CommitEdit();
+        }
+        foreach (var t in CompletedTodos)
+        {
+            if (t.IsEditing) t.CommitEdit();
+        }
 
         var settings = new NotepadWidgetSettings
         {

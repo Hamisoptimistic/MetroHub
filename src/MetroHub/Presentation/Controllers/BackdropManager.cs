@@ -7,17 +7,19 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using MetroHub.Core.LiveWallpapers;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Themes;
+using Microsoft.Win32;
 
 namespace MetroHub.Presentation.Controllers;
 
 /// <summary>
 /// Manages window backdrops (Mica, Acrylic, Windows Desktop Wallpaper, Custom Wallpapers, 
-/// Bing Daily, Windows Spotlight Daily, video wallpapers, dimming, and parallax scrolling).
+/// Bing Daily, Windows Spotlight Daily, video wallpapers, ASCII live wallpapers, dimming, and parallax scrolling).
 /// </summary>
-public sealed class BackdropManager
+public sealed class BackdropManager : IDisposable
 {
     private static readonly SolidColorBrush AcrylicTintBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0x99, 0x0D, 0x0D, 0x11));
     private static readonly SolidColorBrush FallbackDarkBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xEE, 0x10, 0x10, 0x14));
@@ -34,6 +36,8 @@ public sealed class BackdropManager
     private readonly ScrollViewer? _contentScrollViewer;
     private readonly Action<string, bool> _toastAction;
     private readonly Action? _updateMenuChecksAction;
+
+    private AsciiWallpaperHost? _asciiHost;
 
     private int _wallpaperLoadGeneration;
     private string? _currentLoadedWallpaperPath;
@@ -69,6 +73,8 @@ public sealed class BackdropManager
         _contentScrollViewer = contentScrollViewer;
         _toastAction = toastAction;
         _updateMenuChecksAction = updateMenuChecksAction;
+
+        _window.Closed += (s, e) => TeardownLiveWallpaper(_customWallpaperHost as Panel);
     }
 
     private bool _isBackdropConfigured;
@@ -93,65 +99,152 @@ public sealed class BackdropManager
         }
 
         var settings = _settingsProvider();
+        bool isLiveWallpaper = string.Equals(settings.BackdropType, "LiveWallpaper", StringComparison.OrdinalIgnoreCase);
         bool isWallpaper = IsWallpaperBackdrop(settings.BackdropType);
 
-        if (isWallpaper)
+        if (isLiveWallpaper)
         {
-            var ct = BeginNewWallpaperGeneration();
             NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_NONE);
             if (_rootGrid != null)
             {
                 _rootGrid.Background = System.Windows.Media.Brushes.Transparent;
             }
-            _ = UpdateWallpaperDisplayAsync(ct);
+            string scene = !string.IsNullOrEmpty(settings.LiveWallpaperSceneId) ? settings.LiveWallpaperSceneId : "ocean_dolphins";
+            ApplyLiveWallpaper(_customWallpaperHost as Panel, scene);
         }
         else
         {
-            CancelPendingWallpaperLoad();
-            TeardownWallpaperVideo();
+            TeardownLiveWallpaper(_customWallpaperHost as Panel);
 
-            if (_customWallpaperHost != null)
+            if (isWallpaper)
             {
-                _customWallpaperHost.Visibility = Visibility.Collapsed;
-            }
-
-            if (_wallpaperImage != null && _wallpaperImage.Source != null)
-            {
-                _wallpaperImage.Effect = null;
-                _wallpaperImage.Source = null;
-                _currentLoadedWallpaperPath = null;
-                _currentLoadedEffect = null;
-                _currentLoadedIsLight = null;
-            }
-
-            if (string.Equals(settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase))
-            {
-                NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW);
-                if (_rootGrid != null)
-                {
-                    _rootGrid.Background = AcrylicTintBrush;
-                }
-            }
-            else if (string.Equals(settings.BackdropType, "MicaAlt", StringComparison.OrdinalIgnoreCase))
-            {
-                NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TABBEDWINDOW);
+                var ct = BeginNewWallpaperGeneration();
+                NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_NONE);
                 if (_rootGrid != null)
                 {
                     _rootGrid.Background = System.Windows.Media.Brushes.Transparent;
                 }
+                _ = UpdateWallpaperDisplayAsync(ct);
             }
             else
             {
-                NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
-                if (_rootGrid != null)
+                CancelPendingWallpaperLoad();
+                TeardownWallpaperVideo();
+
+                if (_customWallpaperHost != null)
                 {
-                    _rootGrid.Background = System.Windows.Media.Brushes.Transparent;
+                    _customWallpaperHost.Visibility = Visibility.Collapsed;
+                }
+
+                if (_wallpaperImage != null && _wallpaperImage.Source != null)
+                {
+                    _wallpaperImage.Effect = null;
+                    _wallpaperImage.Source = null;
+                    _currentLoadedWallpaperPath = null;
+                    _currentLoadedEffect = null;
+                    _currentLoadedIsLight = null;
+                }
+
+                if (string.Equals(settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase))
+                {
+                    NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW);
+                    if (_rootGrid != null)
+                    {
+                        _rootGrid.Background = AcrylicTintBrush;
+                    }
+                }
+                else if (string.Equals(settings.BackdropType, "MicaAlt", StringComparison.OrdinalIgnoreCase))
+                {
+                    NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TABBEDWINDOW);
+                    if (_rootGrid != null)
+                    {
+                        _rootGrid.Background = System.Windows.Media.Brushes.Transparent;
+                    }
+                }
+                else
+                {
+                    NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_MAINWINDOW);
+                    if (_rootGrid != null)
+                    {
+                        _rootGrid.Background = System.Windows.Media.Brushes.Transparent;
+                    }
                 }
             }
         }
 
         _updateMenuChecksAction?.Invoke();
         _isBackdropConfigured = true;
+    }
+
+    public void ApplyLiveWallpaper(Panel? customWallpaperHost, string sceneId)
+    {
+        if (customWallpaperHost is null) return;
+
+        // Cancel pending static wallpaper decodes and collapse sibling image & video
+        // This prevents an opaque WallpaperImage at index 1 from covering _asciiHost at index 0
+        CancelPendingWallpaperLoad();
+        TeardownWallpaperVideo();
+        if (_wallpaperImage is not null)
+        {
+            _wallpaperImage.Effect = null;
+            _wallpaperImage.Source = null;
+            _wallpaperImage.Visibility = Visibility.Collapsed;
+            _currentLoadedWallpaperPath = null;
+            _currentLoadedEffect = null;
+            _currentLoadedIsLight = null;
+        }
+
+        if (_wallpaperScrim is not null)
+        {
+            var settings = _settingsProvider();
+            double dim = Math.Clamp(settings.WallpaperDimOpacity, 0.1, 0.9);
+            byte alpha = (byte)(255 * dim);
+            var scrimBrush = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
+            scrimBrush.Freeze();
+            _wallpaperScrim.Background = scrimBrush;
+        }
+
+        if (_asciiHost is null)
+        {
+            _asciiHost = new AsciiWallpaperHost();
+            RefreshPowerState();
+            SystemEvents.PowerModeChanged += OnPowerModeChanged;
+
+            // Preserve existing elements (WallpaperImage, Scrim) by inserting at index 0 behind WallpaperScrim
+            customWallpaperHost.Children.Insert(0, _asciiHost);
+        }
+
+        customWallpaperHost.Visibility = Visibility.Visible;
+        _asciiHost.SetScene(sceneId);
+    }
+
+    public void TeardownLiveWallpaper(Panel? customWallpaperHost)
+    {
+        if (_asciiHost is not null)
+        {
+            SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+            _asciiHost.Dispose();
+
+            if (customWallpaperHost is not null)
+            {
+                customWallpaperHost.Children.Remove(_asciiHost);
+                customWallpaperHost.Visibility = Visibility.Collapsed;
+            }
+
+            _asciiHost = null;
+        }
+    }
+
+    private void OnPowerModeChanged(object? sender, PowerModeChangedEventArgs e) => RefreshPowerState();
+
+    private void RefreshPowerState()
+    {
+        if (_asciiHost is null) return;
+        if (NativeMethods.GetSystemPowerStatus(out var status))
+        {
+            // Throttle to 30 FPS when on battery (ACLineStatus == 0) or Windows Energy Saver is active (SystemStatusFlag == 1)
+            _asciiHost.IsBatterySaver = status.ACLineStatus == 0 || status.SystemStatusFlag == 1;
+        }
     }
 
     public void UpdateWallpaperParallax()
@@ -519,5 +612,11 @@ public sealed class BackdropManager
             ".wmv" or ".asf" => "Windows Media codec error. Enable Media Feature Pack in Windows Features.",
             _ => "Unsupported video codec. Try standard .mp4 (H.264) or install required codec."
         };
+    }
+
+    public void Dispose()
+    {
+        TeardownLiveWallpaper(_customWallpaperHost as Panel);
+        CancelPendingWallpaperLoad();
     }
 }

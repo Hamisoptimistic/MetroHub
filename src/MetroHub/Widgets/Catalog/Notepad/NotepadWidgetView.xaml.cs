@@ -161,7 +161,7 @@ public partial class NotepadWidgetView : UserControl
 
         // Tightly calibrated List and ListItem styles for sleek, premium indentation
         var listStyle = new Style(typeof(List));
-        listStyle.Setters.Add(new Setter(Block.MarginProperty, new Thickness(14, 2, 0, 2)));
+        listStyle.Setters.Add(new Setter(Block.MarginProperty, new Thickness(28, 2, 0, 2)));
         listStyle.Setters.Add(new Setter(Block.PaddingProperty, new Thickness(0)));
         listStyle.Setters.Add(new Setter(List.MarkerOffsetProperty, 6.0));
         doc.Resources[typeof(List)] = listStyle;
@@ -520,6 +520,66 @@ public partial class NotepadWidgetView : UserControl
         finally
         {
             _isSynchronizing = false;
+        }
+    }
+
+    private void OnTodoTextMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2 && sender is FrameworkElement fe && fe.DataContext is NotepadTodoItem item)
+        {
+            e.Handled = true;
+            if (DataContext is NotepadWidgetViewModel vm)
+            {
+                vm.BeginEditTodo(item);
+            }
+        }
+    }
+
+    private void OnEditTaskInputIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (sender is TextBox textBox && textBox.IsVisible)
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                textBox.Focus();
+                textBox.CaretIndex = textBox.Text.Length;
+            }, DispatcherPriority.Input);
+        }
+    }
+
+    private void OnEditTaskInputLostFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox textBox && textBox.DataContext is NotepadTodoItem item)
+        {
+            if (DataContext is NotepadWidgetViewModel vm && item.IsEditing)
+            {
+                vm.CommitEditTodo(item);
+            }
+        }
+    }
+
+    private void OnEditTaskInputKeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is TextBox textBox && textBox.DataContext is NotepadTodoItem item)
+        {
+            if (e.Key == Key.Return || e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                Keyboard.ClearFocus();
+                if (DataContext is NotepadWidgetViewModel vm)
+                {
+                    vm.CommitEditTodo(item);
+                }
+            }
+            else if (e.Key == Key.Escape)
+            {
+                e.Handled = true;
+                Keyboard.ClearFocus();
+                if (DataContext is NotepadWidgetViewModel vm)
+                {
+                    vm.CancelEditTodo(item);
+                }
+            }
         }
     }
 }

@@ -8,7 +8,8 @@ public sealed class AppSettings
 
     public string ThemeMode { get; set; } = "System"; // System, Dark, Light
     public AccentStyleMode AccentStyle { get; set; } = AccentStyleMode.Flat; // Flat, StudioGlass
-    public string BackdropType { get; set; } = "Mica"; // Mica, MicaAlt, Acrylic, DesktopWallpaper, Wallpaper, BingDaily, SpotlightDaily
+    public string BackdropType { get; set; } = "Mica"; // Mica, MicaAlt, Acrylic, DesktopWallpaper, Wallpaper, BingDaily, SpotlightDaily, LiveWallpaper
+    public string? LiveWallpaperSceneId { get; set; } = "ocean_dolphins";
     public string? CustomWallpaperPath { get; set; }
     public double WallpaperDimOpacity { get; set; } = 0.70; // 0.50 (Light), 0.70 (Balanced), 0.85 (Heavy)
     public bool WallpaperParallax { get; set; } = true;

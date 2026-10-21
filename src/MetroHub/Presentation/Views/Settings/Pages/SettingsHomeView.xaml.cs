@@ -13,7 +13,14 @@ namespace MetroHub.Presentation.Views.Settings.Pages;
 /// </summary>
 public partial class SettingsHomeView : UserControl
 {
-    private static readonly QuadraticEase RevealEasing = new() { EasingMode = EasingMode.EaseOut };
+    private static readonly QuadraticEase RevealEasing = CreateFrozenEase();
+
+    private static QuadraticEase CreateFrozenEase()
+    {
+        var ease = new QuadraticEase { EasingMode = EasingMode.EaseOut };
+        ease.Freeze();
+        return ease;
+    }
 
     public SettingsHomeView()
     {
@@ -43,7 +50,6 @@ public partial class SettingsHomeView : UserControl
                 {
                     EasingFunction = RevealEasing
                 };
-                Timeline.SetDesiredFrameRate(fadeIn, 120);
                 revealBorder.BeginAnimation(UIElement.OpacityProperty, fadeIn);
             }
         }
@@ -59,7 +65,6 @@ public partial class SettingsHomeView : UserControl
                 {
                     EasingFunction = RevealEasing
                 };
-                Timeline.SetDesiredFrameRate(fadeOut, 120);
                 revealBorder.BeginAnimation(UIElement.OpacityProperty, fadeOut);
             }
         }

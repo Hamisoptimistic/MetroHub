@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MetroHub.Widgets.Catalog.Notepad;
 
@@ -9,12 +11,56 @@ public enum NotepadMode
     Todo = 1
 }
 
-public sealed class NotepadTodoItem
+public sealed class NotepadTodoItem : ObservableObject
 {
+    private string _text = string.Empty;
+    private bool _isCompleted;
+    private bool _isEditing;
+
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
-    public string Text { get; set; } = string.Empty;
-    public bool IsCompleted { get; set; }
+
+    public string Text
+    {
+        get => _text;
+        set => SetProperty(ref _text, value);
+    }
+
+    public bool IsCompleted
+    {
+        get => _isCompleted;
+        set => SetProperty(ref _isCompleted, value);
+    }
+
     public DateTime? CompletedAt { get; set; }
+
+    [JsonIgnore]
+    public bool IsEditing
+    {
+        get => _isEditing;
+        set => SetProperty(ref _isEditing, value);
+    }
+
+    [JsonIgnore]
+    public string OriginalText { get; set; } = string.Empty;
+
+    public void BeginEdit()
+    {
+        OriginalText = Text;
+        IsEditing = true;
+    }
+
+    public void CommitEdit()
+    {
+        var trimmed = Text?.Trim();
+        Text = string.IsNullOrEmpty(trimmed) ? OriginalText : trimmed;
+        IsEditing = false;
+    }
+
+    public void CancelEdit()
+    {
+        Text = OriginalText;
+        IsEditing = false;
+    }
 }
 
 /// <summary>
@@ -35,4 +81,3 @@ public sealed class NotepadWidgetSettings
         set => _mode = Enum.IsDefined(value) ? value : NotepadMode.Notes;
     }
 }
-
