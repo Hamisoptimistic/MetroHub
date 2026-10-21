@@ -21,6 +21,7 @@ public sealed class BackdropManager
 {
     private static readonly SolidColorBrush AcrylicTintBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0x99, 0x0D, 0x0D, 0x11));
     private static readonly SolidColorBrush FallbackDarkBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xEE, 0x10, 0x10, 0x14));
+    private static readonly SolidColorBrush SceneCanvasBrush = ThemeTokens.CreateFrozenBrush(Color.FromRgb(0x0B, 0x0B, 0x0F));
 
     private readonly Window _window;
     private readonly Func<AppSettings> _settingsProvider;
@@ -34,6 +35,7 @@ public sealed class BackdropManager
     private readonly ScrollViewer? _contentScrollViewer;
     private readonly Action<string, bool> _toastAction;
     private readonly Action? _updateMenuChecksAction;
+    private readonly Action<string?>? _applySceneAction;
 
     private int _wallpaperLoadGeneration;
     private string? _currentLoadedWallpaperPath;
@@ -55,7 +57,8 @@ public sealed class BackdropManager
         TranslateTransform? wallpaperVideoTranslateTransform,
         ScrollViewer? contentScrollViewer,
         Action<string, bool> toastAction,
-        Action? updateMenuChecksAction = null)
+        Action? updateMenuChecksAction = null,
+        Action<string?>? applySceneAction = null)
     {
         _window = window;
         _settingsProvider = settingsProvider;
@@ -69,6 +72,7 @@ public sealed class BackdropManager
         _contentScrollViewer = contentScrollViewer;
         _toastAction = toastAction;
         _updateMenuChecksAction = updateMenuChecksAction;
+        _applySceneAction = applySceneAction;
     }
 
     private bool _isBackdropConfigured;
@@ -94,9 +98,11 @@ public sealed class BackdropManager
 
         var settings = _settingsProvider();
         bool isWallpaper = IsWallpaperBackdrop(settings.BackdropType);
+        bool isAsciiScene = IsAsciiSceneBackdrop(settings.BackdropType);
 
         if (isWallpaper)
         {
+            _applySceneAction?.Invoke(null);
             var ct = BeginNewWallpaperGeneration();
             NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_NONE);
             if (_rootGrid != null)
@@ -105,8 +111,39 @@ public sealed class BackdropManager
             }
             _ = UpdateWallpaperDisplayAsync(ct);
         }
+        else if (isAsciiScene)
+        {
+            CancelPendingWallpaperLoad();
+            TeardownWallpaperVideo();
+
+            _currentLoadedWallpaperPath = null;
+            _currentLoadedEffect = null;
+            _currentLoadedIsLight = null;
+
+            if (_wallpaperImage != null)
+            {
+                _wallpaperImage.Effect = null;
+                _wallpaperImage.Source = null;
+                _wallpaperImage.Visibility = Visibility.Collapsed;
+            }
+
+            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_NONE);
+            if (_rootGrid != null)
+            {
+                // Matches the scene canvas, so a failed or letterboxed scene still looks intentional.
+                _rootGrid.Background = SceneCanvasBrush;
+            }
+            if (_customWallpaperHost != null)
+            {
+                _customWallpaperHost.Visibility = Visibility.Visible;
+            }
+
+            ApplyScrim(settings.WallpaperDimOpacity);
+            _applySceneAction?.Invoke(settings.AsciiSceneId);
+        }
         else
         {
+            _applySceneAction?.Invoke(null);
             CancelPendingWallpaperLoad();
             TeardownWallpaperVideo();
 
@@ -247,11 +284,7 @@ public sealed class BackdropManager
         string backdropType = settings.BackdropType;
 
         // Apply scrim dim opacity immediately with frozen Freezable brush
-        double dim = Math.Clamp(settings.WallpaperDimOpacity, 0.1, 0.9);
-        byte alpha = (byte)(255 * dim);
-        var scrimBrush = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
-        scrimBrush.Freeze();
-        _wallpaperScrim.Background = scrimBrush;
+        ApplyScrim(settings.WallpaperDimOpacity);
 
         string? lastError = null;
 
@@ -455,6 +488,21 @@ public sealed class BackdropManager
                string.Equals(backdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(backdropType, "BingDaily", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(backdropType, "SpotlightDaily", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>True when the backdrop is a native ASCII scene pack.</summary>
+    public static bool IsAsciiSceneBackdrop(string? backdropType) =>
+        string.Equals(backdropType, "AsciiScene", StringComparison.OrdinalIgnoreCase);
+
+    private void ApplyScrim(double opacity)
+    {
+        if (_wallpaperScrim == null) return;
+
+        double dim = Math.Clamp(opacity, 0.1, 0.9);
+        byte alpha = (byte)(255 * dim);
+        var scrimBrush = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
+        scrimBrush.Freeze();
+        _wallpaperScrim.Background = scrimBrush;
     }
 
     public static BitmapImage? LoadOptimizedBitmap(string path, int decodeWidth = 1920)

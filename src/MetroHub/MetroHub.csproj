@@ -53,6 +53,9 @@
     <Resource Include="Assets\Rover\**\*" />
     <Resource Include="Assets\quotes.json" />
     <Resource Include="Assets\*.png" />
+    <Content Include="Assets\AsciiArt\*.mhp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

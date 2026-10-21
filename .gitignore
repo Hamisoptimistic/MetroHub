@@ -22,6 +22,9 @@ publish_release/
 .gemini/
 scratch_*
 
+# Node tooling (tools/ascii-pack)
+node_modules/
+
 # Python artifacts
 __pycache__/
 *.py[cod]

@@ -66,6 +66,12 @@
               Panel.ZIndex="-100"
               ClipToBounds="True"
               Visibility="Collapsed">
+            <!-- Native ASCII scene player: frame packs from tools/ascii-pack, no browser engine -->
+            <controls:AsciiArtWallpaper x:Name="AsciiSceneWallpaper"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
+                                        IsHitTestVisible="False"
+                                        Visibility="Collapsed" />
             <Image x:Name="WallpaperImage"
                    Stretch="UniformToFill"
                    HorizontalAlignment="Center"
@@ -377,6 +383,11 @@
                             <MenuItem x:Name="BackdropBingDailyItem" Header="Bing Wallpaper of the Day" IsCheckable="True" Click="OnBackdropBingDailyClick" />
                             <MenuItem x:Name="BackdropSpotlightDailyItem" Header="Windows Spotlight Image" IsCheckable="True" Click="OnBackdropSpotlightDailyClick" />
                             <MenuItem x:Name="BackdropCustomImageItem" Header="Custom Picture or Video..." IsCheckable="True" Click="OnBackdropCustomImageClick" />
+                            <MenuItem x:Name="BackdropLiveScenesItem" Header="Live Scenes">
+                                <MenuItem.Icon>
+                                    <ui:SymbolIcon Symbol="Play24" FontSize="20" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                </MenuItem.Icon>
+                            </MenuItem>
                             <Separator />
                             <MenuItem Header="Wallpaper Parallax">
                                 <MenuItem x:Name="ParallaxEnabledItem" Header="Enabled" IsCheckable="True" Click="OnParallaxEnabledClick" />

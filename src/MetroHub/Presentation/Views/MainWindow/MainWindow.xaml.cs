@@ -258,6 +258,8 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         InitializeComponent();
         DataContext = this;
 
+        BuildLiveScenesMenu();
+
         LoadData();
         InitializeWorkspaces();
 

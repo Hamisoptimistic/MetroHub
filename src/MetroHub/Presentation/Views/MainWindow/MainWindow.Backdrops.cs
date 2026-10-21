@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using MetroHub.Core.AsciiArt;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Controllers;
 using MetroHub.Presentation.Themes;
@@ -28,7 +30,11 @@ public partial class MainWindow
         WallpaperVideoTranslateTransform,
         ContentScrollViewer,
         ShowToast,
-        UpdateBackdropMenuChecks);
+        UpdateBackdropMenuChecks,
+        ApplyAsciiScene);
+
+    private readonly List<(string Slug, MenuItem Item)> _liveSceneItems = [];
+    private string? _currentSceneSlug;
 
     private void OnBackdropMicaClick(object sender, RoutedEventArgs e)
     {
@@ -95,6 +101,87 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>Builds the "Live Scenes" submenu from the .mhp packs on disk.</summary>
+    private void BuildLiveScenesMenu()
+    {
+        if (BackdropLiveScenesItem == null || _liveSceneItems.Count > 0)
+        {
+            return;
+        }
+
+        IReadOnlyList<AsciiPackInfo> packs = AsciiPack.EnumerateAvailable();
+        foreach (AsciiPackInfo pack in packs)
+        {
+            MenuItem item = new()
+            {
+                Header = pack.Name,
+                Tag = pack.Slug,
+                IsCheckable = true,
+            };
+            item.Click += OnBackdropLiveSceneClick;
+            BackdropLiveScenesItem.Items.Add(item);
+            _liveSceneItems.Add((pack.Slug, item));
+        }
+
+        BackdropLiveScenesItem.IsEnabled = _liveSceneItems.Count > 0;
+    }
+
+    private void OnBackdropLiveSceneClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem { Tag: string slug } || string.IsNullOrWhiteSpace(slug))
+        {
+            return;
+        }
+
+        Settings.BackdropType = "AsciiScene";
+        Settings.AsciiSceneId = slug;
+        StorageService.SaveSettings(Settings);
+        ApplyConfiguredBackdrop();
+    }
+
+    /// <summary>Starts, keeps, or stops the native ASCII scene for the current backdrop.</summary>
+    private void ApplyAsciiScene(string? slug)
+    {
+        if (!IsAsciiSceneBackdrop(Settings.BackdropType) || string.IsNullOrWhiteSpace(slug))
+        {
+            _currentSceneSlug = null;
+            AsciiSceneWallpaper.Unload();
+            AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        if (string.Equals(_currentSceneSlug, slug, StringComparison.OrdinalIgnoreCase) && AsciiSceneWallpaper.HasScene)
+        {
+            AsciiSceneWallpaper.Visibility = Visibility.Visible;
+            return;
+        }
+
+        string path = AsciiPack.GetPackPath(slug);
+        if (!File.Exists(path))
+        {
+            _currentSceneSlug = null;
+            AsciiSceneWallpaper.Unload();
+            AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
+            ShowToast($"Scene pack not found: {slug}", isError: true);
+            return;
+        }
+
+        try
+        {
+            AsciiSceneWallpaper.Load(path);
+            AsciiSceneWallpaper.Visibility = Visibility.Visible;
+            _currentSceneSlug = slug;
+        }
+        catch (Exception ex)
+        {
+            _currentSceneSlug = null;
+            AsciiSceneWallpaper.Unload();
+            AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
+            Serilog.Log.Warning(ex, "Failed to load ASCII scene {Slug}", slug);
+            ShowToast($"Failed to load scene: {slug}", isError: true);
+        }
+    }
+
     private void OnWallpaperDimLightClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.50);
     private void OnWallpaperDimBalancedClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.70);
     private void OnWallpaperDimHeavyClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.85);
@@ -135,6 +222,8 @@ public partial class MainWindow
     public void ApplyConfiguredBackdrop(bool force = true) => BackdropManager.ApplyConfiguredBackdrop(force);
 
     public static bool IsWallpaperBackdrop(string? backdropType) => BackdropManager.IsWallpaperBackdrop(backdropType);
+
+    public static bool IsAsciiSceneBackdrop(string? backdropType) => BackdropManager.IsAsciiSceneBackdrop(backdropType);
 
     public static BitmapImage? LoadOptimizedBitmap(string path, int decodeWidth = 1920) => BackdropManager.LoadOptimizedBitmap(path, decodeWidth);
 
@@ -199,6 +288,18 @@ public partial class MainWindow
             BackdropSpotlightDailyItem.IsChecked = string.Equals(Settings.BackdropType, "SpotlightDaily", StringComparison.OrdinalIgnoreCase);
         if (BackdropCustomImageItem != null)
             BackdropCustomImageItem.IsChecked = string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase);
+
+        bool isScene = IsAsciiSceneBackdrop(Settings.BackdropType);
+        if (BackdropLiveScenesItem != null)
+        {
+            BackdropLiveScenesItem.IsEnabled = _liveSceneItems.Count > 0;
+        }
+
+        foreach ((string sceneSlug, MenuItem sceneItem) in _liveSceneItems)
+        {
+            sceneItem.IsChecked = isScene &&
+                string.Equals(sceneSlug, Settings.AsciiSceneId, StringComparison.OrdinalIgnoreCase);
+        }
 
         double dim = Settings.WallpaperDimOpacity;
         if (DimLightItem != null) DimLightItem.IsChecked = Math.Abs(dim - 0.50) < 0.05;
