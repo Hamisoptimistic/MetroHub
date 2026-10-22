@@ -11,7 +11,7 @@ namespace MetroHub.Presentation.Controls;
 /// <summary>
 /// Resolution-, DPI-, and refresh-rate-invariant WinUI 3 smooth scroll behavior.
 /// Uses an impulse-assisted critically damped spring in device-independent pixels (DIPs)
-/// paired with per-monitor physical pixel snapping and GPU sub-pixel interpolation.
+/// paired with per-monitor DPI scaling and GPU sub-pixel interpolation.
 /// </summary>
 public static class SmoothPhysicsScrollBehavior
 {
@@ -251,8 +251,8 @@ public static class SmoothPhysicsScrollBehavior
         private const double InitialVelocityKickRatio = 0.0;  // Zero artificial kick for smooth natural acceleration
         private const double BoundarySpringOmega = 14.0;      // Edge bounce-back stiffness (rad/s)
         private const double MaxOverscrollDistance = 15.0;    // Max edge stretch in DIPs
-        private const double RestPositionThreshold = 0.35;    // Cut off asymptotic tail (<0.5 physical px)
-        private const double RestVelocityThreshold = 3.5;     // Velocity cutoff (<0.025 DIPs/frame at 144Hz)
+        private const double RestPositionThreshold = 0.75;    // Cut off asymptotic crawl (<1 physical px)
+        private const double RestVelocityThreshold = 12.0;    // Velocity cutoff (<0.08 DIPs/frame at 144Hz)
 
         private double _currentOffset;
         private double _rawTargetOffset;
@@ -264,6 +264,7 @@ public static class SmoothPhysicsScrollBehavior
         private TimeSpan _lastRenderArgsTime = TimeSpan.Zero;
         private long _lastWheelTimestamp;
         private bool _isTouchpadGestureActive;
+        private System.Windows.Threading.DispatcherTimer? _cacheSettleTimer;
 
         public PhysicsScrollController(ScrollViewer scrollViewer)
         {
@@ -287,6 +288,7 @@ public static class SmoothPhysicsScrollBehavior
 
         public void CancelMomentumAndFreeze()
         {
+            _cacheSettleTimer?.Stop();
             if (!_isRenderingHooked) return;
 
             _velocity = 0.0;
@@ -300,6 +302,7 @@ public static class SmoothPhysicsScrollBehavior
 
         public void ResetOffset(double offset)
         {
+            _cacheSettleTimer?.Stop();
             DetachRenderLoop();
             _velocity = 0.0;
             double maxScroll = _scrollViewer.ScrollableHeight;
@@ -605,17 +608,23 @@ public static class SmoothPhysicsScrollBehavior
 
         private void AttachRenderLoop()
         {
+            _cacheSettleTimer?.Stop();
+
+            if (_scrollViewer.Content is UIElement content)
+            {
+                content.IsHitTestVisible = false;
+                if (content.CacheMode == null)
+                {
+                    double dpiY = VisualTreeHelper.GetDpi(_scrollViewer).DpiScaleY;
+                    if (dpiY <= 0.0) dpiY = 1.0;
+                    content.CacheMode = new BitmapCache(dpiY) { SnapsToDevicePixels = false, EnableClearType = false };
+                }
+            }
+
             if (_isRenderingHooked) return;
 
             IsScrolling = true;
             TileControl.SuppressRevealForScrolling();
-            if (_scrollViewer.Content is UIElement content)
-            {
-                content.IsHitTestVisible = false;
-                double dpiY = VisualTreeHelper.GetDpi(_scrollViewer).DpiScaleY;
-                if (dpiY <= 0.0) dpiY = 1.0;
-                content.CacheMode = new BitmapCache(dpiY) { SnapsToDevicePixels = true, EnableClearType = false };
-            }
 
             _lastRenderArgsTime = TimeSpan.Zero;
             CompositionTarget.Rendering += OnRendering;
@@ -633,13 +642,33 @@ public static class SmoothPhysicsScrollBehavior
 
             if (_scrollViewer.Content is UIElement content)
             {
-                content.CacheMode = null;
                 content.IsHitTestVisible = true;
                 if (content.RenderTransform == _overscrollTransform)
                 {
                     _overscrollTransform.Y = 0.0;
                     content.RenderTransform = null;
                 }
+
+                // Debounce BitmapCache teardown by 150ms to keep cache hot across trailing wheel detents
+                if (_cacheSettleTimer == null)
+                {
+                    _cacheSettleTimer = new System.Windows.Threading.DispatcherTimer
+                    {
+                        Interval = TimeSpan.FromMilliseconds(150)
+                    };
+                    _cacheSettleTimer.Tick += OnCacheSettleTimerTick;
+                }
+                _cacheSettleTimer.Stop();
+                _cacheSettleTimer.Start();
+            }
+        }
+
+        private void OnCacheSettleTimerTick(object? sender, EventArgs e)
+        {
+            _cacheSettleTimer?.Stop();
+            if (!_isRenderingHooked && _scrollViewer.Content is UIElement content)
+            {
+                content.CacheMode = null;
             }
         }
 
@@ -651,6 +680,9 @@ public static class SmoothPhysicsScrollBehavior
         public void Dispose()
         {
             DetachRenderLoop();
+            _cacheSettleTimer?.Stop();
+            _cacheSettleTimer = null;
+
             _scrollViewer.PreviewMouseWheel -= OnPreviewMouseWheel;
             _scrollViewer.MouseWheel -= OnMouseWheel;
             _scrollViewer.PreviewMouseDown -= OnPreviewMouseDown;
