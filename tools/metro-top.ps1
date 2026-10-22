@@ -13,18 +13,18 @@ param(
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $esc = [char]27
 
-# Unicode box & block characters defined via char codes
+# Unicode box & block characters
 $bTL   = [char]0x250C  # ┌
 $bTR   = [char]0x2510  # ┐
 $bBL   = [char]0x2514  # └
 $bBR   = [char]0x2518  # ┘
-$bH    = [char]0x2500  # ─
-$bV    = [char]0x2502  # │
+$bH    = "" + [char]0x2500  # ─
+$bV    = "" + [char]0x2502  # │
 $bML   = [char]0x251C  # ├
 $bMR   = [char]0x2524  # ┤
-$bFull = [char]0x2588  # █
-$bDim  = [char]0x2591  # ░
-$bDot  = [char]0x25CF  # ●
+$bFull = "" + [char]0x2588  # █
+$bDim  = "" + [char]0x2591  # ░
+$bDot  = "" + [char]0x25CF  # ●
 
 # Sparkline levels
 $sparkChars = @(
@@ -54,6 +54,18 @@ $cGray        = "$esc[38;2;110;120;135m"
 $cDarkGray    = "$esc[38;2;60;68;80m"
 $cWhite       = "$esc[38;2;240;245;250m"
 
+# Terminal Box Width
+$InnerWidth   = 72
+
+# Helper: Format Row with 100% Guaranteed Right Border Alignment
+function Format-TuiRow([string]$text) {
+    # Remove ANSI escape sequences to compute exact visual column width
+    $clean = $text -replace '\x1B\[[0-9;]*[a-zA-Z]', ''
+    $padLen = [Math]::Max(0, $InnerWidth - $clean.Length)
+    $pad = " " * $padLen
+    return "$cCyan$bV$cReset$text$pad$cCyan$bV$cReset"
+}
+
 # Hide Console Cursor via ANSI escape
 [Console]::Write("$esc[?25l")
 
@@ -66,12 +78,12 @@ function Get-PercentColor([double]$val, [double]$warn = 3.0, [double]$crit = 8.0
 
 # Helper: Horizontal Progress Bar
 function Get-ProgressBar([double]$val, [double]$maxVal = 10.0, [int]$width = 24) {
-    $ratio = [Math]::Clamp(($val / $maxVal), 0.0, 1.0)
+    $ratio = [Math]::Min(1.0, [Math]::Max(0.0, ($val / $maxVal)))
     $filled = [int][Math]::Round($ratio * $width)
     $unfilled = $width - $filled
     $barCol = Get-PercentColor -val $val
-    $fStr = ("" + $bFull) * $filled
-    $uStr = ("" + $bDim) * $unfilled
+    $fStr = $bFull * $filled
+    $uStr = $bDim * $unfilled
     return "$barCol$fStr$cDarkGray$uStr$cReset"
 }
 
@@ -80,7 +92,7 @@ function Get-Sparkline([double[]]$history, [double]$maxScale = 8.0) {
     if (-not $history -or $history.Length -eq 0) { return "" }
     $sb = [System.Text.StringBuilder]::new()
     foreach ($val in $history) {
-        $ratio = [Math]::Clamp(($val / $maxScale), 0.0, 1.0)
+        $ratio = [Math]::Min(1.0, [Math]::Max(0.0, ($val / $maxScale)))
         $idx = [int][Math]::Floor($ratio * ($sparkChars.Length - 1))
         $col = Get-PercentColor -val $val
         [void]$sb.Append("$col$($sparkChars[$idx])$cReset")
@@ -97,14 +109,16 @@ $sampleCount = 0
 $cores = [Environment]::ProcessorCount
 
 # Precompute border lines
-$barTop = "$cCyan$bTL" + ("" + $bH) * 72 + "$bTR$cReset"
-$barMid = "$cCyan$bML" + ("" + $bH) * 72 + "$bMR$cReset"
-$barBot = "$cCyan$bBL" + ("" + $bH) * 72 + "$bBR$cReset"
+$barTop = "$cCyan$bTL" + ($bH * $InnerWidth) + "$bTR$cReset"
+$barMid = "$cCyan$bML" + ($bH * $InnerWidth) + "$bMR$cReset"
+$barBot = "$cCyan$bBL" + ($bH * $InnerWidth) + "$bBR$cReset"
 
 # Clear screen once at startup
 [Console]::Write("$esc[2J$esc[H")
 
 $iter = 0
+$privWsCounter = $null
+$lastPid = 0
 
 try {
     while ($true) {
@@ -134,18 +148,39 @@ try {
         $proc = Get-Process -Name MetroHub -ErrorAction SilentlyContinue | Select-Object -First 1
 
         if (-not $proc) {
+            if ($privWsCounter) {
+                try { $privWsCounter.Dispose() } catch { }
+                $privWsCounter = $null
+                $lastPid = 0
+            }
+
             $msg = @(
                 $barTop,
-                "$cCyan$bV$cBold$cWhite   ⚡  METROHUB TUI MONITOR                                         $cCyan$bV$cReset",
+                (Format-TuiRow "  $cBold$cWhite METROHUB TUI MONITOR$cReset"),
                 $barMid,
-                "$cCyan$bV$cReset  $cYellow⏳ Waiting for MetroHub.exe to start...                               $cCyan$bV$cReset",
-                "$cCyan$bV$cReset  $cGray(Launch MetroHub or press Q to exit)                                 $cCyan$bV$cReset",
+                (Format-TuiRow "  $cYellow Waiting for MetroHub.exe to start...$cReset"),
+                (Format-TuiRow "  $cGray(Launch MetroHub or press Q to exit)$cReset"),
                 $barBot
             ) -join "`n"
 
             [Console]::Write("$esc[H$msg`n")
             Start-Sleep -Milliseconds 1000
             continue
+        }
+
+        # Initialize or recreate Private Working Set counter on process PID change
+        if (-not $privWsCounter -or $lastPid -ne $proc.Id) {
+            if ($privWsCounter) {
+                try { $privWsCounter.Dispose() } catch { }
+                $privWsCounter = $null
+            }
+            try {
+                $privWsCounter = New-Object System.Diagnostics.PerformanceCounter('Process', 'Working Set - Private', 'MetroHub', $true)
+                [void]$privWsCounter.NextValue()
+                $lastPid = $proc.Id
+            } catch {
+                $privWsCounter = $null
+            }
         }
 
         # Measure CPU delta over interval
@@ -177,7 +212,13 @@ try {
         $avgCpu = [Math]::Round(($totalCpuSum / $sampleCount), 2)
 
         # Process Metrics
+        $privateWsMb = if ($privWsCounter) {
+            try { [Math]::Round($privWsCounter.NextValue() / 1MB, 1) } catch { 0.0 }
+        } else { 0.0 }
+
         $ramMb = [Math]::Round($proc.WorkingSet64 / 1MB, 1)
+        if ($privateWsMb -le 0.0) { $privateWsMb = $ramMb }
+        $sharedMb = [Math]::Max(0.0, [Math]::Round($ramMb - $privateWsMb, 1))
         $peakRamMb = [Math]::Round($proc.PeakWorkingSet64 / 1MB, 1)
         $privateMb = [Math]::Round($proc.PrivateMemorySize64 / 1MB, 1)
         $threads = $proc.Threads.Count
@@ -188,7 +229,7 @@ try {
         $statusStr = if ($proc.Responding) { "$cNeonGreen$bDot RUNNING$cReset" } else { "$cRed$bDot HUNG$cReset" }
         $cpuCol = Get-PercentColor -val $cpuPercent
         $cpuBar = Get-ProgressBar -val $cpuPercent -maxVal 8.0 -width 24
-        $ramBar = Get-ProgressBar -val $ramMb -maxVal 100.0 -width 24
+        $ramBar = Get-ProgressBar -val $privateWsMb -maxVal 100.0 -width 24
         $spark = Get-Sparkline -history ($cpuHistory.ToArray()) -maxScale 8.0
         
         $missingSpark = $historyLimit - $cpuHistory.Count
@@ -196,16 +237,17 @@ try {
             $spark = ("$cDarkGray.$cReset" * $missingSpark) + $spark
         }
 
-        # Format rows cleanly
-        $r1 = "$cCyan$bV$cBold$cWhite  ⚡ METROHUB PERFORMANCE MONITOR                 $cReset$cGray[Tick: $($IntervalMs)ms]$cCyan      $bV$cReset"
-        $r2 = "$cCyan$bV$cReset  PID: $cWhite$($proc.Id.ToString().PadRight(7))$cReset Status: $statusStr$cReset  Uptime: $cWhite$uptimeStr$cReset   Cores: $cWhite$cores$cCyan  $bV$cReset"
-        $r3 = "$cCyan$bV$cBold$cWhite  PROCESSOR (CPU)$cReset                                                    $cCyan$bV$cReset"
-        $r4 = "$cCyan$bV$cReset  Usage:  $cpuCol$($cpuPercent.ToString("0.00").PadLeft(6))%$cReset  [$cpuBar$cReset]  $cGray(Max: 8%)$cCyan        $bV$cReset"
-        $r5 = "$cCyan$bV$cReset  Stats:  Avg: $cWhite$($avgCpu.ToString("0.00").PadLeft(5))%$cReset  Peak: $cWhite$($peakCpu.ToString("0.00").PadLeft(5))%$cReset  Samples: $cWhite$($sampleCount.ToString().PadRight(6))$cReset$cCyan$bV$cReset"
-        $r6 = "$cCyan$bV$cReset  Chart:  [$spark$cReset] $cGray(Last 36s)$cCyan      $bV$cReset"
-        $r7 = "$cCyan$bV$cBold$cWhite  MEMORY & SYSTEM$cReset                                                    $cCyan$bV$cReset"
-        $r8 = "$cCyan$bV$cReset  RAM:    $cNeonGreen$($ramMb.ToString("0.0").PadLeft(6)) MB$cReset [$ramBar$cReset]  $cGray(Goal: <100MB)$cCyan   $bV$cReset"
-        $r9 = "$cCyan$bV$cReset  Peak:   $cWhite$($peakRamMb.ToString("0.0").PadLeft(6)) MB$cReset  Private: $cWhite$($privateMb.ToString("0.0").PadLeft(6)) MB$cReset  Threads: $cWhite$($threads.ToString().PadLeft(3))$cReset  Handles: $cWhite$($handles.ToString().PadLeft(5))$cReset$cCyan$bV$cReset"
+        # Format rows with 100% guaranteed border alignment
+        $r1 = Format-TuiRow "  $cBold$cWhite METROHUB PERFORMANCE MONITOR$cReset$cGray                   [Tick: $($IntervalMs)ms]$cReset"
+        $r2 = Format-TuiRow "  PID: $cWhite$($proc.Id.ToString().PadRight(6))$cReset Status: $statusStr$cReset   Uptime: $cWhite$($uptimeStr)$cReset   Cores: $cWhite$($cores)$cReset"
+        $r3 = Format-TuiRow "  $cBold$cWhite PROCESSOR (CPU)$cReset"
+        $r4 = Format-TuiRow "  Usage:    $cpuCol$($cpuPercent.ToString('0.00').PadLeft(6))%$cReset  [$cpuBar]  $cGray(Target: <8%)$cReset"
+        $r5 = Format-TuiRow "  Stats:    Avg: $cWhite$($avgCpu.ToString('0.00').PadLeft(5))%$cReset  Peak: $cWhite$($peakCpu.ToString('0.00').PadLeft(5))%$cReset  Samples: $cWhite$($sampleCount.ToString().PadRight(6))$cReset"
+        $r6 = Format-TuiRow "  Chart:    [$spark] $cGray(Last 36s)$cReset"
+        $r7 = Format-TuiRow "  $cBold$cWhite MEMORY & SYSTEM$cReset"
+        $r8 = Format-TuiRow "  RAM:      $cNeonGreen$($privateWsMb.ToString('0.0').PadLeft(6)) MB$cReset  [$ramBar]  $cGray(Task Mgr Private)$cReset"
+        $r9 = Format-TuiRow "  Total WS: $cWhite$($ramMb.ToString('0.0').PadLeft(6)) MB$cReset  Shared: $cWhite$($sharedMb.ToString('0.0').PadLeft(6)) MB$cReset  Commit: $cWhite$($privateMb.ToString('0.0').PadLeft(6)) MB$cReset"
+        $r10 = Format-TuiRow "  Peak WS:  $cWhite$($peakRamMb.ToString('0.0').PadLeft(6)) MB$cReset  Threads: $cWhite$($threads.ToString().PadLeft(3))$cReset       Handles: $cWhite$($handles.ToString().PadLeft(5))$cReset"
         $help = "$cDim  [Q / Esc] Quit    [R] Reset Stats    [T] Toggle 500ms/1000ms$cReset"
 
         $output = @(
@@ -222,6 +264,7 @@ try {
             $r7,
             $r8,
             $r9,
+            $r10,
             $barBot,
             $help
         ) -join "`n"
@@ -231,6 +274,10 @@ try {
     }
 }
 finally {
+    if ($privWsCounter) {
+        try { $privWsCounter.Dispose() } catch { }
+        $privWsCounter = $null
+    }
     # Restore Console Cursor
     [Console]::Write("$esc[?25h")
     Write-Host "$cGray[Monitor stopped]$cReset"

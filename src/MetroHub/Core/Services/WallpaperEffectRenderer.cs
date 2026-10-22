@@ -14,7 +14,7 @@ namespace MetroHub.Core.Services;
 
 /// <summary>
 /// High-performance CPU pixel processing engine for retro and ambient wallpaper treatments
-/// (Dither, ASCII Art, Halftone Print, and Scanlines), ported from Zeron desktop.
+/// (Dither, ASCII Art, Halftone Print, and Scanlines),
 /// All pixel processing executes off the UI thread via Parallel.For with zero-allocation buffers
 /// and atomic disk caching.
 /// </summary>
@@ -52,7 +52,7 @@ public static class WallpaperEffectRenderer
     public static bool IsSupportedCpuEffect(string? effect) =>
         effect switch
         {
-            "Dither" or "Ascii" or "Halftone" or "Scanlines" => true,
+            "Dither" or "Ascii" or "Halftone" or "Scanlines" or "Blur" => true,
             _ => false
         };
 
@@ -145,6 +145,10 @@ public static class WallpaperEffectRenderer
                     ApplyHalftone(src, lumaHalftone, dst, w, h, isLightTheme, parallelOptions);
                     break;
 
+                case "Blur":
+                    ApplyBlur(src, dst, w, h, parallelOptions);
+                    break;
+
                 default:
                     return null;
             }
@@ -175,8 +179,9 @@ public static class WallpaperEffectRenderer
         }
         catch { }
 
-        // Dither is theme-independent per Zeron specification
+        // Dither and Blur are theme-independent
         string themeTag = string.Equals(effect, "Dither", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(effect, "Blur", StringComparison.OrdinalIgnoreCase)
             ? "shared"
             : (isLightTheme ? "light" : "dark");
 
@@ -525,6 +530,121 @@ public static class WallpaperEffectRenderer
         // Two-phase parallel pass: even rows then odd rows (eliminates all write collisions)
         Parallel.For(0, (rows + 1) / 2, opt, i => RenderRow(i * 2));
         Parallel.For(0, rows / 2, opt, i => RenderRow((i * 2) + 1));
+    }
+
+    /// <summary>
+    /// Applies a multi-pass separable box blur yielding a smooth frosted bokeh Gaussian blur (~28px visual radius)
+    /// running on background threads with zero runtime GPU shader overhead.
+    /// </summary>
+    public static void ApplyBlur(byte[] src, byte[] dst, int w, int h, ParallelOptions? options = null)
+    {
+        if (w <= 0 || h <= 0) return;
+        var opt = options ?? new ParallelOptions();
+        int r = Math.Clamp(12, 1, Math.Min(w - 1, h - 1));
+
+        // 3-pass separable box blur (Ivan Kuckir algorithm: 3 passes = precise Gaussian approximation)
+        // Pass 1: H (src -> dst), V (dst -> src)
+        BoxBlurH(src, dst, w, h, r, opt);
+        BoxBlurV(dst, src, w, h, r, opt);
+
+        // Pass 2: H (src -> dst), V (dst -> src)
+        BoxBlurH(src, dst, w, h, r, opt);
+        BoxBlurV(dst, src, w, h, r, opt);
+
+        // Pass 3: H (src -> dst), V (dst -> src)
+        BoxBlurH(src, dst, w, h, r, opt);
+        BoxBlurV(dst, src, w, h, r, opt);
+
+        // Final blurred result copied from scratch ping-pong buffer to destination
+        Buffer.BlockCopy(src, 0, dst, 0, src.Length);
+    }
+
+    private static void BoxBlurH(byte[] input, byte[] output, int w, int h, int r, ParallelOptions opt)
+    {
+        float invDiv = 1.0f / ((2 * r) + 1);
+
+        Parallel.For(0, h, opt, y =>
+        {
+            int rowOffset = y * w * 4;
+
+            int sumB = input[rowOffset + 0] * (r + 1);
+            int sumG = input[rowOffset + 1] * (r + 1);
+            int sumR = input[rowOffset + 2] * (r + 1);
+            int sumA = input[rowOffset + 3] * (r + 1);
+
+            for (int i = 1; i <= r; i++)
+            {
+                int idx = rowOffset + (Math.Min(i, w - 1) * 4);
+                sumB += input[idx + 0];
+                sumG += input[idx + 1];
+                sumR += input[idx + 2];
+                sumA += input[idx + 3];
+            }
+
+            for (int x = 0; x < w; x++)
+            {
+                int dIdx = rowOffset + (x * 4);
+                output[dIdx + 0] = (byte)((sumB * invDiv) + 0.5f);
+                output[dIdx + 1] = (byte)((sumG * invDiv) + 0.5f);
+                output[dIdx + 2] = (byte)((sumR * invDiv) + 0.5f);
+                output[dIdx + 3] = (byte)((sumA * invDiv) + 0.5f);
+
+                int xAdd = Math.Min(x + r + 1, w - 1);
+                int xSub = Math.Max(x - r, 0);
+
+                int idxAdd = rowOffset + (xAdd * 4);
+                int idxSub = rowOffset + (xSub * 4);
+
+                sumB += input[idxAdd + 0] - input[idxSub + 0];
+                sumG += input[idxAdd + 1] - input[idxSub + 1];
+                sumR += input[idxAdd + 2] - input[idxSub + 2];
+                sumA += input[idxAdd + 3] - input[idxSub + 3];
+            }
+        });
+    }
+
+    private static void BoxBlurV(byte[] input, byte[] output, int w, int h, int r, ParallelOptions opt)
+    {
+        float invDiv = 1.0f / ((2 * r) + 1);
+
+        Parallel.For(0, w, opt, x =>
+        {
+            int colOffset = x * 4;
+
+            int sumB = input[colOffset + 0] * (r + 1);
+            int sumG = input[colOffset + 1] * (r + 1);
+            int sumR = input[colOffset + 2] * (r + 1);
+            int sumA = input[colOffset + 3] * (r + 1);
+
+            for (int i = 1; i <= r; i++)
+            {
+                int idx = (Math.Min(i, h - 1) * w * 4) + colOffset;
+                sumB += input[idx + 0];
+                sumG += input[idx + 1];
+                sumR += input[idx + 2];
+                sumA += input[idx + 3];
+            }
+
+            for (int y = 0; y < h; y++)
+            {
+                int dIdx = (y * w * 4) + colOffset;
+                output[dIdx + 0] = (byte)((sumB * invDiv) + 0.5f);
+                output[dIdx + 1] = (byte)((sumG * invDiv) + 0.5f);
+                output[dIdx + 2] = (byte)((sumR * invDiv) + 0.5f);
+                output[dIdx + 3] = (byte)((sumA * invDiv) + 0.5f);
+
+                int yAdd = Math.Min(y + r + 1, h - 1);
+                int ySub = Math.Max(y - r, 0);
+
+                int idxAdd = (yAdd * w * 4) + colOffset;
+                int idxSub = (ySub * w * 4) + colOffset;
+
+                sumB += input[idxAdd + 0] - input[idxSub + 0];
+                sumG += input[idxAdd + 1] - input[idxSub + 1];
+                sumR += input[idxAdd + 2] - input[idxSub + 2];
+                sumA += input[idxAdd + 3] - input[idxSub + 3];
+            }
+        });
     }
 }
 

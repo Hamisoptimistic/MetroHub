@@ -447,19 +447,8 @@ public sealed class BackdropManager
                     return;
                 }
 
-                // Apply or clear Blur effect on Image
-                if (string.Equals(currentEffect, "Blur", StringComparison.OrdinalIgnoreCase))
-                {
-                    _wallpaperImage.Effect = new System.Windows.Media.Effects.BlurEffect
-                    {
-                        Radius = 28,
-                        RenderingBias = System.Windows.Media.Effects.RenderingBias.Performance
-                    };
-                }
-                else
-                {
-                    _wallpaperImage.Effect = null;
-                }
+                // Static wallpapers use pre-rendered CPU effects; runtime WPF BlurEffect is eliminated
+                _wallpaperImage.Effect = null;
 
                 BitmapSource? bmp = null;
                 if (WallpaperEffectRenderer.IsSupportedCpuEffect(currentEffect))
