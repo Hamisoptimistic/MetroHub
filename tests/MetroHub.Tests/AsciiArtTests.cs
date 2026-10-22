@@ -98,6 +98,7 @@ public class AsciiPackFormatTests
     [InlineData("moon-jellyfish", 0.85f)]
     [InlineData("switchback-dusk-drive", 0.82f)]
     [InlineData("towering-cumulus-sky", 0.85f)]
+    [InlineData("rainlight-hearth", 0.82f)]
     public void ShippedDotsPack_IsHalftone(string slug, float saturation)
     {
         string path = AsciiPack.GetPackPath(slug);

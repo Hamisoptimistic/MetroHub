@@ -10,7 +10,7 @@ namespace MetroHub.Core.AsciiArt;
 /// cell grid, bilinearly sampled brightness, percentile tone mapping, four dot
 /// sizes with an ordered dither, and quarter-pixel antialiased stamps.
 /// Pure pixel math over the pack arrays; no drawing engine, no per-frame
-/// allocations. Not thread-safe: call from one thread (the UI thread).
+/// allocations. Not thread-safe: call from one thread (the worker thread).
 /// </summary>
 public sealed class HalftonePainter
 {
@@ -18,6 +18,7 @@ public sealed class HalftonePainter
     private const float InkLuminance = 0.88f;       // canvas.js L(null)
     private const float UnknownInkCoverage = 0.30f; // glyphs.js cover() fallback
     private const int HistogramBins = 512;
+    private const int ToneLutSize = 1024;
 
     private static readonly float[] DotSizes = [0.2f, 0.5f, 0.85f, 1.32f];
     private static readonly int[] Bayer4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
@@ -34,8 +35,12 @@ public sealed class HalftonePainter
     private readonly float[] _brightness;
     private readonly byte[] _keyColor;
     private readonly int[] _histogram = new int[HistogramBins];
+    private readonly float[] _toneLut = new float[ToneLutSize];
     private readonly Dictionary<(int Radius, int X, int Y), DiskMask> _masks = [];
-    private readonly List<Dot>[] _layers;
+
+    // Pre-allocated flat dot layers: zero per-frame GC allocations
+    private readonly Dot[][] _layerDots;
+    private readonly int[] _layerCounts = new int[DotSizes.Length];
 
     /// <summary>Creates a painter for one pack at one cell size, in device pixels.</summary>
     public HalftonePainter(AsciiPack pack, int cellWidth, int cellHeight)
@@ -70,10 +75,26 @@ public sealed class HalftonePainter
 
         _brightness = new float[pack.Cells];
         _keyColor = new byte[pack.Cells];
-        _layers = new List<Dot>[DotSizes.Length];
-        for (int i = 0; i < _layers.Length; i++)
+
+        // Precompute gamma tone curve LUT: replaces 35,000 MathF.Pow calls per frame
+        float gamma = _tuning.ToneCurve;
+        for (int i = 0; i < ToneLutSize; i++)
         {
-            _layers[i] = [];
+            float t = i / (float)(ToneLutSize - 1);
+            _toneLut[i] = MathF.Pow(t, gamma);
+        }
+
+        // Pre-allocate dot layer buffers for max possible dots
+        float unit = Math.Min(cellWidth, cellHeight);
+        float step = unit / Math.Max(0.3f, _tuning.Density);
+        int columns = Math.Max(1, (int)((_pixelWidth / step) + 0.5f));
+        int rows = Math.Max(1, (int)((_pixelHeight / step) + 0.5f));
+        int maxDots = columns * rows;
+
+        _layerDots = new Dot[DotSizes.Length][];
+        for (int i = 0; i < DotSizes.Length; i++)
+        {
+            _layerDots[i] = new Dot[maxDots];
         }
     }
 
@@ -190,10 +211,7 @@ public sealed class HalftonePainter
 
     private void DrawDots(Span<uint> target, float low, float high)
     {
-        foreach (List<Dot> layer in _layers)
-        {
-            layer.Clear();
-        }
+        Array.Clear(_layerCounts);
 
         float unit = Math.Min(_cellWidth, _cellHeight);
         float step = unit / Math.Max(0.3f, _tuning.Density);
@@ -215,7 +233,8 @@ public sealed class HalftonePainter
                 }
 
                 float tone = Math.Clamp((value - low) / toneRange, 0f, 1f);
-                tone = MathF.Pow(tone, _tuning.ToneCurve);
+                int lutIndex = (int)(tone * (ToneLutSize - 1));
+                tone = _toneLut[lutIndex];
 
                 float scaled = (tone * DotSizes.Length) - 0.5f;
                 int level = (int)MathF.Floor(scaled);
@@ -239,16 +258,18 @@ public sealed class HalftonePainter
                     continue;
                 }
 
-                _layers[level].Add(new Dot(pixelX, pixelY, radius, _dotColors[key]));
+                _layerDots[level][_layerCounts[level]++] = new Dot(pixelX, pixelY, radius, _dotColors[key]);
             }
         }
 
         // Big dots last, so overlapping neighbours merge like printed halftone.
-        foreach (List<Dot> layer in _layers)
+        for (int level = 0; level < DotSizes.Length; level++)
         {
-            foreach (Dot dot in layer)
+            int count = _layerCounts[level];
+            Dot[] layer = _layerDots[level];
+            for (int i = 0; i < count; i++)
             {
-                Stamp(target, dot);
+                Stamp(target, layer[i]);
             }
         }
     }
@@ -295,9 +316,9 @@ public sealed class HalftonePainter
         int left = baseX - mask.Radius;
         int top = baseY - mask.Radius;
         int size = (mask.Radius * 2) + 1;
-        float red = (dot.Color >> 16) & 0xFF;
-        float green = (dot.Color >> 8) & 0xFF;
-        float blue = dot.Color & 0xFF;
+        uint red = (dot.Color >> 16) & 0xFF;
+        uint green = (dot.Color >> 8) & 0xFF;
+        uint blue = dot.Color & 0xFF;
 
         for (int y = 0; y < size; y++)
         {
@@ -317,19 +338,25 @@ public sealed class HalftonePainter
                     continue;
                 }
 
-                float coverage = mask.Coverage[maskBase + x];
-                if (coverage <= 0f)
+                uint alpha = mask.Coverage[maskBase + x];
+                if (alpha == 0)
                 {
                     continue;
                 }
 
-                // The canvas is opaque, so coverage is a plain lerp.
+                // Integer fixed-point blending: (fg * alpha + bg * (256 - alpha)) >> 8
+                // Always force 0xFF000000 alpha to keep pixels completely opaque.
                 uint pixel = target[rowBase + targetX];
-                float inverse = 1f - coverage;
-                byte outRed = (byte)((red * coverage) + (((pixel >> 16) & 0xFF) * inverse) + 0.5f);
-                byte outGreen = (byte)((green * coverage) + (((pixel >> 8) & 0xFF) * inverse) + 0.5f);
-                byte outBlue = (byte)((blue * coverage) + ((pixel & 0xFF) * inverse) + 0.5f);
-                target[rowBase + targetX] = 0xFF000000u | ((uint)outRed << 16) | ((uint)outGreen << 8) | outBlue;
+                uint invAlpha = 256u - alpha;
+                uint bgRed = (pixel >> 16) & 0xFF;
+                uint bgGreen = (pixel >> 8) & 0xFF;
+                uint bgBlue = pixel & 0xFF;
+
+                uint outRed = ((red * alpha) + (bgRed * invAlpha)) >> 8;
+                uint outGreen = ((green * alpha) + (bgGreen * invAlpha)) >> 8;
+                uint outBlue = ((blue * alpha) + (bgBlue * invAlpha)) >> 8;
+
+                target[rowBase + targetX] = 0xFF000000u | (outRed << 16) | (outGreen << 8) | outBlue;
             }
         }
     }
@@ -352,7 +379,7 @@ public sealed class HalftonePainter
         float centerY = offsetYQuarters / 4f;
         int edge = (int)MathF.Ceiling(radius + 1f);
         int size = (edge * 2) + 1;
-        float[] coverage = new float[size * size];
+        ushort[] coverage = new ushort[size * size];
 
         for (int y = 0; y < size; y++)
         {
@@ -372,7 +399,8 @@ public sealed class HalftonePainter
                     }
                 }
 
-                coverage[(y * size) + x] = hits / 16f;
+                // Map [0..16] hits to [0..256] fixed-point alpha (hits << 4)
+                coverage[(y * size) + x] = (ushort)(hits << 4);
             }
         }
 
@@ -417,5 +445,5 @@ public sealed class HalftonePainter
 
     private readonly record struct Dot(float X, float Y, float Radius, uint Color);
 
-    private readonly record struct DiskMask(int Radius, float[] Coverage);
+    private readonly record struct DiskMask(int Radius, ushort[] Coverage);
 }
