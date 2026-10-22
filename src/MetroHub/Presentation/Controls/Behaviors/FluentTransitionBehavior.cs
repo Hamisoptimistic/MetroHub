@@ -14,7 +14,7 @@ public enum FluentTransitionMode
 {
     None,
     VerticalDrillIn,   // Flow B: Y: +14 -> 0 (180ms)
-    HorizontalSlide    // Flow A: X: +24 -> 0 (Drill In) or -24 -> 0 (Back to Home) (220ms)
+    HorizontalSlide    // Flow A: X: +20 -> 0 (Drill In, 180ms) or In-Place Fade (Back to Home, 140ms)
 }
 
 /// <summary>
@@ -23,15 +23,15 @@ public enum FluentTransitionMode
 /// </summary>
 public static class FluentTransitionBehavior
 {
-    // ExponentialEase (Exponent 4.5) matches WinUI 3's cubic-bezier(0.1, 0.9, 0.2, 1.0)
-    // and feathers to 0.0 much more smoothly than CubicEase on 120Hz+ displays.
+    // CubicEase (EaseOut) matches WinUI 3 entrance curves and eliminates
+    // the extended subpixel crawl of high-exponent easing functions.
     private static readonly IEasingFunction FluentTransformEasing = CreateTransformEasing();
     private static readonly IEasingFunction FluentOpacityEasing = CreateOpacityEasing();
     private static int _cachedRefreshRate;
 
     private static IEasingFunction CreateTransformEasing()
     {
-        var ease = new ExponentialEase { EasingMode = EasingMode.EaseOut, Exponent = 4.5 };
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
         ease.Freeze();
         return ease;
     }
@@ -174,8 +174,10 @@ public static class FluentTransitionBehavior
         if (mode == FluentTransitionMode.HorizontalSlide)
         {
             bool isReturningHome = IsHomeState(control.Content);
-            offsetX = isReturningHome ? -24.0 : 24.0;
-            durationMs = 220;
+            // Drill-In slides in from +20px. Returning to Home uses in-place fade at 0px
+            // to avoid exposing an unrendered 20px gap on the right window edge.
+            offsetX = isReturningHome ? 0.0 : 20.0;
+            durationMs = isReturningHome ? 140 : 180;
         }
         else if (mode == FluentTransitionMode.VerticalDrillIn)
         {
@@ -228,7 +230,7 @@ public static class FluentTransitionBehavior
 
         int refreshRate = GetTargetFrameRate();
         var translateDuration = new Duration(TimeSpan.FromMilliseconds(durationMs));
-        var opacityDuration = new Duration(TimeSpan.FromMilliseconds(Math.Min(130, durationMs)));
+        var opacityDuration = new Duration(TimeSpan.FromMilliseconds(Math.Min(140, durationMs)));
 
         // Set resting base values before applying HoldEnd/Stop clocks
         target.Opacity = 1.0;
@@ -243,30 +245,44 @@ public static class FluentTransitionBehavior
         Timeline.SetDesiredFrameRate(animOpacity, refreshRate);
 
         double startOffset = mode == FluentTransitionMode.HorizontalSlide ? offsetX : offsetY;
-        var animTranslate = new DoubleAnimation(startOffset, 0.0, translateDuration)
-        {
-            EasingFunction = FluentTransformEasing,
-            FillBehavior = FillBehavior.Stop
-        };
-        Timeline.SetDesiredFrameRate(animTranslate, refreshRate);
 
         DependencyProperty translateProp = mode == FluentTransitionMode.HorizontalSlide
             ? TranslateTransform.XProperty
             : TranslateTransform.YProperty;
 
-        animTranslate.Completed += (_, _) =>
+        if (Math.Abs(startOffset) > 0.001)
         {
-            if ((int)target.GetValue(AnimationVersionProperty) != expectedVersion) return;
+            var animTranslate = new DoubleAnimation(startOffset, 0.0, translateDuration)
+            {
+                EasingFunction = FluentTransformEasing,
+                FillBehavior = FillBehavior.Stop
+            };
+            Timeline.SetDesiredFrameRate(animTranslate, refreshRate);
 
-            // Because FillBehavior.Stop automatically reverts to the base values (Opacity=1, X=0, Y=0)
-            // and we keep the persistent identity TranslateTransform attached, zero layout or visual
-            // tree mutations occur here—eliminating the end-of-animation snap.
-            target.BeginAnimation(UIElement.OpacityProperty, null);
-            transform.BeginAnimation(translateProp, null);
-        };
+            animTranslate.Completed += (_, _) =>
+            {
+                if ((int)target.GetValue(AnimationVersionProperty) != expectedVersion) return;
 
-        target.BeginAnimation(UIElement.OpacityProperty, animOpacity);
-        transform.BeginAnimation(translateProp, animTranslate);
+                // Because FillBehavior.Stop automatically reverts to the base values (Opacity=1, X=0, Y=0)
+                // and we keep the persistent identity TranslateTransform attached, zero layout or visual
+                // tree mutations occur here—eliminating the end-of-animation snap.
+                target.BeginAnimation(UIElement.OpacityProperty, null);
+                transform.BeginAnimation(translateProp, null);
+            };
+
+            target.BeginAnimation(UIElement.OpacityProperty, animOpacity);
+            transform.BeginAnimation(translateProp, animTranslate);
+        }
+        else
+        {
+            animOpacity.Completed += (_, _) =>
+            {
+                if ((int)target.GetValue(AnimationVersionProperty) != expectedVersion) return;
+                target.BeginAnimation(UIElement.OpacityProperty, null);
+            };
+
+            target.BeginAnimation(UIElement.OpacityProperty, animOpacity);
+        }
     }
 
     private static void ResetToRestingState(UIElement target, TranslateTransform transform)
