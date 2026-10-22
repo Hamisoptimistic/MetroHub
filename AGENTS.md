@@ -36,6 +36,7 @@ Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via
 - `src/MetroHub/Presentation` — shell (`Views/MainWindow`), canvas `Controls/Canvas/TileControl.*`, dialogs, themes, controllers.
 - `src/MetroHub/Widgets` — `Abstractions/WidgetViewModelBase.cs`, `Catalog/<Name>/` (ViewModel + View + Settings per widget), `Registry/WidgetRegistry.cs` (single source of widget metadata).
 - `tests/MetroHub.Tests` — xunit tests; references the app project.
+- Cut taglines, helper text and secondary labels. If a screen needs them to make sense, fix the layout.
 
 ## Widgets
 

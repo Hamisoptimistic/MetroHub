@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using MetroHub.Core.AsciiArt;
 using Xunit;
 
@@ -216,6 +218,235 @@ public class HalftonePainterTests
             }
         }
         return count;
+    }
+}
+
+public class HalftoneAudioGovernorTests
+{
+    [Fact]
+    public void Update_AdvancesActiveWavesAndPrunesExpired()
+    {
+        HalftoneAudioGovernor governor = new();
+        governor.TriggerBeat(10f, 10f);
+
+        AudioFrame frame1 = governor.Update(0f, 0f, 0f, 0f, 0.10f);
+        Assert.Equal(1, frame1.ActiveWaves.Length);
+        Assert.Equal(0.10f, frame1.ActiveWaves.Span[0].ElapsedSeconds, 2);
+
+        // Advance past lifetime (0.40s)
+        AudioFrame frame2 = governor.Update(0f, 0f, 0f, 0f, 0.35f);
+        Assert.Equal(0, frame2.ActiveWaves.Length);
+    }
+
+    [Fact]
+    public void Update_ExponentialDecayAndSnapToZero()
+    {
+        HalftoneAudioGovernor governor = new();
+        // Give a strong kick
+        AudioFrame frame = governor.Update(rawKick: 0.8f, rawBass: 0.8f, rawMid: 0.5f, rawTreble: 0.5f, deltaSeconds: 0.016f);
+        Assert.True(frame.Kick > 0.5f);
+
+        // Advance silence for 1 second
+        for (int i = 0; i < 60; i++)
+        {
+            frame = governor.Update(rawKick: 0f, rawBass: 0f, rawMid: 0f, rawTreble: 0f, deltaSeconds: 0.016f);
+        }
+
+        // Should decay and snap to exactly zero below epsilon 0.005
+        Assert.Equal(0f, frame.Kick);
+        Assert.Equal(0f, frame.Bass);
+        Assert.True(frame.IsSilent);
+        Assert.True(governor.IsAtRest);
+    }
+
+    [Fact]
+    public void TriggerBeat_CapsAtMaxConcurrentWaves()
+    {
+        HalftoneAudioGovernor governor = new();
+        for (int i = 0; i < 10; i++)
+        {
+            governor.TriggerBeat(i, i);
+        }
+
+        AudioFrame frame = governor.Update(0f, 0f, 0f, 0f, 0.016f);
+        Assert.Equal(HalftoneAudioGovernor.MaxConcurrentWaves, frame.ActiveWaves.Length);
+    }
+}
+
+public class HalftoneAudioRenderingTests
+{
+    private const uint Canvas = 0xFF0B0B0F;
+
+    [Fact]
+    public void Render_WithBass_ExpandsDotsComparedToRest()
+    {
+        using TestPackFile file = new(TestPack.BuildHalftone(TestPack.Ramp, [(1, 1), (1, 1), (2, 1), (2, 1)]));
+        AsciiPack pack = AsciiPack.Load(file.Path);
+        HalftonePainter painter = new(pack, cellWidth: 8, cellHeight: 8);
+
+        uint[] targetRest = new uint[pack.Cols * 8 * pack.Rows * 8];
+        targetRest.AsSpan().Fill(Canvas);
+        painter.Render(targetRest, 0, AudioFrame.Default);
+
+        uint[] targetBass = new uint[pack.Cols * 8 * pack.Rows * 8];
+        targetBass.AsSpan().Fill(Canvas);
+        AudioFrame loudFrame = new(Kick: 0.5f, Bass: 1.0f, Mid: 0.5f, Treble: 0f, IsSilent: false, ReadOnlyMemory<HalftoneAudioWave>.Empty);
+        painter.Render(targetBass, 0, loudFrame);
+
+        int restInked = CountInked(targetRest, 32, 0, 32);
+        int bassInked = CountInked(targetBass, 32, 0, 32);
+
+        Assert.True(bassInked >= restInked, $"Loud bass ({bassInked}) should produce at least as much ink as rest ({restInked}).");
+    }
+
+    private static int CountInked(uint[] target, int width, int fromX, int toX)
+    {
+        int count = 0;
+        for (int y = 0; y < target.Length / width; y++)
+        {
+            for (int x = fromX; x < toX; x++)
+            {
+                if (target[(y * width) + x] != Canvas)
+                {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+}
+
+public class AsciiPackFromImageTests
+{
+    [Fact]
+    public void FromImage_RejectsNonExistentFile()
+    {
+        Assert.Throws<FileNotFoundException>(() => AsciiPack.FromImage(@"C:\non_existent_metrohub_test_img.jpg"));
+    }
+
+    [Fact]
+    public void FromImage_ProducesValidHalftonePack()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            string tempPng = Path.Combine(Path.GetTempPath(), $"metrohub_test_{Guid.NewGuid():N}.png");
+            try
+            {
+                // Write a tiny 16x16 PNG file
+                WriteSolidPng(tempPng, 16, 16, 200, 100, 50);
+
+                AsciiPack pack = AsciiPack.FromImage(tempPng, targetCols: 16, targetRows: 9);
+
+                Assert.Equal(AsciiRenderMode.Halftone, pack.RenderMode);
+                Assert.Equal(16, pack.Cols);
+                Assert.Equal(9, pack.Rows);
+                Assert.Equal(144, pack.Cells);
+                Assert.Equal(256, pack.Colors.Length);
+                Assert.Equal(144, pack.GlyphIds.Length);
+                Assert.Equal(144, pack.ColorIds.Length);
+            }
+            finally
+            {
+                if (File.Exists(tempPng))
+                {
+                    File.Delete(tempPng);
+                }
+            }
+        });
+    }
+
+    private static void WriteSolidPng(string path, int width, int height, byte r, byte g, byte b)
+    {
+        int stride = width * 4;
+        byte[] pixels = new byte[height * stride];
+        for (int i = 0; i < pixels.Length; i += 4)
+        {
+            pixels[i] = b;
+            pixels[i + 1] = g;
+            pixels[i + 2] = r;
+            pixels[i + 3] = 255;
+        }
+
+        BitmapSource bmp = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, pixels, stride);
+        using FileStream fs = File.Create(path);
+        PngBitmapEncoder encoder = new();
+        encoder.Frames.Add(BitmapFrame.Create(bmp));
+        encoder.Save(fs);
+    }
+}
+
+public class TrueColorHalftoneEngineTests
+{
+    private const uint Canvas = 0xFF0B0B0F;
+
+    [Fact]
+    public void TrueColorHalftone_RendersAntialiasedDotsOverCanvas()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            string tempPng = Path.Combine(Path.GetTempPath(), $"metrohub_truecolor_test_{Guid.NewGuid():N}.png");
+            try
+            {
+                // Write a 64x64 bright cyan image
+                WriteSolidPng(tempPng, 64, 64, 0, 200, 255);
+
+                TrueColorHalftoneEngine engine = new(tempPng, targetWidth: 64, targetHeight: 64, cellSize: 6.0f);
+                Assert.Equal(64, engine.Width);
+                Assert.Equal(64, engine.Height);
+
+                uint[] bufferRest = new uint[64 * 64];
+                bufferRest.AsSpan().Fill(Canvas);
+                engine.Render(bufferRest, AudioFrame.Default);
+
+                int inkedRest = 0;
+                foreach (uint p in bufferRest)
+                {
+                    if (p != Canvas) inkedRest++;
+                }
+
+                Assert.True(inkedRest > 0, "Engine should stamp inked dots for bright image.");
+
+                // Render with loud bass
+                uint[] bufferBass = new uint[64 * 64];
+                bufferBass.AsSpan().Fill(Canvas);
+                AudioFrame bassFrame = new(Kick: 0f, Bass: 1.0f, Mid: 0f, Treble: 0f, IsSilent: false, ReadOnlyMemory<HalftoneAudioWave>.Empty);
+                engine.Render(bufferBass, bassFrame);
+
+                int inkedBass = 0;
+                foreach (uint p in bufferBass)
+                {
+                    if (p != Canvas) inkedBass++;
+                }
+
+                Assert.True(inkedBass >= inkedRest, $"Loud bass ({inkedBass}) should produce at least as much ink as rest ({inkedRest}).");
+            }
+            finally
+            {
+                if (File.Exists(tempPng))
+                {
+                    File.Delete(tempPng);
+                }
+            }
+        });
+    }
+
+    private static void WriteSolidPng(string path, int width, int height, byte r, byte g, byte b)
+    {
+        int stride = width * 4;
+        byte[] pixels = new byte[height * stride];
+        for (int i = 0; i < pixels.Length; i += 4)
+        {
+            pixels[i] = b;
+            pixels[i + 1] = g;
+            pixels[i + 2] = r;
+            pixels[i + 3] = 255;
+        }
+
+        BitmapSource bmp = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, pixels, stride);
+        using FileStream fs = File.Create(path);
+        PngBitmapEncoder encoder = new();
+        encoder.Frames.Add(BitmapFrame.Create(bmp));
+        encoder.Save(fs);
     }
 }
 

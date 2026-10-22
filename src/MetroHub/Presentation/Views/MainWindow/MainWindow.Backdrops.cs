@@ -31,7 +31,8 @@ public partial class MainWindow
         ContentScrollViewer,
         ShowToast,
         UpdateBackdropMenuChecks,
-        ApplyAsciiScene);
+        ApplyAsciiScene,
+        ApplyLiveHalftone);
 
     private readonly List<(string Slug, MenuItem Item)> _liveSceneItems = [];
     private string? _currentSceneSlug;
@@ -182,6 +183,52 @@ public partial class MainWindow
         }
     }
 
+    private string? _currentHalftoneImagePath;
+
+    /// <summary>Starts, keeps, or stops the live audio-reactive halftone wallpaper.</summary>
+    private void ApplyLiveHalftone(string? imagePath)
+    {
+        if (string.IsNullOrWhiteSpace(imagePath))
+        {
+            if (_currentHalftoneImagePath != null)
+            {
+                _currentHalftoneImagePath = null;
+                AsciiSceneWallpaper.Unload();
+                AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
+            }
+            return;
+        }
+
+        if (string.Equals(_currentHalftoneImagePath, imagePath, StringComparison.OrdinalIgnoreCase) && AsciiSceneWallpaper.HasScene)
+        {
+            AsciiSceneWallpaper.Visibility = Visibility.Visible;
+            return;
+        }
+
+        if (!File.Exists(imagePath))
+        {
+            _currentHalftoneImagePath = null;
+            AsciiSceneWallpaper.Unload();
+            AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        try
+        {
+            _currentSceneSlug = null;
+            AsciiSceneWallpaper.LoadFromImage(imagePath);
+            AsciiSceneWallpaper.Visibility = Visibility.Visible;
+            _currentHalftoneImagePath = imagePath;
+        }
+        catch (Exception ex)
+        {
+            _currentHalftoneImagePath = null;
+            AsciiSceneWallpaper.Unload();
+            AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
+            Serilog.Log.Warning(ex, "Failed to load audio-reactive halftone wallpaper from {Path}", imagePath);
+        }
+    }
+
     private void OnWallpaperDimLightClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.50);
     private void OnWallpaperDimBalancedClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.70);
     private void OnWallpaperDimHeavyClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.85);
@@ -189,6 +236,7 @@ public partial class MainWindow
     private void SetWallpaperDim(double opacity) => BackdropManager.SetWallpaperDim(opacity);
 
     private void OnWallpaperEffectNoneClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("None");
+    private void OnWallpaperEffectAudioHalftoneClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("AudioHalftone");
     private void OnWallpaperEffectDitherClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Dither");
     private void OnWallpaperEffectAsciiClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Ascii");
     private void OnWallpaperEffectHalftoneClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Halftone");
@@ -321,6 +369,7 @@ public partial class MainWindow
 
         string currentEffect = Settings.WallpaperEffect ?? "None";
         if (EffectNoneItem != null) EffectNoneItem.IsChecked = string.Equals(currentEffect, "None", StringComparison.OrdinalIgnoreCase);
+        if (EffectAudioHalftoneItem != null) EffectAudioHalftoneItem.IsChecked = string.Equals(currentEffect, "AudioHalftone", StringComparison.OrdinalIgnoreCase);
         if (EffectDitherItem != null) EffectDitherItem.IsChecked = string.Equals(currentEffect, "Dither", StringComparison.OrdinalIgnoreCase);
         if (EffectAsciiItem != null) EffectAsciiItem.IsChecked = string.Equals(currentEffect, "Ascii", StringComparison.OrdinalIgnoreCase);
         if (EffectHalftoneItem != null) EffectHalftoneItem.IsChecked = string.Equals(currentEffect, "Halftone", StringComparison.OrdinalIgnoreCase);

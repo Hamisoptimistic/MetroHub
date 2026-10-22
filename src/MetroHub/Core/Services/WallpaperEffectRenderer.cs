@@ -180,7 +180,11 @@ public static class WallpaperEffectRenderer
             ? "shared"
             : (isLightTheme ? "light" : "dark");
 
-        return $"{name}_{length:X}_{ticks:X}_{effect.ToLowerInvariant()}_{themeTag}";
+        string effectKey = string.Equals(effect, "Halftone", StringComparison.OrdinalIgnoreCase)
+            ? "halftone_v2"
+            : effect.ToLowerInvariant();
+
+        return $"{name}_{length:X}_{ticks:X}_{effectKey}_{themeTag}";
     }
 
     private static BitmapImage? LoadFrozenBitmap(string path)
@@ -425,36 +429,102 @@ public static class WallpaperEffectRenderer
     public static void ApplyHalftone(byte[] src, byte[] luma, byte[] dst, int w, int h, bool light, ParallelOptions? options = null)
     {
         var opt = options ?? new ParallelOptions();
-        float paper = light ? 255f : 0f;
 
-        Parallel.For(0, (h + 3) / 4, opt, yy =>
+        // 1. Initialize canvas background (dark #0B0B0F or light #F5F5F7), preserving source alpha
+        byte bgR = light ? (byte)245 : (byte)11;
+        byte bgG = light ? (byte)245 : (byte)11;
+        byte bgB = light ? (byte)247 : (byte)15;
+
+        Parallel.For(0, h, opt, y =>
         {
-            int y = yy * 4;
-            for (int x = 0; x < w; x += 4)
+            int rowBase = y * w * 4;
+            for (int x = 0; x < w; x++)
             {
-                int v = light ? 255 - luma[(y * w) + x] : luma[(y * w) + x];
-                float radius = 2f * (0.3f + (0.7f * MathF.Sqrt(v / 255f)));
-                int s = ((Math.Min(y + 2, h - 1) * w) + Math.Min(x + 2, w - 1)) * 4;
-                float dotA = src[s + 3] / 255f;
+                int idx = rowBase + (x * 4);
+                dst[idx] = bgB;
+                dst[idx + 1] = bgG;
+                dst[idx + 2] = bgR;
+                dst[idx + 3] = src[idx + 3];
+            }
+        });
 
-                for (int dy = 0; dy < 4 && y + dy < h; dy++)
+        // 2. High-density equilateral hexagonal honeycomb dot geometry
+        const float cellSize = 6.0f;
+        const float maxRadius = (cellSize * 0.5f) * 1.08f;
+        const float stepX = cellSize;
+        const float stepY = cellSize * 0.8660254f; // sqrt(3)/2
+
+        int rows = (int)Math.Ceiling(h / stepY) + 1;
+        int cols = (int)Math.Ceiling(w / stepX) + 1;
+
+        void RenderRow(int row)
+        {
+            float cy = (row + 0.5f) * stepY;
+            if (cy < 0 || cy >= h) return;
+
+            float xOffset = (row & 1) * (stepX * 0.5f);
+
+            for (int col = 0; col < cols; col++)
+            {
+                float cx = (col * stepX) + xOffset;
+                if (cx < 0 || cx >= w) continue;
+
+                int sampleX = Math.Clamp((int)cx, 0, w - 1);
+                int sampleY = Math.Clamp((int)cy, 0, h - 1);
+                int sampleIdx = (sampleY * w) + sampleX;
+                int s = sampleIdx * 4;
+
+                float lumaVal = light ? (255 - luma[sampleIdx]) : luma[sampleIdx];
+                float normLuma = lumaVal / 255.0f;
+                float radius = maxRadius * MathF.Pow(normLuma, 0.70f);
+
+                if (radius < 0.35f) continue;
+
+                byte srcB = src[s];
+                byte srcG = src[s + 1];
+                byte srcR = src[s + 2];
+
+                int minX = Math.Max(0, (int)MathF.Floor(cx - radius - 1f));
+                int maxX = Math.Min(w - 1, (int)MathF.Ceiling(cx + radius + 1f));
+                int minY = Math.Max(0, (int)MathF.Floor(cy - radius - 1f));
+                int maxY = Math.Min(h - 1, (int)MathF.Ceiling(cy + radius + 1f));
+
+                float rPlusHalf = radius + 0.5f;
+                float rPlusHalfSq = rPlusHalf * rPlusHalf;
+
+                for (int py = minY; py <= maxY; py++)
                 {
-                    for (int dx = 0; dx < 4 && x + dx < w; dx++)
-                    {
-                        float distance = MathF.Sqrt(((dx - 1.5f) * (dx - 1.5f)) + ((dy - 1.5f) * (dy - 1.5f)));
-                        float coverage = Math.Clamp(radius + 0.5f - distance, 0f, 1f) * dotA;
+                    int rowBase = py * w * 4;
+                    float dy = py - cy;
+                    float dySq = dy * dy;
 
-                        int i = (((y + dy) * w) + (x + dx)) * 4;
-                        for (int ch = 0; ch < 3; ch++)
-                        {
-                            float dot = (src[s + ch] * coverage) + (paper * (1f - coverage));
-                            dst[i + ch] = ToByte((src[i + ch] * 0.60f) + (dot * 0.40f));
-                        }
-                        dst[i + 3] = src[i + 3];
+                    for (int px = minX; px <= maxX; px++)
+                    {
+                        float dx = px - cx;
+                        float distSq = (dx * dx) + dySq;
+                        if (distSq > rPlusHalfSq) continue;
+
+                        float dist = MathF.Sqrt(distSq);
+                        float coverage = Math.Clamp(rPlusHalf - dist, 0f, 1f);
+                        if (coverage <= 0f) continue;
+
+                        int idx = rowBase + (px * 4);
+                        byte curB = dst[idx];
+                        byte curG = dst[idx + 1];
+                        byte curR = dst[idx + 2];
+
+                        dst[idx] = (byte)((srcB * coverage) + (curB * (1f - coverage)));
+                        dst[idx + 1] = (byte)((srcG * coverage) + (curG * (1f - coverage)));
+                        dst[idx + 2] = (byte)((srcR * coverage) + (curR * (1f - coverage)));
+                        dst[idx + 3] = src[idx + 3];
                     }
                 }
             }
-        });
+        }
+
+        // Two-phase parallel pass: even rows then odd rows (eliminates all write collisions)
+        Parallel.For(0, (rows + 1) / 2, opt, i => RenderRow(i * 2));
+        Parallel.For(0, rows / 2, opt, i => RenderRow((i * 2) + 1));
     }
 }
 

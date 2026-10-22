@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Serilog;
 
 namespace MetroHub.Core.AsciiArt;
@@ -444,5 +445,206 @@ public sealed class AsciiPack
             throw new InvalidDataException("Frame data ended early.");
         }
         return body[cursor++];
+    }
+
+    private const string HalftoneRamp = " ▁▂▃▄▅▆▇█";
+
+    /// <summary>
+    /// Constructs a single-frame static <see cref="AsciiPack"/> from an image or desktop wallpaper.
+    /// Uses DecodePixelWidth only, freezes bitmap, and maps pixels into a 160x90 halftone grid.
+    /// </summary>
+    public static AsciiPack FromImage(string imagePath, int targetCols = 160, int targetRows = 90)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(imagePath);
+        if (!File.Exists(imagePath))
+        {
+            throw new FileNotFoundException("Wallpaper image file not found.", imagePath);
+        }
+
+        targetCols = Math.Clamp(targetCols, 16, 320);
+        targetRows = Math.Clamp(targetRows, 9, 180);
+
+        BitmapImage src = new();
+        src.BeginInit();
+        src.UriSource = new Uri(imagePath, UriKind.Absolute);
+        src.CacheOption = BitmapCacheOption.OnLoad;
+        src.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+        src.DecodePixelWidth = targetCols * 4;
+        src.EndInit();
+        src.Freeze();
+
+        FormatConvertedBitmap converted = new(src, PixelFormats.Bgra32, null, 0);
+        converted.Freeze();
+
+        int imgW = converted.PixelWidth;
+        int imgH = converted.PixelHeight;
+        int stride = imgW * 4;
+        byte[] pixelData = new byte[imgH * stride];
+        converted.CopyPixels(pixelData, stride, 0);
+
+        int totalCells = targetCols * targetRows;
+        byte[] glyphIds = new byte[totalCells];
+        byte[] colorIds = new byte[totalCells];
+
+        Color[] palette = BuildColorPalette();
+        char[] glyphs = [' ', '█'];
+
+        // Detect Windows wallpaper fit mode: 10 = Fill, 6 = Fit, 2 = Stretch, 0 = Center
+        string? style = null;
+        try
+        {
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop");
+            style = key?.GetValue("WallpaperStyle") as string;
+        }
+        catch { }
+
+        // Compute source sampling window based on fit mode
+        float startX = 0f, startY = 0f, spanW = imgW, spanH = imgH;
+        if (style == "6") // Fit (letterbox / pillarbox)
+        {
+            float gridAspect = (float)targetCols / targetRows;
+            float imgAspect = (float)imgW / imgH;
+            if (imgAspect > gridAspect)
+            {
+                // Letterbox: pad vertically
+                spanW = imgW;
+                spanH = imgW / gridAspect;
+                startY = -(spanH - imgH) * 0.5f;
+            }
+            else
+            {
+                // Pillarbox: pad horizontally
+                spanH = imgH;
+                spanW = imgH * gridAspect;
+                startX = -(spanW - imgW) * 0.5f;
+            }
+        }
+        else if (style != "2") // Default to Fill (UniformToFill)
+        {
+            float gridAspect = (float)targetCols / targetRows;
+            float imgAspect = (float)imgW / imgH;
+            if (imgAspect > gridAspect)
+            {
+                // Crop sides
+                spanH = imgH;
+                spanW = imgH * gridAspect;
+                startX = (imgW - spanW) * 0.5f;
+            }
+            else
+            {
+                // Crop top/bottom
+                spanW = imgW;
+                spanH = imgW / gridAspect;
+                startY = (imgH - spanH) * 0.5f;
+            }
+        }
+
+        for (int row = 0; row < targetRows; row++)
+        {
+            float normY = (row + 0.5f) / targetRows;
+            int srcY = (int)(startY + (normY * spanH));
+
+            for (int col = 0; col < targetCols; col++)
+            {
+                float normX = (col + 0.5f) / targetCols;
+                int srcX = (int)(startX + (normX * spanW));
+                int cellIdx = (row * targetCols) + col;
+
+                if (srcX < 0 || srcX >= imgW || srcY < 0 || srcY >= imgH)
+                {
+                    // Letterbox / pillarbox padding: empty dark cell
+                    glyphIds[cellIdx] = 0; // Space
+                    colorIds[cellIdx] = 0;
+                    continue;
+                }
+
+                int pxOffset = (srcY * stride) + (srcX * 4);
+                byte b = pixelData[pxOffset];
+                byte g = pixelData[pxOffset + 1];
+                byte r = pixelData[pxOffset + 2];
+
+                // All valid image cells use solid glyph '█' (index 1).
+                // HalftonePainter calculates dot radius linearly from the palette color luminance.
+                glyphIds[cellIdx] = 1;
+
+                // Quantize to palette
+                colorIds[cellIdx] = FindNearestPaletteIndex(r, g, b);
+            }
+        }
+
+        return new AsciiPack
+        {
+            Slug = "wallpaper-halftone",
+            Name = "Wallpaper Halftone",
+            Cols = targetCols,
+            Rows = targetRows,
+            Fps = 60,
+            FrameCount = 1,
+            RenderMode = AsciiRenderMode.Halftone,
+            LoopMode = AsciiLoopMode.Loop,
+            HalftoneOptions = new AsciiHalftoneOptions(
+                Density: 1.31f,
+                DotScale: 0.85f,
+                ToneLow: 0.00f,
+                ToneHigh: 1.00f,
+                ToneCurve: 0.85f,
+                Saturation: 1.05f),
+            CellAspect = 1.0,
+            Colors = palette,
+            Glyphs = glyphs,
+            GlyphIds = glyphIds,
+            ColorIds = colorIds
+        };
+    }
+
+    private static Color[] BuildColorPalette()
+    {
+        Color[] palette = new Color[256];
+        palette[0] = DefaultInk;
+
+        // 6x6x6 RGB cube: indices 1..216
+        int idx = 1;
+        for (int r = 0; r < 6; r++)
+        {
+            byte red = (byte)(r * 51);
+            for (int g = 0; g < 6; g++)
+            {
+                byte green = (byte)(g * 51);
+                for (int b = 0; b < 6; b++)
+                {
+                    byte blue = (byte)(b * 51);
+                    palette[idx++] = Color.FromRgb(red, green, blue);
+                }
+            }
+        }
+
+        // Grayscale ramp: indices 217..255 (39 shades)
+        for (int i = 0; i < 39; i++)
+        {
+            byte gray = (byte)(i * 255 / 38);
+            palette[idx++] = Color.FromRgb(gray, gray, gray);
+        }
+
+        return palette;
+    }
+
+    private static byte FindNearestPaletteIndex(byte r, byte g, byte b)
+    {
+        // Near-neutral colors map to the fine-grained grayscale ramp
+        int diffRG = Math.Abs(r - g);
+        int diffGB = Math.Abs(g - b);
+        int diffRB = Math.Abs(r - b);
+
+        if (diffRG <= 8 && diffGB <= 8 && diffRB <= 8)
+        {
+            int avg = (r + g + b) / 3;
+            int grayStep = Math.Clamp(avg * 38 / 255, 0, 38);
+            return (byte)(217 + grayStep);
+        }
+
+        int rIdx = Math.Clamp((r + 25) / 51, 0, 5);
+        int gIdx = Math.Clamp((g + 25) / 51, 0, 5);
+        int bIdx = Math.Clamp((b + 25) / 51, 0, 5);
+        return (byte)(1 + (rIdx * 36) + (gIdx * 6) + bIdx);
     }
 }

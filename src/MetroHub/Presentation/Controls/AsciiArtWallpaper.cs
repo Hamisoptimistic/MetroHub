@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using MetroHub.Core.AsciiArt;
+using MetroHub.Core.Radio;
 
 namespace MetroHub.Presentation.Controls;
 
@@ -38,6 +39,7 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
     private readonly DrawingVisual _sceneVisual = new();
 
     private AsciiPack? _pack;
+    private TrueColorHalftoneEngine? _trueColorHalftone;
     private WriteableBitmap? _bitmap;
     private HalftonePainter? _halftone;
 
@@ -53,6 +55,12 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
     private CancellationTokenSource? _cts;
     private Task? _renderTask;
     private bool _isAnimating;
+
+    private readonly HalftoneAudioGovernor _audioGovernor = new();
+    private readonly ManualResetEventSlim _wakeEvent = new(false);
+    private bool _isAudioReactive;
+    private bool _isAtRestRendered;
+    private bool _isAudioHooked;
 
     private byte[] _atlas = [];
     private uint[] _colorLookup = [];
@@ -76,7 +84,7 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
         IsVisibleChanged += OnIsVisibleChanged;
     }
 
-    public bool HasScene => _pack is not null;
+    public bool HasScene => _pack is not null || _trueColorHalftone is not null;
 
     /// <summary>Loads a pack and starts playback. Replaces any current scene.</summary>
     public void Load(string path)
@@ -84,8 +92,29 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
         AsciiPack pack = AsciiPack.Load(path);
+        LoadPack(pack, isAudioReactive: false);
+    }
+
+    /// <summary>Loads an in-memory pack and starts playback, with optional audio-reactive dynamics.</summary>
+    public void LoadPack(AsciiPack pack, bool isAudioReactive = false)
+    {
+        ArgumentNullException.ThrowIfNull(pack);
+
         Unload();
         _pack = pack;
+        _isAudioReactive = isAudioReactive;
+        RebuildSurface();
+        StartClock();
+    }
+
+    /// <summary>Loads a static image or desktop wallpaper as an audio-reactive high-density TrueColor halftone living canvas.</summary>
+    public void LoadFromImage(string imagePath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(imagePath);
+
+        Unload();
+        _isAudioReactive = true;
+        _trueColorHalftone = new TrueColorHalftoneEngine(imagePath, MaxRasterWidth, MaxRasterHeight);
         RebuildSurface();
         StartClock();
     }
@@ -95,8 +124,12 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
     {
         StopClock();
         _pack = null;
+        _trueColorHalftone = null;
         _bitmap = null;
         _halftone = null;
+        _isAudioReactive = false;
+        _isAtRestRendered = false;
+        _audioGovernor.Reset();
         _atlas = [];
         _colorLookup = [];
         _cellWidth = 0;
@@ -178,7 +211,7 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
         if (IsVisible && !_isWindowMinimized)
         {
             RebuildSurface();
-            if (_pack is not null)
+            if (_pack is not null || _trueColorHalftone is not null)
             {
                 StartClock();
             }
@@ -191,7 +224,7 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
         if (IsVisible && !_isWindowMinimized)
         {
             RebuildSurface();
-            if (_pack is not null)
+            if (_pack is not null || _trueColorHalftone is not null)
             {
                 StartClock();
             }
@@ -241,7 +274,7 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
                 StopClock();
                 TrimSurface();
             }
-            else if (IsVisible && _pack is not null)
+            else if (IsVisible && (_pack is not null || _trueColorHalftone is not null))
             {
                 if (_bufferPtrs[0] == 0)
                 {
@@ -257,19 +290,23 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
     /// </summary>
     private void StartClock()
     {
-        AsciiPack? pack = _pack;
-        if (pack is null || _isAnimating)
+        if ((_pack is null && _trueColorHalftone is null) || _isAnimating)
         {
             return;
         }
 
         HookWindowEvents();
+        if (_isAudioReactive)
+        {
+            HookAudioEvents();
+        }
+
         _isAnimating = true;
         _cts = new CancellationTokenSource();
         CancellationToken token = _cts.Token;
 
         _renderTask = Task.Factory.StartNew(
-            () => WorkerLoop(pack, token),
+            () => WorkerLoop(_pack, _trueColorHalftone, token),
             token,
             TaskCreationOptions.LongRunning,
             TaskScheduler.Default);
@@ -287,6 +324,8 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
             return;
         }
 
+        UnhookAudioEvents();
+        _wakeEvent.Set();
         _isAnimating = false;
         CompositionTarget.Rendering -= OnRendering;
 
@@ -307,11 +346,44 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
         }
     }
 
+    private void HookAudioEvents()
+    {
+        if (_isAudioHooked) return;
+        _isAudioHooked = true;
+        RadioAudioService.Instance.PlaybackStateChanged += OnPlaybackStateChanged;
+        RadioAudioService.Instance.BassBeatTriggered += OnBassBeatTriggered;
+    }
+
+    private void UnhookAudioEvents()
+    {
+        if (!_isAudioHooked) return;
+        _isAudioHooked = false;
+        RadioAudioService.Instance.PlaybackStateChanged -= OnPlaybackStateChanged;
+        RadioAudioService.Instance.BassBeatTriggered -= OnBassBeatTriggered;
+    }
+
+    private void OnPlaybackStateChanged(object? sender, bool isPlaying)
+    {
+        if (isPlaying)
+        {
+            _wakeEvent.Set();
+        }
+    }
+
+    private void OnBassBeatTriggered(object? sender, EventArgs e)
+    {
+        if (_isAudioReactive)
+        {
+            _audioGovernor.TriggerBeat();
+            _wakeEvent.Set();
+        }
+    }
+
     private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (IsVisible && !_isWindowMinimized)
         {
-            if (_pack is not null)
+            if (_pack is not null || _trueColorHalftone is not null)
             {
                 if (_bufferPtrs[0] == 0)
                 {
@@ -335,14 +407,20 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
     /// target FPS, then atomically publishes completed buffers to the ready slot.
     /// Sleeps while the parent window is minimized to consume 0% CPU.
     /// </summary>
-    private unsafe void WorkerLoop(AsciiPack pack, CancellationToken token)
+    private unsafe void WorkerLoop(AsciiPack? pack, TrueColorHalftoneEngine? trueColor, CancellationToken token)
     {
         Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-        double fps = Math.Clamp(pack.Fps, 1, 60);
+        double fps = 60.0;
+        if (pack is not null && !_isAudioReactive)
+        {
+            fps = Math.Clamp(pack.Fps, 1, 60);
+        }
+
         long intervalTicks = (long)(Stopwatch.Frequency / fps);
         long nextTick = Stopwatch.GetTimestamp();
         long frameTick = 0;
+        long lastTickTime = nextTick;
 
         while (!token.IsCancellationRequested)
         {
@@ -350,6 +428,8 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
             if (_isWindowMinimized)
             {
                 Thread.Sleep(100);
+                nextTick = Stopwatch.GetTimestamp();
+                lastTickTime = nextTick;
                 continue;
             }
 
@@ -368,6 +448,9 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
                 continue;
             }
 
+            float dt = Math.Clamp((float)(now - lastTickTime) / Stopwatch.Frequency, 0.001f, 0.1f);
+            lastTickTime = now;
+
             nextTick += intervalTicks;
             if (now > nextTick + intervalTicks)
             {
@@ -382,18 +465,64 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
                 continue;
             }
 
-            int frameIndex = AsciiPack.GetPlaybackFrame(frameTick++, pack.FrameCount, pack.LoopMode);
+            int frameIndex = 0;
+            if (pack is not null)
+            {
+                frameIndex = AsciiPack.GetPlaybackFrame(frameTick++, pack.FrameCount, pack.LoopMode);
+            }
+
+            AudioFrame audioFrame = AudioFrame.Default;
+            if (_isAudioReactive)
+            {
+                RadioAudioService.Instance.GetSpectrumLevels(out float kick, out float bass, out float mid, out float treble);
+                audioFrame = _audioGovernor.Update(kick, bass, mid, treble, dt);
+
+                if (audioFrame.IsSilent && _audioGovernor.IsAtRest)
+                {
+                    // Render resting static frame once to ensure canvas is at clean rest
+                    if (!_isAtRestRendered)
+                    {
+                        Span<uint> restTarget = new((void*)writeBuffer, pixelCount);
+                        restTarget.Fill(CanvasPixel);
+                        if (trueColor is not null)
+                        {
+                            trueColor.Render(restTarget, AudioFrame.Default);
+                        }
+                        else
+                        {
+                            _halftone?.Render(restTarget, frameIndex, AudioFrame.Default);
+                        }
+
+                        int restPrev = Interlocked.Exchange(ref _readyBufferIndex, _workerWriteIndex);
+                        _workerWriteIndex = restPrev;
+                        Interlocked.Exchange(ref _isFrameReady, 1);
+                        _isAtRestRendered = true;
+                    }
+
+                    // Deep event-driven sleep: 0.00% CPU, wakes in < 1 ms on playback event
+                    _wakeEvent.Reset();
+                    _wakeEvent.Wait(500, token);
+                    nextTick = Stopwatch.GetTimestamp();
+                    lastTickTime = nextTick;
+                    continue;
+                }
+
+                _isAtRestRendered = false;
+            }
 
             // Render off-thread directly into the worker's private POH buffer
             Span<uint> target = new((void*)writeBuffer, pixelCount);
             target.Fill(CanvasPixel);
 
-            HalftonePainter? halftone = _halftone;
-            if (halftone is not null)
+            if (trueColor is not null)
             {
-                halftone.Render(target, frameIndex);
+                trueColor.Render(target, audioFrame);
             }
-            else
+            else if (_halftone is not null)
+            {
+                _halftone.Render(target, frameIndex, audioFrame);
+            }
+            else if (pack is not null)
             {
                 DrawGlyphs(pack, target, frameIndex);
             }
@@ -465,7 +594,9 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
     private unsafe void RebuildSurface()
     {
         AsciiPack? pack = _pack;
-        if (pack is null)
+        TrueColorHalftoneEngine? trueColor = _trueColorHalftone;
+
+        if (pack is null && trueColor is null)
         {
             StopClock();
             FreeBuffers();
@@ -483,18 +614,31 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
             return;
         }
 
-        // Clamp rasterization resolution to 1080p maximum (saves 75% workload on 4K)
-        double availableWidth = Math.Min(screenW, MaxRasterWidth);
-        double availableHeight = Math.Min(screenH, MaxRasterHeight);
+        int cellWidth, cellHeight, newPixelW, newPixelH;
 
-        // Sizing for UniformToFill (Cover): size cells so that when scaled to cover the
-        // window, the backing bitmap fits the clamped resolution.
-        double scale = Math.Max(availableWidth / pack.Cols, availableHeight / (pack.Rows * pack.CellAspect));
-        int cellWidth = Math.Clamp((int)Math.Ceiling(scale), 2, 256);
-        int cellHeight = Math.Clamp((int)Math.Round(cellWidth * pack.CellAspect), 2, 512);
+        if (trueColor is not null)
+        {
+            newPixelW = trueColor.Width;
+            newPixelH = trueColor.Height;
+            cellWidth = 6;
+            cellHeight = 6;
+            _audioGovernor.SetCenter(newPixelW * 0.5f, newPixelH * 0.5f);
+        }
+        else
+        {
+            // Clamp rasterization resolution to 1080p maximum (saves 75% workload on 4K)
+            double availableWidth = Math.Min(screenW, MaxRasterWidth);
+            double availableHeight = Math.Min(screenH, MaxRasterHeight);
 
-        int newPixelW = cellWidth * pack.Cols;
-        int newPixelH = cellHeight * pack.Rows;
+            // Sizing for UniformToFill (Cover): size cells so that when scaled to cover the
+            // window, the backing bitmap fits the clamped resolution.
+            double scale = Math.Max(availableWidth / pack!.Cols, availableHeight / (pack.Rows * pack.CellAspect));
+            cellWidth = Math.Clamp((int)Math.Ceiling(scale), 2, 256);
+            cellHeight = Math.Clamp((int)Math.Round(cellWidth * pack.CellAspect), 2, 512);
+
+            newPixelW = cellWidth * pack.Cols;
+            newPixelH = cellHeight * pack.Rows;
+        }
 
         // DIMENSION GUARD: If resolution matches and buffers are already warm, update scaling only and return!
         if (newPixelW == _pixelWidth &&
@@ -549,7 +693,11 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
         _readyBufferIndex = 2;
         Interlocked.Exchange(ref _isFrameReady, 0);
 
-        if (pack.RenderMode == AsciiRenderMode.Halftone)
+        if (trueColor is not null)
+        {
+            // TrueColor engine handles its own precomputed geometry
+        }
+        else if (pack!.RenderMode == AsciiRenderMode.Halftone)
         {
             _halftone = new HalftonePainter(pack, cellWidth, cellHeight);
         }
@@ -702,6 +850,7 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
     public void Dispose()
     {
         Unload();
+        _wakeEvent.Dispose();
         GC.SuppressFinalize(this);
     }
 

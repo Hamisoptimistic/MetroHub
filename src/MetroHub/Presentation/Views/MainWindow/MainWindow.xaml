@@ -400,9 +400,10 @@
                             </MenuItem>
                             <MenuItem x:Name="WallpaperEffectsMenu" Header="Wallpaper Effect">
                                 <MenuItem x:Name="EffectNoneItem" Header="None (Original)" IsCheckable="True" Click="OnWallpaperEffectNoneClick" />
+                                <MenuItem x:Name="EffectAudioHalftoneItem" Header="Audio-Reactive Halftone (Live)" IsCheckable="True" Click="OnWallpaperEffectAudioHalftoneClick" />
                                 <MenuItem x:Name="EffectDitherItem" Header="Dither (Bayer 4×4)" IsCheckable="True" Click="OnWallpaperEffectDitherClick" />
                                 <MenuItem x:Name="EffectAsciiItem" Header="ASCII Art Matrix" IsCheckable="True" Click="OnWallpaperEffectAsciiClick" />
-                                <MenuItem x:Name="EffectHalftoneItem" Header="Halftone Print Dots" IsCheckable="True" Click="OnWallpaperEffectHalftoneClick" />
+                                <MenuItem x:Name="EffectHalftoneItem" Header="Halftone Print (Hex)" IsCheckable="True" Click="OnWallpaperEffectHalftoneClick" />
                                 <MenuItem x:Name="EffectScanlinesItem" Header="Scanlines Display" IsCheckable="True" Click="OnWallpaperEffectScanlinesClick" />
                                 <MenuItem x:Name="EffectBlurItem" Header="Frosted Bokeh Blur" IsCheckable="True" Click="OnWallpaperEffectBlurClick" />
                             </MenuItem>
