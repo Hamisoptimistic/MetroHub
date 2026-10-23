@@ -600,21 +600,39 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Mode 2: Search Results Flat List with Breathing Room -->
-                <ScrollViewer x:Name="SearchResultsScrollViewer"
-                              Grid.IsSharedSizeScope="True"
-                              controls:AutoHideScrollBehavior.IsEnabled="True"
-                              Visibility="Collapsed"
-                              VerticalScrollBarVisibility="Auto"
-                              HorizontalScrollBarVisibility="Disabled"
-                              Focusable="False"
-                              Background="Transparent"
-                              Padding="0,2,0,16">
-                    <ScrollViewer.RenderTransform>
+                <!-- Mode 2: Search Results Flat List with High-Performance Virtualization -->
+                <ListBox x:Name="SearchResultsListBox"
+                         Grid.IsSharedSizeScope="True"
+                         VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.VirtualizationMode="Recycling"
+                         VirtualizingPanel.ScrollUnit="Pixel"
+                         ScrollViewer.CanContentScroll="True"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         controls:AutoHideScrollBehavior.IsEnabled="True"
+                         Visibility="Collapsed"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Padding="0,2,0,16"
+                         FocusVisualStyle="{x:Null}"
+                         ItemContainerStyle="{StaticResource FluentSearchListBoxItemStyle}"
+                         ItemTemplate="{StaticResource SearchItemRowTemplate}"
+                         KeyDown="OnSearchResultsKeyDown"
+                         PreviewKeyDown="OnSearchResultsPreviewKeyDown"
+                         PreviewTextInput="OnSearchResultsPreviewTextInput">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.Resources>
+                        <Style TargetType="{x:Type ScrollViewer}" BasedOn="{StaticResource FloatingScrollViewerStyle}" />
+                    </ListBox.Resources>
+                    <ListBox.RenderTransform>
                         <TranslateTransform x:Name="SearchResultsTranslate" Y="0" />
-                    </ScrollViewer.RenderTransform>
-                    <ScrollViewer.Style>
-                        <Style TargetType="ScrollViewer" BasedOn="{StaticResource {x:Type ScrollViewer}}">
+                    </ListBox.RenderTransform>
+                    <ListBox.Style>
+                        <Style TargetType="ListBox" BasedOn="{StaticResource {x:Type ListBox}}">
                             <Style.Triggers>
                                 <Trigger Property="Visibility" Value="Visible">
                                     <Trigger.EnterActions>
@@ -640,98 +658,85 @@
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
-                    </ScrollViewer.Style>
-                    <StackPanel>
-                        <!-- Dedicated Fluent Empty Search Placeholder -->
-                        <Grid x:Name="NoResultsPanel"
-                              Visibility="Collapsed"
-                              HorizontalAlignment="Center"
-                              Margin="16,48,16,24">
-                            <Grid.RenderTransform>
-                                <TranslateTransform Y="0" />
-                            </Grid.RenderTransform>
-                            <Grid.Style>
-                                <Style TargetType="Grid">
-                                    <Style.Triggers>
-                                        <Trigger Property="Visibility" Value="Visible">
-                                            <Trigger.EnterActions>
-                                                <BeginStoryboard>
-                                                    <Storyboard>
-                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                         From="0.0" To="1.0"
-                                                                         Duration="0:0:0.15">
-                                                            <DoubleAnimation.EasingFunction>
-                                                                <CubicEase EasingMode="EaseOut" />
-                                                            </DoubleAnimation.EasingFunction>
-                                                        </DoubleAnimation>
-                                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                                                                         From="6.0" To="0.0"
-                                                                         Duration="0:0:0.15">
-                                                            <DoubleAnimation.EasingFunction>
-                                                                <CubicEase EasingMode="EaseOut" />
-                                                            </DoubleAnimation.EasingFunction>
-                                                        </DoubleAnimation>
-                                                    </Storyboard>
-                                                </BeginStoryboard>
-                                            </Trigger.EnterActions>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Grid.Style>
-                            <StackPanel HorizontalAlignment="Center">
-                                <!-- Ambient Icon Badge with SearchInfo24 -->
-                                <Border Width="52"
-                                        Height="52"
-                                        CornerRadius="26"
-                                        HorizontalAlignment="Center"
-                                        Background="{DynamicResource WidgetDividerBrush}"
-                                        BorderBrush="{DynamicResource WidgetBorderBrush}"
-                                        BorderThickness="1">
-                                    <ui:SymbolIcon Symbol="SearchInfo24"
-                                                   FontSize="22"
-                                                   Foreground="{DynamicResource TextSubtleBrush}"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center" />
-                                </Border>
+                    </ListBox.Style>
+                </ListBox>
 
-                                <!-- Title: 16px SemiBold -->
-                                <TextBlock Text="No results found"
-                                           FontSize="{DynamicResource TypeHeaderFontSize}"
-                                           FontWeight="{DynamicResource TypeHeaderFontWeight}"
-                                           FontFamily="{DynamicResource AppFontFamily}"
-                                           Foreground="{DynamicResource TextPrimaryBrush}"
-                                           HorizontalAlignment="Center"
-                                           Margin="0,14,0,6" />
-
-                                <!-- Query-aware Detail / Hint: 14px Regular -->
-                                <TextBlock x:Name="NoResultsDetailTextBlock"
-                                           Text="Check your spelling or try another search term."
-                                           FontSize="{DynamicResource TypeBodyFontSize}"
-                                           FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                           FontFamily="{DynamicResource AppFontFamily}"
+                <!-- Dedicated Fluent Empty Search Placeholder Overlay -->
+                <Grid x:Name="NoResultsPanel"
+                      Visibility="Collapsed"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Margin="16,0,16,0">
+                    <Grid.RenderTransform>
+                        <TranslateTransform Y="0" />
+                    </Grid.RenderTransform>
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Style.Triggers>
+                                <Trigger Property="Visibility" Value="Visible">
+                                    <Trigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                 From="0.0" To="1.0"
+                                                                 Duration="0:0:0.15">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                                 From="6.0" To="0.0"
+                                                                 Duration="0:0:0.15">
+                                                    <DoubleAnimation.EasingFunction>
+                                                        <CubicEase EasingMode="EaseOut" />
+                                                    </DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.EnterActions>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+                    <StackPanel HorizontalAlignment="Center">
+                        <!-- Ambient Icon Badge with SearchInfo24 -->
+                        <Border Width="52"
+                                Height="52"
+                                CornerRadius="26"
+                                HorizontalAlignment="Center"
+                                Background="{DynamicResource WidgetDividerBrush}"
+                                BorderBrush="{DynamicResource WidgetBorderBrush}"
+                                BorderThickness="1">
+                            <ui:SymbolIcon Symbol="SearchInfo24"
+                                           FontSize="22"
                                            Foreground="{DynamicResource TextSubtleBrush}"
-                                           TextWrapping="Wrap"
-                                           TextAlignment="Center"
                                            HorizontalAlignment="Center"
-                                           MaxWidth="250"
-                                           LineHeight="18" />
-                            </StackPanel>
-                        </Grid>
+                                           VerticalAlignment="Center" />
+                        </Border>
 
-                        <ListBox x:Name="SearchResultsListBox"
-                                 Background="Transparent"
-                                 BorderThickness="0"
-                                 Padding="0"
-                                 FocusVisualStyle="{x:Null}"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                 ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                                 ItemContainerStyle="{StaticResource FluentSearchListBoxItemStyle}"
-                                 ItemTemplate="{StaticResource SearchItemRowTemplate}"
-                                 KeyDown="OnSearchResultsKeyDown"
-                                 PreviewKeyDown="OnSearchResultsPreviewKeyDown"
-                                 PreviewTextInput="OnSearchResultsPreviewTextInput" />
+                        <!-- Title: 16px SemiBold -->
+                        <TextBlock Text="No results found"
+                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                   FontFamily="{DynamicResource AppFontFamily}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,14,0,6" />
+
+                        <!-- Query-aware Detail / Hint: 14px Regular -->
+                        <TextBlock x:Name="NoResultsDetailTextBlock"
+                                   Text="Check your spelling or try another search term."
+                                   FontSize="{DynamicResource TypeBodyFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                   FontFamily="{DynamicResource AppFontFamily}"
+                                   Foreground="{DynamicResource TextSubtleBrush}"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   MaxWidth="250"
+                                   LineHeight="18" />
                     </StackPanel>
-                </ScrollViewer>
+                </Grid>
             </Grid>
         </Grid>
     </Border>

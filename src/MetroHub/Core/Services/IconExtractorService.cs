@@ -96,8 +96,30 @@ public static class IconExtractorService
     private const uint FILE_ATTRIBUTE_NORMAL = 0x00000080;
     private const uint FILE_ATTRIBUTE_DIRECTORY = 0x00000010;
 
+    private const int MaxPerFileCachedIcons = 256;
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource> _extensionIconCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource> _perFileIconCache = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task<BitmapSource?>> _inFlightTasks = new(StringComparer.OrdinalIgnoreCase);
+
+    private static void AddToPerFileCache(string fullPath, ImageSource icon)
+    {
+        lock (_perFileIconCache)
+        {
+            if (!_perFileIconCache.ContainsKey(fullPath) && _perFileIconCache.Count >= MaxPerFileCachedIcons)
+            {
+                var keysToRemove = System.Linq.Enumerable.ToList(System.Linq.Enumerable.Take(_perFileIconCache.Keys, MaxPerFileCachedIcons / 5));
+                foreach (var key in keysToRemove)
+                {
+                    _perFileIconCache.TryRemove(key, out _);
+                }
+            }
+            _perFileIconCache[fullPath] = icon;
+        }
+    }
+
+    internal static int PerFileCacheCount => _perFileIconCache.Count;
+    internal static int InFlightTaskCount => _inFlightTasks.Count;
+    internal static void AddToPerFileCacheForTesting(string fullPath, ImageSource icon) => AddToPerFileCache(fullPath, icon);
 
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     public static extern int SHGetKnownFolderPath(
@@ -200,6 +222,7 @@ public static class IconExtractorService
         _iconPathCache.Clear();
         _extensionIconCache.Clear();
         _perFileIconCache.Clear();
+        _inFlightTasks.Clear();
     }
 
     /// <summary>
@@ -207,22 +230,30 @@ public static class IconExtractorService
     /// Generic extensions and folders are resolved in microseconds without disk I/O via SHGFI_USEFILEATTRIBUTES.
     /// Executables (.exe / .lnk) return an immediate generic icon and asynchronously load the specific PE icon.
     /// </summary>
-    public static ImageSource? GetFileOrExtensionIcon(string fullPath, bool isFolder, Action<ImageSource>? onAsyncIconLoaded = null)
+    public static ImageSource? GetFileOrExtensionIcon(
+        string fullPath,
+        bool isFolder,
+        Action<ImageSource>? onAsyncIconLoaded = null,
+        System.Threading.CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(fullPath)) return null;
 
         // 1. Folders: Use Windows directory Shell attribute
         if (isFolder)
         {
-            return _extensionIconCache.GetOrAdd("__folder__", _ =>
-                ExtractShellIconByAttribute("dummy_folder", FILE_ATTRIBUTE_DIRECTORY));
+            if (_extensionIconCache.TryGetValue("__folder__", out var folderIcon)) return folderIcon;
+            var icon = ExtractShellIconByAttribute("dummy_folder", FILE_ATTRIBUTE_DIRECTORY);
+            if (icon != null) _extensionIconCache["__folder__"] = icon;
+            return icon;
         }
 
         string ext = Path.GetExtension(fullPath);
         if (string.IsNullOrWhiteSpace(ext))
         {
-            return _extensionIconCache.GetOrAdd("__generic_file__", _ =>
-                ExtractShellIconByAttribute("dummy_file", FILE_ATTRIBUTE_NORMAL));
+            if (_extensionIconCache.TryGetValue("__generic_file__", out var genericIcon)) return genericIcon;
+            var icon = ExtractShellIconByAttribute("dummy_file", FILE_ATTRIBUTE_NORMAL);
+            if (icon != null) _extensionIconCache["__generic_file__"] = icon;
+            return icon;
         }
 
         // 2. Executables, shortcuts, and direct icon files have unique embedded icons per path
@@ -234,25 +265,39 @@ public static class IconExtractorService
             }
 
             // Immediately provide the generic .exe / .lnk shell icon so the UI renders without blank space
-            var fallback = _extensionIconCache.GetOrAdd(ext, extension =>
-                ExtractShellIconByAttribute($"dummy{extension}", FILE_ATTRIBUTE_NORMAL));
-
-            // Asynchronously extract the crisp PE/shortcut icon in the background
-            if (onAsyncIconLoaded is not null)
+            if (!_extensionIconCache.TryGetValue(ext, out var fallback))
             {
-                Task.Run(() =>
+                fallback = ExtractShellIconByAttribute($"dummy{ext}", FILE_ATTRIBUTE_NORMAL);
+                if (fallback != null) _extensionIconCache[ext] = fallback;
+            }
+
+            // Asynchronously extract the crisp PE/shortcut icon in the background (deduplicating in-flight tasks)
+            if (onAsyncIconLoaded is not null && !cancellationToken.IsCancellationRequested)
+            {
+                var task = _inFlightTasks.GetOrAdd(fullPath, path => Task.Run(() =>
                 {
                     try
                     {
-                        var peIcon = ExtractPerFileIcon(fullPath);
-                        if (peIcon is not null)
+                        return ExtractPerFileIcon(path);
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                }));
+
+                task.ContinueWith(t =>
+                {
+                    if (t.IsCompletedSuccessfully && t.Result is { } peIcon)
+                    {
+                        AddToPerFileCache(fullPath, peIcon);
+                        if (!cancellationToken.IsCancellationRequested)
                         {
-                            _perFileIconCache[fullPath] = peIcon;
                             onAsyncIconLoaded(peIcon);
                         }
                     }
-                    catch { }
-                });
+                    _inFlightTasks.TryRemove(new System.Collections.Generic.KeyValuePair<string, Task<BitmapSource?>>(fullPath, task));
+                }, TaskScheduler.Default);
             }
 
             return fallback;
@@ -260,11 +305,13 @@ public static class IconExtractorService
 
         // 3. Generic documents, media, code, archives (.pdf, .docx, .mp4, .zip, .cs, etc.)
         // Share the exact same Shell association icon across all files
-        return _extensionIconCache.GetOrAdd(ext, extension =>
-            ExtractShellIconByAttribute($"dummy{extension}", FILE_ATTRIBUTE_NORMAL));
+        if (_extensionIconCache.TryGetValue(ext, out var docIcon)) return docIcon;
+        var extIcon = ExtractShellIconByAttribute($"dummy{ext}", FILE_ATTRIBUTE_NORMAL);
+        if (extIcon != null) _extensionIconCache[ext] = extIcon;
+        return extIcon;
     }
 
-    private static ImageSource? ExtractShellIconByAttribute(string dummyName, uint attributes)
+    private static BitmapSource? ExtractShellIconByAttribute(string dummyName, uint attributes)
     {
         try
         {
@@ -292,7 +339,7 @@ public static class IconExtractorService
         return null;
     }
 
-    private static ImageSource? ExtractPerFileIcon(string fullPath)
+    private static BitmapSource? ExtractPerFileIcon(string fullPath)
     {
         try
         {

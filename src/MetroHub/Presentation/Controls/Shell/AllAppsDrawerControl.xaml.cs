@@ -37,7 +37,7 @@ namespace MetroHub.Presentation.Controls
         public CatalogItemModel App => app;
     }
 
-    public class SearchItemRowViewModel : ObservableObject
+    public class SearchItemRowViewModel : ObservableObject, IDisposable
     {
         public Candidate Candidate { get; }
         public string DisplayName => Candidate.DisplayName;
@@ -91,12 +91,25 @@ namespace MetroHub.Presentation.Controls
 
         public Visibility SubtitleVisibility => string.IsNullOrWhiteSpace(Subtitle) ? Visibility.Collapsed : Visibility.Visible;
 
+        private bool _iconRequested;
+        private bool _appModelHandlerAttached;
+        private bool _isDiscarded;
         private ImageSource? _fileIcon;
+
+        public bool IsIconRequested => _iconRequested;
+        public bool IsDiscarded => _isDiscarded;
+        public bool IsAppModelHandlerAttached => _appModelHandlerAttached;
+
+        public long SessionId { get; }
+        public Func<long>? SessionIdProvider { get; }
+        public System.Threading.CancellationToken CancellationToken { get; }
 
         public ImageSource? Icon
         {
             get
             {
+                EnsureIconLoading();
+
                 if (Candidate.Tag is CatalogItemModel appModel)
                 {
                     return appModel.Icon;
@@ -116,7 +129,20 @@ namespace MetroHub.Presentation.Controls
         public Visibility CustomIconVisibility => Icon is not null ? Visibility.Visible : Visibility.Collapsed;
         public Wpf.Ui.Controls.SymbolRegular Symbol { get; }
         public Visibility SymbolVisibility => Icon is null ? Visibility.Visible : Visibility.Collapsed;
-        public string CategoryHeader { get; set; } = string.Empty;
+
+        private string _categoryHeader = string.Empty;
+        public string CategoryHeader
+        {
+            get => _categoryHeader;
+            set
+            {
+                if (SetProperty(ref _categoryHeader, value))
+                {
+                    OnPropertyChanged(nameof(CategoryHeaderVisibility));
+                }
+            }
+        }
+
         public Visibility CategoryHeaderVisibility => !string.IsNullOrEmpty(CategoryHeader) ? Visibility.Visible : Visibility.Collapsed;
         public string KindBadge { get; }
         public Visibility KindBadgeVisibility
@@ -134,52 +160,106 @@ namespace MetroHub.Presentation.Controls
         public bool IsApp => Candidate.Category == SearchCategory.Apps;
         public CatalogItemModel? AppModel => Candidate.Tag as CatalogItemModel;
 
-        public SearchItemRowViewModel(Candidate candidate, string categoryHeader = "")
+        public SearchItemRowViewModel(
+            Candidate candidate,
+            string categoryHeader = "",
+            long sessionId = 0,
+            Func<long>? sessionIdProvider = null,
+            System.Threading.CancellationToken cancellationToken = default)
         {
             Candidate = candidate;
-            CategoryHeader = categoryHeader;
+            _categoryHeader = categoryHeader;
+            SessionId = sessionId;
+            SessionIdProvider = sessionIdProvider;
+            CancellationToken = cancellationToken;
             Symbol = SearchIconResolver.ResolveSymbol(candidate);
             KindBadge = SearchIconResolver.ResolveKindBadge(candidate);
+        }
 
-            if (candidate.Tag is CatalogItemModel appModel)
+        public bool IsStale()
+        {
+            if (_isDiscarded) return true;
+            if (CancellationToken.IsCancellationRequested) return true;
+            if (SessionId != 0 && SessionIdProvider != null && SessionIdProvider() != SessionId) return true;
+            return false;
+        }
+
+        private void EnsureIconLoading()
+        {
+            if (_iconRequested || IsStale()) return;
+            _iconRequested = true;
+
+            if (Candidate.Tag is CatalogItemModel appModel)
             {
-                System.ComponentModel.PropertyChangedEventManager.AddHandler(appModel, OnAppModelPropertyChanged, nameof(CatalogItemModel.Icon));
-                // Kick off background extraction immediately if not already cached
+                if (!_appModelHandlerAttached)
+                {
+                    _appModelHandlerAttached = true;
+                    System.ComponentModel.PropertyChangedEventManager.AddHandler(appModel, OnAppModelPropertyChanged, nameof(CatalogItemModel.Icon));
+                }
                 _ = appModel.Icon;
             }
-            else if (candidate.Category != SearchCategory.Actions)
+            else if (Candidate.Category != SearchCategory.Actions)
             {
-                // Resolve Shell file/extension icon (synchronous for extensions/folders, async update for executables)
                 _fileIcon = IconExtractorService.GetFileOrExtensionIcon(
-                    candidate.FullPathOrKey,
-                    candidate.IsFolder,
+                    Candidate.FullPathOrKey,
+                    Candidate.IsFolder,
                     onAsyncIconLoaded: updatedIcon =>
                     {
+                        if (IsStale()) return;
                         var dispatcher = Application.Current?.Dispatcher;
                         if (dispatcher is null || dispatcher.CheckAccess())
                         {
-                            Icon = updatedIcon;
+                            if (!IsStale()) Icon = updatedIcon;
                         }
                         else
                         {
-                            dispatcher.InvokeAsync(() => Icon = updatedIcon, System.Windows.Threading.DispatcherPriority.Background);
+                            dispatcher.InvokeAsync(() =>
+                            {
+                                if (!IsStale()) Icon = updatedIcon;
+                            }, System.Windows.Threading.DispatcherPriority.Background);
                         }
-                    });
+                    },
+                    cancellationToken: CancellationToken);
             }
+        }
+
+        public void Detach()
+        {
+            _isDiscarded = true;
+            if (_appModelHandlerAttached && Candidate.Tag is CatalogItemModel appModel)
+            {
+                _appModelHandlerAttached = false;
+                System.ComponentModel.PropertyChangedEventManager.RemoveHandler(appModel, OnAppModelPropertyChanged, nameof(CatalogItemModel.Icon));
+            }
+        }
+
+        public void Dispose()
+        {
+            Detach();
+            GC.SuppressFinalize(this);
         }
 
         private void OnAppModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
+            if (IsStale())
+            {
+                Detach();
+                return;
+            }
+
             if (e.PropertyName == nameof(CatalogItemModel.Icon))
             {
                 var dispatcher = Application.Current?.Dispatcher;
                 if (dispatcher == null || dispatcher.CheckAccess())
                 {
-                    NotifyIconProperties();
+                    if (!IsStale()) NotifyIconProperties();
                 }
                 else
                 {
-                    dispatcher.InvokeAsync(NotifyIconProperties, System.Windows.Threading.DispatcherPriority.Background);
+                    dispatcher.InvokeAsync(() =>
+                    {
+                        if (!IsStale()) NotifyIconProperties();
+                    }, System.Windows.Threading.DispatcherPriority.Background);
                 }
             }
         }
@@ -192,6 +272,7 @@ namespace MetroHub.Presentation.Controls
         }
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF UserControl lifecycle manages disposable fields via Unloaded event.")]
     public partial class AllAppsDrawerControl : UserControl
     {
         public event EventHandler<CatalogItemModel>? AppPinRequested;
@@ -222,13 +303,25 @@ namespace MetroHub.Presentation.Controls
         private readonly SearchOrchestrator _searchOrchestrator;
         private SearchItemRowViewModel? _draggedSearchRow;
         private bool _isSearchRowDragPotential = false;
+        private CancellationTokenSource? _searchCts;
+        private long _renderedSearchSessionId;
+        private readonly Dictionary<string, SearchItemRowViewModel> _activeSearchRows = new(StringComparer.OrdinalIgnoreCase);
+
+        private void DetachAndClearSearchRows()
+        {
+            foreach (var row in _activeSearchRows.Values)
+            {
+                row.Detach();
+            }
+            _activeSearchRows.Clear();
+        }
 
         private static readonly Brush SearchBorderFocusedBrush = CreateFrozenBrush(Color.FromArgb(0x22, 0xFF, 0xFF, 0xFF));
         private static readonly Brush SearchBorderUnfocusedBrush = CreateFrozenBrush(Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF));
         private static readonly Brush UnpinRedBrush = ThemeTokens.StatusErrorBrush;
         private static readonly QuadraticEase TileRevealEasing = new() { EasingMode = EasingMode.EaseOut };
 
-        private static Brush CreateFrozenBrush(Color c)
+        private static SolidColorBrush CreateFrozenBrush(Color c)
         {
             var b = new SolidColorBrush(c);
             b.Freeze();
@@ -237,7 +330,9 @@ namespace MetroHub.Presentation.Controls
 
         public ScrollViewer? GroupedScrollViewerControl => GroupedScrollViewer;
         private ScrollViewer? GroupedScrollViewer => GroupedViewContainer;
-        public ScrollViewer? SearchResultsScrollViewerControl => SearchResultsScrollViewer;
+        public TextBox? SearchBoxControl => SearchBox;
+        public ListBox? SearchResultsListBoxControl => SearchResultsListBox;
+        internal SearchOrchestrator SearchOrchestratorInstance => _searchOrchestrator;
         public ListBox? RecentSuggestionsListBoxControl => RecentSuggestionsListBox;
         public Grid? NoResultsPanelControl => NoResultsPanel;
         public const int MaxZeroStateSuggestions = 15;
@@ -300,7 +395,18 @@ namespace MetroHub.Presentation.Controls
 
             _searchOrchestrator = new SearchOrchestrator(appsProvider: () => _allApps);
             _searchOrchestrator.SnapshotUpdated += OnSearchSnapshotUpdated;
-            Unloaded += (s, e) => _searchOrchestrator.Dispose();
+            Unloaded += (s, e) =>
+            {
+                _searchCts?.Cancel();
+                _searchCts?.Dispose();
+                _searchCts = null;
+                DetachAndClearSearchRows();
+                if (RecentSuggestionsListBox?.ItemsSource is IEnumerable<SearchItemRowViewModel> oldRecent)
+                {
+                    foreach (var old in oldRecent) old.Detach();
+                }
+                _searchOrchestrator.Dispose();
+            };
 
             SettingsService.Instance.SettingChanged += prop =>
             {
@@ -547,6 +653,11 @@ namespace MetroHub.Presentation.Controls
                         CatalogItemModel.PrewarmMemoryCache(recentAppModels!, recentAppModels.Count);
                     }
 
+                    if (RecentSuggestionsListBox.ItemsSource is IEnumerable<SearchItemRowViewModel> oldRecent)
+                    {
+                        foreach (var old in oldRecent) old.Detach();
+                    }
+
                     var rows = new List<SearchItemRowViewModel>(candidates.Count);
                     for (int i = 0; i < candidates.Count; i++)
                     {
@@ -558,6 +669,10 @@ namespace MetroHub.Presentation.Controls
                 }
                 else
                 {
+                    if (RecentSuggestionsListBox.ItemsSource is IEnumerable<SearchItemRowViewModel> oldRecent)
+                    {
+                        foreach (var old in oldRecent) old.Detach();
+                    }
                     RecentSuggestionsListBox.ItemsSource = null;
                     RecentSuggestionsPanel.Visibility = Visibility.Collapsed;
                 }
@@ -565,8 +680,18 @@ namespace MetroHub.Presentation.Controls
             catch (Exception ex)
             {
                 Safe.Log("AllAppsDrawer.RefreshRecentSuggestions", ex);
-                RecentSuggestionsListBox.ItemsSource = null;
-                RecentSuggestionsPanel.Visibility = Visibility.Collapsed;
+                if (RecentSuggestionsListBox != null)
+                {
+                    if (RecentSuggestionsListBox.ItemsSource is IEnumerable<SearchItemRowViewModel> oldRecent)
+                    {
+                        foreach (var old in oldRecent) old.Detach();
+                    }
+                    RecentSuggestionsListBox.ItemsSource = null;
+                }
+                if (RecentSuggestionsPanel != null)
+                {
+                    RecentSuggestionsPanel.Visibility = Visibility.Collapsed;
+                }
             }
         }
 
@@ -625,22 +750,29 @@ namespace MetroHub.Presentation.Controls
 
             if (!hasText)
             {
+                _searchCts?.Cancel();
+                _searchCts?.Dispose();
+                _searchCts = null;
+                DetachAndClearSearchRows();
                 _searchOrchestrator.SetQuery(string.Empty);
                 GroupedViewContainer.Visibility = Visibility.Visible;
-                SearchResultsScrollViewer.Visibility = Visibility.Collapsed;
+                SearchResultsListBox.Visibility = Visibility.Collapsed;
                 SearchResultsListBox.ItemsSource = null;
                 if (NoResultsPanel != null) NoResultsPanel.Visibility = Visibility.Collapsed;
                 RefreshRecentSuggestions(MaxZeroStateSuggestions);
             }
             else
             {
+                _searchCts?.Cancel();
+                _searchCts?.Dispose();
+                _searchCts = new CancellationTokenSource();
                 GroupedViewContainer.Visibility = Visibility.Collapsed;
-                SearchResultsScrollViewer.Visibility = Visibility.Visible;
+                SearchResultsListBox.Visibility = Visibility.Visible;
                 _searchOrchestrator.SetQuery(query);
             }
         }
 
-        private void OnSearchSnapshotUpdated(SearchSnapshot snapshot)
+        internal void OnSearchSnapshotUpdated(SearchSnapshot snapshot)
         {
             Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Normal, () =>
             {
@@ -648,11 +780,13 @@ namespace MetroHub.Presentation.Controls
                 {
                     if (string.IsNullOrWhiteSpace(SearchBox.Text))
                     {
+                        DetachAndClearSearchRows();
                         SearchResultsListBox.ItemsSource = null;
                         if (NoResultsPanel != null) NoResultsPanel.Visibility = Visibility.Collapsed;
                     }
                     else if (snapshot.IsFinal)
                     {
+                        DetachAndClearSearchRows();
                         SearchResultsListBox.ItemsSource = null;
                         UpdateNoResultsText(SearchBox.Text);
                         if (NoResultsPanel != null) NoResultsPanel.Visibility = Visibility.Visible;
@@ -665,7 +799,17 @@ namespace MetroHub.Presentation.Controls
                     return;
                 }
 
+                bool sameSession = snapshot.SessionId != 0 && snapshot.SessionId == _renderedSearchSessionId;
+                if (!sameSession)
+                {
+                    DetachAndClearSearchRows();
+                    _renderedSearchSessionId = snapshot.SessionId;
+                }
+
                 var flatRows = new List<SearchItemRowViewModel>();
+                var currentBatchKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var currentToken = _searchCts?.Token ?? CancellationToken.None;
+
                 foreach (var group in snapshot.Groups)
                 {
                     bool isFirstInGroup = true;
@@ -673,7 +817,48 @@ namespace MetroHub.Presentation.Controls
                     {
                         string header = isFirstInGroup ? group.Title : string.Empty;
                         isFirstInGroup = false;
-                        flatRows.Add(new SearchItemRowViewModel(scoredResult.Candidate, header));
+
+                        string candidateKey = scoredResult.Candidate.Id;
+                        currentBatchKeys.Add(candidateKey);
+
+                        if (sameSession && _activeSearchRows.TryGetValue(candidateKey, out var existingRow))
+                        {
+                            // Reuse existing row across snapshot tiers within same search session
+                            if (existingRow.CategoryHeader != header)
+                            {
+                                existingRow.CategoryHeader = header;
+                            }
+                            flatRows.Add(existingRow);
+                        }
+                        else
+                        {
+                            var newRow = new SearchItemRowViewModel(
+                                scoredResult.Candidate,
+                                header,
+                                snapshot.SessionId,
+                                () => _searchOrchestrator.CurrentSessionId,
+                                currentToken);
+                            _activeSearchRows[candidateKey] = newRow;
+                            flatRows.Add(newRow);
+                        }
+                    }
+                }
+
+                // If same session, clean up rows that were dropped in the newer snapshot
+                if (sameSession && _activeSearchRows.Count > currentBatchKeys.Count)
+                {
+                    var toRemove = new List<string>();
+                    foreach (var kvp in _activeSearchRows)
+                    {
+                        if (!currentBatchKeys.Contains(kvp.Key))
+                        {
+                            kvp.Value.Detach();
+                            toRemove.Add(kvp.Key);
+                        }
+                    }
+                    foreach (var key in toRemove)
+                    {
+                        _activeSearchRows.Remove(key);
                     }
                 }
 
@@ -739,7 +924,8 @@ namespace MetroHub.Presentation.Controls
         {
             StorageService.RecordSearchLaunch(row.Candidate.Id);
 
-            var primary = row.Candidate.PrimaryAction ?? row.Candidate.GetAllActions().FirstOrDefault();
+            var allActions = row.Candidate.GetAllActions();
+            var primary = row.Candidate.PrimaryAction ?? (allActions.Count > 0 ? allActions[0] : null);
             if (primary != null)
             {
                 _ = ExecuteCandidateActionAsync(row.Candidate.Id, primary.ExecuteAsync);
@@ -953,12 +1139,26 @@ namespace MetroHub.Presentation.Controls
                     GroupedScrollViewer?.PageDown();
                     e.Handled = true;
                 }
+                else if (SearchResultsListBox.Items.Count > 0)
+                {
+                    int pageSize = GetSearchPageSize();
+                    int targetIndex = Math.Min(SearchResultsListBox.Items.Count - 1, Math.Max(0, SearchResultsListBox.SelectedIndex) + pageSize);
+                    FocusSearchItem(targetIndex);
+                    e.Handled = true;
+                }
             }
             else if (e.Key == Key.PageUp)
             {
                 if (string.IsNullOrEmpty(SearchBox.Text))
                 {
                     GroupedScrollViewer?.PageUp();
+                    e.Handled = true;
+                }
+                else if (SearchResultsListBox.Items.Count > 0)
+                {
+                    int pageSize = GetSearchPageSize();
+                    int targetIndex = Math.Max(0, SearchResultsListBox.SelectedIndex - pageSize);
+                    FocusSearchItem(targetIndex);
                     e.Handled = true;
                 }
             }
@@ -1164,7 +1364,22 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
-        private void FocusSearchItem(int index)
+        internal int GetSearchPageSize()
+        {
+            double height = SearchResultsListBox?.ActualHeight ?? 0;
+            if (height <= 0 && ActualHeight > 0)
+            {
+                height = Math.Max(0, ActualHeight - 100);
+            }
+            if (height > 0)
+            {
+                int items = (int)Math.Floor(height / 44.0);
+                return Math.Clamp(items, 3, 20);
+            }
+            return 8;
+        }
+
+        internal void FocusSearchItem(int index)
         {
             if (index >= 0 && index < SearchResultsListBox.Items.Count)
             {
@@ -1196,6 +1411,15 @@ namespace MetroHub.Presentation.Controls
                     LaunchSearchItem(row);
                     e.Handled = true;
                 }
+                else if (SearchResultsListBox.Items.Count > 0)
+                {
+                    SearchResultsListBox.SelectedIndex = 0;
+                    if (SearchResultsListBox.SelectedItem is SearchItemRowViewModel topRow)
+                    {
+                        LaunchSearchItem(topRow);
+                        e.Handled = true;
+                    }
+                }
             }
             else if (e.Key == Key.Escape)
             {
@@ -1218,11 +1442,88 @@ namespace MetroHub.Presentation.Controls
                 SearchBox.CaretIndex = SearchBox.Text.Length;
                 e.Handled = true;
             }
-            else if (e.Key == Key.Up && SearchResultsListBox.SelectedIndex == 0)
+            else if (e.Key == Key.Up && SearchResultsListBox.SelectedIndex <= 0)
             {
                 // Smoothly return focus back to the search box when pressing Up from the top item
                 SearchBox.Focus();
                 SearchBox.CaretIndex = SearchBox.Text.Length;
+                e.Handled = true;
+            }
+            else if (e.Key == Key.Down && SearchResultsListBox.SelectedIndex >= SearchResultsListBox.Items.Count - 1)
+            {
+                // Smoothly wrap down from bottom item back to index 0
+                if (SearchResultsListBox.Items.Count > 0)
+                {
+                    FocusSearchItem(0);
+                    e.Handled = true;
+                }
+            }
+            else if (e.Key == Key.Home)
+            {
+                if (SearchResultsListBox.Items.Count > 0)
+                {
+                    FocusSearchItem(0);
+                    e.Handled = true;
+                }
+            }
+            else if (e.Key == Key.End)
+            {
+                if (SearchResultsListBox.Items.Count > 0)
+                {
+                    FocusSearchItem(SearchResultsListBox.Items.Count - 1);
+                    e.Handled = true;
+                }
+            }
+            else if (e.Key == Key.PageDown)
+            {
+                if (SearchResultsListBox.Items.Count > 0)
+                {
+                    int pageSize = GetSearchPageSize();
+                    int targetIndex = Math.Min(SearchResultsListBox.Items.Count - 1, Math.Max(0, SearchResultsListBox.SelectedIndex) + pageSize);
+                    FocusSearchItem(targetIndex);
+                    e.Handled = true;
+                }
+            }
+            else if (e.Key == Key.PageUp)
+            {
+                if (SearchResultsListBox.Items.Count > 0)
+                {
+                    int pageSize = GetSearchPageSize();
+                    int currentIndex = SearchResultsListBox.SelectedIndex;
+                    if (currentIndex <= 0)
+                    {
+                        SearchBox.Focus();
+                        SearchBox.CaretIndex = SearchBox.Text.Length;
+                    }
+                    else
+                    {
+                        int targetIndex = Math.Max(0, currentIndex - pageSize);
+                        FocusSearchItem(targetIndex);
+                    }
+                    e.Handled = true;
+                }
+            }
+            else if (e.Key == Key.Enter)
+            {
+                if (SearchResultsListBox.SelectedItem is SearchItemRowViewModel row)
+                {
+                    LaunchSearchItem(row);
+                    e.Handled = true;
+                }
+                else if (SearchResultsListBox.Items.Count > 0)
+                {
+                    SearchResultsListBox.SelectedIndex = 0;
+                    if (SearchResultsListBox.SelectedItem is SearchItemRowViewModel topRow)
+                    {
+                        LaunchSearchItem(topRow);
+                        e.Handled = true;
+                    }
+                }
+            }
+            else if (e.Key == Key.Escape)
+            {
+                ClearSearch();
+                SearchBox.Focus();
                 e.Handled = true;
             }
             else if (e.Key == Key.Back)
@@ -1256,11 +1557,16 @@ namespace MetroHub.Presentation.Controls
 
         private void ClearSearch()
         {
+            _searchCts?.Cancel();
+            _searchCts?.Dispose();
+            _searchCts = null;
+
+            DetachAndClearSearchRows();
             SearchBox.Text = string.Empty;
             _searchOrchestrator?.SetQuery(string.Empty);
             UpdatePlaceholderVisibility();
             GroupedViewContainer.Visibility = Visibility.Visible;
-            SearchResultsScrollViewer.Visibility = Visibility.Collapsed;
+            SearchResultsListBox.Visibility = Visibility.Collapsed;
             SearchResultsListBox.ItemsSource = null;
             if (NoResultsPanel != null) NoResultsPanel.Visibility = Visibility.Collapsed;
             RefreshRecentSuggestions(MaxZeroStateSuggestions);
@@ -1829,7 +2135,7 @@ namespace MetroHub.Presentation.Controls
             try
             {
                 StorageService.RecordSearchLaunch(item.TargetPath ?? item.Name);
-                string rawPath = item.TargetPath;
+                string rawPath = item.TargetPath!;
                 string execPath = IconExtractorService.ResolveExecutableTarget(rawPath);
 
                 if (rawPath.Contains("WindowsTerminal", StringComparison.OrdinalIgnoreCase) ||

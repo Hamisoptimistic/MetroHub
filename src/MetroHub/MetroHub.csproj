@@ -10,6 +10,7 @@
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <TieredPGO>true</TieredPGO>
+    <MvvmToolkitEnableINotifyPropertyChangingSupport>false</MvvmToolkitEnableINotifyPropertyChangingSupport>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
   </PropertyGroup>
 

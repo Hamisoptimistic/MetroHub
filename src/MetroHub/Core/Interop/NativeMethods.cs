@@ -164,6 +164,23 @@ public static class NativeMethods
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    public struct MONITORINFOEX
+    {
+        public int cbSize;
+        public RECT rcMonitor;
+        public RECT rcWork;
+        public int dwFlags;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+        public string szDevice;
+    }
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    internal static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFOEX lpmi);
+
+    [DllImport("user32.dll")]
+    internal static extern IntPtr MonitorFromWindow(IntPtr hWnd, int flags);
+
     public const int MONITOR_DEFAULTTONEAREST = 2;
 
     [DllImport("user32.dll", SetLastError = true)]
@@ -501,30 +518,73 @@ public static class NativeMethods
         public int dmPanningHeight;
     }
 
-    [DllImport("user32.dll", CharSet = CharSet.Ansi)]
-    public static extern bool EnumDisplaySettings(string? lpszDeviceName, int iModeNum, ref DEVMODE lpDevMode);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "EnumDisplaySettingsW")]
+    internal static extern bool EnumDisplaySettings(string? lpszDeviceName, int iModeNum, ref DEVMODE lpDevMode);
 
     public const int ENUM_CURRENT_SETTINGS = -1;
 
+    private static string? _cachedRefreshRateDevice;
     private static int _cachedRefreshRate = 0;
     private static DateTime _lastRefreshRateQuery = DateTime.MinValue;
 
-    public static int GetScreenRefreshRate()
+    public static int GetScreenRefreshRate(IntPtr hWnd = default)
     {
-        if (_cachedRefreshRate > 0 && (DateTime.UtcNow - _lastRefreshRateQuery).TotalSeconds < 5)
-        {
-            return _cachedRefreshRate;
-        }
-
         try
         {
+            if (hWnd == IntPtr.Zero)
+            {
+                var app = Application.Current;
+                if (app != null && app.Dispatcher.CheckAccess())
+                {
+                    var main = app.MainWindow;
+                    if (main != null)
+                    {
+                        hWnd = new WindowInteropHelper(main).Handle;
+                    }
+                }
+            }
+
+            IntPtr hMonitor = IntPtr.Zero;
+            if (hWnd != IntPtr.Zero)
+            {
+                hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+            }
+
+            if (hMonitor == IntPtr.Zero)
+            {
+                if (GetCursorPos(out POINT cursor))
+                {
+                    hMonitor = MonitorFromPoint(cursor, MONITOR_DEFAULTTONEAREST);
+                }
+            }
+
+            string? deviceName = null;
+            if (hMonitor != IntPtr.Zero)
+            {
+                var mi = new MONITORINFOEX();
+                mi.cbSize = Marshal.SizeOf<MONITORINFOEX>();
+                if (GetMonitorInfo(hMonitor, ref mi) && !string.IsNullOrWhiteSpace(mi.szDevice))
+                {
+                    deviceName = mi.szDevice;
+                }
+            }
+
+            if (_cachedRefreshRate > 0 &&
+                string.Equals(deviceName, _cachedRefreshRateDevice, StringComparison.OrdinalIgnoreCase) &&
+                (DateTime.UtcNow - _lastRefreshRateQuery).TotalSeconds < 2)
+            {
+                return _cachedRefreshRate;
+            }
+
             var devMode = new DEVMODE();
-            devMode.dmSize = (short)Marshal.SizeOf(typeof(DEVMODE));
-            if (EnumDisplaySettings(null, ENUM_CURRENT_SETTINGS, ref devMode))
+            devMode.dmSize = (short)Marshal.SizeOf<DEVMODE>();
+            if ((!string.IsNullOrEmpty(deviceName) && EnumDisplaySettings(deviceName, ENUM_CURRENT_SETTINGS, ref devMode)) ||
+                EnumDisplaySettings(null, ENUM_CURRENT_SETTINGS, ref devMode))
             {
                 if (devMode.dmDisplayFrequency >= 30 && devMode.dmDisplayFrequency <= 360)
                 {
                     _cachedRefreshRate = devMode.dmDisplayFrequency;
+                    _cachedRefreshRateDevice = deviceName;
                     _lastRefreshRateQuery = DateTime.UtcNow;
                     return _cachedRefreshRate;
                 }
@@ -534,7 +594,8 @@ public static class NativeMethods
         {
             Safe.Log(ex, "NativeMethods.GetScreenRefreshRate");
         }
-        return 60; // Safe fallback
+
+        return _cachedRefreshRate > 0 ? _cachedRefreshRate : 60;
     }
 
     #region Power Status

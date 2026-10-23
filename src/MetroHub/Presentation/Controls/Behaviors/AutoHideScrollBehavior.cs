@@ -56,6 +56,16 @@ public static class AutoHideScrollBehavior
                     };
                     fe.Loaded += loaded;
                 }
+
+                DependencyPropertyChangedEventHandler? visibleChanged = null;
+                visibleChanged = (s, args) =>
+                {
+                    if (fe.IsVisible)
+                    {
+                        AttachToChildScrollViewer(fe);
+                    }
+                };
+                fe.IsVisibleChanged += visibleChanged;
             }
             else
             {
@@ -89,6 +99,7 @@ public static class AutoHideScrollBehavior
         }
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "ScrollStateHolder lifetime is managed by ScrollViewer via ScrollStateProperty")]
     private static void ApplyToScrollViewer(ScrollViewer sv, bool isEnabled)
     {
         if (isEnabled)
@@ -156,6 +167,7 @@ public static class AutoHideScrollBehavior
             _scrollViewer.Loaded += OnLoaded;
             _scrollViewer.Unloaded += OnUnloaded;
             _scrollViewer.ScrollChanged += OnScrollChanged;
+            _scrollViewer.IsVisibleChanged += OnIsVisibleChanged;
 
             if (_scrollViewer.IsLoaded)
             {
@@ -171,6 +183,14 @@ public static class AutoHideScrollBehavior
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
             _hideTimer.Stop();
+        }
+
+        private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (_scrollViewer.IsVisible)
+            {
+                AttachScrollBar();
+            }
         }
 
         private void AttachScrollBar()
@@ -281,6 +301,7 @@ public static class AutoHideScrollBehavior
             _scrollViewer.Loaded -= OnLoaded;
             _scrollViewer.Unloaded -= OnUnloaded;
             _scrollViewer.ScrollChanged -= OnScrollChanged;
+            _scrollViewer.IsVisibleChanged -= OnIsVisibleChanged;
 
             if (_verticalScrollBar != null)
             {

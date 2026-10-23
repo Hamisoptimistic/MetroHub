@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using System.Windows.Interop;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Themes;
 
@@ -25,32 +26,40 @@ public static class FluentTransitionBehavior
 {
     // CubicEase (EaseOut) matches WinUI 3 entrance curves and eliminates
     // the extended subpixel crawl of high-exponent easing functions.
-    private static readonly IEasingFunction FluentTransformEasing = CreateTransformEasing();
-    private static readonly IEasingFunction FluentOpacityEasing = CreateOpacityEasing();
-    private static int _cachedRefreshRate;
+    private static readonly CubicEase FluentTransformEasing = CreateTransformEasing();
+    private static readonly CubicEase FluentOpacityEasing = CreateOpacityEasing();
 
-    private static IEasingFunction CreateTransformEasing()
+    private static CubicEase CreateTransformEasing()
     {
         var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
         ease.Freeze();
         return ease;
     }
 
-    private static IEasingFunction CreateOpacityEasing()
+    private static CubicEase CreateOpacityEasing()
     {
         var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
         ease.Freeze();
         return ease;
     }
 
-    private static int GetTargetFrameRate()
+    private static int GetTargetFrameRate(UIElement? element = null)
     {
-        if (_cachedRefreshRate <= 0)
+        IntPtr hwnd = IntPtr.Zero;
+        if (element != null)
         {
-            int rate = NativeMethods.GetScreenRefreshRate();
-            _cachedRefreshRate = rate > 0 ? rate : 120;
+            try
+            {
+                if (PresentationSource.FromVisual(element) is HwndSource source)
+                {
+                    hwnd = source.Handle;
+                }
+            }
+            catch { }
         }
-        return _cachedRefreshRate;
+
+        int rate = NativeMethods.GetScreenRefreshRate(hwnd);
+        return rate > 0 ? rate : 120;
     }
 
     #region Attached Properties
@@ -225,7 +234,7 @@ public static class FluentTransitionBehavior
             return;
         }
 
-        int refreshRate = GetTargetFrameRate();
+        int refreshRate = GetTargetFrameRate(target);
         var translateDuration = new Duration(TimeSpan.FromMilliseconds(durationMs));
         var opacityDuration = new Duration(TimeSpan.FromMilliseconds(Math.Min(140, durationMs)));
 

@@ -90,6 +90,13 @@ public class WindowManagementTests
     }
 
     [Fact]
+    public void NativeMethods_GetScreenRefreshRate_ReturnsValidRefreshRate()
+    {
+        int rate = NativeMethods.GetScreenRefreshRate(IntPtr.Zero);
+        Assert.InRange(rate, 30, 360);
+    }
+
+    [Fact]
     public void WebLinkDialog_Setup_PopulatesFieldsAndDestinationCorrectly()
     {
         WpfTestHost.RunSta(() =>
