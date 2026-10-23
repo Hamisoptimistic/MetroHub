@@ -53,7 +53,6 @@ public sealed class IconPathToBitmapConverter : IValueConverter
             var bmp = new BitmapImage();
             bmp.BeginInit();
             bmp.CacheOption = BitmapCacheOption.OnLoad;
-            bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
             if (decodeWidth > 0)
             {
                 bmp.DecodePixelWidth = decodeWidth;

@@ -116,8 +116,11 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
 
-        int refreshRate = NativeMethods.GetScreenRefreshRate();
-        Timeline.SetDesiredFrameRate(anim, refreshRate > 0 ? refreshRate : 100);
+        anim.Completed += (s, e) =>
+        {
+            AmbientFocusScrim.BeginAnimation(UIElement.OpacityProperty, null);
+            AmbientFocusScrim.Opacity = targetOpacity;
+        };
 
         AmbientFocusScrim.BeginAnimation(UIElement.OpacityProperty, anim);
     }
@@ -502,6 +505,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     }
 
     private DateTime _lastShownTime = DateTime.MinValue;
+    private int _showSequence;
     private bool _isFullyActivated = false;
 
     private void OnWindowActivated(object? sender, EventArgs e)
@@ -1137,13 +1141,27 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         // Immediate cohesive entrance animation without artificial Render-delay gating
         PlayOpenAnimation();
 
-        // Defer widget wake-up and service resumption to background priority so UI opens instantly without frame drops
-        Dispatcher.InvokeAsync(() =>
+        // Stagger widget wake-up and background service resumption so window restore and initial scroll do not compete with 14 widgets resuming simultaneously
+        int showToken = ++_showSequence;
+        Dispatcher.InvokeAsync(async () =>
         {
-            MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(true));
-            WidgetHeartbeatService.SetHubVisibility(true);
-            InstalledAppsService.ResumeWatchers();
-        }, DispatcherPriority.Background);
+            await Task.Delay(120).ConfigureAwait(false);
+            await Dispatcher.InvokeAsync(() =>
+            {
+                if (_isDismissing || !IsVisible || _showSequence != showToken) return;
+
+                MetroHub.Widgets.Messaging.WidgetMessenger.Send(new MetroHub.Widgets.Messaging.HubVisibilityChangedMessage(true));
+                WidgetHeartbeatService.SetHubVisibility(true);
+            }, DispatcherPriority.Background);
+
+            await Task.Delay(180).ConfigureAwait(false);
+            await Dispatcher.InvokeAsync(() =>
+            {
+                if (_isDismissing || !IsVisible || _showSequence != showToken) return;
+
+                InstalledAppsService.ResumeWatchers();
+            }, DispatcherPriority.Background);
+        });
 
         MetroHub.Core.Services.HubState.SetVisibility(true);
         MetroHub.Core.Services.HiddenDiagnosticsLogger.LogTransition(true);
@@ -1152,6 +1170,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     public void HideScreen(bool restorePreviousFocus = true)
     {
         if (_isDismissing || !IsVisible) return;
+        ++_showSequence;
         DismissOpenDialogs();
         _isDismissing = true;
 

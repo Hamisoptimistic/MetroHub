@@ -516,10 +516,7 @@ public static class SmoothPhysicsScrollBehavior
             }
             _lastRenderArgsTime = renderingArgs.RenderingTime;
 
-            if (dt <= 0.0001 || dt > 0.05)
-            {
-                dt = 1.0 / 120.0;
-            }
+            dt = Math.Clamp(dt, 0.001, 0.05);
 
             double maxScroll = _scrollViewer.ScrollableHeight;
             _rawTargetOffset = Math.Clamp(_rawTargetOffset, 0.0, maxScroll);
@@ -649,12 +646,12 @@ public static class SmoothPhysicsScrollBehavior
                     content.RenderTransform = null;
                 }
 
-                // Debounce BitmapCache teardown by 150ms to keep cache hot across trailing wheel detents
+                // Debounce BitmapCache teardown by 500ms (industry standard) to keep cache hot across trailing wheel detents
                 if (_cacheSettleTimer == null)
                 {
                     _cacheSettleTimer = new System.Windows.Threading.DispatcherTimer
                     {
-                        Interval = TimeSpan.FromMilliseconds(150)
+                        Interval = TimeSpan.FromMilliseconds(500)
                     };
                     _cacheSettleTimer.Tick += OnCacheSettleTimerTick;
                 }

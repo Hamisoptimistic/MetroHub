@@ -195,14 +195,11 @@ public static class FluentTransitionBehavior
         transform.X = offsetX;
         transform.Y = offsetY;
 
-        // 2. Schedule at DispatcherPriority.Background (priority 4) so that:
-        //    - DataTemplate inflation & Measure/Arrange (Render, priority 7) finish first
-        //    - All child control Loaded events (Loaded, priority 6) finish second
-        //    - The UI thread is 100% idle when the animation clock starts at T=0.
+        // 2. Schedule at DispatcherPriority.Render (priority 7) so page transitions start reliably without being starved by mouse input events
         control.Dispatcher.InvokeAsync(() =>
         {
             PlayEntrance(control, transform, mode, offsetX, offsetY, durationMs, currentVersion);
-        }, DispatcherPriority.Background);
+        }, DispatcherPriority.Render);
     }
 
     private static bool IsHomeState(object content)

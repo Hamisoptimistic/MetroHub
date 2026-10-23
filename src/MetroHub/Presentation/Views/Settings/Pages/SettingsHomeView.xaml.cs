@@ -43,7 +43,6 @@ public partial class SettingsHomeView : UserControl
                 {
                     EasingFunction = RevealEasing
                 };
-                Timeline.SetDesiredFrameRate(fadeIn, 120);
                 revealBorder.BeginAnimation(UIElement.OpacityProperty, fadeIn);
             }
         }
@@ -59,7 +58,6 @@ public partial class SettingsHomeView : UserControl
                 {
                     EasingFunction = RevealEasing
                 };
-                Timeline.SetDesiredFrameRate(fadeOut, 120);
                 revealBorder.BeginAnimation(UIElement.OpacityProperty, fadeOut);
             }
         }
