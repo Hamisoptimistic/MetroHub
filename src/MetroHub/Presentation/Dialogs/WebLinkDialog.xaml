@@ -106,13 +106,20 @@
         </StackPanel>
 
         <!-- Footer Action Buttons -->
-        <Grid Grid.Row="1" Margin="0,16,0,0">
+        <StackPanel Grid.Row="1"
+                    Margin="0,16,0,0"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+            <Button x:Name="WebLinkChangeIconButton"
+                    Content="Change Icon"
+                    Style="{DynamicResource DefaultButtonStyle}"
+                    Margin="0,0,10,0"
+                    Click="OnChangeIconClick" />
             <Button x:Name="WebLinkActionButton"
                     Content="Add Shortcut"
                     Style="{DynamicResource AccentButtonStyle}"
-                    HorizontalAlignment="Right"
                     IsDefault="True"
                     Click="OnAddWebLinkClick" />
-        </Grid>
+        </StackPanel>
     </Grid>
 </dialogs:MetroDialog>

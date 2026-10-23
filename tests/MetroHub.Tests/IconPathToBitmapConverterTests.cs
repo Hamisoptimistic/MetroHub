@@ -96,4 +96,71 @@ public class IconPathToBitmapConverterTests
             }
         });
     }
+
+    [Fact]
+    public void InvalidateCache_RemovesCachedBitmap_NextCallReloadsFreshInstance()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            string tempImage = CreateTempPng(128, 128);
+            try
+            {
+                var converter = new IconPathToBitmapConverter();
+                var first = converter.Convert(tempImage, typeof(ImageSource), 96, CultureInfo.InvariantCulture);
+                Assert.NotNull(first);
+
+                // Evict cache
+                IconPathToBitmapConverter.InvalidateCache(tempImage);
+
+                var second = converter.Convert(tempImage, typeof(ImageSource), 96, CultureInfo.InvariantCulture);
+                Assert.NotNull(second);
+
+                // Should not be the same reference because cache was evicted
+                Assert.NotSame(first, second);
+            }
+            finally
+            {
+                if (File.Exists(tempImage))
+                {
+                    try { File.Delete(tempImage); } catch { }
+                }
+            }
+        });
+    }
+
+    [Fact]
+    public void CreateBitmapFromBytes_ValidPngBytes_ReturnsFrozenBitmap()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            string tempImage = CreateTempPng(64, 64);
+            try
+            {
+                byte[] bytes = File.ReadAllBytes(tempImage);
+                var bmp = IconPathToBitmapConverter.CreateBitmapFromBytes(bytes);
+
+                Assert.NotNull(bmp);
+                Assert.True(bmp.IsFrozen);
+            }
+            finally
+            {
+                if (File.Exists(tempImage))
+                {
+                    try { File.Delete(tempImage); } catch { }
+                }
+            }
+        });
+    }
+
+    [Fact]
+    public void CreateBitmapFromBytes_InvalidOrShortBytes_ReturnsNullSafely()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            Assert.Null(IconPathToBitmapConverter.CreateBitmapFromBytes(null));
+            Assert.Null(IconPathToBitmapConverter.CreateBitmapFromBytes([]));
+            Assert.Null(IconPathToBitmapConverter.CreateBitmapFromBytes(new byte[50])); // corrupt image bytes
+            Assert.Null(IconPathToBitmapConverter.CreateBitmapFromBytes(new byte[250])); // corrupt image bytes
+        });
+    }
 }

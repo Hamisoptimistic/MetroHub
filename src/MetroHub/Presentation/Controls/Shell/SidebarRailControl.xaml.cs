@@ -789,6 +789,7 @@ public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
                 item.Title = result.Title;
                 if (!string.IsNullOrWhiteSpace(result.IconPath))
                 {
+                    item.CustomIconPath = null;
                     item.CustomIconPath = result.IconPath;
                 }
                 PersistShortcuts();

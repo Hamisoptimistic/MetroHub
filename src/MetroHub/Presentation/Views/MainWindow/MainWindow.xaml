@@ -427,12 +427,7 @@
                             CornerRadius="{DynamicResource TileCornerRadius}"
                             BorderThickness="1.5"
                             BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
-                            Background="{DynamicResource SystemAccentColorDropSlotFill}"
-                            CacheMode="BitmapCache">
-                        <Border.Effect>
-                            <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.6" Color="{DynamicResource SystemAccentColor}" />
-                        </Border.Effect>
-                    </Border>
+                            Background="{DynamicResource SystemAccentColorDropSlotFill}" />
                 </Canvas>
 
                 <!-- Rubber-band (Marquee) Multi-Tile Selection Box -->
@@ -450,22 +445,14 @@
                 <Canvas x:Name="GroupDropHighlightCanvas" IsHitTestVisible="False" Panel.ZIndex="2500">
                     <Border x:Name="GroupDropPerimeterBorder"
                             Visibility="Collapsed"
-                            CornerRadius="6"
+                            CornerRadius="{DynamicResource TileCornerRadius}"
                             BorderThickness="1"
                             BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
                             Background="{DynamicResource SystemAccentColorGroupDropFill}"
-                            RenderTransformOrigin="0.5,0.5"
-                            CacheMode="BitmapCache">
+                            RenderTransformOrigin="0.5,0.5">
                         <Border.RenderTransform>
                             <TranslateTransform x:Name="GroupDropPerimeterTranslate" X="0" Y="0" />
                         </Border.RenderTransform>
-                        <Border.Effect>
-                            <DropShadowEffect x:Name="GroupDropGlowEffect"
-                                              BlurRadius="20"
-                                              ShadowDepth="0"
-                                              Opacity="0.65"
-                                              Color="{DynamicResource SystemAccentColor}" />
-                        </Border.Effect>
                     </Border>
 
                     <!-- Thin 1x1 Red Glowing Border for 1x1 Gap Drop Warning Feedback -->
@@ -476,16 +463,7 @@
                             BorderThickness="1.5"
                             BorderBrush="{DynamicResource StatusDangerGlowBrush}"
                             Background="{DynamicResource StatusDangerSubtleBrush}"
-                            IsHitTestVisible="False"
-                            CacheMode="BitmapCache">
-                        <Border.Effect>
-                            <DropShadowEffect x:Name="GapDropWarningGlow"
-                                              BlurRadius="16"
-                                              ShadowDepth="0"
-                                              Opacity="0.85"
-                                              Color="{StaticResource StatusDangerGlowColor}" />
-                        </Border.Effect>
-                    </Border>
+                            IsHitTestVisible="False" />
 
                     <!-- WPF-UI Fluent Card Style Floating Badge -->
                     <Border x:Name="GroupDropFloatingBadge"
@@ -494,11 +472,7 @@
                             Background="{DynamicResource ShellBadgeBackground}"
                             BorderThickness="1"
                             BorderBrush="{DynamicResource SurfaceBorderBrush}"
-                            Padding="10,6,12,6"
-                            CacheMode="BitmapCache">
-                        <Border.Effect>
-                            <DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.45" Direction="270" Color="#000000" />
-                        </Border.Effect>
+                            Padding="10,6,12,6">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <ui:SymbolIcon x:Name="GroupDropBadgeIcon"
                                            Symbol="Add24"
@@ -520,12 +494,7 @@
                             Visibility="Collapsed"
                             Height="3"
                             CornerRadius="1.5"
-                            Background="{DynamicResource SystemAccentColorPrimaryBrush}"
-                            CacheMode="BitmapCache">
-                        <Border.Effect>
-                            <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.8" Color="{DynamicResource SystemAccentColor}" />
-                        </Border.Effect>
-                    </Border>
+                            Background="{DynamicResource SystemAccentColorPrimaryBrush}" />
                 </Canvas>
 
                 <!-- Retained Workspaces Host Grid: houses WorkspaceCanvasControl instances per workspace -->

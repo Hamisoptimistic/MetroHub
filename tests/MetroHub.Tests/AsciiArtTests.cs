@@ -246,8 +246,8 @@ public class HalftoneAudioGovernorTests
         AudioFrame frame = governor.Update(rawKick: 0.8f, rawBass: 0.8f, rawMid: 0.5f, rawTreble: 0.5f, deltaSeconds: 0.016f);
         Assert.True(frame.Kick > 0.5f);
 
-        // Advance silence for 1 second
-        for (int i = 0; i < 60; i++)
+        // Advance silence for 1.6 seconds (decay + silence threshold)
+        for (int i = 0; i < 100; i++)
         {
             frame = governor.Update(rawKick: 0f, rawBass: 0f, rawMid: 0f, rawTreble: 0f, deltaSeconds: 0.016f);
         }

@@ -38,11 +38,7 @@
                             Padding="0,3,0,3"
                             CornerRadius="{DynamicResource ContextMenuCornerRadius}"
                             BorderBrush="{TemplateBinding BorderBrush}"
-                            Background="{TemplateBinding Background}"
-                            >
-                        <Border.RenderTransform>
-                            <TranslateTransform x:Name="MenuTranslate" Y="0" />
-                        </Border.RenderTransform>
+                            Background="{TemplateBinding Background}">
                         <StackPanel Orientation="Vertical"
                                     IsItemsHost="True"
                                     ClipToBounds="True"
@@ -53,16 +49,7 @@
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
                                     <Storyboard>
-                                        <!-- Smooth 12px subtle glide matching WPF-UI design language without window clipping -->
-                                        <DoubleAnimation Storyboard.TargetName="Border"
-                                                         Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                                                         From="-12" To="0"
-                                                         Duration="{StaticResource FluentDurationNormal}">
-                                            <DoubleAnimation.EasingFunction>
-                                                <CircleEase EasingMode="EaseOut" />
-                                            </DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                        <!-- Smooth opacity fade in -->
+                                        <!-- Unified Fluent 100ms Opacity Fade Token -->
                                         <DoubleAnimation Storyboard.TargetName="Border"
                                                          Storyboard.TargetProperty="Opacity"
                                                          From="0.0" To="1.0"
@@ -240,18 +227,11 @@
                         CornerRadius="{DynamicResource ContextMenuCornerRadius}"
                         BorderBrush="{DynamicResource ContextMenuBorderBrush}"
                         Background="{DynamicResource ContextMenuBackground}"
-                        Margin="8,6,8,12"
-                        CacheMode="BitmapCache">
+                        Margin="4,2,4,4">
                     <Border.LayoutTransform>
                         <ScaleTransform ScaleX="{DynamicResource AppUiScale}"
                                         ScaleY="{DynamicResource AppUiScale}" />
                     </Border.LayoutTransform>
-                    <Border.RenderTransform>
-                        <TranslateTransform x:Name="SubmenuTranslate" Y="0" />
-                    </Border.RenderTransform>
-                    <Border.Effect>
-                        <DropShadowEffect ShadowDepth="4" Direction="270" Opacity="0.35" BlurRadius="16" />
-                    </Border.Effect>
                     <ScrollViewer Style="{StaticResource FloatingScrollViewerStyle}"
                                   CanContentScroll="False"
                                   HorizontalScrollBarVisibility="Disabled"
@@ -282,14 +262,7 @@
                 <Trigger.EnterActions>
                     <BeginStoryboard>
                         <Storyboard>
-                            <DoubleAnimation Storyboard.TargetName="SubmenuBorder"
-                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                                             From="-8" To="0"
-                                             Duration="{StaticResource FluentDurationFast}">
-                                <DoubleAnimation.EasingFunction>
-                                    <CircleEase EasingMode="EaseOut" />
-                                </DoubleAnimation.EasingFunction>
-                            </DoubleAnimation>
+                            <!-- Unified Fluent 100ms Opacity Fade Token -->
                             <DoubleAnimation Storyboard.TargetName="SubmenuBorder"
                                              Storyboard.TargetProperty="Opacity"
                                              From="0.0" To="1.0"

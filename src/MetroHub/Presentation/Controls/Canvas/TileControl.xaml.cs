@@ -51,27 +51,12 @@ public partial class TileControl : UserControl
     public static readonly List<TileControl> ActiveTiles = new();
 
     private static readonly QuadraticEase SharedTilePressEase = CreateFrozenQuadraticEase();
-    private static readonly DropShadowEffect SharedElevationShadow = CreateFrozenElevationShadow();
 
     private static QuadraticEase CreateFrozenQuadraticEase()
     {
         var ease = new QuadraticEase { EasingMode = EasingMode.EaseOut };
         ease.Freeze();
         return ease;
-    }
-
-    private static DropShadowEffect CreateFrozenElevationShadow()
-    {
-        var shadow = new DropShadowEffect
-        {
-            BlurRadius = 24,
-            ShadowDepth = 6,
-            Direction = 270,
-            Opacity = 0.45,
-            Color = Colors.Black
-        };
-        shadow.Freeze();
-        return shadow;
     }
 
     private static DispatcherTimer? _revealSettleTimer;
@@ -398,7 +383,6 @@ public partial class TileControl : UserControl
             EnableClearType = true,
             SnapsToDevicePixels = true
         };
-        RootBorder.Effect = SharedElevationShadow;
     }
 
     public void AnimateRelease(Action? onCompleted = null)
@@ -422,7 +406,6 @@ public partial class TileControl : UserControl
             TileScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
             TileScale.ScaleX = 1.0;
             TileScale.ScaleY = 1.0;
-            RootBorder.Effect = null;
             RootBorder.CacheMode = null;
             onCompleted?.Invoke();
         }
@@ -1234,6 +1217,7 @@ public partial class TileControl : UserControl
                 tile.Title = result.Title;
                 if (!string.IsNullOrWhiteSpace(result.IconPath))
                 {
+                    tile.IconPath = null;
                     tile.IconPath = result.IconPath;
                     tile.AccentColor = ColorExtractorService.ExtractAccentColor(result.IconPath);
                 }

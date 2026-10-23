@@ -1720,18 +1720,12 @@ public partial class MainWindow
                     GroupDropPerimeterTranslate.X = 0;
                 }
 
-                GroupDropPerimeterBorder.CornerRadius = new CornerRadius(6);
                 Canvas.SetLeft(GroupDropPerimeterBorder, bestGroupRect.Left);
                 Canvas.SetTop(GroupDropPerimeterBorder, bestGroupRect.Top);
                 GroupDropPerimeterBorder.Width = bestGroupRect.Width;
                 GroupDropPerimeterBorder.Height = bestGroupRect.Height;
                 GroupDropPerimeterBorder.BorderBrush = solidBrush;
                 GroupDropPerimeterBorder.Background = tintBrush;
-                if (GroupDropGlowEffect != null)
-                {
-                    GroupDropGlowEffect.Color = groupColor;
-                    GroupDropGlowEffect.Opacity = isLocked ? 0.85 : 0.65;
-                }
 
                 GroupDropPerimeterBorder.Opacity = 1.0;
                 GroupDropPerimeterBorder.Visibility = Visibility.Visible;
@@ -1858,15 +1852,8 @@ public partial class MainWindow
             GroupDropPerimeterBorder.Height = 36;
         }
 
-        GroupDropPerimeterBorder.CornerRadius = new CornerRadius(6);
-
         GroupDropPerimeterBorder.BorderBrush = ThemeTokens.StatusDangerBrush;
         GroupDropPerimeterBorder.Background = ThemeTokens.StatusDangerSubtleBrush;
-        if (GroupDropGlowEffect != null)
-        {
-            GroupDropGlowEffect.Color = ThemeTokens.StatusDangerColor;
-            GroupDropGlowEffect.Opacity = 0.95;
-        }
 
         GroupDropPerimeterBorder.Opacity = 1.0;
         GroupDropPerimeterBorder.Visibility = Visibility.Visible;

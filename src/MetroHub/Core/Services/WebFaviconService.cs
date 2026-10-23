@@ -535,13 +535,10 @@ public static partial class WebFaviconService
     }
 
     /// <summary>
-    /// Streams up to 64 KB of the page HTML head, stops at </head>, checks for host redirects,
-    /// parses the highest quality icon and title, and downloads the icon if found.
+    /// Streams up to 64 KB of the page HTML head, stops at &lt;/head&gt;, checks for host redirects,
+    /// and parses the site name, page title, and the highest-quality non-SVG icon URL without downloading the icon to disk.
     /// </summary>
-    private static async Task<HtmlHeadInfo?> TryExtractFromHtmlHeadAsync(
-        string url,
-        string destinationPath,
-        CancellationToken ct)
+    public static async Task<HtmlHeadInfo?> ExtractHtmlHeadInfoAsync(string url, CancellationToken ct = default)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? requestedUri))
             return null;
@@ -562,9 +559,11 @@ public static partial class WebFaviconService
         }
 
         // Host redirect check: if redirected to another host (e.g. login portal), discard
-        string requestedHost = requestedUri.Host;
-        string finalHost = response.RequestMessage?.RequestUri?.Host ?? requestedHost;
-        if (!string.Equals(requestedHost, finalHost, StringComparison.OrdinalIgnoreCase))
+        string requestedHost = requestedUri.Host.ToLowerInvariant().TrimEnd('.');
+        string finalHost = (response.RequestMessage?.RequestUri?.Host ?? requestedHost).ToLowerInvariant().TrimEnd('.');
+        string reqNoWww = requestedHost.StartsWith("www.") ? requestedHost[4..] : requestedHost;
+        string finalNoWww = finalHost.StartsWith("www.") ? finalHost[4..] : finalHost;
+        if (!string.Equals(reqNoWww, finalNoWww, StringComparison.OrdinalIgnoreCase))
         {
             return null;
         }
@@ -596,10 +595,20 @@ public static partial class WebFaviconService
         }
 
         string htmlHead = System.Text.Encoding.UTF8.GetString(ms.GetBuffer(), 0, (int)ms.Length);
-        var headInfo = ParseHtmlHead(htmlHead, baseUri);
+        return ParseHtmlHead(htmlHead, baseUri);
+    }
 
-        // If an icon URL was found, download with minimumBytes check
-        if (!string.IsNullOrWhiteSpace(headInfo.IconUrl))
+    /// <summary>
+    /// Streams up to 64 KB of the page HTML head, stops at </head>, checks for host redirects,
+    /// parses the highest quality icon and title, and downloads the icon if found.
+    /// </summary>
+    private static async Task<HtmlHeadInfo?> TryExtractFromHtmlHeadAsync(
+        string url,
+        string destinationPath,
+        CancellationToken ct)
+    {
+        var headInfo = await ExtractHtmlHeadInfoAsync(url, ct).ConfigureAwait(false);
+        if (headInfo != null && !string.IsNullOrWhiteSpace(headInfo.IconUrl))
         {
             bool downloaded = await HttpHelper.DownloadFileAsync(
                 headInfo.IconUrl,
@@ -771,6 +780,135 @@ public static partial class WebFaviconService
         }
 
         return new WebFaviconResult(null, resolvedTitle);
+    }
+
+    /// <summary>
+    /// Downloads remote icon bytes directly into memory without touching the local disk.
+    /// </summary>
+    public static async Task<byte[]?> DownloadIconBytesAsync(string iconUrl, CancellationToken ct = default, int minimumBytes = 200)
+    {
+        if (string.IsNullOrWhiteSpace(iconUrl)) return null;
+
+        try
+        {
+            using var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, iconUrl);
+            request.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+
+            using var response = await HttpHelper.Client.SendAsync(request, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode) return null;
+
+            byte[] bytes = await response.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
+            if (minimumBytes > 0 && bytes.Length < minimumBytes) return null;
+
+            return bytes;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, $"[WebFaviconService] Failed to download icon bytes from '{iconUrl}'");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Generates candidate favicon source URLs in priority order:
+    /// 1. HTML head apple-touch-icon / high-res icon (if provided)
+    /// 2. Google S2 path-aware favicon service
+    /// 3. Google S2 domain fallback (if queryUrl had a sub-path)
+    /// 4. DuckDuckGo icons service
+    /// 5. Direct root favicon.ico
+    /// </summary>
+    public static List<string> GetCandidateSourceUrls(string url, string? htmlHeadIconUrl = null)
+    {
+        var list = new List<string>(5);
+        if (string.IsNullOrWhiteSpace(url)) return list;
+
+        string normalized = NormalizeUrl(url);
+        if (string.IsNullOrWhiteSpace(normalized)) return list;
+
+        string domain = ExtractDomain(normalized);
+        if (string.IsNullOrWhiteSpace(domain) || !domain.Contains('.')) return list;
+
+        string queryUrl = normalized;
+        if (Uri.TryCreate(normalized, UriKind.Absolute, out Uri? parsedUri))
+        {
+            queryUrl = parsedUri.GetLeftPart(UriPartial.Path);
+        }
+
+        void AddCandidate(string candidate)
+        {
+            if (!string.IsNullOrWhiteSpace(candidate) && !list.Contains(candidate, StringComparer.OrdinalIgnoreCase))
+            {
+                list.Add(candidate);
+            }
+        }
+
+        // 1. HTML head icon
+        if (!string.IsNullOrWhiteSpace(htmlHeadIconUrl))
+        {
+            AddCandidate(htmlHeadIconUrl);
+        }
+
+        // 2. Google S2 Path-aware
+        string googlePathUrl = $"https://www.google.com/s2/favicons?domain={Uri.EscapeDataString(queryUrl)}&sz=128";
+        AddCandidate(googlePathUrl);
+
+        // 3. Google S2 Domain (if path is distinct from root domain)
+        if (!string.Equals(queryUrl, domain, StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(queryUrl, $"https://{domain}/", StringComparison.OrdinalIgnoreCase))
+        {
+            string googleDomainUrl = $"https://www.google.com/s2/favicons?domain={Uri.EscapeDataString(domain)}&sz=128";
+            AddCandidate(googleDomainUrl);
+        }
+
+        // 4. DuckDuckGo Icons
+        string ddgUrl = $"https://icons.duckduckgo.com/ip3/{Uri.EscapeDataString(domain)}.ico";
+        AddCandidate(ddgUrl);
+
+        // 5. Direct root favicon
+        string directUrl = $"https://{domain}/favicon.ico";
+        AddCandidate(directUrl);
+
+        return list;
+    }
+
+    /// <summary>
+    /// Saves the selected icon bytes to the single deterministic cache path on disk,
+    /// updating in-memory memoization.
+    /// </summary>
+    public static string? SaveIconToCache(string url, byte[] bytes)
+    {
+        if (string.IsNullOrWhiteSpace(url) || bytes == null || bytes.Length == 0) return null;
+
+        try
+        {
+            string cachedPath = GetCachedIconPath(url);
+            if (string.IsNullOrWhiteSpace(cachedPath)) return null;
+
+            string? dir = Path.GetDirectoryName(cachedPath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            File.WriteAllBytes(cachedPath, bytes);
+
+            string scopeKey = ComputeCacheScopeKey(url);
+            if (!string.IsNullOrWhiteSpace(scopeKey))
+            {
+                _memoryCache[scopeKey] = cachedPath;
+            }
+
+            return cachedPath;
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, $"Failed to save favicon to cache for '{url}'");
+            return null;
+        }
     }
 }
 

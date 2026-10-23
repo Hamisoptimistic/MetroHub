@@ -20,6 +20,55 @@ public sealed class IconPathToBitmapConverter : IValueConverter
 
     private static readonly ConcurrentDictionary<string, BitmapImage> _iconCache = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Evicts all cached bitmap instances associated with the specified file path or URI.
+    /// Call this whenever an icon file is updated or overwritten in-place on disk.
+    /// </summary>
+    public static void InvalidateCache(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+
+        string normalized = path.Replace('/', '\\');
+        foreach (var key in _iconCache.Keys)
+        {
+            string keyPath = key.Split('|')[0].Replace('/', '\\');
+            if (string.Equals(keyPath, normalized, StringComparison.OrdinalIgnoreCase))
+            {
+                _iconCache.TryRemove(key, out _);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates a frozen BitmapImage directly from raw image bytes in memory without touching disk.
+    /// Returns null if bytes are invalid or cannot be decoded as an image.
+    /// </summary>
+    public static BitmapImage? CreateBitmapFromBytes(byte[]? bytes, int decodeWidth = 0)
+    {
+        if (bytes == null || bytes.Length == 0) return null;
+
+        try
+        {
+            using var ms = new MemoryStream(bytes);
+            var bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.CacheOption = BitmapCacheOption.OnLoad;
+            bmp.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+            if (decodeWidth > 0)
+            {
+                bmp.DecodePixelWidth = decodeWidth;
+            }
+            bmp.StreamSource = ms;
+            bmp.EndInit();
+            bmp.Freeze();
+            return bmp;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public static BitmapImage? LoadClampedIcon(string? path, int decodeWidth = DefaultDecodePixelWidth)
     {
         if (string.IsNullOrWhiteSpace(path)) return null;
