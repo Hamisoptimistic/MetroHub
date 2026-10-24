@@ -244,10 +244,6 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         {
             CancelSpeedTest();
         }
-        else
-        {
-            _ = EnsureSpeedTestServerLocationAsync();
-        }
         if (string.Equals(value, "Usage", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(value, "DataUsage", StringComparison.OrdinalIgnoreCase))
         {
@@ -266,12 +262,12 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     private static readonly Brush GreenIndicatorBrush = ThemeTokens.StatusSuccessBrush;
     private static readonly Brush BlueIndicatorBrush = ThemeTokens.StatusInfoBrush;
     private static readonly Brush RedIndicatorBrush = ThemeTokens.StatusDangerBrush;
-    private static readonly Brush AmberIndicatorBrush = ThemeTokens.StatusWarningBrush;
-    private static readonly Brush PurpleIndicatorBrush = CreateFrozenBrush("#A855F7");
-    private static readonly Brush MutedIndicatorBrush = CreateFrozenBrush("#80FFFFFF");
-    private static readonly Brush WhiteIndicatorBrush = CreateFrozenBrush("#FFFFFF");
+    private static readonly SolidColorBrush AmberIndicatorBrush = ThemeTokens.StatusWarningBrush;
+    private static readonly SolidColorBrush PurpleIndicatorBrush = CreateFrozenBrush("#A855F7");
+    private static readonly SolidColorBrush MutedIndicatorBrush = CreateFrozenBrush("#80FFFFFF");
+    private static readonly SolidColorBrush WhiteIndicatorBrush = CreateFrozenBrush("#FFFFFF");
 
-    private static Brush CreateFrozenBrush(string hex)
+    private static SolidColorBrush CreateFrozenBrush(string hex)
     {
         var b = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hex));
         b.Freeze();
@@ -907,10 +903,11 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     [NotifyPropertyChangedFor(nameof(IsSpeedTestCompletedOrFailed))]
     [NotifyPropertyChangedFor(nameof(SpeedTestPhaseBadgeText))]
     [NotifyPropertyChangedFor(nameof(SpeedTestPhaseBadgeBrush))]
-    [NotifyPropertyChangedFor(nameof(SpeedTestServerOrStatusDisplay))]
     [NotifyPropertyChangedFor(nameof(IsDownloadPhaseActive))]
     [NotifyPropertyChangedFor(nameof(IsUploadPhaseActive))]
     [NotifyPropertyChangedFor(nameof(IsLatencyPhaseActive))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestDownloadDisplay))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestUploadDisplay))]
     [NotifyPropertyChangedFor(nameof(SpeedStatusBrush))]
     private SpeedTestPhase _speedTestPhase = SpeedTestPhase.Idle;
 
@@ -925,20 +922,10 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
     public bool IsUploadPhaseActive => SpeedTestPhase == SpeedTestPhase.Upload;
     public bool IsLatencyPhaseActive => SpeedTestPhase is SpeedTestPhase.Connecting or SpeedTestPhase.Ping;
 
-    public string SpeedTestServerOrStatusDisplay
-    {
-        get
-        {
-            if (IsSpeedTestRunning)
-                return SpeedTestStatusMessage;
-            if (SpeedTestPhase == SpeedTestPhase.Completed)
-                return $"{SpeedTestServerName} • Complete";
-            return SpeedTestServerName;
-        }
-    }
-
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SpeedTestMainNumberDisplay))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestDownloadDisplay))]
+    [NotifyPropertyChangedFor(nameof(SpeedTestUploadDisplay))]
     private double _speedTestInstantaneousMbps;
 
     [ObservableProperty]
@@ -976,51 +963,6 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
 
     [ObservableProperty]
     private string _speedTestStatusMessage = "Ready to test network speed";
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillText))]
-    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillIcon))]
-    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillTooltip))]
-    private string _speedTestServerName = "Cloudflare Edge";
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillText))]
-    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillIcon))]
-    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillTooltip))]
-    private string _speedTestServerLocation = "Auto Edge";
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillText))]
-    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillIcon))]
-    [NotifyPropertyChangedFor(nameof(SpeedTestServerPillTooltip))]
-    private int _speedTestServerDisplayMode = 0; // 0 = Provider ("Cloudflare Edge"), 1 = Location ("Mumbai (BOM)")
-
-    public string SpeedTestServerPillText => SpeedTestServerDisplayMode switch
-    {
-        1 => !string.IsNullOrWhiteSpace(SpeedTestServerLocation) && SpeedTestServerLocation != "Auto Edge"
-            ? SpeedTestServerLocation
-            : "Nearest Edge",
-        _ => SpeedTestServerName
-    };
-
-    public string SpeedTestServerPillIcon => SpeedTestServerDisplayMode switch
-    {
-        1 => "\uE707", // MapPin
-        _ => "\uE774"  // Globe
-    };
-
-    public string SpeedTestServerPillTooltip => SpeedTestServerDisplayMode == 0
-        ? "Provider: Cloudflare Edge • Click to view nearest edge server location"
-        : $"Location: {SpeedTestServerPillText} • Click to view provider";
-
-    [RelayCommand]
-    public void ToggleSpeedTestServerDisplay()
-    {
-        SpeedTestServerDisplayMode = (SpeedTestServerDisplayMode + 1) % 2;
-        OnPropertyChanged(nameof(SpeedTestServerPillText));
-        OnPropertyChanged(nameof(SpeedTestServerPillIcon));
-        OnPropertyChanged(nameof(SpeedTestServerPillTooltip));
-    }
 
     [ObservableProperty]
     private double _speedTestPhaseProgress;
@@ -1131,9 +1073,6 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             SpeedTestPhase = p.Phase;
             if (!string.IsNullOrEmpty(p.StatusMessage))
                 SpeedTestStatusMessage = p.StatusMessage;
-
-            if (!string.IsNullOrEmpty(p.ServerLocation))
-                SpeedTestServerLocation = p.ServerLocation;
 
             if (p.IsMeteredConnection) IsMeteredNetwork = true;
             SpeedTestPeakMbps = p.PeakMbps;
@@ -1250,20 +1189,6 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         SpeedTestArcBrush = BlueIndicatorBrush;
         IsMeteredNetwork = false;
         OnPropertyChanged(nameof(SpeedTestMainNumberDisplay));
-    }
-
-    private async Task EnsureSpeedTestServerLocationAsync()
-    {
-        if (SpeedTestServerLocation != "Auto Edge") return;
-        try
-        {
-            var loc = await SpeedTestService.ProbeServerLocationAsync();
-            if (!string.IsNullOrEmpty(loc))
-            {
-                SpeedTestServerLocation = loc;
-            }
-        }
-        catch { }
     }
 
 

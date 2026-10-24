@@ -661,6 +661,7 @@ public static class IconExtractorService
 
                 // Atomic write via unique temp file to guarantee zero corruption and zero thread-locking clashes
                 string tempFile = Path.Combine(IconCacheDir, $"{hashName}.{Guid.NewGuid():N}.tmp");
+                AppPaths.EnsureDirectory(tempFile);
                 try
                 {
                     using (var fs = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None, 4096))

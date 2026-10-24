@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -19,6 +20,7 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
     private string? _arguments;
     private TileType _tileType = TileType.App;
     private string? _category;
+    private string? _iconPath;
     private ImageSource? _icon;
     private bool _isIconLoading;
 
@@ -57,6 +59,12 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
         set => SetField(ref _category, value);
     }
 
+    public string? IconPath
+    {
+        get => _iconPath;
+        set => SetField(ref _iconPath, value);
+    }
+
     public int SpanX
     {
         get => _spanX;
@@ -82,7 +90,7 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
         set => SetField(ref _tag, value);
     }
 
-    private const int MaxCachedIcons = 64;
+    private const int MaxCachedIcons = 512;
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource> _memoryIconCache = new(StringComparer.OrdinalIgnoreCase);
 
     public static void ClearMemoryCache()
@@ -120,7 +128,20 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
                         return;
                     }
 
-                    string? cached = IconExtractorService.ExtractAndCacheIcon(item.TargetPath);
+                    string? cached = null;
+                    if (!string.IsNullOrWhiteSpace(item._iconPath) && File.Exists(item._iconPath))
+                    {
+                        cached = item._iconPath;
+                    }
+                    else
+                    {
+                        cached = IconExtractorService.ExtractAndCacheIcon(item.TargetPath);
+                        if (!string.IsNullOrWhiteSpace(cached))
+                        {
+                            item.IconPath = cached;
+                        }
+                    }
+
                     if (!string.IsNullOrWhiteSpace(cached))
                     {
                         var img = GetOrCreateBitmapImage(cached, item.TargetPath);
@@ -213,7 +234,20 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
                     return;
                 }
 
-                string? cached = IconExtractorService.ExtractAndCacheIcon(_targetPath);
+                string? cached = null;
+                if (!string.IsNullOrWhiteSpace(_iconPath) && File.Exists(_iconPath))
+                {
+                    cached = _iconPath;
+                }
+                else
+                {
+                    cached = IconExtractorService.ExtractAndCacheIcon(_targetPath);
+                    if (!string.IsNullOrWhiteSpace(cached))
+                    {
+                        IconPath = cached;
+                    }
+                }
+
                 if (!string.IsNullOrWhiteSpace(cached))
                 {
                     var bi = GetOrCreateBitmapImage(cached, _targetPath);

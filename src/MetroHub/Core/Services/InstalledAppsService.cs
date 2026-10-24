@@ -115,6 +115,12 @@ public static class InstalledAppsService
         {
             _debounceTimer?.Dispose();
             _debounceTimer = null;
+
+            if (_cachedApps != null && _cachedApps.Count > 0)
+            {
+                StorageService.SaveAppsCache(_cachedApps);
+            }
+            _cachedApps = null;
         }
 
         foreach (var w in _watchers)
@@ -273,6 +279,30 @@ public static class InstalledAppsService
             catch (Exception ex)
             {
                 Safe.Log("InstalledAppsService.EnumerateAppsFolder", ex);
+            }
+
+            if (previousApps != null && previousApps.Count > 0)
+            {
+                var prevIconMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var prev in previousApps)
+                {
+                    if (!string.IsNullOrWhiteSpace(prev.TargetPath) && !string.IsNullOrWhiteSpace(prev.IconPath))
+                    {
+                        prevIconMap[prev.TargetPath] = prev.IconPath;
+                    }
+                }
+
+                if (prevIconMap.Count > 0)
+                {
+                    foreach (var app in appMap.Values)
+                    {
+                        if (!string.IsNullOrWhiteSpace(app.TargetPath) &&
+                            prevIconMap.TryGetValue(app.TargetPath, out var prevIcon))
+                        {
+                            app.IconPath = prevIcon;
+                        }
+                    }
+                }
             }
 
             var freshApps = appMap.Values
