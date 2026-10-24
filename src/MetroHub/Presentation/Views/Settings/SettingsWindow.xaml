@@ -51,7 +51,7 @@
         <Grid Background="Transparent">
             <!-- Full-Bleed Content Host (CurrentView covers all window bounds Y=0..640) -->
             <ContentControl Content="{Binding CurrentView}"
-                            behaviors:FluentTransitionBehavior.Mode="HorizontalSlide"
+                            behaviors:FluentTransitionBehavior.IsEnabled="True"
                             Focusable="False" />
 
             <!-- ========================================================================= -->

@@ -667,6 +667,21 @@ public sealed class RadioAudioService : IRadioAudioService
         return GetSpectrumLevels(out _, out bass, out mid, out treble);
     }
 
+    public bool GetSpectrumBands(Span<float> bands)
+    {
+        int stream = Volatile.Read(ref _currentStream);
+        bool isPlaying = Volatile.Read(ref _isPlaying);
+        bool isMuted = Volatile.Read(ref _isMuted);
+
+        if (!isPlaying || isMuted || stream == 0)
+        {
+            bands.Clear();
+            return false;
+        }
+
+        return _spectrumProcessor.ProcessChannelBands(stream, bands);
+    }
+
     private void OnBassFxBeat(int channel, double beatPos, IntPtr user)
     {
         if (channel != Volatile.Read(ref _currentStream)) return;

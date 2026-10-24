@@ -158,7 +158,7 @@
                           HorizontalScrollBarVisibility="Disabled"
                           VerticalScrollBarVisibility="Auto">
                 <ContentControl Content="{Binding CurrentPageViewModel}"
-                                behaviors:FluentTransitionBehavior.Mode="VerticalDrillIn"
+                                behaviors:FluentTransitionBehavior.IsEnabled="True"
                                 Focusable="False" />
             </ScrollViewer>
         </Grid>

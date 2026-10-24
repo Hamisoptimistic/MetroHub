@@ -105,14 +105,6 @@ public sealed class HalftonePainter
     /// </summary>
     public void Render(Span<uint> target, int frameIndex)
     {
-        Render(target, frameIndex, AudioFrame.Default);
-    }
-
-    /// <summary>
-    /// Paints one frame with real-time acoustic physics modulation (ink bloom, multi-wave ripples, treble shimmer).
-    /// </summary>
-    public void Render(Span<uint> target, int frameIndex, in AudioFrame audio)
-    {
         if (target.Length < _pixelWidth * _pixelHeight)
         {
             throw new ArgumentException("The target buffer is smaller than the scene.", nameof(target));
@@ -125,7 +117,7 @@ public sealed class HalftonePainter
         BuildBrightness(frameIndex);
         if (TryNormalizeTone(out float low, out float high))
         {
-            DrawDots(target, low, high, audio);
+            DrawDots(target, low, high);
         }
     }
 
@@ -217,7 +209,7 @@ public sealed class HalftonePainter
         return maximum;
     }
 
-    private void DrawDots(Span<uint> target, float low, float high, in AudioFrame audio)
+    private void DrawDots(Span<uint> target, float low, float high)
     {
         Array.Clear(_layerCounts);
 
@@ -228,12 +220,7 @@ public sealed class HalftonePainter
         float stepX = (float)_pixelWidth / columns;
         float stepY = (float)_pixelHeight / rows;
         float toneRange = high - low;
-
-        // Dynamic acoustic ink expansion from bass rhythm (gentle breathing)
-        float dynamicScale = _tuning.DotScale * (1.0f + (audio.Bass * 0.20f));
-
-        ReadOnlySpan<HalftoneAudioWave> waves = audio.ActiveWaves.Span;
-        bool hasWaves = waves.Length > 0;
+        float dynamicScale = _tuning.DotScale;
 
         for (int row = 0; row < rows; row++)
         {
@@ -280,25 +267,6 @@ public sealed class HalftonePainter
                 }
 
                 float radius = 0.5f * unit * dynamicScale * DotSizes[level];
-
-                // Multi-wave radial shockwave modulation (smooth organic water ripple)
-                if (hasWaves)
-                {
-                    float waveMod = 0f;
-                    for (int w = 0; w < waves.Length; w++)
-                    {
-                        ref readonly HalftoneAudioWave wave = ref waves[w];
-                        float dx = cellX - wave.CenterX;
-                        float dy = cellY - wave.CenterY;
-                        float r = MathF.Sqrt((dx * dx) + (dy * dy));
-                        float dist = r - (180f * wave.ElapsedSeconds);
-                        // Gaussian pulse with sigma = 5.5 cells (2 * sigma^2 = 60)
-                        float pulse = MathF.Exp(-(dist * dist) / 60f);
-                        float amp = 0.15f * Math.Max(0f, 1f - (wave.ElapsedSeconds / 0.40f)) * wave.Intensity;
-                        waveMod += amp * pulse;
-                    }
-                    radius *= 1.0f + Math.Min(0.20f, waveMod);
-                }
 
                 // Safety clamp: dot radius never exceeds 0.75 of cell size (maintains contrast and negative space)
                 float maxRadius = 0.75f * unit;

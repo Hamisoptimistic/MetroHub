@@ -15,6 +15,9 @@ public sealed class AudioSpectrumProcessor
     // BASS FFT2048 returns 1024 frequency bins (N/2)
     public const int FftBinCount = 1024;
 
+    /// <summary>Log-spaced bands produced by <see cref="ProcessChannelBands"/>.</summary>
+    public const int BandCount = 16;
+
     // Nominal 44.1 kHz frequency bin boundaries for reference and unit tests:
     // At 44.1 kHz, bin bandwidth is ~21.533 Hz (bin 0 = DC offset)
     public const int KickStartBin = 2;    // ~43 Hz
@@ -34,8 +37,15 @@ public sealed class AudioSpectrumProcessor
     public const float DecayAlpha = 0.08f;
     private const float MinThreshold = 0.001f;
 
+    // Log-spaced band edges, from sub-bass to air.
+    private const float BandLowHz = 35f;
+    private const float BandHighHz = 16000f;
+
     private readonly object _gate = new();
     private readonly float[] _fftBuffer = new float[FftBinCount];
+    private readonly int[] _bandStart = new int[BandCount];
+    private readonly int[] _bandEnd = new int[BandCount];
+    private bool _bandEdgesValid;
 
     private float _binHz = 44100f / 2048f;
     private float _kick;
@@ -78,6 +88,7 @@ public sealed class AudioSpectrumProcessor
         if (sampleRate > 0)
         {
             _binHz = (float)sampleRate / 2048f;
+            _bandEdgesValid = false;
         }
     }
 
@@ -150,7 +161,12 @@ public sealed class AudioSpectrumProcessor
 
         if (ManagedBass.Bass.ChannelGetInfo(channelHandle, out var info) && info.Frequency > 0)
         {
-            _binHz = (float)info.Frequency / 2048f;
+            float binHz = (float)info.Frequency / 2048f;
+            if (binHz != _binHz)
+            {
+                _binHz = binHz;
+                _bandEdgesValid = false;
+            }
         }
 
         int bytesRead;
@@ -175,6 +191,78 @@ public sealed class AudioSpectrumProcessor
     public bool ProcessChannel(int channelHandle, out float bass, out float mid, out float treble)
     {
         return ProcessChannel(channelHandle, out _, out bass, out mid, out treble);
+    }
+
+    /// <summary>
+    /// Fills <paramref name="bands"/> with a log-spaced spectrum (35 Hz to 16 kHz),
+    /// each value dB-mapped to 0..1. Returns false when no audio was read, in which
+    /// case the span is cleared.
+    /// </summary>
+    public bool ProcessChannelBands(int channelHandle, Span<float> bands)
+    {
+        if (bands.IsEmpty)
+        {
+            return false;
+        }
+
+        if (channelHandle == 0)
+        {
+            bands.Clear();
+            return false;
+        }
+
+        if (ManagedBass.Bass.ChannelGetInfo(channelHandle, out var info) && info.Frequency > 0)
+        {
+            float binHz = (float)info.Frequency / 2048f;
+            if (binHz != _binHz)
+            {
+                _binHz = binHz;
+                _bandEdgesValid = false;
+            }
+        }
+
+        lock (_gate)
+        {
+            int bytesRead = ManagedBass.Bass.ChannelGetData(channelHandle, _fftBuffer, (int)DataFlags.FFT2048);
+            if (bytesRead <= 0)
+            {
+                bands.Clear();
+                return false;
+            }
+
+            EnsureBandEdges();
+            int count = Math.Min(bands.Length, BandCount);
+            for (int i = 0; i < count; i++)
+            {
+                bands[i] = CalculateBandRmsDb(_fftBuffer, _bandStart[i], _bandEnd[i]);
+            }
+
+            if (count < bands.Length)
+            {
+                bands[count..].Clear();
+            }
+        }
+
+        return true;
+    }
+
+    private void EnsureBandEdges()
+    {
+        if (_bandEdgesValid)
+        {
+            return;
+        }
+
+        float ratio = BandHighHz / BandLowHz;
+        for (int i = 0; i < BandCount; i++)
+        {
+            float low = BandLowHz * MathF.Pow(ratio, i / (float)BandCount);
+            float high = BandLowHz * MathF.Pow(ratio, (i + 1) / (float)BandCount);
+            _bandStart[i] = Bin(low);
+            _bandEnd[i] = Math.Max(_bandStart[i], Bin(high));
+        }
+
+        _bandEdgesValid = true;
     }
 
     /// <summary>

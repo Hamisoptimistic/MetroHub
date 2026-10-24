@@ -28,6 +28,9 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
     private const int MaxRasterWidth = 1920;
     private const int MaxRasterHeight = 1080;
 
+    // Idle drift stays alive between songs but costs a fraction of the active frame rate.
+    private const double IdleFps = 15.0;
+
     // Opaque near-black canvas, close to the app's dark tint. Pbgra32 little-endian.
     private const byte CanvasRed = 0x0B;
     private const byte CanvasGreen = 0x0B;
@@ -56,11 +59,11 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
     private Task? _renderTask;
     private bool _isAnimating;
 
-    private readonly HalftoneAudioGovernor _audioGovernor = new();
-    private readonly ManualResetEventSlim _wakeEvent = new(false);
+    private readonly WaveField _waveField = new();
+    private readonly ReactiveDynamics _dynamics = new();
+    private readonly float[] _bands = new float[AudioSpectrumProcessor.BandCount];
+    private ReactiveState _state = ReactiveState.Rest;
     private bool _isAudioReactive;
-    private bool _isAtRestRendered;
-    private bool _isAudioHooked;
 
     private byte[] _atlas = [];
     private uint[] _colorLookup = [];
@@ -128,8 +131,9 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
         _bitmap = null;
         _halftone = null;
         _isAudioReactive = false;
-        _isAtRestRendered = false;
-        _audioGovernor.Reset();
+        _dynamics.Reset();
+        _waveField.Reset();
+        _state = ReactiveState.Rest;
         _atlas = [];
         _colorLookup = [];
         _cellWidth = 0;
@@ -296,10 +300,6 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
         }
 
         HookWindowEvents();
-        if (_isAudioReactive)
-        {
-            HookAudioEvents();
-        }
 
         _isAnimating = true;
         _cts = new CancellationTokenSource();
@@ -324,8 +324,6 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
             return;
         }
 
-        UnhookAudioEvents();
-        _wakeEvent.Set();
         _isAnimating = false;
         CompositionTarget.Rendering -= OnRendering;
 
@@ -343,39 +341,6 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
             _cts.Dispose();
             _cts = null;
             _renderTask = null;
-        }
-    }
-
-    private void HookAudioEvents()
-    {
-        if (_isAudioHooked) return;
-        _isAudioHooked = true;
-        RadioAudioService.Instance.PlaybackStateChanged += OnPlaybackStateChanged;
-        RadioAudioService.Instance.BassBeatTriggered += OnBassBeatTriggered;
-    }
-
-    private void UnhookAudioEvents()
-    {
-        if (!_isAudioHooked) return;
-        _isAudioHooked = false;
-        RadioAudioService.Instance.PlaybackStateChanged -= OnPlaybackStateChanged;
-        RadioAudioService.Instance.BassBeatTriggered -= OnBassBeatTriggered;
-    }
-
-    private void OnPlaybackStateChanged(object? sender, bool isPlaying)
-    {
-        if (isPlaying)
-        {
-            _wakeEvent.Set();
-        }
-    }
-
-    private void OnBassBeatTriggered(object? sender, EventArgs e)
-    {
-        if (_isAudioReactive)
-        {
-            _audioGovernor.TriggerBeat();
-            _wakeEvent.Set();
         }
     }
 
@@ -411,13 +376,6 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
     {
         Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-        double fps = 60.0;
-        if (pack is not null && !_isAudioReactive)
-        {
-            fps = Math.Clamp(pack.Fps, 1, 60);
-        }
-
-        long intervalTicks = (long)(Stopwatch.Frequency / fps);
         long nextTick = Stopwatch.GetTimestamp();
         long frameTick = 0;
         long lastTickTime = nextTick;
@@ -432,6 +390,15 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
                 lastTickTime = nextTick;
                 continue;
             }
+
+            // Idle drift keeps breathing at a reduced rate, so silence costs a
+            // fraction of the active frame budget.
+            double fps = _state.IsSilent ? IdleFps : 60.0;
+            if (pack is not null && !_isAudioReactive)
+            {
+                fps = Math.Clamp(pack.Fps, 1, 60);
+            }
+            long intervalTicks = (long)(Stopwatch.Frequency / fps);
 
             long now = Stopwatch.GetTimestamp();
             if (now < nextTick)
@@ -471,43 +438,12 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
                 frameIndex = AsciiPack.GetPlaybackFrame(frameTick++, pack.FrameCount, pack.LoopMode);
             }
 
-            AudioFrame audioFrame = AudioFrame.Default;
             if (_isAudioReactive)
             {
-                RadioAudioService.Instance.GetSpectrumLevels(out float kick, out float bass, out float mid, out float treble);
-                audioFrame = _audioGovernor.Update(kick, bass, mid, treble, dt);
-
-                if (audioFrame.IsSilent && _audioGovernor.IsAtRest)
-                {
-                    // Render resting static frame once to ensure canvas is at clean rest
-                    if (!_isAtRestRendered)
-                    {
-                        Span<uint> restTarget = new((void*)writeBuffer, pixelCount);
-                        restTarget.Fill(CanvasPixel);
-                        if (trueColor is not null)
-                        {
-                            trueColor.Render(restTarget, AudioFrame.Default);
-                        }
-                        else
-                        {
-                            _halftone?.Render(restTarget, frameIndex, AudioFrame.Default);
-                        }
-
-                        int restPrev = Interlocked.Exchange(ref _readyBufferIndex, _workerWriteIndex);
-                        _workerWriteIndex = restPrev;
-                        Interlocked.Exchange(ref _isFrameReady, 1);
-                        _isAtRestRendered = true;
-                    }
-
-                    // Deep event-driven sleep: 0.00% CPU, wakes in < 1 ms on playback event
-                    _wakeEvent.Reset();
-                    _wakeEvent.Wait(500, token);
-                    nextTick = Stopwatch.GetTimestamp();
-                    lastTickTime = nextTick;
-                    continue;
-                }
-
-                _isAtRestRendered = false;
+                // When the radio is silent the sampler clears the span and the
+                // dynamics fall back to a slow, subtle idle drift.
+                RadioAudioService.Instance.GetSpectrumBands(_bands);
+                _state = _dynamics.Update(_bands, dt, _waveField);
             }
 
             // Render off-thread directly into the worker's private POH buffer
@@ -516,11 +452,11 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
 
             if (trueColor is not null)
             {
-                trueColor.Render(target, audioFrame);
+                trueColor.Render(target, _state, _waveField);
             }
             else if (_halftone is not null)
             {
-                _halftone.Render(target, frameIndex, audioFrame);
+                _halftone.Render(target, frameIndex);
             }
             else if (pack is not null)
             {
@@ -622,7 +558,6 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
             newPixelH = trueColor.Height;
             cellWidth = 6;
             cellHeight = 6;
-            _audioGovernor.SetCenter(newPixelW * 0.5f, newPixelH * 0.5f);
         }
         else
         {
@@ -850,7 +785,6 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
     public void Dispose()
     {
         Unload();
-        _wakeEvent.Dispose();
         GC.SuppressFinalize(this);
     }
 

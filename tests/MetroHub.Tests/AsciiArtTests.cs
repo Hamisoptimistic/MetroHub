@@ -221,98 +221,166 @@ public class HalftonePainterTests
     }
 }
 
-public class HalftoneAudioGovernorTests
+public class WaveFieldTests
 {
     [Fact]
-    public void Update_AdvancesActiveWavesAndPrunesExpired()
+    public void Step_WithDrivenEmitter_StaysFiniteAndBounded()
     {
-        HalftoneAudioGovernor governor = new();
-        governor.TriggerBeat(10f, 10f);
+        WaveField field = new();
 
-        AudioFrame frame1 = governor.Update(0f, 0f, 0f, 0f, 0.10f);
-        Assert.Equal(1, frame1.ActiveWaves.Length);
-        Assert.Equal(0.10f, frame1.ActiveWaves.Span[0].ElapsedSeconds, 2);
+        for (int i = 0; i < 600; i++)
+        {
+            field.AddForce(0.5f, 0.5f, 0.05f, 3f);
+            field.AddForce(0.25f, 0.7f, -0.04f, 1.5f);
+            field.Step(1f / 60f);
+        }
 
-        // Advance past lifetime (0.40s)
-        AudioFrame frame2 = governor.Update(0f, 0f, 0f, 0f, 0.35f);
-        Assert.Equal(0, frame2.ActiveWaves.Length);
+        field.Sample(0.5f, 0.5f, out float height, out float gradientX, out float gradientY, out float curlX, out float curlY);
+
+        Assert.False(float.IsNaN(height));
+        Assert.False(float.IsNaN(gradientX) || float.IsNaN(gradientY));
+        Assert.False(float.IsNaN(curlX) || float.IsNaN(curlY));
+        Assert.InRange(height, -4f, 4f);
+        Assert.InRange(field.Peak, 0f, 4f);
     }
 
     [Fact]
-    public void Update_ExponentialDecayAndSnapToZero()
+    public void Step_AfterImpulse_DecaysWhenUndriven()
     {
-        HalftoneAudioGovernor governor = new();
-        // Give a strong kick
-        AudioFrame frame = governor.Update(rawKick: 0.8f, rawBass: 0.8f, rawMid: 0.5f, rawTreble: 0.5f, deltaSeconds: 0.016f);
-        Assert.True(frame.Kick > 0.5f);
+        WaveField field = new();
+        field.AddForce(0.5f, 0.5f, 0.08f, 2f);
+        field.Step(1f / 60f);
 
-        // Advance silence for 1.6 seconds (decay + silence threshold)
-        for (int i = 0; i < 100; i++)
+        float initial = field.Peak;
+        Assert.True(initial > 0f, "an impulse should move the field");
+
+        for (int i = 0; i < 300; i++)
         {
-            frame = governor.Update(rawKick: 0f, rawBass: 0f, rawMid: 0f, rawTreble: 0f, deltaSeconds: 0.016f);
+            field.Step(1f / 60f);
         }
 
-        // Should decay and snap to exactly zero below epsilon 0.005
-        Assert.Equal(0f, frame.Kick);
-        Assert.Equal(0f, frame.Bass);
-        Assert.True(frame.IsSilent);
-        Assert.True(governor.IsAtRest);
+        Assert.True(field.Peak < initial, $"field should decay: {field.Peak} vs {initial}");
     }
 
     [Fact]
-    public void TriggerBeat_CapsAtMaxConcurrentWaves()
+    public void Sample_ClampsOutsideTheGrid()
     {
-        HalftoneAudioGovernor governor = new();
-        for (int i = 0; i < 10; i++)
+        WaveField field = new();
+        field.AddForce(0.5f, 0.5f, 0.05f, 4f);
+        field.Step(1f / 60f);
+
+        field.Sample(-5f, 5f, out float height, out _, out _, out _, out _);
+        Assert.False(float.IsNaN(height));
+        Assert.InRange(height, -4f, 4f);
+
+        field.Sample(0.5f, 0.5f, out float centre, out _, out _, out _, out _);
+        Assert.True(centre > 0f, "the impulse centre should be a crest");
+    }
+
+    [Fact]
+    public void Step_LargeDeltaTime_DoesNotExplode()
+    {
+        WaveField field = new();
+        field.AddForce(0.5f, 0.5f, 0.5f, 2f);
+
+        for (int i = 0; i < 60; i++)
         {
-            governor.TriggerBeat(i, i);
+            field.Step(0.5f);
         }
 
-        AudioFrame frame = governor.Update(0f, 0f, 0f, 0f, 0.016f);
-        Assert.Equal(HalftoneAudioGovernor.MaxConcurrentWaves, frame.ActiveWaves.Length);
+        Assert.InRange(field.Peak, 0f, 4f);
+    }
+
+    [Fact]
+    public void Curl_IsNonZeroAndVariesAcrossTheGrid()
+    {
+        WaveField field = new();
+        field.Sample(0.1f, 0.1f, out _, out _, out _, out float firstX, out float firstY);
+        field.Sample(0.8f, 0.6f, out _, out _, out _, out float secondX, out float secondY);
+
+        Assert.True(MathF.Abs(firstX) + MathF.Abs(firstY) > 0f);
+        Assert.True(MathF.Abs(firstX - secondX) + MathF.Abs(firstY - secondY) > 0f);
     }
 }
 
-public class HalftoneAudioRenderingTests
+public class ReactiveDynamicsTests
 {
-    private const uint Canvas = 0xFF0B0B0F;
-
     [Fact]
-    public void Render_WithBass_ExpandsDotsComparedToRest()
+    public void Update_WithSilence_RampsIntoIdleDrift()
     {
-        using TestPackFile file = new(TestPack.BuildHalftone(TestPack.Ramp, [(1, 1), (1, 1), (2, 1), (2, 1)]));
-        AsciiPack pack = AsciiPack.Load(file.Path);
-        HalftonePainter painter = new(pack, cellWidth: 8, cellHeight: 8);
+        ReactiveDynamics dynamics = new();
+        WaveField field = new();
+        Span<float> bands = stackalloc float[ReactiveDynamics.BandCount];
 
-        uint[] targetRest = new uint[pack.Cols * 8 * pack.Rows * 8];
-        targetRest.AsSpan().Fill(Canvas);
-        painter.Render(targetRest, 0, AudioFrame.Default);
+        for (int frame = 0; frame < 300; frame++)
+        {
+            dynamics.Update(bands, 1f / 60f, field);
+        }
 
-        uint[] targetBass = new uint[pack.Cols * 8 * pack.Rows * 8];
-        targetBass.AsSpan().Fill(Canvas);
-        AudioFrame loudFrame = new(Kick: 0.5f, Bass: 1.0f, Mid: 0.5f, Treble: 0f, IsSilent: false, ReadOnlyMemory<HalftoneAudioWave>.Empty);
-        painter.Render(targetBass, 0, loudFrame);
-
-        int restInked = CountInked(targetRest, 32, 0, 32);
-        int bassInked = CountInked(targetBass, 32, 0, 32);
-
-        Assert.True(bassInked >= restInked, $"Loud bass ({bassInked}) should produce at least as much ink as rest ({restInked}).");
+        ReactiveState state = dynamics.Current;
+        Assert.True(state.Idle > 0.9f, $"idle should ramp up, was {state.Idle}");
+        Assert.True(state.IsSilent);
+        Assert.Equal(0f, state.Energy);
+        Assert.True(field.Peak > 0f, "idle drift should still move the field");
     }
 
-    private static int CountInked(uint[] target, int width, int fromX, int toX)
+    [Fact]
+    public void Update_WithKickTrain_ProducesPulses()
     {
-        int count = 0;
-        for (int y = 0; y < target.Length / width; y++)
+        ReactiveDynamics dynamics = new();
+        WaveField field = new();
+        float[] bands = new float[ReactiveDynamics.BandCount];
+
+        float maximumPulse = 0f;
+        for (int frame = 0; frame < 300; frame++)
         {
-            for (int x = fromX; x < toX; x++)
+            bool kick = frame % 28 == 0;
+            for (int band = 0; band < 4; band++)
             {
-                if (target[(y * width) + x] != Canvas)
-                {
-                    count++;
-                }
+                bands[band] = kick ? 0.9f : 0f;
             }
+
+            maximumPulse = Math.Max(maximumPulse, dynamics.Update(bands, 1f / 60f, field).Pulse);
         }
-        return count;
+
+        Assert.True(maximumPulse > 0.4f, $"kick train should raise the pulse, was {maximumPulse}");
+        Assert.True(field.Peak > 0.0005f);
+        Assert.False(dynamics.Current.IsSilent);
+    }
+
+    [Fact]
+    public void Update_WithLoudBands_RaisesBandEnergies()
+    {
+        ReactiveDynamics dynamics = new();
+        WaveField field = new();
+        float[] bands = new float[ReactiveDynamics.BandCount];
+        Array.Fill(bands, 0.8f);
+
+        ReactiveState state = ReactiveState.Rest;
+        for (int frame = 0; frame < 120; frame++)
+        {
+            state = dynamics.Update(bands, 1f / 60f, field);
+        }
+
+        Assert.True(state.Bass > 0.5f);
+        Assert.True(state.Treble > 0.5f);
+        Assert.True(state.Energy > 0.5f);
+        Assert.Equal(0f, state.Idle);
+    }
+
+    [Fact]
+    public void Reset_ClearsMusicalState()
+    {
+        ReactiveDynamics dynamics = new();
+        WaveField field = new();
+        float[] bands = new float[ReactiveDynamics.BandCount];
+        Array.Fill(bands, 0.9f);
+        dynamics.Update(bands, 1f / 60f, field);
+
+        dynamics.Reset();
+
+        Assert.Equal(0f, dynamics.Current.Energy);
+        Assert.Equal(0f, dynamics.Current.Pulse);
     }
 }
 
@@ -394,9 +462,11 @@ public class TrueColorHalftoneEngineTests
                 Assert.Equal(64, engine.Width);
                 Assert.Equal(64, engine.Height);
 
+                WaveField field = new();
+
                 uint[] bufferRest = new uint[64 * 64];
                 bufferRest.AsSpan().Fill(Canvas);
-                engine.Render(bufferRest, AudioFrame.Default);
+                engine.Render(bufferRest, ReactiveState.Rest, field);
 
                 int inkedRest = 0;
                 foreach (uint p in bufferRest)
@@ -406,19 +476,26 @@ public class TrueColorHalftoneEngineTests
 
                 Assert.True(inkedRest > 0, "Engine should stamp inked dots for bright image.");
 
-                // Render with loud bass
-                uint[] bufferBass = new uint[64 * 64];
-                bufferBass.AsSpan().Fill(Canvas);
-                AudioFrame bassFrame = new(Kick: 0f, Bass: 1.0f, Mid: 0f, Treble: 0f, IsSilent: false, ReadOnlyMemory<HalftoneAudioWave>.Empty);
-                engine.Render(bufferBass, bassFrame);
-
-                int inkedBass = 0;
-                foreach (uint p in bufferBass)
+                // Drive the membrane so refraction actually moves ink.
+                for (int i = 0; i < 24; i++)
                 {
-                    if (p != Canvas) inkedBass++;
+                    field.AddForce(0.25f, 0.5f, 0.06f, 3f);
+                    field.Step(1f / 60f);
                 }
 
-                Assert.True(inkedBass >= inkedRest, $"Loud bass ({inkedBass}) should produce at least as much ink as rest ({inkedRest}).");
+                uint[] bufferMoved = new uint[64 * 64];
+                bufferMoved.AsSpan().Fill(Canvas);
+                ReactiveState loudFrame = new(1f, 1f, 1f, 1f, 1f, 0.5f, 0f, false);
+                engine.Render(bufferMoved, loudFrame, field);
+
+                int inkedMoved = 0;
+                foreach (uint p in bufferMoved)
+                {
+                    if (p != Canvas) inkedMoved++;
+                }
+
+                Assert.True(inkedMoved > 0);
+                Assert.False(bufferRest.AsSpan().SequenceEqual(bufferMoved), "Reactive frame should differ from the rest frame.");
             }
             finally
             {

@@ -60,6 +60,13 @@ public interface IRadioAudioService : IDisposable
     /// </summary>
     bool GetSpectrumLevels(out float bass, out float mid, out float treble);
 
+    /// <summary>
+    /// Fills a log-spaced spectrum (16 bands from 35 Hz to 16 kHz, each 0..1) for
+    /// audio-reactive visuals. Returns true if audio data was actively read; the
+    /// span is cleared when idle, muted, or stopped.
+    /// </summary>
+    bool GetSpectrumBands(Span<float> bands);
+
     /// <summary>Fired when the current station changes.</summary>
     event EventHandler<RadioStation?>? CurrentStationChanged;
 

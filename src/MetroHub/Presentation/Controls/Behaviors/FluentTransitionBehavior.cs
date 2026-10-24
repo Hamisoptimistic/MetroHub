@@ -2,80 +2,44 @@ using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Threading;
-using System.Windows.Interop;
-using MetroHub.Core.Services;
 using MetroHub.Presentation.Themes;
 
 namespace MetroHub.Presentation.Controls.Behaviors;
 
-public enum FluentTransitionMode
-{
-    None,
-    VerticalDrillIn,   // Flow B: Y: +14 -> 0 (180ms)
-    HorizontalSlide    // Flow A: X: +20 -> 0 (Drill In, 180ms) or In-Place Fade (Back to Home, 140ms)
-}
-
 /// <summary>
-/// Production-grade Fluent entrance transition behavior for ContentControl.
-/// Eliminates start layout stalls, child-Loaded frame drops, and end-of-animation pixel snapping.
+/// Stationary micro-fade transition (70ms, from opacity 0.65 to 1.0).
+/// Zero pixel displacement: text stays strictly locked to device pixels with zero UI-thread overhead.
 /// </summary>
 public static class FluentTransitionBehavior
 {
-    // CubicEase (EaseOut) matches WinUI 3 entrance curves and eliminates
-    // the extended subpixel crawl of high-exponent easing functions.
-    private static readonly CubicEase FluentTransformEasing = CreateTransformEasing();
-    private static readonly CubicEase FluentOpacityEasing = CreateOpacityEasing();
+    private static readonly DoubleAnimation FadeAnim = CreateFadeAnimation();
 
-    private static CubicEase CreateTransformEasing()
+    private static DoubleAnimation CreateFadeAnimation()
     {
-        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
-        ease.Freeze();
-        return ease;
-    }
-
-    private static CubicEase CreateOpacityEasing()
-    {
-        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
-        ease.Freeze();
-        return ease;
-    }
-
-    private static int GetTargetFrameRate(UIElement? element = null)
-    {
-        IntPtr hwnd = IntPtr.Zero;
-        if (element != null)
+        var anim = new DoubleAnimation
         {
-            try
-            {
-                if (PresentationSource.FromVisual(element) is HwndSource source)
-                {
-                    hwnd = source.Handle;
-                }
-            }
-            catch { }
-        }
-
-        int rate = NativeMethods.GetScreenRefreshRate(hwnd);
-        return rate > 0 ? rate : 120;
+            From = 0.65,
+            To = 1.0,
+            Duration = TimeSpan.FromMilliseconds(70),
+            FillBehavior = FillBehavior.Stop
+        };
+        anim.Freeze();
+        return anim;
     }
 
-    #region Attached Properties
-
-    public static readonly DependencyProperty ModeProperty =
+    public static readonly DependencyProperty IsEnabledProperty =
         DependencyProperty.RegisterAttached(
-            "Mode",
-            typeof(FluentTransitionMode),
+            "IsEnabled",
+            typeof(bool),
             typeof(FluentTransitionBehavior),
-            new PropertyMetadata(FluentTransitionMode.None, OnModeChanged));
+            new PropertyMetadata(false, OnIsEnabledChanged));
 
-    public static void SetMode(DependencyObject element, FluentTransitionMode value) =>
-        element.SetValue(ModeProperty, value);
+    public static void SetIsEnabled(DependencyObject element, bool value) =>
+        element.SetValue(IsEnabledProperty, value);
 
-    public static FluentTransitionMode GetMode(DependencyObject element) =>
-        (FluentTransitionMode)element.GetValue(ModeProperty);
+    public static bool GetIsEnabled(DependencyObject element) =>
+        (bool)element.GetValue(IsEnabledProperty);
 
     private static readonly DependencyProperty HasRenderedInitialViewProperty =
         DependencyProperty.RegisterAttached(
@@ -84,40 +48,34 @@ public static class FluentTransitionBehavior
             typeof(FluentTransitionBehavior),
             new PropertyMetadata(false));
 
-    private static readonly DependencyProperty AnimationVersionProperty =
-        DependencyProperty.RegisterAttached(
-            "AnimationVersion",
-            typeof(int),
-            typeof(FluentTransitionBehavior),
-            new PropertyMetadata(0));
-
-    #endregion
-
-    private static void OnModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnIsEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not ContentControl contentControl) return;
+        if (d is not ContentControl control) return;
 
         var descriptor = DependencyPropertyDescriptor.FromProperty(
             ContentControl.ContentProperty, typeof(ContentControl));
 
-        descriptor?.RemoveValueChanged(contentControl, OnContentChanged);
-        contentControl.Loaded -= OnControlLoaded;
-        contentControl.Unloaded -= OnControlUnloaded;
+        descriptor?.RemoveValueChanged(control, OnContentChanged);
+        control.Loaded -= OnControlLoaded;
+        control.Unloaded -= OnControlUnloaded;
 
-        if ((FluentTransitionMode)e.NewValue != FluentTransitionMode.None)
+        if ((bool)e.NewValue)
         {
-            EnsurePersistentTransform(contentControl);
-            descriptor?.AddValueChanged(contentControl, OnContentChanged);
-            contentControl.Loaded += OnControlLoaded;
-            contentControl.Unloaded += OnControlUnloaded;
+            descriptor?.AddValueChanged(control, OnContentChanged);
+            control.Loaded += OnControlLoaded;
+            control.Unloaded += OnControlUnloaded;
+        }
+        else
+        {
+            control.BeginAnimation(UIElement.OpacityProperty, null);
+            control.Opacity = 1.0;
         }
     }
 
     private static void OnControlLoaded(object sender, RoutedEventArgs e)
     {
-        if (sender is ContentControl control && GetMode(control) != FluentTransitionMode.None)
+        if (sender is ContentControl control && GetIsEnabled(control))
         {
-            EnsurePersistentTransform(control);
             var descriptor = DependencyPropertyDescriptor.FromProperty(
                 ContentControl.ContentProperty, typeof(ContentControl));
             descriptor?.RemoveValueChanged(control, OnContentChanged);
@@ -130,174 +88,34 @@ public static class FluentTransitionBehavior
         if (sender is ContentControl control)
         {
             control.SetValue(HasRenderedInitialViewProperty, false);
-
             var descriptor = DependencyPropertyDescriptor.FromProperty(
                 ContentControl.ContentProperty, typeof(ContentControl));
             descriptor?.RemoveValueChanged(control, OnContentChanged);
+            control.BeginAnimation(UIElement.OpacityProperty, null);
+            control.Opacity = 1.0;
         }
-    }
-
-    private static TranslateTransform EnsurePersistentTransform(UIElement target)
-    {
-        if (target.RenderTransform is TranslateTransform existing && !existing.IsFrozen)
-        {
-            return existing;
-        }
-
-        var transform = new TranslateTransform(0.0, 0.0);
-        target.RenderTransform = transform;
-        return transform;
     }
 
     private static void OnContentChanged(object? sender, EventArgs e)
     {
         if (sender is not ContentControl control || control.Content == null) return;
 
-        var mode = GetMode(control);
-        if (mode == FluentTransitionMode.None) return;
-
-        var transform = EnsurePersistentTransform(control);
-
-        if (!MotionTokens.AnimationsEnabled)
-        {
-            ResetToRestingState(control, transform);
-            return;
-        }
-
-        // Suppress animation on initial mount when the window or detail shell first opens
+        // Skip animation on initial mount so window opens instantly without delay
         bool hasRenderedInitial = (bool)control.GetValue(HasRenderedInitialViewProperty);
         if (!hasRenderedInitial)
         {
             control.SetValue(HasRenderedInitialViewProperty, true);
-            ResetToRestingState(control, transform);
+            control.Opacity = 1.0;
             return;
         }
 
-        int currentVersion = (int)control.GetValue(AnimationVersionProperty) + 1;
-        control.SetValue(AnimationVersionProperty, currentVersion);
-
-        double offsetX = 0.0;
-        double offsetY = 0.0;
-        int durationMs = 180;
-
-        if (mode == FluentTransitionMode.HorizontalSlide)
+        if (!MotionTokens.AnimationsEnabled)
         {
-            bool isReturningHome = IsHomeState(control.Content);
-            // Drill-In slides in from +20px. Returning to Home uses in-place fade at 0px
-            // to avoid exposing an unrendered 20px gap on the right window edge.
-            offsetX = isReturningHome ? 0.0 : 20.0;
-            durationMs = isReturningHome ? 140 : 180;
-        }
-        else if (mode == FluentTransitionMode.VerticalDrillIn)
-        {
-            offsetY = 14.0;
-            durationMs = 180;
-        }
-
-        // 1. Synchronously clear active clocks and pre-position at the starting offset
-        //    BEFORE the layout/render pass so Frame 0 is already at (offsetX, offsetY).
-        control.BeginAnimation(UIElement.OpacityProperty, null);
-        transform.BeginAnimation(TranslateTransform.XProperty, null);
-        transform.BeginAnimation(TranslateTransform.YProperty, null);
-
-        control.Opacity = 0.0;
-        transform.X = offsetX;
-        transform.Y = offsetY;
-
-        // 2. Schedule at DispatcherPriority.Render (priority 7) so page transitions start reliably without being starved by mouse input events
-        control.Dispatcher.InvokeAsync(() =>
-        {
-            PlayEntrance(control, transform, mode, offsetX, offsetY, durationMs, currentVersion);
-        }, DispatcherPriority.Render);
-    }
-
-    private static bool IsHomeState(object content)
-    {
-        string typeName = content.GetType().Name;
-        return typeName.Contains("Home", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static void PlayEntrance(
-        UIElement target,
-        TranslateTransform transform,
-        FluentTransitionMode mode,
-        double offsetX,
-        double offsetY,
-        int durationMs,
-        int expectedVersion)
-    {
-        if ((int)target.GetValue(AnimationVersionProperty) != expectedVersion) return;
-
-        if (target is FrameworkElement { IsLoaded: false })
-        {
-            ResetToRestingState(target, transform);
+            control.Opacity = 1.0;
             return;
         }
 
-        int refreshRate = GetTargetFrameRate(target);
-        var translateDuration = new Duration(TimeSpan.FromMilliseconds(durationMs));
-        var opacityDuration = new Duration(TimeSpan.FromMilliseconds(Math.Min(140, durationMs)));
-
-        // Set resting base values before applying HoldEnd/Stop clocks
-        target.Opacity = 1.0;
-        transform.X = 0.0;
-        transform.Y = 0.0;
-
-        var animOpacity = new DoubleAnimation(0.0, 1.0, opacityDuration)
-        {
-            EasingFunction = FluentOpacityEasing,
-            FillBehavior = FillBehavior.Stop
-        };
-        Timeline.SetDesiredFrameRate(animOpacity, refreshRate);
-
-        double startOffset = mode == FluentTransitionMode.HorizontalSlide ? offsetX : offsetY;
-
-        DependencyProperty translateProp = mode == FluentTransitionMode.HorizontalSlide
-            ? TranslateTransform.XProperty
-            : TranslateTransform.YProperty;
-
-        if (Math.Abs(startOffset) > 0.001)
-        {
-            var animTranslate = new DoubleAnimation(startOffset, 0.0, translateDuration)
-            {
-                EasingFunction = FluentTransformEasing,
-                FillBehavior = FillBehavior.Stop
-            };
-            Timeline.SetDesiredFrameRate(animTranslate, refreshRate);
-
-            animTranslate.Completed += (_, _) =>
-            {
-                if ((int)target.GetValue(AnimationVersionProperty) != expectedVersion) return;
-
-                // Because FillBehavior.Stop automatically reverts to the base values (Opacity=1, X=0, Y=0)
-                // and we keep the persistent identity TranslateTransform attached, zero layout or visual
-                // tree mutations occur here—eliminating the end-of-animation snap.
-                target.BeginAnimation(UIElement.OpacityProperty, null);
-                transform.BeginAnimation(translateProp, null);
-            };
-
-            target.BeginAnimation(UIElement.OpacityProperty, animOpacity);
-            transform.BeginAnimation(translateProp, animTranslate);
-        }
-        else
-        {
-            animOpacity.Completed += (_, _) =>
-            {
-                if ((int)target.GetValue(AnimationVersionProperty) != expectedVersion) return;
-                target.BeginAnimation(UIElement.OpacityProperty, null);
-            };
-
-            target.BeginAnimation(UIElement.OpacityProperty, animOpacity);
-        }
-    }
-
-    private static void ResetToRestingState(UIElement target, TranslateTransform transform)
-    {
-        target.BeginAnimation(UIElement.OpacityProperty, null);
-        transform.BeginAnimation(TranslateTransform.XProperty, null);
-        transform.BeginAnimation(TranslateTransform.YProperty, null);
-        target.Opacity = 1.0;
-        transform.X = 0.0;
-        transform.Y = 0.0;
+        control.Opacity = 1.0;
+        control.BeginAnimation(UIElement.OpacityProperty, FadeAnim, HandoffBehavior.SnapshotAndReplace);
     }
 }
