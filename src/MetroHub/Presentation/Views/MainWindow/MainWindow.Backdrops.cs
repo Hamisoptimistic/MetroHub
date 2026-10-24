@@ -32,7 +32,7 @@ public partial class MainWindow
         ShowToast,
         UpdateBackdropMenuChecks,
         ApplyAsciiScene,
-        ApplyLiveHalftone);
+        ApplyHalftone);
 
     private readonly List<(string Slug, MenuItem Item)> _liveSceneItems = [];
     private string? _currentSceneSlug;
@@ -184,22 +184,26 @@ public partial class MainWindow
     }
 
     private string? _currentHalftoneImagePath;
+    private bool? _currentHalftoneIsAudioReactive;
 
-    /// <summary>Starts, keeps, or stops the live audio-reactive halftone wallpaper.</summary>
-    private void ApplyLiveHalftone(string? imagePath)
+    /// <summary>Starts, keeps, or stops the halftone wallpaper (live audio-reactive or static Honeycomb).</summary>
+    private void ApplyHalftone(string? imagePath, bool isAudioReactive = true)
     {
         if (string.IsNullOrWhiteSpace(imagePath))
         {
             if (_currentHalftoneImagePath != null)
             {
                 _currentHalftoneImagePath = null;
+                _currentHalftoneIsAudioReactive = null;
                 AsciiSceneWallpaper.Unload();
                 AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
             }
             return;
         }
 
-        if (string.Equals(_currentHalftoneImagePath, imagePath, StringComparison.OrdinalIgnoreCase) && AsciiSceneWallpaper.HasScene)
+        if (string.Equals(_currentHalftoneImagePath, imagePath, StringComparison.OrdinalIgnoreCase) &&
+            _currentHalftoneIsAudioReactive == isAudioReactive &&
+            AsciiSceneWallpaper.HasScene)
         {
             AsciiSceneWallpaper.Visibility = Visibility.Visible;
             return;
@@ -208,6 +212,7 @@ public partial class MainWindow
         if (!File.Exists(imagePath))
         {
             _currentHalftoneImagePath = null;
+            _currentHalftoneIsAudioReactive = null;
             AsciiSceneWallpaper.Unload();
             AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
             return;
@@ -216,16 +221,18 @@ public partial class MainWindow
         try
         {
             _currentSceneSlug = null;
-            AsciiSceneWallpaper.LoadFromImage(imagePath);
+            AsciiSceneWallpaper.LoadFromImage(imagePath, isAudioReactive);
             AsciiSceneWallpaper.Visibility = Visibility.Visible;
             _currentHalftoneImagePath = imagePath;
+            _currentHalftoneIsAudioReactive = isAudioReactive;
         }
         catch (Exception ex)
         {
             _currentHalftoneImagePath = null;
+            _currentHalftoneIsAudioReactive = null;
             AsciiSceneWallpaper.Unload();
             AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
-            Serilog.Log.Warning(ex, "Failed to load audio-reactive halftone wallpaper from {Path}", imagePath);
+            Serilog.Log.Warning(ex, "Failed to load halftone wallpaper from {Path}", imagePath);
         }
     }
 
@@ -237,10 +244,7 @@ public partial class MainWindow
 
     private void OnWallpaperEffectNoneClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("None");
     private void OnWallpaperEffectAudioHalftoneClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("AudioHalftone");
-    private void OnWallpaperEffectDitherClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Dither");
-    private void OnWallpaperEffectAsciiClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Ascii");
-    private void OnWallpaperEffectHalftoneClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Halftone");
-    private void OnWallpaperEffectScanlinesClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Scanlines");
+    private void OnWallpaperEffectHoneycombClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Honeycomb");
     private void OnWallpaperEffectBlurClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Blur");
 
     private void SetWallpaperEffect(string effect)
@@ -370,10 +374,7 @@ public partial class MainWindow
         string currentEffect = Settings.WallpaperEffect ?? "None";
         if (EffectNoneItem != null) EffectNoneItem.IsChecked = string.Equals(currentEffect, "None", StringComparison.OrdinalIgnoreCase);
         if (EffectAudioHalftoneItem != null) EffectAudioHalftoneItem.IsChecked = string.Equals(currentEffect, "AudioHalftone", StringComparison.OrdinalIgnoreCase);
-        if (EffectDitherItem != null) EffectDitherItem.IsChecked = string.Equals(currentEffect, "Dither", StringComparison.OrdinalIgnoreCase);
-        if (EffectAsciiItem != null) EffectAsciiItem.IsChecked = string.Equals(currentEffect, "Ascii", StringComparison.OrdinalIgnoreCase);
-        if (EffectHalftoneItem != null) EffectHalftoneItem.IsChecked = string.Equals(currentEffect, "Halftone", StringComparison.OrdinalIgnoreCase);
-        if (EffectScanlinesItem != null) EffectScanlinesItem.IsChecked = string.Equals(currentEffect, "Scanlines", StringComparison.OrdinalIgnoreCase);
+        if (EffectHoneycombItem != null) EffectHoneycombItem.IsChecked = string.Equals(currentEffect, "Honeycomb", StringComparison.OrdinalIgnoreCase);
         if (EffectBlurItem != null) EffectBlurItem.IsChecked = string.Equals(currentEffect, "Blur", StringComparison.OrdinalIgnoreCase);
 
         if (WallpaperEffectsMenu != null) WallpaperEffectsMenu.IsEnabled = isWallpaper;

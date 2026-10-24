@@ -9,8 +9,8 @@ using MetroHub.Core.AsciiArt;
 namespace ReactivePreview;
 
 /// <summary>
-/// Renders the audio-reactive halftone to PNG files with scripted musical input,
-/// so the look can be tuned without launching MetroHub.
+/// Renders the ferro-acoustic halftone to PNG files with scripted musical input,
+/// so the look and physics can be tuned without launching MetroHub.
 /// </summary>
 internal static class Program
 {
@@ -57,52 +57,39 @@ internal static class Program
 
         uint[] buffer = new uint[width * height];
 
-        RunScenario("rest", engine, buffer, output, width, height, static (frame, bands) =>
+        RunScenario("rest", engine, buffer, output, width, height, static (int frame, out float sub, out float veto) =>
         {
             _ = frame;
-            Array.Clear(bands);
-        }, captureFrames: [120, 150]);
+            sub = 0f;
+            veto = 0f;
+        }, captureFrames: [60, 90]);
 
-        RunScenario("kick", engine, buffer, output, width, height, static (frame, bands) =>
+        RunScenario("kick", engine, buffer, output, width, height, static (int frame, out float sub, out float veto) =>
         {
-            Array.Clear(bands);
-            bool hit = frame % 28 is 0 or 1 or 2;
-            for (int band = 0; band < 4; band++)
-            {
-                bands[band] = hit ? 0.92f : 0.04f;
-            }
-        }, captureFrames: [196, 198, 200]);
-
-        RunScenario("drop", engine, buffer, output, width, height, static (frame, bands) =>
-        {
-            for (int band = 0; band < bands.Length; band++)
-            {
-                bands[band] = 0.35f + (0.25f * MathF.Sin((frame * 0.07f) + band));
-            }
-
             bool hit = frame % 28 is 0 or 1;
-            if (hit)
-            {
-                for (int band = 0; band < 6; band++)
-                {
-                    bands[band] = 0.95f;
-                }
-            }
-        }, captureFrames: [196, 198, 200]);
+            sub = hit ? 0.95f : 0.02f;
+            veto = 0.02f;
+        }, captureFrames: [56, 58, 62]);
 
-        RunScenario("hats", engine, buffer, output, width, height, static (frame, bands) =>
+        RunScenario("veto", engine, buffer, output, width, height, static (int frame, out float sub, out float veto) =>
         {
-            Array.Clear(bands);
-            bool hit = frame % 14 is 0 or 1;
-            for (int band = 11; band < bands.Length; band++)
-            {
-                bands[band] = hit ? 0.95f : 0.02f;
-            }
-        }, captureFrames: [196, 198]);
+            bool hit = frame % 28 is 0 or 1;
+            sub = hit ? 0.85f : 0.05f;
+            veto = 0.90f; // Loud vocal/snare veto suppresses kick trigger
+        }, captureFrames: [56, 58]);
+
+        RunScenario("drop", engine, buffer, output, width, height, static (int frame, out float sub, out float veto) =>
+        {
+            bool hit = frame % 28 is 0 or 1;
+            sub = hit ? 0.98f : 0.15f;
+            veto = 0.08f;
+        }, captureFrames: [56, 58, 62]);
 
         RunPerf(image);
         return 0;
     }
+
+    private delegate void SignalFeeder(int frame, out float subBass, out float veto);
 
     private static void RunScenario(
         string name,
@@ -111,19 +98,16 @@ internal static class Program
         string outputDirectory,
         int width,
         int height,
-        Action<int, float[]> feed,
+        SignalFeeder feed,
         int[] captureFrames)
     {
-        WaveField field = new();
-        ReactiveDynamics dynamics = new();
-        float[] bands = new float[ReactiveDynamics.BandCount];
-        ReactiveState state = ReactiveState.Rest;
+        FerroAcousticBassGovernor governor = new();
 
         int lastFrame = captureFrames[^1];
         for (int frame = 0; frame <= lastFrame; frame++)
         {
-            feed(frame, bands);
-            state = dynamics.Update(bands, 1f / 60f, field);
+            feed(frame, out float subBass, out float veto);
+            governor.StepPhysics(subBass, veto, 1f / 60f);
 
             if (!captureFrames.Contains(frame))
             {
@@ -132,16 +116,15 @@ internal static class Program
 
             Stopwatch timer = Stopwatch.StartNew();
             buffer.AsSpan().Fill(CanvasPixel);
-            engine.Render(buffer, state, field);
+            engine.Render(buffer, governor.ZPiston);
             timer.Stop();
 
             string path = Path.Combine(outputDirectory, $"{name}_{frame:000}.png");
             SavePng(path, buffer, width, height);
 
             Console.WriteLine(
-                $"{name,-6} f{frame,4}  bass={state.Bass:0.00} mid={state.Mid:0.00} "
-                + $"treb={state.Treble:0.00} pulse={state.Pulse:0.00} energy={state.Energy:0.00} "
-                + $"idle={state.Idle:0.00} peak={field.Peak:0.000}  render={timer.Elapsed.TotalMilliseconds:0.0} ms");
+                $"{name,-6} f{frame,4}  sub={subBass:0.00} veto={veto:0.00} "
+                + $"zPiston={governor.ZPiston:0.000} idle={governor.IsIdle}  render={timer.Elapsed.TotalMilliseconds:0.0} ms");
         }
     }
 
@@ -151,21 +134,8 @@ internal static class Program
         const int height = 1080;
 
         TrueColorHalftoneEngine engine = new(image, width, height);
-        WaveField field = new();
-        ReactiveDynamics dynamics = new();
-        float[] bands = new float[ReactiveDynamics.BandCount];
         uint[] buffer = new uint[width * height];
-
-        for (int frame = 0; frame < 30; frame++)
-        {
-            bands[0] = 0.8f;
-            bands[3] = 0.6f;
-            bands[8] = 0.5f;
-            bands[13] = 0.5f;
-            dynamics.Update(bands, 1f / 60f, field);
-        }
-
-        ReactiveState state = dynamics.Current;
+        float zPiston = 0.75f; // Measure with active toroidal press
 
         double[] renderSamples = new double[iterations];
         double[] frameSamples = new double[iterations];
@@ -175,7 +145,7 @@ internal static class Program
             long start = Stopwatch.GetTimestamp();
             buffer.AsSpan().Fill(CanvasPixel);
             long mid = Stopwatch.GetTimestamp();
-            engine.Render(buffer, state, field);
+            engine.Render(buffer, zPiston);
             long end = Stopwatch.GetTimestamp();
 
             renderSamples[i] = (end - mid) * 1000.0 / Stopwatch.Frequency;
@@ -209,65 +179,54 @@ internal static class Program
         nuint byteCount = (nuint)pixelCount * sizeof(uint);
         void* source = NativeMemory.AlignedAlloc(byteCount, 64);
         void* destination = NativeMemory.AlignedAlloc(byteCount, 64);
+
         try
         {
-            new Span<uint>(source, pixelCount).Fill(CanvasPixel);
+            const int warmup = 5;
+            const int runs = 30;
 
-            const int copies = 200;
-            long start = Stopwatch.GetTimestamp();
-            for (int i = 0; i < copies; i++)
+            for (int i = 0; i < warmup; i++)
             {
                 Buffer.MemoryCopy(source, destination, byteCount, byteCount);
             }
 
-            long end = Stopwatch.GetTimestamp();
-            double perCopy = (end - start) * 1000.0 / Stopwatch.Frequency / copies;
-            Console.WriteLine($"  ui blit copy : {perCopy:0.00} ms ({byteCount / 1048576.0:0.0} MB)");
+            double[] samples = new double[runs];
+            for (int i = 0; i < runs; i++)
+            {
+                long start = Stopwatch.GetTimestamp();
+                Buffer.MemoryCopy(source, destination, byteCount, byteCount);
+                long end = Stopwatch.GetTimestamp();
+                samples[i] = (end - start) * 1000.0 / Stopwatch.Frequency;
+            }
+
+            Array.Sort(samples);
+            Console.WriteLine($"  ui blit copy : p10 {Percentile(samples, 0.10):0.000}  "
+                + $"p50 {Percentile(samples, 0.50):0.000}  p90 {Percentile(samples, 0.90):0.000} ms");
         }
         finally
         {
             NativeMemory.AlignedFree(source);
             NativeMemory.AlignedFree(destination);
         }
-
-        MeasureBitmapMemory(pixelCount);
     }
 
-    /// <summary>Reports what a 1080p WriteableBitmap costs the process in private bytes.</summary>
-    private static void MeasureBitmapMemory(int pixelCount)
+    private static void SavePng(string path, uint[] bgra, int width, int height)
     {
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
-
-        long before = Process.GetCurrentProcess().PrivateMemorySize64;
-
-        WriteableBitmap bitmap = new(1920, 1080, 96, 96, PixelFormats.Pbgra32, null);
-        bitmap.Lock();
-        bitmap.Unlock();
-
-        long after = Process.GetCurrentProcess().PrivateMemorySize64;
-        double megabytes = (after - before) / 1048576.0;
-        Console.WriteLine($"  writeablebmp : {megabytes:0.0} MB private bytes for {pixelCount / 1048576.0:0.0} MPx");
-        GC.KeepAlive(bitmap);
-    }
-
-    private static void SavePng(string path, uint[] pixels, int width, int height)
-    {
-        byte[] bytes = MemoryMarshal.AsBytes(pixels.AsSpan()).ToArray();
-        BitmapSource bitmap = BitmapSource.Create(
+        int stride = width * 4;
+        byte[] bytes = MemoryMarshal.AsBytes(bgra.AsSpan()).ToArray();
+        BitmapSource source = BitmapSource.Create(
             width,
             height,
             96,
             96,
-            PixelFormats.Bgra32,
+            PixelFormats.Pbgra32,
             null,
             bytes,
-            width * 4);
+            stride);
 
-        PngBitmapEncoder encoder = new();
-        encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using FileStream stream = File.Create(path);
+        PngBitmapEncoder encoder = new();
+        encoder.Frames.Add(BitmapFrame.Create(source));
         encoder.Save(stream);
     }
 }

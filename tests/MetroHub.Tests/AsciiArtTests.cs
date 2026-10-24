@@ -221,166 +221,90 @@ public class HalftonePainterTests
     }
 }
 
-public class WaveFieldTests
+public class FerroAcousticBassGovernorTests
 {
     [Fact]
-    public void Step_WithDrivenEmitter_StaysFiniteAndBounded()
+    public void StepPhysics_WithSilence_QuicklyEntersIdleSleep()
     {
-        WaveField field = new();
+        FerroAcousticBassGovernor governor = new();
+        bool active = false;
 
-        for (int i = 0; i < 600; i++)
+        // Step with zero input for 180 ms (11 frames at 60 FPS)
+        for (int frame = 0; frame < 11; frame++)
         {
-            field.AddForce(0.5f, 0.5f, 0.05f, 3f);
-            field.AddForce(0.25f, 0.7f, -0.04f, 1.5f);
-            field.Step(1f / 60f);
+            active = governor.StepPhysics(0f, 0f, 1f / 60f);
         }
 
-        field.Sample(0.5f, 0.5f, out float height, out float gradientX, out float gradientY, out float curlX, out float curlY);
-
-        Assert.False(float.IsNaN(height));
-        Assert.False(float.IsNaN(gradientX) || float.IsNaN(gradientY));
-        Assert.False(float.IsNaN(curlX) || float.IsNaN(curlY));
-        Assert.InRange(height, -4f, 4f);
-        Assert.InRange(field.Peak, 0f, 4f);
+        Assert.False(active, "Governor should return false (idle) within 180 ms of silence.");
+        Assert.True(governor.IsIdle, "Governor should report IsIdle == true.");
+        Assert.Equal(0f, governor.ZPiston);
     }
 
     [Fact]
-    public void Step_AfterImpulse_DecaysWhenUndriven()
+    public void StepPhysics_WithVetoMidHigh_SuppressesFalseTriggers()
     {
-        WaveField field = new();
-        field.AddForce(0.5f, 0.5f, 0.08f, 2f);
-        field.Step(1f / 60f);
+        FerroAcousticBassGovernor governor = new();
 
-        float initial = field.Peak;
-        Assert.True(initial > 0f, "an impulse should move the field");
-
-        for (int i = 0; i < 300; i++)
+        // Feed strong sub-bass accompanied by loud veto mid/high (vocal/snare/crackle)
+        for (int frame = 0; frame < 60; frame++)
         {
-            field.Step(1f / 60f);
+            governor.StepPhysics(subBassBand: 0.60f, midHighBand: 0.90f, dt: 1f / 60f);
         }
 
-        Assert.True(field.Peak < initial, $"field should decay: {field.Peak} vs {initial}");
+        Assert.Equal(0f, governor.ZPiston);
+        Assert.True(governor.IsIdle);
     }
 
     [Fact]
-    public void Sample_ClampsOutsideTheGrid()
+    public void StepPhysics_WithSubBassKick_TriggersInstantPistonPress()
     {
-        WaveField field = new();
-        field.AddForce(0.5f, 0.5f, 0.05f, 4f);
-        field.Step(1f / 60f);
+        FerroAcousticBassGovernor governor = new();
 
-        field.Sample(-5f, 5f, out float height, out _, out _, out _, out _);
-        Assert.False(float.IsNaN(height));
-        Assert.InRange(height, -4f, 4f);
-
-        field.Sample(0.5f, 0.5f, out float centre, out _, out _, out _, out _);
-        Assert.True(centre > 0f, "the impulse centre should be a crest");
-    }
-
-    [Fact]
-    public void Step_LargeDeltaTime_DoesNotExplode()
-    {
-        WaveField field = new();
-        field.AddForce(0.5f, 0.5f, 0.5f, 2f);
-
-        for (int i = 0; i < 60; i++)
+        // Baseline silence for a few frames
+        for (int frame = 0; frame < 10; frame++)
         {
-            field.Step(0.5f);
+            governor.StepPhysics(0f, 0f, 1f / 60f);
         }
 
-        Assert.InRange(field.Peak, 0f, 4f);
+        // Clean sub-bass kick hit
+        bool motion = governor.StepPhysics(subBassBand: 0.85f, midHighBand: 0.02f, dt: 1f / 60f);
+
+        Assert.True(motion, "Sub-bass kick should trigger motion.");
+        Assert.True(governor.ZPiston > 0.2f, $"Piston should punch inward on kick, was {governor.ZPiston}");
+        Assert.False(governor.IsIdle);
     }
 
     [Fact]
-    public void Curl_IsNonZeroAndVariesAcrossTheGrid()
+    public void StepPhysics_DuffingOscillator_ProducesElasticRebound()
     {
-        WaveField field = new();
-        field.Sample(0.1f, 0.1f, out _, out _, out _, out float firstX, out float firstY);
-        field.Sample(0.8f, 0.6f, out _, out _, out _, out float secondX, out float secondY);
+        FerroAcousticBassGovernor governor = new();
 
-        Assert.True(MathF.Abs(firstX) + MathF.Abs(firstY) > 0f);
-        Assert.True(MathF.Abs(firstX - secondX) + MathF.Abs(firstY - secondY) > 0f);
-    }
-}
+        // Trigger an initial kick
+        governor.StepPhysics(subBassBand: 0.95f, midHighBand: 0.01f, dt: 1f / 60f);
+        Assert.True(governor.ZPiston > 0f);
 
-public class ReactiveDynamicsTests
-{
-    [Fact]
-    public void Update_WithSilence_RampsIntoIdleDrift()
-    {
-        ReactiveDynamics dynamics = new();
-        WaveField field = new();
-        Span<float> bands = stackalloc float[ReactiveDynamics.BandCount];
-
-        for (int frame = 0; frame < 300; frame++)
+        float minZ = 0f;
+        // Observe Duffing spring oscillation over subsequent frames
+        for (int frame = 0; frame < 30; frame++)
         {
-            dynamics.Update(bands, 1f / 60f, field);
+            governor.StepPhysics(0f, 0f, 1f / 60f);
+            minZ = MathF.Min(minZ, governor.ZPiston);
         }
 
-        ReactiveState state = dynamics.Current;
-        Assert.True(state.Idle > 0.9f, $"idle should ramp up, was {state.Idle}");
-        Assert.True(state.IsSilent);
-        Assert.Equal(0f, state.Energy);
-        Assert.True(field.Peak > 0f, "idle drift should still move the field");
+        Assert.True(minZ < -0.05f, $"Duffing oscillator should rebound below 0 into negative thump, was {minZ}");
     }
 
     [Fact]
-    public void Update_WithKickTrain_ProducesPulses()
+    public void Reset_ClearsAllPhysicsState()
     {
-        ReactiveDynamics dynamics = new();
-        WaveField field = new();
-        float[] bands = new float[ReactiveDynamics.BandCount];
+        FerroAcousticBassGovernor governor = new();
+        governor.StepPhysics(subBassBand: 0.95f, midHighBand: 0.01f, dt: 1f / 60f);
+        Assert.False(governor.IsIdle);
 
-        float maximumPulse = 0f;
-        for (int frame = 0; frame < 300; frame++)
-        {
-            bool kick = frame % 28 == 0;
-            for (int band = 0; band < 4; band++)
-            {
-                bands[band] = kick ? 0.9f : 0f;
-            }
+        governor.Reset();
 
-            maximumPulse = Math.Max(maximumPulse, dynamics.Update(bands, 1f / 60f, field).Pulse);
-        }
-
-        Assert.True(maximumPulse > 0.4f, $"kick train should raise the pulse, was {maximumPulse}");
-        Assert.True(field.Peak > 0.0005f);
-        Assert.False(dynamics.Current.IsSilent);
-    }
-
-    [Fact]
-    public void Update_WithLoudBands_RaisesBandEnergies()
-    {
-        ReactiveDynamics dynamics = new();
-        WaveField field = new();
-        float[] bands = new float[ReactiveDynamics.BandCount];
-        Array.Fill(bands, 0.8f);
-
-        ReactiveState state = ReactiveState.Rest;
-        for (int frame = 0; frame < 120; frame++)
-        {
-            state = dynamics.Update(bands, 1f / 60f, field);
-        }
-
-        Assert.True(state.Bass > 0.5f);
-        Assert.True(state.Treble > 0.5f);
-        Assert.True(state.Energy > 0.5f);
-        Assert.Equal(0f, state.Idle);
-    }
-
-    [Fact]
-    public void Reset_ClearsMusicalState()
-    {
-        ReactiveDynamics dynamics = new();
-        WaveField field = new();
-        float[] bands = new float[ReactiveDynamics.BandCount];
-        Array.Fill(bands, 0.9f);
-        dynamics.Update(bands, 1f / 60f, field);
-
-        dynamics.Reset();
-
-        Assert.Equal(0f, dynamics.Current.Energy);
-        Assert.Equal(0f, dynamics.Current.Pulse);
+        Assert.True(governor.IsIdle);
+        Assert.Equal(0f, governor.ZPiston);
     }
 }
 
@@ -462,11 +386,9 @@ public class TrueColorHalftoneEngineTests
                 Assert.Equal(64, engine.Width);
                 Assert.Equal(64, engine.Height);
 
-                WaveField field = new();
-
                 uint[] bufferRest = new uint[64 * 64];
                 bufferRest.AsSpan().Fill(Canvas);
-                engine.Render(bufferRest, ReactiveState.Rest, field);
+                engine.Render(bufferRest, zPiston: 0f);
 
                 int inkedRest = 0;
                 foreach (uint p in bufferRest)
@@ -476,26 +398,60 @@ public class TrueColorHalftoneEngineTests
 
                 Assert.True(inkedRest > 0, "Engine should stamp inked dots for bright image.");
 
-                // Drive the membrane so refraction actually moves ink.
-                for (int i = 0; i < 24; i++)
+                // Render with active toroidal press (zPiston = 0.8f)
+                uint[] bufferPressed = new uint[64 * 64];
+                bufferPressed.AsSpan().Fill(Canvas);
+                engine.Render(bufferPressed, zPiston: 0.8f);
+
+                int inkedPressed = 0;
+                foreach (uint p in bufferPressed)
                 {
-                    field.AddForce(0.25f, 0.5f, 0.06f, 3f);
-                    field.Step(1f / 60f);
+                    if (p != Canvas) inkedPressed++;
                 }
 
-                uint[] bufferMoved = new uint[64 * 64];
-                bufferMoved.AsSpan().Fill(Canvas);
-                ReactiveState loudFrame = new(1f, 1f, 1f, 1f, 1f, 0.5f, 0f, false);
-                engine.Render(bufferMoved, loudFrame, field);
+                Assert.True(inkedPressed > 0);
+                Assert.False(bufferRest.AsSpan().SequenceEqual(bufferPressed), "Toroidal press frame should differ from the rest frame.");
 
-                int inkedMoved = 0;
-                foreach (uint p in bufferMoved)
+                // Render with rebound thump (zPiston = -0.2f)
+                uint[] bufferRebound = new uint[64 * 64];
+                bufferRebound.AsSpan().Fill(Canvas);
+                engine.Render(bufferRebound, zPiston: -0.2f);
+
+                Assert.False(bufferRest.AsSpan().SequenceEqual(bufferRebound), "Rebound thump frame should differ from the rest frame.");
+            }
+            finally
+            {
+                if (File.Exists(tempPng))
                 {
-                    if (p != Canvas) inkedMoved++;
+                    File.Delete(tempPng);
                 }
+            }
+        });
+    }
 
-                Assert.True(inkedMoved > 0);
-                Assert.False(bufferRest.AsSpan().SequenceEqual(bufferMoved), "Reactive frame should differ from the rest frame.");
+    [Fact]
+    public void TrueColorHalftone_DarkBackground_RemainsAtRestDuringKick()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            string tempPng = Path.Combine(Path.GetTempPath(), $"metrohub_truecolor_dark_test_{Guid.NewGuid():N}.png");
+            try
+            {
+                // Write a pure black 32x32 image (representing dark backdrop behind widgets)
+                WriteSolidPng(tempPng, 32, 32, 0, 0, 0);
+
+                TrueColorHalftoneEngine engine = new(tempPng, targetWidth: 32, targetHeight: 32, cellSize: 6.0f);
+
+                uint[] bufferRest = new uint[32 * 32];
+                bufferRest.AsSpan().Fill(Canvas);
+                engine.Render(bufferRest, zPiston: 0f);
+
+                uint[] bufferKick = new uint[32 * 32];
+                bufferKick.AsSpan().Fill(Canvas);
+                engine.Render(bufferKick, zPiston: 1.0f);
+
+                // For pure dark background, susceptibility is 0, so kick does not alter the canvas
+                Assert.True(bufferRest.AsSpan().SequenceEqual(bufferKick), "Dark background dots should have susceptibility ~0 and remain completely still during kick.");
             }
             finally
             {
@@ -527,7 +483,6 @@ public class TrueColorHalftoneEngineTests
     }
 }
 
-/// <summary>Builds minimal packs for the format and painter tests.</summary>
 internal static class TestPack
 {
     /// <summary>Glyphs " ", "▁", "█" as ids 0, 1 and 2.</summary>

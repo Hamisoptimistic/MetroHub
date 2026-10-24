@@ -59,10 +59,8 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
     private Task? _renderTask;
     private bool _isAnimating;
 
-    private readonly WaveField _waveField = new();
-    private readonly ReactiveDynamics _dynamics = new();
-    private readonly float[] _bands = new float[AudioSpectrumProcessor.BandCount];
-    private ReactiveState _state = ReactiveState.Rest;
+    private readonly FerroAcousticBassGovernor _bassGovernor = new();
+    private bool _isHalftoneAtRest;
     private bool _isAudioReactive;
 
     private byte[] _atlas = [];
@@ -110,13 +108,13 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
         StartClock();
     }
 
-    /// <summary>Loads a static image or desktop wallpaper as an audio-reactive high-density TrueColor halftone living canvas.</summary>
-    public void LoadFromImage(string imagePath)
+    /// <summary>Loads a static image or desktop wallpaper as a high-density TrueColor halftone canvas.</summary>
+    public void LoadFromImage(string imagePath, bool isAudioReactive = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(imagePath);
 
         Unload();
-        _isAudioReactive = true;
+        _isAudioReactive = isAudioReactive;
         _trueColorHalftone = new TrueColorHalftoneEngine(imagePath, MaxRasterWidth, MaxRasterHeight);
         RebuildSurface();
         StartClock();
@@ -131,9 +129,8 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
         _bitmap = null;
         _halftone = null;
         _isAudioReactive = false;
-        _dynamics.Reset();
-        _waveField.Reset();
-        _state = ReactiveState.Rest;
+        _bassGovernor.Reset();
+        _isHalftoneAtRest = false;
         _atlas = [];
         _colorLookup = [];
         _cellWidth = 0;
@@ -391,9 +388,7 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
                 continue;
             }
 
-            // Idle drift keeps breathing at a reduced rate, so silence costs a
-            // fraction of the active frame budget.
-            double fps = _state.IsSilent ? IdleFps : 60.0;
+            double fps = (_isAudioReactive && _bassGovernor.IsIdle) ? IdleFps : 60.0;
             if (pack is not null && !_isAudioReactive)
             {
                 fps = Math.Clamp(pack.Fps, 1, 60);
@@ -438,12 +433,28 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
                 frameIndex = AsciiPack.GetPlaybackFrame(frameTick++, pack.FrameCount, pack.LoopMode);
             }
 
+            float zPiston = 0f;
+            bool hasMotion = _isAudioReactive;
+
             if (_isAudioReactive)
             {
-                // When the radio is silent the sampler clears the span and the
-                // dynamics fall back to a slow, subtle idle drift.
-                RadioAudioService.Instance.GetSpectrumBands(_bands);
-                _state = _dynamics.Update(_bands, dt, _waveField);
+                RadioAudioService.Instance.GetSubBassAndVeto(out float subBass, out float veto);
+                hasMotion = _bassGovernor.StepPhysics(subBass, veto, dt);
+                zPiston = _bassGovernor.ZPiston;
+            }
+
+            if (trueColor is not null)
+            {
+                if (!hasMotion && _isHalftoneAtRest)
+                {
+                    // Silence sleep gate: Governor is idle or effect is static Honeycomb,
+                    // and canvas is already resting at 0% displacement.
+                    // Sleep to guarantee 0% CPU consumption.
+                    Thread.Sleep(_isAudioReactive ? 30 : 100);
+                    continue;
+                }
+
+                _isHalftoneAtRest = !hasMotion;
             }
 
             // Render off-thread directly into the worker's private POH buffer
@@ -452,7 +463,7 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
 
             if (trueColor is not null)
             {
-                trueColor.Render(target, _state, _waveField);
+                trueColor.Render(target, zPiston);
             }
             else if (_halftone is not null)
             {
@@ -588,6 +599,7 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
             _drawHeight = Math.Round(bH * fScale, 2);
             _offsetX = Math.Round((ActualWidth - _drawWidth) / 2.0, 2);
             _offsetY = Math.Round((ActualHeight - _drawHeight) / 2.0, 2);
+            PresentScene();
             return;
         }
 
@@ -626,6 +638,7 @@ public sealed class AsciiArtWallpaper : FrameworkElement, IDisposable
         _workerWriteIndex = 0;
         _uiReadIndex = 1;
         _readyBufferIndex = 2;
+        _isHalftoneAtRest = false;
         Interlocked.Exchange(ref _isFrameReady, 0);
 
         if (trueColor is not null)

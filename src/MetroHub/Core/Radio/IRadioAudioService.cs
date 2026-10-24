@@ -67,6 +67,13 @@ public interface IRadioAudioService : IDisposable
     /// </summary>
     bool GetSpectrumBands(Span<float> bands);
 
+    /// <summary>
+    /// Computes instantaneous sub-bass (25-85 Hz) and veto (250-4000 Hz) levels (0..1)
+    /// for ferro-acoustic kick detection.
+    /// Returns true if audio data was actively read; false when idle, muted, or stopped.
+    /// </summary>
+    bool GetSubBassAndVeto(out float subBass, out float veto);
+
     /// <summary>Fired when the current station changes.</summary>
     event EventHandler<RadioStation?>? CurrentStationChanged;
 

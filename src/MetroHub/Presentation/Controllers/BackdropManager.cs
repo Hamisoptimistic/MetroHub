@@ -36,7 +36,7 @@ public sealed class BackdropManager
     private readonly Action<string, bool> _toastAction;
     private readonly Action? _updateMenuChecksAction;
     private readonly Action<string?>? _applySceneAction;
-    private readonly Action<string?>? _applyLiveHalftoneAction;
+    private readonly Action<string?, bool>? _applyLiveHalftoneAction;
 
     private int _wallpaperLoadGeneration;
     private string? _currentLoadedWallpaperPath;
@@ -60,7 +60,7 @@ public sealed class BackdropManager
         Action<string, bool> toastAction,
         Action? updateMenuChecksAction = null,
         Action<string?>? applySceneAction = null,
-        Action<string?>? applyLiveHalftoneAction = null)
+        Action<string?, bool>? applyLiveHalftoneAction = null)
     {
         _window = window;
         _settingsProvider = settingsProvider;
@@ -106,7 +106,7 @@ public sealed class BackdropManager
         if (isWallpaper)
         {
             _applySceneAction?.Invoke(null);
-            _applyLiveHalftoneAction?.Invoke(null);
+            _applyLiveHalftoneAction?.Invoke(null, false);
             var ct = BeginNewWallpaperGeneration();
             NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_NONE);
             if (_rootGrid != null)
@@ -143,13 +143,13 @@ public sealed class BackdropManager
             }
 
             ApplyScrim(settings.WallpaperDimOpacity);
-            _applyLiveHalftoneAction?.Invoke(null);
+            _applyLiveHalftoneAction?.Invoke(null, false);
             _applySceneAction?.Invoke(settings.AsciiSceneId);
         }
         else
         {
             _applySceneAction?.Invoke(null);
-            _applyLiveHalftoneAction?.Invoke(null);
+            _applyLiveHalftoneAction?.Invoke(null, false);
             CancelPendingWallpaperLoad();
             TeardownWallpaperVideo();
 
@@ -290,12 +290,12 @@ public sealed class BackdropManager
         string backdropType = settings.BackdropType;
 
         string currentEffect = settings.WallpaperEffect ?? "None";
-        bool isHalftone = string.Equals(currentEffect, "Halftone", StringComparison.OrdinalIgnoreCase) ||
-                          string.Equals(currentEffect, "AudioHalftone", StringComparison.OrdinalIgnoreCase);
+        bool isDotCanvas = string.Equals(currentEffect, "AudioHalftone", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(currentEffect, "Honeycomb", StringComparison.OrdinalIgnoreCase);
 
         // Apply scrim dim opacity immediately with frozen Freezable brush
         // Halftone canvas is already dark (#0B0B0F); clear scrim so dots remain crisp and vibrant
-        ApplyScrim(isHalftone ? 0.0 : settings.WallpaperDimOpacity);
+        ApplyScrim(isDotCanvas ? 0.0 : settings.WallpaperDimOpacity);
 
         string? lastError = null;
 
@@ -394,7 +394,10 @@ public sealed class BackdropManager
                 currentEffect = settings.WallpaperEffect ?? "None";
                 bool isLight = string.Equals(settings.ThemeMode, "Light", StringComparison.OrdinalIgnoreCase);
 
-                if (string.Equals(currentEffect, "AudioHalftone", StringComparison.OrdinalIgnoreCase))
+                isDotCanvas = string.Equals(currentEffect, "AudioHalftone", StringComparison.OrdinalIgnoreCase) ||
+                              string.Equals(currentEffect, "Honeycomb", StringComparison.OrdinalIgnoreCase);
+
+                if (isDotCanvas)
                 {
                     if (_wallpaperImage != null)
                     {
@@ -405,6 +408,8 @@ public sealed class BackdropManager
 
                     // Halftone canvas is already dark (#0B0B0F); clear scrim so dots remain crisp and vibrant
                     ApplyScrim(0.0);
+
+                    bool isAudioReactive = string.Equals(currentEffect, "AudioHalftone", StringComparison.OrdinalIgnoreCase);
 
                     if (string.Equals(_currentLoadedWallpaperPath, imagePath, StringComparison.OrdinalIgnoreCase) &&
                         string.Equals(_currentLoadedEffect, currentEffect, StringComparison.OrdinalIgnoreCase))
@@ -417,28 +422,20 @@ public sealed class BackdropManager
                     _currentLoadedWallpaperPath = imagePath;
                     _currentLoadedEffect = currentEffect;
                     _currentLoadedIsLight = isLight;
-                    _applyLiveHalftoneAction?.Invoke(imagePath);
+                    _applyLiveHalftoneAction?.Invoke(imagePath, isAudioReactive);
                     _customWallpaperHost.Visibility = Visibility.Visible;
                     UpdateWallpaperParallax();
                     return;
                 }
 
-                _applyLiveHalftoneAction?.Invoke(null);
+                _applyLiveHalftoneAction?.Invoke(null, false);
 
-                // Halftone print art has a dark canvas (#0B0B0F); clear scrim so dots remain crisp and vibrant
-                if (string.Equals(currentEffect, "Halftone", StringComparison.OrdinalIgnoreCase))
-                {
-                    ApplyScrim(0.0);
-                }
-                else
-                {
-                    ApplyScrim(settings.WallpaperDimOpacity);
-                }
+                ApplyScrim(settings.WallpaperDimOpacity);
 
                 // If the exact same wallpaper, effect, and theme polarity are already active, reuse without re-rendering
                 if (string.Equals(_currentLoadedWallpaperPath, imagePath, StringComparison.OrdinalIgnoreCase) &&
                     string.Equals(_currentLoadedEffect, currentEffect, StringComparison.OrdinalIgnoreCase) &&
-                    (_currentLoadedIsLight == isLight || string.Equals(currentEffect, "Dither", StringComparison.OrdinalIgnoreCase)) &&
+                    _currentLoadedIsLight == isLight &&
                     _wallpaperImage.Source != null)
                 {
                     _wallpaperImage.Visibility = Visibility.Visible;

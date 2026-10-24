@@ -54,7 +54,7 @@ public class AppSettingsTests
             CustomWallpaperPath = @"C:\Wallpapers\custom.png",
             WallpaperDimOpacity = 0.85,
             WallpaperParallax = false,
-            WallpaperEffect = "Dither",
+            WallpaperEffect = "Blur",
             LaunchAtStartup = true,
             StartMinimized = true,
             CloseOnLaunch = false,

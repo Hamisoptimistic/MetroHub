@@ -13,7 +13,7 @@ public sealed class AppSettings
     public string? AsciiSceneId { get; set; } // .mhp pack slug when BackdropType is AsciiScene
     public double WallpaperDimOpacity { get; set; } = 0.70; // 0.50 (Light), 0.70 (Balanced), 0.85 (Heavy)
     public bool WallpaperParallax { get; set; } = true;
-    public string WallpaperEffect { get; set; } = "None"; // None, Dither, Ascii, Halftone, Scanlines, Blur
+    public string WallpaperEffect { get; set; } = "None"; // None, Honeycomb, AudioHalftone, Blur
     
     public bool LaunchAtStartup { get; set; }
     public bool StartMinimized { get; set; }

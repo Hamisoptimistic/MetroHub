@@ -246,6 +246,59 @@ public sealed class AudioSpectrumProcessor
         return true;
     }
 
+    /// <summary>
+    /// Computes normalized 0..1 dB-mapped sub-bass (25-85 Hz) and mid/high veto (250-4000 Hz) energy levels.
+    /// </summary>
+    public bool ProcessSubBassAndVeto(int channelHandle, out float subBass, out float veto)
+    {
+        if (channelHandle == 0)
+        {
+            subBass = 0f;
+            veto = 0f;
+            return false;
+        }
+
+        if (ManagedBass.Bass.ChannelGetInfo(channelHandle, out var info) && info.Frequency > 0)
+        {
+            float binHz = (float)info.Frequency / 2048f;
+            if (binHz != _binHz)
+            {
+                _binHz = binHz;
+                _bandEdgesValid = false;
+            }
+        }
+
+        int bytesRead;
+        lock (_gate)
+        {
+            bytesRead = ManagedBass.Bass.ChannelGetData(channelHandle, _fftBuffer, (int)DataFlags.FFT2048);
+        }
+
+        if (bytesRead <= 0)
+        {
+            subBass = 0f;
+            veto = 0f;
+            return false;
+        }
+
+        ProcessFftSubBassAndVeto(_fftBuffer.AsSpan(0, FftBinCount), out subBass, out veto);
+        return true;
+    }
+
+    /// <summary>
+    /// Computes normalized 0..1 dB-mapped sub-bass (25-85 Hz) and mid/high veto (250-4000 Hz) energy levels from an FFT buffer.
+    /// </summary>
+    public void ProcessFftSubBassAndVeto(ReadOnlySpan<float> fftBins, out float subBass, out float veto)
+    {
+        int subStart = Bin(25f);
+        int subEnd = Bin(85f);
+        int vetoStart = Bin(250f);
+        int vetoEnd = Bin(4000f);
+
+        subBass = CalculateBandRmsDb(fftBins, subStart, subEnd);
+        veto = CalculateBandRmsDb(fftBins, vetoStart, vetoEnd);
+    }
+
     private void EnsureBandEdges()
     {
         if (_bandEdgesValid)
