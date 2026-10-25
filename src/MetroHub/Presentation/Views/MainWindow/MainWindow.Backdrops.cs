@@ -246,6 +246,7 @@ public partial class MainWindow
     private void OnWallpaperEffectAudioHalftoneClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("AudioHalftone");
     private void OnWallpaperEffectHoneycombClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Honeycomb");
     private void OnWallpaperEffectBlurClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Blur");
+    private void OnWallpaperEffectWaterRippleClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("WaterRipple");
 
     private void SetWallpaperEffect(string effect)
     {
@@ -376,6 +377,7 @@ public partial class MainWindow
         if (EffectAudioHalftoneItem != null) EffectAudioHalftoneItem.IsChecked = string.Equals(currentEffect, "AudioHalftone", StringComparison.OrdinalIgnoreCase);
         if (EffectHoneycombItem != null) EffectHoneycombItem.IsChecked = string.Equals(currentEffect, "Honeycomb", StringComparison.OrdinalIgnoreCase);
         if (EffectBlurItem != null) EffectBlurItem.IsChecked = string.Equals(currentEffect, "Blur", StringComparison.OrdinalIgnoreCase);
+        if (EffectWaterRippleItem != null) EffectWaterRippleItem.IsChecked = string.Equals(currentEffect, "WaterRipple", StringComparison.OrdinalIgnoreCase);
 
         if (WallpaperEffectsMenu != null) WallpaperEffectsMenu.IsEnabled = isWallpaper;
     }

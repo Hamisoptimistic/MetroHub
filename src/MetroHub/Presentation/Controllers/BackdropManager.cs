@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
+using MetroHub.Presentation.Shaders;
 using MetroHub.Presentation.Themes;
 
 namespace MetroHub.Presentation.Controllers;
@@ -17,7 +18,7 @@ namespace MetroHub.Presentation.Controllers;
 /// Manages window backdrops (Mica, Acrylic, Windows Desktop Wallpaper, Custom Wallpapers, 
 /// Bing Daily, Windows Spotlight Daily, video wallpapers, dimming, and parallax scrolling).
 /// </summary>
-public sealed class BackdropManager
+public sealed class BackdropManager : IDisposable
 {
     private static readonly SolidColorBrush AcrylicTintBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0x99, 0x0D, 0x0D, 0x11));
     private static readonly SolidColorBrush FallbackDarkBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xEE, 0x10, 0x10, 0x14));
@@ -37,6 +38,7 @@ public sealed class BackdropManager
     private readonly Action? _updateMenuChecksAction;
     private readonly Action<string?>? _applySceneAction;
     private readonly Action<string?, bool>? _applyLiveHalftoneAction;
+    private readonly BackdropShaderDriver _shaderDriver;
 
     private int _wallpaperLoadGeneration;
     private string? _currentLoadedWallpaperPath;
@@ -45,6 +47,7 @@ public sealed class BackdropManager
     private CancellationTokenSource? _wallpaperCts;
 
     public string? CurrentLoadedWallpaperPath => _currentLoadedWallpaperPath;
+    public BackdropShaderDriver ShaderDriver => _shaderDriver;
 
     public BackdropManager(
         Window window,
@@ -76,6 +79,7 @@ public sealed class BackdropManager
         _updateMenuChecksAction = updateMenuChecksAction;
         _applySceneAction = applySceneAction;
         _applyLiveHalftoneAction = applyLiveHalftoneAction;
+        _shaderDriver = new BackdropShaderDriver(_window, _wallpaperImage);
     }
 
     private bool _isBackdropConfigured;
@@ -117,6 +121,7 @@ public sealed class BackdropManager
         }
         else if (isAsciiScene)
         {
+            _shaderDriver.Detach();
             CancelPendingWallpaperLoad();
             TeardownWallpaperVideo();
 
@@ -148,6 +153,7 @@ public sealed class BackdropManager
         }
         else
         {
+            _shaderDriver.Detach();
             _applySceneAction?.Invoke(null);
             _applyLiveHalftoneAction?.Invoke(null, false);
             CancelPendingWallpaperLoad();
@@ -268,6 +274,7 @@ public sealed class BackdropManager
 
     public void CancelPendingWallpaperLoad()
     {
+        _shaderDriver.Detach();
         _wallpaperLoadGeneration++;
         if (_wallpaperCts != null)
         {
@@ -329,6 +336,7 @@ public sealed class BackdropManager
             {
                 if (DailyWallpaperService.IsVideoWallpaper(imagePath))
                 {
+                    _shaderDriver.Detach();
                     if (_wallpaperVideo == null) return;
 
                     string effect = settings.WallpaperEffect ?? "None";
@@ -399,6 +407,7 @@ public sealed class BackdropManager
 
                 if (isDotCanvas)
                 {
+                    _shaderDriver.Detach();
                     if (_wallpaperImage != null)
                     {
                         _wallpaperImage.Effect = null;
@@ -441,10 +450,13 @@ public sealed class BackdropManager
                     _wallpaperImage.Visibility = Visibility.Visible;
                     _customWallpaperHost.Visibility = Visibility.Visible;
                     UpdateWallpaperParallax();
+
+                    ApplyShaderEffect(currentEffect);
                     return;
                 }
 
                 // Static wallpapers use pre-rendered CPU effects; runtime WPF BlurEffect is eliminated
+                _shaderDriver.Detach();
                 _wallpaperImage.Effect = null;
 
                 BitmapSource? bmp = null;
@@ -474,6 +486,8 @@ public sealed class BackdropManager
                     _customWallpaperHost.Visibility = Visibility.Visible;
                     UpdateWallpaperParallax();
 
+                    ApplyShaderEffect(currentEffect);
+
                     // Subtle, silky smooth fade-in
                     var anim = new System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(200));
                     _wallpaperImage.BeginAnimation(UIElement.OpacityProperty, anim);
@@ -497,6 +511,7 @@ public sealed class BackdropManager
         _currentLoadedWallpaperPath = null;
         _currentLoadedEffect = null;
         _currentLoadedIsLight = null;
+        _shaderDriver.Detach();
         if (_wallpaperImage != null)
         {
             _wallpaperImage.Effect = null;
@@ -547,6 +562,31 @@ public sealed class BackdropManager
         var scrimBrush = new SolidColorBrush(Color.FromArgb(alpha, 0, 0, 0));
         scrimBrush.Freeze();
         _wallpaperScrim.Background = scrimBrush;
+    }
+
+    private void ApplyShaderEffect(string? effectName)
+    {
+        if (_wallpaperImage == null) return;
+
+        if (MetroShaderEffect.TryCreate(effectName) is { } shader &&
+            (BackdropShaderDriver.IsHardwareAccelerated || _shaderDriver.BypassHardwareTierCheck))
+        {
+            // Reuse active instance if the same shader is already assigned
+            if (_wallpaperImage.Effect is MetroShaderEffect active &&
+                string.Equals(active.ShaderName, shader.ShaderName, StringComparison.OrdinalIgnoreCase))
+            {
+                _shaderDriver.Attach(active);
+                return;
+            }
+
+            _wallpaperImage.Effect = shader;
+            _shaderDriver.Attach(shader);
+        }
+        else
+        {
+            _shaderDriver.Detach();
+            _wallpaperImage.Effect = null;
+        }
     }
 
     public static BitmapImage? LoadOptimizedBitmap(string path, int decodeWidth = 1920)
@@ -611,5 +651,12 @@ public sealed class BackdropManager
             ".wmv" or ".asf" => "Windows Media codec error. Enable Media Feature Pack in Windows Features.",
             _ => "Unsupported video codec. Try standard .mp4 (H.264) or install required codec."
         };
+    }
+
+    public void Dispose()
+    {
+        _shaderDriver.Dispose();
+        _wallpaperCts?.Dispose();
+        _wallpaperCts = null;
     }
 }

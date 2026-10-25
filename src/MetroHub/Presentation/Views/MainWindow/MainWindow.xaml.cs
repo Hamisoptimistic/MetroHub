@@ -1035,6 +1035,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         _keepWarmTimer = null;
         CancelPendingWallpaperLoad();
         TeardownWallpaperVideo();
+        _backdropManager?.Dispose();
         ClipboardSource.Instance?.Dispose();
         _ = LocalCompanionService.Instance.StopAsync();
         base.OnClosed(e);

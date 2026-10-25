@@ -403,6 +403,7 @@
                                 <MenuItem x:Name="EffectAudioHalftoneItem" Header="Audio-Reactive Halftone (Live)" IsCheckable="True" Click="OnWallpaperEffectAudioHalftoneClick" />
                                 <MenuItem x:Name="EffectHoneycombItem" Header="Honeycomb (Hex Grid)" IsCheckable="True" Click="OnWallpaperEffectHoneycombClick" />
                                 <MenuItem x:Name="EffectBlurItem" Header="Frosted Bokeh Blur" IsCheckable="True" Click="OnWallpaperEffectBlurClick" />
+                                <MenuItem x:Name="EffectWaterRippleItem" Header="Water Ripple (Live)" IsCheckable="True" Click="OnWallpaperEffectWaterRippleClick" />
                             </MenuItem>
                         </MenuItem>
 

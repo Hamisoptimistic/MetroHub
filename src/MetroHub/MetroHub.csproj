@@ -60,4 +60,8 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Presentation\Shaders\*.ps" LogicalName="MetroHub.Presentation.Shaders.%(Filename).ps" />
+  </ItemGroup>
+
 </Project>

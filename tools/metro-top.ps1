@@ -13,6 +13,18 @@ param(
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $esc = [char]27
 
+# VT / ANSI Sequences
+$smcup       = "$esc[?1049h" # Switch to alternate screen buffer
+$rmcup       = "$esc[?1049l" # Restore primary screen buffer
+$hideCursor  = "$esc[?25l"
+$showCursor  = "$esc[?25h"
+$disableWrap = "$esc[?7l"    # Disable auto-wrap (prevents row displacement)
+$enableWrap  = "$esc[?7h"
+$clearScreen = "$esc[2J"
+$homeCursor  = "$esc[H"
+$clearEol    = "$esc[K"     # Erase to end of line
+$clearEos    = "$esc[J"     # Erase to end of screen
+
 # Unicode box & block characters
 $bTL   = [char]0x250C  # ┌
 $bTR   = [char]0x2510  # ┐
@@ -54,20 +66,28 @@ $cGray        = "$esc[38;2;110;120;135m"
 $cDarkGray    = "$esc[38;2;60;68;80m"
 $cWhite       = "$esc[38;2;240;245;250m"
 
-# Terminal Box Width
+# Layout Constants
 $InnerWidth   = 72
+$minReqWidth  = $InnerWidth + 2  # 74 columns total width with borders
 
-# Helper: Format Row with 100% Guaranteed Right Border Alignment
-function Format-TuiRow([string]$text) {
-    # Remove ANSI escape sequences to compute exact visual column width
+# Helper: Safely get terminal dimensions without crashing in redirected/headless hosts
+function Get-ConsoleDimensions {
+    $w = 80
+    $h = 25
+    try {
+        $w = [Console]::WindowWidth
+        $h = [Console]::WindowHeight
+    } catch { }
+    return @{ Width = $w; Height = $h }
+}
+
+# Helper: Format Row with guaranteed border alignment, left margin, and right EOL cleanup
+function Format-TuiRow([string]$text, [string]$leftPad = "") {
     $clean = $text -replace '\x1B\[[0-9;]*[a-zA-Z]', ''
     $padLen = [Math]::Max(0, $InnerWidth - $clean.Length)
     $pad = " " * $padLen
-    return "$cCyan$bV$cReset$text$pad$cCyan$bV$cReset"
+    return "$leftPad$cCyan$bV$cReset$text$pad$cCyan$bV$cReset$clearEol"
 }
-
-# Hide Console Cursor via ANSI escape
-[Console]::Write("$esc[?25l")
 
 # Helper: Colorize based on percentage
 function Get-PercentColor([double]$val, [double]$warn = 3.0, [double]$crit = 8.0) {
@@ -101,29 +121,53 @@ function Get-Sparkline([double[]]$history, [double]$maxScale = 8.0) {
 }
 
 # Metric History State
-$historyLimit = 36
-$cpuHistory = [System.Collections.Generic.List[double]]::new()
-$peakCpu = 0.0
-$totalCpuSum = 0.0
-$sampleCount = 0
-$cores = [Environment]::ProcessorCount
+$historyLimit   = 36
+$cpuHistory     = [System.Collections.Generic.List[double]]::new()
+$gpuHistory     = [System.Collections.Generic.List[double]]::new()
+$peakCpu        = 0.0
+$peakGpu        = 0.0
+$totalCpuSum    = 0.0
+$totalGpuSum    = 0.0
+$sampleCount    = 0
+$gpuSampleCount = 0
+$cores          = [Environment]::ProcessorCount
 
-# Precompute border lines
-$barTop = "$cCyan$bTL" + ($bH * $InnerWidth) + "$bTR$cReset"
-$barMid = "$cCyan$bML" + ($bH * $InnerWidth) + "$bMR$cReset"
-$barBot = "$cCyan$bBL" + ($bH * $InnerWidth) + "$bBR$cReset"
+# Process & Counter State
+$iter           = 0
+$privWsCounter  = $null
+$gpuCounters    = [System.Collections.Generic.List[System.Diagnostics.PerformanceCounter]]::new()
+$lastPid        = 0
 
-# Clear screen once at startup
-[Console]::Write("$esc[2J$esc[H")
+# Track previous terminal dimensions for dynamic resize handling
+$lastW = 0
+$lastH = 0
 
-$iter = 0
-$privWsCounter = $null
-$lastPid = 0
+function Clear-GpuCounters {
+    foreach ($c in $gpuCounters) {
+        try { $c.Dispose() } catch { }
+    }
+    $gpuCounters.Clear()
+}
+
+# Enter alternate screen buffer + hide cursor + disable auto-wrap
+[Console]::Write("$smcup$disableWrap$hideCursor$clearScreen$homeCursor")
 
 try {
     while ($true) {
         if ($Count -gt 0 -and $iter -ge $Count) { break }
         $iter++
+
+        # Terminal Window Dimensions & Dynamic Resize Detection
+        $dims = Get-ConsoleDimensions
+        $curW = $dims.Width
+        $curH = $dims.Height
+
+        if ($curW -ne $lastW -or $curH -ne $lastH) {
+            $lastW = $curW
+            $lastH = $curH
+            # Complete screen wipe when terminal size changes to avoid artifact ghosts
+            [Console]::Write("$clearScreen$homeCursor")
+        }
 
         # Check for keyboard inputs safely
         try {
@@ -134,15 +178,27 @@ try {
                 }
                 if ($key -eq [ConsoleKey]::R) {
                     $cpuHistory.Clear()
+                    $gpuHistory.Clear()
                     $peakCpu = 0.0
+                    $peakGpu = 0.0
                     $totalCpuSum = 0.0
+                    $totalGpuSum = 0.0
                     $sampleCount = 0
+                    $gpuSampleCount = 0
                 }
                 if ($key -eq [ConsoleKey]::T) {
                     $IntervalMs = if ($IntervalMs -eq 1000) { 500 } else { 1000 }
                 }
             }
         } catch { }
+
+        # Centering Margin (Keeps TUI centered regardless of terminal width)
+        $leftMargin = [Math]::Max(0, [int](($curW - $minReqWidth) / 2))
+        $leftPad = " " * $leftMargin
+
+        $barTop = "$leftPad$cCyan$bTL" + ($bH * $InnerWidth) + "$bTR$cReset$clearEol"
+        $barMid = "$leftPad$cCyan$bML" + ($bH * $InnerWidth) + "$bMR$cReset$clearEol"
+        $barBot = "$leftPad$cCyan$bBL" + ($bH * $InnerWidth) + "$bBR$cReset$clearEol"
 
         # Locate MetroHub process
         $proc = Get-Process -Name MetroHub -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -153,17 +209,18 @@ try {
                 $privWsCounter = $null
                 $lastPid = 0
             }
+            Clear-GpuCounters
 
             $msg = @(
                 $barTop,
-                (Format-TuiRow "  $cBold$cWhite METROHUB TUI MONITOR$cReset"),
+                (Format-TuiRow "  $cBold$cWhite METROHUB TUI MONITOR$cReset" $leftPad),
                 $barMid,
-                (Format-TuiRow "  $cYellow Waiting for MetroHub.exe to start...$cReset"),
-                (Format-TuiRow "  $cGray(Launch MetroHub or press Q to exit)$cReset"),
+                (Format-TuiRow "  $cYellow Waiting for MetroHub.exe to start...$cReset" $leftPad),
+                (Format-TuiRow "  $cGray(Launch MetroHub or press Q to exit)$cReset" $leftPad),
                 $barBot
             ) -join "`n"
 
-            [Console]::Write("$esc[H$msg`n")
+            [Console]::Write("$homeCursor$msg$clearEos")
             Start-Sleep -Milliseconds 1000
             continue
         }
@@ -174,6 +231,7 @@ try {
                 try { $privWsCounter.Dispose() } catch { }
                 $privWsCounter = $null
             }
+            Clear-GpuCounters
             try {
                 $privWsCounter = New-Object System.Diagnostics.PerformanceCounter('Process', 'Working Set - Private', 'MetroHub', $true)
                 [void]$privWsCounter.NextValue()
@@ -181,6 +239,19 @@ try {
             } catch {
                 $privWsCounter = $null
             }
+        }
+
+        # Initialize GPU 3D engine counters for target process if not yet connected
+        if ($gpuCounters.Count -eq 0) {
+            try {
+                $gpuCat = [System.Diagnostics.PerformanceCounterCategory]::new('GPU Engine')
+                $gpuInstances = $gpuCat.GetInstanceNames() | Where-Object { $_ -like "*pid_$($proc.Id)*engtype_3D*" }
+                foreach ($inst in $gpuInstances) {
+                    $c = [System.Diagnostics.PerformanceCounter]::new('GPU Engine', 'Utilization Percentage', $inst)
+                    [void]$c.NextValue() # Prime the counter
+                    $gpuCounters.Add($c)
+                }
+            } catch { }
         }
 
         # Measure CPU delta over interval
@@ -198,10 +269,9 @@ try {
         $elapsedSec = ($currTime - $prevTime).TotalSeconds
         $cpuDeltaSec = [Math]::Max(0.0, $currCpu - $prevCpu)
         $cpuPercent = if ($elapsedSec -gt 0) { ($cpuDeltaSec / ($elapsedSec * $cores)) * 100.0 } else { 0.0 }
-        
         $cpuPercent = [Math]::Round($cpuPercent, 2)
 
-        # Update History & Stats
+        # Update CPU History & Stats
         $cpuHistory.Add($cpuPercent)
         if ($cpuHistory.Count -gt $historyLimit) {
             $cpuHistory.RemoveAt(0)
@@ -211,7 +281,30 @@ try {
         $sampleCount++
         $avgCpu = [Math]::Round(($totalCpuSum / $sampleCount), 2)
 
-        # Process Metrics
+        # Sample GPU 3D engine utilization
+        $gpuPercent = 0.0
+        if ($gpuCounters.Count -gt 0) {
+            try {
+                foreach ($c in $gpuCounters) {
+                    $gpuPercent += $c.NextValue()
+                }
+            } catch {
+                Clear-GpuCounters
+            }
+        }
+        $gpuPercent = [Math]::Round($gpuPercent, 2)
+
+        # Update GPU History & Stats
+        $gpuHistory.Add($gpuPercent)
+        if ($gpuHistory.Count -gt $historyLimit) {
+            $gpuHistory.RemoveAt(0)
+        }
+        if ($gpuPercent -gt $peakGpu) { $peakGpu = $gpuPercent }
+        $totalGpuSum += $gpuPercent
+        $gpuSampleCount++
+        $avgGpu = if ($gpuSampleCount -gt 0) { [Math]::Round(($totalGpuSum / $gpuSampleCount), 2) } else { 0.0 }
+
+        # Process Memory Metrics
         $privateWsMb = if ($privWsCounter) {
             try { [Math]::Round($privWsCounter.NextValue() / 1MB, 1) } catch { 0.0 }
         } else { 0.0 }
@@ -227,28 +320,51 @@ try {
         $uptimeStr = "{0:D2}h {1:D2}m {2:D2}s" -f [int]$uptime.TotalHours, $uptime.Minutes, $uptime.Seconds
 
         $statusStr = if ($proc.Responding) { "$cNeonGreen$bDot RUNNING$cReset" } else { "$cRed$bDot HUNG$cReset" }
+
+        # CPU Visualization
         $cpuCol = Get-PercentColor -val $cpuPercent
         $cpuBar = Get-ProgressBar -val $cpuPercent -maxVal 8.0 -width 24
-        $ramBar = Get-ProgressBar -val $privateWsMb -maxVal 100.0 -width 24
-        $spark = Get-Sparkline -history ($cpuHistory.ToArray()) -maxScale 8.0
-        
-        $missingSpark = $historyLimit - $cpuHistory.Count
-        if ($missingSpark -gt 0) {
-            $spark = ("$cDarkGray.$cReset" * $missingSpark) + $spark
+        $cpuSpark = Get-Sparkline -history ($cpuHistory.ToArray()) -maxScale 8.0
+        $missingCpuSpark = $historyLimit - $cpuHistory.Count
+        if ($missingCpuSpark -gt 0) {
+            $cpuSpark = ("$cDarkGray.$cReset" * $missingCpuSpark) + $cpuSpark
         }
 
-        # Format rows with 100% guaranteed border alignment
-        $r1 = Format-TuiRow "  $cBold$cWhite METROHUB PERFORMANCE MONITOR$cReset$cGray                   [Tick: $($IntervalMs)ms]$cReset"
-        $r2 = Format-TuiRow "  PID: $cWhite$($proc.Id.ToString().PadRight(6))$cReset Status: $statusStr$cReset   Uptime: $cWhite$($uptimeStr)$cReset   Cores: $cWhite$($cores)$cReset"
-        $r3 = Format-TuiRow "  $cBold$cWhite PROCESSOR (CPU)$cReset"
-        $r4 = Format-TuiRow "  Usage:    $cpuCol$($cpuPercent.ToString('0.00').PadLeft(6))%$cReset  [$cpuBar]  $cGray(Target: <8%)$cReset"
-        $r5 = Format-TuiRow "  Stats:    Avg: $cWhite$($avgCpu.ToString('0.00').PadLeft(5))%$cReset  Peak: $cWhite$($peakCpu.ToString('0.00').PadLeft(5))%$cReset  Samples: $cWhite$($sampleCount.ToString().PadRight(6))$cReset"
-        $r6 = Format-TuiRow "  Chart:    [$spark] $cGray(Last 36s)$cReset"
-        $r7 = Format-TuiRow "  $cBold$cWhite MEMORY & SYSTEM$cReset"
-        $r8 = Format-TuiRow "  RAM:      $cNeonGreen$($privateWsMb.ToString('0.0').PadLeft(6)) MB$cReset  [$ramBar]  $cGray(Task Mgr Private)$cReset"
-        $r9 = Format-TuiRow "  Total WS: $cWhite$($ramMb.ToString('0.0').PadLeft(6)) MB$cReset  Shared: $cWhite$($sharedMb.ToString('0.0').PadLeft(6)) MB$cReset  Commit: $cWhite$($privateMb.ToString('0.0').PadLeft(6)) MB$cReset"
-        $r10 = Format-TuiRow "  Peak WS:  $cWhite$($peakRamMb.ToString('0.0').PadLeft(6)) MB$cReset  Threads: $cWhite$($threads.ToString().PadLeft(3))$cReset       Handles: $cWhite$($handles.ToString().PadLeft(5))$cReset"
-        $help = "$cDim  [Q / Esc] Quit    [R] Reset Stats    [T] Toggle 500ms/1000ms$cReset"
+        # GPU Visualization
+        $gpuCol = Get-PercentColor -val $gpuPercent -warn 10.0 -crit 25.0
+        $gpuBar = Get-ProgressBar -val $gpuPercent -maxVal 20.0 -width 24
+        $gpuSpark = Get-Sparkline -history ($gpuHistory.ToArray()) -maxScale 20.0
+        $missingGpuSpark = $historyLimit - $gpuHistory.Count
+        if ($missingGpuSpark -gt 0) {
+            $gpuSpark = ("$cDarkGray.$cReset" * $missingGpuSpark) + $gpuSpark
+        }
+
+        # Memory Visualization
+        $ramBar = Get-ProgressBar -val $privateWsMb -maxVal 100.0 -width 24
+
+        # Format rows
+        $r1  = Format-TuiRow "  $cBold$cWhite METROHUB PERFORMANCE MONITOR$cReset$cGray                   [Tick: $($IntervalMs)ms]$cReset" $leftPad
+        $r2  = Format-TuiRow "  PID: $cWhite$($proc.Id.ToString().PadRight(6))$cReset Status: $statusStr$cReset   Uptime: $cWhite$($uptimeStr)$cReset   Cores: $cWhite$($cores)$cReset" $leftPad
+
+        # CPU Card
+        $r3  = Format-TuiRow "  $cBold$cWhite PROCESSOR (CPU)$cReset" $leftPad
+        $r4  = Format-TuiRow "  Usage:    $cpuCol$($cpuPercent.ToString('0.00').PadLeft(6))%$cReset  [$cpuBar]  $cGray(Target: <8%)$cReset" $leftPad
+        $r5  = Format-TuiRow "  Stats:    Avg: $cWhite$($avgCpu.ToString('0.00').PadLeft(5))%$cReset  Peak: $cWhite$($peakCpu.ToString('0.00').PadLeft(5))%$cReset  Samples: $cWhite$($sampleCount.ToString().PadRight(6))$cReset" $leftPad
+        $r6  = Format-TuiRow "  Chart:    [$cpuSpark] $cGray(Last 36s)$cReset" $leftPad
+
+        # GPU Card
+        $rg1 = Format-TuiRow "  $cBold$cWhite GRAPHICS (GPU - 3D ENGINE)$cReset" $leftPad
+        $rg2 = Format-TuiRow "  Usage:    $gpuCol$($gpuPercent.ToString('0.00').PadLeft(6))%$cReset  [$gpuBar]  $cGray(Target: <15%)$cReset" $leftPad
+        $rg3 = Format-TuiRow "  Stats:    Avg: $cWhite$($avgGpu.ToString('0.00').PadLeft(5))%$cReset  Peak: $cWhite$($peakGpu.ToString('0.00').PadLeft(5))%$cReset  Engines: $cWhite$($gpuCounters.Count.ToString().PadRight(6))$cReset" $leftPad
+        $rg4 = Format-TuiRow "  Chart:    [$gpuSpark] $cGray(Last 36s)$cReset" $leftPad
+
+        # Memory Card
+        $r7  = Format-TuiRow "  $cBold$cWhite MEMORY & SYSTEM$cReset" $leftPad
+        $r8  = Format-TuiRow "  RAM:      $cNeonGreen$($privateWsMb.ToString('0.0').PadLeft(6)) MB$cReset  [$ramBar]  $cGray(Task Mgr Private)$cReset" $leftPad
+        $r9  = Format-TuiRow "  Total WS: $cWhite$($ramMb.ToString('0.0').PadLeft(6)) MB$cReset  Shared: $cWhite$($sharedMb.ToString('0.0').PadLeft(6)) MB$cReset  Commit: $cWhite$($privateMb.ToString('0.0').PadLeft(6)) MB$cReset" $leftPad
+        $r10 = Format-TuiRow "  Peak WS:  $cWhite$($peakRamMb.ToString('0.0').PadLeft(6)) MB$cReset  Threads: $cWhite$($threads.ToString().PadLeft(3))$cReset       Handles: $cWhite$($handles.ToString().PadLeft(5))$cReset" $leftPad
+
+        $help = "$leftPad$cDim  [Q / Esc] Quit    [R] Reset Stats    [T] Toggle 500ms/1000ms$cReset$clearEol"
 
         $output = @(
             $barTop,
@@ -261,6 +377,11 @@ try {
             $r5,
             $r6,
             $barMid,
+            $rg1,
+            $rg2,
+            $rg3,
+            $rg4,
+            $barMid,
             $r7,
             $r8,
             $r9,
@@ -269,8 +390,8 @@ try {
             $help
         ) -join "`n"
 
-        # ANSI home position + atomic write for 100% flicker-free rendering
-        [Console]::Write("$esc[H$output`n")
+        # Atomic write: home cursor, render frame, and wipe any trailing terminal content
+        [Console]::Write("$homeCursor$output$clearEos")
     }
 }
 finally {
@@ -278,7 +399,9 @@ finally {
         try { $privWsCounter.Dispose() } catch { }
         $privWsCounter = $null
     }
-    # Restore Console Cursor
-    [Console]::Write("$esc[?25h")
+    Clear-GpuCounters
+
+    # Restore terminal: enable wrap, show cursor, exit alternate screen buffer
+    [Console]::Write("$enableWrap$showCursor$rmcup")
     Write-Host "$cGray[Monitor stopped]$cReset"
 }
