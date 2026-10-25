@@ -58,6 +58,8 @@ $cDim         = "$esc[2m"
 $cCyan        = "$esc[38;2;0;220;255m"
 $cNeonGreen   = "$esc[38;2;0;255;150m"
 $cGreen       = "$esc[38;2;75;215;100m"
+$cBlue        = "$esc[38;2;75;155;255m"   # Dedicated vibrant Blue for RAM
+$cViolet      = "$esc[38;2;190;110;255m"  # Dedicated vibrant Violet for GPU
 $cYellow      = "$esc[38;2;255;205;60m"
 $cOrange      = "$esc[38;2;255;135;40m"
 $cRed         = "$esc[38;2;255;70;85m"
@@ -90,31 +92,51 @@ function Format-TuiRow([string]$text, [string]$leftPad = "") {
 }
 
 # Helper: Colorize based on percentage
-function Get-PercentColor([double]$val, [double]$warn = 3.0, [double]$crit = 8.0) {
-    if ($val -lt $warn) { return $cNeonGreen }
-    if ($val -lt $crit) { return $cYellow }
-    return $cRed
+function Get-PercentColor([double]$val, [double]$warn = 3.0, [double]$crit = 8.0, [string]$themeCol = "") {
+    if ($val -ge $crit) { return $cRed }
+    if ($val -ge $warn) { return $cYellow }
+    if ($themeCol) { return $themeCol }
+    return $cNeonGreen
 }
 
-# Helper: Horizontal Progress Bar
-function Get-ProgressBar([double]$val, [double]$maxVal = 10.0, [int]$width = 24) {
+# Helper: Horizontal Progress Bar with custom theme color and warning thresholds
+function Get-ProgressBar([double]$val, [double]$maxVal = 10.0, [int]$width = 24, [string]$themeCol = "") {
     $ratio = [Math]::Min(1.0, [Math]::Max(0.0, ($val / $maxVal)))
     $filled = [int][Math]::Round($ratio * $width)
     $unfilled = $width - $filled
-    $barCol = Get-PercentColor -val $val
+    $pctRatio = $ratio * 100.0
+
+    $barCol = if ($pctRatio -ge 80.0) {
+        $cRed
+    } elseif ($pctRatio -ge 60.0) {
+        $cYellow
+    } elseif ($themeCol) {
+        $themeCol
+    } else {
+        $cNeonGreen
+    }
+
     $fStr = $bFull * $filled
     $uStr = $bDim * $unfilled
     return "$barCol$fStr$cDarkGray$uStr$cReset"
 }
 
-# Helper: Sparkline renderer from history
-function Get-Sparkline([double[]]$history, [double]$maxScale = 8.0) {
+# Helper: Sparkline renderer from history with theme color
+function Get-Sparkline([double[]]$history, [double]$maxScale = 8.0, [string]$themeCol = "") {
     if (-not $history -or $history.Length -eq 0) { return "" }
     $sb = [System.Text.StringBuilder]::new()
     foreach ($val in $history) {
         $ratio = [Math]::Min(1.0, [Math]::Max(0.0, ($val / $maxScale)))
         $idx = [int][Math]::Floor($ratio * ($sparkChars.Length - 1))
-        $col = Get-PercentColor -val $val
+        $col = if ($val -ge ($maxScale * 0.8)) {
+            $cRed
+        } elseif ($val -ge ($maxScale * 0.6)) {
+            $cYellow
+        } elseif ($themeCol) {
+            $themeCol
+        } else {
+            $cNeonGreen
+        }
         [void]$sb.Append("$col$($sparkChars[$idx])$cReset")
     }
     return $sb.ToString()
@@ -126,6 +148,7 @@ $cpuHistory     = [System.Collections.Generic.List[double]]::new()
 $gpuHistory     = [System.Collections.Generic.List[double]]::new()
 $peakCpu        = 0.0
 $peakGpu        = 0.0
+$peakVramMb     = 0.0
 $totalCpuSum    = 0.0
 $totalGpuSum    = 0.0
 $sampleCount    = 0
@@ -133,10 +156,13 @@ $gpuSampleCount = 0
 $cores          = [Environment]::ProcessorCount
 
 # Process & Counter State
-$iter           = 0
-$privWsCounter  = $null
-$gpuCounters    = [System.Collections.Generic.List[System.Diagnostics.PerformanceCounter]]::new()
-$lastPid        = 0
+$iter            = 0
+$privWsCounter   = $null
+$gpuCounters     = [System.Collections.Generic.List[System.Diagnostics.PerformanceCounter]]::new()
+$gpuMemDedicated = [System.Collections.Generic.List[System.Diagnostics.PerformanceCounter]]::new()
+$gpuMemShared    = [System.Collections.Generic.List[System.Diagnostics.PerformanceCounter]]::new()
+$gpuMemCommit    = [System.Collections.Generic.List[System.Diagnostics.PerformanceCounter]]::new()
+$lastPid         = 0
 
 # Track previous terminal dimensions for dynamic resize handling
 $lastW = 0
@@ -147,6 +173,18 @@ function Clear-GpuCounters {
         try { $c.Dispose() } catch { }
     }
     $gpuCounters.Clear()
+    foreach ($c in $gpuMemDedicated) {
+        try { $c.Dispose() } catch { }
+    }
+    $gpuMemDedicated.Clear()
+    foreach ($c in $gpuMemShared) {
+        try { $c.Dispose() } catch { }
+    }
+    $gpuMemShared.Clear()
+    foreach ($c in $gpuMemCommit) {
+        try { $c.Dispose() } catch { }
+    }
+    $gpuMemCommit.Clear()
 }
 
 # Enter alternate screen buffer + hide cursor + disable auto-wrap
@@ -181,6 +219,7 @@ try {
                     $gpuHistory.Clear()
                     $peakCpu = 0.0
                     $peakGpu = 0.0
+                    $peakVramMb = 0.0
                     $totalCpuSum = 0.0
                     $totalGpuSum = 0.0
                     $sampleCount = 0
@@ -254,6 +293,25 @@ try {
             } catch { }
         }
 
+        # Initialize GPU Process Memory counters for target process if not yet connected
+        if ($gpuMemDedicated.Count -eq 0) {
+            try {
+                $memCat = [System.Diagnostics.PerformanceCounterCategory]::new('GPU Process Memory')
+                $memInstances = $memCat.GetInstanceNames() | Where-Object { $_ -like "*pid_$($proc.Id)*" }
+                foreach ($inst in $memInstances) {
+                    $cD = [System.Diagnostics.PerformanceCounter]::new('GPU Process Memory', 'Dedicated Usage', $inst)
+                    $cS = [System.Diagnostics.PerformanceCounter]::new('GPU Process Memory', 'Shared Usage', $inst)
+                    $cC = [System.Diagnostics.PerformanceCounter]::new('GPU Process Memory', 'Total Committed', $inst)
+                    [void]$cD.NextValue()
+                    [void]$cS.NextValue()
+                    [void]$cC.NextValue()
+                    $gpuMemDedicated.Add($cD)
+                    $gpuMemShared.Add($cS)
+                    $gpuMemCommit.Add($cC)
+                }
+            } catch { }
+        }
+
         # Measure CPU delta over interval
         $prevCpu = $proc.CPU
         $prevTime = [DateTime]::UtcNow
@@ -304,7 +362,27 @@ try {
         $gpuSampleCount++
         $avgGpu = if ($gpuSampleCount -gt 0) { [Math]::Round(($totalGpuSum / $gpuSampleCount), 2) } else { 0.0 }
 
-        # Process Memory Metrics
+        # Sample GPU Process Memory (VRAM)
+        $dedicatedBytes = 0.0
+        $sharedGpuBytes = 0.0
+        $commitGpuBytes = 0.0
+
+        if ($gpuMemDedicated.Count -gt 0) {
+            try {
+                foreach ($c in $gpuMemDedicated) { $dedicatedBytes += $c.NextValue() }
+                foreach ($c in $gpuMemShared)    { $sharedGpuBytes += $c.NextValue() }
+                foreach ($c in $gpuMemCommit)    { $commitGpuBytes += $c.NextValue() }
+            } catch {
+                Clear-GpuCounters
+            }
+        }
+
+        $dedicatedMb = [Math]::Round(($dedicatedBytes / 1MB), 1)
+        $sharedGpuMb = [Math]::Round(($sharedGpuBytes / 1MB), 1)
+        $commitGpuMb = [Math]::Round(($commitGpuBytes / 1MB), 1)
+        if ($dedicatedMb -gt $peakVramMb) { $peakVramMb = $dedicatedMb }
+
+        # Process System Memory Metrics
         $privateWsMb = if ($privWsCounter) {
             try { [Math]::Round($privWsCounter.NextValue() / 1MB, 1) } catch { 0.0 }
         } else { 0.0 }
@@ -321,71 +399,92 @@ try {
 
         $statusStr = if ($proc.Responding) { "$cNeonGreen$bDot RUNNING$cReset" } else { "$cRed$bDot HUNG$cReset" }
 
-        # CPU Visualization
-        $cpuCol = Get-PercentColor -val $cpuPercent
-        $cpuBar = Get-ProgressBar -val $cpuPercent -maxVal 8.0 -width 24
-        $cpuSpark = Get-Sparkline -history ($cpuHistory.ToArray()) -maxScale 8.0
+        # ---------------------------------------------------------
+        # 1. CPU VISUALIZATION (THEME: GREEN)
+        # ---------------------------------------------------------
+        $cpuCol   = Get-PercentColor -val $cpuPercent -warn 3.0 -crit 8.0 -themeCol $cNeonGreen
+        $cpuBar   = Get-ProgressBar -val $cpuPercent -maxVal 8.0 -width 24 -themeCol $cNeonGreen
+        $cpuSpark = Get-Sparkline -history ($cpuHistory.ToArray()) -maxScale 8.0 -themeCol $cNeonGreen
         $missingCpuSpark = $historyLimit - $cpuHistory.Count
         if ($missingCpuSpark -gt 0) {
             $cpuSpark = ("$cDarkGray.$cReset" * $missingCpuSpark) + $cpuSpark
         }
 
-        # GPU Visualization
-        $gpuCol = Get-PercentColor -val $gpuPercent -warn 10.0 -crit 25.0
-        $gpuBar = Get-ProgressBar -val $gpuPercent -maxVal 20.0 -width 24
-        $gpuSpark = Get-Sparkline -history ($gpuHistory.ToArray()) -maxScale 20.0
+        # ---------------------------------------------------------
+        # 2. RAM VISUALIZATION (THEME: BLUE)
+        # ---------------------------------------------------------
+        $ramBar = Get-ProgressBar -val $privateWsMb -maxVal 100.0 -width 24 -themeCol $cBlue
+
+        # ---------------------------------------------------------
+        # 3. GPU VISUALIZATION (THEME: VIOLET)
+        # ---------------------------------------------------------
+        $gpuCol   = Get-PercentColor -val $gpuPercent -warn 10.0 -crit 25.0 -themeCol $cViolet
+        $gpuBar   = Get-ProgressBar -val $gpuPercent -maxVal 20.0 -width 24 -themeCol $cViolet
+        $gpuSpark = Get-Sparkline -history ($gpuHistory.ToArray()) -maxScale 20.0 -themeCol $cViolet
         $missingGpuSpark = $historyLimit - $gpuHistory.Count
         if ($missingGpuSpark -gt 0) {
             $gpuSpark = ("$cDarkGray.$cReset" * $missingGpuSpark) + $gpuSpark
         }
+        $vramBar = Get-ProgressBar -val $dedicatedMb -maxVal 100.0 -width 24 -themeCol $cViolet
 
-        # Memory Visualization
-        $ramBar = Get-ProgressBar -val $privateWsMb -maxVal 100.0 -width 24
-
-        # Format rows
+        # ---------------------------------------------------------
+        # ROWS FORMATTING: HEADER & GENERAL INFO
+        # ---------------------------------------------------------
         $r1  = Format-TuiRow "  $cBold$cWhite METROHUB PERFORMANCE MONITOR$cReset$cGray                   [Tick: $($IntervalMs)ms]$cReset" $leftPad
         $r2  = Format-TuiRow "  PID: $cWhite$($proc.Id.ToString().PadRight(6))$cReset Status: $statusStr$cReset   Uptime: $cWhite$($uptimeStr)$cReset   Cores: $cWhite$($cores)$cReset" $leftPad
 
-        # CPU Card
-        $r3  = Format-TuiRow "  $cBold$cWhite PROCESSOR (CPU)$cReset" $leftPad
-        $r4  = Format-TuiRow "  Usage:    $cpuCol$($cpuPercent.ToString('0.00').PadLeft(6))%$cReset  [$cpuBar]  $cGray(Target: <8%)$cReset" $leftPad
-        $r5  = Format-TuiRow "  Stats:    Avg: $cWhite$($avgCpu.ToString('0.00').PadLeft(5))%$cReset  Peak: $cWhite$($peakCpu.ToString('0.00').PadLeft(5))%$cReset  Samples: $cWhite$($sampleCount.ToString().PadRight(6))$cReset" $leftPad
-        $r6  = Format-TuiRow "  Chart:    [$cpuSpark] $cGray(Last 36s)$cReset" $leftPad
+        # ---------------------------------------------------------
+        # CARD 1: CPU (GREEN)
+        # ---------------------------------------------------------
+        $rcpu1 = Format-TuiRow "  $cBold$cNeonGreen PROCESSOR (CPU)$cReset" $leftPad
+        $rcpu2 = Format-TuiRow "  Usage:    $cpuCol$($cpuPercent.ToString('0.00').PadLeft(6))%$cReset  [$cpuBar]  $cGray(Target: <8%)$cReset" $leftPad
+        $rcpu3 = Format-TuiRow "  Stats:    Avg: $cWhite$($avgCpu.ToString('0.00').PadLeft(5))%$cReset  Peak: $cWhite$($peakCpu.ToString('0.00').PadLeft(5))%$cReset  Samples: $cWhite$($sampleCount.ToString().PadRight(6))$cReset" $leftPad
+        $rcpu4 = Format-TuiRow "  Chart:    [$cpuSpark] $cGray(Last 36s)$cReset" $leftPad
 
-        # GPU Card
-        $rg1 = Format-TuiRow "  $cBold$cWhite GRAPHICS (GPU - 3D ENGINE)$cReset" $leftPad
-        $rg2 = Format-TuiRow "  Usage:    $gpuCol$($gpuPercent.ToString('0.00').PadLeft(6))%$cReset  [$gpuBar]  $cGray(Target: <15%)$cReset" $leftPad
-        $rg3 = Format-TuiRow "  Stats:    Avg: $cWhite$($avgGpu.ToString('0.00').PadLeft(5))%$cReset  Peak: $cWhite$($peakGpu.ToString('0.00').PadLeft(5))%$cReset  Engines: $cWhite$($gpuCounters.Count.ToString().PadRight(6))$cReset" $leftPad
-        $rg4 = Format-TuiRow "  Chart:    [$gpuSpark] $cGray(Last 36s)$cReset" $leftPad
+        # ---------------------------------------------------------
+        # CARD 2: RAM (BLUE)
+        # ---------------------------------------------------------
+        $rram1 = Format-TuiRow "  $cBold$cBlue MEMORY & SYSTEM (RAM)$cReset" $leftPad
+        $rram2 = Format-TuiRow "  RAM:      $cBlue$($privateWsMb.ToString('0.0').PadLeft(6)) MB$cReset  [$ramBar]  $cGray(Task Mgr Private)$cReset" $leftPad
+        $rram3 = Format-TuiRow "  Total WS: $cWhite$($ramMb.ToString('0.0').PadLeft(6)) MB$cReset  Shared: $cWhite$($sharedMb.ToString('0.0').PadLeft(6)) MB$cReset  Commit: $cWhite$($privateMb.ToString('0.0').PadLeft(6)) MB$cReset" $leftPad
+        $rram4 = Format-TuiRow "  Peak WS:  $cWhite$($peakRamMb.ToString('0.0').PadLeft(6)) MB$cReset  Threads: $cWhite$($threads.ToString().PadLeft(3))$cReset       Handles: $cWhite$($handles.ToString().PadLeft(5))$cReset" $leftPad
 
-        # Memory Card
-        $r7  = Format-TuiRow "  $cBold$cWhite MEMORY & SYSTEM$cReset" $leftPad
-        $r8  = Format-TuiRow "  RAM:      $cNeonGreen$($privateWsMb.ToString('0.0').PadLeft(6)) MB$cReset  [$ramBar]  $cGray(Task Mgr Private)$cReset" $leftPad
-        $r9  = Format-TuiRow "  Total WS: $cWhite$($ramMb.ToString('0.0').PadLeft(6)) MB$cReset  Shared: $cWhite$($sharedMb.ToString('0.0').PadLeft(6)) MB$cReset  Commit: $cWhite$($privateMb.ToString('0.0').PadLeft(6)) MB$cReset" $leftPad
-        $r10 = Format-TuiRow "  Peak WS:  $cWhite$($peakRamMb.ToString('0.0').PadLeft(6)) MB$cReset  Threads: $cWhite$($threads.ToString().PadLeft(3))$cReset       Handles: $cWhite$($handles.ToString().PadLeft(5))$cReset" $leftPad
+        # ---------------------------------------------------------
+        # CARD 3: GPU (VIOLET)
+        # ---------------------------------------------------------
+        $rgpu1 = Format-TuiRow "  $cBold$cViolet GRAPHICS (GPU & VRAM)$cReset" $leftPad
+        $rgpu2 = Format-TuiRow "  Usage:    $gpuCol$($gpuPercent.ToString('0.00').PadLeft(6))%$cReset  [$gpuBar]  $cGray(Target: <15%)$cReset" $leftPad
+        $rgpu3 = Format-TuiRow "  Stats:    Avg: $cWhite$($avgGpu.ToString('0.00').PadLeft(5))%$cReset  Peak: $cWhite$($peakGpu.ToString('0.00').PadLeft(5))%$cReset  Engines: $cWhite$($gpuCounters.Count.ToString().PadRight(6))$cReset" $leftPad
+        $rgpu4 = Format-TuiRow "  Chart:    [$gpuSpark] $cGray(Last 36s)$cReset" $leftPad
+        $rgpu5 = Format-TuiRow "  VRAM:     $cViolet$($dedicatedMb.ToString('0.0').PadLeft(6)) MB$cReset  [$vramBar]  $cGray(Dedicated Video RAM)$cReset" $leftPad
+        $rgpu6 = Format-TuiRow "  Memory:   Shared: $cWhite$($sharedGpuMb.ToString('0.0').PadLeft(5)) MB$cReset  Commit: $cWhite$($commitGpuMb.ToString('0.0').PadLeft(5)) MB$cReset  Peak: $cWhite$($peakVramMb.ToString('0.0').PadLeft(5)) MB$cReset" $leftPad
 
+        # Footer help
         $help = "$leftPad$cDim  [Q / Esc] Quit    [R] Reset Stats    [T] Toggle 500ms/1000ms$cReset$clearEol"
 
+        # Output in CPU -> RAM -> GPU arrangement
         $output = @(
             $barTop,
             $r1,
             $barMid,
             $r2,
             $barMid,
-            $r3,
-            $r4,
-            $r5,
-            $r6,
+            $rcpu1,
+            $rcpu2,
+            $rcpu3,
+            $rcpu4,
             $barMid,
-            $rg1,
-            $rg2,
-            $rg3,
-            $rg4,
+            $rram1,
+            $rram2,
+            $rram3,
+            $rram4,
             $barMid,
-            $r7,
-            $r8,
-            $r9,
-            $r10,
+            $rgpu1,
+            $rgpu2,
+            $rgpu3,
+            $rgpu4,
+            $rgpu5,
+            $rgpu6,
             $barBot,
             $help
         ) -join "`n"

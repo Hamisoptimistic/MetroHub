@@ -8,7 +8,6 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using MetroHub.Core.AsciiArt;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Controllers;
 using MetroHub.Presentation.Themes;
@@ -30,12 +29,7 @@ public partial class MainWindow
         WallpaperVideoTranslateTransform,
         ContentScrollViewer,
         ShowToast,
-        UpdateBackdropMenuChecks,
-        ApplyAsciiScene,
-        ApplyHalftone);
-
-    private readonly List<(string Slug, MenuItem Item)> _liveSceneItems = [];
-    private string? _currentSceneSlug;
+        UpdateBackdropMenuChecks);
 
     private void OnBackdropMicaClick(object sender, RoutedEventArgs e)
     {
@@ -102,140 +96,6 @@ public partial class MainWindow
         }
     }
 
-    /// <summary>Builds the "Live Scenes" submenu from the .mhp packs on disk.</summary>
-    private void BuildLiveScenesMenu()
-    {
-        if (BackdropLiveScenesItem == null || _liveSceneItems.Count > 0)
-        {
-            return;
-        }
-
-        IReadOnlyList<AsciiPackInfo> packs = AsciiPack.EnumerateAvailable();
-        foreach (AsciiPackInfo pack in packs)
-        {
-            MenuItem item = new()
-            {
-                Header = pack.Name,
-                Tag = pack.Slug,
-                IsCheckable = true,
-            };
-            item.Click += OnBackdropLiveSceneClick;
-            BackdropLiveScenesItem.Items.Add(item);
-            _liveSceneItems.Add((pack.Slug, item));
-        }
-
-        BackdropLiveScenesItem.IsEnabled = _liveSceneItems.Count > 0;
-    }
-
-    private void OnBackdropLiveSceneClick(object sender, RoutedEventArgs e)
-    {
-        if (sender is not MenuItem { Tag: string slug } || string.IsNullOrWhiteSpace(slug))
-        {
-            return;
-        }
-
-        Settings.BackdropType = "AsciiScene";
-        Settings.AsciiSceneId = slug;
-        StorageService.SaveSettings(Settings);
-        ApplyConfiguredBackdrop();
-    }
-
-    /// <summary>Starts, keeps, or stops the native ASCII scene for the current backdrop.</summary>
-    private void ApplyAsciiScene(string? slug)
-    {
-        if (!IsAsciiSceneBackdrop(Settings.BackdropType) || string.IsNullOrWhiteSpace(slug))
-        {
-            _currentSceneSlug = null;
-            AsciiSceneWallpaper.Unload();
-            AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        if (string.Equals(_currentSceneSlug, slug, StringComparison.OrdinalIgnoreCase) && AsciiSceneWallpaper.HasScene)
-        {
-            AsciiSceneWallpaper.Visibility = Visibility.Visible;
-            return;
-        }
-
-        string path = AsciiPack.GetPackPath(slug);
-        if (!File.Exists(path))
-        {
-            _currentSceneSlug = null;
-            AsciiSceneWallpaper.Unload();
-            AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
-            ShowToast($"Scene pack not found: {slug}", isError: true);
-            return;
-        }
-
-        try
-        {
-            AsciiSceneWallpaper.Load(path);
-            AsciiSceneWallpaper.Visibility = Visibility.Visible;
-            _currentSceneSlug = slug;
-        }
-        catch (Exception ex)
-        {
-            _currentSceneSlug = null;
-            AsciiSceneWallpaper.Unload();
-            AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
-            Serilog.Log.Warning(ex, "Failed to load ASCII scene {Slug}", slug);
-            ShowToast($"Failed to load scene: {slug}", isError: true);
-        }
-    }
-
-    private string? _currentHalftoneImagePath;
-    private bool? _currentHalftoneIsAudioReactive;
-
-    /// <summary>Starts, keeps, or stops the halftone wallpaper (live audio-reactive or static Honeycomb).</summary>
-    private void ApplyHalftone(string? imagePath, bool isAudioReactive = true)
-    {
-        if (string.IsNullOrWhiteSpace(imagePath))
-        {
-            if (_currentHalftoneImagePath != null)
-            {
-                _currentHalftoneImagePath = null;
-                _currentHalftoneIsAudioReactive = null;
-                AsciiSceneWallpaper.Unload();
-                AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
-            }
-            return;
-        }
-
-        if (string.Equals(_currentHalftoneImagePath, imagePath, StringComparison.OrdinalIgnoreCase) &&
-            _currentHalftoneIsAudioReactive == isAudioReactive &&
-            AsciiSceneWallpaper.HasScene)
-        {
-            AsciiSceneWallpaper.Visibility = Visibility.Visible;
-            return;
-        }
-
-        if (!File.Exists(imagePath))
-        {
-            _currentHalftoneImagePath = null;
-            _currentHalftoneIsAudioReactive = null;
-            AsciiSceneWallpaper.Unload();
-            AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        try
-        {
-            _currentSceneSlug = null;
-            AsciiSceneWallpaper.LoadFromImage(imagePath, isAudioReactive);
-            AsciiSceneWallpaper.Visibility = Visibility.Visible;
-            _currentHalftoneImagePath = imagePath;
-            _currentHalftoneIsAudioReactive = isAudioReactive;
-        }
-        catch (Exception ex)
-        {
-            _currentHalftoneImagePath = null;
-            _currentHalftoneIsAudioReactive = null;
-            AsciiSceneWallpaper.Unload();
-            AsciiSceneWallpaper.Visibility = Visibility.Collapsed;
-            Serilog.Log.Warning(ex, "Failed to load halftone wallpaper from {Path}", imagePath);
-        }
-    }
-
     private void OnWallpaperDimLightClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.50);
     private void OnWallpaperDimBalancedClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.70);
     private void OnWallpaperDimHeavyClick(object sender, RoutedEventArgs e) => SetWallpaperDim(0.85);
@@ -243,10 +103,10 @@ public partial class MainWindow
     private void SetWallpaperDim(double opacity) => BackdropManager.SetWallpaperDim(opacity);
 
     private void OnWallpaperEffectNoneClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("None");
-    private void OnWallpaperEffectAudioHalftoneClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("AudioHalftone");
-    private void OnWallpaperEffectHoneycombClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Honeycomb");
     private void OnWallpaperEffectBlurClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Blur");
     private void OnWallpaperEffectWaterRippleClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("WaterRipple");
+    private void OnWallpaperEffectWaterCausticsClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("WaterCaustics");
+    private void OnWallpaperEffectNeonClockClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("NeonClock");
 
     private void SetWallpaperEffect(string effect)
     {
@@ -275,8 +135,6 @@ public partial class MainWindow
     public void ApplyConfiguredBackdrop(bool force = true) => BackdropManager.ApplyConfiguredBackdrop(force);
 
     public static bool IsWallpaperBackdrop(string? backdropType) => BackdropManager.IsWallpaperBackdrop(backdropType);
-
-    public static bool IsAsciiSceneBackdrop(string? backdropType) => BackdropManager.IsAsciiSceneBackdrop(backdropType);
 
     public static BitmapImage? LoadOptimizedBitmap(string path, int decodeWidth = 1920) => BackdropManager.LoadOptimizedBitmap(path, decodeWidth);
 
@@ -342,18 +200,6 @@ public partial class MainWindow
         if (BackdropCustomImageItem != null)
             BackdropCustomImageItem.IsChecked = string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase);
 
-        bool isScene = IsAsciiSceneBackdrop(Settings.BackdropType);
-        if (BackdropLiveScenesItem != null)
-        {
-            BackdropLiveScenesItem.IsEnabled = _liveSceneItems.Count > 0;
-        }
-
-        foreach ((string sceneSlug, MenuItem sceneItem) in _liveSceneItems)
-        {
-            sceneItem.IsChecked = isScene &&
-                string.Equals(sceneSlug, Settings.AsciiSceneId, StringComparison.OrdinalIgnoreCase);
-        }
-
         double dim = Settings.WallpaperDimOpacity;
         if (DimLightItem != null) DimLightItem.IsChecked = Math.Abs(dim - 0.50) < 0.05;
         if (DimBalancedItem != null) DimBalancedItem.IsChecked = Math.Abs(dim - 0.70) < 0.05;
@@ -374,10 +220,10 @@ public partial class MainWindow
 
         string currentEffect = Settings.WallpaperEffect ?? "None";
         if (EffectNoneItem != null) EffectNoneItem.IsChecked = string.Equals(currentEffect, "None", StringComparison.OrdinalIgnoreCase);
-        if (EffectAudioHalftoneItem != null) EffectAudioHalftoneItem.IsChecked = string.Equals(currentEffect, "AudioHalftone", StringComparison.OrdinalIgnoreCase);
-        if (EffectHoneycombItem != null) EffectHoneycombItem.IsChecked = string.Equals(currentEffect, "Honeycomb", StringComparison.OrdinalIgnoreCase);
         if (EffectBlurItem != null) EffectBlurItem.IsChecked = string.Equals(currentEffect, "Blur", StringComparison.OrdinalIgnoreCase);
         if (EffectWaterRippleItem != null) EffectWaterRippleItem.IsChecked = string.Equals(currentEffect, "WaterRipple", StringComparison.OrdinalIgnoreCase);
+        if (EffectWaterCausticsItem != null) EffectWaterCausticsItem.IsChecked = string.Equals(currentEffect, "WaterCaustics", StringComparison.OrdinalIgnoreCase);
+        if (EffectNeonClockItem != null) EffectNeonClockItem.IsChecked = string.Equals(currentEffect, "NeonClock", StringComparison.OrdinalIgnoreCase);
 
         if (WallpaperEffectsMenu != null) WallpaperEffectsMenu.IsEnabled = isWallpaper;
     }

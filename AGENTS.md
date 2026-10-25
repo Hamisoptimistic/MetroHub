@@ -8,6 +8,7 @@ Windows desktop live-tile launcher (WPF, `net10.0-windows10.0.19041.0`, SVMs via
 - **Never edit code without explicit permission.** A question, a "check this", or a clarification request is not permission to change anything.
 - **Never publish while the app is running.** `MetroHub.dll` stays locked and MSBuild fails with MSB3026/MSB3027/MSB3021. Kill it first:
   `Stop-Process -Name MetroHub -Force -ErrorAction SilentlyContinue`
+- **Strict Subsystem Containment (No Domain Bleed):** Never modify unrelated domain or shell files to implement subsystem logic (e.g. never touch `MainWindow.DragDrop.cs`, Canvas, or Tiles for Shaders, Audio/Radio, or Search). Subsystem features and event hooks MUST remain strictly encapsulated inside their dedicated directory (e.g. `src/MetroHub/Presentation/Shaders/BackdropShaderDriver.cs` for shaders).
 - Reply concisely in simplified technical English. Use Unicode box-drawing text flowcharts for flows and design explanations (no Mermaid or SVG).
 - `.agents/rules/` docs are partly stale — trust `src/` over them. Known drift: `BUG_FIXING_PROTOCOL.md` §7.2b describes `MediaPlaybackClock`/`MediaSyncTraceLogger`, and `WIDGET_ONBOARDING_CHECKLIST.md` lists `Core/Serialization/MetroHubJsonContext.cs` plus hardcoded DataTemplates; none of these exist anymore (see Widgets below).
 

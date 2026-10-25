@@ -36,7 +36,7 @@ public static class D3DCompiler
     {
         ID3DBlob code = null;
         ID3DBlob errors = null;
-        int hr = D3DCompile(hlsl, (UIntPtr)hlsl.Length, sourceName, IntPtr.Zero, IntPtr.Zero, entryPoint, target, 0, 0, out code, out errors);
+        int hr = D3DCompile(hlsl, (UIntPtr)hlsl.Length, sourceName, IntPtr.Zero, new IntPtr(1), entryPoint, target, 0, 0, out code, out errors);
         if (hr != 0)
         {
             string msg = "Unknown compilation error";
@@ -64,11 +64,20 @@ if ($hlslFiles.Count -eq 0) {
     exit 0
 }
 
-foreach ($file in $hlslFiles) {
-    $outputPath = [System.IO.Path]::ChangeExtension($file.FullName, ".ps")
-    Write-Host "Compiling $($file.Name) -> $([System.IO.Path]::GetFileName($outputPath)) [$TargetProfile]..."
-    $hlsl = [System.IO.File]::ReadAllText($file.FullName)
-    $bytes = [D3DCompiler]::Compile($hlsl, $file.Name, "main", $TargetProfile)
-    [System.IO.File]::WriteAllBytes($outputPath, $bytes)
-    Write-Host "Success: $([System.IO.Path]::GetFileName($outputPath)) ($($bytes.Length) bytes written)." -ForegroundColor Green
+Push-Location $ShaderDir
+try {
+    foreach ($file in $hlslFiles) {
+        if ($file.Name -like "*Palette*" -or $file.Name -like "*.inc.hlsl") {
+            continue
+        }
+        $outputPath = [System.IO.Path]::ChangeExtension($file.FullName, ".ps")
+        Write-Host "Compiling $($file.Name) -> $([System.IO.Path]::GetFileName($outputPath)) [$TargetProfile]..."
+        $hlsl = [System.IO.File]::ReadAllText($file.FullName)
+        $bytes = [D3DCompiler]::Compile($hlsl, $file.FullName, "main", $TargetProfile)
+        [System.IO.File]::WriteAllBytes($outputPath, $bytes)
+        Write-Host "Success: $([System.IO.Path]::GetFileName($outputPath)) ($($bytes.Length) bytes written)." -ForegroundColor Green
+    }
+}
+finally {
+    Pop-Location
 }

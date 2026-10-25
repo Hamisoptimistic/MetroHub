@@ -10,7 +10,7 @@ namespace MetroHub.Presentation.Shaders;
 /// Drives animation updates for MetroShaderEffect on WPF backdrops.
 /// Manages the CompositionTarget.Rendering loop with a 60 FPS frame limiter to eliminate high CPU spikes
 /// on high-refresh displays (144Hz - 240Hz), cached aspect ratio calculations, lifecycle gating
-/// (0% CPU/GPU when hidden or minimized), and bounded modulo time progression.
+/// (0% CPU/GPU when hidden or minimized), bounded modulo time progression, and wall-clock time in register c0.z.
 /// </summary>
 public sealed class BackdropShaderDriver : IDisposable
 {
@@ -80,6 +80,10 @@ public sealed class BackdropShaderDriver : IDisposable
 
         _activeEffect = effect;
         _lastRenderTimeSeconds = -1.0;
+
+        _window.PreviewMouseLeftButtonDown -= OnWindowMouseDown;
+        _window.PreviewMouseLeftButtonDown += OnWindowMouseDown;
+
         UpdateAspectRatio();
         UpdateDriverState();
     }
@@ -89,8 +93,48 @@ public sealed class BackdropShaderDriver : IDisposable
     /// </summary>
     public void Detach()
     {
+        _window.PreviewMouseLeftButtonDown -= OnWindowMouseDown;
         _activeEffect = null;
         StopRendering();
+    }
+
+    private void OnWindowMouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (_activeEffect == null || e.LeftButton != System.Windows.Input.MouseButtonState.Pressed) return;
+
+        // Ignore clicks on foreground controls (tiles, buttons, inputs, drawers)
+        if (e.OriginalSource is DependencyObject dep && IsInteractiveOrTile(dep))
+        {
+            return;
+        }
+
+        if (string.Equals(_activeEffect.ShaderName, "WaterCaustics", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(_activeEffect.ShaderName, "NeonClock", StringComparison.OrdinalIgnoreCase))
+        {
+            _activeEffect.CyclePalette(6);
+        }
+    }
+
+    private static bool IsInteractiveOrTile(DependencyObject dep)
+    {
+        DependencyObject? current = dep;
+        while (current != null)
+        {
+            if (current is System.Windows.Controls.Primitives.ButtonBase ||
+                current is System.Windows.Controls.Primitives.TextBoxBase ||
+                current is System.Windows.Controls.Primitives.ScrollBar ||
+                current is System.Windows.Controls.Primitives.Thumb ||
+                string.Equals(current.GetType().Name, "TileControl", StringComparison.Ordinal) ||
+                string.Equals(current.GetType().Name, "GroupHeaderControl", StringComparison.Ordinal) ||
+                string.Equals(current.GetType().Name, "AllAppsDrawerControl", StringComparison.Ordinal) ||
+                string.Equals(current.GetType().Name, "SidebarRailControl", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            current = VisualTreeHelper.GetParent(current);
+        }
+        return false;
     }
 
     private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e) => UpdateDriverState();
@@ -188,7 +232,8 @@ public sealed class BackdropShaderDriver : IDisposable
         _lastRenderTimeSeconds = elapsedSeconds;
 
         double time = elapsedSeconds % MaxTimeModulo;
-        _activeEffect.FrameState = new Point4D(time, _aspectRatio, 0.0, 0.0);
+        double timeOfDaySeconds = DateTime.Now.TimeOfDay.TotalSeconds;
+        _activeEffect.FrameState = new Point4D(time, _aspectRatio, timeOfDaySeconds, 0.0);
     }
 
     /// <summary>

@@ -22,6 +22,8 @@ public class MetroShaderEffect : ShaderEffect
     private static readonly ConcurrentDictionary<string, PixelShader> ShaderCache = new(StringComparer.OrdinalIgnoreCase);
 
     public static readonly Point4D DefaultWaterRippleParams = new(18.0, 0.006, 2.5, 2.2);
+    public static readonly Point4D DefaultWaterCausticsParams = new(1.0, 1.0, 1.0, 0.0);
+    public static readonly Point4D DefaultNeonClockParams = new(1.0, 1.0, 1.0, 0.0);
 
     public static readonly DependencyProperty InputProperty =
         RegisterPixelShaderSamplerProperty(
@@ -86,6 +88,17 @@ public class MetroShaderEffect : ShaderEffect
     }
 
     /// <summary>
+    /// Cycles the current palette index stored in EffectParams.W (modulo totalPalettes).
+    /// </summary>
+    public void CyclePalette(int totalPalettes = 6)
+    {
+        if (totalPalettes <= 1) return;
+        double current = Math.Round(EffectParams.W);
+        double next = (current + 1.0) % totalPalettes;
+        EffectParams = new Point4D(EffectParams.X, EffectParams.Y, EffectParams.Z, next);
+    }
+
+    /// <summary>
     /// ARCHITECTURAL DIRECTIVE FOR AGENTS / AI / CONTRIBUTORS:
     /// DO NOT create separate *Effect.cs subclass files or *Registry.cs files for new backdrop shaders.
     /// All standard shaders using register s0 (sampler), c0 (FrameState), and c1 (EffectParams) are directly
@@ -100,6 +113,10 @@ public class MetroShaderEffect : ShaderEffect
         {
             _ when string.Equals(effectName, "WaterRipple", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("WaterRipple", DefaultWaterRippleParams),
+            _ when string.Equals(effectName, "WaterCaustics", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("WaterCaustics", DefaultWaterCausticsParams),
+            _ when string.Equals(effectName, "NeonClock", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("NeonClock", DefaultNeonClockParams),
             _ => null
         };
 

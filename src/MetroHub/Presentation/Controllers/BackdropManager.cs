@@ -22,7 +22,6 @@ public sealed class BackdropManager : IDisposable
 {
     private static readonly SolidColorBrush AcrylicTintBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0x99, 0x0D, 0x0D, 0x11));
     private static readonly SolidColorBrush FallbackDarkBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0xEE, 0x10, 0x10, 0x14));
-    private static readonly SolidColorBrush SceneCanvasBrush = ThemeTokens.CreateFrozenBrush(Color.FromRgb(0x0B, 0x0B, 0x0F));
 
     private readonly Window _window;
     private readonly Func<AppSettings> _settingsProvider;
@@ -36,8 +35,6 @@ public sealed class BackdropManager : IDisposable
     private readonly ScrollViewer? _contentScrollViewer;
     private readonly Action<string, bool> _toastAction;
     private readonly Action? _updateMenuChecksAction;
-    private readonly Action<string?>? _applySceneAction;
-    private readonly Action<string?, bool>? _applyLiveHalftoneAction;
     private readonly BackdropShaderDriver _shaderDriver;
 
     private int _wallpaperLoadGeneration;
@@ -61,9 +58,7 @@ public sealed class BackdropManager : IDisposable
         TranslateTransform? wallpaperVideoTranslateTransform,
         ScrollViewer? contentScrollViewer,
         Action<string, bool> toastAction,
-        Action? updateMenuChecksAction = null,
-        Action<string?>? applySceneAction = null,
-        Action<string?, bool>? applyLiveHalftoneAction = null)
+        Action? updateMenuChecksAction = null)
     {
         _window = window;
         _settingsProvider = settingsProvider;
@@ -77,8 +72,6 @@ public sealed class BackdropManager : IDisposable
         _contentScrollViewer = contentScrollViewer;
         _toastAction = toastAction;
         _updateMenuChecksAction = updateMenuChecksAction;
-        _applySceneAction = applySceneAction;
-        _applyLiveHalftoneAction = applyLiveHalftoneAction;
         _shaderDriver = new BackdropShaderDriver(_window, _wallpaperImage);
     }
 
@@ -105,12 +98,9 @@ public sealed class BackdropManager : IDisposable
 
         var settings = _settingsProvider();
         bool isWallpaper = IsWallpaperBackdrop(settings.BackdropType);
-        bool isAsciiScene = IsAsciiSceneBackdrop(settings.BackdropType);
 
         if (isWallpaper)
         {
-            _applySceneAction?.Invoke(null);
-            _applyLiveHalftoneAction?.Invoke(null, false);
             var ct = BeginNewWallpaperGeneration();
             NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_NONE);
             if (_rootGrid != null)
@@ -119,43 +109,9 @@ public sealed class BackdropManager : IDisposable
             }
             _ = UpdateWallpaperDisplayAsync(ct);
         }
-        else if (isAsciiScene)
-        {
-            _shaderDriver.Detach();
-            CancelPendingWallpaperLoad();
-            TeardownWallpaperVideo();
-
-            _currentLoadedWallpaperPath = null;
-            _currentLoadedEffect = null;
-            _currentLoadedIsLight = null;
-
-            if (_wallpaperImage != null)
-            {
-                _wallpaperImage.Effect = null;
-                _wallpaperImage.Source = null;
-                _wallpaperImage.Visibility = Visibility.Collapsed;
-            }
-
-            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_NONE);
-            if (_rootGrid != null)
-            {
-                // Matches the scene canvas, so a failed or letterboxed scene still looks intentional.
-                _rootGrid.Background = SceneCanvasBrush;
-            }
-            if (_customWallpaperHost != null)
-            {
-                _customWallpaperHost.Visibility = Visibility.Visible;
-            }
-
-            ApplyScrim(settings.WallpaperDimOpacity);
-            _applyLiveHalftoneAction?.Invoke(null, false);
-            _applySceneAction?.Invoke(settings.AsciiSceneId);
-        }
         else
         {
             _shaderDriver.Detach();
-            _applySceneAction?.Invoke(null);
-            _applyLiveHalftoneAction?.Invoke(null, false);
             CancelPendingWallpaperLoad();
             TeardownWallpaperVideo();
 
@@ -297,12 +253,9 @@ public sealed class BackdropManager : IDisposable
         string backdropType = settings.BackdropType;
 
         string currentEffect = settings.WallpaperEffect ?? "None";
-        bool isDotCanvas = string.Equals(currentEffect, "AudioHalftone", StringComparison.OrdinalIgnoreCase) ||
-                           string.Equals(currentEffect, "Honeycomb", StringComparison.OrdinalIgnoreCase);
 
         // Apply scrim dim opacity immediately with frozen Freezable brush
-        // Halftone canvas is already dark (#0B0B0F); clear scrim so dots remain crisp and vibrant
-        ApplyScrim(isDotCanvas ? 0.0 : settings.WallpaperDimOpacity);
+        ApplyScrim(settings.WallpaperDimOpacity);
 
         string? lastError = null;
 
@@ -401,43 +354,6 @@ public sealed class BackdropManager : IDisposable
 
                 currentEffect = settings.WallpaperEffect ?? "None";
                 bool isLight = string.Equals(settings.ThemeMode, "Light", StringComparison.OrdinalIgnoreCase);
-
-                isDotCanvas = string.Equals(currentEffect, "AudioHalftone", StringComparison.OrdinalIgnoreCase) ||
-                              string.Equals(currentEffect, "Honeycomb", StringComparison.OrdinalIgnoreCase);
-
-                if (isDotCanvas)
-                {
-                    _shaderDriver.Detach();
-                    if (_wallpaperImage != null)
-                    {
-                        _wallpaperImage.Effect = null;
-                        _wallpaperImage.Source = null;
-                        _wallpaperImage.Visibility = Visibility.Collapsed;
-                    }
-
-                    // Halftone canvas is already dark (#0B0B0F); clear scrim so dots remain crisp and vibrant
-                    ApplyScrim(0.0);
-
-                    bool isAudioReactive = string.Equals(currentEffect, "AudioHalftone", StringComparison.OrdinalIgnoreCase);
-
-                    if (string.Equals(_currentLoadedWallpaperPath, imagePath, StringComparison.OrdinalIgnoreCase) &&
-                        string.Equals(_currentLoadedEffect, currentEffect, StringComparison.OrdinalIgnoreCase))
-                    {
-                        _customWallpaperHost.Visibility = Visibility.Visible;
-                        UpdateWallpaperParallax();
-                        return;
-                    }
-
-                    _currentLoadedWallpaperPath = imagePath;
-                    _currentLoadedEffect = currentEffect;
-                    _currentLoadedIsLight = isLight;
-                    _applyLiveHalftoneAction?.Invoke(imagePath, isAudioReactive);
-                    _customWallpaperHost.Visibility = Visibility.Visible;
-                    UpdateWallpaperParallax();
-                    return;
-                }
-
-                _applyLiveHalftoneAction?.Invoke(null, false);
 
                 ApplyScrim(settings.WallpaperDimOpacity);
 
@@ -543,9 +459,6 @@ public sealed class BackdropManager : IDisposable
                string.Equals(backdropType, "SpotlightDaily", StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>True when the backdrop is a native ASCII scene pack.</summary>
-    public static bool IsAsciiSceneBackdrop(string? backdropType) =>
-        string.Equals(backdropType, "AsciiScene", StringComparison.OrdinalIgnoreCase);
 
     private void ApplyScrim(double opacity)
     {
