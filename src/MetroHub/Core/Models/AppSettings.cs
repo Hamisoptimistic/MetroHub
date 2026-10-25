@@ -12,7 +12,7 @@ public sealed class AppSettings
     public string? CustomWallpaperPath { get; set; }
     public double WallpaperDimOpacity { get; set; } = 0.70; // 0.50 (Light), 0.70 (Balanced), 0.85 (Heavy)
     public bool WallpaperParallax { get; set; } = true;
-    public string WallpaperEffect { get; set; } = "None"; // None, Blur, WaterRipple, WaterCaustics, NeonClock
+    public string WallpaperEffect { get; set; } = "None"; // None, Blur, WaterRipple, WaterCaustics, NeonClock, FluidWaves, Starfield, Circuit, Ether, SmokeFog, Kaliset
     
     public bool LaunchAtStartup { get; set; }
     public bool StartMinimized { get; set; }

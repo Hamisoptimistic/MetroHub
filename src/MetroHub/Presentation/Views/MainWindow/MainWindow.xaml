@@ -393,6 +393,12 @@
                                 <MenuItem x:Name="EffectWaterRippleItem" Header="Water Ripple (Live)" IsCheckable="True" Click="OnWallpaperEffectWaterRippleClick" />
                                 <MenuItem x:Name="EffectWaterCausticsItem" Header="Water Caustics (Live)" IsCheckable="True" Click="OnWallpaperEffectWaterCausticsClick" />
                                 <MenuItem x:Name="EffectNeonClockItem" Header="Neon Clock (Live)" IsCheckable="True" Click="OnWallpaperEffectNeonClockClick" />
+                                <MenuItem x:Name="EffectFluidWavesItem" Header="Fluid Waves (Live)" IsCheckable="True" Click="OnWallpaperEffectFluidWavesClick" />
+                                <MenuItem x:Name="EffectStarfieldItem" Header="Starfield (Live)" IsCheckable="True" Click="OnWallpaperEffectStarfieldClick" />
+                                <MenuItem x:Name="EffectCircuitItem" Header="Circuit (Live)" IsCheckable="True" Click="OnWallpaperEffectCircuitClick" />
+                                <MenuItem x:Name="EffectEtherItem" Header="Ether (Live)" IsCheckable="True" Click="OnWallpaperEffectEtherClick" />
+                                <MenuItem x:Name="EffectSmokeFogItem" Header="Smoke &amp; Fog (Live)" IsCheckable="True" Click="OnWallpaperEffectSmokeFogClick" />
+                                <MenuItem x:Name="EffectKalisetItem" Header="Kaliset (Live)" IsCheckable="True" Click="OnWallpaperEffectKalisetClick" />
                             </MenuItem>
                         </MenuItem>
 

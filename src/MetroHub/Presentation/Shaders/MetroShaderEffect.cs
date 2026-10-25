@@ -24,6 +24,12 @@ public class MetroShaderEffect : ShaderEffect
     public static readonly Point4D DefaultWaterRippleParams = new(18.0, 0.006, 2.5, 2.2);
     public static readonly Point4D DefaultWaterCausticsParams = new(1.0, 1.0, 1.0, 0.0);
     public static readonly Point4D DefaultNeonClockParams = new(1.0, 1.0, 1.0, 0.0);
+    public static readonly Point4D DefaultFluidWavesParams = new(0.6, 1.0, 1.0, 0.0);
+    public static readonly Point4D DefaultStarfieldParams = new(0.97, 1080.0, 1.0, 1.4);
+    public static readonly Point4D DefaultCircuitParams = new(14.0, 1.0, 1.0, 0.0);
+    public static readonly Point4D DefaultEtherParams = new(1.1, 0.8, 1.0, 0.0);
+    public static readonly Point4D DefaultSmokeFogParams = new(2.0, 1.0, 1.0, 0.0);
+    public static readonly Point4D DefaultKalisetParams = new(3.0, 1.0, 1.0, 0.75);
 
     public static readonly DependencyProperty InputProperty =
         RegisterPixelShaderSamplerProperty(
@@ -45,6 +51,13 @@ public class MetroShaderEffect : ShaderEffect
             typeof(Point4D),
             typeof(MetroShaderEffect),
             new UIPropertyMetadata(new Point4D(0, 0, 0, 0), PixelShaderConstantCallback(1)));
+
+    public static readonly DependencyProperty MouseStateProperty =
+        DependencyProperty.Register(
+            nameof(MouseState),
+            typeof(Point4D),
+            typeof(MetroShaderEffect),
+            new UIPropertyMetadata(new Point4D(0.5, 0.5, 0, 0), PixelShaderConstantCallback(2)));
 
     /// <summary>
     /// Name of the compiled shader resource (e.g. "WaterRipple").
@@ -69,6 +82,12 @@ public class MetroShaderEffect : ShaderEffect
         set => SetValue(EffectParamsProperty, value);
     }
 
+    public Point4D MouseState
+    {
+        get => (Point4D)GetValue(MouseStateProperty);
+        set => SetValue(MouseStateProperty, value);
+    }
+
     public new PixelShader? PixelShader
     {
         get => base.PixelShader;
@@ -85,6 +104,7 @@ public class MetroShaderEffect : ShaderEffect
         UpdateShaderValue(InputProperty);
         UpdateShaderValue(FrameStateProperty);
         UpdateShaderValue(EffectParamsProperty);
+        UpdateShaderValue(MouseStateProperty);
     }
 
     /// <summary>
@@ -117,6 +137,18 @@ public class MetroShaderEffect : ShaderEffect
                 new MetroShaderEffect("WaterCaustics", DefaultWaterCausticsParams),
             _ when string.Equals(effectName, "NeonClock", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("NeonClock", DefaultNeonClockParams),
+            _ when string.Equals(effectName, "FluidWaves", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("FluidWaves", DefaultFluidWavesParams),
+            _ when string.Equals(effectName, "Starfield", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Starfield", DefaultStarfieldParams),
+            _ when string.Equals(effectName, "Circuit", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Circuit", DefaultCircuitParams),
+            _ when string.Equals(effectName, "Ether", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Ether", DefaultEtherParams),
+            _ when string.Equals(effectName, "SmokeFog", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("SmokeFog", DefaultSmokeFogParams),
+            _ when string.Equals(effectName, "Kaliset", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Kaliset", DefaultKalisetParams),
             _ => null
         };
 

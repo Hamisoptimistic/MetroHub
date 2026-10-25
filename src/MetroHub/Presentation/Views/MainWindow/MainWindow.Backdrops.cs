@@ -107,6 +107,12 @@ public partial class MainWindow
     private void OnWallpaperEffectWaterRippleClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("WaterRipple");
     private void OnWallpaperEffectWaterCausticsClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("WaterCaustics");
     private void OnWallpaperEffectNeonClockClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("NeonClock");
+    private void OnWallpaperEffectFluidWavesClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("FluidWaves");
+    private void OnWallpaperEffectStarfieldClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Starfield");
+    private void OnWallpaperEffectCircuitClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Circuit");
+    private void OnWallpaperEffectEtherClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Ether");
+    private void OnWallpaperEffectSmokeFogClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("SmokeFog");
+    private void OnWallpaperEffectKalisetClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Kaliset");
 
     private void SetWallpaperEffect(string effect)
     {
@@ -224,6 +230,12 @@ public partial class MainWindow
         if (EffectWaterRippleItem != null) EffectWaterRippleItem.IsChecked = string.Equals(currentEffect, "WaterRipple", StringComparison.OrdinalIgnoreCase);
         if (EffectWaterCausticsItem != null) EffectWaterCausticsItem.IsChecked = string.Equals(currentEffect, "WaterCaustics", StringComparison.OrdinalIgnoreCase);
         if (EffectNeonClockItem != null) EffectNeonClockItem.IsChecked = string.Equals(currentEffect, "NeonClock", StringComparison.OrdinalIgnoreCase);
+        if (EffectFluidWavesItem != null) EffectFluidWavesItem.IsChecked = string.Equals(currentEffect, "FluidWaves", StringComparison.OrdinalIgnoreCase);
+        if (EffectStarfieldItem != null) EffectStarfieldItem.IsChecked = string.Equals(currentEffect, "Starfield", StringComparison.OrdinalIgnoreCase);
+        if (EffectCircuitItem != null) EffectCircuitItem.IsChecked = string.Equals(currentEffect, "Circuit", StringComparison.OrdinalIgnoreCase);
+        if (EffectEtherItem != null) EffectEtherItem.IsChecked = string.Equals(currentEffect, "Ether", StringComparison.OrdinalIgnoreCase);
+        if (EffectSmokeFogItem != null) EffectSmokeFogItem.IsChecked = string.Equals(currentEffect, "SmokeFog", StringComparison.OrdinalIgnoreCase);
+        if (EffectKalisetItem != null) EffectKalisetItem.IsChecked = string.Equals(currentEffect, "Kaliset", StringComparison.OrdinalIgnoreCase);
 
         if (WallpaperEffectsMenu != null) WallpaperEffectsMenu.IsEnabled = isWallpaper;
     }

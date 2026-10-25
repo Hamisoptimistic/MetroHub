@@ -234,6 +234,21 @@ public sealed class BackdropShaderDriver : IDisposable
         double time = elapsedSeconds % MaxTimeModulo;
         double timeOfDaySeconds = DateTime.Now.TimeOfDay.TotalSeconds;
         _activeEffect.FrameState = new Point4D(time, _aspectRatio, timeOfDaySeconds, 0.0);
+
+        try
+        {
+            Point mousePos = System.Windows.Input.Mouse.GetPosition(_window);
+            double width = _window.ActualWidth > 0 ? _window.ActualWidth : SystemParameters.PrimaryScreenWidth;
+            double height = _window.ActualHeight > 0 ? _window.ActualHeight : SystemParameters.PrimaryScreenHeight;
+            double mx = Math.Clamp(mousePos.X / width, 0.0, 1.0);
+            double my = Math.Clamp(mousePos.Y / height, 0.0, 1.0);
+            double leftDown = System.Windows.Input.Mouse.LeftButton == System.Windows.Input.MouseButtonState.Pressed ? 1.0 : 0.0;
+            _activeEffect.MouseState = new Point4D(mx, my, leftDown, 0.0);
+        }
+        catch
+        {
+            // Non-critical fallback if mouse position cannot be queried
+        }
     }
 
     /// <summary>
