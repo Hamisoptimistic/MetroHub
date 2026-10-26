@@ -171,8 +171,6 @@ public partial class MainWindow
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
 
-        int refreshRate = NativeMethods.GetScreenRefreshRate();
-        Timeline.SetDesiredFrameRate(anim, refreshRate > 0 ? refreshRate : 100);
 
         anim.Completed += (s, e) =>
         {
@@ -221,8 +219,6 @@ public partial class MainWindow
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
 
-        int refreshRate = NativeMethods.GetScreenRefreshRate();
-        Timeline.SetDesiredFrameRate(anim, refreshRate > 0 ? refreshRate : 100);
 
         anim.Completed += (s, e) =>
         {

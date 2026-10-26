@@ -65,6 +65,8 @@
               Grid.ColumnSpan="2"
               Panel.ZIndex="-100"
               ClipToBounds="True"
+              IsHitTestVisible="False"
+              Focusable="False"
               Visibility="Collapsed">
             <Image x:Name="WallpaperImage"
                    Stretch="UniformToFill"
@@ -87,6 +89,8 @@
                           Volume="0"
                           IsMuted="True"
                           ScrubbingEnabled="False"
+                          IsHitTestVisible="False"
+                          Focusable="False"
                           RenderOptions.BitmapScalingMode="LowQuality"
                           RenderOptions.EdgeMode="Aliased"
                           Visibility="Collapsed"

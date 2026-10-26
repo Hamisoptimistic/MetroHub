@@ -172,7 +172,6 @@ public sealed class CinematicFadeService
                     {
                         EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
                     };
-                    Timeline.SetDesiredFrameRate(anim, 120);
 
                     anim.Completed += async (s, e) =>
                     {

@@ -91,7 +91,6 @@ public partial class RadioWidgetView : UserControl
             Duration = TimeSpan.FromMilliseconds(100),
             EasingFunction = FadeEasing
         };
-        Timeline.SetDesiredFrameRate(fadeAnimation, 120);
 
         StationItemsControl.BeginAnimation(UIElement.OpacityProperty, fadeAnimation, HandoffBehavior.SnapshotAndReplace);
     }

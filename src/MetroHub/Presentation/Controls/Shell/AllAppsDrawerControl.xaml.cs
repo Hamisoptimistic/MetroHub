@@ -490,9 +490,6 @@ namespace MetroHub.Presentation.Controls
             // keeps all text pixel-snapped and crisp throughout.
             ResetMicroDrift();
 
-            int refreshRate = NativeMethods.GetScreenRefreshRate();
-            if (refreshRate <= 0) refreshRate = 120;
-
             var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
             const double DriftPx = 8.0;
             const double DriftMs = 140.0;
@@ -505,7 +502,6 @@ namespace MetroHub.Presentation.Controls
                 Duration = TimeSpan.FromMilliseconds(DriftMs),
                 EasingFunction = easing
             };
-            Timeline.SetDesiredFrameRate(yAnim, refreshRate);
 
             // Opacity: from 0.6 (already mostly visible) to 1.0 — no jarring pop-in
             var opAnim = new DoubleAnimation
@@ -515,7 +511,6 @@ namespace MetroHub.Presentation.Controls
                 Duration = TimeSpan.FromMilliseconds(DriftMs),
                 EasingFunction = easing
             };
-            Timeline.SetDesiredFrameRate(opAnim, refreshRate);
 
             // Once settled, clear animation clocks to restore ClearType pixel-snapping
             yAnim.Completed += (s, e) => ResetMicroDrift();

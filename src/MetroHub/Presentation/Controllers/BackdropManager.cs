@@ -200,13 +200,9 @@ public sealed class BackdropManager : IDisposable
     public void TeardownWallpaperVideo()
     {
         if (_wallpaperVideo == null) return;
-        try
-        {
-            _wallpaperVideo.Stop();
-            _wallpaperVideo.Close();
-            _wallpaperVideo.Source = null;
-        }
-        catch { }
+        try { _wallpaperVideo.Stop(); } catch { }
+        try { _wallpaperVideo.Source = null; } catch { }
+        try { _wallpaperVideo.Close(); } catch { }
         _wallpaperVideo.Visibility = Visibility.Collapsed;
     }
 
@@ -292,20 +288,6 @@ public sealed class BackdropManager : IDisposable
                     _shaderDriver.Detach();
                     if (_wallpaperVideo == null) return;
 
-                    string effect = settings.WallpaperEffect ?? "None";
-                    if (string.Equals(effect, "Blur", StringComparison.OrdinalIgnoreCase))
-                    {
-                        _wallpaperVideo.Effect = new System.Windows.Media.Effects.BlurEffect
-                        {
-                            Radius = 28,
-                            RenderingBias = System.Windows.Media.Effects.RenderingBias.Performance
-                        };
-                    }
-                    else
-                    {
-                        _wallpaperVideo.Effect = null;
-                    }
-
                     // If already playing this exact video, ensure visibility and update parallax
                     if (string.Equals(_currentLoadedWallpaperPath, imagePath, StringComparison.OrdinalIgnoreCase) &&
                         _wallpaperVideo.Source != null && _wallpaperVideo.Visibility == Visibility.Visible)
@@ -326,7 +308,7 @@ public sealed class BackdropManager : IDisposable
                     try
                     {
                         _currentLoadedWallpaperPath = imagePath;
-                        _currentLoadedEffect = effect;
+                        _currentLoadedEffect = "None";
                         _currentLoadedIsLight = null;
                         var uri = new Uri(imagePath, UriKind.Absolute);
                         if (!Equals(_wallpaperVideo.Source, uri))

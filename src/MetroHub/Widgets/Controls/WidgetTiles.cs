@@ -361,7 +361,6 @@ public class WidgetTiles : Selector
             {
                 EasingFunction = MotionTokens.Decelerate
             };
-            Timeline.SetDesiredFrameRate(xAnim, 120);
 
             _indicatorTransform.BeginAnimation(TranslateTransform.XProperty, xAnim, HandoffBehavior.SnapshotAndReplace);
 
