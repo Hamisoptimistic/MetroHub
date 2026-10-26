@@ -289,5 +289,34 @@ public sealed class WaterRippleEffectTests
             Assert.Null(nonExistent);
         });
     }
-}
 
+    [Fact]
+    public void MetroShaderEffect_PebblesVariants_ResolveProperly()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            Assert.True(MetroShaderEffect.IsSupported("Pebbles"));
+            Assert.True(MetroShaderEffect.IsSupported("Pebbles_Rose"));
+            Assert.True(MetroShaderEffect.IsSupported("Pebbles_Amber"));
+            Assert.True(MetroShaderEffect.IsSupported("Pebbles_Ice"));
+            Assert.True(MetroShaderEffect.IsSupported("Pebbles_Obsidian"));
+            Assert.True(MetroShaderEffect.IsSupported("Pebbles_Rerank"));
+            Assert.True(MetroShaderEffect.IsSupported("Pebbles_Translate"));
+
+            var rose = MetroShaderEffect.TryCreate("Pebbles_Rose");
+            Assert.NotNull(rose);
+            Assert.Equal("Pebbles", rose.ShaderName);
+            Assert.Equal(0.0, rose.EffectParams.W);
+
+            var amber = MetroShaderEffect.TryCreate("Pebbles_Amber");
+            Assert.NotNull(amber);
+            Assert.Equal("Pebbles", amber.ShaderName);
+            Assert.Equal(1.0, amber.EffectParams.W);
+
+            var ice = MetroShaderEffect.TryCreate("Pebbles_Ice");
+            Assert.NotNull(ice);
+            Assert.Equal("Pebbles", ice.ShaderName);
+            Assert.Equal(2.0, ice.EffectParams.W);
+        });
+    }
+}

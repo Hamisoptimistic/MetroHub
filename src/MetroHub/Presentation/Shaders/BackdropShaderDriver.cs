@@ -27,6 +27,24 @@ public sealed class BackdropShaderDriver : IDisposable
     private bool _isRendering;
     private bool _isDisposed;
 
+    private struct InkDrop
+    {
+        public double X;
+        public double Y;
+        public double Age;
+        public double Alive;
+    }
+
+    private const int InkCapacity = 24;
+    private readonly InkDrop[] _inkDrops = new InkDrop[InkCapacity];
+    private int _inkHead;
+    private double _inkLastX = -100.0;
+    private double _inkLastY = -100.0;
+    private double _inkIdleTime;
+    private Point _inkLastMousePos = new(-1, -1);
+    private double _inkLastMouseMoveSeconds = -10.0;
+    private double _inkLastTickSeconds = -1.0;
+
     /// <summary>
     /// Indicates whether Direct3D Tier 2 (full hardware acceleration) is available.
     /// </summary>
@@ -95,6 +113,9 @@ public sealed class BackdropShaderDriver : IDisposable
     {
         _window.PreviewMouseLeftButtonDown -= OnWindowMouseDown;
         _activeEffect = null;
+        _inkLastTickSeconds = -1.0;
+        _inkLastX = -100.0;
+        _inkLastY = -100.0;
         StopRendering();
     }
 
@@ -225,7 +246,7 @@ public sealed class BackdropShaderDriver : IDisposable
         double elapsedSeconds = _clock.Elapsed.TotalSeconds;
 
         // 60 FPS throttle: skip ticks on high-refresh monitors (144Hz/240Hz) to keep CPU load near 0%
-        if (_lastRenderTimeSeconds >= 0 && (elapsedSeconds - _lastRenderTimeSeconds) < MinFrameIntervalSeconds)
+        if (_lastRenderTimeSeconds >= 0 && (elapsedSeconds - _lastRenderTimeSeconds) < (MinFrameIntervalSeconds - 0.003))
         {
             return;
         }
@@ -248,6 +269,105 @@ public sealed class BackdropShaderDriver : IDisposable
         catch
         {
             // Non-critical fallback if mouse position cannot be queried
+        }
+
+        if (string.Equals(_activeEffect.ShaderName, "Ink", StringComparison.OrdinalIgnoreCase))
+        {
+            UpdateInkTrail(elapsedSeconds, _aspectRatio);
+        }
+    }
+
+    private void UpdateInkTrail(double elapsedSeconds, double aspect)
+    {
+        if (_activeEffect == null) return;
+
+        double dt = _inkLastTickSeconds >= 0 ? Math.Clamp(elapsedSeconds - _inkLastTickSeconds, 0.001, 0.1) : (1.0 / 60.0);
+        _inkLastTickSeconds = elapsedSeconds;
+
+        Point mousePos = System.Windows.Input.Mouse.GetPosition(_window);
+        double width = _window.ActualWidth > 0 ? _window.ActualWidth : SystemParameters.PrimaryScreenWidth;
+        double height = _window.ActualHeight > 0 ? _window.ActualHeight : SystemParameters.PrimaryScreenHeight;
+
+        bool isInside = mousePos.X >= 0 && mousePos.X <= width && mousePos.Y >= 0 && mousePos.Y <= height;
+        bool isMoving = Math.Abs(mousePos.X - _inkLastMousePos.X) > 0.5 || Math.Abs(mousePos.Y - _inkLastMousePos.Y) > 0.5;
+        if (isMoving)
+        {
+            _inkLastMousePos = mousePos;
+            _inkLastMouseMoveSeconds = elapsedSeconds;
+        }
+
+        bool isMouseDown = System.Windows.Input.Mouse.LeftButton == System.Windows.Input.MouseButtonState.Pressed;
+        bool isPointerActive = isInside;
+        double targetX, targetY;
+
+        if (isPointerActive)
+        {
+            double mx = Math.Clamp(mousePos.X / width, 0.0, 1.0);
+            double my = Math.Clamp(mousePos.Y / height, 0.0, 1.0);
+            targetX = mx * aspect;
+            targetY = 1.0 - my;
+        }
+        else
+        {
+            _inkIdleTime += dt * 0.6;
+            targetX = aspect * (0.5 + 0.32 * Math.Sin(_inkIdleTime * 0.9) * Math.Cos(_inkIdleTime * 0.31));
+            targetY = 0.5 + 0.28 * Math.Sin(_inkIdleTime * 1.3 + 1.0);
+        }
+
+        if (_inkLastX < -50.0)
+        {
+            _inkLastX = targetX;
+            _inkLastY = targetY;
+        }
+
+        double dx = targetX - _inkLastX;
+        double dy = targetY - _inkLastY;
+        double dist = Math.Sqrt(dx * dx + dy * dy);
+
+        if (dist > 0.25)
+        {
+            _inkLastX = targetX;
+            _inkLastY = targetY;
+            dx = 0;
+            dy = 0;
+            dist = 0;
+        }
+
+        int prevHead = (_inkHead + InkCapacity - 1) % InkCapacity;
+        bool canClickDrop = isMouseDown && (_inkDrops[prevHead].Age > 0.12 || dist > 0.005);
+
+        if (dist > 0.02 || canClickDrop)
+        {
+            int steps = dist > 0.02 ? Math.Clamp((int)(dist / 0.02), 1, 4) : 1;
+            for (int s = 1; s <= steps; s++)
+            {
+                double frac = (double)s / steps;
+                double x = _inkLastX + dx * frac;
+                double y = _inkLastY + dy * frac;
+                _inkDrops[_inkHead] = new InkDrop
+                {
+                    X = x,
+                    Y = y,
+                    Age = 0.0,
+                    Alive = 1.0
+                };
+                _inkHead = (_inkHead + 1) % InkCapacity;
+            }
+            _inkLastX = targetX;
+            _inkLastY = targetY;
+        }
+
+        for (int i = 0; i < InkCapacity; i++)
+        {
+            if (_inkDrops[i].Alive > 0.0)
+            {
+                _inkDrops[i].Age += dt;
+                if (_inkDrops[i].Age >= 8.0)
+                {
+                    _inkDrops[i].Alive = 0.0;
+                }
+            }
+            _activeEffect.SetDrop(i, new Point4D(_inkDrops[i].X, _inkDrops[i].Y, _inkDrops[i].Age, _inkDrops[i].Alive));
         }
     }
 

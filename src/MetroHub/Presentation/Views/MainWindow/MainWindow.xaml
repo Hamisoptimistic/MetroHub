@@ -400,6 +400,16 @@
                                 <MenuItem x:Name="EffectSmokeFogItem" Header="Smoke &amp; Fog (Live)" IsCheckable="True" Click="OnWallpaperEffectSmokeFogClick" />
                                 <MenuItem x:Name="EffectKalisetItem" Header="Kaliset (Live)" IsCheckable="True" Click="OnWallpaperEffectKalisetClick" />
                                 <MenuItem x:Name="EffectCyberTunnelItem" Header="CyberTunnel (Live)" IsCheckable="True" Click="OnWallpaperEffectCyberTunnelClick" />
+                                <MenuItem x:Name="EffectKoiPondItem" Header="Koi Pond (Live)" IsCheckable="True" Click="OnWallpaperEffectKoiPondClick" />
+                                <MenuItem x:Name="EffectInkItem" Header="Ink Flow (Live)" IsCheckable="True" Click="OnWallpaperEffectInkClick" />
+                                <MenuItem x:Name="EffectPebblesMenu" Header="Pebbles (Glass)">
+                                    <MenuItem x:Name="EffectPebblesRoseItem" Header="Rose (Plum &amp; Pink)" IsCheckable="True" Click="OnWallpaperEffectPebblesRoseClick" />
+                                    <MenuItem x:Name="EffectPebblesAmberItem" Header="Amber (Mocha &amp; Gold)" IsCheckable="True" Click="OnWallpaperEffectPebblesAmberClick" />
+                                    <MenuItem x:Name="EffectPebblesIceItem" Header="Ice (Arctic &amp; Cyan)" IsCheckable="True" Click="OnWallpaperEffectPebblesIceClick" />
+                                    <MenuItem x:Name="EffectPebblesObsidianItem" Header="Obsidian (Charcoal &amp; Slate)" IsCheckable="True" Click="OnWallpaperEffectPebblesObsidianClick" />
+                                    <MenuItem x:Name="EffectPebblesRerankItem" Header="Rerank (Violet &amp; Neon)" IsCheckable="True" Click="OnWallpaperEffectPebblesRerankClick" />
+                                    <MenuItem x:Name="EffectPebblesTranslateItem" Header="Translate (Teal &amp; Coral)" IsCheckable="True" Click="OnWallpaperEffectPebblesTranslateClick" />
+                                </MenuItem>
                             </MenuItem>
                         </MenuItem>
 

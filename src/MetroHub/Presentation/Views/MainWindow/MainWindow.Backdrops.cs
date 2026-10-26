@@ -114,6 +114,14 @@ public partial class MainWindow
     private void OnWallpaperEffectSmokeFogClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("SmokeFog");
     private void OnWallpaperEffectKalisetClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Kaliset");
     private void OnWallpaperEffectCyberTunnelClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("CyberTunnel");
+    private void OnWallpaperEffectKoiPondClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("KoiPond");
+    private void OnWallpaperEffectInkClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Ink");
+    private void OnWallpaperEffectPebblesRoseClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Pebbles_Rose");
+    private void OnWallpaperEffectPebblesAmberClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Pebbles_Amber");
+    private void OnWallpaperEffectPebblesIceClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Pebbles_Ice");
+    private void OnWallpaperEffectPebblesObsidianClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Pebbles_Obsidian");
+    private void OnWallpaperEffectPebblesRerankClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Pebbles_Rerank");
+    private void OnWallpaperEffectPebblesTranslateClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Pebbles_Translate");
 
     private void SetWallpaperEffect(string effect)
     {
@@ -238,6 +246,14 @@ public partial class MainWindow
         if (EffectSmokeFogItem != null) EffectSmokeFogItem.IsChecked = string.Equals(currentEffect, "SmokeFog", StringComparison.OrdinalIgnoreCase);
         if (EffectKalisetItem != null) EffectKalisetItem.IsChecked = string.Equals(currentEffect, "Kaliset", StringComparison.OrdinalIgnoreCase);
         if (EffectCyberTunnelItem != null) EffectCyberTunnelItem.IsChecked = string.Equals(currentEffect, "CyberTunnel", StringComparison.OrdinalIgnoreCase);
+        if (EffectKoiPondItem != null) EffectKoiPondItem.IsChecked = string.Equals(currentEffect, "KoiPond", StringComparison.OrdinalIgnoreCase);
+        if (EffectInkItem != null) EffectInkItem.IsChecked = string.Equals(currentEffect, "Ink", StringComparison.OrdinalIgnoreCase);
+        if (EffectPebblesRoseItem != null) EffectPebblesRoseItem.IsChecked = string.Equals(currentEffect, "Pebbles_Rose", StringComparison.OrdinalIgnoreCase) || string.Equals(currentEffect, "Pebbles", StringComparison.OrdinalIgnoreCase);
+        if (EffectPebblesAmberItem != null) EffectPebblesAmberItem.IsChecked = string.Equals(currentEffect, "Pebbles_Amber", StringComparison.OrdinalIgnoreCase);
+        if (EffectPebblesIceItem != null) EffectPebblesIceItem.IsChecked = string.Equals(currentEffect, "Pebbles_Ice", StringComparison.OrdinalIgnoreCase);
+        if (EffectPebblesObsidianItem != null) EffectPebblesObsidianItem.IsChecked = string.Equals(currentEffect, "Pebbles_Obsidian", StringComparison.OrdinalIgnoreCase);
+        if (EffectPebblesRerankItem != null) EffectPebblesRerankItem.IsChecked = string.Equals(currentEffect, "Pebbles_Rerank", StringComparison.OrdinalIgnoreCase);
+        if (EffectPebblesTranslateItem != null) EffectPebblesTranslateItem.IsChecked = string.Equals(currentEffect, "Pebbles_Translate", StringComparison.OrdinalIgnoreCase);
 
         if (WallpaperEffectsMenu != null) WallpaperEffectsMenu.IsEnabled = isWallpaper;
     }

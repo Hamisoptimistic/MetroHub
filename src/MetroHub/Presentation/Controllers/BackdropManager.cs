@@ -488,6 +488,7 @@ public sealed class BackdropManager : IDisposable
             if (_wallpaperImage.Effect is MetroShaderEffect active &&
                 string.Equals(active.ShaderName, shader.ShaderName, StringComparison.OrdinalIgnoreCase))
             {
+                active.EffectParams = shader.EffectParams;
                 _shaderDriver.Attach(active);
                 return;
             }

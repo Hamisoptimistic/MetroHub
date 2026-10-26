@@ -31,6 +31,9 @@ public class MetroShaderEffect : ShaderEffect
     public static readonly Point4D DefaultSmokeFogParams = new(2.0, 1.0, 1.0, 0.0);
     public static readonly Point4D DefaultKalisetParams = new(3.0, 1.0, 1.0, 0.75);
     public static readonly Point4D DefaultCyberTunnelParams = new(0.8, 1.0, 1.55, 0.0);
+    public static readonly Point4D DefaultKoiPondParams = new(0.7, 4.0, 1.5, 5.0);
+    public static readonly Point4D DefaultInkParams = new(0.6, 0.0, 1.0, 0.0);
+    public static readonly Point4D DefaultPebblesParams = new(0.5, 1.0, 1.0, 0.0);
 
     public static readonly DependencyProperty InputProperty =
         RegisterPixelShaderSamplerProperty(
@@ -59,6 +62,20 @@ public class MetroShaderEffect : ShaderEffect
             typeof(Point4D),
             typeof(MetroShaderEffect),
             new UIPropertyMetadata(new Point4D(0.5, 0.5, 0, 0), PixelShaderConstantCallback(2)));
+
+    public static readonly DependencyProperty[] DropProperties = new DependencyProperty[24];
+
+    static MetroShaderEffect()
+    {
+        for (int i = 0; i < 24; i++)
+        {
+            DropProperties[i] = DependencyProperty.Register(
+                $"Drop{i}",
+                typeof(Point4D),
+                typeof(MetroShaderEffect),
+                new UIPropertyMetadata(new Point4D(0, 0, 999.0, 0), PixelShaderConstantCallback(4 + i)));
+        }
+    }
 
     /// <summary>
     /// Name of the compiled shader resource (e.g. "WaterRipple").
@@ -106,6 +123,22 @@ public class MetroShaderEffect : ShaderEffect
         UpdateShaderValue(FrameStateProperty);
         UpdateShaderValue(EffectParamsProperty);
         UpdateShaderValue(MouseStateProperty);
+
+        if (string.Equals(shaderName, "Ink", StringComparison.OrdinalIgnoreCase))
+        {
+            for (int i = 0; i < 24; i++)
+            {
+                UpdateShaderValue(DropProperties[i]);
+            }
+        }
+    }
+
+    public void SetDrop(int index, Point4D drop)
+    {
+        if (index >= 0 && index < 24)
+        {
+            SetValue(DropProperties[index], drop);
+        }
     }
 
     /// <summary>
@@ -152,6 +185,23 @@ public class MetroShaderEffect : ShaderEffect
                 new MetroShaderEffect("Kaliset", DefaultKalisetParams),
             _ when string.Equals(effectName, "CyberTunnel", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("CyberTunnel", DefaultCyberTunnelParams),
+            _ when string.Equals(effectName, "KoiPond", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("KoiPond", DefaultKoiPondParams),
+            _ when string.Equals(effectName, "Ink", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Ink", DefaultInkParams),
+            _ when string.Equals(effectName, "Pebbles", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(effectName, "Pebbles_Rose", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Pebbles", DefaultPebblesParams),
+            _ when string.Equals(effectName, "Pebbles_Amber", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Pebbles", new Point4D(0.5, 1.0, 1.0, 1.0)),
+            _ when string.Equals(effectName, "Pebbles_Ice", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Pebbles", new Point4D(0.5, 1.0, 1.0, 2.0)),
+            _ when string.Equals(effectName, "Pebbles_Obsidian", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Pebbles", new Point4D(0.5, 1.0, 1.0, 3.0)),
+            _ when string.Equals(effectName, "Pebbles_Rerank", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Pebbles", new Point4D(0.5, 1.0, 1.0, 4.0)),
+            _ when string.Equals(effectName, "Pebbles_Translate", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Pebbles", new Point4D(0.5, 1.0, 1.0, 5.0)),
             _ => null
         };
 
