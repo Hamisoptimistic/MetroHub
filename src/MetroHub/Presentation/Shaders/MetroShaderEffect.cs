@@ -30,6 +30,7 @@ public class MetroShaderEffect : ShaderEffect
     public static readonly Point4D DefaultEtherParams = new(1.1, 0.8, 1.0, 0.0);
     public static readonly Point4D DefaultSmokeFogParams = new(2.0, 1.0, 1.0, 0.0);
     public static readonly Point4D DefaultKalisetParams = new(3.0, 1.0, 1.0, 0.75);
+    public static readonly Point4D DefaultCyberTunnelParams = new(0.8, 1.0, 1.55, 0.0);
 
     public static readonly DependencyProperty InputProperty =
         RegisterPixelShaderSamplerProperty(
@@ -149,6 +150,8 @@ public class MetroShaderEffect : ShaderEffect
                 new MetroShaderEffect("SmokeFog", DefaultSmokeFogParams),
             _ when string.Equals(effectName, "Kaliset", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("Kaliset", DefaultKalisetParams),
+            _ when string.Equals(effectName, "CyberTunnel", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("CyberTunnel", DefaultCyberTunnelParams),
             _ => null
         };
 

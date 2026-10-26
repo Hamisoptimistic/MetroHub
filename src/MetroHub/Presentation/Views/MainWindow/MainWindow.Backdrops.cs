@@ -113,6 +113,7 @@ public partial class MainWindow
     private void OnWallpaperEffectEtherClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Ether");
     private void OnWallpaperEffectSmokeFogClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("SmokeFog");
     private void OnWallpaperEffectKalisetClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Kaliset");
+    private void OnWallpaperEffectCyberTunnelClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("CyberTunnel");
 
     private void SetWallpaperEffect(string effect)
     {
@@ -236,6 +237,7 @@ public partial class MainWindow
         if (EffectEtherItem != null) EffectEtherItem.IsChecked = string.Equals(currentEffect, "Ether", StringComparison.OrdinalIgnoreCase);
         if (EffectSmokeFogItem != null) EffectSmokeFogItem.IsChecked = string.Equals(currentEffect, "SmokeFog", StringComparison.OrdinalIgnoreCase);
         if (EffectKalisetItem != null) EffectKalisetItem.IsChecked = string.Equals(currentEffect, "Kaliset", StringComparison.OrdinalIgnoreCase);
+        if (EffectCyberTunnelItem != null) EffectCyberTunnelItem.IsChecked = string.Equals(currentEffect, "CyberTunnel", StringComparison.OrdinalIgnoreCase);
 
         if (WallpaperEffectsMenu != null) WallpaperEffectsMenu.IsEnabled = isWallpaper;
     }

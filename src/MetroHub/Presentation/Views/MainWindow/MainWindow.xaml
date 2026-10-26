@@ -399,6 +399,7 @@
                                 <MenuItem x:Name="EffectEtherItem" Header="Ether (Live)" IsCheckable="True" Click="OnWallpaperEffectEtherClick" />
                                 <MenuItem x:Name="EffectSmokeFogItem" Header="Smoke &amp; Fog (Live)" IsCheckable="True" Click="OnWallpaperEffectSmokeFogClick" />
                                 <MenuItem x:Name="EffectKalisetItem" Header="Kaliset (Live)" IsCheckable="True" Click="OnWallpaperEffectKalisetClick" />
+                                <MenuItem x:Name="EffectCyberTunnelItem" Header="CyberTunnel (Live)" IsCheckable="True" Click="OnWallpaperEffectCyberTunnelClick" />
                             </MenuItem>
                         </MenuItem>
 
