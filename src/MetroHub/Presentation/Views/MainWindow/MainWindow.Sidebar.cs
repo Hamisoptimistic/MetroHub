@@ -162,27 +162,16 @@ public partial class MainWindow
             return;
         }
 
-        SidebarRail.CacheMode = new BitmapCache { RenderAtScale = 1.0, SnapsToDevicePixels = true };
+        double startX = SidebarRailTranslate.X;
+        SidebarRailTranslate.X = 0;
 
         var anim = new DoubleAnimation
         {
+            From = startX,
             To = 0,
             Duration = TimeSpan.FromMilliseconds(180),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-
-
-        anim.Completed += (s, e) =>
-        {
-            if (SidebarRail != null)
-            {
-                SidebarRail.CacheMode = null;
-            }
-            if (SidebarRailTranslate != null)
-            {
-                SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, null);
-                SidebarRailTranslate.X = 0;
-            }
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            FillBehavior = FillBehavior.Stop
         };
 
         SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
@@ -201,7 +190,6 @@ public partial class MainWindow
             _sidebarGraceTimer?.Stop();
             SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, null);
             SidebarRailTranslate.X = -52;
-            SidebarRail.CacheMode = null;
             return;
         }
 
@@ -210,27 +198,16 @@ public partial class MainWindow
             return;
         }
 
-        SidebarRail.CacheMode = new BitmapCache { RenderAtScale = 1.0, SnapsToDevicePixels = true };
+        double startX = SidebarRailTranslate.X;
+        SidebarRailTranslate.X = -52;
 
         var anim = new DoubleAnimation
         {
+            From = startX,
             To = -52,
-            Duration = TimeSpan.FromMilliseconds(160),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
-        };
-
-
-        anim.Completed += (s, e) =>
-        {
-            if (SidebarRail != null)
-            {
-                SidebarRail.CacheMode = null;
-            }
-            if (SidebarRailTranslate != null)
-            {
-                SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, null);
-                SidebarRailTranslate.X = -52;
-            }
+            Duration = TimeSpan.FromMilliseconds(200),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut },
+            FillBehavior = FillBehavior.Stop
         };
 
         SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
