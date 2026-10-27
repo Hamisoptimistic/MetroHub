@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -25,7 +26,7 @@ public sealed class WorldClockSource : ISearchSource
 
     private readonly QueryRouter _router;
 
-    private static readonly Dictionary<string, (string DisplayName, string TimeZoneId)> CityTimeZones = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly FrozenDictionary<string, (string DisplayName, string TimeZoneId)> CityTimeZones = new Dictionary<string, (string DisplayName, string TimeZoneId)>(StringComparer.OrdinalIgnoreCase)
     {
         ["utc"] = ("UTC (Coordinated Universal Time)", "UTC"),
         ["gmt"] = ("London, United Kingdom (GMT)", "GMT Standard Time"),
@@ -88,7 +89,7 @@ public sealed class WorldClockSource : ISearchSource
         ["honolulu"] = ("Honolulu, Hawaii", "Hawaiian Standard Time"),
         ["hawaii"] = ("Honolulu, Hawaii", "Hawaiian Standard Time"),
         ["hst"] = ("Hawaii Standard Time (HST)", "Hawaiian Standard Time")
-    };
+    }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
     public WorldClockSource(QueryRouter? router = null)
     {

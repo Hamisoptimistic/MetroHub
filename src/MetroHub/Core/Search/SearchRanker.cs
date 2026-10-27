@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
@@ -64,6 +65,8 @@ public static class SearchRanker
         "\\.rustup\\",
         "\\site-packages\\"
     ];
+    private static readonly SearchValues<string> NoiseSearchValues =
+        SearchValues.Create(NoiseKeywords, StringComparison.Ordinal);
     private static readonly string[] ExcludedExtensions = [".tmp", ".pdb", ".log", ".bak", ".ilk", ".exp"];
     private static readonly string[] ExcludedKeywords = ["unins000", "crashreport", "diagnostics", "troubleshoot"];
 
@@ -725,11 +728,7 @@ public static class SearchRanker
     internal static bool IsNoisePathFast(string normPath)
     {
         if (normPath.Length < 6) return false;
-        for (int i = 0; i < NoiseKeywords.Length; i++)
-        {
-            if (normPath.IndexOf(NoiseKeywords[i], StringComparison.Ordinal) >= 0) return true;
-        }
-        return false;
+        return normPath.AsSpan().ContainsAny(NoiseSearchValues);
     }
 
     private static int CountPathDepth(string path)

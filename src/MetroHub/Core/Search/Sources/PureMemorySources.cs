@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -1553,13 +1554,13 @@ public sealed class UnitConverterSource : ISearchSource
     public SourceState State => SourceState.Ready;
 
     // Offline EUR base currency reference rates
-    private static readonly Dictionary<string, double> DefaultEurRates = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly FrozenDictionary<string, double> DefaultEurRates = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase)
     {
         ["EUR"] = 1.0, ["USD"] = 1.08, ["GBP"] = 0.86, ["JPY"] = 165.0,
         ["CAD"] = 1.48, ["AUD"] = 1.65, ["CHF"] = 0.96, ["INR"] = 90.0,
         ["CNY"] = 7.8, ["NZD"] = 1.78, ["BRL"] = 5.95, ["MXN"] = 21.5,
         ["KRW"] = 1480.0, ["SEK"] = 11.5, ["NOK"] = 11.8
-    };
+    }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
     public Task<IReadOnlyList<Candidate>> SearchAsync(SearchQuery query, CancellationToken cancellationToken)
     {

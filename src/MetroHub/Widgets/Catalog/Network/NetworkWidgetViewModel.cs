@@ -101,7 +101,7 @@ public partial class WifiNetworkItemViewModel : ObservableObject
         _ => "Wi-Fi"
     };
 
-    public string SecurityDetailsDisplay => $"{WifiStandardDisplay}  •  {(IsSecured ? "Secured" : "Open")}";
+    public string SecurityDetailsDisplay => $"{WifiStandardDisplay}  â€¢  {(IsSecured ? "Secured" : "Open")}";
 
     public bool CanConnect => !IsConnecting && !IsConnected;
 
@@ -118,13 +118,13 @@ public partial class WifiNetworkItemViewModel : ObservableObject
         get
         {
             if (IsConnected) return "Connected";
-            if (IsProfileKnown) return $"Saved  •  {SecurityType}";
-            if (IsEnterprise) return $"Enterprise  •  {SecurityType}";
+            if (IsProfileKnown) return $"Saved  â€¢  {SecurityType}";
+            if (IsEnterprise) return $"Enterprise  â€¢  {SecurityType}";
             return SecurityType;
         }
     }
 
-    // Uniform Segoe Fluent Icons glyphs — same visual size, fewer arcs for lower signal
+    // Uniform Segoe Fluent Icons glyphs â€” same visual size, fewer arcs for lower signal
     public string WifiSignalGlyph => SignalBars switch
     {
         1 => "\uEC3D",  // Wi-Fi 1 bar
@@ -197,13 +197,13 @@ public partial class PhysicalAdapterItemViewModel : ObservableObject
             {
                 return string.IsNullOrWhiteSpace(LinkSpeedString) || LinkSpeedString == "--"
                     ? "Connected"
-                    : $"Connected • {LinkSpeedString}";
+                    : $"Connected â€¢ {LinkSpeedString}";
             }
             return AdapterType == PhysicalAdapterType.Ethernet ? "Cable unplugged" : "Not connected";
         }
     }
 
-    public string SubtitleText => $"{Description} • {StatusText}";
+    public string SubtitleText => $"{Description} â€¢ {StatusText}";
 }
 
 public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
@@ -575,8 +575,8 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         get
         {
             if (TotalCombinedBytes > 0)
-                return $"↓ {TotalCombinedReceivedDisplay}   ↑ {TotalCombinedSentDisplay}";
-            return (HasEthernetAdapter || HasWifiAdapter) ? "↓ 0 MB   ↑ 0 MB" : "--";
+                return $"â†“ {TotalCombinedReceivedDisplay}   â†‘ {TotalCombinedSentDisplay}";
+            return (HasEthernetAdapter || HasWifiAdapter) ? "â†“ 0 MB   â†‘ 0 MB" : "--";
         }
     }
 
@@ -641,8 +641,8 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         : (HasEthernetAdapter ? "0 MB" : "--");
 
     public string EthernetUsageDetailDisplay => (EthernetDataUsage?.TotalBytes ?? 0) > 0
-        ? $"↓ {EthernetDataUsage!.FormattedReceived}   ↑ {EthernetDataUsage!.FormattedSent}"
-        : (HasEthernetAdapter ? "↓ 0 MB   ↑ 0 MB" : "No active link");
+        ? $"â†“ {EthernetDataUsage!.FormattedReceived}   â†‘ {EthernetDataUsage!.FormattedSent}"
+        : (HasEthernetAdapter ? "â†“ 0 MB   â†‘ 0 MB" : "No active link");
 
     public string EthernetUsageStatusText
     {
@@ -674,8 +674,8 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         : (HasWifiAdapter ? "0 MB" : "--");
 
     public string WifiUsageDetailDisplay => (WifiDataUsage?.TotalBytes ?? 0) > 0
-        ? $"↓ {WifiDataUsage!.FormattedReceived}   ↑ {WifiDataUsage!.FormattedSent}"
-        : (HasWifiAdapter ? "↓ 0 MB   ↑ 0 MB" : "No active link");
+        ? $"â†“ {WifiDataUsage!.FormattedReceived}   â†‘ {WifiDataUsage!.FormattedSent}"
+        : (HasWifiAdapter ? "â†“ 0 MB   â†‘ 0 MB" : "No active link");
 
     public string WifiUsageStatusText
     {
@@ -1296,12 +1296,12 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             if (!HasEthernetAdapter)
                 return $"No {name} adapter detected on this PC";
             if (IsEthernetAdapterDisabled)
-                return $"{name} adapter is disabled • Click Enable to restore";
+                return $"{name} adapter is disabled â€¢ Click Enable to restore";
             if (IsEthernetConnected)
                 return $"Disable / disconnect {name} (Requires Admin privilege)";
             return IsActiveUsbTethering
-                ? "USB device disconnected • Disabling requires Admin privilege"
-                : "Cable unplugged • Disabling requires Admin privilege";
+                ? "USB device disconnected â€¢ Disabling requires Admin privilege"
+                : "Cable unplugged â€¢ Disabling requires Admin privilege";
         }
     }
 
@@ -1388,7 +1388,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
             if (!HasWifiAdapter)
                 return "No Wi-Fi adapter detected on this PC";
             if (IsWifiRadioDisabled)
-                return "Wi-Fi is turned off • Toggle to turn on";
+                return "Wi-Fi is turned off â€¢ Toggle to turn on";
             if (IsWifiConnected)
                 return $"Connected to {WifiConnection.Ssid}";
             return "Not connected to any Wi-Fi network";
@@ -2364,10 +2364,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         var incomingBySsid = new Dictionary<string, WifiNetworkItem>(StringComparer.OrdinalIgnoreCase);
         foreach (var net in rawList)
         {
-            if (!incomingBySsid.ContainsKey(net.Ssid))
-            {
-                incomingBySsid[net.Ssid] = net;
-            }
+            incomingBySsid.TryAdd(net.Ssid, net);
         }
 
         // 1. Remove networks that are no longer present in the scan
@@ -2504,10 +2501,7 @@ public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
         var incomingByName = new Dictionary<string, PhysicalAdapterInfo>(StringComparer.OrdinalIgnoreCase);
         foreach (var a in rawList)
         {
-            if (!incomingByName.ContainsKey(a.Name))
-            {
-                incomingByName[a.Name] = a;
-            }
+            incomingByName.TryAdd(a.Name, a);
         }
 
         // 1. Remove obsolete adapters

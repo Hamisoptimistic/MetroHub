@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -376,7 +377,7 @@ public sealed class ProcessKillerSource : ISearchSource
     public string SourceId => "process_killer";
     public SourceState State => SourceState.Ready;
 
-    internal static readonly HashSet<string> Denylist = new(StringComparer.OrdinalIgnoreCase)
+    internal static readonly FrozenSet<string> Denylist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "metrohub",
         "explorer",
@@ -390,7 +391,7 @@ public sealed class ProcessKillerSource : ISearchSource
         "svchost",
         "system",
         "idle"
-    };
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     private readonly QueryRouter _router;
 

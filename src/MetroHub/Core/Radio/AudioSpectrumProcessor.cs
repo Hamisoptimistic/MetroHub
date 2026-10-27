@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.Intrinsics;
 using ManagedBass;
 
 namespace MetroHub.Core.Radio;
@@ -314,12 +315,21 @@ public sealed class AudioSpectrumProcessor
         int effectiveEnd = Math.Min(endBin, bins.Length - 1);
         if (startBin > effectiveEnd) return 0f;
 
-        float sumSquares = 0f;
-        int count = effectiveEnd - startBin + 1;
+        ReadOnlySpan<float> slice = bins.Slice(startBin, effectiveEnd - startBin + 1);
+        int count = slice.Length;
 
-        for (int i = startBin; i <= effectiveEnd; i++)
+        Vector128<float> sumVec = Vector128<float>.Zero;
+        while (slice.Length >= Vector128<float>.Count)
         {
-            float val = bins[i];
+            var v = Vector128.Create(slice);
+            sumVec += v * v;
+            slice = slice.Slice(Vector128<float>.Count);
+        }
+
+        float sumSquares = Vector128.Sum(sumVec);
+        for (int i = 0; i < slice.Length; i++)
+        {
+            float val = slice[i];
             sumSquares += val * val;
         }
 

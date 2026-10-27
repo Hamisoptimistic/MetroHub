@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -362,7 +363,7 @@ public static class IconExtractorService
         }
     }
 
-    private static readonly Dictionary<string, string> KnownFolderMap = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly System.Collections.Frozen.FrozenDictionary<string, string> KnownFolderMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         { "{6D809377-6AF0-444B-8957-A3773F02200E}", Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) },
         { "{7C5A40EF-A0FB-4BFC-874A-C0F2E0B9FA8E}", Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86) },
@@ -374,7 +375,7 @@ public static class IconExtractorService
         { "{5E6C858F-0E22-4760-9AFE-EA3317B67173}", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) },
         { "{A52BBA46-E9E1-435F-B3D9-28DAA648C0F6}", Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) },
         { "{3EB685FD-984F-4E40-B0D2-E4531642D541}", Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) }
-    };
+    }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
     public static string ResolveKnownFolderGuid(string path)
     {

@@ -252,18 +252,15 @@ public static class InstalledAppsService
                                             path = @"shell:AppsFolder\" + path;
                                         }
 
-                                        if (!appMap.ContainsKey(name))
+                                        appMap.TryAdd(name, new CatalogItemModel
                                         {
-                                            appMap[name] = new CatalogItemModel
-                                            {
-                                                Name = name,
-                                                TargetPath = path,
-                                                TileType = TileType.App,
-                                                SpanX = 2,
-                                                SpanY = 2,
-                                                ProviderId = "installed_apps"
-                                            };
-                                        }
+                                            Name = name,
+                                            TargetPath = path,
+                                            TileType = TileType.App,
+                                            SpanX = 2,
+                                            SpanY = 2,
+                                            ProviderId = "installed_apps"
+                                        });
                                     }
                                 }
                                 catch (Exception ex)

@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,10 +18,10 @@ namespace MetroHub.Widgets.Catalog.Photos;
 
 public sealed partial class PhotosWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler, IWidgetContextMenuProvider
 {
-    private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly System.Collections.Frozen.FrozenSet<string> SupportedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         ".jpg", ".jpeg", ".png", ".bmp", ".webp", ".gif"
-    };
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     private readonly List<string> _photoPaths = new();
     private readonly List<int> _shuffledIndices = new();
