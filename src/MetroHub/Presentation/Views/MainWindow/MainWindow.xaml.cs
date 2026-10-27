@@ -118,8 +118,8 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
         anim.Completed += (s, e) =>
         {
-            AmbientFocusScrim.BeginAnimation(UIElement.OpacityProperty, null);
             AmbientFocusScrim.Opacity = targetOpacity;
+            AmbientFocusScrim.BeginAnimation(UIElement.OpacityProperty, null);
         };
 
         AmbientFocusScrim.BeginAnimation(UIElement.OpacityProperty, anim);

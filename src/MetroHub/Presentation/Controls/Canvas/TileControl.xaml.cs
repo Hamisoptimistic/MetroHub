@@ -402,10 +402,10 @@ public partial class TileControl : UserControl
             if (completedFired) return;
             completedFired = true;
 
-            TileScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
-            TileScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
             TileScale.ScaleX = 1.0;
             TileScale.ScaleY = 1.0;
+            TileScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            TileScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
             RootBorder.CacheMode = null;
             onCompleted?.Invoke();
         }
@@ -1140,13 +1140,13 @@ public partial class TileControl : UserControl
 
         animW.Completed += (s, e) =>
         {
-            RootBorder.BeginAnimation(FrameworkElement.WidthProperty, null);
             RootBorder.Width = newW;
+            RootBorder.BeginAnimation(FrameworkElement.WidthProperty, null);
         };
         animH.Completed += (s, e) =>
         {
-            RootBorder.BeginAnimation(FrameworkElement.HeightProperty, null);
             RootBorder.Height = newH;
+            RootBorder.BeginAnimation(FrameworkElement.HeightProperty, null);
         };
 
         RootBorder.BeginAnimation(FrameworkElement.WidthProperty, animW);

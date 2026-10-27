@@ -220,7 +220,8 @@ public partial class MainWindow
             {
                 var animX = new DoubleAnimation(deltaX, 0.0, TimeSpan.FromMilliseconds(200))
                 {
-                    EasingFunction = SharedTileSlideEase
+                    EasingFunction = SharedTileSlideEase,
+                    FillBehavior = FillBehavior.Stop
                 };
                 translate.BeginAnimation(TranslateTransform.XProperty, animX, HandoffBehavior.SnapshotAndReplace);
             }
@@ -234,7 +235,8 @@ public partial class MainWindow
             {
                 var animY = new DoubleAnimation(deltaY, 0.0, TimeSpan.FromMilliseconds(200))
                 {
-                    EasingFunction = SharedTileSlideEase
+                    EasingFunction = SharedTileSlideEase,
+                    FillBehavior = FillBehavior.Stop
                 };
                 translate.BeginAnimation(TranslateTransform.YProperty, animY, HandoffBehavior.SnapshotAndReplace);
             }
