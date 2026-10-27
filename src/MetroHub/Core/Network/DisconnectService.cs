@@ -12,7 +12,7 @@ namespace MetroHub.Core.Network;
 
 public sealed record WindowsInterfaceStatus(string Name, bool IsAdminEnabled, bool IsConnected);
 
-public sealed class DisconnectService
+public sealed partial class DisconnectService
 {
     private static readonly Lazy<DisconnectService> _instance = new(() => new DisconnectService());
     public static DisconnectService Instance => _instance.Value;
@@ -283,12 +283,13 @@ public sealed class DisconnectService
         return await ToggleWifiConnectionAsync();
     }
 
-    private static readonly Regex ValidAdapterNameRegex = new(@"^[\p{L}\p{N}\s\-_.#()]+$", RegexOptions.Compiled);
+    [GeneratedRegex(@"^[\p{L}\p{N}\s\-_.#()]+$")]
+    private static partial Regex ValidAdapterNameRegex();
 
     private static Task<bool> RunElevatedAdapterCommandAsync(string command, string adapterName)
     {
         // Guard against command injection: validate adapter name and command strictly
-        if (string.IsNullOrWhiteSpace(adapterName) || adapterName.Length > 128 || !ValidAdapterNameRegex.IsMatch(adapterName))
+        if (string.IsNullOrWhiteSpace(adapterName) || adapterName.Length > 128 || !ValidAdapterNameRegex().IsMatch(adapterName))
         {
             return Task.FromResult(false);
         }

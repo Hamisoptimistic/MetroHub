@@ -30,10 +30,34 @@ public sealed record StreamProbeResult(
 /// Detects direct Icecast/Shoutcast audio streams, unwraps single-station .pls/.m3u playlists,
 /// rejects HTML webpages, and guards against massive multi-channel IPTV lists.
 /// </summary>
-public sealed class StreamUrlProbeService
+public sealed partial class StreamUrlProbeService
 {
     private static readonly Lazy<StreamUrlProbeService> _lazyInstance = new(() => new StreamUrlProbeService());
     public static StreamUrlProbeService Instance => _lazyInstance.Value;
+
+    [GeneratedRegex(@"^File\d+=", RegexOptions.IgnoreCase)]
+    private static partial Regex PlsFileEntryRegex();
+
+    [GeneratedRegex(@"^Title1=", RegexOptions.IgnoreCase)]
+    private static partial Regex PlsTitleEntryRegex();
+
+    [GeneratedRegex(@"<ref\s+[^>]*href=[""']([^""']+)[""']", RegexOptions.IgnoreCase)]
+    private static partial Regex AsxRefHrefRegex();
+
+    [GeneratedRegex(@"<title>([^<]+)</title>", RegexOptions.IgnoreCase)]
+    private static partial Regex XmlTitleRegex();
+
+    [GeneratedRegex(@"<location>([^<]+)</location>", RegexOptions.IgnoreCase)]
+    private static partial Regex XspfLocationRegex();
+
+    [GeneratedRegex(@"BANDWIDTH=(\d+)", RegexOptions.IgnoreCase)]
+    private static partial Regex HlsBandwidthRegex();
+
+    [GeneratedRegex(@"[_-]")]
+    private static partial Regex SeparatorNormalizeRegex();
+
+    [GeneratedRegex(@"\d+k(bps)?|\d+mp3", RegexOptions.IgnoreCase)]
+    private static partial Regex BitrateSuffixStripRegex();
 
     private readonly HttpClient _httpClient;
 
@@ -336,7 +360,7 @@ public sealed class StreamUrlProbeService
     private static StreamProbeResult ParsePlsContent(string content, Uri origin)
     {
         var lines = content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-        var fileEntries = lines.Where(l => Regex.IsMatch(l.Trim(), @"^File\d+=", RegexOptions.IgnoreCase)).ToList();
+        var fileEntries = lines.Where(l => PlsFileEntryRegex().IsMatch(l.Trim())).ToList();
 
         if (fileEntries.Count == 0)
         {
@@ -358,7 +382,7 @@ public sealed class StreamUrlProbeService
 
         // Extract Title1 if present
         string? title = null;
-        var titleEntry = lines.FirstOrDefault(l => Regex.IsMatch(l.Trim(), @"^Title1=", RegexOptions.IgnoreCase));
+        var titleEntry = lines.FirstOrDefault(l => PlsTitleEntryRegex().IsMatch(l.Trim()));
         if (titleEntry != null)
         {
             int tIndex = titleEntry.IndexOf('=');
@@ -377,7 +401,7 @@ public sealed class StreamUrlProbeService
 
     private static StreamProbeResult ParseAsxContent(string content, Uri origin)
     {
-        var hrefMatches = Regex.Matches(content, @"<ref\s+[^>]*href=[""']([^""']+)[""']", RegexOptions.IgnoreCase);
+        var hrefMatches = AsxRefHrefRegex().Matches(content);
         if (hrefMatches.Count == 0)
         {
             return new StreamProbeResult(false, null, null, null, "The .asx playlist contains no stream entries.");
@@ -398,7 +422,7 @@ public sealed class StreamUrlProbeService
         }
 
         string? title = null;
-        var titleMatch = Regex.Match(content, @"<title>([^<]+)</title>", RegexOptions.IgnoreCase);
+        var titleMatch = XmlTitleRegex().Match(content);
         if (titleMatch.Success)
         {
             title = titleMatch.Groups[1].Value.Trim();
@@ -416,7 +440,7 @@ public sealed class StreamUrlProbeService
 
     private static StreamProbeResult ParseXspfContent(string content, Uri origin)
     {
-        var locMatches = Regex.Matches(content, @"<location>([^<]+)</location>", RegexOptions.IgnoreCase);
+        var locMatches = XspfLocationRegex().Matches(content);
         if (locMatches.Count == 0)
         {
             return new StreamProbeResult(false, null, null, null, "The .xspf playlist contains no stream entries.");
@@ -437,7 +461,7 @@ public sealed class StreamUrlProbeService
         }
 
         string? title = null;
-        var titleMatch = Regex.Match(content, @"<title>([^<]+)</title>", RegexOptions.IgnoreCase);
+        var titleMatch = XmlTitleRegex().Match(content);
         if (titleMatch.Success)
         {
             title = titleMatch.Groups[1].Value.Trim();
@@ -478,7 +502,7 @@ public sealed class StreamUrlProbeService
             var streamInfLine = lines.FirstOrDefault(l => l.Contains("#EXT-X-STREAM-INF", StringComparison.OrdinalIgnoreCase));
             if (streamInfLine != null)
             {
-                var match = Regex.Match(streamInfLine, @"BANDWIDTH=(\d+)", RegexOptions.IgnoreCase);
+                var match = HlsBandwidthRegex().Match(streamInfLine);
                 if (match.Success && int.TryParse(match.Groups[1].Value, out int bps) && bps > 0)
                 {
                     bitrate = Math.Max(32, bps / 1000);
@@ -567,8 +591,8 @@ public sealed class StreamUrlProbeService
         string? candidate = meaningfulSegments.LastOrDefault();
         if (!string.IsNullOrWhiteSpace(candidate))
         {
-            string cleanSegment = Regex.Replace(candidate, @"[_-]", " ");
-            cleanSegment = Regex.Replace(cleanSegment, @"\d+k(bps)?|\d+mp3", "", RegexOptions.IgnoreCase).Trim();
+            string cleanSegment = SeparatorNormalizeRegex().Replace(candidate, " ");
+            cleanSegment = BitrateSuffixStripRegex().Replace(cleanSegment, "").Trim();
             if (!string.IsNullOrWhiteSpace(cleanSegment) && !genericSegments.Contains(cleanSegment.ToLowerInvariant()))
             {
                 return CapitalizeWords(cleanSegment);

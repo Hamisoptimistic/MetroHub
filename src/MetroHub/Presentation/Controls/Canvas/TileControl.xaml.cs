@@ -48,7 +48,31 @@ public partial class TileControl : UserControl
     }
 
 
-    public static readonly List<TileControl> ActiveTiles = new();
+    private static readonly List<TileControl> s_activeTiles = new();
+    private static readonly HashSet<TileControl> s_activeTileLookup = new();
+    public static IReadOnlyList<TileControl> ActiveTiles => s_activeTiles;
+
+    public static void ClearActiveTiles()
+    {
+        s_activeTileLookup.Clear();
+        s_activeTiles.Clear();
+    }
+
+    private static void RegisterActiveTile(TileControl tile)
+    {
+        if (s_activeTileLookup.Add(tile))
+        {
+            s_activeTiles.Add(tile);
+        }
+    }
+
+    private static void UnregisterActiveTile(TileControl tile)
+    {
+        if (s_activeTileLookup.Remove(tile))
+        {
+            s_activeTiles.Remove(tile);
+        }
+    }
 
     private static readonly QuadraticEase SharedTilePressEase = CreateFrozenQuadraticEase();
 
@@ -164,8 +188,7 @@ public partial class TileControl : UserControl
         InitializeComponent();
         Loaded += (s, e) =>
         {
-            ActiveTiles.RemoveAll(tc => (!tc.IsLoaded || !tc.IsVisible) && !ReferenceEquals(tc, this));
-            if (IsVisible && !ActiveTiles.Contains(this)) ActiveTiles.Add(this);
+            if (IsVisible) RegisterActiveTile(this);
             ApplyTileStyle(animate: false);
         };
         Unloaded += (s, e) =>
@@ -174,19 +197,18 @@ public partial class TileControl : UserControl
             {
                 DetachSharedContextMenu();
             }
-            ActiveTiles.Remove(this);
-            ActiveTiles.RemoveAll(tc => !tc.IsLoaded || !tc.IsVisible);
+            UnregisterActiveTile(this);
         };
         IsVisibleChanged += (s, e) =>
         {
             if (IsVisible)
             {
-                if (!ActiveTiles.Contains(this)) ActiveTiles.Add(this);
+                RegisterActiveTile(this);
                 ApplyTileStyle(animate: false);
             }
             else
             {
-                ActiveTiles.Remove(this);
+                UnregisterActiveTile(this);
             }
         };
         DataContextChanged += (s, e) => ApplyTileStyle(animate: false);

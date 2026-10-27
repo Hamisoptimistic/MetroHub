@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.IO;
@@ -289,7 +289,7 @@ public static class CompanionImageDownloader
 /// (Chrome, Edge, Firefox, Zen) to send tabs and links directly to MetroHub canvas.
 /// Enforces DNS-rebinding immunity, pinned extension origins, and anti-SSRF protections.
 /// </summary>
-public sealed class LocalCompanionService : IDisposable
+public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
 {
     public const int BasePort = 48842;
     public const int MaxPort = 48846;
@@ -1075,7 +1075,44 @@ public sealed class LocalCompanionService : IDisposable
 
     public void Dispose()
     {
-        StopAsync().GetAwaiter().GetResult();
+        CancellationTokenSource? cts;
+        HttpListener? listener;
+
+        lock (_lock)
+        {
+            cts = _cts;
+            _cts = null;
+            listener = _listener;
+            _listener = null;
+            _listenTask = null;
+            _activePort = 0;
+        }
+
+        if (cts != null)
+        {
+            try { cts.Cancel(); } catch { }
+        }
+
+        if (listener != null)
+        {
+            try
+            {
+                listener.Stop();
+                listener.Close();
+            }
+            catch { }
+        }
+
+        // Note: Do not call cts.Dispose() here synchronously.
+        // ListenLoopAsync may still be unwinding on a thread pool thread; evaluating
+        // ct.IsCancellationRequested on a disposed CancellationTokenSource would throw
+        // ObjectDisposedException. Modern .NET CancellationTokenSource instances without
+        // timers hold no unmanaged resources and are safely reclaimed by GC once the task finishes.
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await StopAsync().ConfigureAwait(false);
     }
 }
 

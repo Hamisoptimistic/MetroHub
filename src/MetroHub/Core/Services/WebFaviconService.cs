@@ -148,6 +148,9 @@ public static partial class WebFaviconService
     [GeneratedRegex(@"\bsizes\s*=\s*[""']?(\d+)x(\d+)?[""']?", RegexOptions.IgnoreCase)]
     private static partial Regex SizesAttrRegex();
 
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex MultipleWhitespaceRegex();
+
     /// <summary>
     /// Computes a clean cache scope key for a given URL.
     /// By default, keys strictly by host (preventing cache file proliferation).
@@ -453,7 +456,7 @@ public static partial class WebFaviconService
         if (titleMatch.Success)
         {
             title = System.Net.WebUtility.HtmlDecode(titleMatch.Groups[1].Value.Trim());
-            title = Regex.Replace(title, @"\s+", " ");
+            title = MultipleWhitespaceRegex().Replace(title, " ");
         }
 
         // 3. Extract highest quality non-SVG icon
