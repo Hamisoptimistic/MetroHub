@@ -44,6 +44,10 @@ public sealed class BackdropShaderDriver : IDisposable
     private Point _inkLastMousePos = new(-1, -1);
     private double _inkLastMouseMoveSeconds = -10.0;
     private double _inkLastTickSeconds = -1.0;
+    private bool _isDraggingPlanet;
+    private Point _lastDragPoint = new(-1, -1);
+    private double _planetDragYaw;
+    private double _planetDragVelocity;
 
     /// <summary>
     /// Indicates whether Direct3D Tier 2 (full hardware acceleration) is available.
@@ -100,7 +104,13 @@ public sealed class BackdropShaderDriver : IDisposable
         _lastRenderTimeSeconds = -1.0;
 
         _window.PreviewMouseLeftButtonDown -= OnWindowMouseDown;
+        _window.PreviewMouseLeftButtonUp -= OnWindowMouseUp;
+        _isDraggingPlanet = false;
+        _lastDragPoint = new Point(-1, -1);
+        _planetDragVelocity = 0.0;
         _window.PreviewMouseLeftButtonDown += OnWindowMouseDown;
+        _window.PreviewMouseLeftButtonUp -= OnWindowMouseUp;
+        _window.PreviewMouseLeftButtonUp += OnWindowMouseUp;
 
         UpdateAspectRatio();
         UpdateDriverState();
@@ -112,6 +122,10 @@ public sealed class BackdropShaderDriver : IDisposable
     public void Detach()
     {
         _window.PreviewMouseLeftButtonDown -= OnWindowMouseDown;
+        _window.PreviewMouseLeftButtonUp -= OnWindowMouseUp;
+        _isDraggingPlanet = false;
+        _lastDragPoint = new Point(-1, -1);
+        _planetDragVelocity = 0.0;
         _activeEffect = null;
         _inkLastTickSeconds = -1.0;
         _inkLastX = -100.0;
@@ -134,6 +148,19 @@ public sealed class BackdropShaderDriver : IDisposable
         {
             _activeEffect.CyclePalette(6);
         }
+
+        if (_activeEffect.ShaderName.StartsWith("Planet", StringComparison.OrdinalIgnoreCase))
+        {
+            _isDraggingPlanet = true;
+            _lastDragPoint = e.GetPosition(_window);
+            _planetDragVelocity = 0.0;
+        }
+    }
+
+    private void OnWindowMouseUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        _isDraggingPlanet = false;
+        _lastDragPoint = new Point(-1, -1);
     }
 
     private static bool IsInteractiveOrTile(DependencyObject dep)
@@ -264,7 +291,30 @@ public sealed class BackdropShaderDriver : IDisposable
             double mx = Math.Clamp(mousePos.X / width, 0.0, 1.0);
             double my = Math.Clamp(mousePos.Y / height, 0.0, 1.0);
             double leftDown = System.Windows.Input.Mouse.LeftButton == System.Windows.Input.MouseButtonState.Pressed ? 1.0 : 0.0;
-            _activeEffect.MouseState = new Point4D(mx, my, leftDown, 0.0);
+            if (leftDown <= 0.0)
+            {
+                _isDraggingPlanet = false;
+                _lastDragPoint = new Point(-1, -1);
+            }
+
+            if (_isDraggingPlanet && leftDown > 0.5)
+            {
+                if (_lastDragPoint.X >= 0)
+                {
+                    double deltaX = (mousePos.X - _lastDragPoint.X) / width;
+                    double deltaYaw = deltaX * 4.0;
+                    _planetDragYaw += deltaYaw;
+                    _planetDragVelocity = deltaYaw;
+                }
+                _lastDragPoint = mousePos;
+            }
+            else if (Math.Abs(_planetDragVelocity) > 0.0001)
+            {
+                _planetDragYaw += _planetDragVelocity;
+                _planetDragVelocity *= 0.93;
+            }
+
+            _activeEffect.MouseState = new Point4D(mx, my, leftDown, _planetDragYaw);
         }
         catch
         {

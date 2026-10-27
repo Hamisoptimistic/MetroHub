@@ -54,6 +54,7 @@
     <Resource Include="Assets\Radio\*.json" />
     <Resource Include="Assets\Rover\**\*" />
     <Resource Include="Assets\quotes.json" />
+    <Resource Include="Assets\Planets\**\*" />
     <Resource Include="Assets\*.png" />
   </ItemGroup>
 

@@ -300,9 +300,11 @@ public sealed class BackdropManager : IDisposable
             (BackdropShaderDriver.IsHardwareAccelerated || _shaderDriver.BypassHardwareTierCheck))
         {
             if (_shaderHost.Effect is MetroShaderEffect active &&
-                string.Equals(active.ShaderName, shader.ShaderName, StringComparison.OrdinalIgnoreCase))
+                string.Equals(active.ShaderName, shader.ShaderName, StringComparison.OrdinalIgnoreCase) &&
+                ReferenceEquals(active.Input, shader.Input))
             {
                 active.EffectParams = shader.EffectParams;
+                active.AtmosphereColor = shader.AtmosphereColor;
                 _shaderDriver.Attach(active);
                 return Task.CompletedTask;
             }
