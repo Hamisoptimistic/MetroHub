@@ -56,6 +56,13 @@ public class MetroShaderEffect : ShaderEffect
             2,
             SamplingMode.Bilinear);
 
+    public static readonly DependencyProperty SpecularInputProperty =
+        RegisterPixelShaderSamplerProperty(
+            nameof(SpecularInput),
+            typeof(MetroShaderEffect),
+            3,
+            SamplingMode.Bilinear);
+
     public static readonly DependencyProperty FrameStateProperty =
         DependencyProperty.Register(
             nameof(FrameState),
@@ -121,6 +128,12 @@ public class MetroShaderEffect : ShaderEffect
         set => SetValue(CloudsInputProperty, value);
     }
 
+    public Brush? SpecularInput
+    {
+        get => (Brush?)GetValue(SpecularInputProperty);
+        set => SetValue(SpecularInputProperty, value);
+    }
+
     public Point4D FrameState
     {
         get => (Point4D)GetValue(FrameStateProperty);
@@ -161,6 +174,7 @@ public class MetroShaderEffect : ShaderEffect
         UpdateShaderValue(InputProperty);
         UpdateShaderValue(NightInputProperty);
         UpdateShaderValue(CloudsInputProperty);
+        UpdateShaderValue(SpecularInputProperty);
         UpdateShaderValue(FrameStateProperty);
         UpdateShaderValue(EffectParamsProperty);
         UpdateShaderValue(MouseStateProperty);
@@ -256,6 +270,7 @@ public class MetroShaderEffect : ShaderEffect
                     Input = GetPlanetBrush("2k_earth_color.jpeg"),
                     NightInput = GetPlanetBrush("2k_earth_night.jpeg"),
                     CloudsInput = GetPlanetBrush("2k_earth_clouds.jpeg"),
+                    SpecularInput = GetPlanetBrush("2k_earth_specular.jpeg"),
                     AtmosphereColor = new Point4D(0.05, 0.30, 0.90, 3.0)
                 },
 
@@ -266,45 +281,75 @@ public class MetroShaderEffect : ShaderEffect
                     Input = GetPlanetBrush("2k_earth_color.jpeg"),
                     NightInput = GetPlanetBrush("2k_earth_night.jpeg"),
                     CloudsInput = GetPlanetBrush("2k_earth_clouds.jpeg"),
-                    AtmosphereColor = new Point4D(0.05, 0.30, 0.90, 3.0)
+                    SpecularInput = GetPlanetBrush("2k_earth_specular.jpeg"),
+                    AtmosphereColor = new Point4D(0.05, 0.30, 0.90, 4.0)
                 },
 
             _ when string.Equals(effectName, "Mars", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("Planet", new Point4D(1.0, 0.20, 0.0, 0.0))
                 {
                     Input = GetPlanetBrush("2k_mars.jpg"),
-                    AtmosphereColor = new Point4D(0.90, 0.15, 0.0, 3.0)
+                    NightInput = BlackBrush.Value,
+                    CloudsInput = BlackBrush.Value,
+                    SpecularInput = BlackBrush.Value,
+                    AtmosphereColor = new Point4D(0.90, 0.15, 0.0, 4.0)
                 },
 
             _ when string.Equals(effectName, "Jupiter", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("Planet", new Point4D(1.0, 0.05, 0.0, 0.0))
                 {
                     Input = GetPlanetBrush("2k_jupiter.jpg"),
-                    AtmosphereColor = new Point4D(0.36, 0.92, 0.95, 3.0)
+                    NightInput = BlackBrush.Value,
+                    CloudsInput = BlackBrush.Value,
+                    SpecularInput = BlackBrush.Value,
+                    AtmosphereColor = new Point4D(0.36, 0.92, 0.95, 4.0)
                 },
 
             _ when string.Equals(effectName, "Venus", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("Planet", new Point4D(1.0, 0.10, 0.0, 0.0))
                 {
                     Input = GetPlanetBrush("2k_venus.jpg"),
-                    AtmosphereColor = new Point4D(0.90, 0.30, 0.0, 3.0)
+                    NightInput = BlackBrush.Value,
+                    CloudsInput = BlackBrush.Value,
+                    SpecularInput = BlackBrush.Value,
+                    AtmosphereColor = new Point4D(0.90, 0.30, 0.0, 4.0)
                 },
 
             _ when string.Equals(effectName, "Mercury", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("Planet", new Point4D(1.0, 0.05, 0.0, 0.0))
                 {
                     Input = GetPlanetBrush("2k_mercury.jpg"),
-                    AtmosphereColor = new Point4D(1.0, 1.0, 1.0, 3.0)
+                    NightInput = BlackBrush.Value,
+                    CloudsInput = BlackBrush.Value,
+                    SpecularInput = BlackBrush.Value,
+                    AtmosphereColor = new Point4D(1.0, 1.0, 1.0, 4.0)
                 },
 
             _ when string.Equals(effectName, "Moon", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("Planet", new Point4D(1.0, 0.05, 0.0, 0.0))
                 {
                     Input = GetPlanetBrush("2k_moon.jpeg"),
-                    AtmosphereColor = new Point4D(1.0, 1.0, 1.0, 3.0)
+                    NightInput = BlackBrush.Value,
+                    CloudsInput = BlackBrush.Value,
+                    SpecularInput = BlackBrush.Value,
+                    AtmosphereColor = new Point4D(1.0, 1.0, 1.0, 4.0)
                 },
             _ => null
         };
+
+    private static readonly Lazy<ImageBrush> BlackBrush = new(static () =>
+    {
+        var bitmap = System.Windows.Media.Imaging.BitmapSource.Create(
+            1, 1, 96, 96, PixelFormats.Bgr32, null, new byte[4], 4);
+        bitmap.Freeze();
+        var brush = new ImageBrush(bitmap)
+        {
+            TileMode = TileMode.None,
+            Stretch = Stretch.Fill
+        };
+        brush.Freeze();
+        return brush;
+    });
 
     private static readonly ConcurrentDictionary<string, ImageBrush> PlanetBrushCache = new(StringComparer.OrdinalIgnoreCase);
 

@@ -15,8 +15,6 @@ namespace MetroHub.Presentation.Shaders;
 public sealed class BackdropShaderDriver : IDisposable
 {
     private const double MaxTimeModulo = 400.0 * Math.PI;
-    private const double TargetFps = 60.0;
-    private const double MinFrameIntervalSeconds = 1.0 / TargetFps;
 
     private readonly Window _window;
     private readonly FrameworkElement? _targetElement;
@@ -271,12 +269,6 @@ public sealed class BackdropShaderDriver : IDisposable
         }
 
         double elapsedSeconds = _clock.Elapsed.TotalSeconds;
-
-        // 60 FPS throttle: skip ticks on high-refresh monitors (144Hz/240Hz) to keep CPU load near 0%
-        if (_lastRenderTimeSeconds >= 0 && (elapsedSeconds - _lastRenderTimeSeconds) < (MinFrameIntervalSeconds - 0.003))
-        {
-            return;
-        }
         _lastRenderTimeSeconds = elapsedSeconds;
 
         double time = elapsedSeconds % MaxTimeModulo;
@@ -302,16 +294,17 @@ public sealed class BackdropShaderDriver : IDisposable
                 if (_lastDragPoint.X >= 0)
                 {
                     double deltaX = (mousePos.X - _lastDragPoint.X) / width;
-                    double deltaYaw = deltaX * 4.0;
-                    _planetDragYaw += deltaYaw;
-                    _planetDragVelocity = deltaYaw;
+                    double targetYawDelta = deltaX * 3.5;
+                    // Exponential velocity smoothing eliminates frame-to-frame mouse jitter
+                    _planetDragVelocity = (_planetDragVelocity * 0.35) + (targetYawDelta * 0.65);
+                    _planetDragYaw += _planetDragVelocity;
                 }
                 _lastDragPoint = mousePos;
             }
             else if (Math.Abs(_planetDragVelocity) > 0.0001)
             {
                 _planetDragYaw += _planetDragVelocity;
-                _planetDragVelocity *= 0.93;
+                _planetDragVelocity *= 0.92;
             }
 
             _activeEffect.MouseState = new Point4D(mx, my, leftDown, _planetDragYaw);
