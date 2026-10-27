@@ -8,11 +8,12 @@ public sealed class AppSettings
 
     public string ThemeMode { get; set; } = "System"; // System, Dark, Light
     public AccentStyleMode AccentStyle { get; set; } = AccentStyleMode.Flat; // Flat, StudioGlass
-    public string BackdropType { get; set; } = "Mica"; // Mica, MicaAlt, Acrylic, DesktopWallpaper, Wallpaper, BingDaily, SpotlightDaily
+    public string BackdropType { get; set; } = "Mica"; // Mica, MicaAlt, Acrylic, DesktopWallpaper, Wallpaper, BingDaily, SpotlightDaily, LiveShader
     public string? CustomWallpaperPath { get; set; }
     public double WallpaperDimOpacity { get; set; } = 0.70; // 0.50 (Light), 0.70 (Balanced), 0.85 (Heavy)
     public bool WallpaperParallax { get; set; } = true;
-    public string WallpaperEffect { get; set; } = "None"; // None, Blur, WaterRipple, WaterCaustics, NeonClock, FluidWaves, Starfield, Circuit, Ether, SmokeFog, Kaliset, CyberTunnel, KoiPond, Ink, Pebbles
+    public string WallpaperEffect { get; set; } = "None"; // None, Starfield, CyberTunnel, FluidWaves, etc.
+    public string ImageEffect { get; set; } = "None"; // None, Blur, WaterRipple
     
     public bool LaunchAtStartup { get; set; }
     public bool StartMinimized { get; set; }

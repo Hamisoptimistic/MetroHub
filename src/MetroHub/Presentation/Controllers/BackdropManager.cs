@@ -35,6 +35,7 @@ public sealed class BackdropManager : IDisposable
     private readonly ScrollViewer? _contentScrollViewer;
     private readonly Action<string, bool> _toastAction;
     private readonly Action? _updateMenuChecksAction;
+    private readonly FrameworkElement? _shaderHost;
     private readonly BackdropShaderDriver _shaderDriver;
 
     private int _wallpaperLoadGeneration;
@@ -58,7 +59,8 @@ public sealed class BackdropManager : IDisposable
         TranslateTransform? wallpaperVideoTranslateTransform,
         ScrollViewer? contentScrollViewer,
         Action<string, bool> toastAction,
-        Action? updateMenuChecksAction = null)
+        Action? updateMenuChecksAction = null,
+        FrameworkElement? shaderHost = null)
     {
         _window = window;
         _settingsProvider = settingsProvider;
@@ -72,7 +74,8 @@ public sealed class BackdropManager : IDisposable
         _contentScrollViewer = contentScrollViewer;
         _toastAction = toastAction;
         _updateMenuChecksAction = updateMenuChecksAction;
-        _shaderDriver = new BackdropShaderDriver(_window, _wallpaperImage);
+        _shaderHost = shaderHost;
+        _shaderDriver = new BackdropShaderDriver(_window, _customWallpaperHost);
     }
 
     private bool _isBackdropConfigured;
@@ -97,9 +100,20 @@ public sealed class BackdropManager : IDisposable
         }
 
         var settings = _settingsProvider();
-        bool isWallpaper = IsWallpaperBackdrop(settings.BackdropType);
+        bool isLiveShader = IsLiveShader(settings.BackdropType);
+        bool isStaticWallpaper = IsStaticWallpaper(settings.BackdropType);
 
-        if (isWallpaper)
+        if (isLiveShader)
+        {
+            var ct = BeginNewWallpaperGeneration();
+            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_NONE);
+            if (_rootGrid != null)
+            {
+                _rootGrid.Background = System.Windows.Media.Brushes.Transparent;
+            }
+            _ = UpdateLiveShaderDisplayAsync(ct);
+        }
+        else if (isStaticWallpaper)
         {
             var ct = BeginNewWallpaperGeneration();
             NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_NONE);
@@ -115,19 +129,28 @@ public sealed class BackdropManager : IDisposable
             CancelPendingWallpaperLoad();
             TeardownWallpaperVideo();
 
+            if (_shaderHost != null)
+            {
+                _shaderHost.Effect = null;
+                _shaderHost.Visibility = Visibility.Collapsed;
+            }
+
             if (_customWallpaperHost != null)
             {
                 _customWallpaperHost.Visibility = Visibility.Collapsed;
             }
 
-            if (_wallpaperImage != null && _wallpaperImage.Source != null)
+            if (_wallpaperImage != null)
             {
+                _wallpaperImage.BeginAnimation(UIElement.OpacityProperty, null);
                 _wallpaperImage.Effect = null;
                 _wallpaperImage.Source = null;
-                _currentLoadedWallpaperPath = null;
-                _currentLoadedEffect = null;
-                _currentLoadedIsLight = null;
+                _wallpaperImage.Visibility = Visibility.Collapsed;
             }
+
+            _currentLoadedWallpaperPath = null;
+            _currentLoadedEffect = null;
+            _currentLoadedIsLight = null;
 
             if (string.Equals(settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase))
             {
@@ -200,6 +223,7 @@ public sealed class BackdropManager : IDisposable
     public void TeardownWallpaperVideo()
     {
         if (_wallpaperVideo == null) return;
+        try { _wallpaperVideo.BeginAnimation(UIElement.OpacityProperty, null); } catch { }
         try { _wallpaperVideo.Stop(); } catch { }
         try { _wallpaperVideo.Source = null; } catch { }
         try { _wallpaperVideo.Close(); } catch { }
@@ -240,15 +264,76 @@ public sealed class BackdropManager : IDisposable
         }
     }
 
+    public Task UpdateLiveShaderDisplayAsync(CancellationToken ct)
+    {
+        if (_customWallpaperHost == null || _shaderHost == null || _wallpaperScrim == null)
+            return Task.CompletedTask;
+
+        int currentGen = _wallpaperLoadGeneration;
+        if (ct.IsCancellationRequested || currentGen != _wallpaperLoadGeneration)
+            return Task.CompletedTask;
+
+        var settings = _settingsProvider();
+        string shaderName = settings.WallpaperEffect ?? "Starfield";
+
+        ApplyScrim(settings.WallpaperDimOpacity);
+
+        // Teardown static image completely to free RAM
+        if (_wallpaperImage != null)
+        {
+            _wallpaperImage.BeginAnimation(UIElement.OpacityProperty, null);
+            _wallpaperImage.Effect = null;
+            _wallpaperImage.Source = null;
+            _wallpaperImage.Visibility = Visibility.Collapsed;
+        }
+        _currentLoadedWallpaperPath = null;
+        _currentLoadedEffect = null;
+        _currentLoadedIsLight = null;
+
+        TeardownWallpaperVideo();
+
+        _customWallpaperHost.Visibility = Visibility.Visible;
+        _shaderHost.Visibility = Visibility.Visible;
+        UpdateWallpaperParallax();
+
+        if (MetroShaderEffect.TryCreate(shaderName) is { } shader &&
+            (BackdropShaderDriver.IsHardwareAccelerated || _shaderDriver.BypassHardwareTierCheck))
+        {
+            if (_shaderHost.Effect is MetroShaderEffect active &&
+                string.Equals(active.ShaderName, shader.ShaderName, StringComparison.OrdinalIgnoreCase))
+            {
+                active.EffectParams = shader.EffectParams;
+                _shaderDriver.Attach(active);
+                return Task.CompletedTask;
+            }
+
+            _shaderHost.Effect = shader;
+            _shaderDriver.Attach(shader);
+        }
+        else
+        {
+            _shaderDriver.Detach();
+            _shaderHost.Effect = null;
+        }
+
+        return Task.CompletedTask;
+    }
+
     public async Task UpdateWallpaperDisplayAsync(CancellationToken ct)
     {
         if (_customWallpaperHost == null || _wallpaperImage == null || _wallpaperScrim == null) return;
 
+        _shaderDriver.Detach();
+
+        if (_shaderHost != null)
+        {
+            _shaderHost.Effect = null;
+            _shaderHost.Visibility = Visibility.Collapsed;
+        }
+
         int currentGen = _wallpaperLoadGeneration;
         var settings = _settingsProvider();
         string backdropType = settings.BackdropType;
-
-        string currentEffect = settings.WallpaperEffect ?? "None";
 
         // Apply scrim dim opacity immediately with frozen Freezable brush
         ApplyScrim(settings.WallpaperDimOpacity);
@@ -334,14 +419,14 @@ public sealed class BackdropManager : IDisposable
                 // Static image wallpaper path: release any video decoder resources
                 TeardownWallpaperVideo();
 
-                currentEffect = settings.WallpaperEffect ?? "None";
+                string imageEffect = settings.ImageEffect ?? "None";
                 bool isLight = string.Equals(settings.ThemeMode, "Light", StringComparison.OrdinalIgnoreCase);
 
                 ApplyScrim(settings.WallpaperDimOpacity);
 
                 // If the exact same wallpaper, effect, and theme polarity are already active, reuse without re-rendering
                 if (string.Equals(_currentLoadedWallpaperPath, imagePath, StringComparison.OrdinalIgnoreCase) &&
-                    string.Equals(_currentLoadedEffect, currentEffect, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(_currentLoadedEffect, imageEffect, StringComparison.OrdinalIgnoreCase) &&
                     _currentLoadedIsLight == isLight &&
                     _wallpaperImage.Source != null)
                 {
@@ -349,7 +434,7 @@ public sealed class BackdropManager : IDisposable
                     _customWallpaperHost.Visibility = Visibility.Visible;
                     UpdateWallpaperParallax();
 
-                    ApplyShaderEffect(currentEffect);
+                    ApplyImageEffect(imageEffect);
                     return;
                 }
 
@@ -358,9 +443,9 @@ public sealed class BackdropManager : IDisposable
                 _wallpaperImage.Effect = null;
 
                 BitmapSource? bmp = null;
-                if (WallpaperEffectRenderer.IsSupportedCpuEffect(currentEffect))
+                if (string.Equals(imageEffect, "Blur", StringComparison.OrdinalIgnoreCase))
                 {
-                    bmp = await WallpaperEffectRenderer.GetOrRenderEffectAsync(imagePath, currentEffect, isLight, ct).ConfigureAwait(true);
+                    bmp = await WallpaperEffectRenderer.GetOrRenderEffectAsync(imagePath, "Blur", isLight, ct).ConfigureAwait(true);
                 }
 
                 if (bmp == null)
@@ -377,14 +462,14 @@ public sealed class BackdropManager : IDisposable
                 if (bmp != null)
                 {
                     _currentLoadedWallpaperPath = imagePath;
-                    _currentLoadedEffect = currentEffect;
+                    _currentLoadedEffect = imageEffect;
                     _currentLoadedIsLight = isLight;
                     _wallpaperImage.Source = bmp;
                     _wallpaperImage.Visibility = Visibility.Visible;
                     _customWallpaperHost.Visibility = Visibility.Visible;
                     UpdateWallpaperParallax();
 
-                    ApplyShaderEffect(currentEffect);
+                    ApplyImageEffect(imageEffect);
 
                     // Subtle, silky smooth fade-in
                     var anim = new System.Windows.Media.Animation.DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(200));
@@ -412,6 +497,7 @@ public sealed class BackdropManager : IDisposable
         _shaderDriver.Detach();
         if (_wallpaperImage != null)
         {
+            _wallpaperImage.BeginAnimation(UIElement.OpacityProperty, null);
             _wallpaperImage.Effect = null;
             _wallpaperImage.Source = null;
             _wallpaperImage.Visibility = Visibility.Collapsed;
@@ -433,14 +519,17 @@ public sealed class BackdropManager : IDisposable
         UpdateWallpaperParallax();
     }
 
-    public static bool IsWallpaperBackdrop(string? backdropType)
-    {
-        return string.Equals(backdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(backdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(backdropType, "BingDaily", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(backdropType, "SpotlightDaily", StringComparison.OrdinalIgnoreCase);
-    }
+    public static bool IsStaticWallpaper(string? backdropType) =>
+        string.Equals(backdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(backdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(backdropType, "BingDaily", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(backdropType, "SpotlightDaily", StringComparison.OrdinalIgnoreCase);
 
+    public static bool IsLiveShader(string? backdropType) =>
+        string.Equals(backdropType, "LiveShader", StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsWallpaperBackdrop(string? backdropType) =>
+        IsStaticWallpaper(backdropType) || IsLiveShader(backdropType);
 
     private void ApplyScrim(double opacity)
     {
@@ -459,11 +548,12 @@ public sealed class BackdropManager : IDisposable
         _wallpaperScrim.Background = scrimBrush;
     }
 
-    private void ApplyShaderEffect(string? effectName)
+    private void ApplyImageEffect(string? imageEffect)
     {
         if (_wallpaperImage == null) return;
 
-        if (MetroShaderEffect.TryCreate(effectName) is { } shader &&
+        if (string.Equals(imageEffect, "WaterRipple", StringComparison.OrdinalIgnoreCase) &&
+            MetroShaderEffect.TryCreate("WaterRipple") is { } shader &&
             (BackdropShaderDriver.IsHardwareAccelerated || _shaderDriver.BypassHardwareTierCheck))
         {
             // Reuse active instance if the same shader is already assigned
@@ -551,8 +641,26 @@ public sealed class BackdropManager : IDisposable
 
     public void Dispose()
     {
+        CancelPendingWallpaperLoad();
+        TeardownWallpaperVideo();
         _shaderDriver.Dispose();
-        _wallpaperCts?.Dispose();
-        _wallpaperCts = null;
+
+        if (_wallpaperImage != null)
+        {
+            _wallpaperImage.BeginAnimation(UIElement.OpacityProperty, null);
+            _wallpaperImage.Effect = null;
+            _wallpaperImage.Source = null;
+            _wallpaperImage.Visibility = Visibility.Collapsed;
+        }
+
+        if (_shaderHost != null)
+        {
+            _shaderHost.Effect = null;
+            _shaderHost.Visibility = Visibility.Collapsed;
+        }
+
+        _currentLoadedWallpaperPath = null;
+        _currentLoadedEffect = null;
+        _currentLoadedIsLight = null;
     }
 }

@@ -29,7 +29,8 @@ public partial class MainWindow
         WallpaperVideoTranslateTransform,
         ContentScrollViewer,
         ShowToast,
-        UpdateBackdropMenuChecks);
+        UpdateBackdropMenuChecks,
+        ShaderHost);
 
     private void OnBackdropMicaClick(object sender, RoutedEventArgs e)
     {
@@ -73,8 +74,8 @@ public partial class MainWindow
         {
             var dialog = new Microsoft.Win32.OpenFileDialog
             {
-                Title = "Select Custom Wallpaper (Image or Video)",
-                Filter = "All Supported Wallpapers (*.jpg;*.png;*.bmp;*.webp;*.mp4;*.webm;*.mkv;*.mov)|*.jpg;*.jpeg;*.png;*.bmp;*.webp;*.mp4;*.webm;*.mkv;*.mov|Image Files (*.jpg;*.jpeg;*.png;*.bmp;*.webp)|*.jpg;*.jpeg;*.png;*.bmp;*.webp|Video Files (*.mp4;*.webm;*.mkv;*.mov)|*.mp4;*.webm;*.mkv;*.mov|All Files (*.*)|*.*"
+                Title = "Select Custom Picture",
+                Filter = "Image Files (*.jpg;*.jpeg;*.png;*.bmp;*.webp)|*.jpg;*.jpeg;*.png;*.bmp;*.webp|All Files (*.*)|*.*"
             };
 
             if (dialog.ShowDialog() == true)
@@ -87,7 +88,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"[MainWindow] Failed to open custom wallpaper dialog: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] Failed to open custom picture dialog: {ex.Message}");
         }
         finally
         {
@@ -102,33 +103,73 @@ public partial class MainWindow
 
     private void SetWallpaperDim(double opacity) => BackdropManager.SetWallpaperDim(opacity);
 
-    private void OnWallpaperEffectNoneClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("None");
-    private void OnWallpaperEffectBlurClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Blur");
-    private void OnWallpaperEffectWaterRippleClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("WaterRipple");
-    private void OnWallpaperEffectWaterCausticsClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("WaterCaustics");
-    private void OnWallpaperEffectNeonClockClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("NeonClock");
-    private void OnWallpaperEffectFluidWavesClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("FluidWaves");
-    private void OnWallpaperEffectStarfieldClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Starfield");
-    private void OnWallpaperEffectCircuitClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Circuit");
-    private void OnWallpaperEffectEtherClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Ether");
-    private void OnWallpaperEffectSmokeFogClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("SmokeFog");
-    private void OnWallpaperEffectKalisetClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Kaliset");
-    private void OnWallpaperEffectCyberTunnelClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("CyberTunnel");
-    private void OnWallpaperEffectKoiPondClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("KoiPond");
-    private void OnWallpaperEffectInkClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Ink");
-    private void OnWallpaperEffectPebblesRoseClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Pebbles_Rose");
-    private void OnWallpaperEffectPebblesAmberClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Pebbles_Amber");
-    private void OnWallpaperEffectPebblesIceClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Pebbles_Ice");
-    private void OnWallpaperEffectPebblesObsidianClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Pebbles_Obsidian");
-    private void OnWallpaperEffectPebblesRerankClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Pebbles_Rerank");
-    private void OnWallpaperEffectPebblesTranslateClick(object sender, RoutedEventArgs e) => SetWallpaperEffect("Pebbles_Translate");
+    private void OnImageEffectNoneClick(object sender, RoutedEventArgs e) => SetImageEffect("None");
+    private void OnImageEffectBlurClick(object sender, RoutedEventArgs e) => SetImageEffect("Blur");
+    private void OnImageEffectWaterRippleClick(object sender, RoutedEventArgs e) => SetImageEffect("WaterRipple");
 
-    private void SetWallpaperEffect(string effect)
+    private void SetImageEffect(string effect)
     {
-        Settings.WallpaperEffect = effect;
+        Settings.ImageEffect = effect;
         StorageService.SaveSettings(Settings);
         UpdateBackdropMenuChecks();
         ApplyConfiguredBackdrop();
+    }
+
+    private void SetLiveWallpaper(string shaderName)
+    {
+        Settings.BackdropType = "LiveShader";
+        Settings.WallpaperEffect = shaderName;
+        StorageService.SaveSettings(Settings);
+        UpdateBackdropMenuChecks();
+        ApplyConfiguredBackdrop();
+    }
+
+    private void OnLiveStarfieldClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Starfield");
+    private void OnLiveCyberTunnelClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("CyberTunnel");
+    private void OnLiveFluidWavesClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("FluidWaves");
+    private void OnLiveNeonClockClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("NeonClock");
+    private void OnLiveCircuitClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Circuit");
+    private void OnLiveEtherClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Ether");
+    private void OnLiveSmokeFogClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("SmokeFog");
+    private void OnLiveKalisetClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Kaliset");
+    private void OnLiveKoiPondClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("KoiPond");
+    private void OnLiveInkClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Ink");
+    private void OnLiveWaterCausticsClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("WaterCaustics");
+    private void OnLivePebblesRoseClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Pebbles_Rose");
+    private void OnLivePebblesAmberClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Pebbles_Amber");
+    private void OnLivePebblesIceClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Pebbles_Ice");
+    private void OnLivePebblesObsidianClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Pebbles_Obsidian");
+    private void OnLivePebblesRerankClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Pebbles_Rerank");
+    private void OnLivePebblesTranslateClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Pebbles_Translate");
+
+    private void OnLiveCustomVideoClick(object sender, RoutedEventArgs e)
+    {
+        IsDialogOpen = true;
+        try
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Select Custom Video",
+                Filter = "Video Files (*.mp4;*.webm;*.mkv;*.mov)|*.mp4;*.webm;*.mkv;*.mov|All Files (*.*)|*.*"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                Settings.BackdropType = "Wallpaper";
+                Settings.CustomWallpaperPath = dialog.FileName;
+                StorageService.SaveSettings(Settings);
+                ApplyConfiguredBackdrop();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[MainWindow] Failed to open custom video dialog: {ex.Message}");
+        }
+        finally
+        {
+            IsDialogOpen = false;
+            Activate();
+        }
     }
 
     private void OnParallaxEnabledClick(object sender, RoutedEventArgs e)
@@ -206,6 +247,12 @@ public partial class MainWindow
             BackdropMicaItem.IsChecked = string.Equals(Settings.BackdropType, "Mica", StringComparison.OrdinalIgnoreCase);
         if (BackdropAcrylicItem != null)
             BackdropAcrylicItem.IsChecked = string.Equals(Settings.BackdropType, "Acrylic", StringComparison.OrdinalIgnoreCase);
+
+        bool isStatic = BackdropManager.IsStaticWallpaper(Settings.BackdropType);
+        bool isLive = BackdropManager.IsLiveShader(Settings.BackdropType);
+        bool isVideo = string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase) &&
+                       DailyWallpaperService.IsVideoWallpaper(Settings.CustomWallpaperPath);
+
         if (BackdropDesktopWallpaperItem != null)
             BackdropDesktopWallpaperItem.IsChecked = string.Equals(Settings.BackdropType, "DesktopWallpaper", StringComparison.OrdinalIgnoreCase);
         if (BackdropBingDailyItem != null)
@@ -213,48 +260,61 @@ public partial class MainWindow
         if (BackdropSpotlightDailyItem != null)
             BackdropSpotlightDailyItem.IsChecked = string.Equals(Settings.BackdropType, "SpotlightDaily", StringComparison.OrdinalIgnoreCase);
         if (BackdropCustomImageItem != null)
-            BackdropCustomImageItem.IsChecked = string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase);
+            BackdropCustomImageItem.IsChecked = isStatic && !isVideo && string.Equals(Settings.BackdropType, "Wallpaper", StringComparison.OrdinalIgnoreCase);
 
+        // Image Effects submenu: selectable ONLY when a static wallpaper is active
+        if (ImageEffectsMenu != null)
+        {
+            ImageEffectsMenu.IsEnabled = isStatic && !isVideo;
+        }
+
+        string currentImageEffect = Settings.ImageEffect ?? "None";
+        if (ImageEffectNoneItem != null)
+            ImageEffectNoneItem.IsChecked = isStatic && string.Equals(currentImageEffect, "None", StringComparison.OrdinalIgnoreCase);
+        if (ImageEffectBlurItem != null)
+            ImageEffectBlurItem.IsChecked = isStatic && string.Equals(currentImageEffect, "Blur", StringComparison.OrdinalIgnoreCase);
+        if (ImageEffectWaterRippleItem != null)
+            ImageEffectWaterRippleItem.IsChecked = isStatic && string.Equals(currentImageEffect, "WaterRipple", StringComparison.OrdinalIgnoreCase);
+
+        // Live Wallpapers
+        string currentLiveShader = Settings.WallpaperEffect ?? "Starfield";
+        if (LiveStarfieldItem != null) LiveStarfieldItem.IsChecked = isLive && string.Equals(currentLiveShader, "Starfield", StringComparison.OrdinalIgnoreCase);
+        if (LiveCyberTunnelItem != null) LiveCyberTunnelItem.IsChecked = isLive && string.Equals(currentLiveShader, "CyberTunnel", StringComparison.OrdinalIgnoreCase);
+        if (LiveFluidWavesItem != null) LiveFluidWavesItem.IsChecked = isLive && string.Equals(currentLiveShader, "FluidWaves", StringComparison.OrdinalIgnoreCase);
+        if (LiveNeonClockItem != null) LiveNeonClockItem.IsChecked = isLive && string.Equals(currentLiveShader, "NeonClock", StringComparison.OrdinalIgnoreCase);
+        if (LiveCircuitItem != null) LiveCircuitItem.IsChecked = isLive && string.Equals(currentLiveShader, "Circuit", StringComparison.OrdinalIgnoreCase);
+        if (LiveEtherItem != null) LiveEtherItem.IsChecked = isLive && string.Equals(currentLiveShader, "Ether", StringComparison.OrdinalIgnoreCase);
+        if (LiveSmokeFogItem != null) LiveSmokeFogItem.IsChecked = isLive && string.Equals(currentLiveShader, "SmokeFog", StringComparison.OrdinalIgnoreCase);
+        if (LiveKalisetItem != null) LiveKalisetItem.IsChecked = isLive && string.Equals(currentLiveShader, "Kaliset", StringComparison.OrdinalIgnoreCase);
+        if (LiveKoiPondItem != null) LiveKoiPondItem.IsChecked = isLive && string.Equals(currentLiveShader, "KoiPond", StringComparison.OrdinalIgnoreCase);
+        if (LiveInkItem != null) LiveInkItem.IsChecked = isLive && string.Equals(currentLiveShader, "Ink", StringComparison.OrdinalIgnoreCase);
+        if (LiveWaterCausticsItem != null) LiveWaterCausticsItem.IsChecked = isLive && string.Equals(currentLiveShader, "WaterCaustics", StringComparison.OrdinalIgnoreCase);
+
+        if (LivePebblesRoseItem != null) LivePebblesRoseItem.IsChecked = isLive && (string.Equals(currentLiveShader, "Pebbles_Rose", StringComparison.OrdinalIgnoreCase) || string.Equals(currentLiveShader, "Pebbles", StringComparison.OrdinalIgnoreCase));
+        if (LivePebblesAmberItem != null) LivePebblesAmberItem.IsChecked = isLive && string.Equals(currentLiveShader, "Pebbles_Amber", StringComparison.OrdinalIgnoreCase);
+        if (LivePebblesIceItem != null) LivePebblesIceItem.IsChecked = isLive && string.Equals(currentLiveShader, "Pebbles_Ice", StringComparison.OrdinalIgnoreCase);
+        if (LivePebblesObsidianItem != null) LivePebblesObsidianItem.IsChecked = isLive && string.Equals(currentLiveShader, "Pebbles_Obsidian", StringComparison.OrdinalIgnoreCase);
+        if (LivePebblesRerankItem != null) LivePebblesRerankItem.IsChecked = isLive && string.Equals(currentLiveShader, "Pebbles_Rerank", StringComparison.OrdinalIgnoreCase);
+        if (LivePebblesTranslateItem != null) LivePebblesTranslateItem.IsChecked = isLive && string.Equals(currentLiveShader, "Pebbles_Translate", StringComparison.OrdinalIgnoreCase);
+
+        if (LiveCustomVideoItem != null) LiveCustomVideoItem.IsChecked = isVideo;
+
+        // Dimming and Parallax
         double dim = Settings.WallpaperDimOpacity;
         if (DimLightItem != null) DimLightItem.IsChecked = Math.Abs(dim - 0.50) < 0.05;
         if (DimBalancedItem != null) DimBalancedItem.IsChecked = Math.Abs(dim - 0.70) < 0.05;
         if (DimHeavyItem != null) DimHeavyItem.IsChecked = Math.Abs(dim - 0.85) < 0.05;
 
-        bool isWallpaper = IsWallpaperBackdrop(Settings.BackdropType);
-
+        bool hasBackdropCanvas = isStatic || isLive;
         if (ParallaxEnabledItem != null)
         {
             ParallaxEnabledItem.IsChecked = Settings.WallpaperParallax;
-            ParallaxEnabledItem.IsEnabled = isWallpaper;
+            ParallaxEnabledItem.IsEnabled = hasBackdropCanvas;
         }
         if (ParallaxDisabledItem != null)
         {
             ParallaxDisabledItem.IsChecked = !Settings.WallpaperParallax;
-            ParallaxDisabledItem.IsEnabled = isWallpaper;
+            ParallaxDisabledItem.IsEnabled = hasBackdropCanvas;
         }
-
-        string currentEffect = Settings.WallpaperEffect ?? "None";
-        if (EffectNoneItem != null) EffectNoneItem.IsChecked = string.Equals(currentEffect, "None", StringComparison.OrdinalIgnoreCase);
-        if (EffectBlurItem != null) EffectBlurItem.IsChecked = string.Equals(currentEffect, "Blur", StringComparison.OrdinalIgnoreCase);
-        if (EffectWaterRippleItem != null) EffectWaterRippleItem.IsChecked = string.Equals(currentEffect, "WaterRipple", StringComparison.OrdinalIgnoreCase);
-        if (EffectWaterCausticsItem != null) EffectWaterCausticsItem.IsChecked = string.Equals(currentEffect, "WaterCaustics", StringComparison.OrdinalIgnoreCase);
-        if (EffectNeonClockItem != null) EffectNeonClockItem.IsChecked = string.Equals(currentEffect, "NeonClock", StringComparison.OrdinalIgnoreCase);
-        if (EffectFluidWavesItem != null) EffectFluidWavesItem.IsChecked = string.Equals(currentEffect, "FluidWaves", StringComparison.OrdinalIgnoreCase);
-        if (EffectStarfieldItem != null) EffectStarfieldItem.IsChecked = string.Equals(currentEffect, "Starfield", StringComparison.OrdinalIgnoreCase);
-        if (EffectCircuitItem != null) EffectCircuitItem.IsChecked = string.Equals(currentEffect, "Circuit", StringComparison.OrdinalIgnoreCase);
-        if (EffectEtherItem != null) EffectEtherItem.IsChecked = string.Equals(currentEffect, "Ether", StringComparison.OrdinalIgnoreCase);
-        if (EffectSmokeFogItem != null) EffectSmokeFogItem.IsChecked = string.Equals(currentEffect, "SmokeFog", StringComparison.OrdinalIgnoreCase);
-        if (EffectKalisetItem != null) EffectKalisetItem.IsChecked = string.Equals(currentEffect, "Kaliset", StringComparison.OrdinalIgnoreCase);
-        if (EffectCyberTunnelItem != null) EffectCyberTunnelItem.IsChecked = string.Equals(currentEffect, "CyberTunnel", StringComparison.OrdinalIgnoreCase);
-        if (EffectKoiPondItem != null) EffectKoiPondItem.IsChecked = string.Equals(currentEffect, "KoiPond", StringComparison.OrdinalIgnoreCase);
-        if (EffectInkItem != null) EffectInkItem.IsChecked = string.Equals(currentEffect, "Ink", StringComparison.OrdinalIgnoreCase);
-        if (EffectPebblesRoseItem != null) EffectPebblesRoseItem.IsChecked = string.Equals(currentEffect, "Pebbles_Rose", StringComparison.OrdinalIgnoreCase) || string.Equals(currentEffect, "Pebbles", StringComparison.OrdinalIgnoreCase);
-        if (EffectPebblesAmberItem != null) EffectPebblesAmberItem.IsChecked = string.Equals(currentEffect, "Pebbles_Amber", StringComparison.OrdinalIgnoreCase);
-        if (EffectPebblesIceItem != null) EffectPebblesIceItem.IsChecked = string.Equals(currentEffect, "Pebbles_Ice", StringComparison.OrdinalIgnoreCase);
-        if (EffectPebblesObsidianItem != null) EffectPebblesObsidianItem.IsChecked = string.Equals(currentEffect, "Pebbles_Obsidian", StringComparison.OrdinalIgnoreCase);
-        if (EffectPebblesRerankItem != null) EffectPebblesRerankItem.IsChecked = string.Equals(currentEffect, "Pebbles_Rerank", StringComparison.OrdinalIgnoreCase);
-        if (EffectPebblesTranslateItem != null) EffectPebblesTranslateItem.IsChecked = string.Equals(currentEffect, "Pebbles_Translate", StringComparison.OrdinalIgnoreCase);
-
-        if (WallpaperEffectsMenu != null) WallpaperEffectsMenu.IsEnabled = isWallpaper;
     }
 }

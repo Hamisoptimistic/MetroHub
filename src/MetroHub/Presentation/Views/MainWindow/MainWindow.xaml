@@ -68,6 +68,11 @@
               IsHitTestVisible="False"
               Focusable="False"
               Visibility="Collapsed">
+            <Rectangle x:Name="ShaderHost"
+                       Fill="#000000"
+                       HorizontalAlignment="Stretch"
+                       VerticalAlignment="Stretch"
+                       Visibility="Collapsed" />
             <Image x:Name="WallpaperImage"
                    Stretch="UniformToFill"
                    HorizontalAlignment="Center"
@@ -375,45 +380,51 @@
                             <MenuItem.Icon>
                                 <ui:SymbolIcon Symbol="PaintBucket24" FontSize="20" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </MenuItem.Icon>
-                            <MenuItem x:Name="BackdropMicaItem" Header="Mica (Windows 11)" IsCheckable="True" Click="OnBackdropMicaClick" />
-                            <MenuItem x:Name="BackdropAcrylicItem" Header="Acrylic Obsidian" IsCheckable="True" Click="OnBackdropAcrylicClick" />
-                            <MenuItem x:Name="BackdropDesktopWallpaperItem" Header="Current Desktop Wallpaper" IsCheckable="True" Click="OnBackdropDesktopWallpaperClick" />
-                            <MenuItem x:Name="BackdropBingDailyItem" Header="Bing Wallpaper of the Day" IsCheckable="True" Click="OnBackdropBingDailyClick" />
-                            <MenuItem x:Name="BackdropSpotlightDailyItem" Header="Windows Spotlight Image" IsCheckable="True" Click="OnBackdropSpotlightDailyClick" />
-                            <MenuItem x:Name="BackdropCustomImageItem" Header="Custom Picture or Video..." IsCheckable="True" Click="OnBackdropCustomImageClick" />
+                            <MenuItem x:Name="BackdropMicaItem" Header="Mica" IsCheckable="True" Click="OnBackdropMicaClick" />
+                            <MenuItem x:Name="BackdropAcrylicItem" Header="Acrylic" IsCheckable="True" Click="OnBackdropAcrylicClick" />
                             <Separator />
+                            <MenuItem x:Name="BackdropDesktopWallpaperItem" Header="Desktop Wallpaper" IsCheckable="True" Click="OnBackdropDesktopWallpaperClick" />
+                            <MenuItem x:Name="BackdropBingDailyItem" Header="Bing Daily" IsCheckable="True" Click="OnBackdropBingDailyClick" />
+                            <MenuItem x:Name="BackdropSpotlightDailyItem" Header="Windows Spotlight" IsCheckable="True" Click="OnBackdropSpotlightDailyClick" />
+                            <MenuItem x:Name="BackdropCustomImageItem" Header="Custom Picture..." IsCheckable="True" Click="OnBackdropCustomImageClick" />
+                            <MenuItem x:Name="ImageEffectsMenu" Header="Image Effects">
+                                <MenuItem x:Name="ImageEffectNoneItem" Header="None" IsCheckable="True" Click="OnImageEffectNoneClick" />
+                                <MenuItem x:Name="ImageEffectBlurItem" Header="Frosted Blur" IsCheckable="True" Click="OnImageEffectBlurClick" />
+                                <MenuItem x:Name="ImageEffectWaterRippleItem" Header="Water Ripple" IsCheckable="True" Click="OnImageEffectWaterRippleClick" />
+                            </MenuItem>
+                            <Separator />
+                            <MenuItem x:Name="LiveWallpapersMenu" Header="Live Wallpapers">
+                                <MenuItem x:Name="LiveStarfieldItem" Header="Starfield" IsCheckable="True" Click="OnLiveStarfieldClick" />
+                                <MenuItem x:Name="LiveCyberTunnelItem" Header="Cyber Tunnel" IsCheckable="True" Click="OnLiveCyberTunnelClick" />
+                                <MenuItem x:Name="LiveFluidWavesItem" Header="Fluid Waves" IsCheckable="True" Click="OnLiveFluidWavesClick" />
+                                <MenuItem x:Name="LiveNeonClockItem" Header="Neon Clock" IsCheckable="True" Click="OnLiveNeonClockClick" />
+                                <MenuItem x:Name="LiveCircuitItem" Header="Circuit" IsCheckable="True" Click="OnLiveCircuitClick" />
+                                <MenuItem x:Name="LiveEtherItem" Header="Ether" IsCheckable="True" Click="OnLiveEtherClick" />
+                                <MenuItem x:Name="LiveSmokeFogItem" Header="Smoke &amp; Fog" IsCheckable="True" Click="OnLiveSmokeFogClick" />
+                                <MenuItem x:Name="LiveKalisetItem" Header="Kaliset" IsCheckable="True" Click="OnLiveKalisetClick" />
+                                <MenuItem x:Name="LiveKoiPondItem" Header="Koi Pond" IsCheckable="True" Click="OnLiveKoiPondClick" />
+                                <MenuItem x:Name="LiveInkItem" Header="Ink Flow" IsCheckable="True" Click="OnLiveInkClick" />
+                                <MenuItem x:Name="LiveWaterCausticsItem" Header="Water Caustics" IsCheckable="True" Click="OnLiveWaterCausticsClick" />
+                                <MenuItem x:Name="LivePebblesMenu" Header="Pebbles">
+                                    <MenuItem x:Name="LivePebblesRoseItem" Header="Rose" IsCheckable="True" Click="OnLivePebblesRoseClick" />
+                                    <MenuItem x:Name="LivePebblesAmberItem" Header="Amber" IsCheckable="True" Click="OnLivePebblesAmberClick" />
+                                    <MenuItem x:Name="LivePebblesIceItem" Header="Ice" IsCheckable="True" Click="OnLivePebblesIceClick" />
+                                    <MenuItem x:Name="LivePebblesObsidianItem" Header="Obsidian" IsCheckable="True" Click="OnLivePebblesObsidianClick" />
+                                    <MenuItem x:Name="LivePebblesRerankItem" Header="Violet Neon" IsCheckable="True" Click="OnLivePebblesRerankClick" />
+                                    <MenuItem x:Name="LivePebblesTranslateItem" Header="Teal Coral" IsCheckable="True" Click="OnLivePebblesTranslateClick" />
+                                </MenuItem>
+                                <Separator />
+                                <MenuItem x:Name="LiveCustomVideoItem" Header="Custom Video..." IsCheckable="True" Click="OnLiveCustomVideoClick" />
+                            </MenuItem>
+                            <Separator />
+                            <MenuItem Header="Wallpaper Dimming">
+                                <MenuItem x:Name="DimLightItem" Header="Light" IsCheckable="True" Click="OnWallpaperDimLightClick" />
+                                <MenuItem x:Name="DimBalancedItem" Header="Balanced" IsCheckable="True" Click="OnWallpaperDimBalancedClick" />
+                                <MenuItem x:Name="DimHeavyItem" Header="Heavy" IsCheckable="True" Click="OnWallpaperDimHeavyClick" />
+                            </MenuItem>
                             <MenuItem Header="Wallpaper Parallax">
                                 <MenuItem x:Name="ParallaxEnabledItem" Header="Enabled" IsCheckable="True" Click="OnParallaxEnabledClick" />
                                 <MenuItem x:Name="ParallaxDisabledItem" Header="Disabled" IsCheckable="True" Click="OnParallaxDisabledClick" />
-                            </MenuItem>
-                            <MenuItem Header="Wallpaper Dimming">
-                                <MenuItem x:Name="DimLightItem" Header="Light (50%)" IsCheckable="True" Click="OnWallpaperDimLightClick" />
-                                <MenuItem x:Name="DimBalancedItem" Header="Balanced (70%)" IsCheckable="True" Click="OnWallpaperDimBalancedClick" />
-                                <MenuItem x:Name="DimHeavyItem" Header="Heavy (85%)" IsCheckable="True" Click="OnWallpaperDimHeavyClick" />
-                            </MenuItem>
-                            <MenuItem x:Name="WallpaperEffectsMenu" Header="Wallpaper Effect">
-                                <MenuItem x:Name="EffectNoneItem" Header="None (Original)" IsCheckable="True" Click="OnWallpaperEffectNoneClick" />
-                                <MenuItem x:Name="EffectBlurItem" Header="Frosted Bokeh Blur" IsCheckable="True" Click="OnWallpaperEffectBlurClick" />
-                                <MenuItem x:Name="EffectWaterRippleItem" Header="Water Ripple (Live)" IsCheckable="True" Click="OnWallpaperEffectWaterRippleClick" />
-                                <MenuItem x:Name="EffectWaterCausticsItem" Header="Water Caustics (Live)" IsCheckable="True" Click="OnWallpaperEffectWaterCausticsClick" />
-                                <MenuItem x:Name="EffectNeonClockItem" Header="Neon Clock (Live)" IsCheckable="True" Click="OnWallpaperEffectNeonClockClick" />
-                                <MenuItem x:Name="EffectFluidWavesItem" Header="Fluid Waves (Live)" IsCheckable="True" Click="OnWallpaperEffectFluidWavesClick" />
-                                <MenuItem x:Name="EffectStarfieldItem" Header="Starfield (Live)" IsCheckable="True" Click="OnWallpaperEffectStarfieldClick" />
-                                <MenuItem x:Name="EffectCircuitItem" Header="Circuit (Live)" IsCheckable="True" Click="OnWallpaperEffectCircuitClick" />
-                                <MenuItem x:Name="EffectEtherItem" Header="Ether (Live)" IsCheckable="True" Click="OnWallpaperEffectEtherClick" />
-                                <MenuItem x:Name="EffectSmokeFogItem" Header="Smoke &amp; Fog (Live)" IsCheckable="True" Click="OnWallpaperEffectSmokeFogClick" />
-                                <MenuItem x:Name="EffectKalisetItem" Header="Kaliset (Live)" IsCheckable="True" Click="OnWallpaperEffectKalisetClick" />
-                                <MenuItem x:Name="EffectCyberTunnelItem" Header="CyberTunnel (Live)" IsCheckable="True" Click="OnWallpaperEffectCyberTunnelClick" />
-                                <MenuItem x:Name="EffectKoiPondItem" Header="Koi Pond (Live)" IsCheckable="True" Click="OnWallpaperEffectKoiPondClick" />
-                                <MenuItem x:Name="EffectInkItem" Header="Ink Flow (Live)" IsCheckable="True" Click="OnWallpaperEffectInkClick" />
-                                <MenuItem x:Name="EffectPebblesMenu" Header="Pebbles (Glass)">
-                                    <MenuItem x:Name="EffectPebblesRoseItem" Header="Rose (Plum &amp; Pink)" IsCheckable="True" Click="OnWallpaperEffectPebblesRoseClick" />
-                                    <MenuItem x:Name="EffectPebblesAmberItem" Header="Amber (Mocha &amp; Gold)" IsCheckable="True" Click="OnWallpaperEffectPebblesAmberClick" />
-                                    <MenuItem x:Name="EffectPebblesIceItem" Header="Ice (Arctic &amp; Cyan)" IsCheckable="True" Click="OnWallpaperEffectPebblesIceClick" />
-                                    <MenuItem x:Name="EffectPebblesObsidianItem" Header="Obsidian (Charcoal &amp; Slate)" IsCheckable="True" Click="OnWallpaperEffectPebblesObsidianClick" />
-                                    <MenuItem x:Name="EffectPebblesRerankItem" Header="Rerank (Violet &amp; Neon)" IsCheckable="True" Click="OnWallpaperEffectPebblesRerankClick" />
-                                    <MenuItem x:Name="EffectPebblesTranslateItem" Header="Translate (Teal &amp; Coral)" IsCheckable="True" Click="OnWallpaperEffectPebblesTranslateClick" />
-                                </MenuItem>
                             </MenuItem>
                         </MenuItem>
 

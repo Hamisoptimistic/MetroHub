@@ -319,4 +319,76 @@ public sealed class WaterRippleEffectTests
             Assert.Equal(2.0, ice.EffectParams.W);
         });
     }
+
+    [Theory]
+    [InlineData("Wallpaper", true, false, true)]
+    [InlineData("DesktopWallpaper", true, false, true)]
+    [InlineData("BingDaily", true, false, true)]
+    [InlineData("SpotlightDaily", true, false, true)]
+    [InlineData("LiveShader", false, true, true)]
+    [InlineData("Mica", false, false, false)]
+    [InlineData("Acrylic", false, false, false)]
+    [InlineData("None", false, false, false)]
+    public void BackdropManager_BackdropClassification_ReturnsExpected(
+        string backdropType,
+        bool expectedStatic,
+        bool expectedLive,
+        bool expectedWallpaper)
+    {
+        Assert.Equal(expectedStatic, BackdropManager.IsStaticWallpaper(backdropType));
+        Assert.Equal(expectedLive, BackdropManager.IsLiveShader(backdropType));
+        Assert.Equal(expectedWallpaper, BackdropManager.IsWallpaperBackdrop(backdropType));
+    }
+
+    [Fact]
+    public void BackdropManager_LiveShader_AppliesToShaderHost_WithoutImageSource()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var window = new Window();
+            var settings = new MetroHub.Core.Models.AppSettings
+            {
+                BackdropType = "LiveShader",
+                WallpaperEffect = "Starfield"
+            };
+
+            var hostGrid = new Grid();
+            var shaderHost = new System.Windows.Shapes.Rectangle();
+            var image = new Image();
+            var scrim = new Border();
+
+            hostGrid.Children.Add(shaderHost);
+            hostGrid.Children.Add(image);
+            hostGrid.Children.Add(scrim);
+
+            using var manager = new BackdropManager(
+                window,
+                () => settings,
+                null,
+                hostGrid,
+                image,
+                null,
+                scrim,
+                null,
+                null,
+                null,
+                (_, _) => { },
+                null,
+                shaderHost);
+
+            manager.ShaderDriver.BypassHardwareTierCheck = true;
+
+            var task = manager.UpdateLiveShaderDisplayAsync(System.Threading.CancellationToken.None);
+            Assert.True(task.IsCompleted);
+
+            Assert.Equal(Visibility.Visible, hostGrid.Visibility);
+            Assert.Equal(Visibility.Visible, shaderHost.Visibility);
+            Assert.NotNull(shaderHost.Effect);
+            Assert.IsType<MetroShaderEffect>(shaderHost.Effect);
+
+            // Zero RAM: WallpaperImage must NOT have any source and must be collapsed
+            Assert.Null(image.Source);
+            Assert.Equal(Visibility.Collapsed, image.Visibility);
+        });
+    }
 }
