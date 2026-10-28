@@ -144,6 +144,13 @@ public partial class MainWindow
     private void OnLiveSpectrumNorthSmallClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Spectrum_NorthSmall");
     private void OnLiveSpectrumPrismClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Spectrum_Prism");
     private void OnLiveSpectrumSunsetClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Spectrum_Sunset");
+    private void OnLiveMeadowDynamicClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Meadow_Dynamic");
+    private void OnLiveMeadowSummerClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Meadow_Summer");
+    private void OnLiveMeadowCottageClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Meadow_Cottage");
+    private void OnLiveMeadowPaleBlueClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Meadow_PaleBlue");
+    private void OnLiveMeadowLonelyClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Meadow_Lonely");
+    private void OnLiveMeadowNightClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Meadow_Night");
+    private void OnLiveMeadowMonoClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Meadow_Mono");
     private void OnLiveEarthRealtimeClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Earth_Realtime");
     private void OnLiveEarthCinematicClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Earth_Cinematic");
     private void OnLiveMarsClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Mars");
@@ -310,6 +317,14 @@ public partial class MainWindow
         if (LiveSpectrumNorthSmallItem != null) LiveSpectrumNorthSmallItem.IsChecked = isLive && (string.Equals(currentLiveShader, "Spectrum_NorthSmall", StringComparison.OrdinalIgnoreCase) || string.Equals(currentLiveShader, "Spectrum", StringComparison.OrdinalIgnoreCase));
         if (LiveSpectrumPrismItem != null) LiveSpectrumPrismItem.IsChecked = isLive && string.Equals(currentLiveShader, "Spectrum_Prism", StringComparison.OrdinalIgnoreCase);
         if (LiveSpectrumSunsetItem != null) LiveSpectrumSunsetItem.IsChecked = isLive && string.Equals(currentLiveShader, "Spectrum_Sunset", StringComparison.OrdinalIgnoreCase);
+
+        if (LiveMeadowDynamicItem != null) LiveMeadowDynamicItem.IsChecked = isLive && (string.Equals(currentLiveShader, "Meadow_Dynamic", StringComparison.OrdinalIgnoreCase) || string.Equals(currentLiveShader, "Meadow", StringComparison.OrdinalIgnoreCase));
+        if (LiveMeadowSummerItem != null) LiveMeadowSummerItem.IsChecked = isLive && string.Equals(currentLiveShader, "Meadow_Summer", StringComparison.OrdinalIgnoreCase);
+        if (LiveMeadowCottageItem != null) LiveMeadowCottageItem.IsChecked = isLive && string.Equals(currentLiveShader, "Meadow_Cottage", StringComparison.OrdinalIgnoreCase);
+        if (LiveMeadowPaleBlueItem != null) LiveMeadowPaleBlueItem.IsChecked = isLive && string.Equals(currentLiveShader, "Meadow_PaleBlue", StringComparison.OrdinalIgnoreCase);
+        if (LiveMeadowLonelyItem != null) LiveMeadowLonelyItem.IsChecked = isLive && string.Equals(currentLiveShader, "Meadow_Lonely", StringComparison.OrdinalIgnoreCase);
+        if (LiveMeadowNightItem != null) LiveMeadowNightItem.IsChecked = isLive && string.Equals(currentLiveShader, "Meadow_Night", StringComparison.OrdinalIgnoreCase);
+        if (LiveMeadowMonoItem != null) LiveMeadowMonoItem.IsChecked = isLive && (string.Equals(currentLiveShader, "Meadow_Mono", StringComparison.OrdinalIgnoreCase) || string.Equals(currentLiveShader, "Meadow_BlackAndWhite", StringComparison.OrdinalIgnoreCase));
 
         if (LiveEarthRealtimeItem != null) LiveEarthRealtimeItem.IsChecked = isLive && string.Equals(currentLiveShader, "Earth_Realtime", StringComparison.OrdinalIgnoreCase);
         if (LiveEarthCinematicItem != null) LiveEarthCinematicItem.IsChecked = isLive && (string.Equals(currentLiveShader, "Earth_Cinematic", StringComparison.OrdinalIgnoreCase) || string.Equals(currentLiveShader, "Earth", StringComparison.OrdinalIgnoreCase) || string.Equals(currentLiveShader, "Planet_Procedural", StringComparison.OrdinalIgnoreCase));

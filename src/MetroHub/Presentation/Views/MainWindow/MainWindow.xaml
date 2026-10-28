@@ -418,6 +418,15 @@
                                     <MenuItem x:Name="LiveSpectrumPrismItem" Header="Prism" IsCheckable="True" Click="OnLiveSpectrumPrismClick" />
                                     <MenuItem x:Name="LiveSpectrumSunsetItem" Header="Sunset" IsCheckable="True" Click="OnLiveSpectrumSunsetClick" />
                                 </MenuItem>
+                                <MenuItem x:Name="LiveMeadowMenu" Header="Meadow">
+                                    <MenuItem x:Name="LiveMeadowDynamicItem" Header="Daylight Cycle (Auto)" IsCheckable="True" Click="OnLiveMeadowDynamicClick" />
+                                    <MenuItem x:Name="LiveMeadowSummerItem" Header="Summer" IsCheckable="True" Click="OnLiveMeadowSummerClick" />
+                                    <MenuItem x:Name="LiveMeadowCottageItem" Header="Cottage (Golden Hour)" IsCheckable="True" Click="OnLiveMeadowCottageClick" />
+                                    <MenuItem x:Name="LiveMeadowPaleBlueItem" Header="Pale Blue" IsCheckable="True" Click="OnLiveMeadowPaleBlueClick" />
+                                    <MenuItem x:Name="LiveMeadowLonelyItem" Header="Lonely (Foggy)" IsCheckable="True" Click="OnLiveMeadowLonelyClick" />
+                                    <MenuItem x:Name="LiveMeadowNightItem" Header="Night (Stars)" IsCheckable="True" Click="OnLiveMeadowNightClick" />
+                                    <MenuItem x:Name="LiveMeadowMonoItem" Header="Black &amp; White" IsCheckable="True" Click="OnLiveMeadowMonoClick" />
+                                </MenuItem>
                                 <MenuItem x:Name="LivePlanetsMenu" Header="Planets">
                                     <MenuItem x:Name="LiveEarthRealtimeItem" Header="Earth (Realtime 24h Sync)" IsCheckable="True" Click="OnLiveEarthRealtimeClick" />
                                     <MenuItem x:Name="LiveEarthCinematicItem" Header="Earth (Cinematic Spin)" IsCheckable="True" Click="OnLiveEarthCinematicClick" />

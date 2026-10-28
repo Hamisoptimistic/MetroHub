@@ -160,6 +160,11 @@ public sealed class BackdropShaderDriver : IDisposable
             _activeEffect.CyclePalette(6);
         }
 
+        if (string.Equals(_activeEffect.ShaderName, "Meadow", StringComparison.OrdinalIgnoreCase))
+        {
+            _activeEffect.CyclePalette(7);
+        }
+
         if (_activeEffect.ShaderName.StartsWith("Planet", StringComparison.OrdinalIgnoreCase))
         {
             _isDraggingPlanet = true;

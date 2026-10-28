@@ -35,6 +35,7 @@ public class MetroShaderEffect : ShaderEffect
     public static readonly Point4D DefaultInkParams = new(0.6, 0.0, 1.0, 0.0);
     public static readonly Point4D DefaultPebblesParams = new(0.5, 1.0, 1.0, 0.0);
     public static readonly Point4D DefaultSpectrumParams = new(0.0, 1.0, 1.0, 0.0);
+    public static readonly Point4D DefaultMeadowParams = new(0.35, 0.70, 0.75, 0.0);
 
     public static readonly DependencyProperty InputProperty =
         RegisterPixelShaderSamplerProperty(
@@ -268,6 +269,24 @@ public class MetroShaderEffect : ShaderEffect
                 new MetroShaderEffect("Spectrum", new Point4D(1.0, 1.0, 1.0, 0.0)),
             _ when string.Equals(effectName, "Spectrum_Sunset", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("Spectrum", new Point4D(2.0, 1.0, 1.0, 0.0)),
+
+            // Meadow (ittybitty.dev)
+            _ when string.Equals(effectName, "Meadow", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(effectName, "Meadow_Dynamic", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Meadow", DefaultMeadowParams),
+            _ when string.Equals(effectName, "Meadow_Lonely", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Meadow", new Point4D(0.35, 0.70, 0.75, 1.0)),
+            _ when string.Equals(effectName, "Meadow_Summer", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Meadow", new Point4D(0.35, 0.70, 0.75, 2.0)),
+            _ when string.Equals(effectName, "Meadow_Cottage", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Meadow", new Point4D(0.25, 0.50, 1.00, 3.0)),
+            _ when string.Equals(effectName, "Meadow_PaleBlue", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Meadow", new Point4D(0.35, 0.70, 0.75, 4.0)),
+            _ when string.Equals(effectName, "Meadow_Night", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Meadow", new Point4D(0.35, 0.70, 0.75, 5.0)),
+            _ when string.Equals(effectName, "Meadow_Mono", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(effectName, "Meadow_BlackAndWhite", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Meadow", new Point4D(0.35, 0.70, 0.75, 6.0)),
 
             // Planets
             // Deprecated procedural planet redirects to Earth_Cinematic
