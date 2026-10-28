@@ -1,6 +1,6 @@
 // Meadow (Swaying Grass & Dandelions with Film Still Grading) for MetroHub
 // Based on ittybitty.dev Meadow by Blake Cyze
-// Optimized for Direct3D 9 ps_3_0 with multi-pass register isolation and 24-hour diurnal cycle
+// Optimized for Direct3D 9 ps_3_0 with multi-pass register isolation, 24-hour diurnal cycle, and lossless ALU math
 
 sampler2D InputSampler : register(s0);
 float4 FrameState : register(c0);   // X=Time (Bounded Modulo), Y=AspectRatio, Z=TimeOfDaySeconds, W=0
@@ -9,7 +9,11 @@ float4 MouseState : register(c2);   // X=MouseX, Y=MouseY, Z=LeftDown, W=0
 
 static const float CAM = 0.6;
 static const float RATIO = 1.07;
-static const float ROW_GAP_FACTOR = 1.0 - (1.0 / RATIO); // 0.06542056
+static const float INV_RATIO = 1.0 / 1.07;
+static const float LOG2_RATIO = 0.0976107966;  // log2(1.07)
+static const float INV_LOG2_RATIO = 10.2447683; // 1.0 / log2(1.07)
+static const float ROW_GAP_FACTOR = 1.0 - (1.0 / 1.07);
+static const float INV_003 = 1.0 / 0.03;
 
 float hash11(float p)
 {
@@ -42,13 +46,6 @@ float gust(float2 w, float t)
     return smoothstep(0.2, 0.85, g);
 }
 
-float brush(float2 at, float2 hand)
-{
-    float2 away = at - hand;
-    float near = exp(-dot(away, away) / 0.03);
-    return away.x * 11.0 * near;
-}
-
 float detailOf(float size, float pixel)
 {
     return smoothstep(1.0, 3.0, size / pixel);
@@ -70,17 +67,17 @@ float3 linearToSrgb(float3 c)
     return lerp(c * 12.92, 1.055 * pow(c, (1.0 / 2.4)) - 0.055, step(0.0031308, c));
 }
 
-// Subroutine for flower & seed-clock rendering to keep register count strictly under ps_3_0 limit
+// Subroutine for flower & seed-clock rendering (lossless algebra and gated trigonometry)
 void RenderFlower(
-    float fid, float cell, float fw, float d, float s, float sz, float px, float L,
+    float fid, float cell, float fw, float s, float zw, float px, float L,
     float ground, float rowGap, float bendRow, float xw, float yy, float t,
-    float3 lit, float3 grass, float3 skyLow, float haze, float clocks, float zoom,
-    float2 hand, float touch,
+    float3 lit, float3 grass, float3 skyLow, float haze, float clocks,
+    float2 hand, float handNear,
     inout float3 acc, inout float through)
 {
     float f2 = hash11(fid * 5.71 + 1.3);
     float fx = (cell + 0.15 + 0.7 * f2) * fw;
-    float aw = 1.2 * px / sz;
+    float aw = (1.2 * px) * zw;
     float swing = abs(bendRow) * 0.45;
     if (abs(xw - fx) > swing * 0.625 * L + 1.42 * max(0.0308, 0.55 * aw) + aw * 1.01) return;
 
@@ -90,34 +87,46 @@ void RenderFlower(
     float fg = ground - f3 * rowGap;
     float fh = L * (0.5 + 0.75 * f3 * f4);
     float bend = bendRow * 0.45;
-    float zw = d / zoom;
-    float handNear = touch * exp(-(zw - hand.y) * (zw - hand.y) / 0.03);
-    if (handNear > 0.01) bend += touch * brush(float2(fx, zw), hand) * 0.8;
+
+    // Factored Gaussian hand push
+    if (handNear > 0.01)
+    {
+        float dxHand = fx - hand.x;
+        bend += dxHand * 11.0 * handNear * exp(-dxHand * dxHand * INV_003) * 0.8;
+    }
 
     float hx = fx + bend * 0.5 * fh;
     float hy = fh * (1.0 - 0.15 * bend * bend);
-    float yw = (yy - fg) / sz;
+    float yw = (yy - fg) * zw;
     float r = (clock ? 0.018 : 0.013) * (0.6 + 0.8 * frac(f2 * 9.1));
     float rr = max(r, 0.55 * aw);
-    float energy = (r * r) / (rr * rr);
+    float inv_rr = 1.0 / rr;
+    float energy = (r * r) * (inv_rr * inv_rr);
     float detail = smoothstep(2.0, 6.0, r / aw);
-    float eu = aw / rr;
+    float eu = aw * inv_rr;
     float2 q = float2(xw - hx, yw - hy);
+    float q2 = dot(q, q);
     float a = 0.0;
     float3 c = float3(0.0, 0.0, 0.0);
 
-    if (dot(q, q) < rr * rr * 2.0)
+    if (q2 < rr * rr * 2.0)
     {
         if (clock)
         {
-            float u = length(q) / rr;
-            float fib = lerp(0.5, 0.5 + 0.5 * sin(atan2(q.y, q.x) * 37.0 + f2 * 60.0), detail);
+            float u2 = q2 * (inv_rr * inv_rr);
+            float u = sqrt(u2);
+            float fib = 0.5;
+            float strands = 0.0;
+            if (detail > 0.0)
+            {
+                fib = lerp(0.5, 0.5 + 0.5 * sin(atan2(q.y, q.x) * 37.0 + f2 * 60.0), detail);
+                float fib2 = fib * fib;
+                strands = (fib2 * fib2 * fib2) * smoothstep(0.92 - 0.06 * fib + 0.08, 0.5, u) * detail;
+            }
             float rim = 1.0 - 0.06 * fib;
             float body = smoothstep(rim + eu, rim - 0.45 - eu, u);
-            float fib2 = fib * fib;
-            float strands = (fib2 * fib2 * fib2) * smoothstep(rim + 0.08, 0.5, u) * detail;
             a = saturate(body * 0.65 + strands * 0.2) * lerp(0.5, 1.0, f4);
-            float shade = 0.55 + 0.3 * q.y / rr + 0.25 * (1.0 - sqrt(max(1.0 - u * u, 0.0)));
+            float shade = 0.55 + 0.3 * q.y * inv_rr + 0.25 * (1.0 - sqrt(max(1.0 - u2, 0.0)));
             c = float3(0.86, 0.86, 0.82) * lit * shade;
             c = lerp(c, grass * 0.4 * lit, smoothstep(0.25, 0.08, u) * 0.6 * detail);
         }
@@ -125,14 +134,19 @@ void RenderFlower(
         {
             float squash = clamp(CAM * s * 1.3 + 0.45, 0.5, 0.9);
             float tilt = (f4 - 0.5) * 0.6;
-            float2 b = float2(q.x + q.y * tilt, q.y / (squash * (0.7 + 0.6 * f3)));
-            float u = length(b) / rr;
-            float petals = lerp(0.5, 0.5 + 0.5 * cos(atan2(b.y, b.x) * 18.0 + f2 * 20.0), detail);
+            float2 b_norm = float2(q.x + q.y * tilt, q.y / (squash * (0.7 + 0.6 * f3))) * inv_rr;
+            float u = length(b_norm);
+            float petals = 0.5;
+            float sepal = 0.0;
+            if (detail > 0.0)
+            {
+                petals = lerp(0.5, 0.5 + 0.5 * cos(atan2(b_norm.y, b_norm.x) * 18.0 + f2 * 20.0), detail);
+                sepal = smoothstep(0.92 + eu, 0.92 - eu, length(b_norm + float2(0.0, 0.2))) * detail;
+            }
             float rim = 0.92 + 0.08 * petals;
             float disc = smoothstep(rim + eu, rim - eu, u);
-            float sepal = smoothstep(0.92 + eu, 0.92 - eu, length(b + float2(0.0, 0.2 * rr)) / rr) * detail;
             float3 bloom = float3(0.957, 0.761, 0.122);
-            float3 petal = bloom * (0.8 + 0.3 * f3) * lit * (0.75 + 0.25 * petals * u) * (0.7 + 0.35 * saturate(b.y / rr + 0.3));
+            float3 petal = bloom * (0.8 + 0.3 * f3) * lit * (0.75 + 0.25 * petals * u) * (0.7 + 0.35 * saturate(b_norm.y + 0.3));
             petal = lerp(petal, bloom * float3(1.0, 0.55, 0.2) * lit * 0.7, smoothstep(0.4, 0.1, u));
             a = max(disc, sepal);
             c = lerp(grass * 0.55 * lit, petal, disc);
@@ -152,7 +166,8 @@ void RenderFlower(
     a += sa;
     if (a > 0.0)
     {
-        c = lerp(c / a, skyLow, haze) * a;
+        // Lossless premultiplied-alpha: eliminates 3-channel division by a
+        c = lerp(c, skyLow * a, haze);
         acc += through * c;
         through *= 1.0 - min(a, 1.0);
     }
@@ -278,7 +293,7 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
     else // Variant 0: 24-Hour Diurnal Time-of-Day Automatic Interpolation
     {
         float tod = FrameState.z / 3600.0; // Hour (0.0 to 24.0)
-        if (tod < 5.0) // Deep Night (00:00 - 05:00)
+        if (tod < 5.5) // Deep Night (00:00 - 05:30)
         {
             skyTop = float3(0.004, 0.008, 0.035);
             skyLow = float3(0.016, 0.035, 0.090);
@@ -290,12 +305,17 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
             fog = 0.40;
             exposure = 0.20;
             saturation = 0.50;
+            toning = 0.20;
+            contrast = 1.07;
+            fade = 0.12;
             grain = 0.70;
+            noiseAmt = 0.35;
+            flowers = 0.20;
             clocks = 0.90;
         }
-        else if (tod < 7.5) // Dawn / Sunrise (05:00 - 07:30)
+        else if (tod < 7.0) // Dawn / Sunrise (05:30 - 07:00)
         {
-            float f = (tod - 5.0) / 2.5;
+            float f = (tod - 5.5) / 1.5;
             skyTop = lerp(float3(0.004, 0.008, 0.035), float3(0.157, 0.392, 0.835), f);
             skyLow = lerp(float3(0.016, 0.035, 0.090), float3(1.000, 0.690, 0.404), f);
             light  = lerp(float3(0.012, 0.027, 0.078), float3(1.000, 0.627, 0.271), f);
@@ -304,25 +324,59 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
             tint   = lerp(float3(0.361, 0.478, 0.659), float3(1.000, 0.702, 0.769), f);
             stars = lerp(0.60, 0.0, f);
             fog = lerp(0.40, 0.25, f);
-            saturation = lerp(0.50, 1.80, f);
+            exposure = lerp(0.20, 0.10, f);
+            saturation = lerp(0.50, 1.90, f);
+            toning = 0.20;
+            contrast = lerp(1.07, 1.08, f);
+            fade = lerp(0.12, 0.08, f);
             grain = lerp(0.70, 0.25, f);
+            noiseAmt = lerp(0.35, 0.0, f);
+            flowers = lerp(0.20, 0.90, f);
             clocks = lerp(0.90, 0.30, f);
-            flowers = lerp(0.30, 0.90, f);
         }
-        else if (tod < 11.5) // Morning (07:30 - 11:30)
+        else if (tod < 8.5) // Morning Glow to Pale Mist (07:00 - 08:30)
         {
-            float f = (tod - 7.5) / 4.0;
+            float f = (tod - 7.0) / 1.5;
             skyTop = lerp(float3(0.157, 0.392, 0.835), float3(0.251, 0.478, 0.804), f);
             skyLow = lerp(float3(1.000, 0.690, 0.404), float3(0.765, 0.859, 0.925), f);
             light  = lerp(float3(1.000, 0.627, 0.271), float3(0.576, 0.678, 0.784), f);
             ambient= lerp(float3(0.482, 0.455, 0.380), float3(0.396, 0.549, 0.725), f);
-            grass  = lerp(float3(0.114, 0.459, 0.024), float3(0.090, 0.220, 0.025), f);
+            grass  = lerp(float3(0.114, 0.459, 0.024), float3(0.076, 0.145, 0.027), f);
             tint   = lerp(float3(1.000, 0.702, 0.769), float3(0.639, 0.706, 0.769), f);
-            fog = lerp(0.25, 0.55, f);
-            saturation = lerp(1.80, 0.90, f);
-            clocks = lerp(0.30, 0.50, f);
+            stars = 0.0;
+            fog = lerp(0.25, 0.60, f);
+            exposure = 0.10;
+            saturation = lerp(1.90, 0.80, f);
+            toning = 0.20;
+            contrast = lerp(1.08, 1.02, f);
+            fade = lerp(0.08, 0.30, f);
+            grain = lerp(0.25, 0.40, f);
+            noiseAmt = 0.0;
+            flowers = lerp(0.90, 0.60, f);
+            clocks = lerp(0.30, 0.60, f);
         }
-        else if (tod < 16.5) // Midday / Afternoon (11:30 - 16:30)
+        else if (tod < 10.5) // Pale Mist to Summer Midday (08:30 - 10:30)
+        {
+            float f = (tod - 8.5) / 2.0;
+            skyTop = lerp(float3(0.251, 0.478, 0.804), float3(0.098, 0.274, 0.686), f);
+            skyLow = lerp(float3(0.765, 0.859, 0.925), float3(0.667, 0.761, 0.827), f);
+            light  = lerp(float3(0.576, 0.678, 0.784), float3(1.000, 0.871, 0.675), f);
+            ambient= lerp(float3(0.396, 0.549, 0.725), float3(0.212, 0.337, 0.549), f);
+            grass  = lerp(float3(0.076, 0.145, 0.027), float3(0.102, 0.278, 0.024), f);
+            tint   = lerp(float3(0.639, 0.706, 0.769), float3(0.500, 0.500, 0.500), f);
+            stars = 0.0;
+            fog = lerp(0.60, 0.35, f);
+            exposure = lerp(0.10, 0.0, f);
+            saturation = lerp(0.80, 1.35, f);
+            toning = lerp(0.20, 0.0, f);
+            contrast = lerp(1.02, 1.08, f);
+            fade = lerp(0.30, 0.05, f);
+            grain = lerp(0.40, 0.25, f);
+            noiseAmt = 0.0;
+            flowers = lerp(0.60, 0.85, f);
+            clocks = lerp(0.60, 0.20, f);
+        }
+        else if (tod < 16.0) // Midday / Afternoon (10:30 - 16:00)
         {
             skyTop = float3(0.098, 0.274, 0.686);
             skyLow = float3(0.667, 0.761, 0.827);
@@ -330,53 +384,100 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
             ambient= float3(0.212, 0.337, 0.549);
             grass  = float3(0.102, 0.278, 0.024);
             tint   = float3(0.500, 0.500, 0.500);
+            stars = 0.0;
             fog = 0.35;
             exposure = 0.0;
             saturation = 1.35;
             toning = 0.0;
-            clocks = 0.25;
+            contrast = 1.08;
+            fade = 0.05;
+            grain = 0.25;
+            noiseAmt = 0.0;
             flowers = 0.85;
+            clocks = 0.20;
         }
-        else if (tod < 19.5) // Golden Sunset (16:30 - 19:30)
+        else if (tod < 18.0) // Golden Sunset (16:00 - 18:00)
         {
-            float f = (tod - 16.5) / 3.0;
+            float f = (tod - 16.0) / 2.0;
             skyTop = lerp(float3(0.098, 0.274, 0.686), float3(0.157, 0.392, 0.835), f);
             skyLow = lerp(float3(0.667, 0.761, 0.827), float3(1.000, 0.690, 0.404), f);
             light  = lerp(float3(1.000, 0.871, 0.675), float3(1.000, 0.627, 0.271), f);
             ambient= lerp(float3(0.212, 0.337, 0.549), float3(0.482, 0.455, 0.380), f);
             grass  = lerp(float3(0.102, 0.278, 0.024), float3(0.114, 0.459, 0.024), f);
             tint   = lerp(float3(0.500, 0.500, 0.500), float3(1.000, 0.702, 0.769), f);
+            stars = 0.0;
             fog = lerp(0.35, 0.25, f);
+            exposure = lerp(0.0, 0.10, f);
             saturation = lerp(1.35, 1.90, f);
-            clocks = lerp(0.25, 0.40, f);
+            toning = lerp(0.0, 0.20, f);
+            contrast = 1.08;
+            fade = lerp(0.05, 0.08, f);
+            grain = 0.25;
+            noiseAmt = 0.0;
+            flowers = 1.00;
+            clocks = lerp(0.20, 0.30, f);
         }
-        else if (tod < 22.0) // Twilight / Dusk (19:30 - 22:00)
+        else if (tod < 19.5) // Twilight / Dusk (18:00 - 19:30)
         {
-            float f = (tod - 19.5) / 2.5;
-            skyTop = lerp(float3(0.157, 0.392, 0.835), float3(0.109, 0.113, 0.129), f);
-            skyLow = lerp(float3(1.000, 0.690, 0.404), float3(0.237, 0.243, 0.266), f);
-            light  = lerp(float3(1.000, 0.627, 0.271), float3(0.102, 0.102, 0.109), f);
-            ambient= lerp(float3(0.482, 0.455, 0.380), float3(0.274, 0.282, 0.310), f);
-            grass  = lerp(float3(0.114, 0.459, 0.024), float3(0.076, 0.145, 0.027), f);
-            tint   = lerp(float3(1.000, 0.702, 0.769), float3(0.549, 0.604, 0.651), f);
-            fog = lerp(0.25, 0.60, f);
-            saturation = lerp(1.90, 0.35, f);
-            clocks = lerp(0.40, 0.70, f);
+            float f = (tod - 18.0) / 1.5;
+            skyTop = lerp(float3(0.157, 0.392, 0.835), float3(0.040, 0.060, 0.120), f);
+            skyLow = lerp(float3(1.000, 0.690, 0.404), float3(0.180, 0.160, 0.220), f);
+            light  = lerp(float3(1.000, 0.627, 0.271), float3(0.080, 0.090, 0.150), f);
+            ambient= lerp(float3(0.482, 0.455, 0.380), float3(0.100, 0.120, 0.180), f);
+            grass  = lerp(float3(0.114, 0.459, 0.024), float3(0.035, 0.070, 0.020), f);
+            tint   = lerp(float3(1.000, 0.702, 0.769), float3(0.450, 0.520, 0.650), f);
+            stars = lerp(0.0, 0.35, f);
+            fog = lerp(0.25, 0.45, f);
+            exposure = lerp(0.10, 0.15, f);
+            saturation = lerp(1.90, 0.65, f);
+            toning = 0.20;
+            contrast = lerp(1.08, 1.06, f);
+            fade = lerp(0.08, 0.12, f);
+            grain = lerp(0.25, 0.55, f);
+            noiseAmt = lerp(0.0, 0.20, f);
+            flowers = lerp(1.00, 0.45, f);
+            clocks = lerp(0.30, 0.75, f);
         }
-        else // Nightfall (22:00 - 24:00)
+        else if (tod < 21.0) // Dusk into Full Night (19:30 - 21:00)
         {
-            float f = (tod - 22.0) / 2.0;
-            skyTop = lerp(float3(0.109, 0.113, 0.129), float3(0.004, 0.008, 0.035), f);
-            skyLow = lerp(float3(0.237, 0.243, 0.266), float3(0.016, 0.035, 0.090), f);
-            light  = lerp(float3(0.102, 0.102, 0.109), float3(0.012, 0.027, 0.078), f);
-            ambient= lerp(float3(0.274, 0.282, 0.310), float3(0.024, 0.043, 0.118), f);
-            grass  = lerp(float3(0.076, 0.145, 0.027), float3(0.015, 0.035, 0.010), f);
-            tint   = lerp(float3(0.549, 0.604, 0.651), float3(0.361, 0.478, 0.659), f);
-            stars = lerp(0.0, 0.60, f);
-            fog = lerp(0.60, 0.40, f);
-            saturation = lerp(0.35, 0.50, f);
-            grain = lerp(0.50, 0.70, f);
-            clocks = lerp(0.70, 0.90, f);
+            float f = (tod - 19.5) / 1.5;
+            skyTop = lerp(float3(0.040, 0.060, 0.120), float3(0.004, 0.008, 0.035), f);
+            skyLow = lerp(float3(0.180, 0.160, 0.220), float3(0.016, 0.035, 0.090), f);
+            light  = lerp(float3(0.080, 0.090, 0.150), float3(0.012, 0.027, 0.078), f);
+            ambient= lerp(float3(0.100, 0.120, 0.180), float3(0.024, 0.043, 0.118), f);
+            grass  = lerp(float3(0.035, 0.070, 0.020), float3(0.015, 0.035, 0.010), f);
+            tint   = lerp(float3(0.450, 0.520, 0.650), float3(0.361, 0.478, 0.659), f);
+            stars = lerp(0.35, 0.60, f);
+            fog = lerp(0.45, 0.40, f);
+            exposure = lerp(0.15, 0.20, f);
+            saturation = lerp(0.65, 0.50, f);
+            toning = 0.20;
+            contrast = 1.07;
+            fade = 0.12;
+            grain = lerp(0.55, 0.70, f);
+            noiseAmt = lerp(0.20, 0.35, f);
+            flowers = lerp(0.45, 0.20, f);
+            clocks = lerp(0.75, 0.90, f);
+        }
+        else // Full Night (21:00 - 24:00)
+        {
+            skyTop = float3(0.004, 0.008, 0.035);
+            skyLow = float3(0.016, 0.035, 0.090);
+            light  = float3(0.012, 0.027, 0.078);
+            ambient= float3(0.024, 0.043, 0.118);
+            grass  = float3(0.015, 0.035, 0.010);
+            tint   = float3(0.361, 0.478, 0.659);
+            stars = 0.60;
+            fog = 0.40;
+            exposure = 0.20;
+            saturation = 0.50;
+            toning = 0.20;
+            contrast = 1.07;
+            fade = 0.12;
+            grain = 0.70;
+            noiseAmt = 0.35;
+            flowers = 0.20;
+            clocks = 0.90;
         }
     }
 
@@ -405,13 +506,15 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
     {
         float L = CAM * 0.25;
         float LF = L * 1.5;
-        float lnR = log(RATIO);
-        float iHi = floor(log(CAM / h) / lnR);
-        float iLo = ceil(log(max(CAM - LF * zoom, CAM * 0.2) / h) / lnR);
+
+        // Native base-2 logarithms
+        float iHi = floor(log2(CAM / h) * INV_LOG2_RATIO);
+        float iLo = ceil(log2(max(CAM - LF * zoom, CAM * 0.2) / h) * INV_LOG2_RATIO);
         float spacingW = 0.008;
         float own = 0.6 * spacingW;
         float fw = 0.22;
         float3 lit = ambient + light;
+        float3 skyAmbient = skyLow * (ambient.g * 0.3);
 
         // Pointer influence in world space
         float mouseY = 1.0 - MouseState.y;
@@ -423,15 +526,18 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
 
         float3 acc = float3(0.0, 0.0, 0.0);
         float through = 1.0;
-        float d = pow(RATIO, iLo);
+
+        // Native base-2 exponential & reciprocal stepping
+        float d = exp2(iLo * LOG2_RATIO);
+        float s = 1.0 / d;
 
         [loop]
         for (int n = 0; n < 8; n++)
         {
             float i = iLo + float(n);
             if (i > iHi + 1.0 || through < 0.04) break;
-            float s = 1.0 / d;
             float sz = s * zoom;
+            float zw = d / zoom;
             float ground = uHorizon - CAM * s;
             float lod = smoothstep(1.0, 3.0, spacingW * sz / px);
             bool bladesHere = (lod > 0.0) && (yy < ground + L * 1.1 * sz);
@@ -439,15 +545,21 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
             if (!bladesHere && !flowersHere)
             {
                 d *= RATIO;
+                s *= INV_RATIO;
                 continue;
             }
 
-            float xw = p.x / sz;
-            float zw = d / zoom;
-            float aw = 1.2 * px / sz;
+            // Replace / sz with * zw
+            float xw = p.x * zw;
+            float aw = (1.2 * px) * zw;
             float haze = 1.0 - exp(-d * fog * 0.09);
             float g = gust(float2(xw, zw), t);
             float bendRow = sway * (lerp(0.5, 0.1 + 0.8 * g, gusts) + 0.12 * sin(t * 0.7 + xw * 0.8 + zw * 0.5));
+            float rowGap = CAM * s * ROW_GAP_FACTOR;
+
+            // Factor separable Gaussian handPush along Z
+            float dzHand = zw - hand.y;
+            float handNear = touch > 0.0 ? (touch * exp(-dzHand * dzHand * INV_003)) : 0.0;
 
             if (flowersHere)
             {
@@ -460,8 +572,8 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
                     float fid = cell + i * 71.3;
                     if (hash11(fid * 3.17 + 0.5) <= prob)
                     {
-                        RenderFlower(fid, cell, fw, d, s, sz, px, L, ground, CAM * s * ROW_GAP_FACTOR,
-                                     bendRow, xw, yy, t, lit, grass, skyLow, haze, clocks, zoom, hand, touch, acc, through);
+                        RenderFlower(fid, cell, fw, s, zw, px, L, ground, rowGap,
+                                     bendRow, xw, yy, t, lit, grass, skyLow, haze, clocks, hand, handNear, acc, through);
                     }
                 }
             }
@@ -469,14 +581,25 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
             if (bladesHere && through > 0.04)
             {
                 float tone = noise(float2(xw * 0.6, zw * 0.6)) * 0.6 + noise(float2(xw * 2.1, zw * 2.1)) * 0.4;
-                float hRow = max(yy - ground, 0.0) / sz;
-                float handNear = touch * exp(-(zw - hand.y) * (zw - hand.y) / 0.03);
+                float hRow = max(yy - ground, 0.0) * zw;
                 float bendEst = bendRow + sin(t * 2.4 + xw * 5.0) * 0.12 * (0.4 + g);
-                if (handNear > 0.01) bendEst += touch * brush(float2(xw, zw), hand);
+                if (handNear > 0.01)
+                {
+                    float dxRoot = xw - hand.x;
+                    bendEst += dxRoot * 11.0 * handNear * exp(-dxRoot * dxRoot * INV_003);
+                }
                 bendEst = clamp(bendEst, -1.2, 1.2);
 
                 float lean = 0.6 * hRow * hRow / L;
                 float id = floor((xw - bendEst * lean) / spacingW);
+
+                // Hoisted loop-invariants
+                float side = max(0.00308, 0.5 * aw) + aw;
+                float side2 = side * side;
+                float wavePhase = t * 2.4;
+                float waveAmp = 0.12 * (0.4 + g);
+                float toneMul = 0.65 + 0.7 * tone;
+                float swayMul = (g - 0.4) * 0.6 * sway;
 
                 [loop]
                 for (int k = -1; k <= 1; k++)
@@ -487,13 +610,14 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
                     float hB = frac(hA * 13.17 + 0.31);
                     float hC = frac(hA * 71.31 + 0.67);
                     float x0 = (cell + hA) * spacingW;
-                    float gr = ground - hC * (CAM * s * ROW_GAP_FACTOR);
+                    float gr = ground - hC * rowGap;
                     float bl = L * (0.4 + 0.75 * hB * hB);
-                    float above = (yy - gr) / sz;
+                    float above = (yy - gr) * zw;
                     if (above < 0.0 || above > bl) continue;
 
-                    float bend = bendRow + sin(t * 2.4 + x0 * 5.0) * 0.12 * (0.4 + g);
-                    if (handNear > 0.01) bend += touch * brush(float2(x0, zw), hand);
+                    float dxBlade = x0 - hand.x;
+                    float bend = bendRow + sin(wavePhase + x0 * 5.0) * waveAmp;
+                    if (handNear > 0.01) bend += dxBlade * 11.0 * handNear * exp(-dxBlade * dxBlade * INV_003);
                     bend = clamp(bend, -1.2, 1.2);
                     float tall = bl * (1.0 - 0.3 * bend * bend);
                     float y = above / tall;
@@ -502,13 +626,14 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
                     float stray = ((hA - 0.5) + (hC - 0.5) * abs(bendRow)) * own;
                     float cx = x0 + bend * lean + stray * y * y;
                     float sl = 1.2 * bend * hRow / L + 2.0 * stray * y / tall;
-                    float side = max(0.00308, 0.5 * aw) + aw;
-                    if ((xw - cx) * (xw - cx) > side * side * (1.0 + sl * sl)) continue;
+                    float diffX = xw - cx;
+                    float normFactor = 1.0 + sl * sl;
+                    if (diffX * diffX > side2 * normFactor) continue;
 
                     float taper = saturate(1.0 - y);
                     float w = 0.0022 * (0.6 + 0.8 * hB) * (sqrt(taper) * (0.8 + 0.2 * taper));
                     float wd = max(w, 0.5 * aw);
-                    float dx = (xw - cx) / sqrt(1.0 + sl * sl);
+                    float dx = diffX * rsqrt(normFactor); // Native RSQ
                     float a = smoothstep(wd + aw, wd - aw, abs(dx)) * lod * w / wd;
                     if (a <= 0.0) continue;
 
@@ -516,8 +641,8 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
                     float yShade = y * (1.35 - 0.35 * y);
                     float3 c = base * lerp(0.1, 1.0, yShade) * (ambient + light * (0.6 + 0.4 * hB));
                     c *= 0.75 + 0.3 * clamp(dx / wd, -1.0, 1.0) * detailOf(w, aw);
-                    c *= (0.65 + 0.7 * tone) * (1.0 + (g - 0.4) * 0.6 * sway * y);
-                    c += skyLow * ambient.g * 0.3 * y * y * hB * hB;
+                    c *= toneMul * (1.0 + swayMul * y);
+                    c += skyAmbient * (y * y * hB * hB);
                     c = lerp(c, skyLow, haze);
 
                     acc += through * a * c;
@@ -526,6 +651,7 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
                 }
             }
             d *= RATIO;
+            s *= INV_RATIO;
         }
 
         // Ground under the blades
@@ -536,7 +662,12 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
         float tex = noise(float2(xm * 30.0, zm * 6.0)) * 0.5 + noise(float2(xm * 160.0, zm * 8.0)) * 0.5;
         float toneM = noise(float2(xm * 0.6, zm * 0.6)) * 0.6 + noise(float2(xm * 2.1, zm * 2.1)) * 0.4;
         float3 under = grass * lit * lerp(0.4, 0.1, lodM) * (0.6 + 0.8 * tex) * (0.65 + 0.7 * toneM);
-        under *= 1.0 + (gust(float2(xm, zm), t) - 0.4) * 0.4 * sway * (1.0 - lodM);
+
+        // Gated ground gust (skipped when 1.0 - lodM == 0.0)
+        if (lodM < 1.0)
+        {
+            under *= 1.0 + (gust(float2(xm, zm), t) - 0.4) * 0.4 * sway * (1.0 - lodM);
+        }
         under = lerp(under, skyLow, 1.0 - exp(-dm * fog * 0.09));
         colour = acc + through * under;
         colour = lerp(colour, skyCol, smoothstep(0.012, 0.0, h) * fog);
@@ -551,29 +682,31 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
     float3 toned = lerp(2.0 * l * tint, 1.0 - 2.0 * (1.0 - l) * (1.0 - tint), step(0.5, l));
     c = lerp(c, toned, toning);
     c = (c - 0.5) * contrast + 0.5;
-    c = lerp(float3(fade * 0.2, fade * 0.2, fade * 0.2),
-             float3(1.0 - fade * 0.06, 1.0 - fade * 0.06, 1.0 - fade * 0.06),
-             saturate(c));
+
+    // Algebraic fade (single mad instruction)
+    c = saturate(c) * (1.0 - fade * 0.26) + (fade * 0.20);
     float2 vq = uv - 0.5;
     c *= 1.0 - (0.15 + 0.5 * grain) * smoothstep(0.2, 0.9, dot(vq, vq) * 2.2);
 
-    // Dynamic animated grain & chromatic noise
-    float2 gp = uv * 1080.0;
-    float ft = time * 12.0;
-    float f0 = floor(ft);
-    float fr = smoothstep(0.0, 1.0, frac(ft));
-    l = dot(c, float3(0.2126, 0.7152, 0.0722));
-    if (grain > 0.0)
+    // Gated dynamic grain & chromatic noise
+    if (grain > 0.0 || noiseAmt > 0.0)
     {
-        float gSample = lerp(grainAt(gp, f0), grainAt(gp, f0 + 1.0), fr) * 0.55 + grainAt(gp, -1.0) * 0.45;
-        c += gSample * grain * 0.13 * (0.35 + l * (1.0 - l) * 2.6);
-    }
-    if (noiseAmt > 0.0)
-    {
-        float3 cn = lerp(chromaAt(gp, f0), chromaAt(gp, f0 + 1.0), fr);
-        c += (cn - dot(cn, float3(0.2126, 0.7152, 0.0722))) * noiseAmt * 0.35 * (1.0 - l * 0.6);
+        float2 gp = uv * 1080.0;
+        float ft = time * 12.0;
+        float f0 = floor(ft);
+        float fr = smoothstep(0.0, 1.0, frac(ft));
+        l = dot(c, float3(0.2126, 0.7152, 0.0722));
+        if (grain > 0.0)
+        {
+            float gSample = lerp(grainAt(gp, f0), grainAt(gp, f0 + 1.0), fr) * 0.55 + grainAt(gp, -1.0) * 0.45;
+            c += gSample * grain * 0.13 * (0.35 + l * (1.0 - l) * 2.6);
+        }
+        if (noiseAmt > 0.0)
+        {
+            float3 cn = lerp(chromaAt(gp, f0), chromaAt(gp, f0 + 1.0), fr);
+            c += (cn - dot(cn, float3(0.2126, 0.7152, 0.0722))) * noiseAmt * 0.35 * (1.0 - l * 0.6);
+        }
     }
 
     return float4(saturate(c), 1.0);
 }
-
