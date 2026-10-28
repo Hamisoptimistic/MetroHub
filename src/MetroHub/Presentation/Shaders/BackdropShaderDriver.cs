@@ -178,9 +178,26 @@ public sealed class BackdropShaderDriver : IDisposable
                 return true;
             }
 
-            current = VisualTreeHelper.GetParent(current);
+            current = GetParent(current);
         }
         return false;
+    }
+
+    private static DependencyObject? GetParent(DependencyObject node)
+    {
+        if (node is Visual or Visual3D)
+        {
+            var parent = VisualTreeHelper.GetParent(node);
+            if (parent != null) return parent;
+        }
+
+        if (node is FrameworkElement fe)
+            return fe.Parent ?? fe.TemplatedParent ?? LogicalTreeHelper.GetParent(node);
+
+        if (node is FrameworkContentElement fce)
+            return fce.Parent ?? fce.TemplatedParent ?? LogicalTreeHelper.GetParent(node);
+
+        return LogicalTreeHelper.GetParent(node);
     }
 
     private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e) => UpdateDriverState();
