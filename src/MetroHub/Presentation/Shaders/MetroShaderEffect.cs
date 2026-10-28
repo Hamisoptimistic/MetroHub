@@ -34,6 +34,7 @@ public class MetroShaderEffect : ShaderEffect
     public static readonly Point4D DefaultKoiPondParams = new(0.7, 4.0, 1.5, 5.0);
     public static readonly Point4D DefaultInkParams = new(0.6, 0.0, 1.0, 0.0);
     public static readonly Point4D DefaultPebblesParams = new(0.5, 1.0, 1.0, 0.0);
+    public static readonly Point4D DefaultSpectrumParams = new(0.0, 1.0, 1.0, 0.0);
 
     public static readonly DependencyProperty InputProperty =
         RegisterPixelShaderSamplerProperty(
@@ -259,10 +260,20 @@ public class MetroShaderEffect : ShaderEffect
             _ when string.Equals(effectName, "Pebbles_Translate", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("Pebbles", new Point4D(0.5, 1.0, 1.0, 5.0)),
 
+            // Spectrum (ittybitty.dev)
+            _ when string.Equals(effectName, "Spectrum", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(effectName, "Spectrum_NorthSmall", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Spectrum", DefaultSpectrumParams),
+            _ when string.Equals(effectName, "Spectrum_Prism", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Spectrum", new Point4D(1.0, 1.0, 1.0, 0.0)),
+            _ when string.Equals(effectName, "Spectrum_Sunset", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Spectrum", new Point4D(2.0, 1.0, 1.0, 0.0)),
+
             // Planets
+            // Deprecated procedural planet redirects to Earth_Cinematic
             _ when string.Equals(effectName, "Planet_Procedural", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(effectName, "PlanetProcedural", StringComparison.OrdinalIgnoreCase) =>
-                new MetroShaderEffect("PlanetProcedural", new Point4D(0.5, 0.3, 2.5, 0.08)),
+                TryCreate("Earth_Cinematic"),
 
             _ when string.Equals(effectName, "Earth_Realtime", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("Planet", new Point4D(0.0, 0.30, 1.0, 0.50))
@@ -271,7 +282,7 @@ public class MetroShaderEffect : ShaderEffect
                     NightInput = GetPlanetBrush("2k_earth_night.jpeg"),
                     CloudsInput = GetPlanetBrush("2k_earth_clouds.jpeg"),
                     SpecularInput = GetPlanetBrush("2k_earth_specular.jpeg"),
-                    AtmosphereColor = new Point4D(0.05, 0.30, 0.90, 3.0)
+                    AtmosphereColor = new Point4D(0.05, 0.30, 0.90, 4.0)
                 },
 
             _ when string.Equals(effectName, "Earth_Cinematic", StringComparison.OrdinalIgnoreCase) ||
@@ -282,7 +293,7 @@ public class MetroShaderEffect : ShaderEffect
                     NightInput = GetPlanetBrush("2k_earth_night.jpeg"),
                     CloudsInput = GetPlanetBrush("2k_earth_clouds.jpeg"),
                     SpecularInput = GetPlanetBrush("2k_earth_specular.jpeg"),
-                    AtmosphereColor = new Point4D(0.05, 0.30, 0.90, 3.0)
+                    AtmosphereColor = new Point4D(0.05, 0.30, 0.90, 4.0)
                 },
 
             _ when string.Equals(effectName, "Mars", StringComparison.OrdinalIgnoreCase) =>
@@ -292,7 +303,7 @@ public class MetroShaderEffect : ShaderEffect
                     NightInput = BlackBrush.Value,
                     CloudsInput = BlackBrush.Value,
                     SpecularInput = BlackBrush.Value,
-                    AtmosphereColor = new Point4D(0.90, 0.15, 0.0, 3.0)
+                    AtmosphereColor = new Point4D(0.90, 0.15, 0.0, 4.0)
                 },
 
             _ when string.Equals(effectName, "Jupiter", StringComparison.OrdinalIgnoreCase) =>
@@ -302,7 +313,7 @@ public class MetroShaderEffect : ShaderEffect
                     NightInput = BlackBrush.Value,
                     CloudsInput = BlackBrush.Value,
                     SpecularInput = BlackBrush.Value,
-                    AtmosphereColor = new Point4D(0.36, 0.92, 0.95, 3.0)
+                    AtmosphereColor = new Point4D(0.36, 0.92, 0.95, 4.0)
                 },
 
             _ when string.Equals(effectName, "Venus", StringComparison.OrdinalIgnoreCase) =>
@@ -312,7 +323,7 @@ public class MetroShaderEffect : ShaderEffect
                     NightInput = BlackBrush.Value,
                     CloudsInput = BlackBrush.Value,
                     SpecularInput = BlackBrush.Value,
-                    AtmosphereColor = new Point4D(0.90, 0.30, 0.0, 3.0)
+                    AtmosphereColor = new Point4D(0.90, 0.30, 0.0, 4.0)
                 },
 
             _ when string.Equals(effectName, "Mercury", StringComparison.OrdinalIgnoreCase) =>
@@ -322,7 +333,7 @@ public class MetroShaderEffect : ShaderEffect
                     NightInput = BlackBrush.Value,
                     CloudsInput = BlackBrush.Value,
                     SpecularInput = BlackBrush.Value,
-                    AtmosphereColor = new Point4D(1.0, 1.0, 1.0, 3.0)
+                    AtmosphereColor = new Point4D(1.0, 1.0, 1.0, 4.0)
                 },
 
             _ when string.Equals(effectName, "Moon", StringComparison.OrdinalIgnoreCase) =>
@@ -332,7 +343,7 @@ public class MetroShaderEffect : ShaderEffect
                     NightInput = BlackBrush.Value,
                     CloudsInput = BlackBrush.Value,
                     SpecularInput = BlackBrush.Value,
-                    AtmosphereColor = new Point4D(1.0, 1.0, 1.0, 3.0)
+                    AtmosphereColor = new Point4D(1.0, 1.0, 1.0, 4.0)
                 },
             _ => null
         };

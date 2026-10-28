@@ -320,6 +320,33 @@ public sealed class WaterRippleEffectTests
         });
     }
 
+    [Fact]
+    public void MetroShaderEffect_SpectrumVariants_ResolveProperly()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            Assert.True(MetroShaderEffect.IsSupported("Spectrum"));
+            Assert.True(MetroShaderEffect.IsSupported("Spectrum_NorthSmall"));
+            Assert.True(MetroShaderEffect.IsSupported("Spectrum_Prism"));
+            Assert.True(MetroShaderEffect.IsSupported("Spectrum_Sunset"));
+
+            var northSmall = MetroShaderEffect.TryCreate("Spectrum_NorthSmall");
+            Assert.NotNull(northSmall);
+            Assert.Equal("Spectrum", northSmall.ShaderName);
+            Assert.Equal(0.0, northSmall.EffectParams.X);
+
+            var prism = MetroShaderEffect.TryCreate("Spectrum_Prism");
+            Assert.NotNull(prism);
+            Assert.Equal("Spectrum", prism.ShaderName);
+            Assert.Equal(1.0, prism.EffectParams.X);
+
+            var sunset = MetroShaderEffect.TryCreate("Spectrum_Sunset");
+            Assert.NotNull(sunset);
+            Assert.Equal("Spectrum", sunset.ShaderName);
+            Assert.Equal(2.0, sunset.EffectParams.X);
+        });
+    }
+
     [Theory]
     [InlineData("Wallpaper", true, false, true)]
     [InlineData("DesktopWallpaper", true, false, true)]

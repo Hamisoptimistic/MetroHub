@@ -413,8 +413,12 @@
                                     <MenuItem x:Name="LivePebblesRerankItem" Header="Violet Neon" IsCheckable="True" Click="OnLivePebblesRerankClick" />
                                     <MenuItem x:Name="LivePebblesTranslateItem" Header="Teal Coral" IsCheckable="True" Click="OnLivePebblesTranslateClick" />
                                 </MenuItem>
+                                <MenuItem x:Name="LiveSpectrumMenu" Header="Light Spectrum">
+                                    <MenuItem x:Name="LiveSpectrumNorthSmallItem" Header="North Small" IsCheckable="True" Click="OnLiveSpectrumNorthSmallClick" />
+                                    <MenuItem x:Name="LiveSpectrumPrismItem" Header="Prism" IsCheckable="True" Click="OnLiveSpectrumPrismClick" />
+                                    <MenuItem x:Name="LiveSpectrumSunsetItem" Header="Sunset" IsCheckable="True" Click="OnLiveSpectrumSunsetClick" />
+                                </MenuItem>
                                 <MenuItem x:Name="LivePlanetsMenu" Header="Planets">
-                                    <MenuItem x:Name="LivePlanetProceduralItem" Header="Procedural Planet" IsCheckable="True" Click="OnLivePlanetProceduralClick" />
                                     <MenuItem x:Name="LiveEarthRealtimeItem" Header="Earth (Realtime 24h Sync)" IsCheckable="True" Click="OnLiveEarthRealtimeClick" />
                                     <MenuItem x:Name="LiveEarthCinematicItem" Header="Earth (Cinematic Spin)" IsCheckable="True" Click="OnLiveEarthCinematicClick" />
                                     <MenuItem x:Name="LiveMarsItem" Header="Mars" IsCheckable="True" Click="OnLiveMarsClick" />

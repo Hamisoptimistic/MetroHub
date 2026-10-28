@@ -141,7 +141,9 @@ public partial class MainWindow
     private void OnLivePebblesObsidianClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Pebbles_Obsidian");
     private void OnLivePebblesRerankClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Pebbles_Rerank");
     private void OnLivePebblesTranslateClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Pebbles_Translate");
-    private void OnLivePlanetProceduralClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Planet_Procedural");
+    private void OnLiveSpectrumNorthSmallClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Spectrum_NorthSmall");
+    private void OnLiveSpectrumPrismClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Spectrum_Prism");
+    private void OnLiveSpectrumSunsetClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Spectrum_Sunset");
     private void OnLiveEarthRealtimeClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Earth_Realtime");
     private void OnLiveEarthCinematicClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Earth_Cinematic");
     private void OnLiveMarsClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Mars");
@@ -305,9 +307,12 @@ public partial class MainWindow
         if (LivePebblesRerankItem != null) LivePebblesRerankItem.IsChecked = isLive && string.Equals(currentLiveShader, "Pebbles_Rerank", StringComparison.OrdinalIgnoreCase);
         if (LivePebblesTranslateItem != null) LivePebblesTranslateItem.IsChecked = isLive && string.Equals(currentLiveShader, "Pebbles_Translate", StringComparison.OrdinalIgnoreCase);
 
-        if (LivePlanetProceduralItem != null) LivePlanetProceduralItem.IsChecked = isLive && (string.Equals(currentLiveShader, "Planet_Procedural", StringComparison.OrdinalIgnoreCase) || string.Equals(currentLiveShader, "PlanetProcedural", StringComparison.OrdinalIgnoreCase));
+        if (LiveSpectrumNorthSmallItem != null) LiveSpectrumNorthSmallItem.IsChecked = isLive && (string.Equals(currentLiveShader, "Spectrum_NorthSmall", StringComparison.OrdinalIgnoreCase) || string.Equals(currentLiveShader, "Spectrum", StringComparison.OrdinalIgnoreCase));
+        if (LiveSpectrumPrismItem != null) LiveSpectrumPrismItem.IsChecked = isLive && string.Equals(currentLiveShader, "Spectrum_Prism", StringComparison.OrdinalIgnoreCase);
+        if (LiveSpectrumSunsetItem != null) LiveSpectrumSunsetItem.IsChecked = isLive && string.Equals(currentLiveShader, "Spectrum_Sunset", StringComparison.OrdinalIgnoreCase);
+
         if (LiveEarthRealtimeItem != null) LiveEarthRealtimeItem.IsChecked = isLive && string.Equals(currentLiveShader, "Earth_Realtime", StringComparison.OrdinalIgnoreCase);
-        if (LiveEarthCinematicItem != null) LiveEarthCinematicItem.IsChecked = isLive && (string.Equals(currentLiveShader, "Earth_Cinematic", StringComparison.OrdinalIgnoreCase) || string.Equals(currentLiveShader, "Earth", StringComparison.OrdinalIgnoreCase));
+        if (LiveEarthCinematicItem != null) LiveEarthCinematicItem.IsChecked = isLive && (string.Equals(currentLiveShader, "Earth_Cinematic", StringComparison.OrdinalIgnoreCase) || string.Equals(currentLiveShader, "Earth", StringComparison.OrdinalIgnoreCase) || string.Equals(currentLiveShader, "Planet_Procedural", StringComparison.OrdinalIgnoreCase));
         if (LiveMarsItem != null) LiveMarsItem.IsChecked = isLive && string.Equals(currentLiveShader, "Mars", StringComparison.OrdinalIgnoreCase);
         if (LiveJupiterItem != null) LiveJupiterItem.IsChecked = isLive && string.Equals(currentLiveShader, "Jupiter", StringComparison.OrdinalIgnoreCase);
         if (LiveVenusItem != null) LiveVenusItem.IsChecked = isLive && string.Equals(currentLiveShader, "Venus", StringComparison.OrdinalIgnoreCase);
