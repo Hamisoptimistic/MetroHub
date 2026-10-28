@@ -48,18 +48,11 @@
 
   <ItemGroup>
     <None Remove="Assets\**" />
-    <Resource Include="Assets\app.ico" />
-    <Resource Include="Assets\Fonts\**\*.ttf" />
-    <Resource Include="Assets\Weather\Glassmorphic\*.png" />
-    <Resource Include="Assets\Radio\*.json" />
-    <Resource Include="Assets\Rover\**\*" />
-    <Resource Include="Assets\quotes.json" />
-    <Resource Include="Assets\Planets\**\*" />
-    <Resource Include="Assets\*.png" />
+    <Resource Include="Assets\**\*" Exclude="Assets\Fonts\*.txt" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Presentation\Shaders\*.ps" LogicalName="MetroHub.Presentation.Shaders.%(Filename).ps" />
+    <EmbeddedResource Include="Presentation\Shaders\Bytecode\*.ps" LogicalName="MetroHub.Presentation.Shaders.%(Filename).ps" />
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,6 @@
 param(
     [string]$ShaderDir = "$PSScriptRoot\..\src\MetroHub\Presentation\Shaders",
+    [string]$OutputDir = "$ShaderDir\Bytecode",
     [string]$TargetProfile = "ps_3_0"
 )
 
@@ -64,18 +65,23 @@ if ($hlslFiles.Count -eq 0) {
     exit 0
 }
 
+if (-not (Test-Path $OutputDir)) {
+    [System.IO.Directory]::CreateDirectory($OutputDir) | Out-Null
+}
+
 Push-Location $ShaderDir
 try {
     foreach ($file in $hlslFiles) {
         if ($file.Name -like "*Palette*" -or $file.Name -like "*.inc.hlsl") {
             continue
         }
-        $outputPath = [System.IO.Path]::ChangeExtension($file.FullName, ".ps")
-        Write-Host "Compiling $($file.Name) -> $([System.IO.Path]::GetFileName($outputPath)) [$TargetProfile]..."
+        $outName = [System.IO.Path]::ChangeExtension($file.Name, ".ps")
+        $outputPath = [System.IO.Path]::Combine($OutputDir, $outName)
+        Write-Host "Compiling $($file.Name) -> $outName [$TargetProfile]..."
         $hlsl = [System.IO.File]::ReadAllText($file.FullName)
         $bytes = [D3DCompiler]::Compile($hlsl, $file.FullName, "main", $TargetProfile)
         [System.IO.File]::WriteAllBytes($outputPath, $bytes)
-        Write-Host "Success: $([System.IO.Path]::GetFileName($outputPath)) ($($bytes.Length) bytes written)." -ForegroundColor Green
+        Write-Host "Success: $outName ($($bytes.Length) bytes written)." -ForegroundColor Green
     }
 }
 finally {
