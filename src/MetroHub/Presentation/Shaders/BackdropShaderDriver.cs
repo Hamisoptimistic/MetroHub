@@ -46,6 +46,10 @@ public sealed class BackdropShaderDriver : IDisposable
     private Point _lastDragPoint = new(-1, -1);
     private double _planetDragYaw;
     private double _planetDragVelocity;
+    private double _targetMouseX = 0.5;
+    private double _targetMouseY = 0.5;
+    private double _smoothedMouseX = 0.5;
+    private double _smoothedMouseY = 0.5;
 
     /// <summary>
     /// Indicates whether Direct3D Tier 2 (full hardware acceleration) is available.
@@ -106,6 +110,10 @@ public sealed class BackdropShaderDriver : IDisposable
         _isDraggingPlanet = false;
         _lastDragPoint = new Point(-1, -1);
         _planetDragVelocity = 0.0;
+        _targetMouseX = 0.5;
+        _targetMouseY = 0.5;
+        _smoothedMouseX = 0.5;
+        _smoothedMouseY = 0.5;
         _window.PreviewMouseLeftButtonDown += OnWindowMouseDown;
         _window.PreviewMouseLeftButtonUp -= OnWindowMouseUp;
         _window.PreviewMouseLeftButtonUp += OnWindowMouseUp;
@@ -124,6 +132,10 @@ public sealed class BackdropShaderDriver : IDisposable
         _isDraggingPlanet = false;
         _lastDragPoint = new Point(-1, -1);
         _planetDragVelocity = 0.0;
+        _targetMouseX = 0.5;
+        _targetMouseY = 0.5;
+        _smoothedMouseX = 0.5;
+        _smoothedMouseY = 0.5;
         _activeEffect = null;
         _inkLastTickSeconds = -1.0;
         _inkLastX = -100.0;
@@ -297,8 +309,22 @@ public sealed class BackdropShaderDriver : IDisposable
             Point mousePos = System.Windows.Input.Mouse.GetPosition(_window);
             double width = _window.ActualWidth > 0 ? _window.ActualWidth : SystemParameters.PrimaryScreenWidth;
             double height = _window.ActualHeight > 0 ? _window.ActualHeight : SystemParameters.PrimaryScreenHeight;
-            double mx = Math.Clamp(mousePos.X / width, 0.0, 1.0);
-            double my = Math.Clamp(mousePos.Y / height, 0.0, 1.0);
+
+            // Only update target position when cursor is inside the window boundaries.
+            // When cursor leaves to the taskbar or another app, retain last position in memory.
+            bool isInside = _window.IsMouseOver ||
+                            (mousePos.X >= 0 && mousePos.X <= width && mousePos.Y >= 0 && mousePos.Y <= height);
+
+            if (isInside)
+            {
+                _targetMouseX = Math.Clamp(mousePos.X / width, 0.0, 1.0);
+                _targetMouseY = Math.Clamp(mousePos.Y / height, 0.0, 1.0);
+            }
+
+            // Exponential smoothing (lerp factor ~0.12 at 60 FPS provides natural inertia and zero teleports)
+            _smoothedMouseX += (_targetMouseX - _smoothedMouseX) * 0.12;
+            _smoothedMouseY += (_targetMouseY - _smoothedMouseY) * 0.12;
+
             double leftDown = System.Windows.Input.Mouse.LeftButton == System.Windows.Input.MouseButtonState.Pressed ? 1.0 : 0.0;
             if (leftDown <= 0.0)
             {
@@ -324,7 +350,7 @@ public sealed class BackdropShaderDriver : IDisposable
                 _planetDragVelocity *= 0.92;
             }
 
-            _activeEffect.MouseState = new Point4D(mx, my, leftDown, _planetDragYaw);
+            _activeEffect.MouseState = new Point4D(_smoothedMouseX, _smoothedMouseY, leftDown, _planetDragYaw);
         }
         catch
         {
