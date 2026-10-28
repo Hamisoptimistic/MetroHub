@@ -282,7 +282,7 @@ public class MetroShaderEffect : ShaderEffect
                     NightInput = GetPlanetBrush("2k_earth_night.jpeg"),
                     CloudsInput = GetPlanetBrush("2k_earth_clouds.jpeg"),
                     SpecularInput = GetPlanetBrush("2k_earth_specular.jpeg"),
-                    AtmosphereColor = new Point4D(0.05, 0.30, 0.90, 4.0)
+                    AtmosphereColor = new Point4D(0.05, 0.30, 0.90, 3.0)
                 },
 
             _ when string.Equals(effectName, "Mars", StringComparison.OrdinalIgnoreCase) =>
@@ -292,7 +292,7 @@ public class MetroShaderEffect : ShaderEffect
                     NightInput = BlackBrush.Value,
                     CloudsInput = BlackBrush.Value,
                     SpecularInput = BlackBrush.Value,
-                    AtmosphereColor = new Point4D(0.90, 0.15, 0.0, 4.0)
+                    AtmosphereColor = new Point4D(0.90, 0.15, 0.0, 3.0)
                 },
 
             _ when string.Equals(effectName, "Jupiter", StringComparison.OrdinalIgnoreCase) =>
@@ -302,7 +302,7 @@ public class MetroShaderEffect : ShaderEffect
                     NightInput = BlackBrush.Value,
                     CloudsInput = BlackBrush.Value,
                     SpecularInput = BlackBrush.Value,
-                    AtmosphereColor = new Point4D(0.36, 0.92, 0.95, 4.0)
+                    AtmosphereColor = new Point4D(0.36, 0.92, 0.95, 3.0)
                 },
 
             _ when string.Equals(effectName, "Venus", StringComparison.OrdinalIgnoreCase) =>
@@ -312,7 +312,7 @@ public class MetroShaderEffect : ShaderEffect
                     NightInput = BlackBrush.Value,
                     CloudsInput = BlackBrush.Value,
                     SpecularInput = BlackBrush.Value,
-                    AtmosphereColor = new Point4D(0.90, 0.30, 0.0, 4.0)
+                    AtmosphereColor = new Point4D(0.90, 0.30, 0.0, 3.0)
                 },
 
             _ when string.Equals(effectName, "Mercury", StringComparison.OrdinalIgnoreCase) =>
@@ -322,7 +322,7 @@ public class MetroShaderEffect : ShaderEffect
                     NightInput = BlackBrush.Value,
                     CloudsInput = BlackBrush.Value,
                     SpecularInput = BlackBrush.Value,
-                    AtmosphereColor = new Point4D(1.0, 1.0, 1.0, 4.0)
+                    AtmosphereColor = new Point4D(1.0, 1.0, 1.0, 3.0)
                 },
 
             _ when string.Equals(effectName, "Moon", StringComparison.OrdinalIgnoreCase) =>
@@ -332,7 +332,7 @@ public class MetroShaderEffect : ShaderEffect
                     NightInput = BlackBrush.Value,
                     CloudsInput = BlackBrush.Value,
                     SpecularInput = BlackBrush.Value,
-                    AtmosphereColor = new Point4D(1.0, 1.0, 1.0, 4.0)
+                    AtmosphereColor = new Point4D(1.0, 1.0, 1.0, 3.0)
                 },
             _ => null
         };

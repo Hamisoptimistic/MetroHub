@@ -17,7 +17,7 @@ static const float3 CAMERA_POSITION = float3(0.0, 0.0, 6.0);
 static const float3 uPlanetPosition = float3(0.0, 0.0, -10.0);
 static const float  uPlanetRadius   = 2.0;
 static const float  FOCAL_LENGTH    = 0.375; // 6.0 / (6.0 - (-10.0))
-static const float3 SUN_COLOR       = float3(1.0, 1.0, 1.0);
+static const float3 SUN_COLOR       = float3(1.0, 1.0, 0.9);
 static const float3 DEEP_SPACE      = float3(0.0005, 0.0005, 0.001);
 
 // Exact Scurve sigmoid contrast function from planet.fragment.glsl lines 145-151
@@ -76,7 +76,7 @@ float noise3(float3 p)
     float n010 = hash31(i + float3(0, 1, 0));
     float n110 = hash31(i + float3(1, 1, 0));
     float n001 = hash31(i + float3(0, 0, 1));
-    float n101 = hash31(i + float3(1, 0, 1));
+    float n101 = hash31(i + float3(1, 1, 0));
     float n011 = hash31(i + float3(0, 1, 1));
     float n111 = hash31(i + float3(1, 1, 1));
 
@@ -178,9 +178,9 @@ float4 main(float2 texCoord : TEXCOORD) : COLOR
     float hit = sphIntersect(ro, rd, uPlanetPosition, uPlanetRadius);
     float3 col = float3(0.0, 0.0, 0.0);
 
-    // Exact website lighting parameters (Slider 0.50 = 0.5^5 = 0.03125 for all bodies)
-    float sunIntensity = AtmosphereColor.w > 0.0 ? AtmosphereColor.w : 4.0;
-    float ambientLight = 0.06;
+    // Exact website lighting parameters: Earth = 0.002, Other planets = 0.010
+    float sunIntensity = AtmosphereColor.w > 0.0 ? AtmosphereColor.w : 3.0;
+    float ambientLight = (EffectParams.z > 0.5) ? 0.002 : 0.010;
 
     if (hit > 0.0)
     {
@@ -218,9 +218,10 @@ float4 main(float2 texCoord : TEXCOORD) : COLOR
             float nightSample = tex2D(NightSampler, surfaceUv).r;
             float3 nightCol = pow(nightSample, 3.0) * float3(1.0, 0.8, 0.6) * nightLightIntensity * 1.5;
 
-            // Specular glint on oceans using NASA specular map (2k_earth_specular)
+            // Specular glint on oceans matching earth.fragment.glsl lines 266-270 (locked to horizon edge)
             float3 reflected = normalize(reflect(-sunDir, norm));
-            float phongValue = pow(saturate(dot(-rd, reflected)), 8.0) * 0.3 * sunIntensity;
+            float3 phongRd = normalize(float3(uv / FOCAL_LENGTH, -1.0));
+            float phongValue = pow(saturate(dot(phongRd, reflected)), 8.0) * 0.2 * sunIntensity;
             float oceanMask = tex2D(SpecularSampler, surfaceUv).r;
             float3 specCol = oceanMask * phongValue * SUN_COLOR;
 
@@ -256,7 +257,7 @@ float4 main(float2 texCoord : TEXCOORD) : COLOR
         float planetEdge = max(uPlanetRadius - distFromEdge, 0.0) / uPlanetRadius;
 
         float atmoDot = dot(sunDir, coordFromCenter);
-        float atmoRemap = max(0.0, (atmoDot - (-uPlanetRadius)) / (uPlanetRadius * 0.5 - (-uPlanetRadius)));
+        float atmoRemap = saturate((atmoDot - (-uPlanetRadius)) / (uPlanetRadius * 0.5 - (-uPlanetRadius)));
         float atmoMask = pow(atmoRemap, 5.0) * atmoDensity * uPlanetRadius * sunIntensity;
 
         float planetMask = hit > 0.0 ? 1.0 : 0.0;
