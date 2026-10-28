@@ -9,6 +9,7 @@ float4 MouseState : register(c2);   // X=MouseX, Y=MouseY, Z=LeftDown, W=0
 
 static const float CAM = 0.6;
 static const float RATIO = 1.07;
+static const float ROW_GAP_FACTOR = 1.0 - (1.0 / RATIO); // 0.06542056
 
 float hash11(float p)
 {
@@ -113,7 +114,8 @@ void RenderFlower(
             float fib = lerp(0.5, 0.5 + 0.5 * sin(atan2(q.y, q.x) * 37.0 + f2 * 60.0), detail);
             float rim = 1.0 - 0.06 * fib;
             float body = smoothstep(rim + eu, rim - 0.45 - eu, u);
-            float strands = pow(abs(fib), 6.0) * smoothstep(rim + 0.08, 0.5, u) * detail;
+            float fib2 = fib * fib;
+            float strands = (fib2 * fib2 * fib2) * smoothstep(rim + 0.08, 0.5, u) * detail;
             a = saturate(body * 0.65 + strands * 0.2) * lerp(0.5, 1.0, f4);
             float shade = 0.55 + 0.3 * q.y / rr + 0.25 * (1.0 - sqrt(max(1.0 - u * u, 0.0)));
             c = float3(0.86, 0.86, 0.82) * lit * shade;
@@ -421,20 +423,24 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
 
         float3 acc = float3(0.0, 0.0, 0.0);
         float through = 1.0;
+        float d = pow(RATIO, iLo);
 
         [loop]
-        for (int n = 0; n < 12; n++)
+        for (int n = 0; n < 8; n++)
         {
             float i = iLo + float(n);
-            if (i > iHi + 1.0 || through < 0.02) break;
-            float d = pow(RATIO, i);
+            if (i > iHi + 1.0 || through < 0.04) break;
             float s = 1.0 / d;
             float sz = s * zoom;
             float ground = uHorizon - CAM * s;
             float lod = smoothstep(1.0, 3.0, spacingW * sz / px);
             bool bladesHere = (lod > 0.0) && (yy < ground + L * 1.1 * sz);
-            bool flowersHere = (flowers > 0.0) && (yy < ground + LF * 1.3 * sz);
-            if (!bladesHere && !flowersHere) continue;
+            bool flowersHere = (flowers > 0.0) && (d < 35.0) && (yy < ground + LF * 1.3 * sz);
+            if (!bladesHere && !flowersHere)
+            {
+                d *= RATIO;
+                continue;
+            }
 
             float xw = p.x / sz;
             float zw = d / zoom;
@@ -454,13 +460,13 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
                     float fid = cell + i * 71.3;
                     if (hash11(fid * 3.17 + 0.5) <= prob)
                     {
-                        RenderFlower(fid, cell, fw, d, s, sz, px, L, ground, CAM * s * (1.0 - 1.0 / RATIO),
+                        RenderFlower(fid, cell, fw, d, s, sz, px, L, ground, CAM * s * ROW_GAP_FACTOR,
                                      bendRow, xw, yy, t, lit, grass, skyLow, haze, clocks, zoom, hand, touch, acc, through);
                     }
                 }
             }
 
-            if (bladesHere && through > 0.02)
+            if (bladesHere && through > 0.04)
             {
                 float tone = noise(float2(xw * 0.6, zw * 0.6)) * 0.6 + noise(float2(xw * 2.1, zw * 2.1)) * 0.4;
                 float hRow = max(yy - ground, 0.0) / sz;
@@ -481,7 +487,7 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
                     float hB = frac(hA * 13.17 + 0.31);
                     float hC = frac(hA * 71.31 + 0.67);
                     float x0 = (cell + hA) * spacingW;
-                    float gr = ground - hC * (CAM * s * (1.0 - 1.0 / RATIO));
+                    float gr = ground - hC * (CAM * s * ROW_GAP_FACTOR);
                     float bl = L * (0.4 + 0.75 * hB * hB);
                     float above = (yy - gr) / sz;
                     if (above < 0.0 || above > bl) continue;
@@ -499,14 +505,16 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
                     float side = max(0.00308, 0.5 * aw) + aw;
                     if ((xw - cx) * (xw - cx) > side * side * (1.0 + sl * sl)) continue;
 
-                    float w = 0.0022 * (0.6 + 0.8 * hB) * pow(abs(1.0 - y), 0.6);
+                    float taper = saturate(1.0 - y);
+                    float w = 0.0022 * (0.6 + 0.8 * hB) * (sqrt(taper) * (0.8 + 0.2 * taper));
                     float wd = max(w, 0.5 * aw);
                     float dx = (xw - cx) / sqrt(1.0 + sl * sl);
                     float a = smoothstep(wd + aw, wd - aw, abs(dx)) * lod * w / wd;
                     if (a <= 0.0) continue;
 
                     float3 base = grass * lerp(float3(0.8, 1.0, 0.75), float3(1.15, 1.05, 0.7), hA) * (0.55 + 0.7 * frac(hC * 7.3));
-                    float3 c = base * lerp(0.1, 1.0, pow(abs(y), 0.8)) * (ambient + light * (0.6 + 0.4 * hB));
+                    float yShade = y * (1.35 - 0.35 * y);
+                    float3 c = base * lerp(0.1, 1.0, yShade) * (ambient + light * (0.6 + 0.4 * hB));
                     c *= 0.75 + 0.3 * clamp(dx / wd, -1.0, 1.0) * detailOf(w, aw);
                     c *= (0.65 + 0.7 * tone) * (1.0 + (g - 0.4) * 0.6 * sway * y);
                     c += skyLow * ambient.g * 0.3 * y * y * hB * hB;
@@ -514,9 +522,10 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
 
                     acc += through * a * c;
                     through *= 1.0 - a;
-                    if (through < 0.02) break;
+                    if (through < 0.04) break;
                 }
             }
+            d *= RATIO;
         }
 
         // Ground under the blades
