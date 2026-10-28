@@ -9,9 +9,8 @@ namespace MetroHub.Presentation.Shaders;
 
 /// <summary>
 /// Drives animation updates for MetroShaderEffect on WPF backdrops.
-/// Manages the CompositionTarget.Rendering loop with a 60 FPS frame limiter to eliminate high CPU spikes
-/// on high-refresh displays (144Hz - 240Hz), cached aspect ratio calculations, lifecycle gating
-/// (0% CPU/GPU when hidden or minimized), bounded modulo time progression, and wall-clock time in register c0.z.
+/// Manages the CompositionTarget.Rendering loop at native display refresh rates, cached aspect ratio calculations,
+/// lifecycle gating (0% CPU/GPU when hidden or minimized), bounded modulo time progression, and wall-clock time in register c0.z.
 /// </summary>
 public sealed class BackdropShaderDriver : IDisposable
 {
@@ -344,7 +343,7 @@ public sealed class BackdropShaderDriver : IDisposable
                 _targetMouseY += (0.5 - _targetMouseY) * 0.015;
             }
 
-            // Slow, liquid cinematic inertia (0.035 factor at 60 FPS eliminates all sudden jerks)
+            // Slow, liquid cinematic inertia (0.035 factor eliminates all sudden jerks)
             _smoothedMouseX += (_targetMouseX - _smoothedMouseX) * 0.035;
             _smoothedMouseY += (_targetMouseY - _smoothedMouseY) * 0.035;
 

@@ -37,7 +37,7 @@ public class MetroShaderEffect : ShaderEffect
     public static readonly Point4D DefaultSpectrumParams = new(0.0, 1.0, 1.0, 0.0);
     public static readonly Point4D DefaultMeadowParams = new(0.35, 0.70, 0.75, 0.0);
     public static readonly Point4D DefaultPlasmaParams = new(3.0, 1.0, 1.0, 0.0);
-    public static readonly Point4D DefaultAuroraParams = new(1.0, 1.3, 0.0, 0.0);
+    public static readonly Point4D DefaultAuroraParams = new(1.0, 1.0, 0.0, 0.0);
 
     public static readonly DependencyProperty InputProperty =
         RegisterPixelShaderSamplerProperty(

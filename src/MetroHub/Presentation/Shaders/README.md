@@ -11,13 +11,13 @@ This directory contains the Direct3D 9 GPU Pixel Shader engine used for animated
 │                        MetroHub Shader Pipeline                        │
 ├────────────────────────────────────────────────────────────────────────┤
 │ 1. INPUT SOURCES                                                       │
-│    • 60 FPS Render Timer   ──► Time, Aspect Ratio                      │
+│    • Display Render Timer  ──► Time, Aspect Ratio                      │
 │    • Window Mouse Events   ──► Normalized Mouse (X, Y, Click)          │
 │    • Audio Service (BASS)  ──► Bass / Beat Energy                      │
 │                                │                                       │
 │                                ▼                                       │
 │ 2. DRIVER: BackdropShaderDriver.cs                                     │
-│    • Throttles rendering to 60 FPS (zero waste on 144Hz–240Hz monitors)│
+│    • Synchronized to display refresh via CompositionTarget.Rendering   │
 │    • Stops rendering completely when window is hidden or minimized     │
 │    • Passes live frame and mouse state into MetroShaderEffect          │
 │                                │                                       │
@@ -81,8 +81,8 @@ When you create a new shader, **do not create a separate `*Effect.cs` subclass f
    `MetroShaderEffect.cs` encapsulates GPU bytecode loading, hardware registers, and any required input brush (e.g. procedural noise).
 3. **No External JSON Files:**  
    Shader defaults stay in a compile-time C# table. This prevents file I/O latency, JSON parsing errors, and startup crashes.
-4. **60 FPS Cap:**  
-   `BackdropShaderDriver.cs` caps render ticks to 60 FPS. High-refresh displays (144Hz–240Hz) will not consume extra CPU or GPU cycles.
+4. **Native Display Refresh:**  
+   `BackdropShaderDriver.cs` synchronizes render ticks directly to the display refresh via `CompositionTarget.Rendering` for maximum fluid motion on high-refresh displays.
 5. **Zero Background Overhead:**  
    When the app is minimized or hidden, the render loop unhooks immediately. Background CPU and GPU load remains at 0%.
 6. **Bounded Modulo Time:**  

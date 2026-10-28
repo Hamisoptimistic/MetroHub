@@ -266,21 +266,21 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
     }
     else if (variant == 5) // 5: Night
     {
-        skyTop = float3(0.004, 0.008, 0.035); // #03050c
-        skyLow = float3(0.016, 0.035, 0.090); // #121a2c
-        light  = float3(0.012, 0.027, 0.078); // #0d1426
-        ambient= float3(0.024, 0.043, 0.118); // #141c30
-        grass  = float3(0.015, 0.035, 0.010);
+        skyTop = float3(0.010, 0.018, 0.055); // Rich midnight sapphire
+        skyLow = float3(0.035, 0.055, 0.125); // Horizon glow
+        light  = float3(0.028, 0.048, 0.115); // Moonlit directional key
+        ambient= float3(0.045, 0.070, 0.145); // Moonlit ambient fill
+        grass  = float3(0.032, 0.068, 0.025); // Visible foliage under moonlight
         tint   = float3(0.361, 0.478, 0.659); // #5c7aa8
-        stars = 0.60;
+        stars = 0.65;
         fog = 0.40;
-        exposure = 0.20;
+        exposure = 0.28;
         saturation = 0.50;
         toning = 0.20;
         contrast = 1.07;
         fade = 0.12;
-        grain = 0.70;
-        noiseAmt = 0.35;
+        grain = 0.50;
+        noiseAmt = 0.25;
         clocks = 0.90;
     }
     else if (variant == 6) // 6: Black & White
@@ -292,45 +292,46 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
     }
     else // Variant 0: 24-Hour Diurnal Time-of-Day Automatic Interpolation
     {
+        zoom = 1.00;
         float tod = FrameState.z / 3600.0; // Hour (0.0 to 24.0)
         if (tod < 5.5) // Deep Night (00:00 - 05:30)
         {
-            skyTop = float3(0.004, 0.008, 0.035);
-            skyLow = float3(0.016, 0.035, 0.090);
-            light  = float3(0.012, 0.027, 0.078);
-            ambient= float3(0.024, 0.043, 0.118);
-            grass  = float3(0.015, 0.035, 0.010);
+            skyTop = float3(0.010, 0.018, 0.055);
+            skyLow = float3(0.035, 0.055, 0.125);
+            light  = float3(0.028, 0.048, 0.115);
+            ambient= float3(0.045, 0.070, 0.145);
+            grass  = float3(0.032, 0.068, 0.025);
             tint   = float3(0.361, 0.478, 0.659);
-            stars = 0.60;
+            stars = 0.65;
             fog = 0.40;
-            exposure = 0.20;
+            exposure = 0.28;
             saturation = 0.50;
             toning = 0.20;
             contrast = 1.07;
             fade = 0.12;
-            grain = 0.70;
-            noiseAmt = 0.35;
+            grain = 0.50;
+            noiseAmt = 0.25;
             flowers = 0.20;
             clocks = 0.90;
         }
         else if (tod < 7.0) // Dawn / Sunrise (05:30 - 07:00)
         {
             float f = (tod - 5.5) / 1.5;
-            skyTop = lerp(float3(0.004, 0.008, 0.035), float3(0.157, 0.392, 0.835), f);
-            skyLow = lerp(float3(0.016, 0.035, 0.090), float3(1.000, 0.690, 0.404), f);
-            light  = lerp(float3(0.012, 0.027, 0.078), float3(1.000, 0.627, 0.271), f);
-            ambient= lerp(float3(0.024, 0.043, 0.118), float3(0.482, 0.455, 0.380), f);
-            grass  = lerp(float3(0.015, 0.035, 0.010), float3(0.114, 0.459, 0.024), f);
+            skyTop = lerp(float3(0.010, 0.018, 0.055), float3(0.157, 0.392, 0.835), f);
+            skyLow = lerp(float3(0.035, 0.055, 0.125), float3(1.000, 0.690, 0.404), f);
+            light  = lerp(float3(0.028, 0.048, 0.115), float3(1.000, 0.627, 0.271), f);
+            ambient= lerp(float3(0.045, 0.070, 0.145), float3(0.482, 0.455, 0.380), f);
+            grass  = lerp(float3(0.032, 0.068, 0.025), float3(0.114, 0.459, 0.024), f);
             tint   = lerp(float3(0.361, 0.478, 0.659), float3(1.000, 0.702, 0.769), f);
-            stars = lerp(0.60, 0.0, f);
+            stars = lerp(0.65, 0.0, f);
             fog = lerp(0.40, 0.25, f);
-            exposure = lerp(0.20, 0.10, f);
+            exposure = lerp(0.28, 0.10, f);
             saturation = lerp(0.50, 1.90, f);
             toning = 0.20;
             contrast = lerp(1.07, 1.08, f);
             fade = lerp(0.12, 0.08, f);
-            grain = lerp(0.70, 0.25, f);
-            noiseAmt = lerp(0.35, 0.0, f);
+            grain = lerp(0.50, 0.25, f);
+            noiseAmt = lerp(0.25, 0.0, f);
             flowers = lerp(0.20, 0.90, f);
             clocks = lerp(0.90, 0.30, f);
         }
@@ -441,44 +442,46 @@ float4 main(float2 uv : TEXCOORD0) : COLOR0
         else if (tod < 21.0) // Dusk into Full Night (19:30 - 21:00)
         {
             float f = (tod - 19.5) / 1.5;
-            skyTop = lerp(float3(0.040, 0.060, 0.120), float3(0.004, 0.008, 0.035), f);
-            skyLow = lerp(float3(0.180, 0.160, 0.220), float3(0.016, 0.035, 0.090), f);
-            light  = lerp(float3(0.080, 0.090, 0.150), float3(0.012, 0.027, 0.078), f);
-            ambient= lerp(float3(0.100, 0.120, 0.180), float3(0.024, 0.043, 0.118), f);
-            grass  = lerp(float3(0.035, 0.070, 0.020), float3(0.015, 0.035, 0.010), f);
+            skyTop = lerp(float3(0.040, 0.060, 0.120), float3(0.010, 0.018, 0.055), f);
+            skyLow = lerp(float3(0.180, 0.160, 0.220), float3(0.035, 0.055, 0.125), f);
+            light  = lerp(float3(0.080, 0.090, 0.150), float3(0.028, 0.048, 0.115), f);
+            ambient= lerp(float3(0.100, 0.120, 0.180), float3(0.045, 0.070, 0.145), f);
+            grass  = lerp(float3(0.035, 0.070, 0.020), float3(0.032, 0.068, 0.025), f);
             tint   = lerp(float3(0.450, 0.520, 0.650), float3(0.361, 0.478, 0.659), f);
-            stars = lerp(0.35, 0.60, f);
+            stars = lerp(0.35, 0.65, f);
             fog = lerp(0.45, 0.40, f);
-            exposure = lerp(0.15, 0.20, f);
+            exposure = lerp(0.15, 0.28, f);
             saturation = lerp(0.65, 0.50, f);
             toning = 0.20;
             contrast = 1.07;
             fade = 0.12;
-            grain = lerp(0.55, 0.70, f);
-            noiseAmt = lerp(0.20, 0.35, f);
+            grain = lerp(0.55, 0.50, f);
+            noiseAmt = lerp(0.20, 0.25, f);
             flowers = lerp(0.45, 0.20, f);
             clocks = lerp(0.75, 0.90, f);
         }
         else // Full Night (21:00 - 24:00)
         {
-            skyTop = float3(0.004, 0.008, 0.035);
-            skyLow = float3(0.016, 0.035, 0.090);
-            light  = float3(0.012, 0.027, 0.078);
-            ambient= float3(0.024, 0.043, 0.118);
-            grass  = float3(0.015, 0.035, 0.010);
+            skyTop = float3(0.010, 0.018, 0.055);
+            skyLow = float3(0.035, 0.055, 0.125);
+            light  = float3(0.028, 0.048, 0.115);
+            ambient= float3(0.045, 0.070, 0.145);
+            grass  = float3(0.032, 0.068, 0.025);
             tint   = float3(0.361, 0.478, 0.659);
-            stars = 0.60;
+            stars = 0.65;
             fog = 0.40;
-            exposure = 0.20;
+            exposure = 0.28;
             saturation = 0.50;
             toning = 0.20;
             contrast = 1.07;
             fade = 0.12;
-            grain = 0.70;
-            noiseAmt = 0.35;
+            grain = 0.50;
+            noiseAmt = 0.25;
             flowers = 0.20;
             clocks = 0.90;
         }
+
+        flowers = 1.00;
     }
 
     float screenY = 1.0 - uv.y;
