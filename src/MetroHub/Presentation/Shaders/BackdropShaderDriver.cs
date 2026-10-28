@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using MetroHub.Core.Services;
 
 namespace MetroHub.Presentation.Shaders;
 
@@ -310,20 +311,42 @@ public sealed class BackdropShaderDriver : IDisposable
             double width = _window.ActualWidth > 0 ? _window.ActualWidth : SystemParameters.PrimaryScreenWidth;
             double height = _window.ActualHeight > 0 ? _window.ActualHeight : SystemParameters.PrimaryScreenHeight;
 
-            // Only update target position when cursor is inside the window boundaries.
-            // When cursor leaves to the taskbar or another app, retain last position in memory.
-            bool isInside = _window.IsMouseOver ||
-                            (mousePos.X >= 0 && mousePos.X <= width && mousePos.Y >= 0 && mousePos.Y <= height);
-
-            if (isInside)
+            bool isInside = false;
+            try
             {
-                _targetMouseX = Math.Clamp(mousePos.X / width, 0.0, 1.0);
-                _targetMouseY = Math.Clamp(mousePos.Y / height, 0.0, 1.0);
+                if (_window.IsMouseOver && NativeMethods.GetCursorPos(out NativeMethods.POINT pt))
+                {
+                    Point windowPos = _window.PointFromScreen(new Point(pt.X, pt.Y));
+                    if (windowPos.X >= 0 && windowPos.X <= width && windowPos.Y >= 0 && windowPos.Y <= height)
+                    {
+                        isInside = true;
+                        _targetMouseX = Math.Clamp(windowPos.X / width, 0.0, 1.0);
+                        _targetMouseY = Math.Clamp(windowPos.Y / height, 0.0, 1.0);
+                    }
+                }
+            }
+            catch
+            {
+                // Fallback for headless tests or unpresented window states
+                if (_window.IsMouseOver && mousePos.X > 0 && mousePos.X < width && mousePos.Y > 0 && mousePos.Y < height)
+                {
+                    isInside = true;
+                    _targetMouseX = Math.Clamp(mousePos.X / width, 0.0, 1.0);
+                    _targetMouseY = Math.Clamp(mousePos.Y / height, 0.0, 1.0);
+                }
             }
 
-            // Exponential smoothing (lerp factor ~0.12 at 60 FPS provides natural inertia and zero teleports)
-            _smoothedMouseX += (_targetMouseX - _smoothedMouseX) * 0.12;
-            _smoothedMouseY += (_targetMouseY - _smoothedMouseY) * 0.12;
+            if (!isInside)
+            {
+                // When cursor leaves the window (e.g. over taskbar), slowly and gracefully
+                // drift the target back to center (0.5, 0.5) over ~3 seconds instead of zapping.
+                _targetMouseX += (0.5 - _targetMouseX) * 0.015;
+                _targetMouseY += (0.5 - _targetMouseY) * 0.015;
+            }
+
+            // Slow, liquid cinematic inertia (0.035 factor at 60 FPS eliminates all sudden jerks)
+            _smoothedMouseX += (_targetMouseX - _smoothedMouseX) * 0.035;
+            _smoothedMouseY += (_targetMouseY - _smoothedMouseY) * 0.035;
 
             double leftDown = System.Windows.Input.Mouse.LeftButton == System.Windows.Input.MouseButtonState.Pressed ? 1.0 : 0.0;
             if (leftDown <= 0.0)
