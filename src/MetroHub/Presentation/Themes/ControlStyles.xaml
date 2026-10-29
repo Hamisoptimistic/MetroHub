@@ -833,17 +833,12 @@
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ScrollViewer}">
                     <Grid Background="Transparent">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
                         <ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
-                                               Grid.Column="0"
                                                Margin="{TemplateBinding Padding}"
                                                CanContentScroll="{TemplateBinding CanContentScroll}" />
-                        <ScrollBar Grid.Column="1"
-                                   x:Name="PART_VerticalScrollBar"
+                        <ScrollBar x:Name="PART_VerticalScrollBar"
                                    Style="{StaticResource WidgetFloatingScrollBarStyle}"
+                                   HorizontalAlignment="Right"
                                    Value="{TemplateBinding VerticalOffset}"
                                    Maximum="{TemplateBinding ScrollableHeight}"
                                    ViewportSize="{TemplateBinding ViewportHeight}"

@@ -169,7 +169,7 @@
                     <!-- Native Windows 11 Output Devices List with 4px AutoHide ScrollBar -->
                     <ScrollViewer Grid.Row="1"
                                   Style="{StaticResource WidgetFloatingScrollViewerStyle}"
-                                  Padding="0,0,8,0">
+                                  Padding="0">
                         <ItemsControl ItemsSource="{Binding Devices}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type audiocontrols:AudioDeviceItemViewModel}">

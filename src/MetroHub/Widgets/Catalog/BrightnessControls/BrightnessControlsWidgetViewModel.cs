@@ -256,6 +256,11 @@ public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelB
         ActiveMonitorName = monitor.FriendlyName;
         ActiveMonitorIcon = monitor.DeviceTypeGlyph;
 
+        foreach (var m in Monitors)
+        {
+            m.IsCurrentCursorMonitor = (m == monitor);
+        }
+
         // Pin current cursor screen so the 250ms timer does not override manual user selection
         var lastMonitors = _brightnessService.LastMonitors;
         _pinnedCursorMonitorId = _brightnessService.GetCurrentCursorMonitorId(lastMonitors);
@@ -442,6 +447,10 @@ public sealed partial class BrightnessControlsWidgetViewModel : WidgetViewModelB
             _activeMonitorId = active.Id;
             ActiveMonitorName = active.FriendlyName;
             ActiveMonitorIcon = active.DeviceTypeGlyph;
+            foreach (var m in Monitors)
+            {
+                m.IsCurrentCursorMonitor = (m == active);
+            }
             if (!IsLinked)
             {
                 _isUpdatingMasterInternally = true;
