@@ -1512,208 +1512,145 @@
                             Background="{DynamicResource WidgetDividerBrush}"
                             SnapsToDevicePixels="True" />
 
-                    <!-- ROW 3: DOCKED 2x2 METRICS GRID (Open Cross Dividers, Compact Secondary Tier) -->
-                    <Grid Grid.Row="3" Margin="0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="56" />
-                            <RowDefinition Height="1" />
-                            <RowDefinition Height="56" />
-                        </Grid.RowDefinitions>
+                    <!-- ROW 3: DOCKED 1x4 HORIZONTAL METRICS STRIP -->
+                    <Grid Grid.Row="3" Height="66" Margin="0">
                         <Grid.ColumnDefinitions>
+                            <!-- 0: Download -->
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <!-- 2: Upload -->
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <!-- 4: Ping -->
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <!-- 6: Jitter -->
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <!-- Quadrant (0,0): Download -->
-                        <Grid Grid.Row="0" Grid.Column="0"
-                              VerticalAlignment="Center"
-                              Margin="0,2,0,2">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0"
-                                       Text="Download"
+                        <!-- Column 0: Download -->
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="Download"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Center"
-                                       Margin="0,0,0,3" />
-                            <Grid Grid.Row="1" HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="54*" />
-                                    <ColumnDefinition Width="46*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="{Binding SpeedTestDownloadDisplay}"
+                                       Margin="0,0,0,4" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding SpeedTestDownloadDisplay}"
                                            FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                           FontSize="22"
+                                           FontSize="20"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                            Foreground="{DynamicResource TextPrimaryBrush}"
-                                           HorizontalAlignment="Right"
-                                           TextAlignment="Right"
-                                           TextOptions.TextFormattingMode="Ideal"
                                            Typography.NumeralAlignment="Tabular"
-                                           Margin="0,0,4,0" />
-                                <TextBlock Grid.Column="1"
-                                           Text="Mbps"
+                                           Margin="0,0,3,0" />
+                                <TextBlock Text="Mbps"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="{DynamicResource TextMutedBrush}"
-                                           HorizontalAlignment="Left"
                                            VerticalAlignment="Bottom"
-                                           Margin="0,0,0,3" />
-                            </Grid>
-                        </Grid>
+                                           Margin="0,0,0,2" />
+                            </StackPanel>
+                        </StackPanel>
 
-                        <!-- Upper Vertical Hairline Divider -->
-                        <Border Grid.Row="0" Grid.Column="1"
+                        <!-- Divider 1 -->
+                        <Border Grid.Column="1"
                                 Width="1"
-                                HorizontalAlignment="Center"
-                                Background="{DynamicResource WidgetDividerBrush}"
-                                SnapsToDevicePixels="True" />
-
-                        <!-- Quadrant (0,2): Upload -->
-                        <Grid Grid.Row="0" Grid.Column="2"
-                              VerticalAlignment="Center"
-                              Margin="0,2,0,2">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0"
-                                       Text="Upload"
-                                       FontSize="{DynamicResource TypeCaptionFontSize}"
-                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,0,0,3" />
-                            <Grid Grid.Row="1" HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="54*" />
-                                    <ColumnDefinition Width="46*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="{Binding SpeedTestUploadDisplay}"
-                                           FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                           FontSize="22"
-                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
-                                           Foreground="{DynamicResource TextPrimaryBrush}"
-                                           HorizontalAlignment="Right"
-                                           TextAlignment="Right"
-                                           TextOptions.TextFormattingMode="Ideal"
-                                           Typography.NumeralAlignment="Tabular"
-                                           Margin="0,0,4,0" />
-                                <TextBlock Grid.Column="1"
-                                           Text="Mbps"
-                                           FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           HorizontalAlignment="Left"
-                                           VerticalAlignment="Bottom"
-                                           Margin="0,0,0,3" />
-                            </Grid>
-                        </Grid>
-
-                        <!-- Horizontal Hairline Divider (Continuous Edge-to-Edge) -->
-                        <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
-                                Height="1"
+                                Height="36"
                                 VerticalAlignment="Center"
-                                HorizontalAlignment="Stretch"
                                 Background="{DynamicResource WidgetDividerBrush}"
                                 SnapsToDevicePixels="True" />
 
-                        <!-- Lower Vertical Hairline Divider -->
-                        <Border Grid.Row="2" Grid.Column="1"
+                        <!-- Column 2: Upload -->
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="Upload"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,4" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding SpeedTestUploadDisplay}"
+                                           FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                           FontSize="20"
+                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           Typography.NumeralAlignment="Tabular"
+                                           Margin="0,0,3,0" />
+                                <TextBlock Text="Mbps"
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           VerticalAlignment="Bottom"
+                                           Margin="0,0,0,2" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Divider 2 -->
+                        <Border Grid.Column="3"
                                 Width="1"
-                                HorizontalAlignment="Center"
+                                Height="36"
+                                VerticalAlignment="Center"
                                 Background="{DynamicResource WidgetDividerBrush}"
                                 SnapsToDevicePixels="True" />
 
-                        <!-- Quadrant (2,0): Ping -->
-                        <Grid Grid.Row="2" Grid.Column="0"
-                              VerticalAlignment="Center"
-                              Margin="0,2,0,2">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0"
-                                       Text="Ping"
+                        <!-- Column 4: Ping -->
+                        <StackPanel Grid.Column="4" VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="Ping"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Center"
-                                       Margin="0,0,0,3" />
-                            <Grid Grid.Row="1" HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="54*" />
-                                    <ColumnDefinition Width="46*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="{Binding SpeedTestPingNumberDisplay}"
+                                       Margin="0,0,0,4" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding SpeedTestPingNumberDisplay}"
                                            FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                           FontSize="22"
+                                           FontSize="20"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                            Foreground="{DynamicResource TextPrimaryBrush}"
-                                           HorizontalAlignment="Right"
-                                           TextAlignment="Right"
-                                           TextOptions.TextFormattingMode="Ideal"
                                            Typography.NumeralAlignment="Tabular"
-                                           Margin="0,0,4,0" />
-                                <TextBlock Grid.Column="1"
-                                           Text="ms"
+                                           Margin="0,0,3,0" />
+                                <TextBlock Text="ms"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="{DynamicResource TextMutedBrush}"
-                                           HorizontalAlignment="Left"
                                            VerticalAlignment="Bottom"
-                                           Margin="0,0,0,3" />
-                            </Grid>
-                        </Grid>
+                                           Margin="0,0,0,2" />
+                            </StackPanel>
+                        </StackPanel>
 
-                        <!-- Quadrant (2,2): Jitter -->
-                        <Grid Grid.Row="2" Grid.Column="2"
-                              VerticalAlignment="Center"
-                              Margin="0,2,0,2">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0"
-                                       Text="Jitter"
+                        <!-- Divider 3 -->
+                        <Border Grid.Column="5"
+                                Width="1"
+                                Height="36"
+                                VerticalAlignment="Center"
+                                Background="{DynamicResource WidgetDividerBrush}"
+                                SnapsToDevicePixels="True" />
+
+                        <!-- Column 6: Jitter -->
+                        <StackPanel Grid.Column="6" VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="Jitter"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Center"
-                                       Margin="0,0,0,3" />
-                            <Grid Grid.Row="1" HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="54*" />
-                                    <ColumnDefinition Width="46*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="{Binding SpeedTestJitterNumberDisplay}"
+                                       Margin="0,0,0,4" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding SpeedTestJitterNumberDisplay}"
                                            FontFamily="{DynamicResource AppDisplayFontFamily}"
-                                           FontSize="22"
+                                           FontSize="20"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                            Foreground="{DynamicResource TextPrimaryBrush}"
-                                           HorizontalAlignment="Right"
-                                           TextAlignment="Right"
-                                           TextOptions.TextFormattingMode="Ideal"
                                            Typography.NumeralAlignment="Tabular"
-                                           Margin="0,0,4,0" />
-                                <TextBlock Grid.Column="1"
-                                           Text="ms"
+                                           Margin="0,0,3,0" />
+                                <TextBlock Text="ms"
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            FontWeight="{DynamicResource TypeCaptionFontWeight}"
                                            Foreground="{DynamicResource TextMutedBrush}"
-                                           HorizontalAlignment="Left"
                                            VerticalAlignment="Bottom"
-                                           Margin="0,0,0,3" />
-                            </Grid>
-                        </Grid>
+                                           Margin="0,0,0,2" />
+                            </StackPanel>
+                        </StackPanel>
                     </Grid>
                 </Grid>
 
