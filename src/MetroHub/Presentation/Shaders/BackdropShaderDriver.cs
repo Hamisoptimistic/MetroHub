@@ -33,21 +33,8 @@ public sealed class BackdropShaderDriver : IDisposable
         public double Alive;
     }
 
-    private struct LagoonWakeSegment
-    {
-        public double FromX;
-        public double FromY;
-        public double ToX;
-        public double ToY;
-        public double Age;
-        public double Strength;
-        public double Amplitude;
-        public bool Alive;
-    }
-
     private const int InkCapacity = 24;
-    private const int LagoonWakeCapacity = 8;
-    private const double LagoonUnits = 11.0;
+
     private readonly InkDrop[] _inkDrops = new InkDrop[InkCapacity];
     private int _inkHead;
     private double _inkLastX = -100.0;
@@ -64,16 +51,6 @@ public sealed class BackdropShaderDriver : IDisposable
     private double _targetMouseY = 0.5;
     private double _smoothedMouseX = 0.5;
     private double _smoothedMouseY = 0.5;
-
-    private readonly LagoonWakeSegment[] _lagoonWake = new LagoonWakeSegment[LagoonWakeCapacity];
-    private int _lagoonWakeHead;
-    private bool _lagoonHasLast;
-    private double _lagoonLastX;
-    private double _lagoonLastY;
-    private double _lagoonLastTickSeconds = -1.0;
-    private bool _lagoonClickPending;
-    private double _lagoonClickX;
-    private double _lagoonClickY;
 
     /// <summary>
     /// Indicates whether Direct3D Tier 2 (full hardware acceleration) is available.
@@ -138,12 +115,12 @@ public sealed class BackdropShaderDriver : IDisposable
         _targetMouseY = 0.5;
         _smoothedMouseX = 0.5;
         _smoothedMouseY = 0.5;
-        ResetLagoonWake();
+        UpdateAspectRatio();
+
         _window.PreviewMouseLeftButtonDown += OnWindowMouseDown;
         _window.PreviewMouseLeftButtonUp -= OnWindowMouseUp;
         _window.PreviewMouseLeftButtonUp += OnWindowMouseUp;
 
-        UpdateAspectRatio();
         UpdateDriverState();
     }
 
@@ -161,7 +138,6 @@ public sealed class BackdropShaderDriver : IDisposable
         _targetMouseY = 0.5;
         _smoothedMouseX = 0.5;
         _smoothedMouseY = 0.5;
-        ResetLagoonWake();
         _activeEffect = null;
         _inkLastTickSeconds = -1.0;
         _inkLastX = -100.0;
@@ -183,16 +159,6 @@ public sealed class BackdropShaderDriver : IDisposable
             string.Equals(_activeEffect.ShaderName, "NeonClock", StringComparison.OrdinalIgnoreCase))
         {
             _activeEffect.CyclePalette(6);
-        }
-
-        if (string.Equals(_activeEffect.ShaderName, "Lagoon", StringComparison.OrdinalIgnoreCase))
-        {
-            Point click = e.GetPosition(_window);
-            double width = _window.ActualWidth > 0 ? _window.ActualWidth : SystemParameters.PrimaryScreenWidth;
-            double height = _window.ActualHeight > 0 ? _window.ActualHeight : SystemParameters.PrimaryScreenHeight;
-            _lagoonClickX = Math.Clamp(click.X / width, 0.0, 1.0);
-            _lagoonClickY = Math.Clamp(click.Y / height, 0.0, 1.0);
-            _lagoonClickPending = true;
         }
 
         if (_activeEffect.ShaderName.StartsWith("Planet", StringComparison.OrdinalIgnoreCase))
@@ -408,17 +374,7 @@ public sealed class BackdropShaderDriver : IDisposable
                 _planetDragVelocity *= 0.92;
             }
 
-            bool isLagoon = string.Equals(_activeEffect.ShaderName, "Lagoon", StringComparison.OrdinalIgnoreCase);
-            _activeEffect.MouseState = new Point4D(
-                isLagoon ? _targetMouseX : _smoothedMouseX,
-                isLagoon ? _targetMouseY : _smoothedMouseY,
-                leftDown,
-                _planetDragYaw);
-
-            if (isLagoon)
-            {
-                UpdateLagoonWake(elapsedSeconds, isInside && !IsPointerOverInteractive());
-            }
+            _activeEffect.MouseState = new Point4D(_smoothedMouseX, _smoothedMouseY, leftDown, _planetDragYaw);
         }
         catch
         {
@@ -534,134 +490,6 @@ public sealed class BackdropShaderDriver : IDisposable
         catch
         {
             return false;
-        }
-    }
-
-    private void ResetLagoonWake()
-    {
-        Array.Clear(_lagoonWake);
-        _lagoonWakeHead = 0;
-        _lagoonHasLast = false;
-        _lagoonLastX = 0.5;
-        _lagoonLastY = 0.5;
-        _lagoonLastTickSeconds = -1.0;
-        _lagoonClickPending = false;
-        _lagoonClickX = 0.5;
-        _lagoonClickY = 0.5;
-    }
-
-    private void SpawnLagoonWake(double fromX, double fromY, double toX, double toY, double strength)
-    {
-        _lagoonWake[_lagoonWakeHead] = new LagoonWakeSegment
-        {
-            FromX = fromX,
-            FromY = fromY,
-            ToX = toX,
-            ToY = toY,
-            Age = 0.0,
-            Strength = strength,
-            Amplitude = strength,
-            Alive = true
-        };
-        _lagoonWakeHead = (_lagoonWakeHead + 1) % LagoonWakeCapacity;
-    }
-
-    private void UpdateLagoonWake(double elapsedSeconds, bool pointerActive)
-    {
-        if (_activeEffect == null) return;
-
-        double dt = _lagoonLastTickSeconds >= 0
-            ? Math.Clamp(elapsedSeconds - _lagoonLastTickSeconds, 0.001, 0.1)
-            : (1.0 / 60.0);
-        _lagoonLastTickSeconds = elapsedSeconds;
-
-        for (int i = 0; i < LagoonWakeCapacity; i++)
-        {
-            ref LagoonWakeSegment segment = ref _lagoonWake[i];
-            if (!segment.Alive) continue;
-
-            segment.Age += dt;
-            segment.Amplitude = segment.Strength * Math.Exp(-segment.Age * 0.9);
-            if (segment.Age >= 3.0 || segment.Amplitude < 0.004)
-            {
-                segment.Alive = false;
-                segment.Amplitude = 0.0;
-            }
-        }
-
-        if (_lagoonClickPending)
-        {
-            SpawnLagoonWake(_lagoonClickX, _lagoonClickY, _lagoonClickX, _lagoonClickY, 1.0);
-            _lagoonLastX = _lagoonClickX;
-            _lagoonLastY = _lagoonClickY;
-            _lagoonHasLast = true;
-            _lagoonClickPending = false;
-        }
-
-        if (pointerActive)
-        {
-            if (!_lagoonHasLast)
-            {
-                _lagoonLastX = _targetMouseX;
-                _lagoonLastY = _targetMouseY;
-                _lagoonHasLast = true;
-            }
-            else
-            {
-                double dx = _targetMouseX - _lagoonLastX;
-                double dy = _targetMouseY - _lagoonLastY;
-                double distance = Math.Sqrt(dx * dx + dy * dy);
-
-                if (distance > 0.25)
-                {
-                    // The pointer jumped (window focus, cursor warp); do not
-                    // draw a wake across the whole screen.
-                    _lagoonLastX = _targetMouseX;
-                    _lagoonLastY = _targetMouseY;
-                }
-                else if (distance > 0.003)
-                {
-                    double speed = distance / dt;
-                    double strength = Math.Clamp(speed * 0.55, 0.0, 1.0);
-                    if (strength > 0.02)
-                    {
-                        SpawnLagoonWake(_lagoonLastX, _lagoonLastY, _targetMouseX, _targetMouseY, strength);
-                    }
-
-                    _lagoonLastX = _targetMouseX;
-                    _lagoonLastY = _targetMouseY;
-                }
-            }
-        }
-        else
-        {
-            _lagoonHasLast = false;
-        }
-
-        double scale = _activeEffect.EffectParams.Y > 0.0 ? _activeEffect.EffectParams.Y : 0.7;
-        double units = LagoonUnits / scale;
-        double aspect = _aspectRatio;
-
-        for (int i = 0; i < LagoonWakeCapacity; i++)
-        {
-            LagoonWakeSegment segment = _lagoonWake[i];
-            if (segment.Alive && segment.Amplitude > 0.001)
-            {
-                // The shader's world space: x across the aspect-corrected
-                // canvas, y up from the centre.
-                double fromX = (segment.FromX - 0.5) * aspect * units;
-                double fromY = (0.5 - segment.FromY) * units;
-                double toX = (segment.ToX - 0.5) * aspect * units;
-                double toY = (0.5 - segment.ToY) * units;
-
-                _activeEffect.SetDrop(i * 2, new Point4D(fromX, fromY, toX, toY));
-                _activeEffect.SetDrop(i * 2 + 1, new Point4D(segment.Age, segment.Amplitude, 0.0, 0.0));
-            }
-            else
-            {
-                _activeEffect.SetDrop(i * 2, new Point4D(0.0, 0.0, 0.0, 0.0));
-                _activeEffect.SetDrop(i * 2 + 1, new Point4D(0.0, 0.0, 0.0, 0.0));
-            }
         }
     }
 

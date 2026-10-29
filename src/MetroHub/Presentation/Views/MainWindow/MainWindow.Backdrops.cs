@@ -135,7 +135,6 @@ public partial class MainWindow
     private void OnLiveKoiPondClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("KoiPond");
     private void OnLiveInkClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Ink");
     private void OnLiveWaterCausticsClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("WaterCaustics");
-    private void OnLiveLagoonClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Lagoon");
     private void OnLivePlasmaClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Plasma");
     private void OnLiveAuroraClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Aurora");
     private void OnLivePebblesRoseClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Pebbles_Rose");
@@ -309,7 +308,6 @@ public partial class MainWindow
         if (LiveKoiPondItem != null) LiveKoiPondItem.IsChecked = isLive && string.Equals(currentLiveShader, "KoiPond", StringComparison.OrdinalIgnoreCase);
         if (LiveInkItem != null) LiveInkItem.IsChecked = isLive && string.Equals(currentLiveShader, "Ink", StringComparison.OrdinalIgnoreCase);
         if (LiveWaterCausticsItem != null) LiveWaterCausticsItem.IsChecked = isLive && string.Equals(currentLiveShader, "WaterCaustics", StringComparison.OrdinalIgnoreCase);
-        if (LiveLagoonItem != null) LiveLagoonItem.IsChecked = isLive && string.Equals(currentLiveShader, "Lagoon", StringComparison.OrdinalIgnoreCase);
         if (LivePlasmaItem != null) LivePlasmaItem.IsChecked = isLive && string.Equals(currentLiveShader, "Plasma", StringComparison.OrdinalIgnoreCase);
         if (LiveAuroraItem != null) LiveAuroraItem.IsChecked = isLive && string.Equals(currentLiveShader, "Aurora", StringComparison.OrdinalIgnoreCase);
 

@@ -88,4 +88,14 @@ def parse_trace(filename):
         print("\n")
 
 if __name__ == '__main__':
-    parse_trace('fresh_trace.speedscope.json')
+    default_dir = os.path.join(os.path.dirname(__file__), '..', 'diagnostics')
+    default_trace = os.path.join(default_dir, 'fresh_trace.speedscope.json')
+    if len(sys.argv) > 1:
+        target = sys.argv[1]
+    elif os.path.exists(default_trace):
+        target = default_trace
+    elif os.path.exists('fresh_trace.speedscope.json'):
+        target = 'fresh_trace.speedscope.json'
+    else:
+        target = default_trace
+    parse_trace(target)
