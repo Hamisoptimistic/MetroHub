@@ -347,6 +347,25 @@ public sealed class WaterRippleEffectTests
         });
     }
 
+    [Fact]
+    public void MetroShaderEffect_LagoonDeepReef_ResolvesProperly()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            Assert.True(MetroShaderEffect.IsSupported("Lagoon"));
+            Assert.True(MetroShaderEffect.IsSupported("lagoon"));
+
+            var effect = MetroShaderEffect.TryCreate("Lagoon");
+            Assert.NotNull(effect);
+            Assert.Equal("Lagoon", effect.ShaderName);
+            Assert.Equal(MetroShaderEffect.DefaultLagoonParams, effect.EffectParams);
+            Assert.Equal(0.8, effect.AtmosphereColor.X);
+            Assert.Equal(0.6, effect.AtmosphereColor.Y);
+            Assert.Equal(0.7, effect.AtmosphereColor.Z);
+            Assert.Equal(1.0, effect.AtmosphereColor.W);
+        });
+    }
+
     [Theory]
     [InlineData("Wallpaper", true, false, true)]
     [InlineData("DesktopWallpaper", true, false, true)]

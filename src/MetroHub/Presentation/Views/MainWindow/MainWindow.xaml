@@ -405,6 +405,7 @@
                                 <MenuItem x:Name="LiveKoiPondItem" Header="Koi Pond" IsCheckable="True" Click="OnLiveKoiPondClick" />
                                 <MenuItem x:Name="LiveInkItem" Header="Ink Flow" IsCheckable="True" Click="OnLiveInkClick" />
                                 <MenuItem x:Name="LiveWaterCausticsItem" Header="Water Caustics" IsCheckable="True" Click="OnLiveWaterCausticsClick" />
+                                <MenuItem x:Name="LiveLagoonItem" Header="Lagoon (Deep Reef)" IsCheckable="True" Click="OnLiveLagoonClick" />
                                 <MenuItem x:Name="LivePlasmaItem" Header="Plasma" IsCheckable="True" Click="OnLivePlasmaClick" />
                                 <MenuItem x:Name="LiveAuroraItem" Header="Aurora" IsCheckable="True" Click="OnLiveAuroraClick" />
                                 <MenuItem x:Name="LivePebblesMenu" Header="Pebbles">

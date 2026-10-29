@@ -23,6 +23,7 @@ public class MetroShaderEffect : ShaderEffect
 
     public static readonly Point4D DefaultWaterRippleParams = new(18.0, 0.006, 2.5, 2.2);
     public static readonly Point4D DefaultWaterCausticsParams = new(1.0, 1.0, 1.0, 0.0);
+    public static readonly Point4D DefaultLagoonParams = new(0.6, 0.7, 1.0, 0.6);
     public static readonly Point4D DefaultNeonClockParams = new(1.0, 1.0, 1.0, 0.0);
     public static readonly Point4D DefaultFluidWavesParams = new(0.6, 1.0, 1.0, 0.0);
     public static readonly Point4D DefaultStarfieldParams = new(0.97, 1080.0, 1.0, 1.4);
@@ -184,7 +185,8 @@ public class MetroShaderEffect : ShaderEffect
         UpdateShaderValue(MouseStateProperty);
         UpdateShaderValue(AtmosphereColorProperty);
 
-        if (string.Equals(shaderName, "Ink", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(shaderName, "Ink", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(shaderName, "Lagoon", StringComparison.OrdinalIgnoreCase))
         {
             for (int i = 0; i < 24; i++)
             {
@@ -247,6 +249,13 @@ public class MetroShaderEffect : ShaderEffect
                 new MetroShaderEffect("CyberTunnel", DefaultCyberTunnelParams),
             _ when string.Equals(effectName, "KoiPond", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("KoiPond", DefaultKoiPondParams),
+
+            // Lagoon (ittybitty.dev) — Deep Reef above view
+            _ when string.Equals(effectName, "Lagoon", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("Lagoon", DefaultLagoonParams)
+                {
+                    AtmosphereColor = new Point4D(0.8, 0.6, 0.7, 1.0)
+                },
             _ when string.Equals(effectName, "Ink", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("Ink", DefaultInkParams),
             _ when string.Equals(effectName, "Plasma", StringComparison.OrdinalIgnoreCase) =>
