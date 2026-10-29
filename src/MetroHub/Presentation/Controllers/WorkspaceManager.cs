@@ -174,12 +174,13 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
         CleanUnmanifestedWorkspaces(manifest.Workspaces.Select(w => w.Id));
     }
 
-    private static void CleanUnmanifestedWorkspaces(IEnumerable<string> validIds)
+    internal static void CleanUnmanifestedWorkspaces(IEnumerable<string>? validIds, bool isRecoveryScenario = false)
     {
         Safe.Try(() =>
         {
-            if (!Directory.Exists(AppPaths.WorkspacesDir)) return;
+            if (validIds == null || !Directory.Exists(AppPaths.WorkspacesDir)) return;
             var validSet = new HashSet<string>(validIds, StringComparer.OrdinalIgnoreCase);
+            if (validSet.Count == 0) return;
 
             foreach (string dir in Directory.EnumerateDirectories(AppPaths.WorkspacesDir))
             {
@@ -187,16 +188,21 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
                 if (validSet.Contains(dirName)) continue;
 
                 string layoutPath = Path.Combine(dir, "layout.json");
-                bool isEmptyOrCorrupt = !File.Exists(layoutPath) || new FileInfo(layoutPath).Length <= 2;
+                string layoutBakPath = Path.Combine(dir, "layout.json.bak");
+                string groupsPath = Path.Combine(dir, "groups.json");
+                string groupsBakPath = Path.Combine(dir, "groups.json.bak");
 
-                if (isEmptyOrCorrupt)
+                bool hasRecoverableData =
+                    (File.Exists(layoutPath) && new FileInfo(layoutPath).Length > 2) ||
+                    (File.Exists(layoutBakPath) && new FileInfo(layoutBakPath).Length > 2) ||
+                    (File.Exists(groupsPath) && new FileInfo(groupsPath).Length > 2) ||
+                    (File.Exists(groupsBakPath) && new FileInfo(groupsBakPath).Length > 2);
+
+                if (!hasRecoverableData && !isRecoveryScenario)
                 {
                     Safe.Try(() => Directory.Delete(dir, recursive: true), context: $"WorkspaceManager.CleanEmptyZombie({dirName})");
                 }
-                else
-                {
-                    StorageService.DeleteWorkspaceStorage(dirName);
-                }
+                // If layout or groups are valid (>2 bytes) or isRecoveryScenario is true, never delete or move directory to workspaces_trash.
             }
         }, context: "WorkspaceManager.CleanUnmanifestedWorkspaces");
     }
@@ -247,7 +253,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
         target.IsActive = true;
         ActiveWorkspace = target;
 
-        SaveManifest();
+        SaveManifest(sync: true);
 
         WorkspaceChanging?.Invoke(outgoing, target);
         WorkspaceChanged?.Invoke(target);
@@ -312,6 +318,20 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
     /// </summary>
     public bool RenameWorkspace(string workspaceId, string newName)
         => UpdateWorkspace(workspaceId, newName, null);
+
+    /// <summary>
+    /// Updates workspace icon and immediately commits the updated manifest synchronously.
+    /// </summary>
+    public bool UpdateWorkspaceIcon(string workspaceId, string newIconSymbol)
+    {
+        if (string.IsNullOrWhiteSpace(newIconSymbol)) return false;
+        var ws = Workspaces.FirstOrDefault(w => w.Id == workspaceId);
+        if (ws == null) return false;
+
+        ws.IconSymbol = newIconSymbol.Trim();
+        SaveManifest(sync: true);
+        return true;
+    }
 
 
     /// <summary>
@@ -391,6 +411,20 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
 
     private void AttachWorkspaceTracking(WorkspaceModel ws)
     {
+        ws.PropertyChanged += (sender, args) =>
+        {
+            if (args.PropertyName is nameof(WorkspaceModel.Name)
+                                  or nameof(WorkspaceModel.IconSymbol)
+                                  or nameof(WorkspaceModel.Order))
+            {
+                SaveManifest(sync: true);
+            }
+            else if (args.PropertyName is nameof(WorkspaceModel.ScrollOffset))
+            {
+                SaveManifest(sync: false);
+            }
+        };
+
         void BindTile(TileModel tile)
         {
             tile.PropertyChanged += (sender, args) => OnTilePropertyChanged(ws, args);
@@ -508,7 +542,7 @@ public sealed class WorkspaceManager : INotifyPropertyChanged
                 StorageService.SaveWorkspaceGroupsSync(ws.Id, ws.Groups);
             }
         }
-        SaveManifest();
+        SaveManifest(sync: true);
         StorageService.Flush();
     }
 

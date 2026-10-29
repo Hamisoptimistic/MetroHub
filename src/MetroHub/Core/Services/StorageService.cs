@@ -836,20 +836,31 @@ public sealed class StorageService
     {
         WorkspacesManifest? manifest = TryDeserializeFile<WorkspacesManifest>(AppPaths.WorkspacesManifestPath);
 
-        if (manifest == null)
+        if (manifest == null || manifest.Workspaces == null || manifest.Workspaces.Count == 0)
         {
-            manifest = TryDeserializeFile<WorkspacesManifest>(AppPaths.WorkspacesManifestBakPath);
-            if (manifest != null)
+            var bakManifest = TryDeserializeFile<WorkspacesManifest>(AppPaths.WorkspacesManifestBakPath);
+            if (bakManifest != null && bakManifest.Workspaces != null && bakManifest.Workspaces.Count > 0)
             {
+                manifest = bakManifest;
                 System.Diagnostics.Debug.WriteLine("[StorageService] Workspaces manifest recovered from .bak");
             }
         }
 
-        // If manifest doesn't exist or is empty, perform non-destructive copy migration
-        if (manifest == null || manifest.Workspaces.Count == 0)
+        // If manifest doesn't exist or is empty, discover from disk or perform non-destructive copy migration
+        if (manifest == null || manifest.Workspaces == null || manifest.Workspaces.Count == 0)
+        {
+            PreserveCorruptFile(AppPaths.WorkspacesManifestPath);
+            manifest = DiscoverWorkspacesFromDisk();
+        }
+
+        if (manifest == null || manifest.Workspaces == null || manifest.Workspaces.Count == 0)
         {
             manifest = MigrateLegacyToWorkspaces();
         }
+
+        manifest ??= new WorkspacesManifest();
+        manifest.Workspaces ??= new List<WorkspaceModel>();
+        manifest.Workspaces.RemoveAll(w => w == null);
 
         // Defensive: ensure at least one workspace exists
         if (manifest.Workspaces.Count == 0)
@@ -950,6 +961,102 @@ public sealed class StorageService
 
         SaveWorkspacesSync(manifest);
         return manifest;
+    }
+
+    /// <summary>
+    /// Defensively recovers workspaces by scanning existing subdirectories in AppPaths.WorkspacesDir
+    /// when workspaces.json is missing, blank, or corrupted.
+    /// </summary>
+    internal static WorkspacesManifest? DiscoverWorkspacesFromDisk()
+    {
+        return Safe.Try(() =>
+        {
+            if (!Directory.Exists(AppPaths.WorkspacesDir))
+            {
+                return null;
+            }
+
+            var dirInfo = new DirectoryInfo(AppPaths.WorkspacesDir);
+            var subdirs = dirInfo.GetDirectories();
+            if (subdirs.Length == 0)
+            {
+                return null;
+            }
+
+            var validWorkspaceDirs = new List<DirectoryInfo>();
+            foreach (var dir in subdirs)
+            {
+                if ((dir.Attributes & FileAttributes.Hidden) != 0) continue;
+
+                string layoutPath = Path.Combine(dir.FullName, "layout.json");
+                string layoutBakPath = Path.Combine(dir.FullName, "layout.json.bak");
+                string groupsPath = Path.Combine(dir.FullName, "groups.json");
+                string groupsBakPath = Path.Combine(dir.FullName, "groups.json.bak");
+
+                if (IsValidWorkspaceFile(layoutPath) || IsValidWorkspaceFile(layoutBakPath) ||
+                    IsValidWorkspaceFile(groupsPath) || IsValidWorkspaceFile(groupsBakPath))
+                {
+                    validWorkspaceDirs.Add(dir);
+                }
+            }
+
+            if (validWorkspaceDirs.Count == 0)
+            {
+                return null;
+            }
+
+            // Sort: "default" first, followed by creation time
+            var orderedDirs = validWorkspaceDirs
+                .OrderBy(d => string.Equals(d.Name, "default", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                .ThenBy(d => d.CreationTimeUtc)
+                .ToList();
+
+            var recoveredWorkspaces = new List<WorkspaceModel>(orderedDirs.Count);
+            for (int i = 0; i < orderedDirs.Count; i++)
+            {
+                var dir = orderedDirs[i];
+                string dirName = dir.Name;
+                bool isDefault = string.Equals(dirName, "default", StringComparison.OrdinalIgnoreCase);
+
+                string name = isDefault ? "Main" : $"Workspace {i + 1}";
+
+                var ws = new WorkspaceModel
+                {
+                    Id = dirName,
+                    Name = name,
+                    IconSymbol = "Desktop24",
+                    Order = i,
+                    CreatedUtc = dir.CreationTimeUtc
+                };
+
+                recoveredWorkspaces.Add(ws);
+            }
+
+            string activeId = recoveredWorkspaces.Any(w => string.Equals(w.Id, "default", StringComparison.OrdinalIgnoreCase))
+                ? "default"
+                : recoveredWorkspaces[0].Id;
+
+            var recoveredManifest = new WorkspacesManifest
+            {
+                ActiveWorkspaceId = activeId,
+                Workspaces = recoveredWorkspaces
+            };
+
+            SaveWorkspacesSync(recoveredManifest);
+            return recoveredManifest;
+        }, fallback: null, context: "StorageService.DiscoverWorkspacesFromDisk");
+    }
+
+    private static bool IsValidWorkspaceFile(string path)
+    {
+        try
+        {
+            return File.Exists(path) && new FileInfo(path).Length > 2;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public static void SaveWorkspaces(WorkspacesManifest manifest)
