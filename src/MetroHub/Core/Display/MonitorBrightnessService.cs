@@ -103,7 +103,8 @@ public sealed class MonitorBrightnessService : IDisposable
                 .ThenBy(m => m.rc.left)
                 .ToList();
 
-            // 2. Query WMI for internal laptop displays
+            // 2. Query Windows CCD API for official friendly monitor names (matching Windows Settings) and WMI for laptop internal displays
+            var ccdNames = GetCcdMonitorNames();
             var internalDisplays = GetWmiInternalDisplays();
 
             int displayIndex = 1;
@@ -140,11 +141,15 @@ public sealed class MonitorBrightnessService : IDisposable
                                 string id = $"{devName}_{p}_{rawName}";
                                 processedIds.Add(id);
 
+                                string friendlyName = ccdNames.TryGetValue(devName, out var ccdName) && !string.IsNullOrWhiteSpace(ccdName)
+                                    ? ccdName
+                                    : CleanMonitorName(rawName);
+
                                 monitors.Add(new MonitorDevice
                                 {
                                     Id = id,
                                     DeviceName = devName,
-                                    FriendlyName = CleanMonitorName(rawName),
+                                    FriendlyName = friendlyName,
                                     DisplayIndex = displayIndex++,
                                     CurrentBrightness = percentBrightness,
                                     MinBrightness = min,
@@ -170,11 +175,15 @@ public sealed class MonitorBrightnessService : IDisposable
                 if (internalMatch != null)
                 {
                     processedIds.Add(internalMatch.Id);
+                    string friendlyName = ccdNames.TryGetValue(devName, out var ccdIntName) && !string.IsNullOrWhiteSpace(ccdIntName)
+                        ? ccdIntName
+                        : (string.IsNullOrWhiteSpace(internalMatch.FriendlyName) ? "Built-in Display" : internalMatch.FriendlyName);
+
                     monitors.Add(new MonitorDevice
                     {
                         Id = internalMatch.Id,
                         DeviceName = devName,
-                        FriendlyName = string.IsNullOrWhiteSpace(internalMatch.FriendlyName) ? "Built-in Display" : internalMatch.FriendlyName,
+                        FriendlyName = friendlyName,
                         DisplayIndex = displayIndex++,
                         CurrentBrightness = internalMatch.CurrentBrightness,
                         MinBrightness = 0,
@@ -191,11 +200,15 @@ public sealed class MonitorBrightnessService : IDisposable
 
                 // 3. Fallback for displays where both DDC/CI and WMI returned 0 (e.g. virtual adapters)
                 string fallbackId = $"{devName}_{i}";
+                string fallbackName = ccdNames.TryGetValue(devName, out var ccdFallback) && !string.IsNullOrWhiteSpace(ccdFallback)
+                    ? ccdFallback
+                    : $"Display {displayIndex}";
+
                 monitors.Add(new MonitorDevice
                 {
                     Id = fallbackId,
                     DeviceName = devName,
-                    FriendlyName = $"Display {displayIndex}",
+                    FriendlyName = fallbackName,
                     DisplayIndex = displayIndex++,
                     CurrentBrightness = 50,
                     MinBrightness = 0,
@@ -462,6 +475,66 @@ public sealed class MonitorBrightnessService : IDisposable
         return results;
     }
 
+    private static Dictionary<string, string> GetCcdMonitorNames()
+    {
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            if (NativeMethods.GetDisplayConfigBufferSizes(NativeMethods.QDC_ONLY_ACTIVE_PATHS, out uint pathCount, out uint modeCount) != 0 || pathCount == 0)
+            {
+                return names;
+            }
+
+            var paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
+            var modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
+
+            if (NativeMethods.QueryDisplayConfig(NativeMethods.QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero) != 0)
+            {
+                return names;
+            }
+
+            for (int i = 0; i < pathCount; i++)
+            {
+                var path = paths[i];
+
+                var sourceName = new DISPLAYCONFIG_SOURCE_DEVICE_NAME
+                {
+                    header = new DISPLAYCONFIG_DEVICE_INFO_HEADER
+                    {
+                        type = NativeMethods.DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME,
+                        size = (uint)Marshal.SizeOf<DISPLAYCONFIG_SOURCE_DEVICE_NAME>(),
+                        adapterId = path.sourceInfo.adapterId,
+                        id = path.sourceInfo.id
+                    }
+                };
+
+                if (NativeMethods.DisplayConfigGetDeviceInfo(ref sourceName) != 0 || string.IsNullOrWhiteSpace(sourceName.viewGdiDeviceName))
+                {
+                    continue;
+                }
+
+                var targetName = new DISPLAYCONFIG_TARGET_DEVICE_NAME
+                {
+                    header = new DISPLAYCONFIG_DEVICE_INFO_HEADER
+                    {
+                        type = NativeMethods.DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME,
+                        size = (uint)Marshal.SizeOf<DISPLAYCONFIG_TARGET_DEVICE_NAME>(),
+                        adapterId = path.targetInfo.adapterId,
+                        id = path.targetInfo.id
+                    }
+                };
+
+                if (NativeMethods.DisplayConfigGetDeviceInfo(ref targetName) == 0 && !string.IsNullOrWhiteSpace(targetName.monitorFriendlyDeviceName))
+                {
+                    names[sourceName.viewGdiDeviceName] = targetName.monitorFriendlyDeviceName.Trim();
+                }
+            }
+        }
+        catch { }
+
+        return names;
+    }
+
     private static Dictionary<string, string> GetWmiMonitorNames()
     {
         var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -610,6 +683,94 @@ public sealed class MonitorBrightnessService : IDisposable
 
 #region Native Interop
 
+[StructLayout(LayoutKind.Sequential)]
+internal struct LUID
+{
+    public uint LowPart;
+    public int HighPart;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct DISPLAYCONFIG_DEVICE_INFO_HEADER
+{
+    public uint type;
+    public uint size;
+    public LUID adapterId;
+    public uint id;
+}
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct DISPLAYCONFIG_TARGET_DEVICE_NAME
+{
+    public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
+    public uint flags;
+    public uint outputTechnology;
+    public ushort edidManufactureId;
+    public ushort edidProductCodeId;
+    public uint connectorInstance;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
+    public string monitorFriendlyDeviceName;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+    public string monitorDevicePath;
+}
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct DISPLAYCONFIG_SOURCE_DEVICE_NAME
+{
+    public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)]
+    public string viewGdiDeviceName;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct DISPLAYCONFIG_RATIONAL
+{
+    public uint Numerator;
+    public uint Denominator;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct DISPLAYCONFIG_PATH_SOURCE_INFO
+{
+    public LUID adapterId;
+    public uint id;
+    public uint modeInfoIdx;
+    public uint statusFlags;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct DISPLAYCONFIG_PATH_TARGET_INFO
+{
+    public LUID adapterId;
+    public uint id;
+    public uint modeInfoIdx;
+    public uint outputTechnology;
+    public uint rotation;
+    public uint scaling;
+    public DISPLAYCONFIG_RATIONAL refreshRate;
+    public uint scanLineOrdering;
+    public bool targetAvailable;
+    public uint statusFlags;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct DISPLAYCONFIG_PATH_INFO
+{
+    public DISPLAYCONFIG_PATH_SOURCE_INFO sourceInfo;
+    public DISPLAYCONFIG_PATH_TARGET_INFO targetInfo;
+    public uint flags;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct DISPLAYCONFIG_MODE_INFO
+{
+    public uint infoType;
+    public uint id;
+    public LUID adapterId;
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
+    public byte[] modeInfo;
+}
+
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
 internal struct PHYSICAL_MONITOR
 {
@@ -648,6 +809,9 @@ internal struct POINT
 internal static class NativeMethods
 {
     public const uint MONITORINFOF_PRIMARY = 0x00000001;
+    public const uint QDC_ONLY_ACTIVE_PATHS = 0x00000002;
+    public const uint DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME = 2;
+    public const uint DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME = 1;
 
     public delegate bool MonitorEnumProc(IntPtr hMonitor, IntPtr hdcMonitor, ref RECT lprcMonitor, IntPtr dwData);
 
@@ -659,6 +823,18 @@ internal static class NativeMethods
 
     [DllImport("user32.dll")]
     public static extern bool GetCursorPos(out POINT lpPoint);
+
+    [DllImport("user32.dll")]
+    public static extern int GetDisplayConfigBufferSizes(uint flags, out uint numPathArrayElements, out uint numModeInfoArrayElements);
+
+    [DllImport("user32.dll")]
+    public static extern int QueryDisplayConfig(uint flags, ref uint numPathArrayElements, [Out] DISPLAYCONFIG_PATH_INFO[] pathArray, ref uint numModeInfoArrayElements, [Out] DISPLAYCONFIG_MODE_INFO[] modeInfoArray, IntPtr currentTopologyId);
+
+    [DllImport("user32.dll")]
+    public static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_TARGET_DEVICE_NAME requestPacket);
+
+    [DllImport("user32.dll")]
+    public static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_SOURCE_DEVICE_NAME requestPacket);
 
     [DllImport("dxva2.dll", SetLastError = true)]
     public static extern bool GetNumberOfPhysicalMonitorsFromHMONITOR(IntPtr hMonitor, out uint pdwNumberOfPhysicalMonitors);

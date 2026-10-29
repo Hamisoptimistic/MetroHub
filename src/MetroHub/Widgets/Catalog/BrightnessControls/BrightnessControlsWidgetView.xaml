@@ -260,37 +260,16 @@
                                                            VerticalAlignment="Center"
                                                            HorizontalAlignment="Left" />
 
-                                                <!-- 3. Device Friendly Name & Role Subtitle -->
-                                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="2,0,6,0">
-                                                    <TextBlock Text="{Binding FriendlyName}"
-                                                               FontSize="{DynamicResource TypeBodyFontSize}"
-                                                               FontWeight="{DynamicResource TypeBodyFontWeight}"
-                                                               Foreground="{DynamicResource TextPrimaryBrush}"
-                                                               TextTrimming="CharacterEllipsis" />
-                                                    <TextBlock FontSize="{DynamicResource TypeCaptionFontSize}"
-                                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
-                                                               Foreground="{DynamicResource TextMutedBrush}"
-                                                               Margin="0,1,0,0">
-                                                        <TextBlock.Style>
-                                                            <Style TargetType="TextBlock">
-                                                                <Setter Property="Text" Value="Secondary Display" />
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding IsPrimary}" Value="True">
-                                                                        <Setter Property="Text" Value="Primary Display" />
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding IsInternal}" Value="True">
-                                                                        <Setter Property="Text" Value="Built-in Screen" />
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding IsSupported}" Value="False">
-                                                                        <Setter Property="Text" Value="DDC/CI Disabled" />
-                                                                        <Setter Property="Foreground" Value="{DynamicResource StatusWarningBrush}" />
-                                                                        <Setter Property="ToolTip" Value="DDC/CI hardware control is disabled. Please enable DDC/CI in your monitor's on-screen display (OSD) menu." />
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </TextBlock.Style>
-                                                    </TextBlock>
-                                                </StackPanel>
+                                                <!-- 3. Device Friendly Name (Single Line, Truncates with Ellipsis) -->
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding FriendlyName}"
+                                                           FontSize="{DynamicResource TypeBodyFontSize}"
+                                                           FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           VerticalAlignment="Center"
+                                                           Margin="2,0,6,0"
+                                                           ToolTip="{Binding FriendlyName}" />
 
                                                 <!-- 4. Individual Monitor Slider -->
                                                 <controls:WidgetVolumeSlider Grid.Column="3"

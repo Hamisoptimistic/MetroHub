@@ -190,8 +190,6 @@
                                                             <ColumnDefinition Width="24" />
                                                             <!-- Col 2: Device Friendly Name (WHITE) -->
                                                             <ColumnDefinition Width="*" />
-                                                            <!-- Col 3: Active Checkmark (WHITE) -->
-                                                            <ColumnDefinition Width="24" />
                                                         </Grid.ColumnDefinitions>
 
                                                         <!-- 1. Active Accent Pill (Left Vertical Indicator) -->
@@ -221,16 +219,6 @@
                                                                    TextTrimming="CharacterEllipsis"
                                                                    VerticalAlignment="Center"
                                                                    Margin="2,0" />
-
-                                                        <!-- 4. Active Selection Checkmark (WHITE) -->
-                                                        <TextBlock Grid.Column="3"
-                                                                   Text="&#xE73E;"
-                                                                   FontFamily="{DynamicResource AppIconFontFamily}"
-                                                                   FontSize="13"
-                                                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                                                   HorizontalAlignment="Right"
-                                                                   VerticalAlignment="Center"
-                                                                   Visibility="{Binding IsDefault, Converter={StaticResource BoolToVis}}" />
                                                     </Grid>
                                                 </Border>
                                                 <ControlTemplate.Triggers>
