@@ -26,6 +26,7 @@ public class MetroShaderEffect : ShaderEffect
     public static readonly Point4D DefaultNeonClockParams = new(1.0, 1.0, 1.0, 0.0);
     public static readonly Point4D DefaultFluidWavesParams = new(0.6, 1.0, 1.0, 0.0);
     public static readonly Point4D DefaultStarfieldParams = new(0.97, 1080.0, 1.0, 1.4);
+    public static readonly Point4D DefaultDeepSpaceParams = new(1080.0, 1.0, 1.0, 0.0);
     public static readonly Point4D DefaultCircuitParams = new(14.0, 1.0, 1.0, 0.0);
     public static readonly Point4D DefaultEtherParams = new(1.1, 0.8, 1.0, 0.0);
     public static readonly Point4D DefaultSmokeFogParams = new(2.0, 1.0, 1.0, 0.0);
@@ -235,6 +236,8 @@ public class MetroShaderEffect : ShaderEffect
                 new MetroShaderEffect("FluidWaves", DefaultFluidWavesParams),
             _ when string.Equals(effectName, "Starfield", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("Starfield", DefaultStarfieldParams),
+            _ when string.Equals(effectName, "DeepSpace", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("DeepSpace", DefaultDeepSpaceParams),
             _ when string.Equals(effectName, "Circuit", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("Circuit", DefaultCircuitParams),
             _ when string.Equals(effectName, "Ether", StringComparison.OrdinalIgnoreCase) =>

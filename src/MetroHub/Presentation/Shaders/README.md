@@ -46,7 +46,7 @@ Direct3D 9 (Pixel Shader 3.0) pipeline driving MetroHub desktop backdrops and in
 
 What you can build with this pipeline:
 
-- **Procedural Backdrops**: Math-driven generative visuals running entirely on the GPU with zero image RAM (`Aurora`, `Plasma`, `Starfield`, `CyberTunnel`, `Ether`, `Circuit`, `FluidWaves`, `SmokeFog`).
+- **Procedural Backdrops**: Math-driven generative visuals running entirely on the GPU with zero image RAM (`Aurora`, `DeepSpace`, `Plasma`, `Starfield`, `CyberTunnel`, `Ether`, `Circuit`, `FluidWaves`, `SmokeFog`).
 - **Interactive Mouse Effects**: Liquid cursor trails, water disturbances, and steering (`Ink`, `KoiPond`, `Pebbles`, `Kaliset`). Smooth cursor coordinates arrive through register `c2`.
 - **24-Hour Diurnal Lighting**: Sunlight and sky colors synced to local wall-clock time (`Meadow`, `Planet`, `NeonClock`) via `c0.z` (seconds since midnight).
 - **Multi-Texture 3D Shaders**: Spherical projections with diffuse, night city lights, clouds, and specular maps (`Planet`) using samplers `s0..s3` and mouse drag yaw (`c2.w`).

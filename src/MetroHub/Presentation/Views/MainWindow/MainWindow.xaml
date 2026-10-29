@@ -395,6 +395,7 @@
                             <Separator />
                             <MenuItem x:Name="LiveWallpapersMenu" Header="Live Wallpapers">
                                 <MenuItem x:Name="LiveStarfieldItem" Header="Starfield" IsCheckable="True" Click="OnLiveStarfieldClick" />
+                                <MenuItem x:Name="LiveDeepSpaceItem" Header="Deep Space" IsCheckable="True" Click="OnLiveDeepSpaceClick" />
                                 <MenuItem x:Name="LiveCyberTunnelItem" Header="Cyber Tunnel" IsCheckable="True" Click="OnLiveCyberTunnelClick" />
                                 <MenuItem x:Name="LiveFluidWavesItem" Header="Fluid Waves" IsCheckable="True" Click="OnLiveFluidWavesClick" />
                                 <MenuItem x:Name="LiveNeonClockItem" Header="Neon Clock" IsCheckable="True" Click="OnLiveNeonClockClick" />

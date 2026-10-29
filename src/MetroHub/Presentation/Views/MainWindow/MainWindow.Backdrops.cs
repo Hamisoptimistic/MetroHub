@@ -125,6 +125,7 @@ public partial class MainWindow
     }
 
     private void OnLiveStarfieldClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Starfield");
+    private void OnLiveDeepSpaceClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("DeepSpace");
     private void OnLiveCyberTunnelClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("CyberTunnel");
     private void OnLiveFluidWavesClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("FluidWaves");
     private void OnLiveNeonClockClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("NeonClock");
@@ -298,6 +299,7 @@ public partial class MainWindow
         // Live Wallpapers
         string currentLiveShader = Settings.WallpaperEffect ?? "Starfield";
         if (LiveStarfieldItem != null) LiveStarfieldItem.IsChecked = isLive && string.Equals(currentLiveShader, "Starfield", StringComparison.OrdinalIgnoreCase);
+        if (LiveDeepSpaceItem != null) LiveDeepSpaceItem.IsChecked = isLive && string.Equals(currentLiveShader, "DeepSpace", StringComparison.OrdinalIgnoreCase);
         if (LiveCyberTunnelItem != null) LiveCyberTunnelItem.IsChecked = isLive && string.Equals(currentLiveShader, "CyberTunnel", StringComparison.OrdinalIgnoreCase);
         if (LiveFluidWavesItem != null) LiveFluidWavesItem.IsChecked = isLive && string.Equals(currentLiveShader, "FluidWaves", StringComparison.OrdinalIgnoreCase);
         if (LiveNeonClockItem != null) LiveNeonClockItem.IsChecked = isLive && string.Equals(currentLiveShader, "NeonClock", StringComparison.OrdinalIgnoreCase);
