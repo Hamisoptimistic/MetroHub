@@ -15,7 +15,6 @@ using MetroHub.Widgets.Catalog.Network;
 using MetroHub.Widgets.Catalog.Notepad;
 using MetroHub.Widgets.Catalog.Photos;
 using MetroHub.Widgets.Catalog.Pomodoro;
-using MetroHub.Widgets.Catalog.Power;
 using MetroHub.Widgets.Catalog.QuickControls;
 using MetroHub.Widgets.Catalog.Quotes;
 using MetroHub.Widgets.Catalog.Radio;
@@ -46,7 +45,6 @@ public class XamlViewSanityTests
     [InlineData(typeof(NotepadWidgetView))]
     [InlineData(typeof(PhotosWidgetView))]
     [InlineData(typeof(PomodoroWidgetView))]
-    [InlineData(typeof(PowerWidgetView))]
     [InlineData(typeof(QuickControlsWidgetView))]
     [InlineData(typeof(QuotesWidgetView))]
     [InlineData(typeof(RadioWidgetView))]

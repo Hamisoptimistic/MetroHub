@@ -1416,7 +1416,7 @@ public partial class MainWindow
     internal static bool IsInteractiveElement(DependencyObject? dep)
     {
         // Opt-in escape hatch: a widget whose interactive children would otherwise make the
-        // whole tile undraggable can mark itself Tag="AllowTileDrag" (see PowerWidgetView).
+        // whole tile undraggable can mark itself Tag="AllowTileDrag".
         // The hub then still starts a potential drag on press, and the click/drag conflict
         // resolves itself: ButtonBase only raises Click while it still holds mouse capture,
         // and promoting the press to a drag steals that capture — so a clean click still
