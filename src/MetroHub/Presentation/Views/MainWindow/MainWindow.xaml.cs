@@ -303,7 +303,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
             }
             if (AllAppsDrawer != null && AllAppsDrawer.IsOpen && _canvasScissorTranslate != null)
             {
-                _canvasScissorTranslate.X = (AllAppsDrawer.DrawerWidth > 0 ? AllAppsDrawer.DrawerWidth : 320.0);
+                _canvasScissorTranslate.X = (AllAppsDrawer.DrawerWidth > 0 ? AllAppsDrawer.DrawerWidth : 340.0);
             }
         };
 

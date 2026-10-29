@@ -291,7 +291,7 @@ namespace MetroHub.Presentation.Controls
 
         public bool IsOpen { get; private set; } = false;
 
-        public double DrawerWidth => ActualWidth > 0 ? ActualWidth : (Width > 0 && !double.IsNaN(Width) ? Width : 320);
+        public double DrawerWidth => ActualWidth > 0 ? ActualWidth : (Width > 0 && !double.IsNaN(Width) ? Width : 340);
 
         private List<CatalogItemModel> _allApps = new();
         private Point _dragStartPoint;

@@ -290,8 +290,8 @@ public partial class MainWindow
             return;
         }
 
-        double drawerWidth = AllAppsDrawer?.DrawerWidth ?? 320.0;
-        if (drawerWidth <= 0) drawerWidth = 320.0;
+        double drawerWidth = AllAppsDrawer?.DrawerWidth ?? 340.0;
+        if (drawerWidth <= 0) drawerWidth = 340.0;
 
         _canvasScissorTranslate ??= new TranslateTransform(0, 0);
         _canvasScissorTranslate.BeginAnimation(TranslateTransform.XProperty, null);
