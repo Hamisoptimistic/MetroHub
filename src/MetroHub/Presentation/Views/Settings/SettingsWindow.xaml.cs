@@ -28,6 +28,7 @@ public partial class SettingsWindow : BorderlessFluentWindow
 
     public SettingsWindow()
     {
+        WindowCornerPreference = Wpf.Ui.Controls.WindowCornerPreference.Round;
         InitializeComponent();
         DataContext = new SettingsShellViewModel();
     }
@@ -73,7 +74,13 @@ public partial class SettingsWindow : BorderlessFluentWindow
             }
 
             // Apply native Windows 11 DWM Acrylic composition (DWMSBT_TRANSIENTWINDOW = 3)
-            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW);
+            int cornerPref = WindowCornerPreference switch
+            {
+                Wpf.Ui.Controls.WindowCornerPreference.Round => NativeMethods.DWMWCP_ROUND,
+                Wpf.Ui.Controls.WindowCornerPreference.RoundSmall => NativeMethods.DWMWCP_ROUNDSMALL,
+                _ => NativeMethods.DWMWCP_DONOTROUND
+            };
+            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW, cornerPref);
         }
     }
 

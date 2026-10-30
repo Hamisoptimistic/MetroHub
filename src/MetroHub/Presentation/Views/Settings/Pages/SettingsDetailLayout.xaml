@@ -42,7 +42,7 @@
                 Grid.RowSpan="2"
                 Grid.Column="1"
                 Background="{DynamicResource DialogPanelBackground}"
-                CornerRadius="{DynamicResource TileCornerRadiusRight}" />
+                CornerRadius="{DynamicResource DialogContentPanelCornerRadius}" />
 
         <!-- ========================================================================= -->
         <!-- ROW 0: TOP NAVIGATION BAND                                                -->

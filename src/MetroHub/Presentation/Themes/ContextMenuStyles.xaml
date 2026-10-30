@@ -91,7 +91,7 @@
     <ControlTemplate x:Key="UniversalFluentSubmenuItemTemplate" TargetType="{x:Type MenuItem}">
         <Border x:Name="Border"
                 Background="Transparent"
-                CornerRadius="{DynamicResource ContextMenuCornerRadius}"
+                CornerRadius="{DynamicResource ContextMenuItemCornerRadius}"
                 Margin="4,1,4,1"
                 >
             <Grid Height="{TemplateBinding MinHeight}">
@@ -168,7 +168,7 @@
         <Grid>
             <Border x:Name="Border"
                     Background="Transparent"
-                    CornerRadius="{DynamicResource ContextMenuCornerRadius}"
+                    CornerRadius="{DynamicResource ContextMenuItemCornerRadius}"
                     Margin="4,1,4,1"
                     >
                 <Grid Height="{TemplateBinding MinHeight}">

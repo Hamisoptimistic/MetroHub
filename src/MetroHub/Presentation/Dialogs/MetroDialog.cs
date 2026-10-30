@@ -141,6 +141,7 @@ public class MetroDialog : BorderlessFluentWindow
 
     public MetroDialog()
     {
+        WindowCornerPreference = WindowCornerPreference.Round;
         Width = 620;
         Height = 360;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -313,8 +314,13 @@ public class MetroDialog : BorderlessFluentWindow
             }
 
             // Apply native DWM Acrylic immediately on final window metrics.
-            // Samples and blurs background windows into a frosted glass effect.
-            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW);
+            int cornerPref = WindowCornerPreference switch
+            {
+                Wpf.Ui.Controls.WindowCornerPreference.Round => NativeMethods.DWMWCP_ROUND,
+                Wpf.Ui.Controls.WindowCornerPreference.RoundSmall => NativeMethods.DWMWCP_ROUNDSMALL,
+                _ => NativeMethods.DWMWCP_DONOTROUND
+            };
+            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW, cornerPref);
         }
     }
 

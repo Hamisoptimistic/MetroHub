@@ -11,7 +11,7 @@
         MinWidth="720" MinHeight="460"
         WindowStartupLocation="CenterOwner"
         WindowBackdropType="Acrylic"
-        WindowCornerPreference="DoNotRound"
+        WindowCornerPreference="Round"
         WindowStyle="None"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
@@ -46,12 +46,12 @@
     <Border Background="Transparent"
             BorderBrush="{DynamicResource SurfaceBorderBrush}"
             BorderThickness="1"
-            CornerRadius="{DynamicResource TileCornerRadius}"
+            CornerRadius="{DynamicResource DialogCornerRadius}"
             SnapsToDevicePixels="True">
         <!-- Master Layout Grid (Full-Bleed Viewport with Floating Titlebar Overlay) -->
         <Grid Background="Transparent"
               controls:ClipHelper.IsCornerClipped="True"
-              controls:ClipHelper.CornerRadius="{DynamicResource TileCornerRadius}"
+              controls:ClipHelper.CornerRadius="{DynamicResource DialogCornerRadius}"
               controls:ClipHelper.BorderThickness="1">
             <!-- Full-Bleed Content Host (CurrentView covers all window bounds Y=0..640) -->
             <ContentControl Content="{Binding CurrentView}"

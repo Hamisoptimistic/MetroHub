@@ -131,7 +131,7 @@
                 Background="{DynamicResource DialogPanelBackground}"
                 BorderBrush="Transparent"
                 BorderThickness="0,0.5,0,0"
-                CornerRadius="{DynamicResource ControlCornerRadiusBottom}">
+                CornerRadius="{DynamicResource DialogBottomPanelCornerRadius}">
             <ScrollViewer VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
                 <ItemsControl ItemsSource="{Binding Categories}"

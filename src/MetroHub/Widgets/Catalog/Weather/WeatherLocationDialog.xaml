@@ -126,7 +126,7 @@
                             Background="#232323"
                             BorderBrush="#40FFFFFF"
                             BorderThickness="1"
-                            CornerRadius="{DynamicResource ControlCornerRadiusBottom}">
+                            CornerRadius="{DynamicResource ContextMenuCornerRadius}">
                         <ListBox x:Name="WeatherSuggestionsList"
                                  Background="Transparent"
                                  BorderThickness="0"

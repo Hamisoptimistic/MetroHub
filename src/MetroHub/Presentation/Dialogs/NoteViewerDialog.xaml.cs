@@ -45,17 +45,6 @@ public partial class NoteViewerDialog : MetroDialog
         };
     }
 
-    protected override void OnSourceInitialized(EventArgs e)
-    {
-        base.OnSourceInitialized(e);
-
-        IntPtr hwnd = new WindowInteropHelper(this).Handle;
-        if (hwnd != IntPtr.Zero)
-        {
-            // Apply native Windows 11 DWM Acrylic composition with sharp Metro 2px border
-            NativeMethods.ApplyMica(hwnd, dark: true, NativeMethods.DWMSBT_TRANSIENTWINDOW, NativeMethods.DWMWCP_DONOTROUND);
-        }
-    }
 
     protected override void OnClosed(EventArgs e)
     {

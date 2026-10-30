@@ -207,4 +207,110 @@ public class XamlViewSanityTests
             Assert.True((bool)netList.GetValue(ScrollViewer.CanContentScrollProperty));
         });
     }
+
+    [Fact]
+    public void DialogsAndSettingsWindow_HaveRoundWindowCornerPreference()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var metroDialog = new MetroDialog();
+            Assert.Equal(Wpf.Ui.Controls.WindowCornerPreference.Round, metroDialog.WindowCornerPreference);
+
+            var noteDialog = new NoteViewerDialog(new Core.Models.TileModel());
+            Assert.Equal(Wpf.Ui.Controls.WindowCornerPreference.Round, noteDialog.WindowCornerPreference);
+
+            var settings = new MetroHub.Presentation.Views.Settings.SettingsWindow();
+            Assert.Equal(Wpf.Ui.Controls.WindowCornerPreference.Round, settings.WindowCornerPreference);
+        });
+    }
+
+    [Fact]
+    public void AccentButtonStyle_HasZeroBorderThickness_AndScalesWithResourceTokens()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var btnStyle = Application.Current.TryFindResource("AccentButtonStyle") as Style;
+            Assert.NotNull(btnStyle);
+
+            var button = new Button { Style = btnStyle };
+            var window = new Window { Content = button, Width = 100, Height = 100 };
+            window.Show();
+            System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
+
+            Assert.Equal(new Thickness(0), button.BorderThickness);
+
+            var border = button.Template.FindName("BtnBorder", button) as Border;
+            Assert.NotNull(border);
+            Assert.Equal(new Thickness(0), border.BorderThickness);
+            Assert.Equal(Application.Current.FindResource("ControlCornerRadius"), border.CornerRadius);
+
+            try
+            {
+                // Test dynamic token scaling across all standard corner radii
+                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(0);
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
+                Assert.Equal(new CornerRadius(0), border.CornerRadius);
+
+                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(4);
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
+                Assert.Equal(new CornerRadius(4), border.CornerRadius);
+
+                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(8);
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
+                Assert.Equal(new CornerRadius(6), border.CornerRadius);
+            }
+            finally
+            {
+                // Reset back to standard subtle fluent token (2px)
+                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(2);
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
+                Assert.Equal(new CornerRadius(2), border.CornerRadius);
+                window.Close();
+            }
+        });
+    }
+
+    [Fact]
+    public void MetroSettingsCards_UseTileCornerRadiusToken()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var cardStyle = Application.Current.FindResource(typeof(Wpf.Ui.Controls.CardControl)) as Style;
+            var card = new Wpf.Ui.Controls.CardControl { Style = cardStyle };
+            Assert.Equal(Application.Current.FindResource("TileCornerRadius"), card.CornerRadius);
+
+            var expanderStyle = Application.Current.FindResource(typeof(Wpf.Ui.Controls.CardExpander)) as Style;
+            var expander = new Wpf.Ui.Controls.CardExpander { Style = expanderStyle };
+            Assert.Equal(Application.Current.FindResource("TileCornerRadius"), expander.CornerRadius);
+        });
+    }
+
+    [Fact]
+    public void DialogsAndSettingsWindow_UseDialogCornerRadiusTokens()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var dialogRadius = (CornerRadius)Application.Current.FindResource("DialogCornerRadius");
+            var contentPanelRadius = (CornerRadius)Application.Current.FindResource("DialogContentPanelCornerRadius");
+            var bottomPanelRadius = (CornerRadius)Application.Current.FindResource("DialogBottomPanelCornerRadius");
+
+            Assert.Equal(new CornerRadius(8), dialogRadius);
+            Assert.Equal(new CornerRadius(0, 7, 7, 0), contentPanelRadius);
+            Assert.Equal(new CornerRadius(0, 0, 7, 7), bottomPanelRadius);
+
+            var contextMenuRadius = (CornerRadius)Application.Current.FindResource("ContextMenuCornerRadius");
+            var contextMenuItemRadius = (CornerRadius)Application.Current.FindResource("ContextMenuItemCornerRadius");
+            Assert.Equal(new CornerRadius(8), contextMenuRadius);
+            Assert.Equal(new CornerRadius(4), contextMenuItemRadius);
+
+            var settings = new MetroHub.Presentation.Views.Settings.SettingsWindow();
+            var border = settings.Content as Border;
+            Assert.NotNull(border);
+            Assert.Equal(dialogRadius, border.CornerRadius);
+
+            var grid = border.Child as Grid;
+            Assert.NotNull(grid);
+            Assert.Equal(dialogRadius, MetroHub.Presentation.Controls.ClipHelper.GetCornerRadius(grid));
+        });
+    }
 }

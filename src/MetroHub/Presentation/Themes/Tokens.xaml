@@ -76,7 +76,6 @@
     <SolidColorBrush x:Key="SmokeFillColorDefaultBrush" Color="#1A08080C" po:Freeze="True" />
     <SolidColorBrush x:Key="ContentDialogSeparatorBorderBrush" Color="#18FFFFFF" po:Freeze="True" />
     <SolidColorBrush x:Key="ContentDialogTopOverlay" Color="#08FFFFFF" po:Freeze="True" />
-    <CornerRadius x:Key="DialogOverlayCornerRadius">10,10,0,0</CornerRadius>
     <!-- Tier 2 Obsidian Deck Tint (calibrated translucent acrylic tint matching SettingsWindow) -->
     <SolidColorBrush x:Key="DialogPanelBackground" Color="#280D0D11" po:Freeze="True" />
     <SolidColorBrush x:Key="DialogShellBackground" Color="#202020" po:Freeze="True" />
@@ -87,7 +86,6 @@
     <!-- ========================================================================= -->
     <SolidColorBrush x:Key="ShellBadgeBackground" Color="#F0202022" po:Freeze="True" />
     <SolidColorBrush x:Key="ShellToastBackground" Color="#EE18181C" po:Freeze="True" />
-    <CornerRadius x:Key="ToastCornerRadius">8</CornerRadius>
 
     <!-- ========================================================================= -->
     <!-- CANVAS GROUP COLOR PALETTE (10 Standard Metro/Fluent Accents)             -->
@@ -136,9 +134,11 @@
     <!-- Dialog Geometry Tokens (Fluent 2 Window / Modal Spec) -->
     <CornerRadius x:Key="DialogCornerRadius">8</CornerRadius>
     <CornerRadius x:Key="DialogContentPanelCornerRadius">0,7,7,0</CornerRadius>
+    <CornerRadius x:Key="DialogBottomPanelCornerRadius">0,0,7,7</CornerRadius>
 
     <!-- ContextMenu & Dropdown Container / Item Radius -->
-    <CornerRadius x:Key="ContextMenuCornerRadius">2</CornerRadius>
+    <CornerRadius x:Key="ContextMenuCornerRadius">8</CornerRadius>
+    <CornerRadius x:Key="ContextMenuItemCornerRadius">4</CornerRadius>
 
     <!-- MetroHub Tile Geometry Tokens -->
     <!-- Default: 2 for Subtle Fluent/Metro edge. (0 = Sharp Metro, 2 = Subtle Fluent, 4 = Medium Fluent, 8 = Rounded Fluent) -->

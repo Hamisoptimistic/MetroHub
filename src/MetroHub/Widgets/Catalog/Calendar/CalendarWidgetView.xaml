@@ -120,11 +120,11 @@
                                                    Foreground="{DynamicResource TextDisabledBrush}"
                                                    />
 
-                                        <!-- Today: Universal 2px Accent Border -->
+                                        <!-- Today: Universal Accent Border -->
                                         <Border x:Name="TodayFrame"
                                                 BorderThickness="2"
                                                 BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                                CornerRadius="2"
+                                                CornerRadius="{DynamicResource ControlCornerRadius}"
                                                 Margin="1"
                                                 Visibility="Collapsed"
                                                 IsHitTestVisible="False"

@@ -123,6 +123,7 @@
         <Setter Property="FontSize" Value="{DynamicResource TypeBodyStrongFontSize}" />
         <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
         <Setter Property="Foreground" Value="{DynamicResource SystemAccentColorForegroundBrush}" />
+        <Setter Property="BorderThickness" Value="0" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
@@ -132,19 +133,16 @@
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="BtnBorder"
                             Background="{DynamicResource SystemAccentColorPrimaryBrush}"
-                            BorderBrush="{DynamicResource SystemAccentColorPrimaryBrush}"
-                            BorderThickness="1"
+                            BorderThickness="0"
                             CornerRadius="{DynamicResource ControlCornerRadius}">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource SystemAccentColorSecondaryBrush}" />
-                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource SystemAccentColorSecondaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="BtnBorder" Property="Background" Value="{DynamicResource SystemAccentColorTertiaryBrush}" />
-                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="{DynamicResource SystemAccentColorTertiaryBrush}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="BtnBorder" Property="Opacity" Value="0.35" />
@@ -495,7 +493,7 @@
                 <ControlTemplate TargetType="{x:Type ComboBoxItem}">
                     <Border x:Name="Border"
                             Background="Transparent"
-                            CornerRadius="{DynamicResource ContextMenuCornerRadius}"
+                            CornerRadius="{DynamicResource ContextMenuItemCornerRadius}"
                             Margin="4,1,4,1"
                             SnapsToDevicePixels="True"
                             UseLayoutRounding="True">
@@ -940,7 +938,7 @@
                     <Border Background="{TemplateBinding Background}"
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
-                            CornerRadius="2"
+                            CornerRadius="{DynamicResource ControlCornerRadius}"
                             Padding="{TemplateBinding Padding}"
                             SnapsToDevicePixels="True"
                             UseLayoutRounding="True">
@@ -973,14 +971,14 @@
                                     <!-- Hover Box (Gentle pre-glow) -->
                                     <Border x:Name="HoverBox"
                                             Background="#10FFFFFF"
-                                            CornerRadius="2"
+                                            CornerRadius="{DynamicResource ControlCornerRadius}"
                                             BorderThickness="0"
                                             Opacity="0" />
 
-                                    <!-- Active Box (2px Corner Radius Frosted Glass Pill) -->
+                                    <!-- Active Box (Frosted Glass Pill) -->
                                     <Border x:Name="ActiveBox"
                                             Background="#24FFFFFF"
-                                            CornerRadius="2"
+                                            CornerRadius="{DynamicResource ControlCornerRadius}"
                                             BorderThickness="0"
                                             Opacity="0" />
 
