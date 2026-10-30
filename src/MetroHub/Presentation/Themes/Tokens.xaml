@@ -135,6 +135,9 @@
     <!-- Modal Dialogs, Settings, and System Overlays (Strict Sharp Metro: 0px) -->
     <CornerRadius x:Key="DialogCornerRadius">0</CornerRadius>
 
+    <!-- Universal Modal Window Close Button Inset (Equidistant 10px from Top & Right) -->
+    <Thickness x:Key="ModalDismissButtonMargin">0,10,10,0</Thickness>
+
     <!-- Context Menu & Flyout Container / Items -->
     <CornerRadius x:Key="ContextMenuCornerRadius">8</CornerRadius>
     <CornerRadius x:Key="ContextMenuItemCornerRadius">4</CornerRadius>

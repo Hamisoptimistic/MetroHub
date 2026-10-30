@@ -61,14 +61,14 @@
             <!-- ========================================================================= -->
             <!-- TOP-RIGHT CLOSE [X] BUTTON (NON-DRAGGABLE WINDOW)                         -->
             <!-- ========================================================================= -->
-            <StackPanel HorizontalAlignment="Right"
-                        VerticalAlignment="Top"
-                        Margin="0,8,10,0">
-                <Button x:Name="CloseButton"
-                        Style="{DynamicResource ModalDismissButtonStyle}"
-                        Click="OnCloseButtonClick"
-                        ToolTip="Close (Esc)" />
-            </StackPanel>
+            <Button x:Name="CloseButton"
+                    Style="{DynamicResource ModalDismissButtonStyle}"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="{DynamicResource ModalDismissButtonMargin}"
+                    Panel.ZIndex="100"
+                    Click="OnCloseButtonClick"
+                    ToolTip="Close (Esc)" />
         </Grid>
     </Border>
 </views:BorderlessFluentWindow>

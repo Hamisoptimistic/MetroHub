@@ -65,19 +65,14 @@
                                     RenderOptions.ClearTypeHint="Enabled">
                                 <Grid Margin="24,20,24,20">
                                     <Grid.RowDefinitions>
-                                        <!-- Row 0: Header (Title + Dismiss [X]) -->
+                                        <!-- Row 0: Header (Title) -->
                                         <RowDefinition Height="Auto" />
                                         <!-- Row 1: Dialog Content Body -->
                                         <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
 
-                                    <!-- Header -->
-                                    <Grid Grid.Row="0" Margin="0,0,0,16">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-
+                                    <!-- Header (36px right clearance for Close [X] button) -->
+                                    <Grid Grid.Row="0" Margin="0,0,36,16">
                                         <StackPanel VerticalAlignment="Center">
                                             <TextBlock Text="{TemplateBinding Title}"
                                                        FontSize="{DynamicResource TypeHeaderFontSize}"
@@ -92,19 +87,22 @@
                                                        TextTrimming="CharacterEllipsis"
                                                        Visibility="{TemplateBinding SubtitleVisibility}" />
                                         </StackPanel>
-
-                                        <!-- Top-Right Close Button -->
-                                        <Button x:Name="PART_CloseButton"
-                                                Grid.Column="1"
-                                                Style="{DynamicResource ModalDismissButtonStyle}"
-                                                VerticalAlignment="Top"
-                                                ToolTip="Close (Esc)" />
                                     </Grid>
 
                                     <!-- Body Content Slot -->
                                     <ContentPresenter Grid.Row="1" />
                                 </Grid>
                             </Border>
+
+                            <!-- Universal Modal Close [X] Button (Top-Right Chrome Overlay) -->
+                            <Button x:Name="PART_CloseButton"
+                                    Grid.Column="1"
+                                    Style="{DynamicResource ModalDismissButtonStyle}"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    Margin="{DynamicResource ModalDismissButtonMargin}"
+                                    Panel.ZIndex="100"
+                                    ToolTip="Close (Esc)" />
                         </Grid>
                     </Border>
                 </ControlTemplate>

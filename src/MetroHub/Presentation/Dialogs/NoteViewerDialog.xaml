@@ -179,32 +179,28 @@
             <Grid Grid.Row="0"
                   Background="Transparent"
                   MouseLeftButtonDown="OnTitleBarMouseDown"
-                  Margin="20,14,14,4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
+                  Margin="20,14,46,4">
                 <!-- Note Title -->
                 <TextBlock x:Name="TitleTextBlock"
-                           Grid.Column="0"
                            Text="Note"
                            FontSize="{DynamicResource TypeHeaderFontSize}"
                            FontWeight="{DynamicResource TypeHeaderFontWeight}"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis"
-                           Margin="0,0,8,0" />
-
-                <!-- Top-Right Close Button -->
-                <Button x:Name="PART_CloseButton"
-                        Grid.Column="1"
-                        Style="{DynamicResource ModalDismissButtonStyle}"
-                        VerticalAlignment="Center"
-                        Click="OnCloseClick"
-                        TabIndex="4"
-                        ToolTip="Close (Esc)" />
+                           TextTrimming="CharacterEllipsis" />
             </Grid>
+
+            <!-- Universal Modal Close [X] Button (Top-Right Chrome Overlay) -->
+            <Button x:Name="PART_CloseButton"
+                    Grid.Row="0"
+                    Style="{DynamicResource ModalDismissButtonStyle}"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Margin="{DynamicResource ModalDismissButtonMargin}"
+                    Click="OnCloseClick"
+                    TabIndex="4"
+                    Panel.ZIndex="100"
+                    ToolTip="Close (Esc)" />
 
             <!-- ========================================================================= -->
             <!-- ROW 1: TEXT CONTENT WITH UNIVERSAL FLOATING SCROLLBAR                     -->
