@@ -773,9 +773,20 @@ public partial class MainWindow
     {
         Settings.TileCornerRadius = radius;
         StorageService.SaveSettings(Settings);
-        Application.Current.Resources["TileCornerRadius"] = new CornerRadius(radius);
-        Application.Current.Resources["ControlCornerRadius"] = new CornerRadius(radius <= 2 ? radius : (radius == 4 ? 4 : 6));
+        UpdateCornerRadiusResourceTokens(radius);
         UpdateTileCornerMenuChecks();
+    }
+
+    public static void UpdateCornerRadiusResourceTokens(int radius)
+    {
+        var res = Application.Current.Resources;
+        res["TileCornerRadius"] = new CornerRadius(radius);
+        res["TileCornerRadiusRight"] = new CornerRadius(0, radius, radius, 0);
+        res["ControlCornerRadius"] = new CornerRadius(radius <= 2 ? radius : (radius == 4 ? 4 : 6));
+        res["ControlCornerRadiusBottom"] = new CornerRadius(0, 0, radius, radius);
+        res["ControlCornerRadiusTop"] = new CornerRadius(radius, radius, 0, 0);
+        res["ControlCornerRadiusSmall"] = new CornerRadius(Math.Max(0, radius - 2));
+        res["ControlCornerRadiusLarge"] = new CornerRadius(radius <= 2 ? radius * 2 : 8);
     }
 
     private void UpdateTileCornerMenuChecks()

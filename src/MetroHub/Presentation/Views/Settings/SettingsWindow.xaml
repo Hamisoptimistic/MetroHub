@@ -5,6 +5,7 @@
         xmlns:vm="clr-namespace:MetroHub.Presentation.Views.Settings.ViewModels"
         xmlns:pages="clr-namespace:MetroHub.Presentation.Views.Settings.Pages"
         xmlns:behaviors="clr-namespace:MetroHub.Presentation.Controls.Behaviors"
+        xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
         Title="Settings"
         Width="960" Height="640"
         MinWidth="720" MinHeight="460"
@@ -48,7 +49,10 @@
             CornerRadius="{DynamicResource TileCornerRadius}"
             SnapsToDevicePixels="True">
         <!-- Master Layout Grid (Full-Bleed Viewport with Floating Titlebar Overlay) -->
-        <Grid Background="Transparent">
+        <Grid Background="Transparent"
+              controls:ClipHelper.IsCornerClipped="True"
+              controls:ClipHelper.CornerRadius="{DynamicResource TileCornerRadius}"
+              controls:ClipHelper.BorderThickness="1">
             <!-- Full-Bleed Content Host (CurrentView covers all window bounds Y=0..640) -->
             <ContentControl Content="{Binding CurrentView}"
                             behaviors:FluentTransitionBehavior.IsEnabled="True"

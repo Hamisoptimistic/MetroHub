@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
         xmlns:dialogs="clr-namespace:MetroHub.Presentation.Dialogs"
         Title="Note Viewer"
         Width="540"
@@ -151,13 +152,16 @@
         </Style>
     </Window.Resources>
 
-    <!-- Master Fluent Acrylic Card Shell with sharp Metro 2px border -->
+    <!-- Master Fluent Acrylic Card Shell with DialogCornerRadius and concentric clipping -->
     <Border Background="{StaticResource SettingsTier2ObsidianBrush}"
             BorderBrush="{DynamicResource SurfaceBorderBrush}"
             BorderThickness="1"
-            CornerRadius="2"
+            CornerRadius="{DynamicResource DialogCornerRadius}"
             SnapsToDevicePixels="True">
-        <Grid Background="Transparent">
+        <Grid Background="Transparent"
+              controls:ClipHelper.IsCornerClipped="True"
+              controls:ClipHelper.CornerRadius="{DynamicResource DialogCornerRadius}"
+              controls:ClipHelper.BorderThickness="1">
             <Grid.RowDefinitions>
                 <!-- Row 0: Header & Drag Strip -->
                 <RowDefinition Height="Auto" />

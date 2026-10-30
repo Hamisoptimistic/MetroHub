@@ -396,5 +396,149 @@ public class TileManagerAndCanvasTests
         Assert.Equal(6, lowerMember.Row);
         Assert.Contains(lowerMember, modified);
     }
+
+    [Fact]
+    public void TileControl_AtRest_IsBorderless()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var model = new TileModel { Id = "test1", Title = "Test Tile", IsSelected = false, IsBeingDragged = false };
+            var tile = new Presentation.Controls.TileControl { DataContext = model };
+            tile.ApplyTemplate();
+
+            // ContentClipHost border thickness must be 0
+            Assert.Equal(new System.Windows.Thickness(0), tile.ContentClipHost.BorderThickness);
+            Assert.Equal(new System.Windows.Thickness(0), Presentation.Controls.ClipHelper.GetBorderThickness(tile.ContentClipHost));
+            Assert.True(Presentation.Controls.ClipHelper.GetIsCornerClipped(tile.ContentClipHost));
+
+            // RestBorder default brush must be Transparent
+            Assert.Equal(System.Windows.Media.Brushes.Transparent, tile.RestBorder.BorderBrush);
+
+            // RootBorder border thickness must be 0
+            Assert.Equal(new System.Windows.Thickness(0), tile.RootBorder.BorderThickness);
+        });
+    }
+
+    [Fact]
+    public void TileControl_WhenSelectedOrDragged_ActivatesAccentBorder()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var model = new TileModel { Id = "test1", Title = "Test Tile", IsSelected = true, IsBeingDragged = false };
+            var tile = new Presentation.Controls.TileControl { DataContext = model };
+            var window = new System.Windows.Window { Content = tile, Width = 300, Height = 300 };
+            window.Show();
+
+            // Process dispatcher to ensure bindings and triggers update
+            System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
+
+            // RestBorder brush becomes the accent brush when selected
+            var accentBrush = System.Windows.Application.Current.FindResource("SystemAccentColorPrimaryBrush");
+            Assert.Equal(accentBrush, tile.RestBorder.BorderBrush);
+
+            // RestBorder brush becomes the accent brush when dragged
+            model.IsSelected = false;
+            model.IsBeingDragged = true;
+            System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
+            Assert.Equal(accentBrush, tile.RestBorder.BorderBrush);
+
+            window.Close();
+        });
+    }
+
+    [Fact]
+    public void AllAppsDrawer_RecentGridTile_AtRest_IsBorderless_AndSelected_ShowsAccentBorder()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var drawer = new Presentation.Controls.AllAppsDrawerControl();
+            drawer.ApplyTemplate();
+            var template = drawer.Resources["RecentGridTileTemplate"] as System.Windows.DataTemplate;
+            Assert.NotNull(template);
+
+            var content = template.LoadContent() as System.Windows.Controls.Border;
+            Assert.NotNull(content);
+            Assert.Equal(new System.Windows.Thickness(0), content.BorderThickness);
+
+            var grid = content.Child as System.Windows.Controls.Grid;
+            Assert.NotNull(grid);
+            var restBorder = grid.Children.OfType<System.Windows.Controls.Border>().FirstOrDefault(b => b.Name == "RestBorder");
+            Assert.NotNull(restBorder);
+            Assert.Equal(System.Windows.Media.Brushes.Transparent, restBorder.BorderBrush);
+            Assert.Equal(new System.Windows.Thickness(1), restBorder.BorderThickness);
+
+            // Verify that selection trigger on ListBoxItem activates SystemAccentColorPrimaryBrush
+            var candidate = new Core.Search.Candidate("app:test", "Test", @"C:\test.exe", Core.Search.SearchCategory.Apps, "test");
+            var itemStyle = drawer.Resources["FluentSearchListBoxItemStyle"] as System.Windows.Style;
+            var listBox = new System.Windows.Controls.ListBox
+            {
+                ItemContainerStyle = itemStyle,
+                ItemTemplate = template,
+                ItemsSource = new[] { new Presentation.Controls.SearchItemRowViewModel(candidate) }
+            };
+
+            var window = new System.Windows.Window { Content = listBox, Width = 200, Height = 200 };
+            window.Show();
+            listBox.SelectedIndex = 0;
+            System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
+
+            var lbi = listBox.ItemContainerGenerator.ContainerFromIndex(0) as System.Windows.Controls.ListBoxItem;
+            Assert.NotNull(lbi);
+            Assert.True(lbi.IsSelected);
+
+            var card = FindVisualChild<System.Windows.Controls.Border>(lbi);
+            Assert.NotNull(card);
+            var cardGrid = card.Child as System.Windows.Controls.Grid;
+            Assert.NotNull(cardGrid);
+            var liveRestBorder = cardGrid.Children.OfType<System.Windows.Controls.Border>().FirstOrDefault(b => b.Name == "RestBorder");
+            Assert.NotNull(liveRestBorder);
+
+            var accentBrush = System.Windows.Application.Current.FindResource("SystemAccentColorPrimaryBrush");
+            Assert.Equal(accentBrush, liveRestBorder.BorderBrush);
+
+            window.Close();
+        });
+    }
+
+    private static T? FindVisualChild<T>(System.Windows.DependencyObject parent) where T : System.Windows.DependencyObject
+    {
+        for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+            if (child is T typed) return typed;
+            var descendant = FindVisualChild<T>(child);
+            if (descendant != null) return descendant;
+        }
+        return null;
+    }
+
+    [Fact]
+    public void ClipHelper_WhenBorderThicknessZero_ClipsToFullBounds()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var border = new System.Windows.Controls.Border
+            {
+                Width = 100,
+                Height = 100
+            };
+            var window = new System.Windows.Window { Content = border, Width = 200, Height = 200 };
+            Presentation.Controls.ClipHelper.SetCornerRadius(border, new System.Windows.CornerRadius(4));
+            Presentation.Controls.ClipHelper.SetBorderThickness(border, new System.Windows.Thickness(0));
+            Presentation.Controls.ClipHelper.SetIsCornerClipped(border, true);
+
+            window.Show();
+            System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
+
+            Assert.NotNull(border.Clip);
+            var rectGeom = Assert.IsType<System.Windows.Media.RectangleGeometry>(border.Clip);
+            Assert.Equal(new System.Windows.Rect(0, 0, 100, 100), rectGeom.Rect);
+            Assert.Equal(4.0, rectGeom.RadiusX);
+            Assert.Equal(4.0, rectGeom.RadiusY);
+
+            window.Close();
+        });
+    }
 }
+
 

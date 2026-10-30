@@ -583,8 +583,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     {
         Settings = SettingsService.Instance.Current;
         SystemAccentColorService.SetStyleMode(Settings.AccentStyle);
-        Application.Current.Resources["TileCornerRadius"] = new CornerRadius(Settings.TileCornerRadius);
-        Application.Current.Resources["ControlCornerRadius"] = new CornerRadius(Settings.TileCornerRadius <= 2 ? Settings.TileCornerRadius : (Settings.TileCornerRadius == 4 ? 4 : 6));
+        UpdateCornerRadiusResourceTokens(Settings.TileCornerRadius);
         WorkspaceManager.Instance.Initialize();
         var activeWs = WorkspaceManager.Instance.ActiveWorkspace;
         Tiles = activeWs.Tiles;

@@ -1641,12 +1641,14 @@ namespace MetroHub.Presentation.Controls
 
             if (card.Child is Grid grid)
             {
-                if (grid.Children.Count > 0 && grid.Children[0] is Border fillBorder)
+                var fillBorder = grid.Children.OfType<Border>().FirstOrDefault(b => b.Name == "RevealFillBorder");
+                if (fillBorder != null)
                 {
                     var anim = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(120)) { EasingFunction = TileRevealEasing };
                     fillBorder.BeginAnimation(UIElement.OpacityProperty, anim);
                 }
-                if (grid.Children.Count > 2 && grid.Children[2] is Border edgeBorder)
+                var edgeBorder = grid.Children.OfType<Border>().FirstOrDefault(b => b.Name == "RevealEdgeBorder");
+                if (edgeBorder != null)
                 {
                     var anim = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(120)) { EasingFunction = TileRevealEasing };
                     edgeBorder.BeginAnimation(UIElement.OpacityProperty, anim);
@@ -1683,12 +1685,14 @@ namespace MetroHub.Presentation.Controls
 
             if (card.Child is Grid grid)
             {
-                if (grid.Children.Count > 0 && grid.Children[0] is Border fillBorder)
+                var fillBorder = grid.Children.OfType<Border>().FirstOrDefault(b => b.Name == "RevealFillBorder");
+                if (fillBorder != null)
                 {
                     var anim = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(180)) { EasingFunction = TileRevealEasing };
                     fillBorder.BeginAnimation(UIElement.OpacityProperty, anim);
                 }
-                if (grid.Children.Count > 2 && grid.Children[2] is Border edgeBorder)
+                var edgeBorder = grid.Children.OfType<Border>().FirstOrDefault(b => b.Name == "RevealEdgeBorder");
+                if (edgeBorder != null)
                 {
                     var anim = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(180)) { EasingFunction = TileRevealEasing };
                     edgeBorder.BeginAnimation(UIElement.OpacityProperty, anim);
@@ -1712,32 +1716,28 @@ namespace MetroHub.Presentation.Controls
         {
             if (card.Child is not Grid grid) return;
 
-            if (grid.Children.Count > 0 && grid.Children[0] is Border fillBorder)
+            var fillBorder = grid.Children.OfType<Border>().FirstOrDefault(b => b.Name == "RevealFillBorder");
+            if (fillBorder?.Background is RadialGradientBrush fillBrush)
             {
-                if (fillBorder.Background is RadialGradientBrush fillBrush)
+                if (fillBrush.IsFrozen)
                 {
-                    if (fillBrush.IsFrozen)
-                    {
-                        fillBrush = fillBrush.Clone();
-                        fillBorder.Background = fillBrush;
-                    }
-                    fillBrush.Center = pos;
-                    fillBrush.GradientOrigin = pos;
+                    fillBrush = fillBrush.Clone();
+                    fillBorder.Background = fillBrush;
                 }
+                fillBrush.Center = pos;
+                fillBrush.GradientOrigin = pos;
             }
 
-            if (grid.Children.Count > 2 && grid.Children[2] is Border edgeBorder)
+            var edgeBorder = grid.Children.OfType<Border>().FirstOrDefault(b => b.Name == "RevealEdgeBorder");
+            if (edgeBorder?.BorderBrush is RadialGradientBrush edgeBrush)
             {
-                if (edgeBorder.BorderBrush is RadialGradientBrush edgeBrush)
+                if (edgeBrush.IsFrozen)
                 {
-                    if (edgeBrush.IsFrozen)
-                    {
-                        edgeBrush = edgeBrush.Clone();
-                        edgeBorder.BorderBrush = edgeBrush;
-                    }
-                    edgeBrush.Center = pos;
-                    edgeBrush.GradientOrigin = pos;
+                    edgeBrush = edgeBrush.Clone();
+                    edgeBorder.BorderBrush = edgeBrush;
                 }
+                edgeBrush.Center = pos;
+                edgeBrush.GradientOrigin = pos;
             }
         }
 

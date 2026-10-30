@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
                     xmlns:dialogs="clr-namespace:MetroHub.Presentation.Dialogs">
 
     <!-- ========================================================================= -->
@@ -30,9 +31,12 @@
                     <Border Background="Transparent"
                             BorderBrush="{DynamicResource SurfaceBorderBrush}"
                             BorderThickness="1"
-                            CornerRadius="2"
+                            CornerRadius="{DynamicResource DialogCornerRadius}"
                             SnapsToDevicePixels="True">
-                        <Grid RenderOptions.ClearTypeHint="Enabled">
+                        <Grid RenderOptions.ClearTypeHint="Enabled"
+                              controls:ClipHelper.IsCornerClipped="True"
+                              controls:ClipHelper.CornerRadius="{DynamicResource DialogCornerRadius}"
+                              controls:ClipHelper.BorderThickness="1">
                             <Grid.ColumnDefinitions>
                                 <!-- COLUMN 0: FROSTED ACRYLIC SIDEBAR -->
                                 <ColumnDefinition Width="155" />
@@ -57,7 +61,7 @@
                             <!-- COLUMN 1: OBSIDIAN DARK CONTENT PANEL -->
                             <Border Grid.Column="1"
                                     Background="{DynamicResource DialogPanelBackground}"
-                                    CornerRadius="0,2,2,0"
+                                    CornerRadius="{DynamicResource DialogContentPanelCornerRadius}"
                                     RenderOptions.ClearTypeHint="Enabled">
                                 <Grid Margin="24,20,24,20">
                                     <Grid.RowDefinitions>

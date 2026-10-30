@@ -1636,15 +1636,16 @@ public sealed class TileManager
                 int tileCol = targetCol + colOffset;
                 int tileRow = targetRow + 1 + rowOffset;
 
+                string url = item.Url ?? string.Empty;
                 string displayTitle = !string.IsNullOrWhiteSpace(item.Title)
                     ? item.Title
-                    : WebFaviconService.InferTitleFromUrl(item.Url);
+                    : WebFaviconService.InferTitleFromUrl(url);
 
                 var tile = new TileModel
                 {
                     Id = Guid.NewGuid().ToString("N"),
                     Title = displayTitle,
-                    TargetPath = item.Url.Trim(),
+                    TargetPath = url.Trim(),
                     TileType = TileType.WebUrl,
                     Group = groupId,
                     SectionHeader = groupTitle,

@@ -277,9 +277,10 @@
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
                     CornerRadius="{DynamicResource TileCornerRadius}"
-                    BorderThickness="1"
-                    ClipToBounds="True"
+                    BorderThickness="0"
+                    ClipToBounds="False"
                     SnapsToDevicePixels="True"
+                    UseLayoutRounding="True"
                     ToolTip="{Binding DisplayName}"
                     Tag="{Binding}"
                     Cursor="Hand"
@@ -296,20 +297,15 @@
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="Background" Value="#14FFFFFF" />
-                        <Setter Property="BorderBrush" Value="#1AFFFFFF" />
                         <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="BorderBrush" Value="#25FFFFFF" />
-                            </Trigger>
                             <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
-                                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
                                 <Setter Property="Background" Value="#28FFFFFF" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </Border.Style>
 
-                <Grid>
+                <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
                     <!-- Fluent Reveal Highlight: Surface Spotlight -->
                     <Border x:Name="RevealFillBorder"
                             CornerRadius="{DynamicResource TileCornerRadius}"
@@ -344,10 +340,32 @@
                                        Visibility="{Binding SymbolVisibility}" />
                     </Grid>
 
-                    <!-- Fluent Reveal Highlight: Edge Illumination -->
-                    <Border x:Name="RevealEdgeBorder"
+                    <!-- Rest / Selection Perimeter Stroke (Above Content, Never Occluded; Transparent at rest) -->
+                    <Border x:Name="RestBorder"
+                            Background="Transparent"
                             CornerRadius="{DynamicResource TileCornerRadius}"
-                            BorderThickness="1.2"
+                            BorderThickness="1"
+                            IsHitTestVisible="False">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="Transparent" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=Border}, Path=IsMouseOver}" Value="True">
+                                        <Setter Property="BorderBrush" Value="#25FFFFFF" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=IsSelected}" Value="True">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+
+                    <!-- Fluent Reveal Highlight: Edge Illumination (Coincident @ 0,0, Thickness=1) -->
+                    <Border x:Name="RevealEdgeBorder"
+                            Background="Transparent"
+                            CornerRadius="{DynamicResource TileCornerRadius}"
+                            BorderThickness="1"
                             IsHitTestVisible="False"
                             Opacity="0">
                         <Border.BorderBrush>

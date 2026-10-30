@@ -7,6 +7,7 @@
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              xmlns:models="clr-namespace:MetroHub.Core.Models"
              xmlns:widgets="clr-namespace:MetroHub.Widgets"
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
              mc:Ignorable="d"
              Margin="0"
              Focusable="False"
@@ -159,26 +160,23 @@
 
     <Border x:Name="RootBorder"
             Background="Transparent"
+            BorderThickness="0"
             CornerRadius="{DynamicResource TileCornerRadius}"
             ClipToBounds="False"
             Width="{Binding SpanX, Converter={StaticResource SpanConverter}}"
             Height="{Binding SpanY, Converter={StaticResource SpanConverter}}"
             RenderTransformOrigin="0.5,0.5"
             RenderOptions.ClearTypeHint="Enabled"
+            SnapsToDevicePixels="True"
+            UseLayoutRounding="True"
             ContextMenuOpening="OnContextMenuOpening">
 
         <Border.Style>
             <Style TargetType="Border">
                 <Setter Property="Opacity" Value="1.0"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="BorderBrush" Value="#22FFFFFF"/>
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
-                    </DataTrigger>
                     <DataTrigger Binding="{Binding IsBeingDragged}" Value="True">
                         <Setter Property="Opacity" Value="0.9"/>
-                        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}"/>
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
@@ -188,9 +186,21 @@
             <ScaleTransform x:Name="TileScale" ScaleX="1.0" ScaleY="1.0" />
         </Border.RenderTransform>
 
+        <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
+            <!-- Layer 1: Content Area (Clipped to Outer Contour) -->
+            <Border x:Name="ContentClipHost"
+                    CornerRadius="{DynamicResource TileCornerRadius}"
+                    BorderThickness="0"
+                    controls:ClipHelper.IsCornerClipped="True"
+                    controls:ClipHelper.CornerRadius="{DynamicResource TileCornerRadius}"
+                    controls:ClipHelper.BorderThickness="0"
+                    IsHitTestVisible="True">
+                <ContentPresenter x:Name="TileContentPresenter"
+                                  Content="{Binding TileContent}"
+                                  ContentTemplateSelector="{StaticResource WidgetTemplateSelector}" />
+            </Border>
 
-        <Grid>
-            <!-- Fluent Reveal Highlight: Surface Spotlight -->
+            <!-- Layer 2: Fluent Reveal Highlight: Surface Spotlight -->
             <Border x:Name="RevealFillBorder"
                     CornerRadius="{DynamicResource TileCornerRadius}"
                     IsHitTestVisible="False"
@@ -214,16 +224,32 @@
                 </Border.Background>
             </Border>
 
-            <!-- Content Area via ContentPresenter: resolved dynamically via WidgetTemplateSelector -->
-            <ContentPresenter x:Name="TileContentPresenter"
-                              Content="{Binding TileContent}"
-                              ContentTemplateSelector="{StaticResource WidgetTemplateSelector}"
-                              />
-
-            <!-- Fluent Reveal Highlight: Edge Illumination (above ContentPresenter so it shows on top of full-bleed widget content e.g. photos) -->
-            <Border x:Name="RevealEdgeBorder"
+            <!-- Layer 3: Selection Perimeter Stroke (Above Content, Never Occluded; Transparent at rest) -->
+            <Border x:Name="RestBorder"
+                    Background="Transparent"
                     CornerRadius="{DynamicResource TileCornerRadius}"
-                    BorderThickness="1.2"
+                    BorderThickness="1"
+                    IsHitTestVisible="False">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="BorderBrush" Value="Transparent" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsBeingDragged}" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+            </Border>
+
+            <!-- Layer 4: Fluent Reveal Highlight: Edge Illumination (Coincident @ 0,0, Thickness=1) -->
+            <Border x:Name="RevealEdgeBorder"
+                    Background="Transparent"
+                    CornerRadius="{DynamicResource TileCornerRadius}"
+                    BorderThickness="1"
                     IsHitTestVisible="False"
                     Opacity="0">
                 <Border.BorderBrush>
