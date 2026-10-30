@@ -96,6 +96,7 @@
                      Grid.Column="0"
                      ItemsSource="{Binding Categories}"
                      SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                      Margin="12,0,12,12"
                      Padding="0"
                      BorderThickness="0"
@@ -103,8 +104,9 @@
             <ui:ListView.ItemContainerStyle>
                 <Style TargetType="{x:Type ui:ListViewItem}" BasedOn="{StaticResource {x:Type ui:ListViewItem}}">
                     <Setter Property="Height" Value="38" />
-                    <Setter Property="Margin" Value="0,2" />
+                    <Setter Property="Margin" Value="0,2,4,2" />
                     <Setter Property="Padding" Value="12,0" />
+                    <Setter Property="Border.CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
                 </Style>
             </ui:ListView.ItemContainerStyle>
             <ui:ListView.ItemTemplate>

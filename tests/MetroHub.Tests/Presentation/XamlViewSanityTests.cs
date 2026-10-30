@@ -172,6 +172,20 @@ public class XamlViewSanityTests
             Assert.Equal(PanningMode.VerticalOnly, uilv.GetValue(ScrollViewer.PanningModeProperty));
             Assert.True((bool)uilv.GetValue(ScrollViewer.CanContentScrollProperty));
 
+            var detailLayout = new MetroHub.Presentation.Views.Settings.Pages.SettingsDetailLayout();
+            var style = detailLayout.FindResource(typeof(Wpf.Ui.Controls.ListViewItem)) as Style;
+            var basedOn = style?.BasedOn;
+            Setter crSetter = null;
+            foreach (var s in basedOn.Setters)
+            {
+                if (s is Setter setter && setter.Property?.Name == "CornerRadius")
+                {
+                    crSetter = setter;
+                    break;
+                }
+            }
+            throw new Exception($"Property: {crSetter?.Property?.Name}, OwnerType: {crSetter?.Property?.OwnerType.FullName}, Value: {crSetter?.Value}");
+
             // Verify actual dialog and widget instances resolve the per-pixel virtualization settings
             var weatherDialog = new WeatherLocationDialog();
             var weatherList = weatherDialog.WeatherSuggestionsList;
