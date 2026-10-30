@@ -141,7 +141,7 @@ public class MetroDialog : BorderlessFluentWindow
 
     public MetroDialog()
     {
-        WindowCornerPreference = WindowCornerPreference.Round;
+        WindowCornerPreference = WindowCornerPreference.DoNotRound;
         Width = 620;
         Height = 360;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;

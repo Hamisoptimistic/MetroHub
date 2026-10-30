@@ -11,7 +11,7 @@
         MinWidth="720" MinHeight="460"
         WindowStartupLocation="CenterOwner"
         WindowBackdropType="Acrylic"
-        WindowCornerPreference="Round"
+        WindowCornerPreference="DoNotRound"
         WindowStyle="None"
         ResizeMode="NoResize"
         ShowInTaskbar="False"

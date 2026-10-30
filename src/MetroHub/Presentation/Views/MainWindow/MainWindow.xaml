@@ -513,7 +513,7 @@
                     <!-- WPF-UI Fluent Card Style Floating Badge -->
                     <Border x:Name="GroupDropFloatingBadge"
                             Visibility="Collapsed"
-                            CornerRadius="{DynamicResource ControlCornerRadiusLarge}"
+                            CornerRadius="{DynamicResource ControlCornerRadius}"
                             Background="{DynamicResource ShellBadgeBackground}"
                             BorderThickness="1"
                             BorderBrush="{DynamicResource SurfaceBorderBrush}"

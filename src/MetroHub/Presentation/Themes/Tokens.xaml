@@ -123,26 +123,21 @@
     <!-- ========================================================================= -->
     <!-- UNIVERSAL FLUENT GEOMETRY & INTERACTION TOKENS                            -->
     <!-- ========================================================================= -->
-    <!-- Standard Control & Button Corner Radius -->
+    <!-- Canvas Tiles (Dynamic: 0 = Sharp, 2 = Subtle, 4 = Medium, 8 = Rounded) -->
+    <CornerRadius x:Key="TileCornerRadius">2</CornerRadius>
+
+    <!-- Standard Controls, Buttons, and Inputs (Proportional: 2px default) -->
     <CornerRadius x:Key="ControlCornerRadius">2</CornerRadius>
-    <CornerRadius x:Key="ControlCornerRadiusSmall">2</CornerRadius>
-    <CornerRadius x:Key="ControlCornerRadiusLarge">4</CornerRadius>
+
+    <!-- Directional Docked Bottom Containers (Widgets) -->
     <CornerRadius x:Key="ControlCornerRadiusBottom">0,0,2,2</CornerRadius>
-    <CornerRadius x:Key="ControlCornerRadiusTop">2,2,0,0</CornerRadius>
-    <CornerRadius x:Key="TileCornerRadiusRight">0,2,2,0</CornerRadius>
 
-    <!-- Dialog Geometry Tokens (Fluent 2 Window / Modal Spec) -->
-    <CornerRadius x:Key="DialogCornerRadius">8</CornerRadius>
-    <CornerRadius x:Key="DialogContentPanelCornerRadius">0,7,7,0</CornerRadius>
-    <CornerRadius x:Key="DialogBottomPanelCornerRadius">0,0,7,7</CornerRadius>
+    <!-- Modal Dialogs, Settings, and System Overlays (Strict Sharp Metro: 0px) -->
+    <CornerRadius x:Key="DialogCornerRadius">0</CornerRadius>
 
-    <!-- ContextMenu & Dropdown Container / Item Radius -->
+    <!-- Context Menu & Flyout Container / Items -->
     <CornerRadius x:Key="ContextMenuCornerRadius">8</CornerRadius>
     <CornerRadius x:Key="ContextMenuItemCornerRadius">4</CornerRadius>
-
-    <!-- MetroHub Tile Geometry Tokens -->
-    <!-- Default: 2 for Subtle Fluent/Metro edge. (0 = Sharp Metro, 2 = Subtle Fluent, 4 = Medium Fluent, 8 = Rounded Fluent) -->
-    <CornerRadius x:Key="TileCornerRadius">2</CornerRadius>
 
     <!-- Universal Fluent Dark-Glass Interaction Brushes -->
     <SolidColorBrush x:Key="FluentHoverBrush" Color="#12FFFFFF" po:Freeze="True" />

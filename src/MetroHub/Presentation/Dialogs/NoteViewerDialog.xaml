@@ -14,7 +14,7 @@
         SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         WindowBackdropType="Acrylic"
-        WindowCornerPreference="Round"
+        WindowCornerPreference="DoNotRound"
         WindowStyle="None"
         ResizeMode="NoResize"
         ShowInTaskbar="False"

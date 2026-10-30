@@ -9,7 +9,7 @@
     <!-- ========================================================================= -->
     <Style TargetType="{x:Type dialogs:MetroDialog}" x:Key="{x:Type dialogs:MetroDialog}">
         <Setter Property="WindowBackdropType" Value="Acrylic" />
-        <Setter Property="WindowCornerPreference" Value="Round" />
+        <Setter Property="WindowCornerPreference" Value="DoNotRound" />
         <Setter Property="ExtendsContentIntoTitleBar" Value="True" />
         <Setter Property="WindowStyle" Value="None" />
         <Setter Property="ResizeMode" Value="NoResize" />
@@ -61,7 +61,7 @@
                             <!-- COLUMN 1: OBSIDIAN DARK CONTENT PANEL -->
                             <Border Grid.Column="1"
                                     Background="{DynamicResource DialogPanelBackground}"
-                                    CornerRadius="{DynamicResource DialogContentPanelCornerRadius}"
+                                    CornerRadius="{DynamicResource DialogCornerRadius}"
                                     RenderOptions.ClearTypeHint="Enabled">
                                 <Grid Margin="24,20,24,20">
                                     <Grid.RowDefinitions>

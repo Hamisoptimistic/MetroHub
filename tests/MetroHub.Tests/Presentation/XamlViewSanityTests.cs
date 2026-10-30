@@ -209,18 +209,18 @@ public class XamlViewSanityTests
     }
 
     [Fact]
-    public void DialogsAndSettingsWindow_HaveRoundWindowCornerPreference()
+    public void DialogsAndSettingsWindow_HaveDoNotRoundWindowCornerPreference()
     {
         WpfTestHost.RunSta(() =>
         {
             var metroDialog = new MetroDialog();
-            Assert.Equal(Wpf.Ui.Controls.WindowCornerPreference.Round, metroDialog.WindowCornerPreference);
+            Assert.Equal(Wpf.Ui.Controls.WindowCornerPreference.DoNotRound, metroDialog.WindowCornerPreference);
 
             var noteDialog = new NoteViewerDialog(new Core.Models.TileModel());
-            Assert.Equal(Wpf.Ui.Controls.WindowCornerPreference.Round, noteDialog.WindowCornerPreference);
+            Assert.Equal(Wpf.Ui.Controls.WindowCornerPreference.DoNotRound, noteDialog.WindowCornerPreference);
 
             var settings = new MetroHub.Presentation.Views.Settings.SettingsWindow();
-            Assert.Equal(Wpf.Ui.Controls.WindowCornerPreference.Round, settings.WindowCornerPreference);
+            Assert.Equal(Wpf.Ui.Controls.WindowCornerPreference.DoNotRound, settings.WindowCornerPreference);
         });
     }
 
@@ -291,12 +291,9 @@ public class XamlViewSanityTests
         WpfTestHost.RunSta(() =>
         {
             var dialogRadius = (CornerRadius)Application.Current.FindResource("DialogCornerRadius");
-            var contentPanelRadius = (CornerRadius)Application.Current.FindResource("DialogContentPanelCornerRadius");
-            var bottomPanelRadius = (CornerRadius)Application.Current.FindResource("DialogBottomPanelCornerRadius");
 
-            Assert.Equal(new CornerRadius(8), dialogRadius);
-            Assert.Equal(new CornerRadius(0, 7, 7, 0), contentPanelRadius);
-            Assert.Equal(new CornerRadius(0, 0, 7, 7), bottomPanelRadius);
+            // Strict Sharp Metro: Dialog and Settings surfaces are 0px sharp
+            Assert.Equal(new CornerRadius(0), dialogRadius);
 
             var contextMenuRadius = (CornerRadius)Application.Current.FindResource("ContextMenuCornerRadius");
             var contextMenuItemRadius = (CornerRadius)Application.Current.FindResource("ContextMenuItemCornerRadius");
@@ -311,6 +308,24 @@ public class XamlViewSanityTests
             var grid = border.Child as Grid;
             Assert.NotNull(grid);
             Assert.Equal(dialogRadius, MetroHub.Presentation.Controls.ClipHelper.GetCornerRadius(grid));
+
+            try
+            {
+                // Verify that changing tile settings preserves 0px sharp dialog windows
+                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(0);
+                Assert.Equal(new CornerRadius(0), Application.Current.FindResource("DialogCornerRadius"));
+
+                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(4);
+                Assert.Equal(new CornerRadius(0), Application.Current.FindResource("DialogCornerRadius"));
+
+                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(8);
+                Assert.Equal(new CornerRadius(0), Application.Current.FindResource("DialogCornerRadius"));
+            }
+            finally
+            {
+                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(2);
+                Assert.Equal(new CornerRadius(0), Application.Current.FindResource("DialogCornerRadius"));
+            }
         });
     }
 }

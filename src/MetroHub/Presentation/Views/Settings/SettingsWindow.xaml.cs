@@ -28,7 +28,7 @@ public partial class SettingsWindow : BorderlessFluentWindow
 
     public SettingsWindow()
     {
-        WindowCornerPreference = Wpf.Ui.Controls.WindowCornerPreference.Round;
+        WindowCornerPreference = Wpf.Ui.Controls.WindowCornerPreference.DoNotRound;
         InitializeComponent();
         DataContext = new SettingsShellViewModel();
     }
