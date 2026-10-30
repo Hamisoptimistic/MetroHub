@@ -51,6 +51,8 @@ public partial class NotepadWidgetView : UserControl
         EditorBox.SelectionChanged += OnEditorSelectionChanged;
         EditorBox.LostFocus -= OnEditorLostFocus;
         EditorBox.LostFocus += OnEditorLostFocus;
+        DataObject.RemovePastingHandler(EditorBox, OnEditorPasting);
+        DataObject.AddPastingHandler(EditorBox, OnEditorPasting);
 
         HookViewModel(DataContext as NotepadWidgetViewModel);
         LoadDocumentFromViewModel();
@@ -65,6 +67,7 @@ public partial class NotepadWidgetView : UserControl
         _debounceTimer?.Stop();
         SynchronizeToViewModel();
 
+        DataObject.RemovePastingHandler(EditorBox, OnEditorPasting);
         PreviewKeyDown -= OnPreviewKeyDown;
         EditorBox.TextChanged -= OnEditorTextChanged;
         EditorBox.SelectionChanged -= OnEditorSelectionChanged;
@@ -161,7 +164,7 @@ public partial class NotepadWidgetView : UserControl
 
         // Tightly calibrated List and ListItem styles for sleek, premium indentation
         var listStyle = new Style(typeof(List));
-        listStyle.Setters.Add(new Setter(Block.MarginProperty, new Thickness(14, 2, 0, 2)));
+        listStyle.Setters.Add(new Setter(Block.MarginProperty, new Thickness(28, 2, 0, 2)));
         listStyle.Setters.Add(new Setter(Block.PaddingProperty, new Thickness(0)));
         listStyle.Setters.Add(new Setter(List.MarkerOffsetProperty, 6.0));
         doc.Resources[typeof(List)] = listStyle;
@@ -193,7 +196,12 @@ public partial class NotepadWidgetView : UserControl
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.S && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        HandlePreviewKeyDown(e, Keyboard.Modifiers);
+    }
+
+    internal void HandlePreviewKeyDown(KeyEventArgs e, ModifierKeys modifiers)
+    {
+        if (e.Key == Key.S && (modifiers & ModifierKeys.Control) == ModifierKeys.Control)
         {
             SynchronizeAndSave();
             e.Handled = true;
@@ -201,35 +209,163 @@ public partial class NotepadWidgetView : UserControl
         }
 
         // Ctrl+0: Reset zoom to 100%
-        if ((e.Key == Key.D0 || e.Key == Key.NumPad0) && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        if ((e.Key == Key.D0 || e.Key == Key.NumPad0) && (modifiers & ModifierKeys.Control) == ModifierKeys.Control)
         {
             ResetZoom();
             e.Handled = true;
             return;
         }
 
-        // Handle Enter in List: exit gracefully if pressing enter on an empty bullet/numbered item
-        if (e.Key == Key.Enter)
+        // Handle Todo mode navigation and shortcuts (F2/Enter to edit, Delete to delete)
+        if (DataContext is NotepadWidgetViewModel vm && vm.IsTodoMode)
         {
-            if (EditorBox.IsFocused)
+            if (e.Key is Key.F2 or Key.Enter or Key.Delete)
             {
-                var caret = EditorBox.CaretPosition;
-                var para = caret.Paragraph;
-                if (para != null && para.Parent is ListItem listItem && listItem.Parent is List parentList)
+                if (e.OriginalSource is DependencyObject dep)
                 {
-                    var range = new TextRange(para.ContentStart, para.ContentEnd);
-                    var text = range.Text.Trim();
+                    // If focus is inside an active TextBox (e.g. typing in NewTaskInput or TaskEditBox), let TextBox handle its keys
+                    if (dep is TextBox || (dep is FrameworkElement fe && fe.TemplatedParent is TextBox))
+                    {
+                        return;
+                    }
+
+                    if ((dep as FrameworkElement)?.DataContext is NotepadTodoItem todoItem)
+                    {
+                        if (e.Key is Key.F2 || (e.Key == Key.Enter && !todoItem.IsEditing))
+                        {
+                            if (!todoItem.IsCompleted)
+                            {
+                                vm.BeginEditTodo(todoItem);
+                                e.Handled = true;
+                                return;
+                            }
+                        }
+                        else if (e.Key == Key.Delete && !todoItem.IsEditing)
+                        {
+                            vm.DeleteTodo(todoItem);
+                            e.Handled = true;
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (e.OriginalSource is Button)
+        {
+            return;
+        }
+
+        bool isEditorContext = (DataContext is NotepadWidgetViewModel vmNotes && vmNotes.IsNotesMode)
+            || EditorBox.IsKeyboardFocusWithin
+            || e.OriginalSource == EditorBox
+            || (e.OriginalSource is DependencyObject d && EditorBox.IsAncestorOf(d));
+
+        if (e.Key == Key.Tab)
+        {
+            if (isEditorContext)
+            {
+                bool isTextSelected = EditorBox.Selection != null && !EditorBox.Selection.IsEmpty;
+                bool isInListItem = false;
+                if (EditorBox.CaretPosition != null)
+                {
+                    TextElement? cur = EditorBox.CaretPosition.Paragraph ?? EditorBox.CaretPosition.Parent as TextElement;
+                    while (cur != null)
+                    {
+                        if (cur is ListItem)
+                        {
+                            isInListItem = true;
+                            break;
+                        }
+                        cur = cur.Parent as TextElement;
+                    }
+                }
+
+                bool isShift = (modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+                if (isInListItem || isTextSelected)
+                {
+                    if (isShift)
+                    {
+                        EditingCommands.DecreaseIndentation.Execute(null, EditorBox);
+                    }
+                    else
+                    {
+                        EditingCommands.IncreaseIndentation.Execute(null, EditorBox);
+                    }
+                    e.Handled = true;
+                    UpdatePlaceholder();
+                    UpdateFormattingState();
+                    _isDocumentDirty = true;
+                    _debounceTimer?.Stop();
+                    _debounceTimer?.Start();
+                    return;
+                }
+                else if (isShift)
+                {
+                    // When not in list or selection, prevent Shift+Tab from escaping to shell window
+                    e.Handled = true;
+                    return;
+                }
+            }
+        }
+
+        // Handle Enter in List: exit gracefully if pressing enter on an empty bullet/numbered item
+        if (e.Key == Key.Enter && isEditorContext)
+        {
+            // Soft line break: Shift+Enter preserves list item
+            if ((modifiers & ModifierKeys.Shift) == ModifierKeys.Shift)
+            {
+                return;
+            }
+
+            var caret = EditorBox.CaretPosition;
+            if (caret != null)
+            {
+                ListItem? listItem = null;
+                TextElement? cur = caret.Paragraph ?? caret.Parent as TextElement;
+                while (cur != null)
+                {
+                    if (cur is ListItem li)
+                    {
+                        listItem = li;
+                        break;
+                    }
+                    cur = cur.Parent as TextElement;
+                }
+
+                List? parentList = listItem?.Parent as List;
+                var para = caret.Paragraph ?? listItem?.Blocks?.FirstBlock as Paragraph;
+                var rawText = para != null
+                    ? new TextRange(para.ContentStart, para.ContentEnd).Text
+                    : string.Empty;
+                var text = rawText.Trim(' ', '\t', '\r', '\n', '•', '\u2022', '\u25E6', '\u25AA');
+
+                if (parentList != null)
+                {
                     if (string.IsNullOrEmpty(text))
                     {
-                        // Current list item is blank: toggle list off to exit list cleanly
-                        if (parentList.MarkerStyle == TextMarkerStyle.Decimal)
+                        // Check if in a nested sub-list: outdent cleanly
+                        if (parentList.Parent is ListItem || parentList.Parent is List)
                         {
-                            EditingCommands.ToggleNumbering.Execute(null, EditorBox);
+                            EditingCommands.DecreaseIndentation.Execute(null, EditorBox);
                         }
                         else
                         {
-                            EditingCommands.ToggleBullets.Execute(null, EditorBox);
+                            // Top-level list item is blank: toggle list off to exit list cleanly
+                            if (parentList.MarkerStyle is TextMarkerStyle.Decimal
+                                or TextMarkerStyle.LowerLatin
+                                or TextMarkerStyle.UpperLatin
+                                or TextMarkerStyle.LowerRoman
+                                or TextMarkerStyle.UpperRoman)
+                            {
+                                EditingCommands.ToggleNumbering.Execute(null, EditorBox);
+                            }
+                            else
+                            {
+                                EditingCommands.ToggleBullets.Execute(null, EditorBox);
+                            }
                         }
+
                         e.Handled = true;
                         UpdatePlaceholder();
                         UpdateFormattingState();
@@ -255,10 +391,19 @@ public partial class NotepadWidgetView : UserControl
         {
             _zoomScale = 1.0;
             EditorBox.LayoutTransform = Transform.Identity;
+            if (PlaceholderText != null)
+            {
+                PlaceholderText.LayoutTransform = Transform.Identity;
+            }
         }
         else
         {
-            EditorBox.LayoutTransform = new ScaleTransform(_zoomScale, _zoomScale);
+            var transform = new ScaleTransform(_zoomScale, _zoomScale);
+            EditorBox.LayoutTransform = transform;
+            if (PlaceholderText != null)
+            {
+                PlaceholderText.LayoutTransform = transform;
+            }
         }
     }
 
@@ -268,6 +413,10 @@ public partial class NotepadWidgetView : UserControl
         if (EditorBox != null)
         {
             EditorBox.LayoutTransform = Transform.Identity;
+        }
+        if (PlaceholderText != null)
+        {
+            PlaceholderText.LayoutTransform = Transform.Identity;
         }
     }
 
@@ -369,6 +518,14 @@ public partial class NotepadWidgetView : UserControl
     private void UpdatePlaceholder()
     {
         if (PlaceholderText == null || EditorBox?.Document == null) return;
+
+        // If the first block is a List, hide placeholder immediately so it never collides with bullets/numbers
+        if (EditorBox.Document.Blocks.FirstBlock is List)
+        {
+            PlaceholderText.Visibility = Visibility.Collapsed;
+            return;
+        }
+
         var range = new TextRange(EditorBox.Document.ContentStart, EditorBox.Document.ContentEnd);
         var text = range.Text.Trim();
         PlaceholderText.Visibility = string.IsNullOrEmpty(text) ? Visibility.Visible : Visibility.Collapsed;
@@ -447,22 +604,92 @@ public partial class NotepadWidgetView : UserControl
         _debounceTimer?.Stop();
         if (_isSynchronizing || DataContext is not NotepadWidgetViewModel vm || EditorBox?.Document == null) return;
 
+        string plainText = string.Empty;
         try
         {
             _isSynchronizing = true;
             _isDocumentDirty = false;
             var range = new TextRange(EditorBox.Document.ContentStart, EditorBox.Document.ContentEnd);
-            var plainText = range.Text.TrimEnd('\r', '\n');
-            var xaml = XamlWriter.Save(EditorBox.Document);
+            plainText = range.Text.TrimEnd('\r', '\n');
+
+            string xaml;
+            try
+            {
+                xaml = XamlWriter.Save(EditorBox.Document);
+            }
+            catch
+            {
+                // Fall back to empty string so serialization failure doesn't lose notes
+                xaml = string.Empty;
+            }
+
             vm.UpdateTextMetrics(plainText, xaml);
         }
         catch
         {
-            // Suppress serialization faults
+            if (!string.IsNullOrEmpty(plainText))
+            {
+                vm.UpdateTextMetrics(plainText, string.Empty);
+            }
         }
         finally
         {
             _isSynchronizing = false;
+        }
+    }
+
+    private void OnEditorPasting(object sender, DataObjectPastingEventArgs e)
+    {
+        try
+        {
+            if (e.DataObject.GetDataPresent(DataFormats.UnicodeText, true))
+            {
+                var text = e.DataObject.GetData(DataFormats.UnicodeText, true) as string ?? string.Empty;
+                var dataObject = new DataObject();
+                dataObject.SetData(DataFormats.UnicodeText, text);
+                e.DataObject = dataObject;
+                e.FormatToApply = DataFormats.UnicodeText;
+            }
+            else if (e.DataObject.GetDataPresent(DataFormats.Text, true))
+            {
+                var text = e.DataObject.GetData(DataFormats.Text, true) as string ?? string.Empty;
+                var dataObject = new DataObject();
+                dataObject.SetData(DataFormats.UnicodeText, text);
+                e.DataObject = dataObject;
+                e.FormatToApply = DataFormats.UnicodeText;
+            }
+            else
+            {
+                // Strip non-text payload (such as raw bitmaps or file drops) to prevent serialization crashes
+                e.CancelCommand();
+            }
+        }
+        catch
+        {
+            // Suppress paste validation faults
+        }
+    }
+
+    private void OnTaskEditBoxIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (sender is TextBox textBox && textBox.IsVisible)
+        {
+            Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
+            {
+                textBox.Focus();
+                textBox.SelectAll();
+            });
+        }
+    }
+
+    private void OnTaskEditBoxLostFocus(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox textBox && textBox.DataContext is NotepadTodoItem item && item.IsEditing)
+        {
+            if (DataContext is NotepadWidgetViewModel vm)
+            {
+                vm.CommitEditTodo(item);
+            }
         }
     }
 

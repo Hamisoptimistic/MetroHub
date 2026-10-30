@@ -15,7 +15,7 @@
     <UserControl.Resources>
         <!-- Circular Todo Checkbox with Solid Fill (Zero Banding, Zero Transparency) -->
         <Style x:Key="CircleTodoCheckBoxStyle" TargetType="{x:Type CheckBox}">
-            <Setter Property="Focusable" Value="False" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Template">
@@ -42,6 +42,9 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="CheckRing" Property="BorderBrush" Value="{DynamicResource SystemAccentColorSolidBrush}" />
                             </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="CheckRing" Property="BorderBrush" Value="{DynamicResource SystemAccentColorSolidBrush}" />
+                            </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="CheckRing" Property="Background" Value="{DynamicResource SystemAccentColorSolidBrush}" />
                                 <Setter TargetName="CheckRing" Property="BorderThickness" Value="0" />
@@ -55,7 +58,7 @@
 
         <!-- History Todo Checkbox Style using &#xE930; glyph (No blue color, clean theme glyph) -->
         <Style x:Key="HistoryTodoCheckBoxStyle" TargetType="{x:Type CheckBox}">
-            <Setter Property="Focusable" Value="False" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Template">
@@ -78,6 +81,9 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="HistoryGlyph" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="HistoryGlyph" Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -94,6 +100,10 @@
             <Setter Property="Margin" Value="0,0,0,6" />
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+                </Trigger>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
                     <Setter Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
                     <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
                 </Trigger>
@@ -165,7 +175,7 @@
                             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsTodoMode}" Value="True">
-                                    <Setter Property="Foreground" Value="{DynamicResource SystemAccentColorSolidBrush}" />
+                                     <Setter Property="Foreground" Value="{DynamicResource SystemAccentColorSolidBrush}" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -283,7 +293,7 @@
                                       FontSize="{DynamicResource TypeBodyFontSize}">
                             <FlowDocument.Resources>
                                 <Style TargetType="{x:Type List}">
-                                    <Setter Property="Margin" Value="14,2,0,2" />
+                                    <Setter Property="Margin" Value="28,2,0,2" />
                                     <Setter Property="Padding" Value="0" />
                                     <Setter Property="MarkerOffset" Value="6" />
                                 </Style>
@@ -300,13 +310,13 @@
                     </RichTextBox.Document>
                 </RichTextBox>
 
-                <!-- Watermark / Placeholder "Write here" with 6px caret offset -->
+                <!-- Watermark / Placeholder "Write here" with 2px caret offset -->
                 <TextBlock x:Name="PlaceholderText"
                            Text="Write here"
                            FontSize="{DynamicResource TypeBodyFontSize}"
                            FontFamily="{DynamicResource AppFontFamily}"
                            Foreground="{DynamicResource TextDisabledBrush}"
-                           Margin="6,2,0,0"
+                           Margin="2,2,0,0"
                            IsHitTestVisible="False"
                            Visibility="Collapsed" />
             </Grid>
@@ -417,40 +427,110 @@
                                                   Margin="0,0,10,0"
                                                   Tag="InteractiveControl" />
 
-                                        <!-- Task Text -->
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding Text}"
-                                                   VerticalAlignment="Center"
-                                                   FontSize="{DynamicResource TypeBodyFontSize}"
-                                                   FontFamily="{DynamicResource AppFontFamily}"
-                                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                                   TextWrapping="Wrap" />
+                                        <!-- Task Text & In-Place Editing -->
+                                        <Grid Grid.Column="1" Background="Transparent" VerticalAlignment="Center">
+                                            <Grid.InputBindings>
+                                                <MouseBinding Gesture="LeftDoubleClick"
+                                                              Command="{Binding DataContext.BeginEditTodoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                              CommandParameter="{Binding}" />
+                                            </Grid.InputBindings>
 
-                                        <!-- Delete Button: Hidden by default (Opacity 0), appears on hover -->
-                                        <Button x:Name="DeleteButton"
-                                                Grid.Column="2"
-                                                Style="{StaticResource WidgetMicroButtonStyle}"
-                                                Focusable="False"
-                                                Command="{Binding DataContext.DeleteTodoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"
-                                                Width="24" Height="24"
-                                                Opacity="0"
-                                                IsHitTestVisible="False"
-                                                ToolTip="Delete Task"
-                                                Margin="4,0,0,0">
-                                            <ui:SymbolIcon Symbol="Dismiss16" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
-                                        </Button>
+                                            <!-- Display Mode -->
+                                            <TextBlock x:Name="TaskText"
+                                                       Text="{Binding Text}"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="{DynamicResource TypeBodyFontSize}"
+                                                       FontFamily="{DynamicResource AppFontFamily}"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                                       TextWrapping="Wrap"
+                                                       Cursor="IBeam" />
+
+                                            <!-- Inline Edit Mode -->
+                                            <TextBox x:Name="TaskEditBox"
+                                                     Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}"
+                                                     FontSize="{DynamicResource TypeBodyFontSize}"
+                                                     FontFamily="{DynamicResource AppFontFamily}"
+                                                     Foreground="{DynamicResource TextPrimaryBrush}"
+                                                     CaretBrush="{DynamicResource TextPrimaryBrush}"
+                                                     Background="Transparent"
+                                                     BorderThickness="0"
+                                                     Padding="0"
+                                                     VerticalAlignment="Center"
+                                                     FocusVisualStyle="{x:Null}"
+                                                     Visibility="Collapsed"
+                                                     IsVisibleChanged="OnTaskEditBoxIsVisibleChanged"
+                                                     LostFocus="OnTaskEditBoxLostFocus"
+                                                     Tag="InteractiveControl">
+                                                <TextBox.Template>
+                                                    <ControlTemplate TargetType="{x:Type TextBox}">
+                                                        <ScrollViewer x:Name="PART_ContentHost"
+                                                                      Focusable="False"
+                                                                      VerticalAlignment="Center"
+                                                                      HorizontalScrollBarVisibility="Hidden"
+                                                                      VerticalScrollBarVisibility="Hidden" />
+                                                    </ControlTemplate>
+                                                </TextBox.Template>
+                                                <TextBox.InputBindings>
+                                                    <KeyBinding Key="Return"
+                                                                Command="{Binding DataContext.CommitEditTodoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}" />
+                                                    <KeyBinding Key="Escape"
+                                                                Command="{Binding DataContext.CancelEditTodoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}" />
+                                                </TextBox.InputBindings>
+                                            </TextBox>
+                                        </Grid>
+
+                                        <!-- Actions: Edit and Delete Buttons (appear on hover) -->
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button x:Name="EditButton"
+                                                    Style="{StaticResource WidgetMicroButtonStyle}"
+                                                    Focusable="False"
+                                                    Command="{Binding DataContext.BeginEditTodoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Width="24" Height="24"
+                                                    Opacity="0"
+                                                    IsHitTestVisible="False"
+                                                    ToolTip="Edit Task"
+                                                    Margin="4,0,0,0">
+                                                <ui:SymbolIcon Symbol="Edit16" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            </Button>
+
+                                            <Button x:Name="DeleteButton"
+                                                    Style="{StaticResource WidgetMicroButtonStyle}"
+                                                    Focusable="False"
+                                                    Command="{Binding DataContext.DeleteTodoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Width="24" Height="24"
+                                                    Opacity="0"
+                                                    IsHitTestVisible="False"
+                                                    ToolTip="Delete Task"
+                                                    Margin="2,0,0,0">
+                                                <ui:SymbolIcon Symbol="Dismiss16" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            </Button>
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
                                 <DataTemplate.Triggers>
                                     <Trigger SourceName="ItemCard" Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="EditButton" Property="Opacity" Value="0.7" />
+                                        <Setter TargetName="EditButton" Property="IsHitTestVisible" Value="True" />
                                         <Setter TargetName="DeleteButton" Property="Opacity" Value="0.7" />
                                         <Setter TargetName="DeleteButton" Property="IsHitTestVisible" Value="True" />
+                                    </Trigger>
+                                    <Trigger SourceName="EditButton" Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="EditButton" Property="Opacity" Value="1.0" />
+                                        <Setter TargetName="EditButton" Property="IsHitTestVisible" Value="True" />
                                     </Trigger>
                                     <Trigger SourceName="DeleteButton" Property="IsMouseOver" Value="True">
                                         <Setter TargetName="DeleteButton" Property="Opacity" Value="1.0" />
                                         <Setter TargetName="DeleteButton" Property="IsHitTestVisible" Value="True" />
                                     </Trigger>
+                                    <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                        <Setter TargetName="TaskText" Property="Visibility" Value="Collapsed" />
+                                        <Setter TargetName="TaskEditBox" Property="Visibility" Value="Visible" />
+                                        <Setter TargetName="EditButton" Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
                                 </DataTemplate.Triggers>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -585,6 +665,23 @@
                         <StackPanel Orientation="Horizontal">
                             <ui:SymbolIcon Symbol="ArrowLeft24" FontSize="14" Margin="0,0,5,0" Foreground="{DynamicResource TextSecondaryBrush}" />
                             <TextBlock Text="Back to Tasks"
+                                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Clear All Completed Tasks in History View -->
+                    <Button Style="{StaticResource WidgetMicroButtonStyle}"
+                            Command="{Binding ClearCompletedTodosCommand}"
+                            Visibility="{Binding IsHistoryTodoView, Converter={StaticResource BoolToVis}}"
+                            ToolTip="Clear all completed tasks"
+                            Width="Auto"
+                            Padding="8,0"
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Delete24" FontSize="14" Margin="0,0,5,0" Foreground="{DynamicResource TextSecondaryBrush}" />
+                            <TextBlock Text="Clear All"
                                        FontSize="{DynamicResource TypeCaptionFontSize}"
                                        Foreground="{DynamicResource TextSecondaryBrush}" />
                         </StackPanel>

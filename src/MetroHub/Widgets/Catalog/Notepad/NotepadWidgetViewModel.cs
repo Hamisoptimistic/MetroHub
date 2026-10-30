@@ -155,6 +155,9 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
     {
         if (item == null) return;
 
+        item.IsEditing = false;
+        _originalTexts.Remove(item.Id);
+
         if (item.IsCompleted)
         {
             // Moving from active to completed
@@ -190,11 +193,62 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
         }
     }
 
+    private readonly Dictionary<string, string> _originalTexts = new();
+
+    [RelayCommand]
+    public void BeginEditTodo(NotepadTodoItem? item)
+    {
+        if (item == null || item.IsCompleted) return;
+
+        foreach (var other in ActiveTodos)
+        {
+            if (other != item && other.IsEditing)
+            {
+                CommitEditTodo(other);
+            }
+        }
+
+        _originalTexts[item.Id] = item.Text;
+        item.IsEditing = true;
+    }
+
+    [RelayCommand]
+    public void CommitEditTodo(NotepadTodoItem? item)
+    {
+        if (item == null) return;
+
+        _originalTexts.Remove(item.Id);
+        item.Text = item.Text?.Trim() ?? string.Empty;
+        item.IsEditing = false;
+        SaveSettings();
+    }
+
+    [RelayCommand]
+    public void CancelEditTodo(NotepadTodoItem? item)
+    {
+        if (item == null) return;
+
+        if (_originalTexts.Remove(item.Id, out var originalText))
+        {
+            item.Text = originalText;
+        }
+
+        item.IsEditing = false;
+    }
+
+    [RelayCommand]
+    public void ClearCompletedTodos()
+    {
+        CompletedTodos.Clear();
+        SaveSettings();
+    }
+
     [RelayCommand]
     public void DeleteTodo(NotepadTodoItem item)
     {
         if (item == null) return;
 
+        _originalTexts.Remove(item.Id);
         ActiveTodos.Remove(item);
         CompletedTodos.Remove(item);
         SaveSettings();
@@ -285,7 +339,14 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
 
     public override void SaveSettings()
     {
-        RequestDocumentSync?.Invoke();
+        try
+        {
+            RequestDocumentSync?.Invoke();
+        }
+        catch
+        {
+            // Suppress document sync faults to guarantee state persistence continues
+        }
 
         var settings = new NotepadWidgetSettings
         {
@@ -346,6 +407,7 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
 
             ActiveTodos.Clear();
             CompletedTodos.Clear();
+            _originalTexts.Clear();
         }
     }
 }

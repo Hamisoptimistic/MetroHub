@@ -434,6 +434,510 @@ public class NotepadWidgetTests
             Assert.DoesNotContain("Text for Instance A", stateB);
         });
     }
+
+    [Fact]
+    public void ListIndentation_CalculatesSufficientGutter_ForSingleAndDoubleDigits()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+            var view = new NotepadWidgetView { DataContext = vm };
+            var loadedArgs = new System.Windows.RoutedEventArgs(System.Windows.FrameworkElement.LoadedEvent, view);
+            view.RaiseEvent(loadedArgs);
+
+            var doc = view.EditorBox.Document;
+            Assert.NotNull(doc);
+            var listStyle = doc.Resources[typeof(System.Windows.Documents.List)] as System.Windows.Style;
+            Assert.NotNull(listStyle);
+
+            var marginSetter = listStyle.Setters
+                .OfType<System.Windows.Setter>()
+                .FirstOrDefault(s => s.Property == System.Windows.Documents.Block.MarginProperty);
+            Assert.NotNull(marginSetter);
+            var margin = (System.Windows.Thickness)marginSetter.Value;
+            Assert.True(margin.Left >= 28.0, $"List margin left must be at least 28px, got {margin.Left}");
+
+            var markerOffsetSetter = listStyle.Setters
+                .OfType<System.Windows.Setter>()
+                .FirstOrDefault(s => s.Property == System.Windows.Documents.List.MarkerOffsetProperty);
+            Assert.NotNull(markerOffsetSetter);
+            var offset = (double)markerOffsetSetter.Value;
+            Assert.True(offset >= 6.0, $"Marker offset must be at least 6.0, got {offset}");
+        });
+    }
+
+    [Fact]
+    public void TabKey_InsideListItem_ExecutesIncreaseIndentation()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+            var view = new NotepadWidgetView { DataContext = vm };
+            var loadedArgs = new System.Windows.RoutedEventArgs(System.Windows.FrameworkElement.LoadedEvent, view);
+            view.RaiseEvent(loadedArgs);
+
+            var list = new System.Windows.Documents.List();
+            var item = new System.Windows.Documents.ListItem(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run("List text")));
+            list.ListItems.Add(item);
+            view.EditorBox.Document.Blocks.Clear();
+            view.EditorBox.Document.Blocks.Add(list);
+            view.EditorBox.CaretPosition = item.ContentStart;
+
+            var keyArgs = new System.Windows.Input.KeyEventArgs(
+                System.Windows.Input.Keyboard.PrimaryDevice,
+                new System.Windows.Interop.HwndSource(0, 0, 0, 0, 0, "", System.IntPtr.Zero),
+                0,
+                System.Windows.Input.Key.Tab)
+            {
+                RoutedEvent = System.Windows.UIElement.PreviewKeyDownEvent
+            };
+
+            view.RaiseEvent(keyArgs);
+            Assert.True(keyArgs.Handled);
+        });
+    }
+
+    [Fact]
+    public void ShiftTabKey_InsideListItem_ExecutesDecreaseIndentation()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+            var view = new NotepadWidgetView { DataContext = vm };
+            var loadedArgs = new System.Windows.RoutedEventArgs(System.Windows.FrameworkElement.LoadedEvent, view);
+            view.RaiseEvent(loadedArgs);
+
+            var list = new System.Windows.Documents.List();
+            var item = new System.Windows.Documents.ListItem(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run("Sub item")));
+            list.ListItems.Add(item);
+            view.EditorBox.Document.Blocks.Clear();
+            view.EditorBox.Document.Blocks.Add(list);
+            view.EditorBox.CaretPosition = item.ContentStart;
+
+            var keyArgs = new System.Windows.Input.KeyEventArgs(
+                System.Windows.Input.Keyboard.PrimaryDevice,
+                new System.Windows.Interop.HwndSource(0, 0, 0, 0, 0, "", System.IntPtr.Zero),
+                0,
+                System.Windows.Input.Key.Tab)
+            {
+                RoutedEvent = System.Windows.UIElement.PreviewKeyDownEvent,
+                Source = view.EditorBox
+            };
+
+            view.HandlePreviewKeyDown(keyArgs, System.Windows.Input.ModifierKeys.Shift);
+            Assert.True(keyArgs.Handled);
+        });
+    }
+
+    [Fact]
+    public void ShiftTabKey_OutsideList_InEditorBox_PreventsEscape()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+            var view = new NotepadWidgetView { DataContext = vm };
+            var loadedArgs = new System.Windows.RoutedEventArgs(System.Windows.FrameworkElement.LoadedEvent, view);
+            view.RaiseEvent(loadedArgs);
+
+            var para = new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run("Normal paragraph text"));
+            view.EditorBox.Document.Blocks.Clear();
+            view.EditorBox.Document.Blocks.Add(para);
+            view.EditorBox.CaretPosition = para.ContentStart;
+
+            var keyArgs = new System.Windows.Input.KeyEventArgs(
+                System.Windows.Input.Keyboard.PrimaryDevice,
+                new System.Windows.Interop.HwndSource(0, 0, 0, 0, 0, "", System.IntPtr.Zero),
+                0,
+                System.Windows.Input.Key.Tab)
+            {
+                RoutedEvent = System.Windows.UIElement.PreviewKeyDownEvent,
+                Source = view.EditorBox
+            };
+
+            view.HandlePreviewKeyDown(keyArgs, System.Windows.Input.ModifierKeys.Shift);
+            Assert.True(keyArgs.Handled);
+        });
+    }
+
+    [Fact]
+    public void ShiftTabKey_InTodoMode_IsNotHandled_AllowsControlNavigation()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+            vm.ToggleTodoMode();
+            Assert.True(vm.IsTodoMode);
+
+            var view = new NotepadWidgetView { DataContext = vm };
+            var loadedArgs = new System.Windows.RoutedEventArgs(System.Windows.FrameworkElement.LoadedEvent, view);
+            view.RaiseEvent(loadedArgs);
+
+            var keyArgs = new System.Windows.Input.KeyEventArgs(
+                System.Windows.Input.Keyboard.PrimaryDevice,
+                new System.Windows.Interop.HwndSource(0, 0, 0, 0, 0, "", System.IntPtr.Zero),
+                0,
+                System.Windows.Input.Key.Tab)
+            {
+                RoutedEvent = System.Windows.UIElement.PreviewKeyDownEvent,
+                Source = view.NewTaskInput
+            };
+
+            view.HandlePreviewKeyDown(keyArgs, System.Windows.Input.ModifierKeys.Shift);
+            Assert.False(keyArgs.Handled);
+        });
+    }
+
+    [Fact]
+    public void ShiftEnter_InListItem_PreservesSoftLineBreak()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+            var view = new NotepadWidgetView { DataContext = vm };
+            var loadedArgs = new System.Windows.RoutedEventArgs(System.Windows.FrameworkElement.LoadedEvent, view);
+            view.RaiseEvent(loadedArgs);
+
+            var list = new System.Windows.Documents.List();
+            var item = new System.Windows.Documents.ListItem(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run("Item text")));
+            list.ListItems.Add(item);
+            view.EditorBox.Document.Blocks.Clear();
+            view.EditorBox.Document.Blocks.Add(list);
+            view.EditorBox.CaretPosition = item.ContentStart;
+
+            var keyArgs = new System.Windows.Input.KeyEventArgs(
+                System.Windows.Input.Keyboard.PrimaryDevice,
+                new System.Windows.Interop.HwndSource(0, 0, 0, 0, 0, "", System.IntPtr.Zero),
+                0,
+                System.Windows.Input.Key.Enter)
+            {
+                RoutedEvent = System.Windows.UIElement.PreviewKeyDownEvent,
+                Source = view.EditorBox
+            };
+
+            view.HandlePreviewKeyDown(keyArgs, System.Windows.Input.ModifierKeys.Shift);
+
+            // Shift+Enter should NOT be handled by custom list exit handler, preserving soft line break in RichTextBox
+            Assert.False(keyArgs.Handled);
+        });
+    }
+
+    [Fact]
+    public void Enter_OnEmptySubListItem_OutdentsSubList()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+            var view = new NotepadWidgetView { DataContext = vm };
+            var loadedArgs = new System.Windows.RoutedEventArgs(System.Windows.FrameworkElement.LoadedEvent, view);
+            view.RaiseEvent(loadedArgs);
+
+            var outerList = new System.Windows.Documents.List();
+            var outerItem = new System.Windows.Documents.ListItem(new System.Windows.Documents.Paragraph(new System.Windows.Documents.Run("Outer item")));
+            var subList = new System.Windows.Documents.List();
+            var emptyPara = new System.Windows.Documents.Paragraph();
+            var emptySubItem = new System.Windows.Documents.ListItem(emptyPara);
+            subList.ListItems.Add(emptySubItem);
+            outerItem.Blocks.Add(subList);
+            outerList.ListItems.Add(outerItem);
+
+            view.EditorBox.Document.Blocks.Clear();
+            view.EditorBox.Document.Blocks.Add(outerList);
+            view.EditorBox.CaretPosition = emptyPara.ContentStart;
+
+            Assert.NotNull(view.EditorBox.CaretPosition);
+            Assert.NotNull(view.EditorBox.CaretPosition.Paragraph);
+
+            var keyArgs = new System.Windows.Input.KeyEventArgs(
+                System.Windows.Input.Keyboard.PrimaryDevice,
+                new System.Windows.Interop.HwndSource(0, 0, 0, 0, 0, "", System.IntPtr.Zero),
+                0,
+                System.Windows.Input.Key.Enter)
+            {
+                RoutedEvent = System.Windows.UIElement.PreviewKeyDownEvent,
+                Source = view.EditorBox
+            };
+
+            view.HandlePreviewKeyDown(keyArgs, System.Windows.Input.ModifierKeys.None);
+            Assert.True(keyArgs.Handled);
+        });
+    }
+
+    [Fact]
+    public void TodoItem_Editing_UpdatesTextAndPersists()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            using var sandbox = new WidgetTestSandbox();
+            var store = new WidgetStateStore(sandbox.StateDir, sandbox.BakDir);
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile, store);
+
+            vm.NewTodoText = "Original task";
+            vm.AddTodo();
+            var item = vm.ActiveTodos[0];
+
+            Assert.False(item.IsEditing);
+
+            // Begin editing
+            vm.BeginEditTodo(item);
+            Assert.True(item.IsEditing);
+
+            // Modify text while editing
+            item.Text = "Updated task content";
+
+            // Commit edit
+            vm.CommitEditTodo(item);
+            Assert.False(item.IsEditing);
+            Assert.Equal("Updated task content", item.Text);
+
+            // Verify persisted to state file
+            string? stateJson = store.Read(NotepadWidgetViewModel.WidgetId, tile.Id);
+            Assert.NotNull(stateJson);
+            Assert.Contains("Updated task content", stateJson);
+
+            // Test CancelEditTodo reverts changes
+            vm.BeginEditTodo(item);
+            item.Text = "Cancelled edit content";
+            vm.CancelEditTodo(item);
+            Assert.False(item.IsEditing);
+            Assert.Equal("Updated task content", item.Text);
+        });
+    }
+
+    [Fact]
+    public void TodoItem_MultipleEdits_CommitPreviousItemAndPreserveOriginalTexts()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            using var sandbox = new WidgetTestSandbox();
+            var store = new WidgetStateStore(sandbox.StateDir, sandbox.BakDir);
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile, store);
+
+            vm.NewTodoText = "Task A";
+            vm.AddTodo();
+            vm.NewTodoText = "Task B";
+            vm.AddTodo();
+
+            var taskA = vm.ActiveTodos[0];
+            var taskB = vm.ActiveTodos[1];
+
+            // Edit Task A
+            vm.BeginEditTodo(taskA);
+            Assert.True(taskA.IsEditing);
+            taskA.Text = "Task A modified";
+
+            // Starting edit on Task B auto-commits Task A
+            vm.BeginEditTodo(taskB);
+            Assert.False(taskA.IsEditing);
+            Assert.Equal("Task A modified", taskA.Text);
+            Assert.True(taskB.IsEditing);
+
+            // Cancelling Task B restores Task B, and Task A remains unaffected
+            taskB.Text = "Task B modified";
+            vm.CancelEditTodo(taskB);
+            Assert.False(taskB.IsEditing);
+            Assert.Equal("Task B", taskB.Text);
+            Assert.Equal("Task A modified", taskA.Text);
+
+            string? stateJson = store.Read(NotepadWidgetViewModel.WidgetId, tile.Id);
+            Assert.NotNull(stateJson);
+            Assert.Contains("Task A modified", stateJson);
+            Assert.Contains("Task B", stateJson);
+        });
+    }
+
+    [Fact]
+    public void TodoItem_KeyboardShortcuts_F2AndEnter_BeginEdit_Delete_Deletes()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+            vm.ToggleTodoMode();
+
+            vm.NewTodoText = "Key Shortcut Task";
+            vm.AddTodo();
+            var task = vm.ActiveTodos[0];
+
+            var view = new NotepadWidgetView { DataContext = vm };
+            var loadedArgs = new System.Windows.RoutedEventArgs(System.Windows.FrameworkElement.LoadedEvent, view);
+            view.RaiseEvent(loadedArgs);
+
+            // Create a fake CheckBox whose DataContext is task
+            var checkBox = new System.Windows.Controls.CheckBox { DataContext = task };
+
+            // Press F2 on the item
+            var f2Args = new System.Windows.Input.KeyEventArgs(
+                System.Windows.Input.Keyboard.PrimaryDevice,
+                new System.Windows.Interop.HwndSource(0, 0, 0, 0, 0, "", System.IntPtr.Zero),
+                0,
+                System.Windows.Input.Key.F2)
+            {
+                RoutedEvent = System.Windows.UIElement.PreviewKeyDownEvent,
+                Source = checkBox
+            };
+
+            view.HandlePreviewKeyDown(f2Args, System.Windows.Input.ModifierKeys.None);
+            Assert.True(f2Args.Handled);
+            Assert.True(task.IsEditing);
+
+            // Commit edit
+            vm.CommitEditTodo(task);
+            Assert.False(task.IsEditing);
+
+            // Press Enter on the item
+            var enterArgs = new System.Windows.Input.KeyEventArgs(
+                System.Windows.Input.Keyboard.PrimaryDevice,
+                new System.Windows.Interop.HwndSource(0, 0, 0, 0, 0, "", System.IntPtr.Zero),
+                0,
+                System.Windows.Input.Key.Enter)
+            {
+                RoutedEvent = System.Windows.UIElement.PreviewKeyDownEvent,
+                Source = checkBox
+            };
+
+            view.HandlePreviewKeyDown(enterArgs, System.Windows.Input.ModifierKeys.None);
+            Assert.True(enterArgs.Handled);
+            Assert.True(task.IsEditing);
+
+            vm.CancelEditTodo(task);
+
+            // Press Delete on the item
+            var deleteArgs = new System.Windows.Input.KeyEventArgs(
+                System.Windows.Input.Keyboard.PrimaryDevice,
+                new System.Windows.Interop.HwndSource(0, 0, 0, 0, 0, "", System.IntPtr.Zero),
+                0,
+                System.Windows.Input.Key.Delete)
+            {
+                RoutedEvent = System.Windows.UIElement.PreviewKeyDownEvent,
+                Source = checkBox
+            };
+
+            view.HandlePreviewKeyDown(deleteArgs, System.Windows.Input.ModifierKeys.None);
+            Assert.True(deleteArgs.Handled);
+            Assert.Empty(vm.ActiveTodos);
+        });
+    }
+
+    [Fact]
+    public void ClearCompletedTodos_PurgesCompletedList()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            using var sandbox = new WidgetTestSandbox();
+            var store = new WidgetStateStore(sandbox.StateDir, sandbox.BakDir);
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile, store);
+
+            vm.NewTodoText = "Task 1";
+            vm.AddTodo();
+            vm.NewTodoText = "Task 2";
+            vm.AddTodo();
+
+            var task1 = vm.ActiveTodos[0];
+            var task2 = vm.ActiveTodos[1];
+            task1.IsCompleted = true;
+            vm.ToggleTodoCompletion(task1);
+            task2.IsCompleted = true;
+            vm.ToggleTodoCompletion(task2);
+
+            Assert.Equal(2, vm.CompletedCount);
+            Assert.Equal(2, vm.CompletedTodos.Count);
+
+            // Clear all completed tasks
+            vm.ClearCompletedTodos();
+
+            Assert.Equal(0, vm.CompletedCount);
+            Assert.Empty(vm.CompletedTodos);
+
+            string? stateJson = store.Read(NotepadWidgetViewModel.WidgetId, tile.Id);
+            Assert.NotNull(stateJson);
+            Assert.DoesNotContain("Task 1", stateJson);
+            Assert.DoesNotContain("Task 2", stateJson);
+        });
+    }
+
+    [Fact]
+    public void XamlWriter_FailureFallback_PreservesPlainText()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+            vm.UpdateTextMetrics("Important Plain Text That Must Survive", "");
+
+            var view = new NotepadWidgetView { DataContext = vm };
+            var loadedArgs = new System.Windows.RoutedEventArgs(System.Windows.FrameworkElement.LoadedEvent, view);
+            view.RaiseEvent(loadedArgs);
+
+            Assert.Equal("Important Plain Text That Must Survive", vm.PlainText);
+
+            vm.RequestDocumentSync?.Invoke();
+
+            Assert.Equal("Important Plain Text That Must Survive", vm.PlainText);
+            Assert.True(vm.CharCount > 0);
+        });
+    }
+
+    [Fact]
+    public void UpdatePlaceholder_Hides_WhenFirstBlockIsList()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+            var view = new NotepadWidgetView { DataContext = vm };
+            var loadedArgs = new System.Windows.RoutedEventArgs(System.Windows.FrameworkElement.LoadedEvent, view);
+            view.RaiseEvent(loadedArgs);
+
+            Assert.Equal(System.Windows.Visibility.Visible, view.PlaceholderText.Visibility);
+
+            var list = new System.Windows.Documents.List();
+            list.ListItems.Add(new System.Windows.Documents.ListItem(new System.Windows.Documents.Paragraph()));
+            view.EditorBox.Document.Blocks.Clear();
+            view.EditorBox.Document.Blocks.Add(list);
+
+            var textChangedArgs = new System.Windows.Controls.TextChangedEventArgs(
+                System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent,
+                System.Windows.Controls.UndoAction.None);
+            view.EditorBox.RaiseEvent(textChangedArgs);
+
+            Assert.Equal(System.Windows.Visibility.Collapsed, view.PlaceholderText.Visibility);
+        });
+    }
+
+    [Fact]
+    public void Paste_NonTextPayload_IsCancelled()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile(null);
+            using var vm = new NotepadWidgetViewModel(tile);
+            var view = new NotepadWidgetView { DataContext = vm };
+            var loadedArgs = new System.Windows.RoutedEventArgs(System.Windows.FrameworkElement.LoadedEvent, view);
+            view.RaiseEvent(loadedArgs);
+
+            var dataObj = new System.Windows.DataObject();
+            dataObj.SetData("CustomFormat", "CustomData");
+
+            var pastingArgs = new System.Windows.DataObjectPastingEventArgs(
+                dataObj,
+                false,
+                "CustomFormat");
+
+            view.EditorBox.RaiseEvent(pastingArgs);
+
+            Assert.True(pastingArgs.CommandCancelled);
+        });
+    }
 }
 
 

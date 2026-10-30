@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MetroHub.Widgets.Catalog.Notepad;
 
@@ -9,11 +11,19 @@ public enum NotepadMode
     Todo = 1
 }
 
-public sealed class NotepadTodoItem
+public sealed partial class NotepadTodoItem : ObservableObject
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
-    public string Text { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string Text { get; set; } = string.Empty;
+
     public bool IsCompleted { get; set; }
+
+    [ObservableProperty]
+    [JsonIgnore]
+    public partial bool IsEditing { get; set; }
+
     public DateTime? CompletedAt { get; set; }
 }
 

@@ -32,6 +32,24 @@ internal static class WpfTestHost
                 {
                     try
                     {
+                        var asm = typeof(MetroHub.App).Assembly;
+                        var resName = asm.GetName().Name + ".g.resources";
+                        using (var s = asm.GetManifestResourceStream(resName))
+                        {
+                            if (s != null)
+                            {
+                                using var r = new System.Resources.ResourceReader(s);
+                                var dict = r.GetEnumerator();
+                                while (dict.MoveNext())
+                                {
+                                    if (dict.Key.ToString()!.Contains("widgetstyles", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        Console.WriteLine($"[FOUND RES]: {dict.Key}");
+                                    }
+                                }
+                            }
+                        }
+
                         appResources.MergedDictionaries.Add(new ThemesDictionary { Theme = Wpf.Ui.Appearance.ApplicationTheme.Dark });
                         appResources.MergedDictionaries.Add(new ControlsDictionary());
                         appResources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/MetroHub;component/Presentation/Themes/Tokens.xaml", UriKind.Absolute) });
@@ -41,7 +59,11 @@ internal static class WpfTestHost
                         appResources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/MetroHub;component/Widgets/WidgetStyles.xaml", UriKind.Absolute) });
                         MetroHub.Core.Services.SystemAccentColorService.UpdateSystemAccentColors();
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[WpfTestHost ERROR]: {ex}");
+                        throw;
+                    }
                 }
             }
 
