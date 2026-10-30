@@ -138,6 +138,7 @@ public partial class MainWindow
     private void OnLiveWaterCausticsClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("WaterCaustics");
     private void OnLivePlasmaClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Plasma");
     private void OnLiveAuroraClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Aurora");
+    private void OnLiveCampfireAsciiClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("CampfireAscii");
     private void OnLivePebblesRoseClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Pebbles_Rose");
     private void OnLivePebblesAmberClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Pebbles_Amber");
     private void OnLivePebblesIceClick(object sender, RoutedEventArgs e) => SetLiveWallpaper("Pebbles_Ice");
@@ -312,6 +313,7 @@ public partial class MainWindow
         if (LiveWaterCausticsItem != null) LiveWaterCausticsItem.IsChecked = isLive && string.Equals(currentLiveShader, "WaterCaustics", StringComparison.OrdinalIgnoreCase);
         if (LivePlasmaItem != null) LivePlasmaItem.IsChecked = isLive && string.Equals(currentLiveShader, "Plasma", StringComparison.OrdinalIgnoreCase);
         if (LiveAuroraItem != null) LiveAuroraItem.IsChecked = isLive && string.Equals(currentLiveShader, "Aurora", StringComparison.OrdinalIgnoreCase);
+        if (LiveCampfireAsciiItem != null) LiveCampfireAsciiItem.IsChecked = isLive && string.Equals(currentLiveShader, "CampfireAscii", StringComparison.OrdinalIgnoreCase);
 
         if (LivePebblesRoseItem != null) LivePebblesRoseItem.IsChecked = isLive && (string.Equals(currentLiveShader, "Pebbles_Rose", StringComparison.OrdinalIgnoreCase) || string.Equals(currentLiveShader, "Pebbles", StringComparison.OrdinalIgnoreCase));
         if (LivePebblesAmberItem != null) LivePebblesAmberItem.IsChecked = isLive && string.Equals(currentLiveShader, "Pebbles_Amber", StringComparison.OrdinalIgnoreCase);

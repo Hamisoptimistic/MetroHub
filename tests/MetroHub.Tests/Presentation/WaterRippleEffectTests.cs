@@ -347,6 +347,25 @@ public sealed class WaterRippleEffectTests
         });
     }
 
+    [Fact]
+    public void MetroShaderEffect_CampfireAscii_ResolvesProperly()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            Assert.True(MetroShaderEffect.IsSupported("CampfireAscii"));
+            Assert.True(MetroShaderEffect.IsSupported("campfireascii"));
+            Assert.True(MetroShaderEffect.IsSupported("Campfire"));
+
+            var effect = MetroShaderEffect.TryCreate("CampfireAscii");
+            Assert.NotNull(effect);
+            Assert.Equal("CampfireAscii", effect.ShaderName);
+            Assert.Equal(MetroShaderEffect.DefaultCampfireAsciiParams, effect.EffectParams);
+
+            var pixelShader = MetroShaderEffect.GetOrCreatePixelShader("CampfireAscii");
+            Assert.NotNull(pixelShader);
+        });
+    }
+
 
     [Theory]
     [InlineData("Wallpaper", true, false, true)]

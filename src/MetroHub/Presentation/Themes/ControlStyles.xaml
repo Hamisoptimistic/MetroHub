@@ -159,6 +159,7 @@
     <Style x:Key="ModalDismissButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
         <Setter Property="Width" Value="32" />
         <Setter Property="Height" Value="32" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
@@ -170,7 +171,7 @@
                         <Path x:Name="Icon"
                               Width="10" Height="10"
                               Data="M 0.5,0.5 L 9.5,9.5 M 0.5,9.5 L 9.5,0.5"
-                              Stroke="#85FFFFFF"
+                              Stroke="{TemplateBinding Foreground}"
                               StrokeThickness="1.2"
                               StrokeStartLineCap="Round"
                               StrokeEndLineCap="Round"

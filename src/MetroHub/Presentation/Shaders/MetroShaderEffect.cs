@@ -39,6 +39,7 @@ public class MetroShaderEffect : ShaderEffect
     public static readonly Point4D DefaultMeadowParams = new(0.35, 0.70, 0.75, 0.0);
     public static readonly Point4D DefaultPlasmaParams = new(3.0, 1.0, 1.0, 0.0);
     public static readonly Point4D DefaultAuroraParams = new(1.0, 1.0, 0.0, 0.0);
+    public static readonly Point4D DefaultCampfireAsciiParams = new(1.0, 48.0, 1.15, 0.0);
 
     public static readonly DependencyProperty InputProperty =
         RegisterPixelShaderSamplerProperty(
@@ -256,6 +257,9 @@ public class MetroShaderEffect : ShaderEffect
                 new MetroShaderEffect("Ink", DefaultInkParams),
             _ when string.Equals(effectName, "Plasma", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("Plasma", DefaultPlasmaParams),
+            _ when string.Equals(effectName, "CampfireAscii", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(effectName, "Campfire", StringComparison.OrdinalIgnoreCase) =>
+                new MetroShaderEffect("CampfireAscii", DefaultCampfireAsciiParams),
             _ when string.Equals(effectName, "Aurora", StringComparison.OrdinalIgnoreCase) =>
                 new MetroShaderEffect("Aurora", DefaultAuroraParams),
             _ when string.Equals(effectName, "Pebbles", StringComparison.OrdinalIgnoreCase) ||

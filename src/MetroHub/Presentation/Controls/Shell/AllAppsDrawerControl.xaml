@@ -442,12 +442,12 @@
                             Padding="0"
                             Focusable="False"
                             ToolTip="Refresh installed apps"
-                            Margin="0,0,2,0"
+                            Margin="0,0,4,0"
                             Click="OnRefreshClick">
                         <ui:SymbolIcon x:Name="RefreshIcon"
                                        Symbol="ArrowClockwise24"
-                                       FontSize="16"
-                                       Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}"
+                                       FontSize="18"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
                                        RenderTransformOrigin="0.5,0.5">
                             <ui:SymbolIcon.RenderTransform>
                                 <RotateTransform x:Name="RefreshIconRotation" Angle="0" />
@@ -455,17 +455,9 @@
                         </ui:SymbolIcon>
                     </Button>
                     <Button x:Name="CloseButton"
-                            Style="{StaticResource SubtleButtonStyle}"
-                            Width="32"
-                            Height="32"
-                            Padding="0"
-                            Focusable="False"
+                            Style="{DynamicResource ModalDismissButtonStyle}"
                             ToolTip="Close"
-                            Click="OnCloseClick">
-                        <ui:SymbolIcon Symbol="Dismiss24"
-                                       FontSize="16"
-                                       Foreground="{Binding RelativeSource={RelativeSource AncestorType=Button}, Path=Foreground}" />
-                    </Button>
+                            Click="OnCloseClick" />
                 </StackPanel>
             </Grid>
 

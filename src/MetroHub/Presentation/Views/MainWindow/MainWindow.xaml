@@ -408,6 +408,7 @@
                                 <MenuItem x:Name="LiveWaterCausticsItem" Header="Water Caustics" IsCheckable="True" Click="OnLiveWaterCausticsClick" />
                                 <MenuItem x:Name="LivePlasmaItem" Header="Plasma" IsCheckable="True" Click="OnLivePlasmaClick" />
                                 <MenuItem x:Name="LiveAuroraItem" Header="Aurora" IsCheckable="True" Click="OnLiveAuroraClick" />
+                                <MenuItem x:Name="LiveCampfireAsciiItem" Header="Campfire ASCII" IsCheckable="True" Click="OnLiveCampfireAsciiClick" />
                                 <MenuItem x:Name="LivePebblesMenu" Header="Pebbles">
                                     <MenuItem x:Name="LivePebblesRoseItem" Header="Rose" IsCheckable="True" Click="OnLivePebblesRoseClick" />
                                     <MenuItem x:Name="LivePebblesAmberItem" Header="Amber" IsCheckable="True" Click="OnLivePebblesAmberClick" />
