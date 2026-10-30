@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
+using MetroHub.Presentation.Messaging;
 using MetroHub.Core.Services.Catalog;
 
 namespace MetroHub.Presentation.Controllers;
@@ -382,6 +383,108 @@ public sealed class TileManager
         var targets = GetSelectedTiles();
         if (targets.Count == 0) return;
         BatchUnpinTiles(targets);
+    }
+
+
+    public void BatchDeletePastedAssets(TileModel anchorTile)
+    {
+        var selected = GetSelectedTiles();
+        List<TileModel> targets = (anchorTile.IsSelected && selected.Count > 1)
+            ? selected.Where(t => t.IsPastedAsset).ToList()
+            : (anchorTile.IsPastedAsset ? new List<TileModel> { anchorTile } : new List<TileModel>());
+
+        if (targets.Count == 0) return;
+
+        var rail = CanvasMessenger.GetSidebarRail();
+        if (rail != null)
+        {
+            SidebarPinningService.BatchUnpinTiles(rail, targets);
+        }
+
+        var allActiveTiles = _tilesProvider();
+
+        // 1. Permanently delete underlying asset files for eligible pasted assets
+        foreach (var tile in targets)
+        {
+            DeleteAssetFileIfUnreferenced(tile, targets, allActiveTiles, rail);
+        }
+
+        // 2. Remove the tiles from canvas and reflow layout
+        BatchUnpinTiles(targets);
+    }
+
+    private static void DeleteAssetFileIfUnreferenced(TileModel target, IReadOnlyCollection<TileModel> deletingTiles, IEnumerable<TileModel> allTiles, ISidebarShortcutStore? rail = null)
+    {
+        string? targetPath = target.TargetPath;
+        if (string.IsNullOrWhiteSpace(targetPath) || !AppPaths.IsPastedAssetPath(targetPath))
+        {
+            return; // Fail-closed: Never delete anything outside AppData pasted directories
+        }
+
+        // Deduplication check: Do other tiles still reference this same file?
+        bool isReferencedByOtherTile = allTiles.Any(t =>
+            !deletingTiles.Contains(t) &&
+            (string.Equals(t.TargetPath, targetPath, StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(t.IconPath, targetPath, StringComparison.OrdinalIgnoreCase)));
+
+        if (!isReferencedByOtherTile && WorkspaceManager.Instance is { } wm)
+        {
+            foreach (var ws in wm.Workspaces)
+            {
+                if (ws.Tiles.Any(t =>
+                    !deletingTiles.Contains(t) &&
+                    (string.Equals(t.TargetPath, targetPath, StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(t.IconPath, targetPath, StringComparison.OrdinalIgnoreCase))))
+                {
+                    isReferencedByOtherTile = true;
+                    break;
+                }
+            }
+        }
+
+        if (!isReferencedByOtherTile && rail?.Shortcuts != null)
+        {
+            if (rail.Shortcuts.Any(s =>
+                string.Equals(s.Target, targetPath, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(s.CustomIconPath, targetPath, StringComparison.OrdinalIgnoreCase)))
+            {
+                isReferencedByOtherTile = true;
+            }
+        }
+
+        if (!isReferencedByOtherTile)
+        {
+            Safe.Try(() =>
+            {
+                if (File.Exists(targetPath))
+                {
+                    File.Delete(targetPath);
+                }
+            }, context: $"TileManager.BatchDeletePastedAssets: {targetPath}");
+        }
+
+        // If icon is also a distinct pasted asset image and unreferenced, clean it up
+        string? iconPath = target.IconPath;
+        if (!string.IsNullOrWhiteSpace(iconPath) &&
+            !string.Equals(iconPath, targetPath, StringComparison.OrdinalIgnoreCase) &&
+            AppPaths.IsPastedAssetPath(iconPath))
+        {
+            bool isIconReferenced = allTiles.Any(t =>
+                !deletingTiles.Contains(t) &&
+                (string.Equals(t.TargetPath, iconPath, StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(t.IconPath, iconPath, StringComparison.OrdinalIgnoreCase)));
+
+            if (!isIconReferenced)
+            {
+                Safe.Try(() =>
+                {
+                    if (File.Exists(iconPath))
+                    {
+                        File.Delete(iconPath);
+                    }
+                }, context: $"TileManager.BatchDeletePastedAssets.Icon: {iconPath}");
+            }
+        }
     }
 
     public void BatchUnpinSelectedTiles(TileModel anchorTile)

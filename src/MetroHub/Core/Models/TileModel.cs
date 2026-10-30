@@ -112,6 +112,7 @@ public sealed class TileModel : INotifyPropertyChanged
             if (SetField(ref _targetPath, value))
             {
                 OnPropertyChanged(nameof(IsNote));
+                OnPropertyChanged(nameof(IsPastedAsset));
                 OnPropertyChanged(nameof(ShowStandardIcon));
                 OnPropertyChanged(nameof(HasWebSource));
                 OnPropertyChanged(nameof(WebSourceIconPath));
@@ -297,6 +298,9 @@ public sealed class TileModel : INotifyPropertyChanged
 
     [JsonIgnore]
     public bool IsWide => SpanX >= 4 && SpanY == 2;
+
+    [JsonIgnore]
+    public bool IsPastedAsset => AppPaths.IsPastedAssetPath(_targetPath);
 
     [JsonIgnore]
     public bool IsNote

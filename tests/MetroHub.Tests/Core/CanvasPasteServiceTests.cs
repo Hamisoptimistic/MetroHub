@@ -1002,4 +1002,197 @@ public sealed class CanvasPasteServiceTests : IDisposable
             "https://docs.google.com/spreadsheets/d/123/edit");
         Assert.Equal("Q4 Financials", sheetDoc);
     }
+
+    // ── 12. Pasted Asset Deletion & Safety Invariants ────────────────────────
+
+    [Fact]
+    public void AppPaths_IsPastedAssetPath_ValidPastedFiles_ReturnsTrue()
+    {
+        string imagePath = Path.Combine(AppPaths.PastedImagesDir, "img_12345abcdef.png");
+        string notePath = Path.Combine(AppPaths.PastedNotesDir, "Note_20261031_123456.txt");
+
+        Assert.True(AppPaths.IsPastedAssetPath(imagePath));
+        Assert.True(AppPaths.IsPastedAssetPath(notePath));
+    }
+
+    [Fact]
+    public void AppPaths_IsPastedAssetPath_ExternalFilesAndUrls_ReturnsFalse()
+    {
+        Assert.False(AppPaths.IsPastedAssetPath(@"C:\Users\User\Downloads\screenshot.png"));
+        Assert.False(AppPaths.IsPastedAssetPath(@"C:\Users\User\Desktop\notes.txt"));
+        Assert.False(AppPaths.IsPastedAssetPath(@"C:\Program Files\App\app.exe"));
+        Assert.False(AppPaths.IsPastedAssetPath("https://github.com/dotnet"));
+        Assert.False(AppPaths.IsPastedAssetPath(string.Empty));
+        Assert.False(AppPaths.IsPastedAssetPath(null));
+
+        // Sibling path prefix attack / directory boundary test
+        string spoofPath = Path.Combine(AppPaths.DataDir, "pasted_images_spoof", "test.png");
+        Assert.False(AppPaths.IsPastedAssetPath(spoofPath));
+    }
+
+    [Fact]
+    public void TileModel_IsPastedAsset_CorrectlyIdentifiesPastedAssets()
+    {
+        var pastedImageTile = new TileModel
+        {
+            TargetPath = Path.Combine(AppPaths.PastedImagesDir, "img_test.png")
+        };
+        var pastedNoteTile = new TileModel
+        {
+            TargetPath = Path.Combine(AppPaths.PastedNotesDir, "Note_test.txt")
+        };
+        var downloadFileTile = new TileModel
+        {
+            TargetPath = @"C:\Users\User\Downloads\my_image.png"
+        };
+        var webUrlTile = new TileModel
+        {
+            TargetPath = "https://example.com"
+        };
+
+        Assert.True(pastedImageTile.IsPastedAsset);
+        Assert.True(pastedNoteTile.IsPastedAsset);
+        Assert.False(downloadFileTile.IsPastedAsset);
+        Assert.False(webUrlTile.IsPastedAsset);
+    }
+
+    [Fact]
+    public void TileManager_BatchDeletePastedAssets_DeletesFileAndUnpinsTile()
+    {
+        Directory.CreateDirectory(AppPaths.PastedNotesDir);
+        string dummyNote = Path.Combine(AppPaths.PastedNotesDir, "Note_delete_test.txt");
+        File.WriteAllText(dummyNote, "Delete me please!");
+
+        var tiles = new ObservableCollection<TileModel>();
+        var groups = new ObservableCollection<TileGroupModel>();
+        var tm = CreateTestTileManager(tiles, groups);
+
+        var tile = new TileModel
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Title = "Temporary Note",
+            TargetPath = dummyNote,
+            SpanX = 2,
+            SpanY = 2
+        };
+        tiles.Add(tile);
+
+        Assert.True(File.Exists(dummyNote));
+        Assert.Single(tiles);
+
+        tm.BatchDeletePastedAssets(tile);
+
+        Assert.Empty(tiles);
+        Assert.False(File.Exists(dummyNote), "Physical file must be deleted from AppData");
+    }
+
+    [Fact]
+    public void TileManager_BatchDeletePastedAssets_ExternalUserFile_NeverDeletesDiskFile()
+    {
+        string externalDir = Path.Combine(_sandboxDir, "UserDownloads");
+        Directory.CreateDirectory(externalDir);
+        string externalFile = Path.Combine(externalDir, "important_document.txt");
+        File.WriteAllText(externalFile, "Do not delete this!");
+
+        var tiles = new ObservableCollection<TileModel>();
+        var groups = new ObservableCollection<TileGroupModel>();
+        var tm = CreateTestTileManager(tiles, groups);
+
+        var tile = new TileModel
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Title = "Important File",
+            TargetPath = externalFile,
+            SpanX = 2,
+            SpanY = 2
+        };
+        tiles.Add(tile);
+
+        Assert.True(File.Exists(externalFile));
+
+        // Attempt deletion of an external file
+        tm.BatchDeletePastedAssets(tile);
+
+        // Verification: tile is not deleted because it's not a pasted asset, and the file on disk remains untouched!
+        Assert.True(File.Exists(externalFile), "External user file must NEVER be deleted!");
+    }
+
+    [Fact]
+    public void TileManager_BatchDeletePastedAssets_SharedImage_PreservesUntilLastReferenceDeleted()
+    {
+        Directory.CreateDirectory(AppPaths.PastedImagesDir);
+        string dummyImage = Path.Combine(AppPaths.PastedImagesDir, "img_shared_cas.png");
+        File.WriteAllBytes(dummyImage, new byte[] { 1, 2, 3, 4 });
+
+        var tiles = new ObservableCollection<TileModel>();
+        var groups = new ObservableCollection<TileGroupModel>();
+        var tm = CreateTestTileManager(tiles, groups);
+
+        var tile1 = new TileModel
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Title = "Image 1",
+            TargetPath = dummyImage,
+            SpanX = 2,
+            SpanY = 2
+        };
+        var tile2 = new TileModel
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Title = "Image 2",
+            TargetPath = dummyImage,
+            SpanX = 2,
+            SpanY = 2
+        };
+        tiles.Add(tile1);
+        tiles.Add(tile2);
+
+        // Delete first tile
+        tm.BatchDeletePastedAssets(tile1);
+
+        Assert.Single(tiles);
+        Assert.Contains(tile2, tiles);
+        Assert.True(File.Exists(dummyImage), "Shared image file must stay on disk while referenced by tile2");
+
+        // Delete second tile
+        tm.BatchDeletePastedAssets(tile2);
+
+        Assert.Empty(tiles);
+        Assert.False(File.Exists(dummyImage), "Image file should be deleted when last referencing tile is removed");
+    }
+
+    [Fact]
+    public void SidebarPinningService_BatchUnpinTiles_RemovesMatchingPastedAssetFromSidebar()
+    {
+        var store = new FakeSidebarStore();
+        string notePath = Path.Combine(AppPaths.PastedNotesDir, "Note_sidebar_sync.txt");
+
+        var tile = new TileModel
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Title = "Note on Sidebar",
+            TargetPath = notePath,
+            SpanX = 2,
+            SpanY = 2
+        };
+
+        var shortcut = SidebarPinningService.CreateShortcutFromTile(tile);
+        store.AddShortcutItem(shortcut);
+
+        Assert.Single(store.Shortcuts);
+
+        // Unpin via SidebarPinningService when tile is deleted
+        SidebarPinningService.BatchUnpinTiles(store, new[] { tile });
+
+        Assert.Empty(store.Shortcuts);
+    }
+
+    private sealed class FakeSidebarStore : ISidebarShortcutStore
+    {
+        private readonly List<SidebarShortcutItem> _items = new();
+        public IReadOnlyList<SidebarShortcutItem> Shortcuts => _items;
+        public void AddShortcutItem(SidebarShortcutItem item, int? insertIndex = null) => _items.Add(item);
+        public bool RemoveShortcutItem(SidebarShortcutItem item) => _items.Remove(item);
+        public void SaveShortcutsState() { }
+    }
 }

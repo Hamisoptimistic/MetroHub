@@ -89,6 +89,9 @@ public partial class MainWindow
     public void BatchUnpinSelectedTiles(TileModel anchorTile) =>
         TileManager.BatchUnpinSelectedTiles(anchorTile);
 
+    public void BatchDeletePastedAssets(TileModel anchorTile) =>
+        TileManager.BatchDeletePastedAssets(anchorTile);
+
     public void BatchUnpinTiles(IList<TileModel> targets) =>
         TileManager.BatchUnpinTiles(targets);
 

@@ -505,6 +505,7 @@ public partial class TileControl : UserControl
     private static MenuItem? s_pinToSidebarMenuItem;
     private static Wpf.Ui.Controls.SymbolIcon? s_pinToSidebarIcon;
     private static MenuItem? s_unpinMenuItem;
+    private static MenuItem? s_deleteMenuItem;
 
     private static MenuItem CreateMenuItem(
         string header,
@@ -578,6 +579,7 @@ public partial class TileControl : UserControl
         s_pinToSidebarMenuItem = CreateMenuItem("Pin to Sidebar", SymbolRegular.Pin24, OnSharedPinToSidebarClick, icon: s_pinToSidebarIcon);
 
         s_unpinMenuItem = CreateMenuItem("Unpin from MetroHub", SymbolRegular.PinOff24, OnSharedUnpinClick, isDestructive: true);
+        s_deleteMenuItem = CreateMenuItem("Delete", SymbolRegular.Delete24, OnSharedDeleteClick, isDestructive: true);
 
         s_sharedContextMenu.Items.Add(s_resizeMenuItem);
         s_sharedContextMenu.Items.Add(s_styleMenuItem);
@@ -593,6 +595,7 @@ public partial class TileControl : UserControl
         s_sharedContextMenu.Items.Add(s_unpinSeparator);
         s_sharedContextMenu.Items.Add(s_pinToSidebarMenuItem);
         s_sharedContextMenu.Items.Add(s_unpinMenuItem);
+        s_sharedContextMenu.Items.Add(s_deleteMenuItem);
 
         return s_sharedContextMenu;
     }
@@ -751,6 +754,7 @@ public partial class TileControl : UserControl
             if (s_styleMenuItem != null) s_styleMenuItem.Visibility = Visibility.Collapsed;
             if (s_unpinSeparator != null) s_unpinSeparator.Visibility = Visibility.Visible;
             if (s_groupMenuItem != null) s_groupMenuItem.Visibility = Visibility.Collapsed;
+            if (s_deleteMenuItem != null) s_deleteMenuItem.Visibility = Visibility.Collapsed;
 
             if (tile.TileContent is IWidgetContextMenuProvider menuProvider && s_sharedContextMenu != null)
             {
@@ -825,6 +829,15 @@ public partial class TileControl : UserControl
             {
                 s_styleColourfulMenuItem.IsCheckable = true;
                 s_styleColourfulMenuItem.IsChecked = isColourful;
+            }
+
+            if (s_deleteMenuItem != null)
+            {
+                bool canDelete = selectedCount > 1
+                    ? selectedTiles.All(t => t.IsPastedAsset)
+                    : tile.IsPastedAsset;
+                s_deleteMenuItem.Visibility = canDelete ? Visibility.Visible : Visibility.Collapsed;
+                s_deleteMenuItem.Header = "Delete";
             }
         }
 
@@ -1222,6 +1235,14 @@ public partial class TileControl : UserControl
         if (s_activeTargetTile?.DataContext is TileModel tile)
         {
             WeakReferenceMessenger.Default.Send(new TileBatchUnpinMessage(tile));
+        }
+    }
+
+    private static void OnSharedDeleteClick(object sender, RoutedEventArgs e)
+    {
+        if (s_activeTargetTile?.DataContext is TileModel tile)
+        {
+            WeakReferenceMessenger.Default.Send(new TileBatchDeleteMessage(tile));
         }
     }
 

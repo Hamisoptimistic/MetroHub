@@ -75,6 +75,28 @@ public static class AppPaths
     public static string PastedImagesDir => Path.Combine(DataDir, "pasted_images");
     public static string PastedNotesDir => Path.Combine(DataDir, "pasted_notes");
 
+    /// <summary>
+    /// Checks whether the specified file path is strictly contained within MetroHub's internal
+    /// pasted asset directories (pasted_images or pasted_notes).
+    /// Prevents directory traversal and ensures external user files are never misidentified.
+    /// </summary>
+    public static bool IsPastedAssetPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+        try
+        {
+            string full = Path.GetFullPath(path);
+            string imgDir = PastedImagesDir.TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
+            string noteDir = PastedNotesDir.TrimEnd('\\', '/') + Path.DirectorySeparatorChar;
+            return full.StartsWith(imgDir, StringComparison.OrdinalIgnoreCase) ||
+                   full.StartsWith(noteDir, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     // ── Widget state (per-tile autosave mirrors) ─────────────
     /// <summary>Root for widget-owned state files: config\widgets\{widgetId}\{tileId}.json.</summary>
     public static string WidgetStateDir => Path.Combine(ConfigDir, "widgets");

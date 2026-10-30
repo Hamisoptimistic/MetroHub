@@ -35,6 +35,8 @@ public record TileAddToGroupMessage(IReadOnlyList<TileModel> Targets, TileGroupM
 
 public record TileBatchUnpinMessage(TileModel SourceTile);
 
+public record TileBatchDeleteMessage(TileModel SourceTile);
+
 public record TileToggleSidebarPinMessage(TileModel Tile);
 
 public record TileShowWeatherLocationDialogMessage(WeatherWidgetViewModel WeatherVm);
