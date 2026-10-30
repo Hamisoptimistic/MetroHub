@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MetroHub.Core.Models;
 using MetroHub.Core.Search;
 using MetroHub.Presentation.Controls;
 using Xunit;
@@ -180,6 +182,93 @@ public sealed class CandidateActionTests
 
         vm.OverrideSubtitle = null;
         Assert.Equal(@"D:\", vm.Subtitle);
+    }
+
+    [Fact]
+    public void AppActionProvider_ShortcutLnkApp_IncludesRunAsAdminAction()
+    {
+        var app = new CatalogItemModel
+        {
+            Name = "Visual Studio Code",
+            TargetPath = @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio Code.lnk",
+            TileType = TileType.App
+        };
+
+        var candidate = new Candidate(
+            Id: app.TargetPath,
+            DisplayName: app.Name,
+            FullPathOrKey: app.TargetPath,
+            Category: SearchCategory.Apps,
+            SourceId: "app_catalog",
+            Tag: app)
+        {
+            ActionProvider = AppActionProvider.GetActions
+        };
+
+        var actions = candidate.GetAllActions();
+        var adminAction = actions.FirstOrDefault(a => a.Id == "app:run_admin");
+
+        Assert.NotNull(adminAction);
+        Assert.Equal("Run as administrator", adminAction.Title);
+    }
+
+    [Fact]
+    public void AppActionProvider_RunAsAdminAction_InvokesSearchActionRegistry()
+    {
+        var app = new CatalogItemModel
+        {
+            Name = "Notepad",
+            TargetPath = @"C:\Windows\notepad.exe",
+            TileType = TileType.App
+        };
+
+        var candidate = new Candidate(
+            Id: app.TargetPath,
+            DisplayName: app.Name,
+            FullPathOrKey: app.TargetPath,
+            Category: SearchCategory.Apps,
+            SourceId: "app_catalog",
+            Tag: app)
+        {
+            ActionProvider = AppActionProvider.GetActions
+        };
+
+        CatalogItemModel? launchedAdminApp = null;
+        SearchActionRegistry.LaunchAppAsAdmin = a => launchedAdminApp = a;
+
+        try
+        {
+            var actions = candidate.GetAllActions();
+            var adminAction = actions.First(a => a.Id == "app:run_admin");
+
+            adminAction.ExecuteAsync(new ActionContext(CancellationToken.None)).GetAwaiter().GetResult();
+
+            Assert.Same(app, launchedAdminApp);
+        }
+        finally
+        {
+            SearchActionRegistry.LaunchAppAsAdmin = null;
+        }
+    }
+
+    [Fact]
+    public void FileActionProvider_ShortcutLnkFile_IncludesRunAsAdminAction()
+    {
+        var candidate = new Candidate(
+            Id: @"C:\Users\User\Desktop\CustomApp.lnk",
+            DisplayName: "CustomApp.lnk",
+            FullPathOrKey: @"C:\Users\User\Desktop\CustomApp.lnk",
+            Category: SearchCategory.Documents,
+            SourceId: "everything")
+        {
+            ActionProvider = FileActionProvider.GetActions
+        };
+
+        var actions = candidate.GetAllActions();
+        var adminAction = actions.FirstOrDefault(a => a.Id == "file:run_admin");
+
+        Assert.NotNull(adminAction);
+        Assert.Equal("Run as administrator", adminAction.Title);
     }
 }
 

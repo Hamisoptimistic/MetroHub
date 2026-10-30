@@ -184,7 +184,7 @@ public class XamlViewSanityTests
                     break;
                 }
             }
-            throw new Exception($"Property: {crSetter?.Property?.Name}, OwnerType: {crSetter?.Property?.OwnerType.FullName}, Value: {crSetter?.Value}");
+            Assert.NotNull(crSetter);
 
             // Verify actual dialog and widget instances resolve the per-pixel virtualization settings
             var weatherDialog = new WeatherLocationDialog();

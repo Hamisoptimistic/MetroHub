@@ -25,6 +25,7 @@ public static class SearchActionRegistry
     public static Action<CatalogItemModel>? PinApp { get; set; }
     public static Action<CatalogItemModel>? UnpinApp { get; set; }
     public static Action<CatalogItemModel>? LaunchApp { get; set; }
+    public static Action<CatalogItemModel>? LaunchAppAsAdmin { get; set; }
     public static Action<CatalogItemModel>? UninstallApp { get; set; }
 }
 
@@ -55,7 +56,7 @@ public static class FileActionProvider
 
         bool isFolder = candidate.IsFolder;
         string ext = Path.GetExtension(path).ToLowerInvariant();
-        bool isScriptOrExe = !isFolder && ext is ".exe" or ".bat" or ".cmd" or ".ps1" or ".msc";
+        bool isScriptOrExe = !isFolder && ext is ".exe" or ".bat" or ".cmd" or ".ps1" or ".msc" or ".lnk";
 
         var actions = new List<CandidateAction>(7);
 
@@ -97,7 +98,8 @@ public static class FileActionProvider
                 Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.Shield24),
                 ExecuteAsync: _ =>
                 {
-                    ProcessLauncherService.LaunchTarget(path, runAsAdmin: true);
+                    string target = ext == ".lnk" ? IconExtractorService.ResolveExecutableTarget(path) : path;
+                    ProcessLauncherService.LaunchTarget(target, runAsAdmin: true);
                     return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
                 }));
         }
@@ -240,7 +242,7 @@ public static class AppActionProvider
         // Group 1: Launch Actions
         actions.Add(CreateOpenAction(app));
 
-        if (!string.IsNullOrEmpty(app.TargetPath) && Path.GetExtension(app.TargetPath).Equals(".exe", StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrEmpty(app.TargetPath))
         {
             actions.Add(new CandidateAction(
                 Id: "app:run_admin",
@@ -249,7 +251,15 @@ public static class AppActionProvider
                 Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.Shield24),
                 ExecuteAsync: _ =>
                 {
-                    ProcessLauncherService.LaunchTarget(app.TargetPath, runAsAdmin: true);
+                    if (SearchActionRegistry.LaunchAppAsAdmin != null)
+                    {
+                        SearchActionRegistry.LaunchAppAsAdmin.Invoke(app);
+                    }
+                    else
+                    {
+                        string execPath = IconExtractorService.ResolveExecutableTarget(app.TargetPath);
+                        ProcessLauncherService.LaunchTarget(execPath, app.Arguments, runAsAdmin: true);
+                    }
                     return Task.FromResult(new ActionResult(ActionOutcome.DismissDrawer));
                 }));
         }

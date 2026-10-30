@@ -438,6 +438,7 @@ namespace MetroHub.Presentation.Controls
                 Close();
                 ShellHideRequested?.Invoke(this, EventArgs.Empty);
             };
+            SearchActionRegistry.LaunchAppAsAdmin = app => LaunchAppAsAdmin(app);
             SearchActionRegistry.UninstallApp = app =>
             {
                 AppUninstallService.RequestUninstall(app);
@@ -2122,9 +2123,8 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
-        private void OnContextMenuRunAsAdminClick(object sender, RoutedEventArgs e)
+        private void LaunchAppAsAdmin(CatalogItemModel? item)
         {
-            var item = _activeContextMenuItem ?? GetCatalogItemFromMenu(sender);
             if (item == null || string.IsNullOrWhiteSpace(item.TargetPath)) return;
 
             try
@@ -2157,6 +2157,12 @@ namespace MetroHub.Presentation.Controls
             {
                 Safe.Log("AllAppsDrawer.RunAsAdmin", ex);
             }
+        }
+
+        private void OnContextMenuRunAsAdminClick(object sender, RoutedEventArgs e)
+        {
+            var item = _activeContextMenuItem ?? GetCatalogItemFromMenu(sender);
+            LaunchAppAsAdmin(item);
         }
 
         private void OnContextMenuPinClick(object sender, RoutedEventArgs e)

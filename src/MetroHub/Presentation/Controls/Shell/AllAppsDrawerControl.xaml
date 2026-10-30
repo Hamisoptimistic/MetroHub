@@ -89,6 +89,7 @@
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="VerticalContentAlignment" Value="Stretch" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="ClipToBounds" Value="False" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ListBoxItem}">
@@ -549,6 +550,7 @@
                                      BorderThickness="0"
                                      Margin="{StaticResource DrawerGutterRecentGridMargin}"
                                      Padding="0"
+                                     ClipToBounds="False"
                                      FocusVisualStyle="{x:Null}"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
@@ -557,7 +559,13 @@
                                      ItemsPanel="{StaticResource RecentGridItemsPanelTemplate}"
                                      KeyDown="OnRecentSuggestionsKeyDown"
                                      PreviewKeyDown="OnRecentSuggestionsPreviewKeyDown"
-                                     PreviewTextInput="OnRecentSuggestionsPreviewTextInput" />
+                                     PreviewTextInput="OnRecentSuggestionsPreviewTextInput">
+                                <ListBox.Template>
+                                    <ControlTemplate TargetType="{x:Type ListBox}">
+                                        <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+                                    </ControlTemplate>
+                                </ListBox.Template>
+                            </ListBox>
                         </StackPanel>
 
                         <!-- Mode 1B: Alphabetical Grouped Apps -->
