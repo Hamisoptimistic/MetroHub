@@ -102,6 +102,7 @@ public static class IconExtractorService
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource> _extensionIconCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource> _perFileIconCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task<BitmapSource?>> _inFlightTasks = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly SemaphoreSlim _extractionThrottle = new(2, 2);
 
     private static readonly ImageSource EmptySentinel = CreateFrozenSentinel();
     private static readonly int _genericDocIconIndex = GetGenericDocIconIndex();
@@ -167,6 +168,7 @@ public static class IconExtractorService
     internal static int PerFileCacheCount => _perFileIconCache.Count;
     internal static int InFlightTaskCount => _inFlightTasks.Count;
     internal static void AddToPerFileCacheForTesting(string fullPath, ImageSource icon) => AddToPerFileCache(fullPath, icon);
+    public static void ClearPerFileCache() => _perFileIconCache.Clear();
 
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     public static extern int SHGetKnownFolderPath(
@@ -333,8 +335,9 @@ public static class IconExtractorService
             // Asynchronously extract the crisp PE/shortcut icon / thumbnail in the background (deduplicating in-flight tasks)
             if (onAsyncIconLoaded is not null && !cancellationToken.IsCancellationRequested)
             {
-                var task = _inFlightTasks.GetOrAdd(fullPath, path => Task.Run(() =>
+                var task = _inFlightTasks.GetOrAdd(fullPath, path => Task.Run(async () =>
                 {
+                    await _extractionThrottle.WaitAsync().ConfigureAwait(false);
                     try
                     {
                         return ExtractPerFileIcon(path);
@@ -342,6 +345,10 @@ public static class IconExtractorService
                     catch
                     {
                         return null;
+                    }
+                    finally
+                    {
+                        _extractionThrottle.Release();
                     }
                 }));
 
@@ -412,17 +419,20 @@ public static class IconExtractorService
             string target = ResolveShortcutTarget(fullPath);
             if (!isImg && IsImageFile(target)) isImg = true;
 
-            var shellIcon = ExtractViaShellItemImageFactory(fullPath, 48, allowThumbnail: isImg)
-                         ?? ExtractViaShellItemImageFactory(target, 48, allowThumbnail: isImg);
+            bool hasDifferentTarget = !string.IsNullOrEmpty(target) && !string.Equals(fullPath, target, StringComparison.OrdinalIgnoreCase);
+
+            var shellIcon = ExtractViaShellItemImageFactory(fullPath, 32, allowThumbnail: isImg)
+                         ?? (hasDifferentTarget ? ExtractViaShellItemImageFactory(target, 32, allowThumbnail: isImg) : null);
             if (shellIcon is not null) return shellIcon;
 
             if (target.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && File.Exists(target))
             {
-                var peIcon = ExtractViaPrivateExtractIcons(target, 48);
+                var peIcon = ExtractViaPrivateExtractIcons(target, 32);
                 if (peIcon is not null) return peIcon;
             }
 
-            return ExtractViaLegacyShell(fullPath) ?? ExtractViaLegacyShell(target);
+            return ExtractViaLegacyShell(fullPath)
+                ?? (hasDifferentTarget ? ExtractViaLegacyShell(target) : null);
         }
         catch
         {
@@ -874,10 +884,11 @@ public static class IconExtractorService
 
     private static BitmapSource? ExtractViaShellItemImageFactory(string path, int size, bool allowThumbnail = false)
     {
+        IShellItemImageFactory? factory = null;
         try
         {
             Guid guid = IID_IShellItemImageFactory;
-            int hr = SHCreateItemFromParsingName(path, IntPtr.Zero, ref guid, out IShellItemImageFactory factory);
+            int hr = SHCreateItemFromParsingName(path, IntPtr.Zero, ref guid, out factory);
             if (hr == 0 && factory != null)
             {
                 SIIGBF flags = allowThumbnail
@@ -905,6 +916,13 @@ public static class IconExtractorService
             }
         }
         catch { }
+        finally
+        {
+            if (factory != null)
+            {
+                Marshal.FinalReleaseComObject(factory);
+            }
+        }
         return null;
     }
 

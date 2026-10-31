@@ -171,5 +171,19 @@ public sealed class SearchIconTests
             Assert.Null(icon);
         });
     }
+
+    [Fact]
+    public void ClearPerFileCache_ResetsCacheToZero()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var img = new System.Windows.Media.Imaging.BitmapImage();
+            IconExtractorService.AddToPerFileCacheForTesting(@"C:\dummy\file.jpg", img);
+            Assert.True(IconExtractorService.PerFileCacheCount > 0);
+
+            IconExtractorService.ClearPerFileCache();
+            Assert.Equal(0, IconExtractorService.PerFileCacheCount);
+        });
+    }
 }
 

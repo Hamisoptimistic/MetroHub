@@ -503,6 +503,7 @@ namespace MetroHub.Presentation.Controls
 
             Visibility = Visibility.Collapsed;
             ClearSearch();
+            IconExtractorService.ClearPerFileCache();
             Closed?.Invoke(this, EventArgs.Empty);
         }
 
