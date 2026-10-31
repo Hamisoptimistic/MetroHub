@@ -507,10 +507,65 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     private DateTime _lastShownTime = DateTime.MinValue;
     private int _showSequence;
     private bool _isFullyActivated = false;
+    internal bool _isPeekActive = false;
+
+    private void EnsureTopmost(bool topmost)
+    {
+        if (Dispatcher.CheckAccess())
+        {
+            if (Topmost != topmost) Topmost = topmost;
+        }
+        else
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                if (Topmost != topmost) Topmost = topmost;
+            });
+        }
+    }
+
+    internal static bool ShouldHandlePeekOverlay(IntPtr foreHwnd, uint foreProcessId)
+    {
+        return PowerToysPeekLauncher.IsPeekWindow(foreHwnd, foreProcessId) ||
+            (PowerToysPeekLauncher.IsRecentLaunch && (foreHwnd == IntPtr.Zero || PowerToysPeekLauncher.IsPowerToysProcess(foreProcessId)));
+    }
+
+    internal bool HandlePeekOverlay(IntPtr foreHwnd, uint foreProcessId)
+    {
+        if (ShouldHandlePeekOverlay(foreHwnd, foreProcessId))
+        {
+            _isPeekActive = true;
+            if (foreHwnd != IntPtr.Zero && PowerToysPeekLauncher.IsPeekWindow(foreHwnd, foreProcessId))
+            {
+                NativeMethods.SetWindowPos(
+                    foreHwnd,
+                    NativeMethods.HWND_TOPMOST,
+                    0, 0, 0, 0,
+                    NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE);
+            }
+
+            if (foreHwnd != IntPtr.Zero)
+            {
+                EnsureTopmost(false);
+            }
+            return true;
+        }
+
+        return false;
+    }
 
     private void OnWindowActivated(object? sender, EventArgs e)
     {
         _isFullyActivated = true;
+        if (_isPeekActive || !Topmost)
+        {
+            _isPeekActive = false;
+            if (!Topmost && IsVisible && !_isDismissing)
+            {
+                EnsureTopmost(true);
+            }
+        }
+
         if ((_isDragging || _isPotentialDrag || _isRubberBanding) && Mouse.LeftButton != MouseButtonState.Pressed)
         {
             CancelActiveDrag();
@@ -560,6 +615,12 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
         // If focus shifted internally to one of our own windows (like a MetroDialog or SettingsWindow), do not dismiss
         if (foreProcessId == currentProcessId)
+        {
+            return;
+        }
+
+        // If the incoming foreground window is PowerToys Peek, keep MetroHub visible and floating underneath
+        if (HandlePeekOverlay(foreHwnd, foreProcessId))
         {
             return;
         }
@@ -702,6 +763,12 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
         if (foreProcessId != 0 && foreProcessId != currentProcessId)
         {
+            // If the incoming window is PowerToys Peek, keep MetroHub visible and floating underneath
+            if (HandlePeekOverlay(hwnd, foreProcessId))
+            {
+                return;
+            }
+
             // If the incoming window is a transient tool window or screen capture overlay (Snipping Tool, crosshairs, etc.), do not dismiss
             if (IsTransientToolOverlay(hwnd, foreProcessId))
             {
@@ -781,7 +848,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     /// Uses standard Win32 extended window styles (WS_EX_TOOLWINDOW, WS_EX_TRANSPARENT, WS_EX_NOACTIVATE),
     /// while strictly excluding Windows Shell surfaces (Taskbar, Desktop, Start Menu, System Tray).
     /// </summary>
-    private static bool IsTransientToolOverlay(IntPtr hwnd, uint processId)
+    internal static bool IsTransientToolOverlay(IntPtr hwnd, uint processId)
     {
         if (hwnd == IntPtr.Zero) return false;
 
@@ -790,6 +857,12 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         if (IsShellSurface(hwnd, processId))
         {
             return false;
+        }
+
+        // PowerToys Peek preview window is a transient preview tool that floats over MetroHub
+        if (PowerToysPeekLauncher.IsPeekWindow(hwnd, processId))
+        {
+            return true;
         }
 
         try
@@ -863,6 +936,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         Hide();
         _isDismissing = false;
         _isFullyActivated = false;
+        _isPeekActive = false;
         Topmost = false;
 
         if (RootGrid != null) RootGrid.IsHitTestVisible = true;
@@ -1124,6 +1198,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         _isDismissing = false;
         _lastShownTime = DateTime.UtcNow;
         _isFullyActivated = false;
+        _isPeekActive = false;
 
         if (AmbientFocusScrim != null)
         {
@@ -1192,6 +1267,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         ++_showSequence;
         DismissOpenDialogs();
         _isDismissing = true;
+        _isPeekActive = false;
 
         if (restorePreviousFocus && _previousForegroundWindow != IntPtr.Zero)
         {

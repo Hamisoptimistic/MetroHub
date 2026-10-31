@@ -274,11 +274,22 @@ public static class PowerToysPeekLauncher
 
             if (ProcessStarter != null)
             {
-                return ProcessStarter(startInfo);
+                bool customStarted = ProcessStarter(startInfo);
+                if (customStarted)
+                {
+                    _lastLaunchTime = DateTime.UtcNow;
+                }
+                return customStarted;
             }
 
             using var process = Process.Start(startInfo);
-            return process != null;
+            if (process != null)
+            {
+                _lastLaunchTime = DateTime.UtcNow;
+                return true;
+            }
+
+            return false;
         }
         catch (Exception ex)
         {
@@ -287,9 +298,103 @@ public static class PowerToysPeekLauncher
         }
     }
 
+    private static DateTime _lastLaunchTime = DateTime.MinValue;
+
+    /// <summary>
+    /// Gets whether PowerToys Peek was recently invoked from MetroHub (within the last 2.5 seconds).
+    /// </summary>
+    public static bool IsRecentLaunch => (DateTime.UtcNow - _lastLaunchTime).TotalMilliseconds < 2500;
+
+    /// <summary>
+    /// Checks whether the specified process ID belongs to any PowerToys process.
+    /// </summary>
+    public static bool IsPowerToysProcess(uint processId)
+    {
+        if (processId == 0 || processId == (uint)Environment.ProcessId) return false;
+
+        try
+        {
+            using var proc = Process.GetProcessById((int)processId);
+            string name = proc.ProcessName;
+            if (name.StartsWith("PowerToys", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+        catch
+        {
+            // Process may have exited or access denied
+        }
+
+        try
+        {
+            string? exePath = GetProcessPathViaLimitedQuery((int)processId);
+            if (exePath != null && exePath.Contains("PowerToys", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+        catch
+        {
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Checks whether the specified window or process belongs to PowerToys Peek UI.
+    /// </summary>
+    public static bool IsPeekWindow(IntPtr hwnd, uint processId)
+    {
+        if (CustomPeekWindowChecker != null)
+        {
+            return CustomPeekWindowChecker(hwnd, processId);
+        }
+
+        if (processId == 0 && hwnd != IntPtr.Zero)
+        {
+            NativeMethods.GetWindowThreadProcessId(hwnd, out processId);
+        }
+
+        if (processId == 0 || processId == (uint)Environment.ProcessId)
+        {
+            return false;
+        }
+
+        try
+        {
+            using var proc = Process.GetProcessById((int)processId);
+            string name = proc.ProcessName;
+            if (name.Equals("PowerToys.Peek.UI", StringComparison.OrdinalIgnoreCase) ||
+                name.StartsWith("PowerToys.Peek", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+        catch
+        {
+            // Access denied (elevation) or process exited - fallback to limited query
+        }
+
+        try
+        {
+            string? exePath = GetProcessPathViaLimitedQuery((int)processId);
+            if (exePath != null && exePath.Contains("PowerToys.Peek.UI", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+        catch
+        {
+        }
+
+        return false;
+    }
+
     internal static Func<string?>? CustomPeekPathResolver { get; set; }
     internal static Func<string?>? CustomFindPeekExe { get; set; }
     internal static Func<ProcessStartInfo, bool>? ProcessStarter { get; set; }
+    internal static Func<IntPtr, uint, bool>? CustomPeekWindowChecker { get; set; }
 
     internal static void ResetCacheForTesting()
     {
@@ -297,9 +402,11 @@ public static class PowerToysPeekLauncher
         {
             _cachedExePath = null;
             _lastFailedCheck = DateTime.MinValue;
+            _lastLaunchTime = DateTime.MinValue;
             CustomPeekPathResolver = null;
             CustomFindPeekExe = null;
             ProcessStarter = null;
+            CustomPeekWindowChecker = null;
         }
     }
 }

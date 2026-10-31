@@ -429,4 +429,71 @@ public sealed class PowerToysPeekKeyboardRoutingTests : IDisposable
             }
         });
     }
+
+    [Fact]
+    public void IsTransientToolOverlay_WhenPowerToysPeekWindow_ReturnsTrue()
+    {
+        PowerToysPeekLauncher.CustomPeekWindowChecker = (hwnd, pid) => pid == 7777;
+
+        bool isTransient = MainWindow.IsTransientToolOverlay(new IntPtr(1234), 7777);
+
+        Assert.True(isTransient);
+    }
+
+    [Fact]
+    public void IsTransientToolOverlay_WhenZeroHwnd_ReturnsFalse()
+    {
+        bool isTransient = MainWindow.IsTransientToolOverlay(IntPtr.Zero, 7777);
+
+        Assert.False(isTransient);
+    }
+
+    [Fact]
+    public void ShouldHandlePeekOverlay_WhenPeekWindow_ReturnsTrue()
+    {
+        PowerToysPeekLauncher.CustomPeekWindowChecker = (hwnd, pid) => pid == 7777;
+
+        bool shouldHandle = MainWindow.ShouldHandlePeekOverlay(new IntPtr(1234), 7777);
+
+        Assert.True(shouldHandle);
+    }
+
+    [Fact]
+    public void ShouldHandlePeekOverlay_WhenRecentLaunchAndZeroHwnd_ReturnsTrue()
+    {
+        PowerToysPeekLauncher.CustomPeekPathResolver = () => @"C:\PowerToys\PowerToys.Peek.UI.exe";
+        PowerToysPeekLauncher.ProcessStarter = _ => true;
+
+        bool launched = PowerToysPeekLauncher.TryLaunchPreview(_tempFile);
+        Assert.True(launched);
+
+        bool shouldHandle = MainWindow.ShouldHandlePeekOverlay(IntPtr.Zero, 0);
+
+        Assert.True(shouldHandle);
+    }
+
+    [Fact]
+    public void ShouldHandlePeekOverlay_WhenRecentLaunchAndNonPowerToysProcess_ReturnsFalse()
+    {
+        PowerToysPeekLauncher.CustomPeekPathResolver = () => @"C:\PowerToys\PowerToys.Peek.UI.exe";
+        PowerToysPeekLauncher.ProcessStarter = _ => true;
+
+        bool launched = PowerToysPeekLauncher.TryLaunchPreview(_tempFile);
+        Assert.True(launched);
+
+        // e.g. User switched to Chrome (PID 99999) - should NOT handle/retain Peek overlay
+        bool shouldHandle = MainWindow.ShouldHandlePeekOverlay(new IntPtr(5678), 99999);
+
+        Assert.False(shouldHandle);
+    }
+
+    [Fact]
+    public void ShouldHandlePeekOverlay_WhenNotRecentLaunchAndNonPeek_ReturnsFalse()
+    {
+        PowerToysPeekLauncher.ResetCacheForTesting();
+
+        bool shouldHandle = MainWindow.ShouldHandlePeekOverlay(IntPtr.Zero, 0);
+
+        Assert.False(shouldHandle);
+    }
 }

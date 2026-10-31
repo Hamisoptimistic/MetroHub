@@ -306,4 +306,83 @@ public sealed class PowerToysPeekLauncherTests : IDisposable
 
         Assert.Null(path);
     }
+
+    [Fact]
+    public void IsPeekWindow_WithZeroParameters_ReturnsFalse()
+    {
+        Assert.False(PowerToysPeekLauncher.IsPeekWindow(IntPtr.Zero, 0));
+    }
+
+    [Fact]
+    public void IsPeekWindow_WithCustomChecker_UsesCheckerResult()
+    {
+        PowerToysPeekLauncher.CustomPeekWindowChecker = (hwnd, pid) => pid == 12345;
+
+        Assert.True(PowerToysPeekLauncher.IsPeekWindow(IntPtr.Zero, 12345));
+        Assert.False(PowerToysPeekLauncher.IsPeekWindow(IntPtr.Zero, 54321));
+    }
+
+    [Fact]
+    public void IsPowerToysProcess_WithZero_ReturnsFalse()
+    {
+        Assert.False(PowerToysPeekLauncher.IsPowerToysProcess(0));
+    }
+
+    [Fact]
+    public void IsPowerToysProcess_WithCurrentProcess_ReturnsFalse()
+    {
+        // Testhost is not PowerToys
+        Assert.False(PowerToysPeekLauncher.IsPowerToysProcess((uint)Environment.ProcessId));
+    }
+
+    [Fact]
+    public void IsRecentLaunch_TracksTryLaunchPreviewAndResets()
+    {
+        Assert.False(PowerToysPeekLauncher.IsRecentLaunch);
+
+        string mockExe = @"C:\Program Files\PowerToys\WinUI3Apps\PowerToys.Peek.UI.exe";
+        PowerToysPeekLauncher.CustomPeekPathResolver = () => mockExe;
+        PowerToysPeekLauncher.ProcessStarter = _ => true;
+
+        bool launched = PowerToysPeekLauncher.TryLaunchPreview(_tempFile);
+        Assert.True(launched);
+        Assert.True(PowerToysPeekLauncher.IsRecentLaunch);
+
+        PowerToysPeekLauncher.ResetCacheForTesting();
+        Assert.False(PowerToysPeekLauncher.IsRecentLaunch);
+    }
+
+    [Fact]
+    public void IsPeekWindow_WithCurrentProcess_ReturnsFalse()
+    {
+        Assert.False(PowerToysPeekLauncher.IsPeekWindow(IntPtr.Zero, (uint)Environment.ProcessId));
+    }
+
+    [Fact]
+    public void TryLaunchPreview_WhenProcessStarterReturnsFalse_DoesNotSetIsRecentLaunch()
+    {
+        Assert.False(PowerToysPeekLauncher.IsRecentLaunch);
+
+        string mockExe = @"C:\Program Files\PowerToys\WinUI3Apps\PowerToys.Peek.UI.exe";
+        PowerToysPeekLauncher.CustomPeekPathResolver = () => mockExe;
+        PowerToysPeekLauncher.ProcessStarter = _ => false;
+
+        bool launched = PowerToysPeekLauncher.TryLaunchPreview(_tempFile);
+        Assert.False(launched);
+        Assert.False(PowerToysPeekLauncher.IsRecentLaunch);
+    }
+
+    [Fact]
+    public void TryLaunchPreview_WhenProcessStarterThrows_DoesNotSetIsRecentLaunch()
+    {
+        Assert.False(PowerToysPeekLauncher.IsRecentLaunch);
+
+        string mockExe = @"C:\Program Files\PowerToys\WinUI3Apps\PowerToys.Peek.UI.exe";
+        PowerToysPeekLauncher.CustomPeekPathResolver = () => mockExe;
+        PowerToysPeekLauncher.ProcessStarter = _ => throw new InvalidOperationException("boom");
+
+        bool launched = PowerToysPeekLauncher.TryLaunchPreview(_tempFile);
+        Assert.False(launched);
+        Assert.False(PowerToysPeekLauncher.IsRecentLaunch);
+    }
 }

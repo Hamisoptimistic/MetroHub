@@ -416,6 +416,8 @@ public static class NativeMethods
     public static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
     public static readonly IntPtr HWND_BROADCAST = new IntPtr(0xffff);
+    public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+    public static readonly IntPtr HWND_NOTOPMOST = new IntPtr(-2);
     public static readonly uint WM_SHOW_METROHUB = RegisterWindowMessage("WM_SHOW_METROHUB_WAKE");
 
     public delegate void WinEventDelegate(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
