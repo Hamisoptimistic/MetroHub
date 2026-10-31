@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MetroHub.Core.Search;
+using MetroHub.Core.Services;
 using MetroHub.Presentation.Search;
 using Wpf.Ui.Controls;
 using Xunit;
@@ -126,6 +127,49 @@ public sealed class SearchIconTests
         var result = results[0];
         Assert.Equal(SymbolRegular.Calculator24, result.Icon.Symbol);
         Assert.Equal("Calculator", result.KindLabel);
+    }
+
+    [Theory]
+    [InlineData(".png", true)]
+    [InlineData(".jpg", true)]
+    [InlineData(".jpeg", true)]
+    [InlineData(".webp", true)]
+    [InlineData(".bmp", true)]
+    [InlineData(".gif", true)]
+    [InlineData(".ico", true)]
+    [InlineData(".tiff", true)]
+    [InlineData(".tif", true)]
+    [InlineData(".svg", true)]
+    [InlineData(".avif", true)]
+    [InlineData(".cs", false)]
+    [InlineData(".txt", false)]
+    [InlineData(".exe", false)]
+    public void IsImageExtension_IdentifiesCorrectly(string ext, bool expected)
+    {
+        Assert.Equal(expected, IconExtractorService.IsImageExtension(ext));
+    }
+
+    [Fact]
+    public void GetFileOrExtensionIcon_ReturnsNullSynchronously_ForImagesAndMsc()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var pngIcon = IconExtractorService.GetFileOrExtensionIcon(@"C:\test\sample.png", isFolder: false);
+            var mscIcon = IconExtractorService.GetFileOrExtensionIcon(@"C:\test\sample.msc", isFolder: false);
+
+            Assert.Null(pngIcon);
+            Assert.Null(mscIcon);
+        });
+    }
+
+    [Fact]
+    public void GetFileOrExtensionIcon_ReturnsNull_ForUnregisteredExtension()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var icon = IconExtractorService.GetFileOrExtensionIcon(@"C:\test\dummy.__unknown_ext_metrohub__", isFolder: false);
+            Assert.Null(icon);
+        });
     }
 }
 

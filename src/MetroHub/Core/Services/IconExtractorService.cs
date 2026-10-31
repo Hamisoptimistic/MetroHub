@@ -94,6 +94,7 @@ public static class IconExtractorService
     private const uint SHGFI_LARGEICON = 0x000000000;
     private const uint SHGFI_SMALLICON = 0x000000001;
     private const uint SHGFI_USEFILEATTRIBUTES = 0x000000010;
+    private const uint SHGFI_SYSICONINDEX = 0x000004000;
     private const uint FILE_ATTRIBUTE_NORMAL = 0x00000080;
     private const uint FILE_ATTRIBUTE_DIRECTORY = 0x00000010;
 
@@ -101,6 +102,51 @@ public static class IconExtractorService
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource> _extensionIconCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource> _perFileIconCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task<BitmapSource?>> _inFlightTasks = new(StringComparer.OrdinalIgnoreCase);
+
+    private static readonly ImageSource EmptySentinel = CreateFrozenSentinel();
+    private static readonly int _genericDocIconIndex = GetGenericDocIconIndex();
+
+    private static ImageSource CreateFrozenSentinel()
+    {
+        var group = new DrawingGroup();
+        group.Freeze();
+        var img = new DrawingImage(group);
+        img.Freeze();
+        return img;
+    }
+
+    private static int GetGenericDocIconIndex()
+    {
+        try
+        {
+            var shinfo = new SHFILEINFO();
+            uint flags = SHGFI_ICON | SHGFI_LARGEICON | SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX;
+            IntPtr res = SHGetFileInfo("dummy.__metrohub_unreg__", FILE_ATTRIBUTE_NORMAL, ref shinfo, (uint)Marshal.SizeOf<SHFILEINFO>(), flags);
+            if (res != IntPtr.Zero && shinfo.hIcon != IntPtr.Zero)
+            {
+                DestroyIcon(shinfo.hIcon);
+                return shinfo.iIcon;
+            }
+        }
+        catch { }
+        return 0;
+    }
+
+    private static bool TryGetCachedExtensionIcon(string key, out ImageSource? icon)
+    {
+        if (_extensionIconCache.TryGetValue(key, out var cached))
+        {
+            icon = ReferenceEquals(cached, EmptySentinel) ? null : cached;
+            return true;
+        }
+        icon = null;
+        return false;
+    }
+
+    private static void CacheExtensionIcon(string key, ImageSource? icon)
+    {
+        _extensionIconCache[key] = icon ?? EmptySentinel;
+    }
 
     private static void AddToPerFileCache(string fullPath, ImageSource icon)
     {
@@ -144,11 +190,16 @@ public static class IconExtractorService
 
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _extHandlerCache = new(StringComparer.OrdinalIgnoreCase);
 
+    public static bool IsImageExtension(string? ext)
+    {
+        if (string.IsNullOrWhiteSpace(ext)) return false;
+        return ext.ToLowerInvariant() is ".png" or ".jpg" or ".jpeg" or ".bmp" or ".gif" or ".webp" or ".ico" or ".tiff" or ".tif" or ".svg" or ".avif";
+    }
+
     public static bool IsImageFile(string path)
     {
         if (string.IsNullOrWhiteSpace(path)) return false;
-        string ext = Path.GetExtension(path);
-        return ext is ".png" or ".jpg" or ".jpeg" or ".bmp" or ".gif" or ".webp" or ".ico" or ".tiff";
+        return IsImageExtension(Path.GetExtension(path));
     }
 
     public static string GetDefaultHandlerForExtension(string ext)
@@ -242,37 +293,44 @@ public static class IconExtractorService
         // 1. Folders: Use Windows directory Shell attribute
         if (isFolder)
         {
-            if (_extensionIconCache.TryGetValue("__folder__", out var folderIcon)) return folderIcon;
+            if (TryGetCachedExtensionIcon("__folder__", out var folderIcon)) return folderIcon;
             var icon = ExtractShellIconByAttribute("dummy_folder", FILE_ATTRIBUTE_DIRECTORY);
-            if (icon != null) _extensionIconCache["__folder__"] = icon;
+            CacheExtensionIcon("__folder__", icon);
             return icon;
         }
 
         string ext = Path.GetExtension(fullPath);
         if (string.IsNullOrWhiteSpace(ext))
         {
-            if (_extensionIconCache.TryGetValue("__generic_file__", out var genericIcon)) return genericIcon;
+            if (TryGetCachedExtensionIcon("__generic_file__", out var genericIcon)) return genericIcon;
             var icon = ExtractShellIconByAttribute("dummy_file", FILE_ATTRIBUTE_NORMAL);
-            if (icon != null) _extensionIconCache["__generic_file__"] = icon;
+            CacheExtensionIcon("__generic_file__", icon);
             return icon;
         }
 
-        // 2. Executables, shortcuts, and direct icon files have unique embedded icons per path
-        if (ext is ".exe" or ".lnk" or ".ico")
+        // 2. Executables, shortcuts, snap-ins, and images have unique embedded icons or thumbnails per path
+        bool isPerFile = ext is ".exe" or ".lnk" or ".ico" or ".msc" or ".url" || IsImageExtension(ext);
+        if (isPerFile)
         {
             if (_perFileIconCache.TryGetValue(fullPath, out var cachedIcon))
             {
                 return cachedIcon;
             }
 
-            // Immediately provide the generic .exe / .lnk shell icon so the UI renders without blank space
-            if (!_extensionIconCache.TryGetValue(ext, out var fallback))
+            // Immediately provide generic shell fallback icon only for binaries/shortcuts (.exe/.lnk)
+            // For images and .msc snap-ins, return null so the row immediately renders its clean Fluent symbol
+            // until the real thumbnail or snap-in icon loads asynchronously.
+            ImageSource? fallback = null;
+            if (ext is ".exe" or ".lnk")
             {
-                fallback = ExtractShellIconByAttribute($"dummy{ext}", FILE_ATTRIBUTE_NORMAL);
-                if (fallback != null) _extensionIconCache[ext] = fallback;
+                if (!TryGetCachedExtensionIcon(ext, out fallback))
+                {
+                    fallback = ExtractShellIconByAttribute($"dummy{ext}", FILE_ATTRIBUTE_NORMAL);
+                    CacheExtensionIcon(ext, fallback);
+                }
             }
 
-            // Asynchronously extract the crisp PE/shortcut icon in the background (deduplicating in-flight tasks)
+            // Asynchronously extract the crisp PE/shortcut icon / thumbnail in the background (deduplicating in-flight tasks)
             if (onAsyncIconLoaded is not null && !cancellationToken.IsCancellationRequested)
             {
                 var task = _inFlightTasks.GetOrAdd(fullPath, path => Task.Run(() =>
@@ -306,9 +364,9 @@ public static class IconExtractorService
 
         // 3. Generic documents, media, code, archives (.pdf, .docx, .mp4, .zip, .cs, etc.)
         // Share the exact same Shell association icon across all files
-        if (_extensionIconCache.TryGetValue(ext, out var docIcon)) return docIcon;
+        if (TryGetCachedExtensionIcon(ext, out var docIcon)) return docIcon;
         var extIcon = ExtractShellIconByAttribute($"dummy{ext}", FILE_ATTRIBUTE_NORMAL);
-        if (extIcon != null) _extensionIconCache[ext] = extIcon;
+        CacheExtensionIcon(ext, extIcon);
         return extIcon;
     }
 
@@ -317,12 +375,18 @@ public static class IconExtractorService
         try
         {
             var shinfo = new SHFILEINFO();
-            uint flags = SHGFI_ICON | SHGFI_LARGEICON | SHGFI_USEFILEATTRIBUTES;
+            uint flags = SHGFI_ICON | SHGFI_LARGEICON | SHGFI_USEFILEATTRIBUTES | SHGFI_SYSICONINDEX;
             IntPtr hRes = SHGetFileInfo(dummyName, attributes, ref shinfo, (uint)Marshal.SizeOf<SHFILEINFO>(), flags);
             if (hRes != IntPtr.Zero && shinfo.hIcon != IntPtr.Zero)
             {
                 try
                 {
+                    // Discard generic blank sheet document icons (e.g. index 0 or matching system unregistered fallback)
+                    if ((attributes & FILE_ATTRIBUTE_DIRECTORY) == 0 && (shinfo.iIcon == _genericDocIconIndex || shinfo.iIcon == 0))
+                    {
+                        return null;
+                    }
+
                     var bs = Imaging.CreateBitmapSourceFromHIcon(
                         shinfo.hIcon,
                         Int32Rect.Empty,
@@ -344,9 +408,12 @@ public static class IconExtractorService
     {
         try
         {
+            bool isImg = IsImageFile(fullPath);
             string target = ResolveShortcutTarget(fullPath);
-            var shellIcon = ExtractViaShellItemImageFactory(fullPath, 48)
-                         ?? ExtractViaShellItemImageFactory(target, 48);
+            if (!isImg && IsImageFile(target)) isImg = true;
+
+            var shellIcon = ExtractViaShellItemImageFactory(fullPath, 48, allowThumbnail: isImg)
+                         ?? ExtractViaShellItemImageFactory(target, 48, allowThumbnail: isImg);
             if (shellIcon is not null) return shellIcon;
 
             if (target.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && File.Exists(target))
@@ -805,7 +872,7 @@ public static class IconExtractorService
         return null;
     }
 
-    private static BitmapSource? ExtractViaShellItemImageFactory(string path, int size)
+    private static BitmapSource? ExtractViaShellItemImageFactory(string path, int size, bool allowThumbnail = false)
     {
         try
         {
@@ -813,7 +880,11 @@ public static class IconExtractorService
             int hr = SHCreateItemFromParsingName(path, IntPtr.Zero, ref guid, out IShellItemImageFactory factory);
             if (hr == 0 && factory != null)
             {
-                int hrImg = factory.GetImage(new SIZE(size, size), SIIGBF.SIIGBF_ICONONLY | SIIGBF.SIIGBF_BIGGERSIZEOK, out IntPtr hBitmap);
+                SIIGBF flags = allowThumbnail
+                    ? SIIGBF.SIIGBF_RESIZETOFIT
+                    : (SIIGBF.SIIGBF_ICONONLY | SIIGBF.SIIGBF_BIGGERSIZEOK);
+
+                int hrImg = factory.GetImage(new SIZE(size, size), flags, out IntPtr hBitmap);
                 if (hrImg == 0 && hBitmap != IntPtr.Zero)
                 {
                     try
