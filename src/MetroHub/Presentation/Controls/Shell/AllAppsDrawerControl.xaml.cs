@@ -1032,6 +1032,36 @@ namespace MetroHub.Presentation.Controls
 
         private void OnSearchBoxPreviewKeyDown(object sender, KeyEventArgs e)
         {
+            HandleSearchBoxPreviewKeyDown(e);
+        }
+
+        internal void HandleSearchBoxPreviewKeyDown(KeyEventArgs e, ModifierKeys? modifiersOverride = null)
+        {
+            var modifiers = modifiersOverride ?? Keyboard.Modifiers;
+
+            // Ctrl+Space triggers Peek on currently selected candidate without leaving the search box
+            if (e.Key == Key.Space && (modifiers & ModifierKeys.Control) == ModifierKeys.Control && (modifiers & ModifierKeys.Alt) == ModifierKeys.None)
+            {
+                object? selectedItem = string.IsNullOrEmpty(SearchBox.Text)
+                    ? RecentSuggestionsListBox?.SelectedItem ?? (RecentSuggestionsListBox?.Items.Count > 0 ? RecentSuggestionsListBox.Items[0] : null)
+                    : SearchResultsListBox.SelectedItem ?? (SearchResultsListBox.Items.Count > 0 ? SearchResultsListBox.Items[0] : null);
+
+                string? path = (selectedItem as SearchItemRowViewModel)?.FullPath ?? (selectedItem as Candidate)?.FullPathOrKey;
+                if (!string.IsNullOrEmpty(path))
+                {
+                    string normalized = path.Trim().Trim('"');
+                    if (PowerToysPeekLauncher.IsAvailable && Path.IsPathFullyQualified(normalized) && Path.Exists(normalized))
+                    {
+                        if (!e.IsRepeat)
+                        {
+                            PowerToysPeekLauncher.TryLaunchPreview(normalized);
+                        }
+                        e.Handled = true;
+                        return;
+                    }
+                }
+            }
+
             if (e.Key == Key.Down)
             {
                 if (string.IsNullOrEmpty(SearchBox.Text))
@@ -1275,8 +1305,37 @@ namespace MetroHub.Presentation.Controls
             }
         }
 
+        internal void HandleRecentSuggestionsPreviewKeyDown(KeyEventArgs e, ModifierKeys? modifiersOverride = null)
+        {
+            var modifiers = modifiersOverride ?? Keyboard.Modifiers;
+
+            // Space triggers Peek when navigating recent suggestions (preserves Alt+Space for system menu)
+            if (e.Key == Key.Space && (modifiers & ModifierKeys.Alt) == ModifierKeys.None)
+            {
+                var selectedItem = RecentSuggestionsListBox?.SelectedItem
+                    ?? (RecentSuggestionsListBox?.Items.Count > 0 ? RecentSuggestionsListBox.Items[0] : null);
+                string? path = (selectedItem as SearchItemRowViewModel)?.FullPath ?? (selectedItem as Candidate)?.FullPathOrKey;
+                if (!string.IsNullOrEmpty(path))
+                {
+                    string normalized = path.Trim().Trim('"');
+                    if (PowerToysPeekLauncher.IsAvailable && Path.IsPathFullyQualified(normalized) && Path.Exists(normalized))
+                    {
+                        if (!e.IsRepeat)
+                        {
+                            PowerToysPeekLauncher.TryLaunchPreview(normalized);
+                        }
+                        e.Handled = true;
+                        return;
+                    }
+                }
+            }
+        }
+
         private void OnRecentSuggestionsPreviewKeyDown(object sender, KeyEventArgs e)
         {
+            HandleRecentSuggestionsPreviewKeyDown(e);
+            if (e.Handled) return;
+
             if (RecentViewMode == RecentItemsViewMode.List)
             {
                 if (e.Key == Key.Right || e.Key == Key.Apps || (e.Key == Key.F10 && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift))
@@ -1427,6 +1486,34 @@ namespace MetroHub.Presentation.Controls
 
         private void OnSearchResultsPreviewKeyDown(object sender, KeyEventArgs e)
         {
+            HandleSearchResultsPreviewKeyDown(e);
+        }
+
+        internal void HandleSearchResultsPreviewKeyDown(KeyEventArgs e, ModifierKeys? modifiersOverride = null)
+        {
+            var modifiers = modifiersOverride ?? Keyboard.Modifiers;
+
+            // Space triggers Peek when navigating the results list (preserves Alt+Space for system menu)
+            if (e.Key == Key.Space && (modifiers & ModifierKeys.Alt) == ModifierKeys.None)
+            {
+                var selectedItem = SearchResultsListBox.SelectedItem
+                    ?? (SearchResultsListBox.Items.Count > 0 ? SearchResultsListBox.Items[0] : null);
+                string? path = (selectedItem as SearchItemRowViewModel)?.FullPath ?? (selectedItem as Candidate)?.FullPathOrKey;
+                if (!string.IsNullOrEmpty(path))
+                {
+                    string normalized = path.Trim().Trim('"');
+                    if (PowerToysPeekLauncher.IsAvailable && Path.IsPathFullyQualified(normalized) && Path.Exists(normalized))
+                    {
+                        if (!e.IsRepeat)
+                        {
+                            PowerToysPeekLauncher.TryLaunchPreview(normalized);
+                        }
+                        e.Handled = true;
+                        return;
+                    }
+                }
+            }
+
             if (e.Key == Key.Right || e.Key == Key.Apps || (e.Key == Key.F10 && (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift))
             {
                 OpenContextMenuForCurrentSearchItem();

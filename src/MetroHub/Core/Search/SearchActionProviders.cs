@@ -58,10 +58,24 @@ public static class FileActionProvider
         string ext = Path.GetExtension(path).ToLowerInvariant();
         bool isScriptOrExe = !isFolder && ext is ".exe" or ".bat" or ".cmd" or ".ps1" or ".msc" or ".lnk";
 
-        var actions = new List<CandidateAction>(7);
+        var actions = new List<CandidateAction>(8);
 
         // Group 1: Launch Actions
         actions.Add(CreateOpenAction(path));
+
+        if (PowerToysPeekLauncher.IsAvailable)
+        {
+            actions.Add(new CandidateAction(
+                Id: "file:peek",
+                Title: "Preview (Peek)",
+                KeyGestureHint: "Space",
+                Icon: new CandidateIcon(CandidateIconKind.Symbol, Symbol: SymbolRegular.Eye24),
+                ExecuteAsync: _ =>
+                {
+                    PowerToysPeekLauncher.TryLaunchPreview(path);
+                    return Task.FromResult(new ActionResult(ActionOutcome.StayOpenAndRefresh));
+                }));
+        }
 
         if (isFolder)
         {
