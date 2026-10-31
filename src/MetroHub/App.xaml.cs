@@ -13,10 +13,6 @@ namespace MetroHub;
 public partial class App : Application
 {
     public const string AppUserModelId = "MetroHub.Launcher";
-    private const string EventName = "MetroHub_App_Wake_Event";
-    private const string MutexName = "MetroHub_App_SingleInstance_Mutex";
-    private Mutex? _singleInstanceMutex;
-    private bool _ownsMutex;
     private EventWaitHandle? _wakeEvent;
     private RegisteredWaitHandle? _registeredWakeHandle;
     private TaskbarIcon? _notifyIcon;
@@ -135,29 +131,9 @@ public partial class App : Application
         // Grant permission for this process and any instances to manage foreground window
         NativeMethods.AllowSetForegroundWindow(NativeMethods.ASFW_ANY);
 
-        _singleInstanceMutex = new Mutex(true, MutexName, out bool isNewInstance);
-        _ownsMutex = isNewInstance;
-        if (!isNewInstance)
-        {
-            // Signal the existing running instance's wake event
-            try
-            {
-                using var wakeEvent = EventWaitHandle.OpenExisting(EventName);
-                wakeEvent.Set();
-            }
-            catch (Exception ex)
-            {
-                // First instance may be shutting down; proceed with shutdown cleanly
-                Serilog.Log.Debug(ex, "Could not signal existing instance wake event");
-            }
-
-            Shutdown();
-            return;
-        }
-
         try
         {
-            _wakeEvent = new EventWaitHandle(false, EventResetMode.AutoReset, EventName);
+            _wakeEvent = new EventWaitHandle(false, EventResetMode.AutoReset, Program.EventName);
             _registeredWakeHandle = ThreadPool.RegisterWaitForSingleObject(
                 _wakeEvent,
                 (state, timedOut) =>
@@ -244,7 +220,7 @@ public partial class App : Application
                 string? exe = Environment.ProcessPath;
                 if (!string.IsNullOrEmpty(exe))
                 {
-                    ReleaseSingleInstanceMutex();
+                    Program.ReleaseSingleInstanceMutex();
                     Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
                 }
             }
@@ -354,32 +330,10 @@ public partial class App : Application
             _wakeEvent = null;
         }
 
-        ReleaseSingleInstanceMutex();
+        Program.ReleaseSingleInstanceMutex();
 
         LoggingService.Shutdown();
 
         base.OnExit(e);
-    }
-
-    private void ReleaseSingleInstanceMutex()
-    {
-        if (_singleInstanceMutex != null)
-        {
-            if (_ownsMutex)
-            {
-                try
-                {
-                    _singleInstanceMutex.ReleaseMutex();
-                }
-                catch (ApplicationException ex)
-                {
-                    // Mutex was already released or not owned on this thread
-                    Serilog.Log.Debug(ex, "Mutex was not owned or already released on exit");
-                }
-                _ownsMutex = false;
-            }
-            _singleInstanceMutex.Dispose();
-            _singleInstanceMutex = null;
-        }
     }
 }
