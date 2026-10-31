@@ -172,7 +172,7 @@ public sealed class CatalogItemModel : INotifyPropertyChanged
             bi.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
             bi.UriSource = new Uri(cachedPath, UriKind.Absolute);
             bi.CacheOption = BitmapCacheOption.OnLoad;
-            bi.DecodePixelWidth = 24; // Lightweight 24px menu thumbnail (<2.5 KB RAM per app)
+            bi.DecodePixelWidth = 32; // Crisp 32px menu thumbnail (<4 KB RAM per app)
             bi.EndInit();
             bi.Freeze();
 

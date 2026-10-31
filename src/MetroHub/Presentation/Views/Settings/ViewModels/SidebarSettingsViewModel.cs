@@ -34,6 +34,11 @@ public partial class SidebarSettingsViewModel : ObservableObject
     // C# 14 collection expression
     public ObservableCollection<string> RecentLayouts { get; } = ["Grid", "List"];
 
+    [ObservableProperty]
+    private string _selectedDrawerDensity = "Relaxed";
+
+    public ObservableCollection<string> DrawerDensities { get; } = ["Relaxed", "Compact"];
+
     public SidebarSettingsViewModel(SettingsService? settingsService = null)
     {
         _settingsService = settingsService ?? SettingsService.Instance;
@@ -48,6 +53,7 @@ public partial class SidebarSettingsViewModel : ObservableObject
             _showPowerButton = current.ShowPowerButton;
             _showRecentApps = current.ShowRecentApps;
             _selectedRecentLayout = current.RecentViewMode == RecentItemsViewMode.List ? "List" : "Grid";
+            _selectedDrawerDensity = current.DrawerDensity == DrawerDensity.Compact ? "Compact" : "Relaxed";
         }
         finally
         {
@@ -98,6 +104,14 @@ public partial class SidebarSettingsViewModel : ObservableObject
         var mode = value == "List" ? RecentItemsViewMode.List : RecentItemsViewMode.Grid;
         _settingsService.Current.RecentViewMode = mode;
         _settingsService.NotifyChanged(nameof(AppSettings.RecentViewMode));
+    }
+
+    partial void OnSelectedDrawerDensityChanged(string value)
+    {
+        if (_isInitializing) return;
+        var density = value == "Compact" ? DrawerDensity.Compact : DrawerDensity.Relaxed;
+        _settingsService.Current.DrawerDensity = density;
+        _settingsService.NotifyChanged(nameof(AppSettings.DrawerDensity));
     }
 }
 

@@ -19,6 +19,9 @@ public class SidebarSettingsViewModelTests
         Assert.Equal(SettingsService.Instance.Current.ShowRecentApps, vm.ShowRecentApps);
         Assert.Contains("Grid", vm.RecentLayouts);
         Assert.Contains("List", vm.RecentLayouts);
+        Assert.Contains("Relaxed", vm.DrawerDensities);
+        Assert.Contains("Compact", vm.DrawerDensities);
+        Assert.Equal(SettingsService.Instance.Current.DrawerDensity == DrawerDensity.Compact ? "Compact" : "Relaxed", vm.SelectedDrawerDensity);
     }
 
     [Fact]
@@ -31,6 +34,7 @@ public class SidebarSettingsViewModelTests
         bool initialPower = vm.ShowPowerButton;
         bool initialRecent = vm.ShowRecentApps;
         string initialLayout = vm.SelectedRecentLayout;
+        string initialDensity = vm.SelectedDrawerDensity;
 
         try
         {
@@ -61,6 +65,13 @@ public class SidebarSettingsViewModelTests
 
             vm.SelectedRecentLayout = "Grid";
             Assert.Equal(RecentItemsViewMode.Grid, SettingsService.Instance.Current.RecentViewMode);
+
+            // Change Drawer Density
+            vm.SelectedDrawerDensity = "Compact";
+            Assert.Equal(DrawerDensity.Compact, SettingsService.Instance.Current.DrawerDensity);
+
+            vm.SelectedDrawerDensity = "Relaxed";
+            Assert.Equal(DrawerDensity.Relaxed, SettingsService.Instance.Current.DrawerDensity);
         }
         finally
         {
@@ -70,6 +81,7 @@ public class SidebarSettingsViewModelTests
             vm.ShowPowerButton = initialPower;
             vm.ShowRecentApps = initialRecent;
             vm.SelectedRecentLayout = initialLayout;
+            vm.SelectedDrawerDensity = initialDensity;
         }
     }
 }

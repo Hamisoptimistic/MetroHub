@@ -340,6 +340,7 @@ namespace MetroHub.Presentation.Controls
         public const int MaxListZeroStateSuggestions = 6;
 
         public RecentItemsViewMode RecentViewMode { get; set; } = RecentItemsViewMode.Grid;
+        public DrawerDensity DrawerDensity { get; set; } = DrawerDensity.Relaxed;
 
         public void InitializeSettings(AppSettings? settings)
         {
@@ -347,7 +348,25 @@ namespace MetroHub.Presentation.Controls
             {
                 RecentViewMode = settings.RecentViewMode;
                 ApplyRecentViewMode(RecentViewMode);
+                DrawerDensity = settings.DrawerDensity;
+                ApplyDrawerDensity(DrawerDensity);
             }
+        }
+
+        public void ApplyDrawerDensity(DrawerDensity density)
+        {
+            DrawerDensity = density;
+            bool isRelaxed = density == DrawerDensity.Relaxed;
+
+            Resources["DrawerGutterHoverRowPadding"] = isRelaxed ? new Thickness(10, 7, 10, 7) : new Thickness(8, 5, 8, 5);
+            Resources["DrawerGutterHoverRowMargin"] = isRelaxed ? new Thickness(4, 1.5, 12, 1.5) : new Thickness(4, 1, 12, 1);
+            Resources["DrawerAppIconBoxSize"] = isRelaxed ? 28.0 : 22.0;
+            Resources["DrawerAppIconImageSize"] = isRelaxed ? 26.0 : 20.0;
+            Resources["DrawerAppIconSymbolSize"] = isRelaxed ? 22.0 : 18.0;
+            Resources["DrawerAccentPillHeight"] = isRelaxed ? 22.0 : 16.0;
+            Resources["DrawerRecentTileHeight"] = isRelaxed ? 54.0 : 48.0;
+            Resources["DrawerRecentTileImageSize"] = isRelaxed ? 28.0 : 24.0;
+            Resources["DrawerRecentTileSymbolSize"] = isRelaxed ? 22.0 : 18.0;
         }
 
         public void ApplyRecentViewMode(RecentItemsViewMode mode)
@@ -389,6 +408,8 @@ namespace MetroHub.Presentation.Controls
                 if (settings != null)
                 {
                     RecentViewMode = settings.RecentViewMode;
+                    DrawerDensity = settings.DrawerDensity;
+                    ApplyDrawerDensity(DrawerDensity);
                 }
             }
             catch { }
@@ -410,13 +431,15 @@ namespace MetroHub.Presentation.Controls
 
             SettingsService.Instance.SettingChanged += prop =>
             {
-                if (prop is nameof(AppSettings.RecentViewMode) or nameof(AppSettings.ShowRecentApps))
+                if (prop is nameof(AppSettings.RecentViewMode) or nameof(AppSettings.ShowRecentApps) or nameof(AppSettings.DrawerDensity))
                 {
                     Dispatcher.InvokeAsync(() =>
                     {
                         var s = SettingsService.Instance.Current;
                         RecentViewMode = s.RecentViewMode;
                         ApplyRecentViewMode(RecentViewMode);
+                        DrawerDensity = s.DrawerDensity;
+                        ApplyDrawerDensity(DrawerDensity);
                         if (IsOpen)
                         {
                             RefreshRecentSuggestions();

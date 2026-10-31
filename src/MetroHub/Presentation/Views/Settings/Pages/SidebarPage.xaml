@@ -145,6 +145,28 @@
                       ItemsSource="{Binding RecentLayouts}"
                       SelectedItem="{Binding SelectedRecentLayout, Mode=TwoWay}" />
         </ui:CardControl>
+
+        <!-- Card 7: Drawer Density -->
+        <ui:CardControl>
+            <ui:CardControl.Icon>
+                <ui:SymbolIcon Symbol="ArrowAutofitHeight24" FontSize="18" />
+            </ui:CardControl.Icon>
+            <ui:CardControl.Header>
+                <StackPanel>
+                    <TextBlock Text="Drawer Density"
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Choose compact or relaxed item sizing in the drawer"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,2,0,0" />
+                </StackPanel>
+            </ui:CardControl.Header>
+            <ComboBox MinWidth="160"
+                      ItemsSource="{Binding DrawerDensities}"
+                      SelectedItem="{Binding SelectedDrawerDensity, Mode=TwoWay}" />
+        </ui:CardControl>
     </StackPanel>
 </UserControl>
 

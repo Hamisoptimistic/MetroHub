@@ -39,7 +39,14 @@ public sealed class AppSettings
     public bool BrowserExtensionCompanionEnabled { get; set; } = true;
     public bool EnableGroupOpenAllButton { get; set; } = true;
     public RecentItemsViewMode RecentViewMode { get; set; } = RecentItemsViewMode.Grid;
+    public DrawerDensity DrawerDensity { get; set; } = DrawerDensity.Relaxed;
     public SearchSettings Search { get; set; } = new();
+}
+
+public enum DrawerDensity
+{
+    Compact,
+    Relaxed
 }
 
 public enum RecentItemsViewMode
