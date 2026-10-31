@@ -232,12 +232,22 @@ public static class NativeMethods
     [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
     public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string? lpszClass, string? lpszWindow);
 
-    public static Rect GetActiveMonitorWorkArea()
+    public static Rect GetActiveMonitorWorkArea(IntPtr hWnd = default)
     {
         try
         {
-            GetCursorPos(out POINT cursor);
-            IntPtr hMonitor = MonitorFromPoint(cursor, MONITOR_DEFAULTTONEAREST);
+            IntPtr hMonitor = IntPtr.Zero;
+            if (hWnd != IntPtr.Zero)
+            {
+                hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+            }
+
+            if (hMonitor == IntPtr.Zero)
+            {
+                GetCursorPos(out POINT cursor);
+                hMonitor = MonitorFromPoint(cursor, MONITOR_DEFAULTTONEAREST);
+            }
+
             MONITORINFO mi = new MONITORINFO();
             mi.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
 

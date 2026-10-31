@@ -878,6 +878,8 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     private const int WM_SETTINGCHANGE = 0x001A;
     private const int WM_GETOBJECT = 0x003D;
     private const int WM_DISPLAYCHANGE = 0x007E;
+    private const int WM_DPICHANGED = 0x02E0;
+    private const int SPI_SETWORKAREA = 0x002F;
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
@@ -920,8 +922,22 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
                 }
             });
         }
+        else if (msg == WM_DPICHANGED)
+        {
+            _cachedWorkArea = Rect.Empty;
+            _cachedDpiX = 0;
+            _cachedDpiY = 0;
+            // Do not set handled = true! Allow WPF HwndSource to process WM_DPICHANGED,
+            // update internal transform matrices, and invoke OnDpiChanged.
+            handled = false;
+        }
         else if (msg == NativeMethods.WM_SHNOTIFY || msg == WM_SETTINGCHANGE)
         {
+            if (msg == WM_SETTINGCHANGE && ((int)wParam == SPI_SETWORKAREA || lParam == IntPtr.Zero))
+            {
+                _cachedWorkArea = Rect.Empty;
+                SnapToWorkArea(force: true);
+            }
             IconExtractorService.InvalidateAssociationCache();
             Dispatcher.InvokeAsync(async () =>
             {
@@ -979,8 +995,8 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd == IntPtr.Zero) return;
 
-        // 1. Get raw monitor work area in physical pixels
-        Rect workAreaPixels = NativeMethods.GetActiveMonitorWorkArea();
+        // 1. Get raw monitor work area in physical pixels anchored to window
+        Rect workAreaPixels = NativeMethods.GetActiveMonitorWorkArea(hwnd);
 
         // 2. Query active monitor DPI scaling factor for this window
         DpiScale dpi = VisualTreeHelper.GetDpi(this);
@@ -1024,6 +1040,9 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     {
         base.OnDpiChanged(oldDpi, newDpi);
+        _cachedWorkArea = Rect.Empty;
+        _cachedDpiX = 0;
+        _cachedDpiY = 0;
         SnapToWorkArea(force: true);
     }
 

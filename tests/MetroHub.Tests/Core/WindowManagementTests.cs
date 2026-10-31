@@ -125,4 +125,16 @@ public class WindowManagementTests
             Assert.False(dialog.WebLinkDestCanvasRadio.IsChecked);
         });
     }
+
+    [Fact]
+    public void NativeMethods_GetActiveMonitorWorkArea_ReturnsValidDimensions()
+    {
+        Rect workAreaDefault = NativeMethods.GetActiveMonitorWorkArea();
+        Assert.True(workAreaDefault.Width > 0);
+        Assert.True(workAreaDefault.Height > 0);
+
+        Rect workAreaZeroHwnd = NativeMethods.GetActiveMonitorWorkArea(IntPtr.Zero);
+        Assert.True(workAreaZeroHwnd.Width > 0);
+        Assert.True(workAreaZeroHwnd.Height > 0);
+    }
 }

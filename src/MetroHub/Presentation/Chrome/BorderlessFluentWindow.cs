@@ -143,6 +143,11 @@ public class BorderlessFluentWindow : FluentWindow
             var mmi = System.Runtime.InteropServices.Marshal.PtrToStructure<NativeMethods.MINMAXINFO>(lParam);
             if (mmi.ptMaxPosition.X < 0) mmi.ptMaxPosition.X = 0;
             if (mmi.ptMaxPosition.Y < 0) mmi.ptMaxPosition.Y = 0;
+
+            // Unclamp tracking bounds so SetWindowPos is never restricted on 1440p/4K or dynamic DPI switches
+            mmi.ptMaxTrackSize.X = int.MaxValue;
+            mmi.ptMaxTrackSize.Y = int.MaxValue;
+
             System.Runtime.InteropServices.Marshal.StructureToPtr(mmi, lParam, true);
             handled = true;
             return IntPtr.Zero;
