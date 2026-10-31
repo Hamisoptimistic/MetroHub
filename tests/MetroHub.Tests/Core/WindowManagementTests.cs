@@ -137,4 +137,14 @@ public class WindowManagementTests
         Assert.True(workAreaZeroHwnd.Width > 0);
         Assert.True(workAreaZeroHwnd.Height > 0);
     }
+
+    [Fact]
+    public void NativeMethods_SecurityAndShellIdentity_CanBeCalledWithoutException()
+    {
+        bool dllSecResult = NativeMethods.SetDefaultDllDirectories(NativeMethods.LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+        Assert.True(dllSecResult);
+
+        int aumidResult = NativeMethods.SetCurrentProcessExplicitAppUserModelID(App.AppUserModelId);
+        Assert.Equal(0, aumidResult); // S_OK = 0
+    }
 }

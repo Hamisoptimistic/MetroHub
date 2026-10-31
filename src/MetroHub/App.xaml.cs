@@ -12,6 +12,7 @@ namespace MetroHub;
 
 public partial class App : Application
 {
+    public const string AppUserModelId = "MetroHub.Launcher";
     private const string EventName = "MetroHub_App_Wake_Event";
     private const string MutexName = "MetroHub_App_SingleInstance_Mutex";
     private Mutex? _singleInstanceMutex;
@@ -83,6 +84,12 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // Harden native DLL loading against current-working-directory injection
+        NativeMethods.SetDefaultDllDirectories(NativeMethods.LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+
+        // Register explicit AppUserModelID for clean Taskbar grouping and Action Center notification identity
+        NativeMethods.SetCurrentProcessExplicitAppUserModelID(AppUserModelId);
+
         // Initialize centralized Serilog logging pipeline
         LoggingService.Initialize();
 

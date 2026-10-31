@@ -329,6 +329,19 @@ public static class NativeMethods
 
     #endregion
 
+    #region Security & Shell Identity
+
+    public const int LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000;
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SetDefaultDllDirectories(int directoryFlags);
+
+    [DllImport("shell32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern int SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string appID);
+
+    #endregion
+
     #region Window Activation & Foreground
 
     [DllImport("user32.dll")]
