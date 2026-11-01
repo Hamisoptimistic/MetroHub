@@ -289,20 +289,20 @@ namespace MetroHub.Presentation.Controls
         public Func<string, bool>? IsFilePinnedPredicate { get; set; }
         public event EventHandler<string>? FileUnpinRequested;
 
-        public bool IsOpen { get; private set; } = false;
+        public bool IsOpen { get; private set; }
 
         public double DrawerWidth => ActualWidth > 0 ? ActualWidth : (Width > 0 && !double.IsNaN(Width) ? Width : 340);
 
         private List<CatalogItemModel> _allApps = new();
         private Point _dragStartPoint;
         private CatalogItemModel? _draggedItem;
-        private bool _isAppDragPotential = false;
-        private bool _isAppsLoaded = false;
+        private bool _isAppDragPotential;
+        private bool _isAppsLoaded;
         private CatalogItemModel? _activeContextMenuItem;
 
         private readonly SearchOrchestrator _searchOrchestrator;
         private SearchItemRowViewModel? _draggedSearchRow;
-        private bool _isSearchRowDragPotential = false;
+        private bool _isSearchRowDragPotential;
         private CancellationTokenSource? _searchCts;
         private long _renderedSearchSessionId;
         private readonly Dictionary<string, SearchItemRowViewModel> _activeSearchRows = new(StringComparer.OrdinalIgnoreCase);

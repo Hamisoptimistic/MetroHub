@@ -116,7 +116,7 @@ public sealed class NightLightService : IDisposable
         Green = new ushort[256],
         Blue = new ushort[256]
     };
-    private double _currentAppliedStrength = 0.0;
+    private double _currentAppliedStrength;
 
     public event EventHandler? StateChanged;
 
@@ -437,7 +437,7 @@ public sealed class NightLightService : IDisposable
         EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, (IntPtr hMonitor, IntPtr hdcMonitor, ref RECT rc, IntPtr data) =>
         {
             var info = new MONITORINFOEX();
-            info.cbSize = Marshal.SizeOf(typeof(MONITORINFOEX));
+            info.cbSize = Marshal.SizeOf<MONITORINFOEX>();
             if (GetMonitorInfo(hMonitor, ref info))
             {
                 if (!string.IsNullOrEmpty(info.szDevice) && !devices.Contains(info.szDevice))

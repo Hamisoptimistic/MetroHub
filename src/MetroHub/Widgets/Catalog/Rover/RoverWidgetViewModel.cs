@@ -36,7 +36,7 @@ public sealed partial class RoverWidgetViewModel : WidgetViewModelBase, IWidgetA
     private readonly RoverAnimationEngine _engine = new();
     private readonly RoverAudioService _audioService = new();
 
-    private int _secondsSinceLastIdleCheck = 0;
+    private int _secondsSinceLastIdleCheck;
     private int _secondsUntilNextAmbient = 20;
     private bool _isAmbientActive = true;
 

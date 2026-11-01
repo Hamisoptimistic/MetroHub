@@ -222,7 +222,7 @@ public sealed class TableSource : ISearchSource
         if (query.Length >= 2 && keyword.StartsWith(query, StringComparison.OrdinalIgnoreCase)) return true;
 
         // Multi-word keyword: any individual word in keyword starts with query (e.g. query "rate" matches "refresh rate")
-        if (query.Length >= 3 && keyword.IndexOf(' ') >= 0)
+        if (query.Length >= 3 && keyword.Contains(' '))
         {
             int idx = 0;
             while (idx < keyword.Length)

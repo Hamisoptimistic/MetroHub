@@ -6,7 +6,7 @@ namespace MetroHub.Widgets.Catalog.Dino;
 /// </summary>
 public sealed class DinoWidgetSettings
 {
-    public int HighScore { get; set; } = 0;
-    public bool IsMuted { get; set; } = false;
-    public bool? ReducedMotion { get; set; } = null; // null = follow Windows system setting
+    public int HighScore { get; set; }
+    public bool IsMuted { get; set; }
+    public bool? ReducedMotion { get; set; } // null = follow Windows system setting
 }

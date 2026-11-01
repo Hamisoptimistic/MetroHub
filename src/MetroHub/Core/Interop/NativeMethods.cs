@@ -249,7 +249,7 @@ public static class NativeMethods
             }
 
             MONITORINFO mi = new MONITORINFO();
-            mi.cbSize = Marshal.SizeOf(typeof(MONITORINFO));
+            mi.cbSize = Marshal.SizeOf<MONITORINFO>();
 
             if (GetMonitorInfo(hMonitor, ref mi))
             {
@@ -553,7 +553,7 @@ public static class NativeMethods
     public const int ENUM_CURRENT_SETTINGS = -1;
 
     private static string? _cachedRefreshRateDevice;
-    private static int _cachedRefreshRate = 0;
+    private static int _cachedRefreshRate;
     private static DateTime _lastRefreshRateQuery = DateTime.MinValue;
 
     public static int GetScreenRefreshRate(IntPtr hWnd = default)

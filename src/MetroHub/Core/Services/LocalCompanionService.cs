@@ -1046,7 +1046,7 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
         return true;
     }
 
-    private static IReadOnlyList<CompanionWorkspaceDto> GetDefaultWorkspaces()
+    private static List<CompanionWorkspaceDto> GetDefaultWorkspaces()
     {
         // Safe fallback when running without UI or during initialization
         return new List<CompanionWorkspaceDto>

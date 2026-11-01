@@ -104,10 +104,10 @@ public static class IconExtractorService
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task<BitmapSource?>> _inFlightTasks = new(StringComparer.OrdinalIgnoreCase);
     private static readonly SemaphoreSlim _extractionThrottle = new(2, 2);
 
-    private static readonly ImageSource EmptySentinel = CreateFrozenSentinel();
+    private static readonly DrawingImage EmptySentinel = CreateFrozenSentinel();
     private static readonly int _genericDocIconIndex = GetGenericDocIconIndex();
 
-    private static ImageSource CreateFrozenSentinel()
+    private static DrawingImage CreateFrozenSentinel()
     {
         var group = new DrawingGroup();
         group.Freeze();

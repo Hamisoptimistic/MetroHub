@@ -18,7 +18,7 @@ public partial class GroupHeaderControl : UserControl
     private static readonly Brush LockOpenBrush = ThemeTokens.CreateFrozenBrush(Color.FromArgb(0x90, 0xFF, 0xFF, 0xFF));
 
     private Point _dragStartPoint;
-    private bool _isPotentialDrag = false;
+    private bool _isPotentialDrag;
 
     private TileGroupModel? _boundGroup;
 

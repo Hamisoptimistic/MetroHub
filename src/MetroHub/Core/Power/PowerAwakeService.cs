@@ -52,7 +52,7 @@ public sealed class PowerAwakeService : IDisposable
 
     private volatile bool _isRunning = true;
     private AwakeMode _mode = AwakeMode.Passive;
-    private bool _keepScreenOn = false;
+    private bool _keepScreenOn;
     private DateTime? _targetExpiryUtc;
     private bool _isDisposed;
 

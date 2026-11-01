@@ -9,6 +9,6 @@ public class TemplateWidgetSettings
 {
     public string Label { get; set; } = "Template Widget";
     public string BoxColor { get; set; } = "#2563EB";
-    public int Counter { get; set; } = 0;
+    public int Counter { get; set; }
     public bool IsFeatureEnabled { get; set; } = true;
 }

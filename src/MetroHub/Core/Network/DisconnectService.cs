@@ -14,6 +14,7 @@ public sealed record WindowsInterfaceStatus(string Name, bool IsAdminEnabled, bo
 
 public sealed partial class DisconnectService
 {
+    private static readonly char[] LineSeparators = ['\r', '\n'];
     private static readonly Lazy<DisconnectService> _instance = new(() => new DisconnectService());
     public static DisconnectService Instance => _instance.Value;
 
@@ -81,7 +82,7 @@ public sealed partial class DisconnectService
                 string output = proc.StandardOutput.ReadToEnd();
                 proc.WaitForExit(1000);
 
-                var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                var lines = output.Split(LineSeparators, StringSplitOptions.RemoveEmptyEntries);
                 bool passedHeader = false;
                 foreach (var line in lines)
                 {
@@ -92,7 +93,7 @@ public sealed partial class DisconnectService
                     }
                     if (!passedHeader) continue;
 
-                    var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length >= 4)
                     {
                         string adminStateStr = parts[0];

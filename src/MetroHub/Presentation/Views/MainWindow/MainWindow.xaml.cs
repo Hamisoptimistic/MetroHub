@@ -74,7 +74,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
     public static MainWindow? Current { get; private set; }
     
-    private int _dialogOpenCount = 0;
+    private int _dialogOpenCount;
     private static int _dialogScopeDepth;
 
     public bool IsDialogOpen
@@ -240,7 +240,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     }
 
     private readonly HotkeyService _hotkeyService = new();
-    private bool _isClosingToExit = false;
+    private bool _isClosingToExit;
     private IntPtr _previousForegroundWindow = IntPtr.Zero;
 
     private bool _isDismissing
@@ -252,7 +252,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     private IntPtr _winEventHook = IntPtr.Zero;
     private NativeMethods.WinEventDelegate? _winEventDelegate;
     private System.Threading.Timer? _keepWarmTimer;
-    private uint _shellChangeNotifyId = 0;
+    private uint _shellChangeNotifyId;
 
     public MainWindow()
     {
@@ -506,8 +506,8 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
     private DateTime _lastShownTime = DateTime.MinValue;
     private int _showSequence;
-    private bool _isFullyActivated = false;
-    internal bool _isPeekActive = false;
+    private bool _isFullyActivated;
+    internal bool _isPeekActive;
 
     private void EnsureTopmost(bool topmost)
     {
@@ -1061,8 +1061,8 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     }
 
     private Rect _cachedWorkArea = Rect.Empty;
-    private double _cachedDpiX = 0.0;
-    private double _cachedDpiY = 0.0;
+    private double _cachedDpiX;
+    private double _cachedDpiY;
 
     public void SnapToWorkArea(bool force = false)
     {

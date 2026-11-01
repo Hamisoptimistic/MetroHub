@@ -1298,7 +1298,7 @@ public sealed class StorageService
     // ────────────────────────────────────────────────────────
 
     private static readonly ConcurrentDictionary<string, SearchUsageRecord> _searchUsageCache = new(StringComparer.OrdinalIgnoreCase);
-    private static bool _searchUsageLoaded = false;
+    private static bool _searchUsageLoaded;
     private static readonly object _searchUsageLock = new();
     private static Timer? _searchUsageFlushTimer;
 

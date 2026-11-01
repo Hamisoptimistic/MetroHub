@@ -8,16 +8,16 @@ public sealed class TileGroupModel : INotifyPropertyChanged
 {
     private string _id = Guid.NewGuid().ToString("N");
     private string _title = "New Group";
-    private string? _headerColor = null;
-    private int _col = 0;
-    private int _row = 0;
-    private double _x = 0;
-    private double _y = 0;
-    private bool _isEditing = false;
-    private bool _isBeingDragged = false;
-    private bool _isLocked = false;
-    private int _columnIndex = 0;
-    private int _orderIndex = 0;
+    private string? _headerColor;
+    private int _col;
+    private int _row;
+    private double _x;
+    private double _y;
+    private bool _isEditing;
+    private bool _isBeingDragged;
+    private bool _isLocked;
+    private int _columnIndex;
+    private int _orderIndex;
 
     public int ColumnIndex
     {
@@ -93,7 +93,7 @@ public sealed class TileGroupModel : INotifyPropertyChanged
         set => SetField(ref _isLocked, value);
     }
 
-    private string? _tintColor = null;
+    private string? _tintColor;
     public string? TintColor
     {
         get => _tintColor;
@@ -108,28 +108,28 @@ public sealed class TileGroupModel : INotifyPropertyChanged
         }
     }
 
-    private double _plateWidth = 0;
+    private double _plateWidth;
     public double PlateWidth
     {
         get => _plateWidth;
         set => SetField(ref _plateWidth, value);
     }
 
-    private double _plateHeight = 0;
+    private double _plateHeight;
     public double PlateHeight
     {
         get => _plateHeight;
         set => SetField(ref _plateHeight, value);
     }
 
-    private double _plateX = 0;
+    private double _plateX;
     public double PlateX
     {
         get => _plateX;
         set => SetField(ref _plateX, value);
     }
 
-    private double _plateY = 0;
+    private double _plateY;
     public double PlateY
     {
         get => _plateY;

@@ -41,6 +41,7 @@ public sealed record ClipboardSnapshot(
 /// </summary>
 public static class CanvasPasteService
 {
+    private static readonly char[] LineSeparators = ['\r', '\n'];
     public const int MaxFileCount = 50;
     public const int MaxTextLength = 1024 * 1024; // 1 MB
     public const int MaxBitmapDimension = 8192;
@@ -104,7 +105,7 @@ public static class CanvasPasteService
         return await Task.Run(() => ProcessSnapshot(snapshot)).ConfigureAwait(false);
     }
 
-    private static IReadOnlyList<PasteItemSpec>? ProcessClipboardDataCore(
+    private static List<PasteItemSpec>? ProcessClipboardDataCore(
         IReadOnlyList<string>? rawFiles,
         string? rawText,
         BitmapSource? frozenImage,
@@ -301,7 +302,7 @@ public static class CanvasPasteService
             File.WriteAllText(targetPath, text, Utf8NoBom);
 
             // Determine display title from first non-empty line
-            string firstLine = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+            string firstLine = text.Split(LineSeparators, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
             string title = firstLine.Length > 24
                 ? firstLine.Substring(0, 24).Trim() + "..."
                 : firstLine.Trim();

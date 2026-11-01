@@ -49,11 +49,11 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
 
     private SourceState _state;
     private SearchWorkItem? _pendingItem;
-    private int _consecutiveFailures = 0;
+    private int _consecutiveFailures;
     private DateTimeOffset _lastProbeTime = DateTimeOffset.MinValue;
     private double _probeBackoffSeconds = 1.0;
     private const double MaxProbeBackoffSeconds = 30.0;
-    private bool _isDisposed = false;
+    private bool _isDisposed;
 
     public EverythingSearchSource(int maxResults = 100)
         : this(CreateDefaultClient(), maxResults)
@@ -82,7 +82,7 @@ public sealed class EverythingSearchSource : ISearchSource, IDisposable
         _workerThread.Start();
     }
 
-    private static IEverythingClient? CreateDefaultClient()
+    private static EverythingClient? CreateDefaultClient()
     {
         try
         {

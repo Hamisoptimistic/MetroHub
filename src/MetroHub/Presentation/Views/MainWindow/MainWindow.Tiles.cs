@@ -36,8 +36,8 @@ public partial class MainWindow
         return ease;
     }
     private Point _canvasRightClickPoint;
-    private bool _isAppsLoaded = false;
-    private bool _isLoadingApps = false;
+    private bool _isAppsLoaded;
+    private bool _isLoadingApps;
     private DateTime _lastAppsRefreshTime = DateTime.UtcNow;
 
     private readonly LayoutHistoryService _historyService = new();
@@ -186,7 +186,7 @@ public partial class MainWindow
         return appendTt;
     }
 
-    private void AnimateModifiedTiles(IList<TileModel> modified)
+    private void AnimateModifiedTiles(List<TileModel> modified)
     {
         if (TilesListBox == null || modified.Count == 0) return;
 

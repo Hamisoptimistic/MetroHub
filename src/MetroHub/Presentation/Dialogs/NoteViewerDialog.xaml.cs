@@ -14,6 +14,7 @@ namespace MetroHub.Presentation.Dialogs;
 
 public partial class NoteViewerDialog : MetroDialog
 {
+    private static readonly char[] WordSeparators = [' ', '\r', '\n', '\t'];
     private readonly TileModel? _tile;
     private readonly string? _filePath;
     private readonly DispatcherTimer _copyTimer;
@@ -177,7 +178,7 @@ public partial class NoteViewerDialog : MetroDialog
         }
 
         int charCount = text.Length;
-        int wordCount = text.Split(new[] { ' ', '\r', '\n', '\t' }, StringSplitOptions.RemoveEmptyEntries).Length;
+        int wordCount = text.Split(WordSeparators, StringSplitOptions.RemoveEmptyEntries).Length;
 
         string wordPart = wordCount == 1 ? "1 word" : $"{wordCount:N0} words";
         string charPart = $"{charCount:N0} char";

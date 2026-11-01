@@ -21,12 +21,13 @@ namespace MetroHub.Presentation.Controllers;
 /// </summary>
 public sealed class TileManager
 {
+    private static readonly char[] LineSeparators = ['\r', '\n'];
     private readonly Func<ObservableCollection<TileModel>> _tilesProvider;
     private readonly Func<ObservableCollection<TileGroupModel>> _groupsProvider;
     private readonly Func<ItemsControl?> _tilesListBoxProvider;
     private readonly Func<ScrollViewer?> _contentScrollViewerProvider;
     private readonly Func<double> _windowWidthProvider;
-    private readonly Action<IList<TileModel>> _animateModifiedTilesAction;
+    private readonly Action<List<TileModel>> _animateModifiedTilesAction;
     private readonly Action _updateGroupHeaderPositionsAction;
     private readonly Action _updateLayoutMetricsAction;
     private readonly Action _updateCanvasHeightAction;
@@ -45,7 +46,7 @@ public sealed class TileManager
         Func<ItemsControl?> tilesListBoxProvider,
         Func<ScrollViewer?> contentScrollViewerProvider,
         Func<double> windowWidthProvider,
-        Action<IList<TileModel>> animateModifiedTilesAction,
+        Action<List<TileModel>> animateModifiedTilesAction,
         Action updateGroupHeaderPositionsAction,
         Action updateLayoutMetricsAction,
         Action updateCanvasHeightAction,
@@ -1400,7 +1401,7 @@ public sealed class TileManager
             noteFilePath = Path.Combine(noteDir, noteFileName);
             await File.WriteAllTextAsync(noteFilePath, request.Note!, Encoding.UTF8, ct).ConfigureAwait(false);
 
-            string firstLine = request.Note!.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
+            string firstLine = request.Note!.Split(LineSeparators, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? string.Empty;
             string snippetTitle = firstLine.Length > 24 ? firstLine.Substring(0, 24).Trim() + "..." : firstLine.Trim();
             displayTitle = !string.IsNullOrWhiteSpace(request.Title) && !request.Title.Equals("null", StringComparison.OrdinalIgnoreCase)
                 ? request.Title

@@ -12,7 +12,7 @@ namespace MetroHub.Widgets.Catalog.Photos;
 public partial class PhotosWidgetView : UserControl
 {
     private PhotosWidgetViewModel? _vm;
-    private int _motionProfileIndex = 0;
+    private int _motionProfileIndex;
     private static readonly Duration FadeDuration = new(TimeSpan.FromMilliseconds(900));
     private static readonly IEasingFunction FadeEase = new CubicEase { EasingMode = EasingMode.EaseInOut };
 

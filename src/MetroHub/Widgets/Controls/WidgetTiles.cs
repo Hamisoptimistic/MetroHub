@@ -63,7 +63,7 @@ public class WidgetTiles : Selector
     private Border? _slidingIndicator;
     private TranslateTransform? _indicatorTransform;
     private DropShadowEffect? _indicatorShadow;
-    private bool _isInternalSync = false;
+    private bool _isInternalSync;
 
     static WidgetTiles()
     {

@@ -26,15 +26,15 @@ public static class AppPaths
         try
         {
             string proc = System.Diagnostics.Process.GetCurrentProcess().ProcessName;
-            if (proc.IndexOf("testhost", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                proc.IndexOf("vstest", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (proc.Contains("testhost", StringComparison.OrdinalIgnoreCase) ||
+                proc.Contains("vstest", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
             string domainName = AppDomain.CurrentDomain.FriendlyName;
-            if (domainName.IndexOf("testhost", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                domainName.IndexOf("test", StringComparison.OrdinalIgnoreCase) >= 0)
+            if (domainName.Contains("testhost", StringComparison.OrdinalIgnoreCase) ||
+                domainName.Contains("test", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }

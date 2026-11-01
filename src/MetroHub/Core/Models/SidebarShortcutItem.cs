@@ -29,7 +29,7 @@ public sealed class SidebarShortcutItem : INotifyPropertyChanged
     private string _iconSymbol = "Folder24";
     private string? _customIconPath;
     private bool _isRemovable = true;
-    private int _sortOrder = 0;
+    private int _sortOrder;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -218,7 +218,7 @@ public sealed class SidebarShortcutItem : INotifyPropertyChanged
             return "Desktop24";
 
         // Root Drives (C:\, D:\, etc.)
-        if (nameOrPath.EndsWith(":\\") || nameOrPath.EndsWith(":") || name.Contains("drive") || name.Contains("disk"))
+        if (nameOrPath.EndsWith(":\\") || nameOrPath.EndsWith(':') || name.Contains("drive") || name.Contains("disk"))
             return "Storage24";
 
         // Archives / Zip / Backups / ISO

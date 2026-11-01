@@ -16,7 +16,7 @@ public sealed class WorkspaceModel : INotifyPropertyChanged
     private string _id = Guid.NewGuid().ToString("N");
     private string _name = "New Workspace";
     private string _iconSymbol = "Desktop24";
-    private int _order = 0;
+    private int _order;
     private DateTime _createdUtc = DateTime.UtcNow;
     private bool _isActive;
     private bool _isDirty;

@@ -294,8 +294,8 @@ public sealed class WorldClockSource : ISearchSource
         // Scan system time zones for partial match on ID or DisplayName
         foreach (var z in TimeZoneInfo.GetSystemTimeZones())
         {
-            if (z.Id.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                z.DisplayName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+            if (z.Id.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                z.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase))
             {
                 return (z.DisplayName, z);
             }
@@ -320,10 +320,10 @@ public sealed class ClipboardSource : ISearchSource, IDisposable
     private readonly QueryRouter _router;
     private readonly object _lock = new();
     private readonly List<ClipboardItem> _history = new(50);
-    private uint _lastSequenceNumber = 0;
+    private uint _lastSequenceNumber;
     private IntPtr _hwnd = IntPtr.Zero;
-    private bool _isListening = false;
-    private bool _isDisposed = false;
+    private bool _isListening;
+    private bool _isDisposed;
 
     public sealed record ClipboardItem(
         string Text,

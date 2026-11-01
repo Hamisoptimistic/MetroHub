@@ -30,6 +30,7 @@ namespace MetroHub.Widgets.Catalog.Media;
 /// </summary>
 public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetContextMenuProvider
 {
+    private static readonly string[] ArtistTrackSeparators = [" - "];
     private MediaManager? _mediaManager;
     private MediaManager.MediaSession? _activeSession;
     private volatile bool _isMediaManagerStarted;
@@ -577,7 +578,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
         // If artist is empty but title has " - ", split artist and track name (common on YouTube/browser streams)
         if (string.IsNullOrWhiteSpace(cleanArtist) && cleanTitle.Contains(" - "))
         {
-            var parts = cleanTitle.Split(new[] { " - " }, 2, StringSplitOptions.RemoveEmptyEntries);
+            var parts = cleanTitle.Split(ArtistTrackSeparators, 2, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length == 2)
             {
                 cleanArtist = parts[0].Trim();
@@ -1228,7 +1229,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
     /// Stretched to the full square and blurred by the renderer, so a 64px decode
     /// (~16 KB) is indistinguishable from a full-resolution backdrop.
     /// </summary>
-    private static BitmapSource? DecodeBackdrop(byte[] bytes)
+    private static BitmapImage? DecodeBackdrop(byte[] bytes)
     {
         try
         {
@@ -1413,7 +1414,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
     /// load, so a cache holding original full-resolution bytes decodes
     /// identically to the first decode.
     /// </summary>
-    private static ImageSource? CreateThumbnailFromBytes(
+    private static BitmapSource? CreateThumbnailFromBytes(
         byte[] bytes,
         int decodeWidth)
     {
@@ -1506,8 +1507,8 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
             {
                 foreach (var subKeyName in root.GetSubKeyNames())
                 {
-                    if (subKeyName.IndexOf(appId, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                        appId.IndexOf(subKeyName, StringComparison.OrdinalIgnoreCase) >= 0)
+                    if (subKeyName.Contains(appId, StringComparison.OrdinalIgnoreCase) ||
+                        appId.Contains(subKeyName, StringComparison.OrdinalIgnoreCase))
                     {
                         using var subKey = root.OpenSubKey(subKeyName);
                         var disp = subKey?.GetValue("DisplayName") as string;

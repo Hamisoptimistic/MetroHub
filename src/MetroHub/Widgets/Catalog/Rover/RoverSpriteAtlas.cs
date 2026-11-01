@@ -16,7 +16,7 @@ public static class RoverSpriteAtlas
     public const int AtlasWidth = 2160;
     public const int AtlasHeight = 2160;
 
-    private static readonly Lazy<BitmapSource> _sharedAtlas = new(LoadAtlas);
+    private static readonly Lazy<BitmapImage> _sharedAtlas = new(LoadAtlas);
 
     /// <summary>
     /// Frozen, immutable BitmapSource representing the entire sprite sheet.
@@ -42,7 +42,7 @@ public static class RoverSpriteAtlas
         return new Rect(frame.X, frame.Y, FrameWidth, FrameHeight);
     }
 
-    private static BitmapSource LoadAtlas()
+    private static BitmapImage LoadAtlas()
     {
         using var stream = RoverManifest.TryOpenResource("Assets/Rover/map.png")
             ?? throw new FileNotFoundException("Rover sprite atlas 'map.png' not found: Assets/Rover/map.png");

@@ -10,7 +10,7 @@ public sealed class CaffeineSleepWidgetSettings
 {
     public string LastPanel { get; set; } = "Caffeine";
     public double NightLightStrength { get; set; } = 50.0;
-    public bool KeepScreenOn { get; set; } = false;
+    public bool KeepScreenOn { get; set; }
     public int SelectedMinutes { get; set; } = 30;
     public bool CinematicFade { get; set; } = true;
 }

@@ -13,8 +13,8 @@ public class PomodoroWidgetSettings
     public bool SoundEnabled { get; set; } = true;
 
     // Analytics / Gamification
-    public int CompletedSessions { get; set; } = 0;
-    public int TotalFocusMinutes { get; set; } = 0;
+    public int CompletedSessions { get; set; }
+    public int TotalFocusMinutes { get; set; }
     public int CurrentStreak { get; set; } = 1;
     public string? LastActiveDate { get; set; }
 }

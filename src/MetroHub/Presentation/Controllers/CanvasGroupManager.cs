@@ -27,7 +27,7 @@ public sealed class CanvasGroupManager
     private readonly Func<FrameworkElement?> _mainCanvasGridProvider;
     private readonly Func<double> _windowWidthProvider;
     private readonly Func<IList<TileModel>> _selectedTilesProvider;
-    private readonly Action<IList<TileModel>> _animateModifiedTilesAction;
+    private readonly Action<List<TileModel>> _animateModifiedTilesAction;
     private readonly Action _updateExposedAddSlotsAction;
     private readonly Action<TileGroupModel> _flashLockedGroupAction;
     private readonly Action _clearTileSelectionAction;
@@ -45,7 +45,7 @@ public sealed class CanvasGroupManager
         Func<FrameworkElement?> mainCanvasGridProvider,
         Func<double> windowWidthProvider,
         Func<IList<TileModel>> selectedTilesProvider,
-        Action<IList<TileModel>> animateModifiedTilesAction,
+        Action<List<TileModel>> animateModifiedTilesAction,
         Action updateExposedAddSlotsAction,
         Action<TileGroupModel> flashLockedGroupAction,
         Action clearTileSelectionAction,

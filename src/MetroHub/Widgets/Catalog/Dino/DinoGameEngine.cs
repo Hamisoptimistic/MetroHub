@@ -64,39 +64,39 @@ public sealed class DinoGameEngine
 
     // Player State
     public double DinoY { get; private set; } = DinoTuning.GroundY; // Y coordinate of feet
-    public double DinoHeightAboveGround { get; private set; } = 0.0;
-    public double VerticalVelocity { get; private set; } = 0.0;
+    public double DinoHeightAboveGround { get; private set; }
+    public double VerticalVelocity { get; private set; }
     public bool IsGrounded => DinoHeightAboveGround <= 0.001;
-    public bool IsDucking { get; private set; } = false;
-    public bool DownKeyHeld { get; private set; } = false;
+    public bool IsDucking { get; private set; }
+    public bool DownKeyHeld { get; private set; }
 
     // Input Buffer & Timing
-    private double _jumpBufferTimer = 0.0;
-    private double _legSwapTimer = 0.0;
-    public bool RunLegState { get; private set; } = false; // toggles every 83ms
+    private double _jumpBufferTimer;
+    private double _legSwapTimer;
+    public bool RunLegState { get; private set; } // toggles every 83ms
 
-    private double _birdFlapTimer = 0.0;
-    public bool BirdFlapState { get; private set; } = false; // toggles every 160ms
+    private double _birdFlapTimer;
+    public bool BirdFlapState { get; private set; } // toggles every 160ms
 
-    private double _dyingTimer = 0.0;
-    private long _restartAllowedTimestamp = 0;
+    private double _dyingTimer;
+    private long _restartAllowedTimestamp;
 
     // Progression
-    public double Score { get; private set; } = 0.0;
+    public double Score { get; private set; }
     public int DisplayScore => (int)Math.Floor(Score);
-    public int HighScore { get; private set; } = 0;
+    public int HighScore { get; private set; }
     public double Speed { get; private set; } = DinoTuning.InitialSpeed;
     public double BirdSpeed => Speed * DinoTuning.BirdSpeedMultiplier;
 
     // Day/Night Cycle
-    public double NightBlend { get; private set; } = 0.0; // 0 = Day, 1 = Night
+    public double NightBlend { get; private set; } // 0 = Day, 1 = Night
 
     // Obstacles
     private readonly List<ObstacleInstance> _obstacles = new(8);
     public IReadOnlyList<ObstacleInstance> ActiveObstacles => _obstacles;
 
-    private double _distanceSinceLastSpawn = 0.0;
-    private double _nextSpawnGap = 0.0;
+    private double _distanceSinceLastSpawn;
+    private double _nextSpawnGap;
     private ObstacleType _nextObstacleType = ObstacleType.SmallCactus;
 
     // Events for Audio & Milestones

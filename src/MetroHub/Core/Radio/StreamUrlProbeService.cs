@@ -32,6 +32,7 @@ public sealed record StreamProbeResult(
 /// </summary>
 public sealed partial class StreamUrlProbeService : IDisposable
 {
+    private static readonly char[] NewlineSeparators = ['\r', '\n'];
     private static readonly Lazy<StreamUrlProbeService> _lazyInstance = new(() => new StreamUrlProbeService());
     public static StreamUrlProbeService Instance => _lazyInstance.Value;
 
@@ -365,7 +366,7 @@ public sealed partial class StreamUrlProbeService : IDisposable
 
     private static StreamProbeResult ParsePlsContent(string content, Uri origin)
     {
-        var lines = content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var lines = content.Split(NewlineSeparators, StringSplitOptions.RemoveEmptyEntries);
         var fileEntries = lines.Where(l => PlsFileEntryRegex().IsMatch(l.Trim())).ToList();
 
         if (fileEntries.Count == 0)
@@ -485,7 +486,7 @@ public sealed partial class StreamUrlProbeService : IDisposable
 
     private static StreamProbeResult ParseM3uContent(string content, Uri origin)
     {
-        var lines = content.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        var lines = content.Split(NewlineSeparators, StringSplitOptions.RemoveEmptyEntries);
 
         // 1. Detect HLS (HTTP Live Streaming) playlists (master or media playlists)
         bool isHls = content.Contains("#EXT-X-", StringComparison.OrdinalIgnoreCase) ||

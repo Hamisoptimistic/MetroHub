@@ -338,7 +338,7 @@ public sealed class SpeedTestService
 
                         using var stream = await res.Content.ReadAsStreamAsync(downloadCts.Token).ConfigureAwait(false);
                         int read;
-                        while ((read = await stream.ReadAsync(buffer, 0, buffer.Length, downloadCts.Token).ConfigureAwait(false)) > 0)
+                        while ((read = await stream.ReadAsync(buffer, downloadCts.Token).ConfigureAwait(false)) > 0)
                         {
                             Interlocked.Add(ref totalBytesDownloaded, read);
                             consecutiveDownloadErrors = 0;
@@ -424,10 +424,7 @@ public sealed class SpeedTestService
 
             try { await Task.WhenAll(downloadTasks).ConfigureAwait(false); } catch { }
 
-            if (cancellationToken.IsCancellationRequested)
-            {
-                throw new OperationCanceledException(cancellationToken);
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
             if (Interlocked.Read(ref totalBytesDownloaded) == 0 && lastDownloadError != null)
             {
@@ -614,10 +611,7 @@ public sealed class SpeedTestService
 
             try { await Task.WhenAll(uploadTasks).ConfigureAwait(false); } catch { }
 
-            if (cancellationToken.IsCancellationRequested)
-            {
-                throw new OperationCanceledException(cancellationToken);
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
             if (Interlocked.Read(ref successfulUploadRequests) == 0 && lastUploadError != null)
             {

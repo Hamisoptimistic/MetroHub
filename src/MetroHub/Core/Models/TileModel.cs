@@ -30,11 +30,11 @@ public sealed class TileModel : INotifyPropertyChanged
     private string? _sectionHeader;
     private string? _group;
     private string? _accentColor;
-    private int _orderIndex = 0;
-    private double _x = 0;
-    private double _y = 0;
-    private int _col = 0;
-    private int _row = 0;
+    private int _orderIndex;
+    private double _x;
+    private double _y;
+    private int _col;
+    private int _row;
 
     public int Col
     {
@@ -59,8 +59,8 @@ public sealed class TileModel : INotifyPropertyChanged
         get => _y;
         set => SetField(ref _y, value);
     }
-    private bool _runAsAdmin = false;
-    private bool _isBeingDragged = false;
+    private bool _runAsAdmin;
+    private bool _isBeingDragged;
 
     [JsonIgnore]
     public bool IsBeingDragged
@@ -69,7 +69,7 @@ public sealed class TileModel : INotifyPropertyChanged
         set => SetField(ref _isBeingDragged, value);
     }
 
-    private bool _isLocked = false;
+    private bool _isLocked;
 
     public bool IsLocked
     {
@@ -77,7 +77,7 @@ public sealed class TileModel : INotifyPropertyChanged
         set => SetField(ref _isLocked, value);
     }
 
-    private bool _isSelected = false;
+    private bool _isSelected;
 
     [JsonIgnore]
     public bool IsSelected

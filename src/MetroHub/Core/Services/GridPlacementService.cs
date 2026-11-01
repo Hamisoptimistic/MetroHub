@@ -490,15 +490,8 @@ public static class GridPlacementService
                     if (neededOtherCol > otherCol)
                     {
                         shiftedCols[other] = neededOtherCol;
-                        if (!visited.Contains(other))
-                        {
-                            visited.Add(other);
-                            queue.Enqueue(other);
-                        }
-                        else
-                        {
-                            queue.Enqueue(other);
-                        }
+                        visited.Add(other);
+                        queue.Enqueue(other);
                     }
                 }
             }
@@ -597,9 +590,8 @@ public static class GridPlacementService
                         // Other is locked: current jumps beneath other in its same column
                         int pushedCurRow = otherRow + other.SpanY;
                         proposedPositions[current] = (curCol, pushedCurRow);
-                        if (!inQueue.Contains(current))
+                        if (inQueue.Add(current))
                         {
-                            inQueue.Add(current);
                             queue.Enqueue(current);
                         }
                         break;
@@ -611,9 +603,8 @@ public static class GridPlacementService
                         if (neededOtherRow > otherRow)
                         {
                             proposedPositions[other] = (otherCol, neededOtherRow);
-                            if (!inQueue.Contains(other))
+                            if (inQueue.Add(other))
                             {
-                                inQueue.Add(other);
                                 queue.Enqueue(other);
                             }
                         }
@@ -874,9 +865,8 @@ public static class GridPlacementService
                         pushedRow = Math.Max(curPos.Row, pushedRow);
                     }
                     proposedPositions[obstacle] = (obsCol, pushedRow);
-                    if (!inQueue.Contains(obstacle))
+                    if (inQueue.Add(obstacle))
                     {
-                        inQueue.Add(obstacle);
                         queue.Enqueue(obstacle);
                     }
                 }
@@ -892,9 +882,8 @@ public static class GridPlacementService
                         pushedRow = Math.Max(curPos.Row, pushedRow);
                     }
                     proposedPositions[obstacle] = (obsCol, pushedRow);
-                    if (!inQueue.Contains(obstacle))
+                    if (inQueue.Add(obstacle))
                     {
-                        inQueue.Add(obstacle);
                         queue.Enqueue(obstacle);
                     }
                 }
@@ -947,9 +936,8 @@ public static class GridPlacementService
                     if (neededOtherRow > otherRow)
                     {
                         proposedPositions[other] = (otherCol, neededOtherRow);
-                        if (!inQueue.Contains(other))
+                        if (inQueue.Add(other))
                         {
-                            inQueue.Add(other);
                             queue.Enqueue(other);
                         }
                     }
@@ -1269,9 +1257,8 @@ public static class GridPlacementService
                     if (neededOtherRow > oR)
                     {
                         positions[other] = (oC, neededOtherRow);
-                        if (!inQueue.Contains(other))
+                        if (inQueue.Add(other))
                         {
-                            inQueue.Add(other);
                             queue.Enqueue(other);
                         }
                     }

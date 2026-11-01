@@ -89,9 +89,9 @@ public sealed class SearchOrchestrator : IDisposable
 
     private Timer? _debounceTimer;
     private CancellationTokenSource? _activeCts;
-    private long _currentSessionId = 0;
-    private int _tier2InFlight = 0;
-    private bool _isDisposed = false;
+    private long _currentSessionId;
+    private int _tier2InFlight;
+    private bool _isDisposed;
 
     public event Action<SearchSnapshot>? SnapshotUpdated;
 
@@ -657,9 +657,8 @@ public sealed class SearchOrchestrator : IDisposable
             {
                 var app = appList[i];
                 string id = app.TargetPath ?? app.Name;
-                if (!existingIds.Contains(id))
+                if (existingIds.Add(id))
                 {
-                    existingIds.Add(id);
                     candidates.Add(new Candidate(
                         Id: id,
                         DisplayName: app.Name,

@@ -31,8 +31,8 @@ public sealed record ProcessSnapshotEntry(int Pid, string ProcessName, DateTime 
 public static class RunningSnapshot
 {
     private static readonly object _lock = new();
-    private static long _lastWindowScanTicks = 0;
-    private static long _lastProcessScanTicks = 0;
+    private static long _lastWindowScanTicks;
+    private static long _lastProcessScanTicks;
     private static List<WindowSnapshotEntry> _cachedWindows = new();
     private static List<ProcessSnapshotEntry> _cachedProcesses = new();
 

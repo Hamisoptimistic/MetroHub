@@ -15,7 +15,7 @@ public sealed record MonitorDevice
     public required bool IsInternal { get; init; }
     public required bool IsPrimary { get; init; }
     public required bool IsSupported { get; init; }
-    public int PhysicalIndex { get; init; } = 0;
+    public int PhysicalIndex { get; init; }
     public string? WmiInstanceName { get; init; }
     public required System.Windows.Rect Bounds { get; init; }
 }

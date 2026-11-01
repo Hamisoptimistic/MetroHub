@@ -358,7 +358,7 @@ public static class SearchRanker
                 matchScore = fzfScore;
             }
             // 8. Path Match
-            else if (candidate.NormalizedPath.IndexOf(q, StringComparison.Ordinal) >= 0)
+            else if (candidate.NormalizedPath.Contains(q, StringComparison.Ordinal))
             {
                 matchKind = MatchKind.PathOnly;
                 matchScore = weights.PathOnly;
@@ -706,17 +706,17 @@ public static class SearchRanker
         }
 
         // Standard Windows user locations checked with fast Ordinal against lowercase path
-        return normPath.IndexOf("\\desktop\\", StringComparison.Ordinal) >= 0 ||
-               normPath.IndexOf("\\documents\\", StringComparison.Ordinal) >= 0 ||
-               normPath.IndexOf("\\downloads\\", StringComparison.Ordinal) >= 0 ||
-               normPath.IndexOf("\\source\\", StringComparison.Ordinal) >= 0 ||
-               normPath.IndexOf("\\repos\\", StringComparison.Ordinal) >= 0 ||
-               normPath.IndexOf("\\projects\\", StringComparison.Ordinal) >= 0 ||
-               normPath.IndexOf("\\workspace\\", StringComparison.Ordinal) >= 0 ||
-               normPath.IndexOf("\\dev\\", StringComparison.Ordinal) >= 0 ||
-               normPath.IndexOf("\\pictures\\", StringComparison.Ordinal) >= 0 ||
-               normPath.IndexOf("\\videos\\", StringComparison.Ordinal) >= 0 ||
-               normPath.IndexOf("\\music\\", StringComparison.Ordinal) >= 0;
+        return normPath.Contains("\\desktop\\", StringComparison.Ordinal) ||
+               normPath.Contains("\\documents\\", StringComparison.Ordinal) ||
+               normPath.Contains("\\downloads\\", StringComparison.Ordinal) ||
+               normPath.Contains("\\source\\", StringComparison.Ordinal) ||
+               normPath.Contains("\\repos\\", StringComparison.Ordinal) ||
+               normPath.Contains("\\projects\\", StringComparison.Ordinal) ||
+               normPath.Contains("\\workspace\\", StringComparison.Ordinal) ||
+               normPath.Contains("\\dev\\", StringComparison.Ordinal) ||
+               normPath.Contains("\\pictures\\", StringComparison.Ordinal) ||
+               normPath.Contains("\\videos\\", StringComparison.Ordinal) ||
+               normPath.Contains("\\music\\", StringComparison.Ordinal);
     }
 
     public static bool IsNoisePath(string path)
