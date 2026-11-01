@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MetroHub.Widgets.Catalog.Calendar;
@@ -10,7 +11,7 @@ public partial class CalendarDayViewModel : ObservableObject
 {
     public DateTime Date { get; }
 
-    public string DayText => Date.Day.ToString();
+    public string DayText => Date.Day.ToString(CultureInfo.InvariantCulture);
 
     public bool IsCurrentMonth { get; }
     public bool IsToday { get; }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -63,7 +64,7 @@ public sealed class RoverAudioService : IDisposable
 
         for (int i = 1; i <= 10; i++)
         {
-            string key = i.ToString();
+            string key = i.ToString(CultureInfo.InvariantCulture);
             string targetPath = Path.Combine(localCacheDir, $"sound{key}.mp3");
 
             // Check candidate directory on disk first

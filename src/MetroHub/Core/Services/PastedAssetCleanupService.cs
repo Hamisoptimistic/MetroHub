@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -352,7 +353,7 @@ public static class PastedAssetCleanupService
                 try
                 {
                     AppPaths.EnsureDirectory(timestampPath);
-                    File.WriteAllText(timestampPath, DateTime.UtcNow.ToBinary().ToString());
+                    File.WriteAllText(timestampPath, DateTime.UtcNow.ToBinary().ToString(CultureInfo.InvariantCulture));
                 }
                 catch { }
 

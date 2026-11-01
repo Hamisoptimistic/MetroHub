@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -253,7 +254,7 @@ public partial class DinoWidgetView : UserControl
 
     private void UpdateHud(DinoGameEngine engine)
     {
-        CurrentScoreText.Text = engine.DisplayScore.ToString("D5");
+        CurrentScoreText.Text = engine.DisplayScore.ToString("D5", CultureInfo.InvariantCulture);
 
         if (engine.HighScore > 0)
         {

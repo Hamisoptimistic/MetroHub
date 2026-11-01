@@ -394,7 +394,7 @@ public partial class HabitWidgetViewModel : WidgetViewModelBase, IWidgetContextM
     public void RebuildMonthGrid()
     {
         string rawMonth = _currentDisplayMonth.ToString("MMMM", CultureInfo.CurrentCulture);
-        string titleMonth = char.ToUpper(rawMonth[0]) + (rawMonth.Length > 1 ? rawMonth.Substring(1).ToLower() : "");
+        string titleMonth = char.ToUpper(rawMonth[0], CultureInfo.CurrentCulture) + (rawMonth.Length > 1 ? rawMonth.Substring(1).ToLower(CultureInfo.CurrentCulture) : "");
         DisplayMonthYear = $"{titleMonth} {_currentDisplayMonth.Year}";
 
         Days.Clear();

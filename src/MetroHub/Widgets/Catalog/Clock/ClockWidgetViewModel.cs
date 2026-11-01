@@ -136,11 +136,11 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase, IWidgetA
         {
             hour = hour % 12;
             if (hour == 0) hour = 12;
-            HoursString = hour.ToString();
+            HoursString = hour.ToString(CultureInfo.InvariantCulture);
         }
         else
         {
-            HoursString = hour.ToString("D2");
+            HoursString = hour.ToString("D2", CultureInfo.InvariantCulture);
         }
 
         MinutesString = now.ToString("mm", CultureInfo.InvariantCulture);

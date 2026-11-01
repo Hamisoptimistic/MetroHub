@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MetroHub.Widgets.Catalog.Habit;
@@ -52,7 +53,7 @@ public partial class HabitDayViewModel : ObservableObject
     {
         get
         {
-            string dateStr = Date.ToString("dddd, MMM d");
+            string dateStr = Date.ToString("dddd, MMM d", CultureInfo.InvariantCulture);
             if (!IsCurrentMonth) return dateStr;
             if (IsFuture) return $"{dateStr} (Upcoming)";
             return State switch

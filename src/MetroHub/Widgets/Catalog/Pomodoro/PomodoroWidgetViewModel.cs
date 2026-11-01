@@ -2,6 +2,7 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Media;
 using System.Threading;
 using System.Windows.Controls;
@@ -199,7 +200,7 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase, IWidg
             {
                 CompletedSessions++;
                 TotalFocusMinutes += FocusMinutes;
-                var today = DateTime.UtcNow.ToString("yyyy-MM-dd");
+                var today = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                 UpdateStreak(today);
             }
 
@@ -491,7 +492,7 @@ public sealed partial class PomodoroWidgetViewModel : WidgetViewModelBase, IWidg
             CompletedSessions = CompletedSessions,
             TotalFocusMinutes = TotalFocusMinutes,
             CurrentStreak = CurrentStreak,
-            LastActiveDate = DateTime.UtcNow.ToString("yyyy-MM-dd")
+            LastActiveDate = DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
         };
 
         var json = WidgetSerializer.Serialize(settings);

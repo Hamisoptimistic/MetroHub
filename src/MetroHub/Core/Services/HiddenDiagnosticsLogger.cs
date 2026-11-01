@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using Serilog;
 
@@ -139,37 +140,37 @@ public static class HiddenDiagnosticsLogger
 
             var sb = new StringBuilder();
             sb.AppendLine();
-            sb.AppendLine($"==================== [MEMORY DIAGNOSTIC SNAPSHOT: {trigger}] ====================");
-            sb.AppendLine($"  [OS & Process Memory]");
-            sb.AppendLine($"    Working Set (Physical RAM):  {wsMb:0.0} MB  (Peak: {peakWsMb:0.0} MB)");
-            sb.AppendLine($"    Private Bytes (True Commit): {privMb:0.0} MB  <-- [Crucial: tracks real unmanaged leaks]");
-            sb.AppendLine($"    Paged Memory (Commit Size):  {pagedMb:0.0} MB  (Peak: {peakPagedMb:0.0} MB)");
-            sb.AppendLine($"    Virtual Address Space:       {virtMb:0.0} MB");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"==================== [MEMORY DIAGNOSTIC SNAPSHOT: {trigger}] ====================");
+            sb.AppendLine("  [OS & Process Memory]");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    Working Set (Physical RAM):  {wsMb:0.0} MB  (Peak: {peakWsMb:0.0} MB)");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    Private Bytes (True Commit): {privMb:0.0} MB  <-- [Crucial: tracks real unmanaged leaks]");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    Paged Memory (Commit Size):  {pagedMb:0.0} MB  (Peak: {peakPagedMb:0.0} MB)");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    Virtual Address Space:       {virtMb:0.0} MB");
             sb.AppendLine($"  [Handles & Win32 Resources]");
-            sb.AppendLine($"    GDI Objects:                 {gdiCount} / 10,000  (Bitmaps, Pens, Brushes, DCs)");
-            sb.AppendLine($"    USER Objects:                {userCount} / 10,000  (Windows, Menus, Hooks, Timers)");
-            sb.AppendLine($"    Kernel Handles:              {handles}");
-            sb.AppendLine($"    Active Threads:              {threads}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    GDI Objects:                 {gdiCount} / 10,000  (Bitmaps, Pens, Brushes, DCs)");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    USER Objects:                {userCount} / 10,000  (Windows, Menus, Hooks, Timers)");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    Kernel Handles:              {handles}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    Active Threads:              {threads}");
             sb.AppendLine($"  [.NET Managed Heap (CLR GC)]");
             if (beforeManagedMb.HasValue)
             {
                 double freed = beforeManagedMb.Value - currentManagedMb;
-                sb.AppendLine($"    Managed Heap:                {beforeManagedMb.Value:0.0} MB → {currentManagedMb:0.0} MB (Freed: {freed:0.0} MB)");
+                sb.AppendLine(CultureInfo.InvariantCulture, $"    Managed Heap:                {beforeManagedMb.Value:0.0} MB → {currentManagedMb:0.0} MB (Freed: {freed:0.0} MB)");
             }
             else
             {
-                sb.AppendLine($"    Live Allocated Objects:      {currentManagedMb:0.0} MB");
+                sb.AppendLine(CultureInfo.InvariantCulture, $"    Live Allocated Objects:      {currentManagedMb:0.0} MB");
             }
-            sb.AppendLine($"    Total Heap Size:             {heapSizeMb:0.0} MB");
-            sb.AppendLine($"    Heap Fragmentation:          {fragmentedMb:0.0} MB ({fragPercent:0.0}%)");
-            sb.AppendLine($"    Gen 0: {gen0Mb:0.0} MB  (Collections: {gen0Collections})");
-            sb.AppendLine($"    Gen 1: {gen1Mb:0.0} MB  (Collections: {gen1Collections})");
-            sb.AppendLine($"    Gen 2: {gen2Mb:0.0} MB  (Collections: {gen2Collections})");
-            sb.AppendLine($"    LOH (Large Object Heap):     {lohMb:0.0} MB");
-            sb.AppendLine($"    POH (Pinned Object Heap):    {pohMb:0.0} MB");
-            sb.AppendLine($"  [WPF Runtime]");
-            sb.AppendLine($"    Loaded Windows Count:        {windowCount}");
-            sb.AppendLine($"==================================================================================");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    Total Heap Size:             {heapSizeMb:0.0} MB");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    Heap Fragmentation:          {fragmentedMb:0.0} MB ({fragPercent:0.0}%)");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    Gen 0: {gen0Mb:0.0} MB  (Collections: {gen0Collections})");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    Gen 1: {gen1Mb:0.0} MB  (Collections: {gen1Collections})");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    Gen 2: {gen2Mb:0.0} MB  (Collections: {gen2Collections})");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    LOH (Large Object Heap):     {lohMb:0.0} MB");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    POH (Pinned Object Heap):    {pohMb:0.0} MB");
+            sb.AppendLine("  [WPF Runtime]");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"    Loaded Windows Count:        {windowCount}");
+            sb.AppendLine("==================================================================================");
 
             Logger.Information(
                 "[SNAPSHOT] {Trigger} | WS: {WorkingSetMb:0.0} MB | Priv: {PrivateBytesMb:0.0} MB | Heap: {HeapSizeMb:0.0} MB | GDI/USER: {GdiCount}/{UserCount} | Handles: {HandleCount}\n{SnapshotText}",

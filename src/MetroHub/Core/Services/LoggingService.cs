@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using Serilog;
 using Serilog.Events;
@@ -44,7 +45,8 @@ public static class LoggingService
                     .MinimumLevel.Override("System", LogEventLevel.Warning)
                     .Enrich.FromLogContext()
                     .WriteTo.Debug(
-                        outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+                        outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
+                        formatProvider: CultureInfo.InvariantCulture)
                     .WriteTo.File(
                         path: logFilePathPattern,
                         rollingInterval: RollingInterval.Day,
@@ -52,10 +54,12 @@ public static class LoggingService
                         fileSizeLimitBytes: 15 * 1024 * 1024,
                         rollOnFileSizeLimit: true,
                         buffered: true,
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
+                        formatProvider: CultureInfo.InvariantCulture)
                     .WriteTo.Seq(
                         serverUrl: "http://localhost:5341",
-                        period: TimeSpan.FromSeconds(2));
+                        period: TimeSpan.FromSeconds(2),
+                        formatProvider: CultureInfo.InvariantCulture);
 
                 Log.Logger = logConfig.CreateLogger();
                 _initialized = true;

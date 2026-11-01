@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Management;
 using System.Runtime.InteropServices;
@@ -437,7 +438,7 @@ public sealed class MonitorBrightnessService : IDisposable
 
                     string instanceName = obj["InstanceName"]?.ToString() ?? string.Empty;
                     var curObj = obj["CurrentBrightness"];
-                    uint cur = curObj != null ? Convert.ToUInt32(curObj) : 50u;
+                    uint cur = curObj != null ? Convert.ToUInt32(curObj, CultureInfo.InvariantCulture) : 50u;
 
                     // Match deterministic name from WmiMonitorID via InstanceName or device prefix
                     string? name = null;

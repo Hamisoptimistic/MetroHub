@@ -212,7 +212,7 @@ public sealed partial class StreamUrlProbeService : IDisposable
                             if (scRes.IsSuccessStatusCode)
                             {
                                 string? scType = scRes.Content.Headers.ContentType?.MediaType?.ToLowerInvariant();
-                                if (scType != null && (scType.StartsWith("audio/") || scType == "application/ogg" || scType == "application/octet-stream"))
+                                if (scType != null && (scType.StartsWith("audio/", StringComparison.OrdinalIgnoreCase) || scType == "application/ogg" || scType == "application/octet-stream"))
                                 {
                                     string scName = GetHeader(scRes, "icy-name") ?? InferStationNameFromUri(uri);
                                     string? scBr = GetHeader(scRes, "icy-br");

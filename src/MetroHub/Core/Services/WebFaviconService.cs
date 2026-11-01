@@ -80,7 +80,7 @@ public static partial class WebFaviconService
         if (Uri.TryCreate(trimmed, UriKind.Absolute, out Uri? uri))
         {
             string host = uri.Host.ToLowerInvariant().TrimEnd('.');
-            if (host.StartsWith("www.") && host.Length > 4)
+            if (host.StartsWith("www.", StringComparison.Ordinal) && host.Length > 4)
             {
                 host = host.Substring(4);
             }
@@ -106,7 +106,7 @@ public static partial class WebFaviconService
         if (Uri.TryCreate(normalized, UriKind.Absolute, out Uri? uri))
         {
             string host = uri.Host.ToLowerInvariant().TrimEnd('.');
-            if (host.StartsWith("www."))
+            if (host.StartsWith("www.", StringComparison.Ordinal))
             {
                 host = host.Length > 4 ? host.Substring(4) : string.Empty;
             }
@@ -167,7 +167,7 @@ public static partial class WebFaviconService
         }
 
         string host = uri.Host.ToLowerInvariant().TrimEnd('.');
-        if (host.StartsWith("www.") && host.Length > 4)
+        if (host.StartsWith("www.", StringComparison.Ordinal) && host.Length > 4)
         {
             host = host.Substring(4);
         }
@@ -215,7 +215,7 @@ public static partial class WebFaviconService
         }
 
         string host = uri.Host.ToLowerInvariant().TrimEnd('.');
-        if (host.StartsWith("www.") && host.Length > 4)
+        if (host.StartsWith("www.", StringComparison.Ordinal) && host.Length > 4)
         {
             host = host.Substring(4);
         }
@@ -564,8 +564,8 @@ public static partial class WebFaviconService
         // Host redirect check: if redirected to another host (e.g. login portal), discard
         string requestedHost = requestedUri.Host.ToLowerInvariant().TrimEnd('.');
         string finalHost = (response.RequestMessage?.RequestUri?.Host ?? requestedHost).ToLowerInvariant().TrimEnd('.');
-        string reqNoWww = requestedHost.StartsWith("www.") ? requestedHost[4..] : requestedHost;
-        string finalNoWww = finalHost.StartsWith("www.") ? finalHost[4..] : finalHost;
+        string reqNoWww = requestedHost.StartsWith("www.", StringComparison.Ordinal) ? requestedHost[4..] : requestedHost;
+        string finalNoWww = finalHost.StartsWith("www.", StringComparison.Ordinal) ? finalHost[4..] : finalHost;
         if (!string.Equals(reqNoWww, finalNoWww, StringComparison.OrdinalIgnoreCase))
         {
             return null;

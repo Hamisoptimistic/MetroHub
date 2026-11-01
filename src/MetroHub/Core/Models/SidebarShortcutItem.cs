@@ -218,7 +218,7 @@ public sealed class SidebarShortcutItem : INotifyPropertyChanged
             return "Desktop24";
 
         // Root Drives (C:\, D:\, etc.)
-        if (nameOrPath.EndsWith(":\\") || nameOrPath.EndsWith(':') || name.Contains("drive") || name.Contains("disk"))
+        if (nameOrPath.EndsWith(":\\", StringComparison.Ordinal) || nameOrPath.EndsWith(':') || name.Contains("drive") || name.Contains("disk"))
             return "Storage24";
 
         // Archives / Zip / Backups / ISO

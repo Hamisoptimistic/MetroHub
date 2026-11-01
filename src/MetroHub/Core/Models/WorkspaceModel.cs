@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
@@ -97,7 +98,7 @@ public sealed class WorkspaceModel : INotifyPropertyChanged
     public ObservableCollection<TileGroupModel> Groups { get; } = new();
 
     [JsonIgnore]
-    public string DisplayGlyph => (Order + 1).ToString();
+    public string DisplayGlyph => (Order + 1).ToString(CultureInfo.InvariantCulture);
 
     [JsonIgnore]
     public string TooltipText => $"{Name} (Ctrl+Shift+{Math.Min(Order + 1, 9)})";
