@@ -127,7 +127,7 @@
         <StackPanel Grid.Row="0"
                     Orientation="Horizontal"
                     HorizontalAlignment="Center"
-                    Margin="20,10,20,6">
+                    Margin="20,6,20,6">
             <!-- Numbered List (Clean 1 2 3 glyph sized to match) -->
             <Button Style="{StaticResource WidgetMicroButtonStyle}"
                     Width="34" Height="32"
