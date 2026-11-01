@@ -243,7 +243,7 @@ public sealed class NightLightService : IDisposable
         catch { }
         finally
         {
-            if (hdc != IntPtr.Zero) ReleaseDC(IntPtr.Zero, hdc);
+            if (hdc != IntPtr.Zero) _ = ReleaseDC(IntPtr.Zero, hdc);
         }
 
         return RAMP.CreateLinear();
@@ -265,7 +265,7 @@ public sealed class NightLightService : IDisposable
         }
         finally
         {
-            if (hdc != IntPtr.Zero) ReleaseDC(IntPtr.Zero, hdc);
+            if (hdc != IntPtr.Zero) _ = ReleaseDC(IntPtr.Zero, hdc);
         }
     }
 
@@ -485,7 +485,7 @@ public sealed class NightLightService : IDisposable
                 }
                 finally
                 {
-                    ReleaseDC(IntPtr.Zero, hdc);
+                    _ = ReleaseDC(IntPtr.Zero, hdc);
                 }
             }
         }

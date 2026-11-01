@@ -19,6 +19,7 @@ namespace MetroHub.Presentation.Controls;
 /// Dedicated dialog for searching, previewing, and setting weather location coordinates.
 /// Inherits from MetroDialog for automatic acrylic backdrop, window dragging, and styling.
 /// </summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF Window lifecycle manages disposable fields via OnClosed.")]
 public partial class WeatherLocationDialog : MetroDialog
 {
     private WeatherWidgetViewModel? _weatherVm;
@@ -323,5 +324,11 @@ public partial class WeatherLocationDialog : MetroDialog
         };
         dlg.Setup(weatherVm);
         return dlg.ShowDialog() == true;
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        CancelPendingSearch();
+        base.OnClosed(e);
     }
 }

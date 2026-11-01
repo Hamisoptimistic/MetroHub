@@ -24,6 +24,7 @@ public record WidgetDefinition(
 {
     public WidgetSize InitialSize => DefaultSize ?? (AllowedSizes.Count > 0 ? AllowedSizes[0] : WidgetSize.Medium);
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Factory method creates and transfers ownership of the disposable IWidgetViewModel to caller.")]
     public IWidgetViewModel CreateViewModel(TileModel model)
     {
         return MetroHub.Core.Services.Safe.Try<IWidgetViewModel?>(() =>

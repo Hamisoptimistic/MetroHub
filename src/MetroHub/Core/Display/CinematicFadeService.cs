@@ -249,7 +249,7 @@ public sealed class CinematicFadeService
             if (handle != IntPtr.Zero)
             {
                 int exStyle = GetWindowLong(handle, GWL_EXSTYLE);
-                SetWindowLong(handle, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
+                _ = SetWindowLong(handle, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
             }
         };
 

@@ -66,22 +66,22 @@ public static class NativeMethods
             if (DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkVal, sizeof(int)) != 0)
             {
                 int oldDarkAttr = 19;
-                DwmSetWindowAttribute(hwnd, oldDarkAttr, ref darkVal, sizeof(int));
+                _ = DwmSetWindowAttribute(hwnd, oldDarkAttr, ref darkVal, sizeof(int));
             }
 
             // Apply corner preference (e.g. sharp or rounded) if explicitly specified
             if (cornerPreference != DWMWCP_DEFAULT)
             {
                 int cornerVal = cornerPreference;
-                DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerVal, sizeof(int));
+                _ = DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerVal, sizeof(int));
             }
 
             // Suppress the 1px DWM window border completely (DWMWA_COLOR_NONE = 0xFFFFFFFE)
             int borderVal = DWMWA_COLOR_NONE;
-            DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, ref borderVal, sizeof(int));
+            _ = DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, ref borderVal, sizeof(int));
 
             MARGINS margins = new MARGINS(-1, -1, -1, -1);
-            DwmExtendFrameIntoClientArea(hwnd, ref margins);
+            _ = DwmExtendFrameIntoClientArea(hwnd, ref margins);
 
             int backdropVal = backdrop;
             int res = DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref backdropVal, sizeof(int));
@@ -89,7 +89,7 @@ public static class NativeMethods
             {
                 // Fallback for Windows 11 Build 22000 (21H2)
                 int trueVal = 1;
-                DwmSetWindowAttribute(hwnd, 1029, ref trueVal, sizeof(int));
+                _ = DwmSetWindowAttribute(hwnd, 1029, ref trueVal, sizeof(int));
             }
 
             // Inform DWM that the non-client frame and backdrop metrics have changed.

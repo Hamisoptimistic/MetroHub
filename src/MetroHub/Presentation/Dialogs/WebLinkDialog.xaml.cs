@@ -14,6 +14,7 @@ namespace MetroHub.Presentation.Dialogs;
 /// Dedicated dialog for adding web link shortcuts to the canvas and/or sidebar rail.
 /// Inherits from MetroDialog for automatic acrylic backdrop, window dragging, and styling.
 /// </summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF Window lifecycle manages disposable fields via OnClosed.")]
 public partial class WebLinkDialog : MetroDialog
 {
     private CancellationTokenSource? _debounceCts;
@@ -614,6 +615,19 @@ public partial class WebLinkDialog : MetroDialog
         };
         dlg.SetupEdit(initialUrl, initialTitle, initialIconPath);
         return dlg.ShowDialog() == true ? dlg.WebLinkResult : null;
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+        _debounceCts = null;
+
+        _cycleCts?.Cancel();
+        _cycleCts?.Dispose();
+        _cycleCts = null;
+
+        base.OnClosed(e);
     }
 }
 

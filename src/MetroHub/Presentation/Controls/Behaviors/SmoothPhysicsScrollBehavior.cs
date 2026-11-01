@@ -139,6 +139,7 @@ public static class SmoothPhysicsScrollBehavior
         }
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "PhysicsScrollController lifetime is managed by ScrollViewer via ControllerProperty.")]
     private static void ApplyToScrollViewer(ScrollViewer sv, bool isEnabled)
     {
         if (isEnabled)

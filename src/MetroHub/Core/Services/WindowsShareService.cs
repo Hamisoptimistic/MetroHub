@@ -255,7 +255,7 @@ public static class WindowsShareService
             }
             finally
             {
-                WindowsDeleteString(hstring);
+                _ = WindowsDeleteString(hstring);
             }
         }
     }

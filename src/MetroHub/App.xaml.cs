@@ -10,6 +10,7 @@ using MetroHub.Presentation.Controllers;
 
 namespace MetroHub;
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF Application lifecycle manages disposable fields via OnExit.")]
 public partial class App : Application
 {
     public const string AppUserModelId = "MetroHub.Launcher";
@@ -84,7 +85,7 @@ public partial class App : Application
         NativeMethods.SetDefaultDllDirectories(NativeMethods.LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 
         // Register explicit AppUserModelID for clean Taskbar grouping and Action Center notification identity
-        NativeMethods.SetCurrentProcessExplicitAppUserModelID(AppUserModelId);
+        _ = NativeMethods.SetCurrentProcessExplicitAppUserModelID(AppUserModelId);
 
         // Initialize centralized Serilog logging pipeline
         LoggingService.Initialize();

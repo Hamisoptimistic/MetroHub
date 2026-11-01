@@ -7,6 +7,7 @@ public sealed class HotkeyService : IDisposable
 {
     private const int HotkeyId = 9001;
     private IntPtr _windowHandle;
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:DisposableFieldsShouldBeDisposed", Justification = "HwndSource is retrieved via FromHwnd; lifetime is owned by the WPF Window.")]
     private HwndSource? _hwndSource;
     private bool _isRegistered;
 

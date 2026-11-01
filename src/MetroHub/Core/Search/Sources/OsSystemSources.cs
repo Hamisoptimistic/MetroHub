@@ -59,7 +59,7 @@ public static class RunningSnapshot
         var list = new List<WindowSnapshotEntry>();
         var titleBuffer = new StringBuilder(512);
 
-        NativeMethodsSearch.EnumWindows((hwnd, _) =>
+        NativeMethodsSearch.EnumWindows((hwnd, lParam) =>
         {
             if (!NativeMethods.IsWindowVisible(hwnd)) return true;
 
@@ -86,7 +86,7 @@ public static class RunningSnapshot
             string title = titleBuffer.ToString().Trim();
             if (string.IsNullOrEmpty(title) || title == "Program Manager" || title == "MetroHub") return true;
 
-            NativeMethods.GetWindowThreadProcessId(hwnd, out uint pid);
+            _ = NativeMethods.GetWindowThreadProcessId(hwnd, out uint pid);
             string procName = string.Empty;
             try
             {

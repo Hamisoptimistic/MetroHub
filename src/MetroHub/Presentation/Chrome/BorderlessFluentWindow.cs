@@ -80,7 +80,7 @@ public class BorderlessFluentWindow : FluentWindow
             if (EnableToolWindowStyle)
             {
                 int exStyle = NativeMethods.GetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE);
-                NativeMethods.SetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE, (exStyle | NativeMethods.WS_EX_TOOLWINDOW) & ~NativeMethods.WS_EX_APPWINDOW);
+                _ = NativeMethods.SetWindowLong(hwnd, NativeMethods.GWL_EXSTYLE, (exStyle | NativeMethods.WS_EX_TOOLWINDOW) & ~NativeMethods.WS_EX_APPWINDOW);
             }
         }
 
@@ -170,14 +170,14 @@ public class BorderlessFluentWindow : FluentWindow
             WindowCornerPreference.RoundSmall => NativeMethods.DWMWCP_ROUNDSMALL,
             _ => NativeMethods.DWMWCP_DONOTROUND
         };
-        NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerVal, sizeof(int));
+        _ = NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerVal, sizeof(int));
 
         // 2. Suppress 1px DWM window border completely (DWMWA_COLOR_NONE = 0xFFFFFFFE)
         int borderVal = NativeMethods.DWMWA_COLOR_NONE;
-        NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_BORDER_COLOR, ref borderVal, sizeof(int));
+        _ = NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_BORDER_COLOR, ref borderVal, sizeof(int));
 
         // 3. Forcibly disable OS window animations/transitions (prevents Windows 11 DWM entrance/exit animation lag)
         int disableTransitions = 1;
-        NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_TRANSITIONS_FORCEDISABLED, ref disableTransitions, sizeof(int));
+        _ = NativeMethods.DwmSetWindowAttribute(hwnd, NativeMethods.DWMWA_TRANSITIONS_FORCEDISABLED, ref disableTransitions, sizeof(int));
     }
 }

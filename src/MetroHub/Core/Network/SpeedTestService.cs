@@ -14,6 +14,7 @@ public sealed class SpeedTestService
 {
     private static readonly HttpClient HttpClient;
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "SocketsHttpHandler lifetime is transferred to static HttpClient.")]
     static SpeedTestService()
     {
         var handler = new SocketsHttpHandler
@@ -25,7 +26,7 @@ public sealed class SpeedTestService
             ConnectTimeout = TimeSpan.FromSeconds(6)
         };
 
-        HttpClient = new HttpClient(handler)
+        HttpClient = new HttpClient(handler, disposeHandler: true)
         {
             Timeout = TimeSpan.FromMinutes(2)
         };

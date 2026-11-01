@@ -209,7 +209,9 @@ public partial class PhysicalAdapterItemViewModel : ObservableObject
 public sealed partial class NetworkWidgetViewModel : WidgetViewModelBase
 {
     private readonly EthernetProvider _ethernetProvider = EthernetProvider.Instance;
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:DisposableFieldsShouldBeDisposed", Justification = "Shared singleton instance; lifetime managed at application shutdown.")]
     private readonly NativeWifiService _wifiService = NativeWifiService.Instance;
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2213:DisposableFieldsShouldBeDisposed", Justification = "Shared singleton instance; lifetime managed at application shutdown.")]
     private readonly ThroughputService _throughputService = ThroughputService.Instance;
     private readonly DisconnectService _disconnectService = DisconnectService.Instance;
     private readonly NetworkHealthService _healthService = NetworkHealthService.Instance;

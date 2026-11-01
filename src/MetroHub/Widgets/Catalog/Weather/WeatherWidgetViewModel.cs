@@ -560,6 +560,8 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
         {
             Model.PropertyChanged -= OnModelPropertyChanged;
             Pause();
+            _cts?.Dispose();
+            _cts = null;
         }
         base.Dispose(disposing);
     }

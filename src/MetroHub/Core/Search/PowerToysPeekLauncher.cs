@@ -353,7 +353,7 @@ public static class PowerToysPeekLauncher
 
         if (processId == 0 && hwnd != IntPtr.Zero)
         {
-            NativeMethods.GetWindowThreadProcessId(hwnd, out processId);
+            _ = NativeMethods.GetWindowThreadProcessId(hwnd, out processId);
         }
 
         if (processId == 0 || processId == (uint)Environment.ProcessId)

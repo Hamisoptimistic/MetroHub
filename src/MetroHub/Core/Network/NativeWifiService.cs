@@ -416,7 +416,7 @@ public sealed class NativeWifiService : IDisposable
         {
             try
             {
-                WlanNative.WlanScan(_clientHandle, ref _primaryInterfaceGuid, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+                _ = WlanNative.WlanScan(_clientHandle, ref _primaryInterfaceGuid, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
             }
             catch { }
         }
@@ -922,7 +922,7 @@ public sealed class NativeWifiService : IDisposable
     {
         if (_clientHandle != IntPtr.Zero)
         {
-            WlanNative.WlanCloseHandle(_clientHandle, IntPtr.Zero);
+            _ = WlanNative.WlanCloseHandle(_clientHandle, IntPtr.Zero);
             _clientHandle = IntPtr.Zero;
         }
     }

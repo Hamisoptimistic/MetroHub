@@ -21,6 +21,7 @@ namespace MetroHub.Presentation.Controls;
 /// <summary>
 /// Dedicated modal dialog for searching and adding online radio stations or direct stream URLs.
 /// </summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF Window lifecycle manages disposable fields via OnDialogClosed.")]
 public partial class RadioStationDialog : MetroDialog
 {
     private RadioStation? _radioStationResult;
@@ -54,6 +55,8 @@ public partial class RadioStationDialog : MetroDialog
     private void OnDialogClosed(object? sender, EventArgs e)
     {
         RadioCatalogService.Instance.CatalogChanged -= OnCatalogChanged;
+        CancelPendingSearch();
+        CancelPendingProbe();
     }
 
     private void OnWindowIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)

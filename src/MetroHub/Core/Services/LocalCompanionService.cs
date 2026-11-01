@@ -353,6 +353,7 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
     /// Starts the loopback HTTP companion listener.
     /// Probes sequential ports from BasePort (48842) to MaxPort (48846) until binding succeeds.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "HttpListener ownership is transferred to _listener field, which is disposed on shutdown in StopAsync.")]
     public Task StartAsync(int? preferredPort = null, CancellationToken ct = default)
     {
         lock (_lock)
@@ -369,6 +370,7 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
             {
                 var listener = new HttpListener();
                 listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+                bool success = false;
 
                 try
                 {
@@ -379,12 +381,21 @@ public sealed class LocalCompanionService : IDisposable, IAsyncDisposable
                     _listenTask = Task.Run(() => ListenLoopAsync(_cts.Token), CancellationToken.None);
 
                     Serilog.Log.Information("[LocalCompanionService] Listening on http://127.0.0.1:{Port}/", port);
+                    success = true;
                     return Task.CompletedTask;
                 }
                 catch (HttpListenerException ex)
                 {
-                    try { listener.Close(); } catch { }
                     Serilog.Log.Warning(ex, "[LocalCompanionService] Port {Port} unavailable: {Message}", port, ex.Message);
+
+                }
+                finally
+                {
+                    if (!success)
+                    {
+                        try { listener.Close(); } catch { }
+                    }
+
                 }
             }
 

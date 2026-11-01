@@ -105,6 +105,9 @@ public sealed class ThroughputService : IDisposable
             _throughputTimer = null;
             _latencyTimer?.Dispose();
             _latencyTimer = null;
+            _latencyCts?.Cancel();
+            _latencyCts?.Dispose();
+            _latencyCts = null;
         }
     }
 

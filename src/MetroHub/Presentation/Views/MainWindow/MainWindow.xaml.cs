@@ -610,7 +610,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         uint foreProcessId = 0;
         if (foreHwnd != IntPtr.Zero)
         {
-            NativeMethods.GetWindowThreadProcessId(foreHwnd, out foreProcessId);
+            _ = NativeMethods.GetWindowThreadProcessId(foreHwnd, out foreProcessId);
         }
 
         // If focus shifted internally to one of our own windows (like a MetroDialog or SettingsWindow), do not dismiss
@@ -759,7 +759,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
         // Check if the foreground window belongs to an external process (taskbar, clock, other app, desktop)
         uint currentProcessId = (uint)Environment.ProcessId;
-        NativeMethods.GetWindowThreadProcessId(hwnd, out uint foreProcessId);
+        _ = NativeMethods.GetWindowThreadProcessId(hwnd, out uint foreProcessId);
 
         if (foreProcessId != 0 && foreProcessId != currentProcessId)
         {
@@ -1007,7 +1007,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         }
         else if (msg == NativeMethods.WM_SHNOTIFY || msg == WM_SETTINGCHANGE)
         {
-            if (msg == WM_SETTINGCHANGE && ((int)wParam == SPI_SETWORKAREA || lParam == IntPtr.Zero))
+            if (msg == WM_SETTINGCHANGE && (wParam.ToInt32() == SPI_SETWORKAREA || lParam == IntPtr.Zero))
             {
                 _cachedWorkArea = Rect.Empty;
                 SnapToWorkArea(force: true);
@@ -1188,7 +1188,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         IntPtr myHwnd = new WindowInteropHelper(this).Handle;
         if (foreHwnd != IntPtr.Zero && foreHwnd != myHwnd)
         {
-            NativeMethods.GetWindowThreadProcessId(foreHwnd, out uint forePid);
+            _ = NativeMethods.GetWindowThreadProcessId(foreHwnd, out uint forePid);
             if (forePid != (uint)Environment.ProcessId)
             {
                 _previousForegroundWindow = foreHwnd;

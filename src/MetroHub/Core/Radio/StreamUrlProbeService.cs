@@ -30,7 +30,7 @@ public sealed record StreamProbeResult(
 /// Detects direct Icecast/Shoutcast audio streams, unwraps single-station .pls/.m3u playlists,
 /// rejects HTML webpages, and guards against massive multi-channel IPTV lists.
 /// </summary>
-public sealed partial class StreamUrlProbeService
+public sealed partial class StreamUrlProbeService : IDisposable
 {
     private static readonly Lazy<StreamUrlProbeService> _lazyInstance = new(() => new StreamUrlProbeService());
     public static StreamUrlProbeService Instance => _lazyInstance.Value;
@@ -60,31 +60,37 @@ public sealed partial class StreamUrlProbeService
     private static partial Regex BitrateSuffixStripRegex();
 
     private readonly HttpClient _httpClient;
+    private readonly bool _ownsHttpClient;
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "SocketsHttpHandler ownership transferred to HttpClient with disposeHandler: true.")]
     public StreamUrlProbeService(HttpClient? httpClient = null)
     {
         if (httpClient != null)
         {
             _httpClient = httpClient;
+            _ownsHttpClient = false;
         }
         else
         {
-            var handler = new SocketsHttpHandler
-            {
-                PooledConnectionLifetime = TimeSpan.FromMinutes(15),
-                AutomaticDecompression = System.Net.DecompressionMethods.All,
-                ConnectTimeout = TimeSpan.FromSeconds(4),
-                SslOptions = new SslClientAuthenticationOptions
-                {
-                    RemoteCertificateValidationCallback = (_, _, _, _) => true
-                }
-            };
-
+            _ownsHttpClient = true;
+            var handler = CreateDefaultHandler();
             _httpClient = new HttpClient(handler, disposeHandler: true);
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) MetroHub/1.0");
             _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Icy-MetaData", "1");
         }
     }
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "SocketsHttpHandler ownership transferred to HttpClient with disposeHandler: true.")]
+    private static SocketsHttpHandler CreateDefaultHandler() => new()
+    {
+        PooledConnectionLifetime = TimeSpan.FromMinutes(15),
+        AutomaticDecompression = System.Net.DecompressionMethods.All,
+        ConnectTimeout = TimeSpan.FromSeconds(4),
+        SslOptions = new SslClientAuthenticationOptions
+        {
+            RemoteCertificateValidationCallback = (_, _, _, _) => true
+        }
+    };
 
     /// <summary>
     /// Sanitizes and probes a stream URL.
@@ -164,7 +170,7 @@ public sealed partial class StreamUrlProbeService
             // 2. Fall back to GET with byte range (Range: bytes=0-4095)
             if (!headSucceeded || response == null)
             {
-                var getReq = new HttpRequestMessage(HttpMethod.Get, uri);
+                using var getReq = new HttpRequestMessage(HttpMethod.Get, uri);
                 getReq.Headers.Range = new RangeHeaderValue(0, 4095);
                 getReq.Headers.TryAddWithoutValidation("Icy-MetaData", "1");
                 response = await _httpClient.SendAsync(getReq, HttpCompletionOption.ResponseHeadersRead, linkedCts.Token).ConfigureAwait(false);
@@ -620,5 +626,13 @@ public sealed partial class StreamUrlProbeService
         if (string.IsNullOrWhiteSpace(text)) return text;
         var parts = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return string.Join(" ", parts.Select(p => p.Length > 1 ? char.ToUpperInvariant(p[0]) + p[1..] : p.ToUpperInvariant()));
+    }
+
+    public void Dispose()
+    {
+        if (_ownsHttpClient)
+        {
+            _httpClient.Dispose();
+        }
     }
 }
