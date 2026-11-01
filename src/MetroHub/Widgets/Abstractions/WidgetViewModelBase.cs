@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System;
 using System.Collections.Generic;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -74,6 +75,7 @@ public abstract partial class WidgetViewModelBase : ObservableRecipient, IWidget
     /// <summary>
     /// Lifecycle hook: resume timers/polling when MetroHub is visible.
     /// </summary>
+    [SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Standard widget lifecycle contract")]
     public virtual void Resume() { }
 
     /// <summary>

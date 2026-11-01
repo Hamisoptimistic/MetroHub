@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -34,12 +35,14 @@ public interface IRadioAudioService : IDisposable
     void Pause();
 
     /// <summary>Resumes the current station live stream.</summary>
+    [SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Standard audio playback API contract")]
     void Resume();
 
     /// <summary>Toggles between Play and Pause.</summary>
     void TogglePlayPause();
 
     /// <summary>Stops playback and clears current station.</summary>
+    [SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Standard audio playback API contract")]
     void Stop();
 
     /// <summary>Sets the audio volume level (0.0 to 1.0).</summary>

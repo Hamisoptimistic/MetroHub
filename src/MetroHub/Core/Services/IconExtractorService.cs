@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Diagnostics.CodeAnalysis;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -27,7 +28,7 @@ public static class IconExtractorService
     private static readonly Guid IID_IShellItemImageFactory = new Guid("bcc18b79-ba16-442f-80c4-8a59c30c463b");
 
     [StructLayout(LayoutKind.Sequential)]
-    public struct SIZE
+    internal struct SIZE
     {
         public int cx;
         public int cy;
@@ -35,7 +36,8 @@ public static class IconExtractorService
     }
 
     [Flags]
-    public enum SIIGBF
+    [SuppressMessage("Naming", "CA1712:Do not prefix enum values with type name", Justification = "Preserves Windows Shell IShellItemImageFactory header enum names")]
+    internal enum SIIGBF
     {
         SIIGBF_RESIZETOFIT = 0x00,
         SIIGBF_BIGGERSIZEOK = 0x01,
@@ -48,7 +50,7 @@ public static class IconExtractorService
     [ComImport]
     [Guid("bcc18b79-ba16-442f-80c4-8a59c30c463b")]
     [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    public interface IShellItemImageFactory
+    internal interface IShellItemImageFactory
     {
         [PreserveSig]
         int GetImage(
@@ -58,28 +60,34 @@ public static class IconExtractorService
     }
 
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern int SHCreateItemFromParsingName(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int SHCreateItemFromParsingName(
         [MarshalAs(UnmanagedType.LPWStr)] string pszPath,
         IntPtr pbc,
         ref Guid riid,
         [MarshalAs(UnmanagedType.Interface)] out IShellItemImageFactory ppv);
 
     [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool DestroyIcon(IntPtr hIcon);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern bool DestroyIcon(IntPtr hIcon);
 
     [DllImport("gdi32.dll", SetLastError = true)]
-    public static extern bool DeleteObject(IntPtr hObject);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern bool DeleteObject(IntPtr hObject);
 
-    [DllImport("user32.dll", CharSet = CharSet.Auto)]
-    public static extern uint PrivateExtractIcons(
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "PrivateExtractIconsW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern uint PrivateExtractIcons(
         string lpszFile, int nIconIndex, int cxIcon, int cyIcon,
         IntPtr[] phicon, IntPtr[] piconid, uint nIcons, uint flags);
 
     [DllImport("shell32.dll", CharSet = CharSet.Auto)]
-    public static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
+    [SuppressMessage("Globalization", "CA2101:Specify marshaling for P/Invoke string arguments", Justification = "Win32 SHGetFileInfo requires Auto charset for system image list compatibility")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    public struct SHFILEINFO
+    internal struct SHFILEINFO
     {
         public IntPtr hIcon;
         public int iIcon;
@@ -171,13 +179,16 @@ public static class IconExtractorService
     public static void ClearPerFileCache() => _perFileIconCache.Clear();
 
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern int SHGetKnownFolderPath(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int SHGetKnownFolderPath(
         [MarshalAs(UnmanagedType.LPStruct)] Guid rfid,
         uint dwFlags,
         IntPtr hToken,
         out IntPtr ppszPath);
 
     [DllImport("shlwapi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [SuppressMessage("Performance", "CA1838:Avoid using StringBuilder for P/Invokes", Justification = "Win32 AssocQueryString buffer requirement")]
     private static extern int AssocQueryString(
         uint flags,
         uint str,

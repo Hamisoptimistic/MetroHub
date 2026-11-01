@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -25,24 +26,30 @@ internal static class NativeMethodsSearch
     /// Empties the Windows Recycle Bin on all drives or a specific root.
     /// </summary>
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern int SHEmptyRecycleBin(IntPtr hwnd, string? pszRootPath, uint dwFlags);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int SHEmptyRecycleBin(IntPtr hwnd, string? pszRootPath, uint dwFlags);
 
     [DllImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool IsIconic(IntPtr hWnd);
+    internal static extern bool IsIconic(IntPtr hWnd);
 
     [DllImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    internal static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
     public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
     [DllImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+    internal static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
 
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern IntPtr SendMessageTimeout(
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "SendMessageTimeoutW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [SuppressMessage("Performance", "CA1838:Avoid using StringBuilder for P/Invokes", Justification = "Win32 WM_GETTEXT buffer requirement")]
+    internal static extern IntPtr SendMessageTimeout(
         IntPtr hWnd,
         uint msg,
         IntPtr wParam,
@@ -52,22 +59,27 @@ internal static class NativeMethodsSearch
         out IntPtr result);
 
     [DllImport("dwmapi.dll")]
-    public static extern int DwmGetWindowAttribute(IntPtr hwnd, int attr, out int attrValue, int attrSize);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int DwmGetWindowAttribute(IntPtr hwnd, int attr, out int attrValue, int attrSize);
 
     [DllImport("user32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool AddClipboardFormatListener(IntPtr hwnd);
+    internal static extern bool AddClipboardFormatListener(IntPtr hwnd);
 
     [DllImport("user32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool RemoveClipboardFormatListener(IntPtr hwnd);
+    internal static extern bool RemoveClipboardFormatListener(IntPtr hwnd);
 
     [DllImport("user32.dll")]
-    public static extern uint GetClipboardSequenceNumber();
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern uint GetClipboardSequenceNumber();
 
     public const uint SHCNE_ASSOCCHANGED = 0x08000000;
     public const uint SHCNF_IDLIST = 0x0000;
 
     [DllImport("shell32.dll")]
-    public static extern void SHChangeNotify(uint wEventId, uint uFlags, IntPtr dwItem1, IntPtr dwItem2);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern void SHChangeNotify(uint wEventId, uint uFlags, IntPtr dwItem1, IntPtr dwItem2);
 }

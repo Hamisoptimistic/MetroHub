@@ -1,8 +1,11 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace MetroHub.Core.Network.Interop;
 
+[SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Justification = "Windows Native API definitions")]
+[SuppressMessage("Naming", "CA1712:Do not prefix enum values with type name", Justification = "Windows Native API definitions")]
 public static class WlanNative
 {
     private const string WlanApi = "wlanapi.dll";
@@ -60,6 +63,7 @@ public static class WlanNative
         wlan_connection_mode_invalid
     }
 
+    [SuppressMessage("Design", "CA1069:Enums should not have duplicate values", Justification = "Preserves Windows SDK aliases")]
     public enum DOT11_PHY_TYPE : uint
     {
         dot11_phy_type_unknown = 0,
@@ -76,6 +80,7 @@ public static class WlanNative
         dot11_phy_type_eht = 10 // 802.11be (Wi-Fi 7)
     }
 
+    [SuppressMessage("Design", "CA1069:Enums should not have duplicate values", Justification = "Preserves Windows SDK aliases")]
     public enum DOT11_AUTH_ALGORITHM : uint
     {
         DOT11_AUTH_ALGO_80211_OPEN = 1,
@@ -214,25 +219,29 @@ public static class WlanNative
     }
 
     [DllImport(WlanApi, SetLastError = true)]
-    public static extern int WlanOpenHandle(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int WlanOpenHandle(
         uint dwClientVersion,
         IntPtr pReserved,
         out uint pdwNegotiatedVersion,
         out IntPtr phClientHandle);
 
     [DllImport(WlanApi, SetLastError = true)]
-    public static extern int WlanCloseHandle(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int WlanCloseHandle(
         IntPtr hClientHandle,
         IntPtr pReserved);
 
     [DllImport(WlanApi, SetLastError = true)]
-    public static extern int WlanEnumInterfaces(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int WlanEnumInterfaces(
         IntPtr hClientHandle,
         IntPtr pReserved,
         out IntPtr ppInterfaceList);
 
     [DllImport(WlanApi, SetLastError = true)]
-    public static extern int WlanScan(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int WlanScan(
         IntPtr hClientHandle,
         ref Guid pInterfaceGuid,
         IntPtr pDot11Ssid,
@@ -240,7 +249,8 @@ public static class WlanNative
         IntPtr pReserved);
 
     [DllImport(WlanApi, SetLastError = true)]
-    public static extern int WlanGetAvailableNetworkList(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int WlanGetAvailableNetworkList(
         IntPtr hClientHandle,
         ref Guid pInterfaceGuid,
         uint dwFlags,
@@ -248,7 +258,8 @@ public static class WlanNative
         out IntPtr ppAvailableNetworkList);
 
     [DllImport(WlanApi, SetLastError = true)]
-    public static extern int WlanQueryInterface(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int WlanQueryInterface(
         IntPtr hClientHandle,
         ref Guid pInterfaceGuid,
         WLAN_INTF_OPCODE OpCode,
@@ -258,20 +269,23 @@ public static class WlanNative
         out int pWlanOpcodeValueType);
 
     [DllImport(WlanApi, SetLastError = true)]
-    public static extern int WlanDisconnect(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int WlanDisconnect(
         IntPtr hClientHandle,
         ref Guid pInterfaceGuid,
         IntPtr pReserved);
 
     [DllImport(WlanApi, SetLastError = true)]
-    public static extern int WlanConnect(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int WlanConnect(
         IntPtr hClientHandle,
         ref Guid pInterfaceGuid,
         ref WLAN_CONNECTION_PARAMETERS pConnectionParameters,
         IntPtr pReserved);
 
     [DllImport(WlanApi, SetLastError = true)]
-    public static extern int WlanSetInterface(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int WlanSetInterface(
         IntPtr hClientHandle,
         ref Guid pInterfaceGuid,
         WLAN_INTF_OPCODE OpCode,
@@ -282,7 +296,8 @@ public static class WlanNative
     public const uint WLAN_PROFILE_USER = 0x00000001;
 
     [DllImport(WlanApi, CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern int WlanSetProfile(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int WlanSetProfile(
         IntPtr hClientHandle,
         ref Guid pInterfaceGuid,
         uint dwFlags,
@@ -293,12 +308,14 @@ public static class WlanNative
         out uint pdwReasonCode);
 
     [DllImport(WlanApi, CharSet = CharSet.Unicode, SetLastError = true)]
-    public static extern int WlanDeleteProfile(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int WlanDeleteProfile(
         IntPtr hClientHandle,
         ref Guid pInterfaceGuid,
         [MarshalAs(UnmanagedType.LPWStr)] string strProfileName,
         IntPtr pReserved);
 
     [DllImport(WlanApi)]
-    public static extern void WlanFreeMemory(IntPtr pMemory);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern void WlanFreeMemory(IntPtr pMemory);
 }

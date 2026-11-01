@@ -1,18 +1,23 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+
+[assembly: SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Scope = "namespaceanddescendants", Target = "~N:MetroHub.Core.Audio.Interop", Justification = "Preserves Windows SDK CoreAudio names")]
+[assembly: SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix", Scope = "namespaceanddescendants", Target = "~N:MetroHub.Core.Audio.Interop", Justification = "Preserves Windows SDK CoreAudio names")]
+
 
 namespace MetroHub.Core.Audio.Interop;
 
 #region Enumerations
 
-public enum EDataFlow
+internal enum EDataFlow
 {
     eRender = 0,
     eCapture = 1,
     eAll = 2
 }
 
-public enum ERole
+internal enum ERole
 {
     eConsole = 0,
     eMultimedia = 1,
@@ -20,7 +25,7 @@ public enum ERole
 }
 
 [Flags]
-public enum DeviceState : uint
+internal enum DeviceState : uint
 {
     Active = 0x00000001,
     Disabled = 0x00000002,
@@ -29,21 +34,21 @@ public enum DeviceState : uint
     All = 0x0000000F
 }
 
-public enum StorageAccessMode
+internal enum StorageAccessMode
 {
     Read = 0,
     Write = 1,
     ReadWrite = 2
 }
 
-public enum AudioSessionState
+internal enum AudioSessionState
 {
     Inactive = 0,
     Active = 1,
     Expired = 2
 }
 
-public enum AudioSessionDisconnectReason
+internal enum AudioSessionDisconnectReason
 {
     DisconnectReasonDeviceRemoval = 0,
     DisconnectReasonServerShutdown = 1,
@@ -54,7 +59,7 @@ public enum AudioSessionDisconnectReason
 }
 
 [Flags]
-public enum CLSCTX : uint
+internal enum CLSCTX : uint
 {
     INPROC_SERVER = 0x1,
     INPROC_HANDLER = 0x2,
@@ -79,7 +84,7 @@ public enum CLSCTX : uint
 #region Structures
 
 [StructLayout(LayoutKind.Sequential)]
-public struct PropertyKey
+internal struct PropertyKey
 {
     public Guid fmtid;
     public uint pid;
@@ -92,7 +97,7 @@ public struct PropertyKey
 }
 
 [StructLayout(LayoutKind.Explicit)]
-public struct PropVariant
+internal struct PropVariant
 {
     [FieldOffset(0)] public short vt;
     [FieldOffset(2)] public short wReserved1;
@@ -103,7 +108,7 @@ public struct PropVariant
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct AUDIO_VOLUME_NOTIFICATION_DATA
+internal struct AUDIO_VOLUME_NOTIFICATION_DATA
 {
     public Guid guidEventContext;
     [MarshalAs(UnmanagedType.Bool)]
@@ -119,15 +124,15 @@ public struct AUDIO_VOLUME_NOTIFICATION_DATA
 
 [ComImport]
 [Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")]
-public class MMDeviceEnumeratorComObject { }
+internal class MMDeviceEnumeratorComObject { }
 
 [ComImport]
 [Guid("870AF99C-171D-4F9E-AF0D-E63DF40C2BC9")]
-public class CPolicyConfigVistaClient { }
+internal class CPolicyConfigVistaClient { }
 
 [ComImport]
 [Guid("870AF99C-171D-4F9E-AF0D-E63DF40C2BC9")]
-public class PolicyConfigClient { }
+internal class PolicyConfigClient { }
 
 #endregion
 
@@ -136,7 +141,7 @@ public class PolicyConfigClient { }
 [ComImport]
 [Guid("A95664D2-9614-4F35-A746-DE8DB63617E6")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IMMDeviceEnumerator
+internal interface IMMDeviceEnumerator
 {
     [PreserveSig]
     int EnumAudioEndpoints(EDataFlow dataFlow, DeviceState dwStateMask, out IMMDeviceCollection ppDevices);
@@ -157,7 +162,7 @@ public interface IMMDeviceEnumerator
 [ComImport]
 [Guid("0BD7A1BE-7A1A-44DB-8397-CC5392387B5E")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IMMDeviceCollection
+internal interface IMMDeviceCollection
 {
     [PreserveSig]
     int GetCount(out uint pcDevices);
@@ -169,7 +174,7 @@ public interface IMMDeviceCollection
 [ComImport]
 [Guid("D666063F-1587-4E43-81F1-B948E807363F")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IMMDevice
+internal interface IMMDevice
 {
     [PreserveSig]
     int Activate(ref Guid iid, CLSCTX dwClsCtx, IntPtr pActivationParams, [MarshalAs(UnmanagedType.IUnknown)] out object ppInterface);
@@ -187,7 +192,7 @@ public interface IMMDevice
 [ComImport]
 [Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IPropertyStore
+internal interface IPropertyStore
 {
     [PreserveSig]
     int GetCount(out uint cProps);
@@ -208,7 +213,7 @@ public interface IPropertyStore
 [ComImport]
 [Guid("7991EEC9-7E89-4D85-8390-6C703CEC60C0")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IMMNotificationClient
+internal interface IMMNotificationClient
 {
     [PreserveSig]
     int OnDeviceStateChanged([MarshalAs(UnmanagedType.LPWStr)] string pwstrDeviceId, DeviceState dwNewState);
@@ -229,7 +234,7 @@ public interface IMMNotificationClient
 [ComImport]
 [Guid("5CDF2C82-841E-4546-9722-0CF74078229A")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IAudioEndpointVolume
+internal interface IAudioEndpointVolume
 {
     [PreserveSig]
     int RegisterControlChangeNotify(IAudioEndpointVolumeCallback pNotify);
@@ -289,7 +294,7 @@ public interface IAudioEndpointVolume
 [ComImport]
 [Guid("657804FA-D6AD-4496-8A60-352752AF4F89")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IAudioEndpointVolumeCallback
+internal interface IAudioEndpointVolumeCallback
 {
     [PreserveSig]
     int OnNotify(IntPtr pNotifyData);
@@ -299,7 +304,7 @@ public interface IAudioEndpointVolumeCallback
 [ComImport]
 [Guid("77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IAudioSessionManager2
+internal interface IAudioSessionManager2
 {
     [PreserveSig]
     int GetAudioSessionControl(ref Guid AudioSessionGuid, uint StreamFlags, out IAudioSessionControl SessionControl);
@@ -326,7 +331,7 @@ public interface IAudioSessionManager2
 [ComImport]
 [Guid("E2F5BB11-0570-40CA-ACDD-3AA01277DEE8")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IAudioSessionEnumerator
+internal interface IAudioSessionEnumerator
 {
     [PreserveSig]
     int GetCount(out int SessionCount);
@@ -338,7 +343,7 @@ public interface IAudioSessionEnumerator
 [ComImport]
 [Guid("F4B1A599-7266-4319-A8CA-E70ACB11E8CD")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IAudioSessionControl
+internal interface IAudioSessionControl
 {
     [PreserveSig]
     int GetState(out AudioSessionState pRetVal);
@@ -371,7 +376,7 @@ public interface IAudioSessionControl
 [ComImport]
 [Guid("BFB7FF88-7239-4FC9-8FA2-07C950BE9C6D")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IAudioSessionControl2
+internal interface IAudioSessionControl2
 {
     [PreserveSig]
     int GetState(out AudioSessionState pRetVal);
@@ -419,7 +424,7 @@ public interface IAudioSessionControl2
 [ComImport]
 [Guid("87CE5498-68D6-44E5-9215-6DA47EF883D8")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface ISimpleAudioVolume
+internal interface ISimpleAudioVolume
 {
     [PreserveSig]
     int SetMasterVolume(float fLevel, [In] ref Guid EventContext);
@@ -437,7 +442,7 @@ public interface ISimpleAudioVolume
 [ComImport]
 [Guid("24918ACC-64B3-37C1-8CA9-74A66E9957A8")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IAudioSessionEvents
+internal interface IAudioSessionEvents
 {
     [PreserveSig]
     int OnDisplayNameChanged([MarshalAs(UnmanagedType.LPWStr)] string NewDisplayName, [In] ref Guid EventContext);
@@ -464,7 +469,7 @@ public interface IAudioSessionEvents
 [ComImport]
 [Guid("641DD20B-4D41-49CC-ABA3-174B9477BB08")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IAudioSessionNotification
+internal interface IAudioSessionNotification
 {
     [PreserveSig]
     int OnSessionCreated(IAudioSessionControl NewSession);
@@ -473,7 +478,7 @@ public interface IAudioSessionNotification
 [ComImport]
 [Guid("F8679F50-850A-41CF-9C72-430F290290C8")]
 [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-public interface IPolicyConfigVista
+internal interface IPolicyConfigVista
 {
     [PreserveSig]
     int GetMixFormat([MarshalAs(UnmanagedType.LPWStr)] string pszDeviceName, IntPtr ppFormat);
@@ -514,7 +519,7 @@ public interface IPolicyConfigVista
 
 #endregion
 
-public enum EndpointFormFactor : uint
+internal enum EndpointFormFactor : uint
 {
     RemoteNetworkDevice = 0,
     Speakers = 1,
@@ -530,7 +535,7 @@ public enum EndpointFormFactor : uint
     UnknownFormFactor = 11
 }
 
-public static class CoreAudioConstants
+internal static class CoreAudioConstants
 {
     public static readonly PropertyKey PKEY_Device_FriendlyName = new(new Guid("A45C254E-DF1C-4EFD-8020-67D146A850E0"), 14);
     public static readonly PropertyKey PKEY_DeviceInterface_FriendlyName = new(new Guid("026E516E-B814-414B-83CD-856D6FEF4822"), 2);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -11,7 +12,9 @@ using System.Windows.Media.Imaging;
 
 namespace MetroHub.Core.Services;
 
-public static class NativeMethods
+[SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Justification = "Preserves Win32 SDK header names")]
+[SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix", Justification = "Preserves Win32 SDK header names")]
+internal static class NativeMethods
 {
     #region DWM Mica & Backdrop
 
@@ -33,13 +36,16 @@ public static class NativeMethods
     }
 
     [DllImport("dwmapi.dll")]
-    public static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref MARGINS margins);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int DwmExtendFrameIntoClientArea(IntPtr hwnd, ref MARGINS margins);
 
     [DllImport("dwmapi.dll")]
-    public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 
     [DllImport("dwmapi.dll")]
-    public static extern int DwmGetWindowAttribute(IntPtr hwnd, int attr, out int attrValue, int attrSize);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int DwmGetWindowAttribute(IntPtr hwnd, int attr, out int attrValue, int attrSize);
 
     public const int DWMWA_TRANSITIONS_FORCEDISABLED = 3;
     public const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
@@ -108,7 +114,8 @@ public static class NativeMethods
     #region Resource Tracking
 
     [DllImport("user32.dll")]
-    public static extern uint GetGuiResources(IntPtr hProcess, uint uiFlags);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern uint GetGuiResources(IntPtr hProcess, uint uiFlags);
 
     public const uint GR_GDIOBJECTS = 0;
     public const uint GR_USEROBJECTS = 1;
@@ -118,10 +125,12 @@ public static class NativeMethods
     #region Hotkeys
 
     [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
 
     [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
     public const int WM_HOTKEY = 0x0312;
     public const uint MOD_ALT = 0x0001;
@@ -152,10 +161,12 @@ public static class NativeMethods
     }
 
     [DllImport("user32.dll")]
-    public static extern IntPtr MonitorFromPoint(POINT pt, int flags);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr MonitorFromPoint(POINT pt, int flags);
 
     [DllImport("user32.dll")]
-    public static extern bool GetCursorPos(out POINT lpPoint);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern bool GetCursorPos(out POINT lpPoint);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct POINT
@@ -165,10 +176,11 @@ public static class NativeMethods
         public POINT(int x, int y) { X = x; Y = y; }
     }
 
-    [DllImport("user32.dll", CharSet = CharSet.Auto)]
-    public static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "GetMonitorInfoW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct MONITORINFOEX
     {
         public int cbSize;
@@ -179,30 +191,37 @@ public static class NativeMethods
         public string szDevice;
     }
 
-    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "GetMonitorInfoW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     internal static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFOEX lpmi);
 
     [DllImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     internal static extern IntPtr MonitorFromWindow(IntPtr hWnd, int flags);
 
     public const int MONITOR_DEFAULTTONEAREST = 2;
 
     [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
     [DllImport("user32.dll", SetLastError = true)]
-    public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int GetWindowLong(IntPtr hWnd, int nIndex);
 
     [DllImport("user32.dll")]
-    public static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
     [DllImport("user32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+    internal static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
     [DllImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool IsWindowVisible(IntPtr hWnd);
+    internal static extern bool IsWindowVisible(IntPtr hWnd);
 
     public const int GWL_STYLE = -16;
     public const int GWL_EXSTYLE = -20;
@@ -226,11 +245,13 @@ public static class NativeMethods
         public POINT ptMaxTrackSize;
     }
 
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern IntPtr FindWindow(string? lpClassName, string? lpWindowName);
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FindWindowW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr FindWindow(string? lpClassName, string? lpWindowName);
 
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string? lpszClass, string? lpszWindow);
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FindWindowExW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string? lpszClass, string? lpszWindow);
 
     public static Rect GetActiveMonitorWorkArea(IntPtr hWnd = default)
     {
@@ -334,57 +355,69 @@ public static class NativeMethods
     public const int LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x00001000;
 
     [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool SetDefaultDllDirectories(int directoryFlags);
+    internal static extern bool SetDefaultDllDirectories(int directoryFlags);
 
     [DllImport("shell32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern int SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string appID);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string appID);
 
     #endregion
 
     #region Window Activation & Foreground
 
     [DllImport("user32.dll")]
-    public static extern bool AllowSetForegroundWindow(int dwProcessId);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern bool AllowSetForegroundWindow(int dwProcessId);
 
     public const int ASFW_ANY = -1;
 
     [DllImport("user32.dll")]
-    public static extern IntPtr GetForegroundWindow();
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr GetForegroundWindow();
 
     [DllImport("user32.dll", SetLastError = true)]
-    public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
     [DllImport("user32.dll")]
-    public static extern IntPtr DefWindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr DefWindowProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
 
     [DllImport("user32.dll")]
-    public static extern bool SetForegroundWindow(IntPtr hWnd);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern bool SetForegroundWindow(IntPtr hWnd);
 
     [DllImport("user32.dll")]
-    public static extern bool BringWindowToTop(IntPtr hWnd);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern bool BringWindowToTop(IntPtr hWnd);
 
     [DllImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool IsWindow(IntPtr hWnd);
+    internal static extern bool IsWindow(IntPtr hWnd);
 
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern int GetClassName(IntPtr hWnd, System.Text.StringBuilder lpClassName, int nMaxCount);
-
-    [DllImport("user32.dll")]
-    public static extern IntPtr GetShellWindow();
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "GetClassNameW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int GetClassName(IntPtr hWnd, [Out] char[] lpClassName, int nMaxCount);
 
     [DllImport("user32.dll")]
-    public static extern IntPtr GetDesktopWindow();
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr GetShellWindow();
+
+    [DllImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr GetDesktopWindow();
 
     public static string GetWindowClassName(IntPtr hWnd)
     {
         if (hWnd == IntPtr.Zero) return string.Empty;
         try
         {
-            var sb = new System.Text.StringBuilder(256);
-            int length = GetClassName(hWnd, sb, sb.Capacity);
-            return length > 0 ? sb.ToString() : string.Empty;
+            char[] buffer = new char[256];
+            int length = GetClassName(hWnd, buffer, buffer.Length);
+            return length > 0 ? new string(buffer, 0, length) : string.Empty;
         }
         catch (Exception ex)
         {
@@ -409,11 +442,13 @@ public static class NativeMethods
         }
     }
 
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern uint RegisterWindowMessage(string lpString);
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "RegisterWindowMessageW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern uint RegisterWindowMessage(string lpString);
 
     [DllImport("user32.dll")]
-    public static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
     public static readonly IntPtr HWND_BROADCAST = new IntPtr(0xffff);
     public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
@@ -423,33 +458,40 @@ public static class NativeMethods
     public delegate void WinEventDelegate(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
 
     [DllImport("user32.dll")]
-    public static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr hmodWinEventProc, WinEventDelegate lpfnWinEventProc, uint idProcess, uint idThread, uint dwFlags);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr SetWinEventHook(uint eventMin, uint eventMax, IntPtr hmodWinEventProc, WinEventDelegate lpfnWinEventProc, uint idProcess, uint idThread, uint dwFlags);
 
     [DllImport("user32.dll")]
-    public static extern bool UnhookWinEvent(IntPtr hWinEventHook);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern bool UnhookWinEvent(IntPtr hWinEventHook);
 
     public const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
     public const uint WINEVENT_OUTOFCONTEXT = 0x0000;
 
     [DllImport("user32.dll", ExactSpelling = true)]
-    public static extern IntPtr GetAncestor(IntPtr hwnd, uint gaFlags);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr GetAncestor(IntPtr hwnd, uint gaFlags);
 
     [DllImport("user32.dll")]
-    public static extern IntPtr GetActiveWindow();
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr GetActiveWindow();
 
     [DllImport("user32.dll")]
-    public static extern IntPtr WindowFromPoint(POINT Point);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr WindowFromPoint(POINT Point);
 
     public const uint GA_PARENT = 1;
     public const uint GA_ROOT = 2;
     public const uint GA_ROOTOWNER = 3;
 
     [DllImport("user32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool UnhookWindowsHookEx(IntPtr hhk);
+    internal static extern bool UnhookWindowsHookEx(IntPtr hhk);
 
     [DllImport("user32.dll")]
-    public static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
 
     public const int WH_MOUSE_LL = 14;
     public const int WM_LBUTTONDOWN = 0x0201;
@@ -470,13 +512,15 @@ public static class NativeMethods
     public delegate IntPtr LowLevelMouseProc(int nCode, IntPtr wParam, IntPtr lParam);
 
     [DllImport("user32.dll", SetLastError = true)]
-    public static extern IntPtr SetWindowsHookEx(int idHook, LowLevelMouseProc lpfn, IntPtr hMod, uint dwThreadId);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern IntPtr SetWindowsHookEx(int idHook, LowLevelMouseProc lpfn, IntPtr hMod, uint dwThreadId);
 
     #endregion
 
     #region Shell Icon Metrics
 
     [DllImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern int GetSystemMetrics(int nIndex);
 
     private const int SM_CXSMICON = 49;
@@ -548,6 +592,7 @@ public static class NativeMethods
     }
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "EnumDisplaySettingsW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     internal static extern bool EnumDisplaySettings(string? lpszDeviceName, int iModeNum, ref DEVMODE lpDevMode);
 
     public const int ENUM_CURRENT_SETTINGS = -1;
@@ -641,8 +686,9 @@ public static class NativeMethods
     }
 
     [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool GetSystemPowerStatus(out SYSTEM_POWER_STATUS lpSystemPowerStatus);
+    internal static extern bool GetSystemPowerStatus(out SYSTEM_POWER_STATUS lpSystemPowerStatus);
 
     #endregion
 
@@ -662,7 +708,8 @@ public static class NativeMethods
     public const int WM_SHNOTIFY = 0x0401; // WM_USER + 1
 
     [DllImport("shell32.dll", SetLastError = true)]
-    public static extern uint SHChangeNotifyRegister(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern uint SHChangeNotifyRegister(
         IntPtr hwnd,
         int fSources,
         int fEvents,
@@ -671,8 +718,9 @@ public static class NativeMethods
         ref SHChangeNotifyEntry pshe);
 
     [DllImport("shell32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    public static extern bool SHChangeNotifyDeregister(uint ulID);
+    internal static extern bool SHChangeNotifyDeregister(uint ulID);
 
     #endregion
 

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System;
 using System.Collections.Generic;
 using MetroHub.Core.Models;
@@ -16,6 +17,7 @@ public interface IWidgetViewModel : IDisposable
     void Initialize(TileModel model);
     void SaveSettings();
     void Pause();
+    [SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Standard widget lifecycle contract")]
     void Resume();
     void Teardown();
 }

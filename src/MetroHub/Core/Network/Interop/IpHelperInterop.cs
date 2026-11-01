@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using System;
 using System.Runtime.InteropServices;
 
 namespace MetroHub.Core.Network.Interop;
 
-public static class IpHelperInterop
+[SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Justification = "Preserves Win32 IpHelper header names")]
+internal static class IpHelperInterop
 {
     private const string IpHlpApi = "iphlpapi.dll";
     private const string Kernel32 = "kernel32.dll";
@@ -13,10 +15,11 @@ public static class IpHelperInterop
     public const int IF_MAX_PHYS_ADDRESS_SIZE = 32;
 
     [DllImport(Kernel32, ExactSpelling = true)]
-    public static extern ulong GetTickCount64();
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern ulong GetTickCount64();
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    public struct MIB_IF_ROW2
+    internal struct MIB_IF_ROW2
     {
         public ulong InterfaceLuid;
         public uint InterfaceIndex;
@@ -77,5 +80,6 @@ public static class IpHelperInterop
     public const uint NET_IF_ADMIN_STATUS_TESTING = 3;
 
     [DllImport(IpHlpApi, SetLastError = true, CharSet = CharSet.Unicode)]
-    public static extern int GetIfEntry2(ref MIB_IF_ROW2 Row);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern int GetIfEntry2(ref MIB_IF_ROW2 Row);
 }

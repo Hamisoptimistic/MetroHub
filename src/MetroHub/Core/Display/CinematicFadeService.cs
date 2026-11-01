@@ -25,20 +25,25 @@ public sealed class CinematicFadeService
     public static CinematicFadeService Instance => _instance.Value;
 
     [DllImport("user32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
     [DllImport("user32.dll", EntryPoint = "GetWindowLongW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
 
     [DllImport("user32.dll", EntryPoint = "SetWindowLongW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
     [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool LockWorkStation();
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern bool LockWorkStation();
 
     [DllImport("powrprof.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.I1)]
-    public static extern bool SetSuspendState(
+    internal static extern bool SetSuspendState(
         [MarshalAs(UnmanagedType.I1)] bool hibernate,
         [MarshalAs(UnmanagedType.I1)] bool forceCritical,
         [MarshalAs(UnmanagedType.I1)] bool disableWakeEvent);

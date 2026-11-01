@@ -181,13 +181,16 @@ public static class PowerToysPeekLauncher
     }
 
     [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern IntPtr OpenProcess(uint processAccess, bool bInheritHandle, int processId);
 
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "QueryFullProcessImageNameW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool QueryFullProcessImageName(IntPtr hProcess, int flags, [Out] StringBuilder lpExeName, ref int lpdwSize);
+    private static extern bool QueryFullProcessImageName(IntPtr hProcess, int flags, [Out] char[] lpExeName, ref int lpdwSize);
 
     [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool CloseHandle(IntPtr hObject);
 
@@ -218,11 +221,11 @@ public static class PowerToysPeekLauncher
 
         try
         {
-            var sb = new StringBuilder(1024);
-            int size = sb.Capacity;
-            if (QueryFullProcessImageName(hProcess, 0, sb, ref size))
+            char[] buffer = new char[1024];
+            int size = buffer.Length;
+            if (QueryFullProcessImageName(hProcess, 0, buffer, ref size) && size > 0)
             {
-                return sb.ToString();
+                return new string(buffer, 0, size);
             }
             return null;
         }

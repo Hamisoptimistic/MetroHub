@@ -298,7 +298,7 @@ public sealed class AudioService : IDisposable
         return devices;
     }
 
-    public static string ResolveDeviceIconGlyph(string deviceName, string? deviceDesc = null, EndpointFormFactor? formFactor = null)
+    internal static string ResolveDeviceIconGlyph(string deviceName, string? deviceDesc = null, EndpointFormFactor? formFactor = null)
     {
         string text = $"{deviceName} {deviceDesc ?? string.Empty}".ToLowerInvariant();
 
