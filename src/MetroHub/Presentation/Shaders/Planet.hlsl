@@ -7,7 +7,7 @@ sampler2D NightSampler    : register(s1);
 sampler2D CloudsSampler   : register(s2);
 sampler2D SpecularSampler : register(s3);
 
-float4 FrameState      : register(c0); // X=Time, Y=AspectRatio, Z=TimeOfDaySeconds, W=Unused
+float4 FrameState      : register(c0); // X=Time, Y=AspectRatio, Z=LocalTimeSeconds, W=UtcTimeSeconds
 float4 EffectParams    : register(c1); // X=TimeMode (0=Realtime, 1=Website 45deg), Y=AtmoDensity, Z=HasNight, W=CloudsDensity
 float4 MouseState      : register(c2); // X=MouseX, Y=MouseY, Z=LeftDown, W=PlanetDragYaw
 float4 AtmosphereColor : register(c3); // RGB=AtmoColor, W=SunIntensity
@@ -19,12 +19,6 @@ static const float  uPlanetRadius   = 2.0;
 static const float  FOCAL_LENGTH    = 0.375; // 6.0 / (6.0 - (-10.0))
 static const float3 SUN_COLOR       = float3(1.0, 1.0, 0.9);
 
-// Orthogonal 3D rotation matrix to break cubic lattice alignment between FBM octaves
-static const float3x3 NEBULA_ROT = float3x3(
-     0.00,  0.80,  0.60,
-    -0.80,  0.36, -0.48,
-    -0.60, -0.48,  0.64
-);
 
 // Exact Scurve sigmoid contrast function from planet.fragment.glsl lines 145-151
 float Sigmoid(float x)
@@ -68,45 +62,11 @@ float2 sphereProjection(float3 p, float3 origin)
 // Billowing Nebula, Dark Dust Rifts & 4-Tier Circular Gaussian Starfield
 // ============================================================================
 
-float hash13(float3 p)
-{
-    p = frac(p * float3(0.1031, 0.1030, 0.0973));
-    p += dot(p, p.zyx + 33.33);
-    return frac((p.x + p.y) * p.z);
-}
-
 float3 hash33(float3 p)
 {
     p = frac(p * float3(0.1031, 0.1030, 0.0973));
     p += dot(p, p.yxz + 33.33);
     return frac((p.xxy + p.yxx) * p.zyx);
-}
-
-// C2-continuous quintic 3D value noise (eliminates cubic Mach banding)
-float noise3(float3 p)
-{
-    float3 i = floor(p);
-    float3 f = frac(p);
-    float3 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
-
-    float n000 = hash13(i + float3(0.0, 0.0, 0.0));
-    float n100 = hash13(i + float3(1.0, 0.0, 0.0));
-    float n010 = hash13(i + float3(0.0, 1.0, 0.0));
-    float n110 = hash13(i + float3(1.0, 1.0, 0.0));
-    float n001 = hash13(i + float3(0.0, 0.0, 1.0));
-    float n101 = hash13(i + float3(1.0, 0.0, 1.0));
-    float n011 = hash13(i + float3(0.0, 1.0, 1.0));
-    float n111 = hash13(i + float3(1.0, 1.0, 1.0));
-
-    float nx00 = lerp(n000, n100, u.x);
-    float nx10 = lerp(n010, n110, u.x);
-    float nx01 = lerp(n001, n101, u.x);
-    float nx11 = lerp(n011, n111, u.x);
-
-    float nxy0 = lerp(nx00, nx10, u.y);
-    float nxy1 = lerp(nx01, nx11, u.y);
-
-    return lerp(nxy0, nxy1, u.z);
 }
 
 // Stellar color temperature lookup (blue-white O/B, white A/F, golden G/K, warm rose M)
@@ -118,40 +78,6 @@ float3 starTemperatureColor(float t)
     return (t < 0.5)
         ? lerp(coolGold, pureWhite, t * 2.0)
         : lerp(pureWhite, hotBlue, (t - 0.5) * 2.0);
-}
-
-float3 spaceNebula(float3 gDir, float time)
-{
-    // Slow, natural celestial drift
-    float3 drift = float3(time * 0.003, time * 0.001, -time * 0.002);
-
-    // Broad, smooth 3-octave FBM for natural cosmic gas clouds
-    float3 p1 = gDir * 1.8 + drift;
-    float n1 = noise3(p1);
-
-    // Rotated octaves to break any grid alignment
-    float3 p2 = mul(NEBULA_ROT, p1 * 1.8) + float3(n1 * 0.40, -n1 * 0.30, n1 * 0.20);
-    float n2 = noise3(p2);
-
-    float3 p3 = mul(NEBULA_ROT, p2 * 1.9) + float3(-n2 * 0.30, n2 * 0.30, -n2 * 0.20);
-    float n3 = noise3(p3);
-
-    // Smooth, spread-out cloud density across space (no sharp edges or narrow ribbons)
-    float cloud = n1 * 0.52 + n2 * 0.32 + n3 * 0.16;
-
-    // Gentle contrast curve: spreads out smoothly with no hard borders
-    float density = smoothstep(0.22, 0.78, cloud);
-    density = pow(density, 1.5);
-
-    // Realistic deep space palette: midnight navy into soft, diffuse celestial blue
-    float3 deepNavy  = float3(0.0010, 0.0035, 0.0120);
-    float3 softBlue  = float3(0.0050, 0.0200, 0.0600);
-    float3 cyanGlow  = float3(0.0140, 0.0550, 0.1250);
-
-    float3 col = lerp(deepNavy, softBlue, saturate(density * 1.6));
-    col = lerp(col, cyanGlow, saturate((density - 0.40) * 1.8));
-
-    return col * density * 1.6;
 }
 
 // Single 2D spherical star layer helper: crisp pinpricks strictly bounded inside cell
@@ -202,8 +128,7 @@ float3 spaceStars(float2 skyPos, float cosLat, float time)
 float3 spaceBackground(float3 dir, float time)
 {
     // Slow, majestic celestial rotation
-    float rotAngle = fmod(time * 0.0015, 628.31853);
-    float3 gDir = mul(rotateY(rotAngle), dir);
+    float rotAngle = fmod(time * 0.008, 628.31853);
 
     // Continuous 2D spherical coordinates for stars
     float lon = atan2(dir.x, -dir.z) + rotAngle;
@@ -214,10 +139,9 @@ float3 spaceBackground(float3 dir, float time)
     // Deep space baseline (rich, clean dark cosmos)
     static const float3 DEEP_COSMOS = float3(0.0001, 0.0002, 0.0005);
 
-    float3 nebula = spaceNebula(gDir, time);
     float3 stars  = spaceStars(skyPos, cosLat, time);
 
-    return DEEP_COSMOS + nebula + stars;
+    return DEEP_COSMOS + stars;
 }
 
 float4 main(float2 texCoord : TEXCOORD) : COLOR
@@ -239,13 +163,16 @@ float4 main(float2 texCoord : TEXCOORD) : COLOR
 
     if (EffectParams.x < 0.5)
     {
-        // MODE 0: REALTIME 24-HOUR SYNC
-        float dayFraction = frac(FrameState.z / 86400.0);
-        float sunAngle = dayFraction * 2.0 * PI - PI * 0.5;
-        sunDir = normalize(float3(cos(sunAngle), 0.28, sin(sunAngle)));
+        // MODE 0: REALTIME UTC DAY/NIGHT WITH VISUAL PLANETARY SPIN
+        float spinSpeed = 0.05;
+        planetRot = time * spinSpeed + dragOffset;
+        cloudsRot = time * (spinSpeed * 1.15) + dragOffset * 1.05;
 
-        planetRot = dragOffset;
-        cloudsRot = time * 0.003 + dragOffset * 1.05;
+        float utcSeconds = FrameState.w > 0.0 ? FrameState.w : FrameState.z;
+        float utcAngle = (utcSeconds / 86400.0) * 2.0 * PI;
+        float solarY = -0.22;
+        float3 sunDirObject = normalize(float3(sin(utcAngle), solarY, -cos(utcAngle)));
+        sunDir = mul(rotateY(-planetRot), sunDirObject);
     }
     else
     {
@@ -261,7 +188,7 @@ float4 main(float2 texCoord : TEXCOORD) : COLOR
 
     // Balanced ambient lighting: Earth = 0.008, Other planets = 0.020
     float sunIntensity = AtmosphereColor.w > 0.0 ? AtmosphereColor.w : 4.0;
-    float ambientLight = (EffectParams.z > 0.5) ? 0.008 : 0.020;
+    float ambientLight = (EffectParams.z > 0.5) ? 0.025 : 0.020;
 
     if (hit > 0.0)
     {
@@ -296,9 +223,9 @@ float4 main(float2 texCoord : TEXCOORD) : COLOR
             float3 diffuseLight = surfaceCol * (ambientLight + directLight * SUN_COLOR);
 
             // Night lights on shadow side: rich golden city lights on dark continents
-            float nightLightIntensity = saturate(dot(-norm, sunDir) + 0.1);
+            float nightLightIntensity = saturate(dot(-norm, sunDir) + 0.15);
             float nightSample = tex2D(NightSampler, surfaceUv).r;
-            float3 nightCol = pow(nightSample, 2.8) * float3(1.2, 0.95, 0.65) * nightLightIntensity * 2.2;
+            float3 nightCol = pow(nightSample, 1.8) * float3(1.35, 1.10, 0.75) * nightLightIntensity * 3.2;
 
             // Specular glint on oceans: strictly gated by sunlight (NEVER shines on night side)
             float3 reflected = normalize(reflect(-sunDir, norm));
@@ -307,7 +234,8 @@ float4 main(float2 texCoord : TEXCOORD) : COLOR
             float oceanMask = tex2D(SpecularSampler, surfaceUv).r;
             float3 specCol = oceanMask * phongValue * SUN_COLOR;
 
-            col = diffuseLight + nightCol + specCol;
+            float3 nightAmbient = surfaceCol * float3(0.012, 0.016, 0.028) * nightLightIntensity;
+            col = diffuseLight + nightCol + specCol + nightAmbient;
         }
         else
         {

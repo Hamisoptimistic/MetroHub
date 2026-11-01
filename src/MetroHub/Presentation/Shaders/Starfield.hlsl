@@ -2,12 +2,12 @@ sampler2D InputSampler : register(s0);
 float4 FrameState : register(c0);   // X=Time (Bounded Modulo), Y=AspectRatio, Z=0, W=0
 float4 EffectParams : register(c1); // X=Threshold (0.97), Y=VirtualResolution (1080.0), Z=Speed (1.0), W=Brightness (1.0)
 
-// Return random noise in the range [0.0, 1.0], as a function of x.
-float Noise2d(float2 x)
+// Hash without Sine (Dave Hoskins) - prevents precision aliasing and line artifacts
+float Noise2d(float2 p)
 {
-    float xhash = cos(x.x * 37.0);
-    float yhash = cos(x.y * 57.0);
-    return frac(415.92653 * (xhash + yhash));
+    float3 q = frac(p.xyx * 0.1031);
+    q += dot(q, q.yzx + 33.33);
+    return frac((q.x + q.y) * q.z);
 }
 
 // Convert Noise2d() into a "star field" by stomping everything below fThreshhold to zero.

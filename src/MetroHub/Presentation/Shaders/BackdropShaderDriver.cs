@@ -304,7 +304,7 @@ public sealed class BackdropShaderDriver : IDisposable
 
         double time = elapsedSeconds % MaxTimeModulo;
         double timeOfDaySeconds = DateTime.Now.TimeOfDay.TotalSeconds;
-        _activeEffect.FrameState = new Point4D(time, _aspectRatio, timeOfDaySeconds, 0.0);
+        _activeEffect.FrameState = new Point4D(time, _aspectRatio, timeOfDaySeconds, DateTime.UtcNow.TimeOfDay.TotalSeconds);
 
         try
         {
@@ -345,9 +345,9 @@ public sealed class BackdropShaderDriver : IDisposable
                 _targetMouseY += (0.5 - _targetMouseY) * 0.015;
             }
 
-            // Slow, liquid cinematic inertia (0.035 factor eliminates all sudden jerks)
-            _smoothedMouseX += (_targetMouseX - _smoothedMouseX) * 0.035;
-            _smoothedMouseY += (_targetMouseY - _smoothedMouseY) * 0.035;
+            double mouseSmoothing = string.Equals(_activeEffect.ShaderName, "Meadow", StringComparison.OrdinalIgnoreCase) ? 0.12 : 0.035;
+            _smoothedMouseX += (_targetMouseX - _smoothedMouseX) * mouseSmoothing;
+            _smoothedMouseY += (_targetMouseY - _smoothedMouseY) * mouseSmoothing;
 
             double leftDown = System.Windows.Input.Mouse.LeftButton == System.Windows.Input.MouseButtonState.Pressed ? 1.0 : 0.0;
             if (leftDown <= 0.0)
