@@ -122,7 +122,7 @@ public sealed class DailyWallpaperService
             // 3. Download high-resolution image
             if (!string.IsNullOrEmpty(uhdUrl))
             {
-                bool downloaded = await HttpHelper.DownloadFileAsync(uhdUrl, cachePath, ct, minimumBytes: 20_000);
+                bool downloaded = await HttpHelper.DownloadFileAsync(uhdUrl, cachePath, minimumBytes: 20_000, ct: ct);
                 if (downloaded)
                 {
                     PruneOldCacheFiles();
@@ -213,7 +213,7 @@ public sealed class DailyWallpaperService
             // 3. Download high-resolution master image
             if (!string.IsNullOrEmpty(imageUrl))
             {
-                bool downloaded = await HttpHelper.DownloadFileAsync(imageUrl, cachePath, ct, minimumBytes: 20_000);
+                bool downloaded = await HttpHelper.DownloadFileAsync(imageUrl, cachePath, minimumBytes: 20_000, ct: ct);
                 if (downloaded)
                 {
                     PruneOldCacheFiles();

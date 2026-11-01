@@ -25,7 +25,7 @@ public static class CatalogService
     /// </summary>
     public static void RegisterProvider(ICatalogProvider provider)
     {
-        if (provider == null) throw new ArgumentNullException(nameof(provider));
+        ArgumentNullException.ThrowIfNull(provider);
 
         lock (_lock)
         {

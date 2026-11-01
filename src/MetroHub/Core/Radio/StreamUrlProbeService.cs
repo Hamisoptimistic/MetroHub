@@ -82,6 +82,7 @@ public sealed partial class StreamUrlProbeService : IDisposable
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "SocketsHttpHandler ownership transferred to HttpClient with disposeHandler: true.")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5359:Do Not Disable Certificate Validation", Justification = "Community radio streams frequently use self-signed or legacy TLS certificates on streaming relays.")]
     private static SocketsHttpHandler CreateDefaultHandler() => new()
     {
         PooledConnectionLifetime = TimeSpan.FromMinutes(15),

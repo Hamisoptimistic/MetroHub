@@ -16,7 +16,12 @@ public sealed class NetworkHealthService
     public NetworkHealthStatus CurrentStatus { get; private set; } = new() { Connectivity = QueryFastConnectivity() };
     public event Action<NetworkHealthStatus>? HealthChanged;
 
-    public volatile bool IsHubVisible = true;
+    private volatile bool _isHubVisible = true;
+    public bool IsHubVisible
+    {
+        get => _isHubVisible;
+        set => _isHubVisible = value;
+    }
 
     private DateTime _lastSuccessfulTrafficTime = DateTime.UtcNow;
     private DateTime _lastProbeTime = DateTime.MinValue;

@@ -1849,6 +1849,8 @@ public sealed class UnitConverterSource : ISearchSource
 /// URL escaping/unescaping, cryptographic hashing (MD5, SHA-1, SHA-256),
 /// and Unix epoch conversions.
 /// </summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5351:Do Not Use Broken Cryptographic Algorithm MD5", Justification = "Dev utility search provider computing user-requested MD5 string hash.")]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5350:Do Not Use Weak Cryptographic Algorithm SHA1", Justification = "Dev utility search provider computing user-requested SHA-1 string hash.")]
 public sealed class DevUtilitySource : ISearchSource
 {
     public string SourceId => "dev_utility";

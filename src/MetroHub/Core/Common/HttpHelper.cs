@@ -169,8 +169,8 @@ public static class HttpHelper
     public static async Task<bool> DownloadFileAsync(
         string url,
         string destinationPath,
-        CancellationToken ct = default,
-        long minimumBytes = 0)
+        long minimumBytes = 0,
+        CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(url) || string.IsNullOrWhiteSpace(destinationPath))
         {

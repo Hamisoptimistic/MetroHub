@@ -616,8 +616,8 @@ public static partial class WebFaviconService
             bool downloaded = await HttpHelper.DownloadFileAsync(
                 headInfo.IconUrl,
                 destinationPath,
-                ct,
-                minimumBytes: 200).ConfigureAwait(false);
+                minimumBytes: 200,
+                ct: ct).ConfigureAwait(false);
 
             if (downloaded)
             {
@@ -722,7 +722,7 @@ public static partial class WebFaviconService
         try
         {
             string googlePathUrl = $"https://www.google.com/s2/favicons?domain={Uri.EscapeDataString(queryUrl)}&sz=128";
-            if (await HttpHelper.DownloadFileAsync(googlePathUrl, cachedPath, overallCts.Token, minimumBytes: 200).ConfigureAwait(false))
+            if (await HttpHelper.DownloadFileAsync(googlePathUrl, cachedPath, minimumBytes: 200, ct: overallCts.Token).ConfigureAwait(false))
             {
                 _memoryCache[scopeKey] = cachedPath;
                 return new WebFaviconResult(cachedPath, resolvedTitle);
@@ -740,7 +740,7 @@ public static partial class WebFaviconService
             try
             {
                 string googleDomainUrl = $"https://www.google.com/s2/favicons?domain={Uri.EscapeDataString(domain)}&sz=128";
-                if (await HttpHelper.DownloadFileAsync(googleDomainUrl, cachedPath, overallCts.Token, minimumBytes: 200).ConfigureAwait(false))
+                if (await HttpHelper.DownloadFileAsync(googleDomainUrl, cachedPath, minimumBytes: 200, ct: overallCts.Token).ConfigureAwait(false))
                 {
                     _memoryCache[scopeKey] = cachedPath;
                     return new WebFaviconResult(cachedPath, resolvedTitle);
@@ -756,7 +756,7 @@ public static partial class WebFaviconService
         try
         {
             string ddgUrl = $"https://icons.duckduckgo.com/ip3/{Uri.EscapeDataString(domain)}.ico";
-            if (await HttpHelper.DownloadFileAsync(ddgUrl, cachedPath, overallCts.Token, minimumBytes: 200).ConfigureAwait(false))
+            if (await HttpHelper.DownloadFileAsync(ddgUrl, cachedPath, minimumBytes: 200, ct: overallCts.Token).ConfigureAwait(false))
             {
                 _memoryCache[scopeKey] = cachedPath;
                 return new WebFaviconResult(cachedPath, resolvedTitle);
@@ -771,7 +771,7 @@ public static partial class WebFaviconService
         try
         {
             string directUrl = $"https://{domain}/favicon.ico";
-            if (await HttpHelper.DownloadFileAsync(directUrl, cachedPath, overallCts.Token, minimumBytes: 200).ConfigureAwait(false))
+            if (await HttpHelper.DownloadFileAsync(directUrl, cachedPath, minimumBytes: 200, ct: overallCts.Token).ConfigureAwait(false))
             {
                 _memoryCache[scopeKey] = cachedPath;
                 return new WebFaviconResult(cachedPath, resolvedTitle);
@@ -788,7 +788,13 @@ public static partial class WebFaviconService
     /// <summary>
     /// Downloads remote icon bytes directly into memory without touching the local disk.
     /// </summary>
-    public static async Task<byte[]?> DownloadIconBytesAsync(string iconUrl, CancellationToken ct = default, int minimumBytes = 200)
+    public static Task<byte[]?> DownloadIconBytesAsync(string iconUrl, CancellationToken ct = default)
+        => DownloadIconBytesAsync(iconUrl, 200, ct);
+
+    /// <summary>
+    /// Downloads remote icon bytes directly into memory without touching the local disk.
+    /// </summary>
+    public static async Task<byte[]?> DownloadIconBytesAsync(string iconUrl, int minimumBytes, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(iconUrl)) return null;
 
