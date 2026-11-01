@@ -54,4 +54,6 @@ MetroHub includes 18 catalog widgets located in `src/MetroHub/Widgets/Catalog/`:
    ```
 
 ## License
-MetroHub is licensed under the [GNU General Public License v3.0](LICENSE).
+MetroHub source code is licensed under the [GNU General Public License v3.0](LICENSE) with a [Section 7 Linking Exception](THIRD_PARTY_NOTICES.md) for the bundled native BASS audio libraries.
+
+The native audio binaries in `lib/native/win-x64/` (`bass*.dll`) are proprietary freeware for non-commercial use only © [Un4seen Developments Ltd.](https://www.un4seen.com/) and respective authors. Full license texts, exceptions, and third-party notices are provided in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
