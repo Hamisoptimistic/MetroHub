@@ -998,8 +998,7 @@ public sealed class TileManager
         {
             _ = Task.Run(async () =>
             {
-                bool updated = false;
-                foreach (var wt in pendingWebTiles)
+                var fetchTasks = pendingWebTiles.Select(async wt =>
                 {
                     string? fetched = await WebFaviconService.GetFaviconPathAsync(wt.TargetPath).ConfigureAwait(false);
                     if (string.IsNullOrWhiteSpace(fetched))
@@ -1012,12 +1011,14 @@ public sealed class TileManager
                         await _dispatcher.InvokeAsync(() =>
                         {
                             wt.IconPath = fetched;
-                            updated = true;
                         });
+                        return true;
                     }
-                }
+                    return false;
+                });
 
-                if (updated)
+                var results = await Task.WhenAll(fetchTasks).ConfigureAwait(false);
+                if (results.Any(r => r))
                 {
                     await _dispatcher.InvokeAsync(() => SaveLayoutAndWorkspace(tiles));
                 }
@@ -1789,10 +1790,10 @@ public sealed class TileManager
                 targetWorkspace.IsDirty = true;
             }
 
-            // 7. Background asynchronous favicon fetching for each tile
+            // 7. Background asynchronous favicon fetching for each tile (concurrent)
             _ = Task.Run(async () =>
             {
-                foreach (var tile in createdTiles)
+                var fetchTasks = createdTiles.Select(async tile =>
                 {
                     try
                     {
@@ -1808,21 +1809,31 @@ public sealed class TileManager
                             await RunOnDispatcherAsync(() =>
                             {
                                 tile.IconPath = iconPath;
-                                if (isActiveWorkspace)
-                                {
-                                    SaveLayoutAndWorkspace(targetTiles);
-                                }
-                                else
-                                {
-                                    StorageService.SaveWorkspaceLayout(targetWorkspace!.Id, targetTiles);
-                                }
                             }).ConfigureAwait(false);
+                            return true;
                         }
                     }
                     catch (Exception ex)
                     {
                         Safe.Log(ex, $"[TileManager] Background favicon extraction failed for '{tile.TargetPath}'");
                     }
+                    return false;
+                });
+
+                var results = await Task.WhenAll(fetchTasks).ConfigureAwait(false);
+                if (results.Any(r => r))
+                {
+                    await RunOnDispatcherAsync(() =>
+                    {
+                        if (isActiveWorkspace)
+                        {
+                            SaveLayoutAndWorkspace(targetTiles);
+                        }
+                        else
+                        {
+                            StorageService.SaveWorkspaceLayout(targetWorkspace!.Id, targetTiles);
+                        }
+                    }).ConfigureAwait(false);
                 }
             });
 

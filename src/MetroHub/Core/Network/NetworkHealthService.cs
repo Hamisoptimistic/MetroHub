@@ -263,25 +263,26 @@ public sealed class NetworkHealthService
             return status;
         }
 
-        // 2. DNS Resolution Diagnostic
-        var sw = Stopwatch.StartNew();
-        try
+        // 2. Launch DNS and TCP reachability diagnostics concurrently with ICMP pings
+        var dnsTask = Task.Run(async () =>
         {
-            var addresses = await Dns.GetHostAddressesAsync("www.msftconnecttest.com", cancellationToken);
-            sw.Stop();
-            status.HasDnsResolution = addresses != null && addresses.Length > 0;
-            status.DnsResolutionTimeMs = sw.Elapsed.TotalMilliseconds;
-        }
-        catch
-        {
-            sw.Stop();
-            status.HasDnsResolution = false;
-            status.DnsResolutionTimeMs = -1;
-        }
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                var addresses = await Dns.GetHostAddressesAsync("www.msftconnecttest.com", cancellationToken).ConfigureAwait(false);
+                sw.Stop();
+                return (HasDns: addresses != null && addresses.Length > 0, TimeMs: sw.Elapsed.TotalMilliseconds);
+            }
+            catch
+            {
+                sw.Stop();
+                return (HasDns: false, TimeMs: -1.0);
+            }
+        }, cancellationToken);
 
-        if (!IsHubVisible || cancellationToken.IsCancellationRequested) return CurrentStatus;
+        var tcpTask = CheckInternetReachabilityAsync(800, cancellationToken);
 
-        // 3. Packet Loss & Latency Diagnostic (4 pings)
+        // 3. Packet Loss & Latency Diagnostic (3 pings)
         using var ping = new Ping();
         int lostPackets = 0;
         long totalRtt = 0;
@@ -316,7 +317,11 @@ public sealed class NetworkHealthService
 
         if (!IsHubVisible || cancellationToken.IsCancellationRequested) return CurrentStatus;
 
-        bool hasTcpReachability = await CheckInternetReachabilityAsync(800, cancellationToken);
+        var (hasDns, dnsTimeMs) = await dnsTask.ConfigureAwait(false);
+        bool hasTcpReachability = await tcpTask.ConfigureAwait(false);
+
+        status.HasDnsResolution = hasDns;
+        status.DnsResolutionTimeMs = dnsTimeMs;
 
         if (!IsHubVisible || cancellationToken.IsCancellationRequested) return CurrentStatus;
 

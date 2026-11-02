@@ -219,27 +219,30 @@ public sealed class SearchOrchestrator : IDisposable
                 var hardCandidates = new List<Candidate>();
                 var hardSourceStates = new Dictionary<string, SourceState>(StringComparer.OrdinalIgnoreCase);
 
+                var hardTasks = new List<Task<(ISearchSource Source, IReadOnlyList<Candidate>? Batch, Exception? Error)>>(_tier1Sources.Count);
                 for (int i = 0; i < _tier1Sources.Count; i++)
                 {
-                    if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
                     var source = _tier1Sources[i];
                     if (route.Kind == RouteKind.Terminal && source is not TerminalSource) continue;
                     if ((route.Kind == RouteKind.Settings || route.Kind == RouteKind.ControlPanel) && source is not TableSource) continue;
                     if (route.Kind == RouteKind.Help && source is not TableSource) continue;
 
                     hardSourceStates[source.SourceId] = source.State;
-                    try
-                    {
-                        var batch = await source.SearchAsync(query, ct).ConfigureAwait(false);
-                        if (batch != null && batch.Count > 0)
-                        {
-                            hardCandidates.AddRange(batch);
-                        }
-                    }
-                    catch (OperationCanceledException) { return; }
-                    catch (Exception ex)
+                    hardTasks.Add(QuerySourceSafelyAsync(source, query, ct));
+                }
+
+                var hardResults = await Task.WhenAll(hardTasks).ConfigureAwait(false);
+                if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
+
+                foreach (var (source, batch, ex) in hardResults)
+                {
+                    if (ex != null)
                     {
                         hardSourceStates[source.SourceId] = new SourceState(SourceStateKind.Degraded, ex.Message);
+                    }
+                    else if (batch != null && batch.Count > 0)
+                    {
+                        hardCandidates.AddRange(batch);
                     }
                 }
 
@@ -266,28 +269,30 @@ public sealed class SearchOrchestrator : IDisposable
                 return;
             }
 
-            // 1. Tier 1: Fast In-Memory Sources (Apps)
+            // 1. Tier 1: Fast In-Memory Sources (Queried concurrently)
             var candidates = new List<Candidate>();
             var sourceStates = new Dictionary<string, SourceState>(StringComparer.OrdinalIgnoreCase);
 
+            var t1Tasks = new Task<(ISearchSource Source, IReadOnlyList<Candidate>? Batch, Exception? Error)>[_tier1Sources.Count];
             for (int i = 0; i < _tier1Sources.Count; i++)
             {
-                if (ct.IsCancellationRequested) return;
                 var source = _tier1Sources[i];
                 sourceStates[source.SourceId] = source.State;
+                t1Tasks[i] = QuerySourceSafelyAsync(source, query, ct);
+            }
 
-                try
-                {
-                    var batch = await source.SearchAsync(query, ct).ConfigureAwait(false);
-                    if (batch != null && batch.Count > 0)
-                    {
-                        candidates.AddRange(batch);
-                    }
-                }
-                catch (OperationCanceledException) { return; }
-                catch (Exception ex)
+            var t1Results = await Task.WhenAll(t1Tasks).ConfigureAwait(false);
+            if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
+
+            foreach (var (source, batch, ex) in t1Results)
+            {
+                if (ex != null)
                 {
                     sourceStates[source.SourceId] = new SourceState(SourceStateKind.Degraded, ex.Message);
+                }
+                else if (batch != null && batch.Count > 0)
+                {
+                    candidates.AddRange(batch);
                 }
             }
 
@@ -308,33 +313,38 @@ public sealed class SearchOrchestrator : IDisposable
                 PublishIfCurrent(intermediateSnapshot, sessionId, ct);
             }
 
-            // 2. Tier 2: Everything File Search (Single-flight guarded)
+            // 2. Tier 2: Everything File Search (Single-flight guarded, queried concurrently)
             if (_tier2Sources.Count > 0)
             {
                 if (Interlocked.CompareExchange(ref _tier2InFlight, 1, 0) == 0)
                 {
                     try
                     {
+                        var t2Tasks = new Task<(ISearchSource Source, IReadOnlyList<Candidate>? Batch, Exception? Error)>[_tier2Sources.Count];
                         for (int i = 0; i < _tier2Sources.Count; i++)
                         {
-                            if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
                             var source = _tier2Sources[i];
                             sourceStates[source.SourceId] = source.State;
+                            t2Tasks[i] = QuerySourceSafelyAsync(source, query, ct);
+                        }
 
-                            try
+                        var t2Results = await Task.WhenAll(t2Tasks).ConfigureAwait(false);
+                        if (ct.IsCancellationRequested || sessionId != Interlocked.Read(ref _currentSessionId)) return;
+
+                        foreach (var (source, batch, ex) in t2Results)
+                        {
+                            if (ex != null)
                             {
-                                var batch = await source.SearchAsync(query, ct).ConfigureAwait(false);
+                                sourceStates[source.SourceId] = new SourceState(SourceStateKind.Degraded, ex.Message);
+                            }
+                            else
+                            {
+                                sourceStates[source.SourceId] = source.State;
                                 if (batch != null && batch.Count > 0)
                                 {
                                     candidates.AddRange(batch);
                                 }
                             }
-                            catch (OperationCanceledException) { return; }
-                            catch (Exception ex)
-                            {
-                                sourceStates[source.SourceId] = new SourceState(SourceStateKind.Degraded, ex.Message);
-                            }
-                            sourceStates[source.SourceId] = source.State;
                         }
                     }
                     finally
@@ -365,6 +375,26 @@ public sealed class SearchOrchestrator : IDisposable
         catch (Exception)
         {
             // Fail fast, publish empty degraded snapshot
+        }
+    }
+
+    private static async Task<(ISearchSource Source, IReadOnlyList<Candidate>? Batch, Exception? Error)> QuerySourceSafelyAsync(
+        ISearchSource source,
+        SearchQuery query,
+        CancellationToken ct)
+    {
+        try
+        {
+            var batch = await source.SearchAsync(query, ct).ConfigureAwait(false);
+            return (source, batch, null);
+        }
+        catch (OperationCanceledException)
+        {
+            return (source, null, null);
+        }
+        catch (Exception ex)
+        {
+            return (source, null, ex);
         }
     }
 
