@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using MetroHub.Presentation.Controllers;
 using Serilog;
 
 namespace MetroHub.Core.Services;
@@ -15,9 +14,38 @@ namespace MetroHub.Core.Services;
 /// </summary>
 public static class PowerService
 {
+    [DllImport("user32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    internal static extern bool LockWorkStation();
+
+    [DllImport("powrprof.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    internal static extern bool SetSuspendState(
+        [MarshalAs(UnmanagedType.I1)] bool hibernate,
+        [MarshalAs(UnmanagedType.I1)] bool forceCritical,
+        [MarshalAs(UnmanagedType.I1)] bool disableWakeEvent);
+
     [DllImport("powrprof.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool IsPwrHibernateAllowed();
+
+    /// <summary>
+    /// Optional transition handler supplied by the Presentation layer (e.g. CinematicFadeService).
+    /// If null (such as in headless unit tests), power actions execute immediately.
+    /// </summary>
+    public static Func<Action, int, int, Task>? FadeAndExecuteHandler { get; set; }
+
+    private static Task RunPowerActionAsync(Action action, int fadeDurationMs, int holdDurationMs)
+    {
+        if (FadeAndExecuteHandler != null)
+        {
+            return FadeAndExecuteHandler(action, fadeDurationMs, holdDurationMs);
+        }
+
+        action();
+        return Task.CompletedTask;
+    }
 
     /// <summary>
     /// Event raised whenever the system hibernation capability changes (e.g. enabled via Settings).
@@ -46,10 +74,10 @@ public static class PowerService
     /// </summary>
     public static Task ExecuteLockAsync(int fadeDurationMs = 450, int holdDurationMs = 50)
     {
-        return CinematicFadeService.Instance.FadeAndExecuteAsync(() =>
-        {
-            CinematicFadeService.LockWorkStation();
-        }, fadeDurationMs, holdDurationMs);
+        return RunPowerActionAsync(
+            () => LockWorkStation(),
+            fadeDurationMs,
+            holdDurationMs);
     }
 
     /// <summary>
@@ -57,10 +85,10 @@ public static class PowerService
     /// </summary>
     public static Task ExecuteSleepAsync(int fadeDurationMs = 600, int holdDurationMs = 250)
     {
-        return CinematicFadeService.Instance.FadeAndExecuteAsync(() =>
-        {
-            CinematicFadeService.SetSuspendState(hibernate: false, forceCritical: false, disableWakeEvent: false);
-        }, fadeDurationMs, holdDurationMs);
+        return RunPowerActionAsync(
+            () => SetSuspendState(hibernate: false, forceCritical: false, disableWakeEvent: false),
+            fadeDurationMs,
+            holdDurationMs);
     }
 
     /// <summary>
@@ -69,10 +97,10 @@ public static class PowerService
     /// </summary>
     public static Task ExecuteHibernateAsync(int fadeDurationMs = 650, int holdDurationMs = 300)
     {
-        return CinematicFadeService.Instance.FadeAndExecuteAsync(() =>
-        {
-            CinematicFadeService.SetSuspendState(hibernate: true, forceCritical: false, disableWakeEvent: false);
-        }, fadeDurationMs, holdDurationMs);
+        return RunPowerActionAsync(
+            () => SetSuspendState(hibernate: true, forceCritical: false, disableWakeEvent: false),
+            fadeDurationMs,
+            holdDurationMs);
     }
 
     /// <summary>
@@ -80,10 +108,10 @@ public static class PowerService
     /// </summary>
     public static Task ExecuteRestartAsync(int fadeDurationMs = 650, int holdDurationMs = 300)
     {
-        return CinematicFadeService.Instance.FadeAndExecuteAsync(() =>
-        {
-            ProcessLauncherService.LaunchTarget("shutdown.exe", "/r /t 0");
-        }, fadeDurationMs, holdDurationMs);
+        return RunPowerActionAsync(
+            () => ProcessLauncherService.LaunchTarget("shutdown.exe", "/r /t 0"),
+            fadeDurationMs,
+            holdDurationMs);
     }
 
     /// <summary>
@@ -91,10 +119,10 @@ public static class PowerService
     /// </summary>
     public static Task ExecuteShutdownAsync(int fadeDurationMs = 650, int holdDurationMs = 300)
     {
-        return CinematicFadeService.Instance.FadeAndExecuteAsync(() =>
-        {
-            ProcessLauncherService.LaunchTarget("shutdown.exe", "/s /t 0");
-        }, fadeDurationMs, holdDurationMs);
+        return RunPowerActionAsync(
+            () => ProcessLauncherService.LaunchTarget("shutdown.exe", "/s /t 0"),
+            fadeDurationMs,
+            holdDurationMs);
     }
 
     /// <summary>
@@ -102,10 +130,10 @@ public static class PowerService
     /// </summary>
     public static Task ExecuteSignOutAsync(int fadeDurationMs = 500, int holdDurationMs = 200)
     {
-        return CinematicFadeService.Instance.FadeAndExecuteAsync(() =>
-        {
-            ProcessLauncherService.LaunchTarget("shutdown.exe", "/l");
-        }, fadeDurationMs, holdDurationMs);
+        return RunPowerActionAsync(
+            () => ProcessLauncherService.LaunchTarget("shutdown.exe", "/l"),
+            fadeDurationMs,
+            holdDurationMs);
     }
 
     /// <summary>

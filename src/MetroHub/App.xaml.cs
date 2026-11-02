@@ -163,6 +163,8 @@ public partial class App : Application
         // Dynamically detect and synchronize Windows accent color with application theme
         SystemAccentColorService.Initialize();
         GeometryTokens.Initialize();
+        PowerService.FadeAndExecuteHandler = (action, fadeMs, holdMs) =>
+            CinematicFadeService.Instance.FadeAndExecuteAsync(action, fadeMs, holdMs);
 
         MetroHub.Core.Models.TileModel.WidgetViewModelFactory = MetroHub.Widgets.Registry.WidgetRegistry.CreateViewModelForTile;
 
