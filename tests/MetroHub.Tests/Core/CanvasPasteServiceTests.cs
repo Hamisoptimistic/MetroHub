@@ -160,7 +160,7 @@ public sealed class CanvasPasteServiceTests : IDisposable
     {
         var snapshot = new ClipboardSnapshot(
             Files: null,
-            Text: "Antigravity task checklist\r\nItem 1\r\nItem 2",
+            Text: "Project task checklist\r\nItem 1\r\nItem 2",
             Image: null,
             IsSensitive: false);
 
@@ -168,7 +168,7 @@ public sealed class CanvasPasteServiceTests : IDisposable
 
         Assert.NotNull(specs);
         Assert.Single(specs);
-        Assert.StartsWith("Antigravity task", specs[0].Title);
+        Assert.StartsWith("Project task", specs[0].Title);
         Assert.EndsWith(".txt", specs[0].TargetPath);
         Assert.True(File.Exists(specs[0].TargetPath));
     }

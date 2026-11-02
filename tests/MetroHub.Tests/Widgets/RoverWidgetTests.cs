@@ -196,13 +196,13 @@ public class RoverWidgetTests
     }
 
     [Fact]
-    public void RenderRoverWidgetsToArtifactDirectory()
+    public void RenderRoverWidgetsToDisk()
     {
         var thread = new Thread(() =>
         {
             EnsureApplication();
 
-            string outDir = @"C:\Users\HamB\.gemini\antigravity-ide\brain\a6e02d95-8bf4-47e5-864a-6d9ee3ef1384";
+            string outDir = Path.Combine(Path.GetTempPath(), "MetroHub_TestRenders", "Rover");
             Directory.CreateDirectory(outDir);
 
             var scenarios = new[]
