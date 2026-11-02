@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using Hardcodet.Wpf.TaskbarNotification;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Controllers;
+using MetroHub.Presentation.Themes;
 
 namespace MetroHub;
 
@@ -161,6 +162,7 @@ public partial class App : Application
 
         // Dynamically detect and synchronize Windows accent color with application theme
         SystemAccentColorService.Initialize();
+        GeometryTokens.Initialize();
 
         MetroHub.Core.Models.TileModel.WidgetViewModelFactory = MetroHub.Widgets.Registry.WidgetRegistry.CreateViewModelForTile;
 

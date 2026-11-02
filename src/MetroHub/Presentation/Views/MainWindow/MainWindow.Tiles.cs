@@ -775,20 +775,8 @@ public partial class MainWindow
     public void ApplyTileCornerRadius(int radius)
     {
         Settings.TileCornerRadius = radius;
-        StorageService.SaveSettings(Settings);
-        UpdateCornerRadiusResourceTokens(radius);
+        SettingsService.Instance.NotifyChanged(nameof(AppSettings.TileCornerRadius));
         UpdateTileCornerMenuChecks();
-    }
-
-    public static void UpdateCornerRadiusResourceTokens(int radius)
-    {
-        var res = Application.Current.Resources;
-        res["TileCornerRadius"] = new CornerRadius(radius);
-        res["ControlCornerRadius"] = new CornerRadius(radius <= 2 ? radius : (radius == 4 ? 4 : 6));
-        res["ControlCornerRadiusBottom"] = new CornerRadius(0, 0, radius, radius);
-
-        // Strict Sharp Metro Windows: Setting window and dialogs are 0px sharp
-        res["DialogCornerRadius"] = new CornerRadius(0);
     }
 
     private void UpdateTileCornerMenuChecks()

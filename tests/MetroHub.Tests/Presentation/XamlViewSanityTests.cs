@@ -261,22 +261,22 @@ public class XamlViewSanityTests
             try
             {
                 // Test dynamic token scaling across all standard corner radii
-                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(0);
+                MetroHub.Presentation.Themes.GeometryTokens.ApplyCornerRadius(0);
                 System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
                 Assert.Equal(new CornerRadius(0), border.CornerRadius);
 
-                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(4);
+                MetroHub.Presentation.Themes.GeometryTokens.ApplyCornerRadius(4);
                 System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
                 Assert.Equal(new CornerRadius(4), border.CornerRadius);
 
-                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(8);
+                MetroHub.Presentation.Themes.GeometryTokens.ApplyCornerRadius(8);
                 System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
                 Assert.Equal(new CornerRadius(6), border.CornerRadius);
             }
             finally
             {
                 // Reset back to standard subtle fluent token (2px)
-                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(2);
+                MetroHub.Presentation.Themes.GeometryTokens.ApplyCornerRadius(2);
                 System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
                 Assert.Equal(new CornerRadius(2), border.CornerRadius);
                 window.Close();
@@ -326,18 +326,18 @@ public class XamlViewSanityTests
             try
             {
                 // Verify that changing tile settings preserves 0px sharp dialog windows
-                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(0);
+                MetroHub.Presentation.Themes.GeometryTokens.ApplyCornerRadius(0);
                 Assert.Equal(new CornerRadius(0), Application.Current.FindResource("DialogCornerRadius"));
 
-                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(4);
+                MetroHub.Presentation.Themes.GeometryTokens.ApplyCornerRadius(4);
                 Assert.Equal(new CornerRadius(0), Application.Current.FindResource("DialogCornerRadius"));
 
-                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(8);
+                MetroHub.Presentation.Themes.GeometryTokens.ApplyCornerRadius(8);
                 Assert.Equal(new CornerRadius(0), Application.Current.FindResource("DialogCornerRadius"));
             }
             finally
             {
-                MetroHub.MainWindow.UpdateCornerRadiusResourceTokens(2);
+                MetroHub.Presentation.Themes.GeometryTokens.ApplyCornerRadius(2);
                 Assert.Equal(new CornerRadius(0), Application.Current.FindResource("DialogCornerRadius"));
             }
         });

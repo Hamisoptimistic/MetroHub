@@ -20,6 +20,7 @@ using MetroHub.Presentation.Controls;
 using MetroHub.Presentation.Views;
 using MetroHub.Presentation.Messaging;
 using MetroHub.Presentation.Controllers;
+using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Messaging;
 using MetroHub.Core.Search;
 using MetroHub.Core.Search.Native;
@@ -227,9 +228,9 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
 
     private static void OnCurrentScaleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (e.NewValue is double scale && Application.Current != null)
+        if (e.NewValue is double scale)
         {
-            Application.Current.Resources["AppUiScale"] = scale;
+            GeometryTokens.ApplyUiScale(scale);
         }
     }
 
@@ -645,7 +646,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
     {
         Settings = SettingsService.Instance.Current;
         SystemAccentColorService.SetStyleMode(Settings.AccentStyle);
-        UpdateCornerRadiusResourceTokens(Settings.TileCornerRadius);
+        GeometryTokens.ApplyCornerRadius(Settings.TileCornerRadius);
         WorkspaceManager.Instance.Initialize();
         var activeWs = WorkspaceManager.Instance.ActiveWorkspace;
         Tiles = activeWs.Tiles;
