@@ -8,6 +8,7 @@ using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Display;
 using MetroHub.Core.Models;
 using MetroHub.Core.Power;
+using MetroHub.Presentation.Controllers;
 using MetroHub.Presentation.Themes;
 using MetroHub.Widgets.Serialization;
 using Wpf.Ui.Controls;

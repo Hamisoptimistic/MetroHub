@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ManagedBass;
 
-namespace MetroHub.Core.Radio;
+namespace MetroHub.Widgets.Catalog.Radio.Services;
 
 /// <summary>
 /// High-performance singleton implementation of <see cref="IRadioAudioService"/>

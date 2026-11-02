@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace MetroHub.Core.Radio;
+namespace MetroHub.Widgets.Catalog.Radio.Services;
 
 /// <summary>
 /// Represents a single radio or ambient audio streaming station.

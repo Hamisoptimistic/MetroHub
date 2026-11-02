@@ -101,7 +101,7 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidgetActionH
         // 1. Try loading user override from quotes.json (config or legacy root)
         try
         {
-            string userQuotesFile = MetroHub.Core.Services.AppPaths.QuotesPath;
+            string userQuotesFile = MetroHub.Core.Services.AppPaths.ResolveConfigFile("quotes.json");
 
             if (File.Exists(userQuotesFile))
             {

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Windows;
 using MetroHub.Core.Models;
-using MetroHub.Core.Radio;
+using MetroHub.Widgets.Catalog.Radio.Services;
 using MetroHub.Widgets;
 using MetroHub.Widgets.Catalog.Radio;
 using MetroHub.Widgets.Registry;

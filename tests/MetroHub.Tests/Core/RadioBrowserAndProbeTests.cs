@@ -4,7 +4,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using MetroHub.Core.Radio;
+using MetroHub.Widgets.Catalog.Radio.Services;
 using Xunit;
 
 namespace MetroHub.Tests;

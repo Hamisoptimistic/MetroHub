@@ -826,7 +826,7 @@ public sealed partial class MediaWidgetViewModel : WidgetViewModelBase, IWidgetC
     {
         try
         {
-            string path = MetroHub.Core.Services.AppPaths.MediaLogPath;
+            string path = MetroHub.Core.Services.AppPaths.ResolveLogFile("media_art.log");
             MetroHub.Core.Services.AppPaths.EnsureDirectory(path);
 
             if (File.Exists(path) && new FileInfo(path).Length > 256 * 1024)

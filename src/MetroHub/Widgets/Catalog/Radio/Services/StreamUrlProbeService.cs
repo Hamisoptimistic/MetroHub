@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MetroHub.Core.Radio;
+namespace MetroHub.Widgets.Catalog.Radio.Services;
 
 /// <summary>
 /// Result returned after probing and validating an audio stream URL.

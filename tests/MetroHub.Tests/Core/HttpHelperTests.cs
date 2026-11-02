@@ -7,9 +7,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using MetroHub.Core.Radio;
+using MetroHub.Widgets.Catalog.Radio.Services;
 using MetroHub.Core.Services;
-using MetroHub.Core.Services.Catalog.Weather;
+using MetroHub.Widgets.Catalog.Weather.Services;
 using Xunit;
 
 namespace MetroHub.Tests;

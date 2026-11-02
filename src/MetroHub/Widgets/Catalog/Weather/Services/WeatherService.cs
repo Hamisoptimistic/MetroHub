@@ -5,11 +5,13 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MetroHub.Core.Services.Catalog.Weather;
+using MetroHub.Core.Services;
+
+namespace MetroHub.Widgets.Catalog.Weather.Services;
 
 public sealed class WeatherService
 {
-    private static string WeatherCachePath => AppPaths.WeatherCachePath;
+    private static string WeatherCachePath => AppPaths.ResolveCacheFile("v1_weather_cache.json");
 
     internal static HttpClient SharedHttpClient => HttpHelper.Client;
 

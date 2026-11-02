@@ -92,7 +92,7 @@ public partial class App : Application
         LoggingService.Initialize();
 
         // Register native BASS audio engine dynamic library resolver
-        MetroHub.Core.Radio.BassLoader.Register();
+        MetroHub.Widgets.Catalog.Radio.Services.BassLoader.Register();
 
         // Global crash logging
         AppDomain.CurrentDomain.UnhandledException += (s, args) =>

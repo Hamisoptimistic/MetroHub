@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using MetroHub.Core.Common;
 using MetroHub.Core.Models;
 using MetroHub.Core.Services;
-using MetroHub.Presentation.Messaging;
 using Wpf.Ui.Controls;
 
 namespace MetroHub.Core.Search;
@@ -17,6 +16,8 @@ namespace MetroHub.Core.Search;
 /// </summary>
 public static class SearchActionRegistry
 {
+    public static Func<ISidebarShortcutStore?>? SidebarStoreProvider { get; set; }
+
     public static Func<string, bool>? IsFilePinned { get; set; }
     public static Action<string>? PinFile { get; set; }
     public static Action<string>? UnpinFile { get; set; }
@@ -178,8 +179,8 @@ public static class FileActionProvider
                 return Task.FromResult(new ActionResult(ActionOutcome.StayOpenAndRefresh));
             }));
 
-        var rail = CanvasMessenger.GetSidebarRail();
-        bool isPinnedSidebar = rail != null && SidebarPinningService.IsPathPinnedToSidebar(rail, path);
+        var store = SearchActionRegistry.SidebarStoreProvider?.Invoke();
+        bool isPinnedSidebar = store != null && SidebarPinningService.IsPathPinnedToSidebar(store, path);
         actions.Add(new CandidateAction(
             Id: "file:pin_sidebar",
             Title: isPinnedSidebar ? "Unpin from Sidebar" : "Pin to Sidebar",
@@ -188,12 +189,12 @@ public static class FileActionProvider
             IsDestructive: isPinnedSidebar,
             ExecuteAsync: _ =>
             {
-                var r = CanvasMessenger.GetSidebarRail();
-                if (r != null)
+                var s = SearchActionRegistry.SidebarStoreProvider?.Invoke();
+                if (s != null)
                 {
                     if (isPinnedSidebar)
                     {
-                        SidebarPinningService.UnpinPathFromSidebar(r, path);
+                        SidebarPinningService.UnpinPathFromSidebar(s, path);
                     }
                     else
                     {
@@ -214,10 +215,10 @@ public static class FileActionProvider
                             TargetType = isFolder ? SidebarShortcutType.CustomFolder : SidebarShortcutType.Application,
                             IconSymbol = smartIcon,
                             CustomIconPath = iconPath,
-                            SortOrder = r.Shortcuts.Count,
+                            SortOrder = s.Shortcuts.Count,
                             IsRemovable = true
                         };
-                        r.AddShortcutItem(shortcut);
+                        s.AddShortcutItem(shortcut);
                     }
                 }
                 return Task.FromResult(new ActionResult(ActionOutcome.StayOpenAndRefresh));
@@ -328,8 +329,8 @@ public static class AppActionProvider
                 return Task.FromResult(new ActionResult(ActionOutcome.StayOpenAndRefresh));
             }));
 
-        var rail = CanvasMessenger.GetSidebarRail();
-        bool isPinnedSidebar = rail != null && SidebarPinningService.IsCatalogItemPinnedToSidebar(rail, app);
+        var store = SearchActionRegistry.SidebarStoreProvider?.Invoke();
+        bool isPinnedSidebar = store != null && SidebarPinningService.IsCatalogItemPinnedToSidebar(store, app);
         actions.Add(new CandidateAction(
             Id: "app:pin_sidebar",
             Title: isPinnedSidebar ? "Unpin from Sidebar" : "Pin to Sidebar",
@@ -338,16 +339,16 @@ public static class AppActionProvider
             IsDestructive: isPinnedSidebar,
             ExecuteAsync: _ =>
             {
-                var r = CanvasMessenger.GetSidebarRail();
-                if (r != null)
+                var s = SearchActionRegistry.SidebarStoreProvider?.Invoke();
+                if (s != null)
                 {
                     if (isPinnedSidebar)
                     {
-                        SidebarPinningService.UnpinCatalogItemFromSidebar(r, app);
+                        SidebarPinningService.UnpinCatalogItemFromSidebar(s, app);
                     }
                     else
                     {
-                        SidebarPinningService.PinCatalogItem(r, app);
+                        SidebarPinningService.PinCatalogItem(s, app);
                     }
                 }
                 return Task.FromResult(new ActionResult(ActionOutcome.StayOpenAndRefresh));

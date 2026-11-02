@@ -179,11 +179,13 @@ public static class ColorExtractorService
     }
 
     /// <summary>
-    /// Returns Windows system accent color as #RRGGBB, dynamically sourced from SystemAccentColorService.
+    /// Returns Windows system accent color as #RRGGBB, dynamically sourced from FallbackAccentHexProvider.
     /// </summary>
+    public static Func<string>? FallbackAccentHexProvider { get; set; }
+
     public static string GetFallbackSystemAccentHex()
     {
-        return SystemAccentColorService.CurrentAccentHex;
+        return FallbackAccentHexProvider?.Invoke() ?? "#4CC2FF";
     }
 
     /// <summary>

@@ -296,13 +296,12 @@ public partial class MainWindow
         }
     }
 
-    public void ShowSetWeatherLocationDialog(Widgets.Catalog.Weather.WeatherWidgetViewModel weatherVm)
+    public void ShowModalDialog(Action<Window> showDialogAction)
     {
-        if (weatherVm == null) return;
-
+        if (showDialogAction == null) return;
         using (EnterDialogScope())
         {
-            Presentation.Controls.WeatherLocationDialog.Show(this, weatherVm);
+            showDialogAction(this);
         }
     }
 

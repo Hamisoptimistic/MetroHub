@@ -1,6 +1,6 @@
 using System;
 using CommunityToolkit.Mvvm.ComponentModel;
-using MetroHub.Core.Radio;
+using MetroHub.Widgets.Catalog.Radio.Services;
 
 namespace MetroHub.Widgets.Catalog.Radio;
 

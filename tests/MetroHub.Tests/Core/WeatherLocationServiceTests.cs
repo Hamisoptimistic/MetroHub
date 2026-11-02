@@ -2,6 +2,7 @@ using System;
 using System.Text.Json;
 using MetroHub.Core.Models.Geocoding;
 using MetroHub.Core.Services;
+using MetroHub.Widgets.Catalog.Weather.Services;
 using Xunit;
 
 namespace MetroHub.Tests;

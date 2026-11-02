@@ -134,4 +134,33 @@ public sealed class AppPathsTests : IDisposable
         Assert.StartsWith(AppPaths.LogsDir, AppPaths.HiddenDiagnosticsLogPath, StringComparison.OrdinalIgnoreCase);
         Assert.EndsWith("hidden_diagnostics.log", AppPaths.HiddenDiagnosticsLogPath, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void GenericResolvers_ResolveUnderRespectiveCategoryDirectories()
+    {
+        string? prevCustom = AppPaths.CustomAppDataDir;
+        try
+        {
+            AppPaths.CustomAppDataDir = _testRoot;
+
+            string config = AppPaths.ResolveConfigFile("test_cfg.json");
+            Assert.Equal(Path.Combine(AppPaths.ConfigDir, "test_cfg.json"), config);
+
+            string cache = AppPaths.ResolveCacheFile("test_cache.json");
+            Assert.Equal(Path.Combine(AppPaths.CacheDir, "test_cache.json"), cache);
+
+            string backup = AppPaths.ResolveBackupFile("test_bak.json");
+            Assert.Equal(Path.Combine(AppPaths.BackupsDir, "test_bak.json"), backup);
+
+            string log = AppPaths.ResolveLogFile("test_log.log");
+            Assert.Equal(Path.Combine(AppPaths.LogsDir, "test_log.log"), log);
+
+            string cacheDir = AppPaths.ResolveCacheDirectory("test_subcache");
+            Assert.Equal(Path.Combine(AppPaths.CacheDir, "test_subcache"), cacheDir);
+        }
+        finally
+        {
+            AppPaths.CustomAppDataDir = prevCustom;
+        }
+    }
 }

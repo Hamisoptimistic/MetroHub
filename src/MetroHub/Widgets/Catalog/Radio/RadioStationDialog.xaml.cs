@@ -8,7 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using MetroHub.Core.Radio;
+using MetroHub.Widgets.Catalog.Radio.Services;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Dialogs;
 using MetroHub.Presentation.Themes;

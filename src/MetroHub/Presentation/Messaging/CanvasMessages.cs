@@ -5,7 +5,6 @@ using CommunityToolkit.Mvvm.Messaging;
 using CommunityToolkit.Mvvm.Messaging.Messages;
 using MetroHub.Core.Models;
 using MetroHub.Presentation.Controls;
-using MetroHub.Widgets.Catalog.Weather;
 
 namespace MetroHub.Presentation.Messaging;
 
@@ -39,7 +38,7 @@ public record TileBatchDeleteMessage(TileModel SourceTile);
 
 public record TileToggleSidebarPinMessage(TileModel Tile);
 
-public record TileShowWeatherLocationDialogMessage(WeatherWidgetViewModel WeatherVm);
+public record ShowModalDialogRequestMessage(Action<System.Windows.Window> ShowDialogAction);
 
 // ─────────────────────────────────────────────────────────────
 // Group Command Messages

@@ -8,9 +8,9 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MetroHub.Core.Models.Geocoding;
-using MetroHub.Core.Services.Catalog.Weather;
 
-namespace MetroHub.Core.Services;
+
+namespace MetroHub.Widgets.Catalog.Weather.Services;
 
 /// <summary>
 /// Service providing asynchronous geocoding search with Open-Meteo and Photon fallback,

@@ -3,7 +3,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MetroHub.Core.Radio;
+namespace MetroHub.Widgets.Catalog.Radio.Services;
 
 /// <summary>
 /// Singleton contract for managing application-wide radio stream audio playback.

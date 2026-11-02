@@ -57,7 +57,7 @@ internal static class WpfTestHost
                         appResources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/MetroHub;component/Presentation/Themes/ContextMenuStyles.xaml", UriKind.Absolute) });
                         appResources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/MetroHub;component/Presentation/Dialogs/MetroDialog.xaml", UriKind.Absolute) });
                         appResources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/MetroHub;component/Widgets/WidgetStyles.xaml", UriKind.Absolute) });
-                        MetroHub.Core.Services.SystemAccentColorService.UpdateSystemAccentColors();
+                        MetroHub.Presentation.Themes.SystemAccentColorService.UpdateSystemAccentColors();
                     }
                     catch (Exception ex)
                     {

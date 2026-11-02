@@ -11,6 +11,7 @@ using MetroHub.Core.Models.Geocoding;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Dialogs;
 using MetroHub.Widgets.Catalog.Weather;
+using MetroHub.Widgets.Catalog.Weather.Services;
 using Wpf.Ui.Controls;
 
 namespace MetroHub.Presentation.Controls;

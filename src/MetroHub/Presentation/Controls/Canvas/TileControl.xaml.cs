@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
@@ -14,11 +15,12 @@ using MetroHub.Presentation.Controllers;
 using MetroHub.Presentation.Dialogs;
 using MetroHub.Presentation.Messaging;
 using MetroHub.Presentation.Themes;
+using MetroHub.Presentation.Shaders;
 using MetroHub.Widgets;
 
 namespace MetroHub.Presentation.Controls;
 
-public partial class TileControl : UserControl
+public partial class TileControl : UserControl, IShaderInputBlocker
 {
     public static readonly RoutedEvent TileActivatedEvent = EventManager.RegisterRoutedEvent(
         nameof(TileActivated), RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(TileControl));
@@ -1218,7 +1220,8 @@ public partial class TileControl : UserControl
         if (s_activeTargetTile?.DataContext is TileModel tile)
         {
             var ownerWindow = Window.GetWindow(s_activeTargetTile) ?? Application.Current?.MainWindow;
-            WindowsShareService.ShowShareUI(tile, ownerWindow);
+            IntPtr hwnd = ownerWindow != null ? new WindowInteropHelper(ownerWindow).Handle : IntPtr.Zero;
+            WindowsShareService.ShowShareUI(tile, hwnd);
         }
     }
 

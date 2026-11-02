@@ -8,7 +8,9 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace MetroHub.Core.Radio;
+using MetroHub.Core.Services;
+
+namespace MetroHub.Widgets.Catalog.Radio.Services;
 
 /// <summary>
 /// Service responsible for loading, mutating, and persisting the unified station catalog.
@@ -55,8 +57,8 @@ public sealed class RadioCatalogService
         }
         else
         {
-            _catalogFilePath = Services.AppPaths.RadioCatalogPath;
-            _catalogBakPath = Services.AppPaths.RadioCatalogBakPath;
+            _catalogFilePath = AppPaths.ResolveCacheFile("radio_catalog.json");
+            _catalogBakPath = AppPaths.ResolveBackupFile("radio_catalog.json.bak");
         }
     }
 
@@ -338,8 +340,8 @@ public sealed class RadioCatalogService
 
         try
         {
-            Services.AppPaths.EnsureDirectory(_catalogFilePath);
-            Services.AppPaths.EnsureDirectory(_catalogBakPath);
+            AppPaths.EnsureDirectory(_catalogFilePath);
+            AppPaths.EnsureDirectory(_catalogBakPath);
 
             using (var fs = new FileStream(tmpPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
             using (var writer = new StreamWriter(fs, Utf8NoBom))

@@ -15,6 +15,7 @@ using MetroHub.Core.Models;
 using MetroHub.Core.Search;
 using MetroHub.Core.Services;
 using MetroHub.Presentation.Themes;
+using MetroHub.Presentation.Shaders;
 using MetroHub.Presentation.Messaging;
 using MetroHub.Presentation.Search;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -273,7 +274,7 @@ namespace MetroHub.Presentation.Controls
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "WPF UserControl lifecycle manages disposable fields via Unloaded event.")]
-    public partial class AllAppsDrawerControl : UserControl
+    public partial class AllAppsDrawerControl : UserControl, IShaderInputBlocker
     {
         public event EventHandler<CatalogItemModel>? AppPinRequested;
         public event EventHandler<CatalogItemModel>? AppUnpinRequested;
@@ -448,6 +449,7 @@ namespace MetroHub.Presentation.Controls
                 }
             };
 
+            SearchActionRegistry.SidebarStoreProvider = () => CanvasMessenger.GetSidebarRail();
             SearchActionRegistry.IsFilePinned = path => IsFilePinnedPredicate?.Invoke(path) ?? false;
             SearchActionRegistry.PinFile = path => FilePinRequested?.Invoke(this, path);
             SearchActionRegistry.UnpinFile = path => FileUnpinRequested?.Invoke(this, path);

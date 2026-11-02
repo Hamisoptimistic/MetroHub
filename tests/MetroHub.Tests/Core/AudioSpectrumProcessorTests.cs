@@ -1,5 +1,5 @@
 using System;
-using MetroHub.Core.Radio;
+using MetroHub.Widgets.Catalog.Radio.Services;
 using Xunit;
 
 namespace MetroHub.Tests;

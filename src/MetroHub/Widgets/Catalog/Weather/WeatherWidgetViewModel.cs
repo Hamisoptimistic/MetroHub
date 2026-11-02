@@ -12,7 +12,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Models;
-using MetroHub.Core.Services.Catalog.Weather;
+using MetroHub.Widgets.Catalog.Weather.Services;
 using MetroHub.Presentation.Messaging;
 using MetroHub.Widgets.Serialization;
 
@@ -258,7 +258,7 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
     public IEnumerable<Control> GetContextMenuItems()
     {
         yield return WidgetMenu.Item("Change Location...", SymbolRegular.Location24, () =>
-            WeakReferenceMessenger.Default.Send(new TileShowWeatherLocationDialogMessage(this)));
+            WeakReferenceMessenger.Default.Send(new ShowModalDialogRequestMessage(owner => Presentation.Controls.WeatherLocationDialog.Show(owner, this))));
         yield return WidgetMenu.Item("Automatic Location", SymbolRegular.MyLocation24, () => _ = UseAutoLocationAsync(),
             isCheckable: true, isChecked: IsAutoLocation);
         yield return WidgetMenu.Submenu("Temperature Units", SymbolRegular.Temperature24,

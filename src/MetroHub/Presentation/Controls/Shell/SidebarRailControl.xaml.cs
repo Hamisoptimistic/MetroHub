@@ -14,10 +14,11 @@ using MetroHub.Core.Models;
 using MetroHub.Core.Services;
 using MetroHub.Core.Services.Catalog;
 using MetroHub.Presentation.Dialogs;
+using MetroHub.Presentation.Shaders;
 
 namespace MetroHub.Presentation.Controls;
 
-public partial class SidebarRailControl : UserControl, ISidebarShortcutStore
+public partial class SidebarRailControl : UserControl, ISidebarShortcutStore, IShaderInputBlocker
 {
     public event EventHandler? AppsToggleRequested;
     public event EventHandler? ShortcutsChanged;

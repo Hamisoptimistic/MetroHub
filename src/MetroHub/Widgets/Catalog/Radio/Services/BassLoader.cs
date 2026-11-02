@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using ManagedBass;
 
-namespace MetroHub.Core.Radio;
+namespace MetroHub.Widgets.Catalog.Radio.Services;
 
 /// <summary>
 /// Bulletproof modern .NET 10 dynamic native library resolver for Un4seen BASS audio engine binaries.

@@ -84,7 +84,7 @@ public class WindowsShareServiceTests
                     Assert.NotEqual(IntPtr.Zero, hwnd);
 
                     var tile = new TileModel { Title = "Test Tile", TargetPath = "https://example.com", TileType = TileType.WebUrl };
-                    WindowsShareService.ShowShareUI(tile, win);
+                    WindowsShareService.ShowShareUI(tile, hwnd);
 
                     var interop = (IDataTransferManagerInterop)WindowsShareService.GetInteropForTesting();
                     Guid iid = new(0xa5caee9b, 0x8708, 0x49d1, 0x8d, 0x36, 0x67, 0xd2, 0x5a, 0x8d, 0xa0, 0x0c);

@@ -1,11 +1,12 @@
 using System;
 using System.Windows;
 using System.Windows.Media;
+using MetroHub.Core.Common;
 using MetroHub.Core.Models;
-using MetroHub.Presentation.Themes;
+using MetroHub.Core.Services;
 using Wpf.Ui.Appearance;
 
-namespace MetroHub.Core.Services;
+namespace MetroHub.Presentation.Themes;
 
 /// <summary>
 /// Service that dynamically detects and synchronizes the application's accent colors with the Windows system accent color.
@@ -44,6 +45,8 @@ public static class SystemAccentColorService
     /// </summary>
     public static void Initialize()
     {
+        ColorExtractorService.FallbackAccentHexProvider = () => CurrentAccentHex;
+
         lock (_lock)
         {
             if (_initialized) return;

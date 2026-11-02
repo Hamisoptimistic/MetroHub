@@ -5,11 +5,13 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace MetroHub.Core.Services.Catalog.Weather;
+using MetroHub.Core.Services;
+
+namespace MetroHub.Widgets.Catalog.Weather.Services;
 
 public sealed class LocationService
 {
-    private static string LocationCachePath => AppPaths.LocationCachePath;
+    private static string LocationCachePath => AppPaths.ResolveCacheFile("v1_location_cache.json");
 
     private readonly HttpClient _httpClient;
     private static readonly TimeSpan LocationTtl = TimeSpan.FromDays(7);

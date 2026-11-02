@@ -1,8 +1,6 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Interop;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using MetroHub.Core.Models;
@@ -73,27 +71,22 @@ public static class WindowsShareService
     /// <summary>
     /// Invokes the native Windows 11 Share UI flyout for the specified tile.
     /// </summary>
-    public static void ShowShareUI(TileModel tile, Window? ownerWindow = null)
+    public static void ShowShareUI(TileModel tile, IntPtr ownerHwnd = default)
     {
-        if (!CanShare(tile)) return;
-
-        ownerWindow ??= Application.Current?.MainWindow;
-        if (ownerWindow == null) return;
-
-        IntPtr hwnd = new WindowInteropHelper(ownerWindow).Handle;
-        if (hwnd == IntPtr.Zero) return;
+        if (ownerHwnd == IntPtr.Zero || !CanShare(tile)) return;
 
         try
         {
             _activeTile = tile;
-            EnsureDataTransferManager(hwnd);
+            EnsureDataTransferManager(ownerHwnd);
 
             // Cast to interop interface and display the native Windows Share pane
             var interop = (IDataTransferManagerInterop)MarshalInterfaceHelper.GetInterop();
-            interop.ShowShareUIForWindow(hwnd);
+            interop.ShowShareUIForWindow(ownerHwnd);
         }
         catch (Exception ex)
         {
+            _activeTile = null;
             Safe.Log(ex, "WindowsShareService: Failed to display native Share UI");
         }
     }
@@ -129,86 +122,99 @@ public static class WindowsShareService
         var tile = _activeTile;
         if (tile == null) return;
 
-        var request = args.Request;
-        var data = request.Data;
-
-        string title = !string.IsNullOrWhiteSpace(tile.Title) ? tile.Title : "MetroHub Tile";
-        data.Properties.Title = title;
-        data.Properties.Description = "Shared from MetroHub";
-
-        // Case 1: Strict Web Link or Note with Web Source
-        if (tile.TileType == TileType.WebUrl && !string.IsNullOrWhiteSpace(tile.TargetPath))
+        bool deferralTaken = false;
+        try
         {
-            string url = tile.TargetPath.Trim();
-            if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-                !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            var request = args.Request;
+            var data = request.Data;
+
+            string title = !string.IsNullOrWhiteSpace(tile.Title) ? tile.Title : "MetroHub Tile";
+            data.Properties.Title = title;
+            data.Properties.Description = "Shared from MetroHub";
+
+            // Case 1: Strict Web Link or Note with Web Source
+            if (tile.TileType == TileType.WebUrl && !string.IsNullOrWhiteSpace(tile.TargetPath))
             {
-                url = "https://" + url;
+                string url = tile.TargetPath.Trim();
+                if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                    !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                {
+                    url = "https://" + url;
+                }
+
+                if (Uri.TryCreate(url, UriKind.Absolute, out Uri? webUri))
+                {
+                    data.SetWebLink(webUri);
+                    data.SetText(webUri.AbsoluteUri);
+                    return;
+                }
             }
 
-            if (Uri.TryCreate(url, UriKind.Absolute, out Uri? webUri))
+            if (tile.HasWebSource && !string.IsNullOrWhiteSpace(tile.Arguments) &&
+                Uri.TryCreate(tile.Arguments, UriKind.Absolute, out Uri? srcUri))
             {
-                data.SetWebLink(webUri);
-                data.SetText(webUri.AbsoluteUri);
+                data.SetWebLink(srcUri);
+                data.SetText(srcUri.AbsoluteUri);
                 return;
             }
-        }
 
-        if (tile.HasWebSource && !string.IsNullOrWhiteSpace(tile.Arguments) &&
-            Uri.TryCreate(tile.Arguments, UriKind.Absolute, out Uri? srcUri))
-        {
-            data.SetWebLink(srcUri);
-            data.SetText(srcUri.AbsoluteUri);
-            return;
-        }
-
-        // Case 2: Note Tile (Plain Text)
-        if (tile.IsNote && File.Exists(tile.TargetPath))
-        {
-            try
-            {
-                string noteText = File.ReadAllText(tile.TargetPath);
-                data.SetText(noteText);
-                return;
-            }
-            catch (Exception ex)
-            {
-                Safe.Log(ex, "WindowsShareService: Failed to read note text for share");
-            }
-        }
-
-        // Case 3: Local File or Image on disk (e.g. Pasted screenshot, image, document)
-        if (!string.IsNullOrWhiteSpace(tile.TargetPath) && File.Exists(tile.TargetPath))
-        {
-            var deferral = request.GetDeferral();
-            _ = System.Threading.Tasks.Task.Run(async () =>
+            // Case 2: Note Tile (Plain Text)
+            if (tile.IsNote && File.Exists(tile.TargetPath))
             {
                 try
                 {
-                    string fullPath = Path.GetFullPath(tile.TargetPath);
-                    StorageFile storageFile = await StorageFile.GetFileFromPathAsync(fullPath);
-                    data.SetStorageItems(new[] { storageFile });
+                    string noteText = File.ReadAllText(tile.TargetPath);
+                    data.SetText(noteText);
+                    return;
                 }
                 catch (Exception ex)
                 {
-                    Safe.Log(ex, "WindowsShareService: Failed to set storage items for file share");
-                    if (!string.IsNullOrWhiteSpace(tile.TargetPath))
-                    {
-                        data.SetText(tile.TargetPath);
-                    }
+                    Safe.Log(ex, "WindowsShareService: Failed to read note text for share");
                 }
-                finally
-                {
-                    deferral.Complete();
-                }
-            });
-            return;
-        }
+            }
 
-        // Fallback: Share whatever TargetPath or Title we have as text
-        if (!string.IsNullOrWhiteSpace(tile.TargetPath))
+            // Case 3: Local File or Image on disk (e.g. Pasted screenshot, image, document)
+            if (!string.IsNullOrWhiteSpace(tile.TargetPath) && File.Exists(tile.TargetPath))
+            {
+                deferralTaken = true;
+                var deferral = request.GetDeferral();
+                _ = System.Threading.Tasks.Task.Run(async () =>
+                {
+                    try
+                    {
+                        string fullPath = Path.GetFullPath(tile.TargetPath);
+                        StorageFile storageFile = await StorageFile.GetFileFromPathAsync(fullPath);
+                        data.SetStorageItems(new[] { storageFile });
+                    }
+                    catch (Exception ex)
+                    {
+                        Safe.Log(ex, "WindowsShareService: Failed to set storage items for file share");
+                        if (!string.IsNullOrWhiteSpace(tile.TargetPath))
+                        {
+                            data.SetText(tile.TargetPath);
+                        }
+                    }
+                    finally
+                    {
+                        _activeTile = null;
+                        deferral.Complete();
+                    }
+                });
+                return;
+            }
+
+            // Fallback: Share whatever TargetPath or Title we have as text
+            if (!string.IsNullOrWhiteSpace(tile.TargetPath))
+            {
+                data.SetText(tile.TargetPath);
+            }
+        }
+        finally
         {
-            data.SetText(tile.TargetPath);
+            if (!deferralTaken)
+            {
+                _activeTile = null;
+            }
         }
     }
 

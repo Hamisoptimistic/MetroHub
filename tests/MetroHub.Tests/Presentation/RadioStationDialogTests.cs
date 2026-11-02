@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using System.Windows.Controls;
-using MetroHub.Core.Radio;
+using MetroHub.Widgets.Catalog.Radio.Services;
 using MetroHub.Presentation.Controls;
 using Xunit;
 

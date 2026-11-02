@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using MetroHub.Core.Display;
+using MetroHub.Presentation.Controllers;
 using Serilog;
 
 namespace MetroHub.Core.Services;

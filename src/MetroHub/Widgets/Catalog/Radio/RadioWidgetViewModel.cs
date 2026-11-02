@@ -8,7 +8,7 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MetroHub.Core.Models;
-using MetroHub.Core.Radio;
+using MetroHub.Widgets.Catalog.Radio.Services;
 using MetroHub.Widgets.Serialization;
 
 namespace MetroHub.Widgets.Catalog.Radio;

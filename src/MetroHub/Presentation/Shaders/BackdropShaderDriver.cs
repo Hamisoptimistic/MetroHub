@@ -8,6 +8,11 @@ using MetroHub.Core.Services;
 namespace MetroHub.Presentation.Shaders;
 
 /// <summary>
+/// Marker interface for UI controls that block shader background mouse and touch inputs.
+/// </summary>
+public interface IShaderInputBlocker { }
+
+/// <summary>
 /// Drives animation updates for MetroShaderEffect on WPF backdrops.
 /// Manages the CompositionTarget.Rendering loop at native display refresh rates, cached aspect ratio calculations,
 /// lifecycle gating (0% CPU/GPU when hidden or minimized), bounded modulo time progression, and wall-clock time in register c0.z.
@@ -184,10 +189,7 @@ public sealed class BackdropShaderDriver : IDisposable
                 current is System.Windows.Controls.Primitives.TextBoxBase ||
                 current is System.Windows.Controls.Primitives.ScrollBar ||
                 current is System.Windows.Controls.Primitives.Thumb ||
-                string.Equals(current.GetType().Name, "TileControl", StringComparison.Ordinal) ||
-                string.Equals(current.GetType().Name, "GroupHeaderControl", StringComparison.Ordinal) ||
-                string.Equals(current.GetType().Name, "AllAppsDrawerControl", StringComparison.Ordinal) ||
-                string.Equals(current.GetType().Name, "SidebarRailControl", StringComparison.Ordinal))
+                current is IShaderInputBlocker)
             {
                 return true;
             }

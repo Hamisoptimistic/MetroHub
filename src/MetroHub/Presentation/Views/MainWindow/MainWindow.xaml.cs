@@ -387,7 +387,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         WeakReferenceMessenger.Default.Register<MainWindow, TileBatchUnpinMessage>(this, (r, m) => r.BatchUnpinSelectedTiles(m.SourceTile));
         WeakReferenceMessenger.Default.Register<MainWindow, TileBatchDeleteMessage>(this, (r, m) => r.BatchDeletePastedAssets(m.SourceTile));
         WeakReferenceMessenger.Default.Register<MainWindow, TileToggleSidebarPinMessage>(this, (r, m) => SidebarPinningService.HandleTogglePin(r.SidebarRail, m.Tile, r.SelectedTiles));
-        WeakReferenceMessenger.Default.Register<MainWindow, TileShowWeatherLocationDialogMessage>(this, (r, m) => r.ShowSetWeatherLocationDialog(m.WeatherVm));
+        WeakReferenceMessenger.Default.Register<MainWindow, ShowModalDialogRequestMessage>(this, (r, m) => r.ShowModalDialog(m.ShowDialogAction));
 
         WeakReferenceMessenger.Default.Register<MainWindow, GroupFlashLockedMessage>(this, (r, m) => r.FlashLockedGroupPerimeter(m.Group));
         WeakReferenceMessenger.Default.Register<MainWindow, GroupRenameMessage>(this, (r, m) =>

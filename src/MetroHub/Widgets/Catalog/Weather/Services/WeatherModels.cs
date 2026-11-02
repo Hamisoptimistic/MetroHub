@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace MetroHub.Core.Services.Catalog.Weather;
+namespace MetroHub.Widgets.Catalog.Weather.Services;
 
 public sealed class LocationCacheEntry
 {

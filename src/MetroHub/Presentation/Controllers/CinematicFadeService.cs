@@ -10,7 +10,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using Microsoft.Win32;
 
-namespace MetroHub.Core.Display;
+namespace MetroHub.Presentation.Controllers;
 
 /// <summary>
 /// Universal cinematic display transition engine for MetroHub.

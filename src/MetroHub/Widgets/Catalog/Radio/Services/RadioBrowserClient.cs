@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MetroHub.Core.Services;
 
-namespace MetroHub.Core.Radio;
+namespace MetroHub.Widgets.Catalog.Radio.Services;
 
 /// <summary>
 /// Data transfer object representing a radio station returned by the Radio-Browser Community API.

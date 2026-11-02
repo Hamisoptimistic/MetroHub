@@ -113,9 +113,6 @@ public static class AppPaths
     public static string PrimaryWallpaperEffectsDir => Path.Combine(CacheDir, "WallpaperEffects");
     public static string LegacyWallpaperEffectsDir => Path.Combine(AppDataDir, "WallpaperEffects");
 
-    public static string PrimaryRoverSoundsDir => Path.Combine(CacheDir, "RoverSounds");
-    public static string LegacyRoverSoundsDir => Path.Combine(AppDataDir, "RoverSounds");
-
     // ── Path resolution properties ───────────────────────────
 
     // Config
@@ -142,10 +139,6 @@ public static class AppPaths
     public static string SettingsBakPath => ResolveFilePath(
         Path.Combine(BackupsDir, "settings.json.bak"),
         Path.Combine(AppDataDir, "settings.json.bak"));
-
-    public static string QuotesPath => ResolveFilePath(
-        Path.Combine(ConfigDir, "quotes.json"),
-        Path.Combine(AppDataDir, "quotes.json"));
 
     // Search Usage History
     public static string SearchHistoryPath => ResolveFilePath(
@@ -184,22 +177,6 @@ public static class AppPaths
         Path.Combine(BackupsDir, "apps_cache.json.bak"),
         Path.Combine(AppDataDir, "apps_cache.json.bak"));
 
-    public static string RadioCatalogPath => ResolveFilePath(
-        Path.Combine(CacheDir, "radio_catalog.json"),
-        Path.Combine(AppDataDir, "radio_catalog.json"));
-
-    public static string RadioCatalogBakPath => ResolveFilePath(
-        Path.Combine(BackupsDir, "radio_catalog.json.bak"),
-        Path.Combine(AppDataDir, "radio_catalog.json.bak"));
-
-    public static string WeatherCachePath => ResolveFilePath(
-        Path.Combine(CacheDir, "v1_weather_cache.json"),
-        Path.Combine(AppDataDir, "v1_weather_cache.json"));
-
-    public static string LocationCachePath => ResolveFilePath(
-        Path.Combine(CacheDir, "v1_location_cache.json"),
-        Path.Combine(AppDataDir, "v1_location_cache.json"));
-
     public static string IconCacheDir => ResolveDirectoryPath(
         PrimaryIconsDir,
         LegacyIconsDir);
@@ -212,15 +189,7 @@ public static class AppPaths
         PrimaryWallpaperEffectsDir,
         LegacyWallpaperEffectsDir);
 
-    public static string RoverSoundsDir => ResolveDirectoryPath(
-        PrimaryRoverSoundsDir,
-        LegacyRoverSoundsDir);
-
     // Logs
-    public static string MediaLogPath => ResolveFilePath(
-        Path.Combine(LogsDir, "media_art.log"),
-        Path.Combine(AppDataDir, "media_art.log"));
-
     public static string CrashLogPath => ResolveFilePath(
         Path.Combine(LogsDir, "crash.log"),
         Path.Combine(AppDataDir, "crash.log"));
@@ -230,6 +199,12 @@ public static class AppPaths
         Path.Combine(AppDataDir, "hidden_diagnostics.log"));
 
     // ── Resolution Helpers ───────────────────────────────────
+
+    public static string ResolveConfigFile(string fileName) => ResolveFilePath(Path.Combine(ConfigDir, fileName), Path.Combine(AppDataDir, fileName));
+    public static string ResolveCacheFile(string fileName) => ResolveFilePath(Path.Combine(CacheDir, fileName), Path.Combine(AppDataDir, fileName));
+    public static string ResolveBackupFile(string fileName) => ResolveFilePath(Path.Combine(BackupsDir, fileName), Path.Combine(AppDataDir, fileName));
+    public static string ResolveLogFile(string fileName) => ResolveFilePath(Path.Combine(LogsDir, fileName), Path.Combine(AppDataDir, fileName));
+    public static string ResolveCacheDirectory(string dirName) => ResolveDirectoryPath(Path.Combine(CacheDir, dirName), Path.Combine(AppDataDir, dirName));
 
     /// <summary>
     /// Resolves a file path:

@@ -2,7 +2,7 @@ using System;
 using System.Runtime.Intrinsics;
 using ManagedBass;
 
-namespace MetroHub.Core.Radio;
+namespace MetroHub.Widgets.Catalog.Radio.Services;
 
 /// <summary>
 /// High-performance, zero-allocation audio spectrum processor for MetroHub.
