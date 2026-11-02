@@ -17,6 +17,43 @@ public partial class MainWindow
     private RectangleGeometry? _canvasScissorGeom;
     private TranslateTransform? _canvasScissorTranslate;
     private TranslateTransform? SidebarRailTranslate => SidebarRail?.RenderTransform as TranslateTransform;
+    private int _sidebarAnimToken;
+    private BitmapCache? _sidebarBitmapCache;
+
+    private void EnableSidebarAnimationCache()
+    {
+        if (SidebarRail == null) return;
+
+        double dpi = VisualTreeHelper.GetDpi(SidebarRail).DpiScaleX;
+        if (dpi <= 0 || double.IsNaN(dpi)) dpi = 1.0;
+
+        if (_sidebarBitmapCache == null)
+        {
+            _sidebarBitmapCache = new BitmapCache
+            {
+                RenderAtScale = dpi,
+                EnableClearType = false,
+                SnapsToDevicePixels = true
+            };
+        }
+        else if (Math.Abs(_sidebarBitmapCache.RenderAtScale - dpi) > 0.001)
+        {
+            _sidebarBitmapCache.RenderAtScale = dpi;
+        }
+
+        if (SidebarRail.CacheMode != _sidebarBitmapCache)
+        {
+            SidebarRail.CacheMode = _sidebarBitmapCache;
+        }
+    }
+
+    private void DisableSidebarAnimationCache(int token)
+    {
+        if (token == _sidebarAnimToken && SidebarRail != null)
+        {
+            SidebarRail.CacheMode = null;
+        }
+    }
 
     private void SetupSidebarTimers()
     {
@@ -159,8 +196,12 @@ public partial class MainWindow
 
         if (Math.Abs(SidebarRailTranslate.X) < 0.1 && !SidebarRailTranslate.HasAnimatedProperties)
         {
+            SidebarRail.CacheMode = null;
             return;
         }
+
+        EnableSidebarAnimationCache();
+        int token = ++_sidebarAnimToken;
 
         double startX = SidebarRailTranslate.X;
         SidebarRailTranslate.X = 0;
@@ -173,6 +214,7 @@ public partial class MainWindow
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
             FillBehavior = FillBehavior.Stop
         };
+        anim.Completed += (s, e) => DisableSidebarAnimationCache(token);
 
         SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
     }
@@ -188,6 +230,8 @@ public partial class MainWindow
         {
             _sidebarIntentTimer?.Stop();
             _sidebarGraceTimer?.Stop();
+            _sidebarAnimToken++;
+            SidebarRail.CacheMode = null;
             SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, null);
             SidebarRailTranslate.X = -52;
             return;
@@ -195,8 +239,12 @@ public partial class MainWindow
 
         if (SidebarRailTranslate.X <= -52 && !SidebarRailTranslate.HasAnimatedProperties)
         {
+            SidebarRail.CacheMode = null;
             return;
         }
+
+        EnableSidebarAnimationCache();
+        int token = ++_sidebarAnimToken;
 
         double startX = SidebarRailTranslate.X;
         SidebarRailTranslate.X = -52;
@@ -209,6 +257,7 @@ public partial class MainWindow
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut },
             FillBehavior = FillBehavior.Stop
         };
+        anim.Completed += (s, e) => DisableSidebarAnimationCache(token);
 
         SidebarRailTranslate.BeginAnimation(TranslateTransform.XProperty, anim);
     }
