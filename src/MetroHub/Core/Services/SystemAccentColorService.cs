@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Media;
 using MetroHub.Core.Models;
 using MetroHub.Presentation.Themes;
+using Wpf.Ui.Appearance;
 
 namespace MetroHub.Core.Services;
 
@@ -86,45 +87,33 @@ public static class SystemAccentColorService
     /// </summary>
     public static void UpdateSystemAccentColors()
     {
-        Color accentColor;
-        Color accentSecondary;
-        Color accentTertiary;
-        Color rawAccent;
+        Color accentColor = GetFallbackSystemAccentColor();
+        Color accentSecondary = Lighten(accentColor, 0.15f);
+        Color accentTertiary = Darken(accentColor, 0.15f);
+        Color rawAccent = Darken(accentColor, 0.25f);
 
-        try
+        if (_uiSettings != null)
         {
-            if (_uiSettings != null)
+            try
             {
                 // In Windows 11 Dark Mode, Fluent controls use:
                 // Primary: AccentLight2 (resting state fill, matching Windows Quick Settings / Sliders)
                 // Secondary: AccentLight3 (pointer over / hover)
                 // Tertiary: AccentLight1 (pressed / active)
                 var winAccentLight2 = _uiSettings.GetColorValue(Windows.UI.ViewManagement.UIColorType.AccentLight2);
-                accentColor = Color.FromArgb(winAccentLight2.A, winAccentLight2.R, winAccentLight2.G, winAccentLight2.B);
-
                 var winAccentLight3 = _uiSettings.GetColorValue(Windows.UI.ViewManagement.UIColorType.AccentLight3);
-                accentSecondary = Color.FromArgb(winAccentLight3.A, winAccentLight3.R, winAccentLight3.G, winAccentLight3.B);
-
                 var winAccentLight1 = _uiSettings.GetColorValue(Windows.UI.ViewManagement.UIColorType.AccentLight1);
-                accentTertiary = Color.FromArgb(winAccentLight1.A, winAccentLight1.R, winAccentLight1.G, winAccentLight1.B);
-
                 var winRawAccent = _uiSettings.GetColorValue(Windows.UI.ViewManagement.UIColorType.Accent);
+
+                accentColor = Color.FromArgb(winAccentLight2.A, winAccentLight2.R, winAccentLight2.G, winAccentLight2.B);
+                accentSecondary = Color.FromArgb(winAccentLight3.A, winAccentLight3.R, winAccentLight3.G, winAccentLight3.B);
+                accentTertiary = Color.FromArgb(winAccentLight1.A, winAccentLight1.R, winAccentLight1.G, winAccentLight1.B);
                 rawAccent = Color.FromArgb(winRawAccent.A, winRawAccent.R, winRawAccent.G, winRawAccent.B);
             }
-            else
+            catch (Exception ex)
             {
-                accentColor = GetFallbackSystemAccentColor();
-                accentSecondary = Lighten(accentColor, 0.15f);
-                accentTertiary = Darken(accentColor, 0.15f);
-                rawAccent = Darken(accentColor, 0.25f);
+                Safe.Log("SystemAccentColorService.UpdateSystemAccentColors", ex);
             }
-        }
-        catch
-        {
-            accentColor = GetFallbackSystemAccentColor();
-            accentSecondary = Lighten(accentColor, 0.15f);
-            accentTertiary = Darken(accentColor, 0.15f);
-            rawAccent = Darken(accentColor, 0.25f);
         }
 
         CurrentAccentColor = accentColor;
@@ -217,6 +206,16 @@ public static class SystemAccentColorService
         var app = Application.Current;
         if (app == null) return;
 
+        // Synchronize all WPF-UI native controls (ListViewItem, ToggleSwitch, ComboBox, etc.) via official API
+        try
+        {
+            ApplicationAccentColorManager.Apply(accent, ApplicationTheme.Dark);
+        }
+        catch (Exception ex)
+        {
+            Safe.Log("SystemAccentColorService.ApplyToResources.WpfUi", ex);
+        }
+
         var res = app.Resources;
 
         var primaryBrush = CreatePrimaryAccentBrush(accent, CurrentStyleMode);
@@ -224,7 +223,7 @@ public static class SystemAccentColorService
         var tertiaryBrush = CreateTertiaryAccentBrush(accent, tertiary, CurrentStyleMode);
         var glassBorderBrush = CreateGlassBorderBrush(accent, CurrentStyleMode);
 
-        // Core Accent Color & Brushes
+        // Core Accent Color & Brushes (MetroHub tokens)
         res["SystemAccentColor"] = accent;
         res["SystemAccentColorBrush"] = primaryBrush;
         res["SystemAccentColorPrimaryBrush"] = primaryBrush;
@@ -243,9 +242,7 @@ public static class SystemAccentColorService
         res["SystemAccentColorDropSlotFill"] = CreateFrozenBrush(accent, 0.20);
         res["SystemAccentColorGroupDropFill"] = CreateFrozenBrush(accent, 0.08);
 
-        // Universal Fluent ToggleSwitch Active Track Brushes
-        // NOTE: The third-party WPF-UI library (Wpf.Ui.dll) specifically looks up these exact string keys
-        // in its internal ToggleSwitch control template. Setting them here dynamically repaints the toggle switch track.
+        // Control Accent Tokens (ToggleSwitch, ListViewItem, ComboBox)
         res["ToggleSwitchFillOn"] = primaryBrush;
         res["ToggleSwitchFillOnPointerOver"] = secondaryBrush;
         res["ToggleSwitchFillOnPressed"] = tertiaryBrush;
@@ -253,6 +250,8 @@ public static class SystemAccentColorService
         res["ToggleSwitchStrokeOn"] = primaryBrush;
         res["ToggleSwitchStrokeOnPointerOver"] = secondaryBrush;
         res["ToggleSwitchStrokeOnPressed"] = tertiaryBrush;
+        res["ListViewItemPillFillBrush"] = primaryBrush;
+        res["ComboBoxItemPillFillBrush"] = primaryBrush;
 
         // Synchronize ThemeTokens C# cache
         ThemeTokens.AccentPrimaryColor = accent;

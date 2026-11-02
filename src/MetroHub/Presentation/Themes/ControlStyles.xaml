@@ -201,24 +201,15 @@
     <!-- ========================================================================= -->
     <!-- 2. UNIVERSAL FLUENT TOGGLESWITCH                                          -->
     <!-- Brush overrides and styles for WPF-UI's ToggleSwitch control.             -->
-    <!-- Dynamically synchronized to the active Windows accent color via            -->
-    <!-- SystemAccentColorService.                                                 -->
+    <!-- Active track colors are dynamically bound to SystemAccentColorPrimaryBrush-->
+    <!-- via SystemAccentColorService (no frozen static brushes).                  -->
     <!-- ========================================================================= -->
 
-    <!-- ON state: Active track (System Accent) with Solid Black knob -->
-    <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
-    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
-    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
-    <SolidColorBrush x:Key="ToggleSwitchFillOnDisabled" Color="{StaticResource SystemAccentColor}" Opacity="0.5" po:Freeze="True" />
-    <SolidColorBrush x:Key="ToggleSwitchStrokeOn" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
-    <SolidColorBrush x:Key="ToggleSwitchStrokeOnPointerOver" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
-    <SolidColorBrush x:Key="ToggleSwitchStrokeOnPressed" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
+    <!-- OFF state: Transparent track, subtle fluent outline, silver knob -->
     <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="#000000" po:Freeze="True" />
     <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="#1A1A1A" po:Freeze="True" />
     <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="#000000" po:Freeze="True" />
     <SolidColorBrush x:Key="ToggleSwitchKnobFillOnDisabled" Color="#000000" po:Freeze="True" />
-
-    <!-- OFF state: Transparent track, subtle fluent outline, silver knob -->
     <SolidColorBrush x:Key="ToggleSwitchFillOff" Color="Transparent" po:Freeze="True" />
     <SolidColorBrush x:Key="ToggleSwitchFillOffPointerOver" Color="#0DFFFFFF" po:Freeze="True" />
     <SolidColorBrush x:Key="ToggleSwitchFillOffPressed" Color="#18FFFFFF" po:Freeze="True" />
@@ -236,11 +227,6 @@
     <Style x:Key="FluentAccentToggleSwitchStyle" TargetType="{x:Type ui:ToggleSwitch}" BasedOn="{StaticResource DefaultUiToggleSwitchStyle}">
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <Style.Resources>
-            <SolidColorBrush x:Key="SystemAccentColorBrush" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
-            <SolidColorBrush x:Key="SystemAccentColorSecondaryBrush" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
-            <SolidColorBrush x:Key="SystemAccentColorTertiaryBrush" Color="{StaticResource SystemAccentColor}" po:Freeze="True" />
-        </Style.Resources>
     </Style>
 
 
