@@ -18,6 +18,7 @@ public static class SystemAccentColorService
 
     public static Color CurrentAccentColor { get; private set; } = Color.FromRgb(0x4C, 0xC2, 0xFF);
     public static string CurrentAccentHex { get; private set; } = "#4CC2FF";
+    public static Color RawAccentColor { get; private set; } = Color.FromRgb(0x00, 0x78, 0xD4);
 
     /// <summary>
     /// Current artistic accent rendering style (e.g. StudioGlass vs Flat). Defaults to Flat.
@@ -80,31 +81,42 @@ public static class SystemAccentColorService
 
     /// <summary>
     /// Queries the current Windows accent color and applies it to Application resources.
+    /// In Dark Mode, Fluent controls (Quick Settings, sliders, toggles) use AccentLight2
+    /// for primary fills to maintain clean contrast and aesthetic presentation against dark backplates.
     /// </summary>
     public static void UpdateSystemAccentColors()
     {
         Color accentColor;
         Color accentSecondary;
         Color accentTertiary;
+        Color rawAccent;
 
         try
         {
             if (_uiSettings != null)
             {
-                var winAccent = _uiSettings.GetColorValue(Windows.UI.ViewManagement.UIColorType.Accent);
-                accentColor = Color.FromArgb(winAccent.A, winAccent.R, winAccent.G, winAccent.B);
+                // In Windows 11 Dark Mode, Fluent controls use:
+                // Primary: AccentLight2 (resting state fill, matching Windows Quick Settings / Sliders)
+                // Secondary: AccentLight3 (pointer over / hover)
+                // Tertiary: AccentLight1 (pressed / active)
+                var winAccentLight2 = _uiSettings.GetColorValue(Windows.UI.ViewManagement.UIColorType.AccentLight2);
+                accentColor = Color.FromArgb(winAccentLight2.A, winAccentLight2.R, winAccentLight2.G, winAccentLight2.B);
 
-                var winLight = _uiSettings.GetColorValue(Windows.UI.ViewManagement.UIColorType.AccentLight1);
-                accentSecondary = Color.FromArgb(winLight.A, winLight.R, winLight.G, winLight.B);
+                var winAccentLight3 = _uiSettings.GetColorValue(Windows.UI.ViewManagement.UIColorType.AccentLight3);
+                accentSecondary = Color.FromArgb(winAccentLight3.A, winAccentLight3.R, winAccentLight3.G, winAccentLight3.B);
 
-                var winDark = _uiSettings.GetColorValue(Windows.UI.ViewManagement.UIColorType.AccentDark1);
-                accentTertiary = Color.FromArgb(winDark.A, winDark.R, winDark.G, winDark.B);
+                var winAccentLight1 = _uiSettings.GetColorValue(Windows.UI.ViewManagement.UIColorType.AccentLight1);
+                accentTertiary = Color.FromArgb(winAccentLight1.A, winAccentLight1.R, winAccentLight1.G, winAccentLight1.B);
+
+                var winRawAccent = _uiSettings.GetColorValue(Windows.UI.ViewManagement.UIColorType.Accent);
+                rawAccent = Color.FromArgb(winRawAccent.A, winRawAccent.R, winRawAccent.G, winRawAccent.B);
             }
             else
             {
                 accentColor = GetFallbackSystemAccentColor();
                 accentSecondary = Lighten(accentColor, 0.15f);
                 accentTertiary = Darken(accentColor, 0.15f);
+                rawAccent = Darken(accentColor, 0.25f);
             }
         }
         catch
@@ -112,12 +124,14 @@ public static class SystemAccentColorService
             accentColor = GetFallbackSystemAccentColor();
             accentSecondary = Lighten(accentColor, 0.15f);
             accentTertiary = Darken(accentColor, 0.15f);
+            rawAccent = Darken(accentColor, 0.25f);
         }
 
         CurrentAccentColor = accentColor;
         CurrentAccentHex = $"#{accentColor.R:X2}{accentColor.G:X2}{accentColor.B:X2}";
+        RawAccentColor = rawAccent;
 
-        ApplyToResources(accentColor, accentSecondary, accentTertiary);
+        ApplyToResources(accentColor, accentSecondary, accentTertiary, rawAccent);
     }
 
     private static Color GetFallbackSystemAccentColor()
@@ -127,7 +141,7 @@ public static class SystemAccentColorService
             Color glass = SystemParameters.WindowGlassColor;
             if (glass.A > 0 && (glass.R > 20 || glass.G > 20 || glass.B > 20))
             {
-                return Color.FromRgb(glass.R, glass.G, glass.B);
+                return Lighten(Color.FromRgb(glass.R, glass.G, glass.B), 0.25f);
             }
         }
         catch { }
@@ -198,7 +212,7 @@ public static class SystemAccentColorService
         return CreateFrozenBrush(accent);
     }
 
-    private static void ApplyToResources(Color accent, Color secondary, Color tertiary)
+    private static void ApplyToResources(Color accent, Color secondary, Color tertiary, Color rawAccent)
     {
         var app = Application.Current;
         if (app == null) return;
@@ -219,6 +233,10 @@ public static class SystemAccentColorService
         res["SystemAccentColorTertiaryBrush"] = tertiaryBrush;
         res["SystemAccentGlassBorderBrush"] = glassBorderBrush;
         res["SystemAccentColorForegroundBrush"] = CreateFrozenBrush(GetContrastingForeground(accent));
+
+        // Raw System Accent (base un-tinted Windows accent)
+        res["SystemAccentColorRaw"] = rawAccent;
+        res["SystemAccentColorRawBrush"] = CreateFrozenBrush(rawAccent);
 
         // Selection & Drag/Drop Fills
         res["SystemAccentColorSelectionFill"] = CreateFrozenBrush(accent, 0.15);
