@@ -6,6 +6,7 @@
              xmlns:widgets="clr-namespace:MetroHub.Widgets"
              xmlns:quickcontrols="clr-namespace:MetroHub.Widgets.Catalog.QuickControls"
              xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=quickcontrols:QuickControlsWidgetViewModel}"
              Focusable="False"
@@ -51,22 +52,32 @@
                         VerticalAlignment="Center"
                         HorizontalAlignment="Left"
                         ToolTip="Play / Pause">
-                    <TextBlock FontFamily="{DynamicResource AppIconFontFamily}"
-                               VerticalAlignment="Center"
-                               HorizontalAlignment="Center">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Text" Value="&#xE768;" />
-                                <Setter Property="FontSize" Value="15" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Media.IsPlaying}" Value="True">
-                                        <Setter Property="Text" Value="&#xE769;" />
-                                        <Setter Property="FontSize" Value="16" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ui:SymbolIcon Symbol="Play24" FontSize="18" Foreground="{DynamicResource TextPrimaryBrush}" Margin="2,0,0,0">
+                            <ui:SymbolIcon.Style>
+                                <Style TargetType="ui:SymbolIcon">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Media.IsPlaying}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:SymbolIcon.Style>
+                        </ui:SymbolIcon>
+                        <ui:SymbolIcon Symbol="Pause24" FontSize="18" Foreground="{DynamicResource TextPrimaryBrush}">
+                            <ui:SymbolIcon.Style>
+                                <Style TargetType="ui:SymbolIcon">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Media.IsPlaying}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:SymbolIcon.Style>
+                        </ui:SymbolIcon>
+                    </Grid>
                 </Button>
 
                 <!-- Col 1: Center Area -->
@@ -127,11 +138,7 @@
                             Width="26"
                             Height="26"
                             ToolTip="Previous">
-                        <TextBlock Text="&#xE76B;"
-                                   FontFamily="{DynamicResource AppIconFontFamily}"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center" />
+                        <ui:SymbolIcon Symbol="Previous24" FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}" />
                     </Button>
                     <Button Style="{StaticResource WidgetMicroButtonStyle}"
                             Command="{Binding Media.SkipNextCommand}"
@@ -140,11 +147,7 @@
                             Height="26"
                             Margin="2,0,0,0"
                             ToolTip="Next">
-                        <TextBlock Text="&#xE76C;"
-                                   FontFamily="{DynamicResource AppIconFontFamily}"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center" />
+                        <ui:SymbolIcon Symbol="Next24" FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}" />
                     </Button>
                 </StackPanel>
             </Grid>

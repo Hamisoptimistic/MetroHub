@@ -6,6 +6,7 @@
              xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
              xmlns:widgets="clr-namespace:MetroHub.Widgets"
              xmlns:media="clr-namespace:MetroHub.Widgets.Catalog.Media"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
              mc:Ignorable="d po" 
              d:DataContext="{d:DesignInstance Type=media:MediaWidgetViewModel}"
              Focusable="False"
@@ -158,11 +159,7 @@
                                     Command="{Binding SkipPreviousCommand}"
                                     IsEnabled="{Binding CanSkipPrevious}"
                                     ToolTip="Previous">
-                                <TextBlock Text="&#xE76B;"
-                                           FontFamily="{DynamicResource AppIconFontFamily}"
-                                           FontSize="15"
-                                           VerticalAlignment="Center"
-                                           HorizontalAlignment="Center" />
+                                <ui:SymbolIcon Symbol="Previous24" FontSize="15" Foreground="{DynamicResource TextPrimaryBrush}" />
                             </Button>
 
                             <!-- Play / Pause (▷ or ||) -->
@@ -171,25 +168,32 @@
                                     IsEnabled="{Binding CanPlayPause}"
                                     Margin="4,0"
                                     ToolTip="Play / Pause">
-                                <TextBlock x:Name="PlayPauseIcon"
-                                           FontFamily="{DynamicResource AppIconFontFamily}"
-                                           VerticalAlignment="Center"
-                                           HorizontalAlignment="Center">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Text" Value="&#xE768;" />
-                                            <Setter Property="FontSize" Value="15" />
-                                            <Setter Property="Margin" Value="0" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                                    <Setter Property="Text" Value="&#xE769;" />
-                                                    <Setter Property="FontSize" Value="16" />
-                                                    <Setter Property="Margin" Value="0" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
+                                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <ui:SymbolIcon Symbol="Play24" FontSize="18" Foreground="{DynamicResource TextPrimaryBrush}" Margin="2,0,0,0">
+                                        <ui:SymbolIcon.Style>
+                                            <Style TargetType="ui:SymbolIcon">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ui:SymbolIcon.Style>
+                                    </ui:SymbolIcon>
+                                    <ui:SymbolIcon Symbol="Pause24" FontSize="18" Foreground="{DynamicResource TextPrimaryBrush}">
+                                        <ui:SymbolIcon.Style>
+                                            <Style TargetType="ui:SymbolIcon">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ui:SymbolIcon.Style>
+                                    </ui:SymbolIcon>
+                                </Grid>
                             </Button>
 
                             <!-- Next Track (>) -->
@@ -197,11 +201,7 @@
                                     Command="{Binding SkipNextCommand}"
                                     IsEnabled="{Binding CanSkipNext}"
                                     ToolTip="Next">
-                                <TextBlock Text="&#xE76C;"
-                                           FontFamily="{DynamicResource AppIconFontFamily}"
-                                           FontSize="15"
-                                           VerticalAlignment="Center"
-                                           HorizontalAlignment="Center" />
+                                <ui:SymbolIcon Symbol="Next24" FontSize="15" Foreground="{DynamicResource TextPrimaryBrush}" />
                             </Button>
                         </StackPanel>
 
@@ -242,22 +242,32 @@
                         VerticalAlignment="Center"
                         HorizontalAlignment="Left"
                         ToolTip="Play / Pause">
-                    <TextBlock FontFamily="{DynamicResource AppIconFontFamily}"
-                               VerticalAlignment="Center"
-                               HorizontalAlignment="Center">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Text" Value="&#xE768;" />
-                                <Setter Property="FontSize" Value="15" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                        <Setter Property="Text" Value="&#xE769;" />
-                                        <Setter Property="FontSize" Value="16" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
+                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ui:SymbolIcon Symbol="Play24" FontSize="18" Foreground="{DynamicResource TextPrimaryBrush}" Margin="2,0,0,0">
+                            <ui:SymbolIcon.Style>
+                                <Style TargetType="ui:SymbolIcon">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:SymbolIcon.Style>
+                        </ui:SymbolIcon>
+                        <ui:SymbolIcon Symbol="Pause24" FontSize="18" Foreground="{DynamicResource TextPrimaryBrush}">
+                            <ui:SymbolIcon.Style>
+                                <Style TargetType="ui:SymbolIcon">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ui:SymbolIcon.Style>
+                        </ui:SymbolIcon>
+                    </Grid>
                 </Button>
 
                 <!-- Col 1: Center Area -->
@@ -319,11 +329,7 @@
                             Width="26"
                             Height="26"
                             ToolTip="Previous">
-                        <TextBlock Text="&#xE76B;"
-                                   FontFamily="{DynamicResource AppIconFontFamily}"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center" />
+                        <ui:SymbolIcon Symbol="Previous24" FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}" />
                     </Button>
                     <Button Style="{StaticResource WidgetMediumButtonStyle}"
                             Command="{Binding SkipNextCommand}"
@@ -332,11 +338,7 @@
                             Height="26"
                             Margin="2,0,0,0"
                             ToolTip="Next">
-                        <TextBlock Text="&#xE76C;"
-                                   FontFamily="{DynamicResource AppIconFontFamily}"
-                                   FontSize="13"
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center" />
+                        <ui:SymbolIcon Symbol="Next24" FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}" />
                     </Button>
                 </StackPanel>
             </Grid>
@@ -516,12 +518,7 @@
                                     Height="32"
                                     VerticalAlignment="Center"
                                     Margin="0,0,12,0">
-                                <TextBlock Text="&#xE76B;"
-                                           FontFamily="{DynamicResource AppIconFontFamily}"
-                                           FontSize="15"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           VerticalAlignment="Center"
-                                           HorizontalAlignment="Center" />
+                                <ui:SymbolIcon Symbol="Previous24" FontSize="16" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </Button>
 
                             <!-- Center: Play / Pause Button -->
@@ -532,24 +529,32 @@
                                     Width="40"
                                     Height="34"
                                     VerticalAlignment="Center">
-                                <TextBlock FontFamily="{DynamicResource AppIconFontFamily}"
-                                           FontSize="18"
-                                           Foreground="{DynamicResource TextPrimaryBrush}"
-                                           VerticalAlignment="Center"
-                                           HorizontalAlignment="Center">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Text" Value="&#xE768;" />
-                                            <Setter Property="Margin" Value="1,0,0,0" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                                    <Setter Property="Text" Value="&#xE769;" />
-                                                    <Setter Property="Margin" Value="0" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
+                                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <ui:SymbolIcon Symbol="Play24" FontSize="20" Foreground="{DynamicResource TextPrimaryBrush}" Margin="2,0,0,0">
+                                        <ui:SymbolIcon.Style>
+                                            <Style TargetType="ui:SymbolIcon">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ui:SymbolIcon.Style>
+                                    </ui:SymbolIcon>
+                                    <ui:SymbolIcon Symbol="Pause24" FontSize="20" Foreground="{DynamicResource TextPrimaryBrush}">
+                                        <ui:SymbolIcon.Style>
+                                            <Style TargetType="ui:SymbolIcon">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ui:SymbolIcon.Style>
+                                    </ui:SymbolIcon>
+                                </Grid>
                             </Button>
 
                             <!-- Right Button: Forward / Next Track -->
@@ -561,12 +566,7 @@
                                     Height="32"
                                     VerticalAlignment="Center"
                                     Margin="12,0,0,0">
-                                <TextBlock Text="&#xE76C;"
-                                           FontFamily="{DynamicResource AppIconFontFamily}"
-                                           FontSize="15"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           VerticalAlignment="Center"
-                                           HorizontalAlignment="Center" />
+                                <ui:SymbolIcon Symbol="Next24" FontSize="16" Foreground="{DynamicResource TextSecondaryBrush}" />
                             </Button>
                         </StackPanel>
                     </Grid>
