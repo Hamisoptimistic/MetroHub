@@ -64,3 +64,7 @@ extensions/*.xpi
 extensions/*.png
 extensions/signed/
 extensions/.amo-credentials.json
+
+# Local agent architecture notes
+src/MetroHub/Presentation/Views/Settings/README.md
+
