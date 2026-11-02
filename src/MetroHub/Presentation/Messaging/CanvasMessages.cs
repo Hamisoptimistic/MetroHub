@@ -40,6 +40,8 @@ public record TileToggleSidebarPinMessage(TileModel Tile);
 
 public record ShowModalDialogRequestMessage(Action<System.Windows.Window> ShowDialogAction);
 
+public record ShaderActiveChangedMessage(bool IsActive);
+
 // ─────────────────────────────────────────────────────────────
 // Group Command Messages
 // ─────────────────────────────────────────────────────────────

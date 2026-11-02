@@ -535,8 +535,38 @@ public class TileManagerAndCanvasTests
             Assert.Equal(new System.Windows.Rect(0, 0, 100, 100), rectGeom.Rect);
             Assert.Equal(4.0, rectGeom.RadiusX);
             Assert.Equal(4.0, rectGeom.RadiusY);
+        });
+    }
 
-            window.Close();
+    [Fact]
+    public void TileControl_ShaderActive_TogglesContentClipHostBitmapCache()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tileControl = new Presentation.Controls.TileControl();
+            var window = new System.Windows.Window { Content = tileControl, Width = 300, Height = 300 };
+            window.Show();
+
+            try
+            {
+                Presentation.Controls.TileControl.SetShaderActive(false);
+                Assert.Null(tileControl.ContentClipHost.CacheMode);
+
+                Presentation.Controls.TileControl.SetShaderActive(true);
+                Assert.NotNull(tileControl.ContentClipHost.CacheMode);
+                var cache = Assert.IsType<System.Windows.Media.BitmapCache>(tileControl.ContentClipHost.CacheMode);
+                Assert.True(cache.EnableClearType);
+                Assert.True(cache.SnapsToDevicePixels);
+
+                Presentation.Controls.TileControl.SetShaderActive(false);
+                Assert.Null(tileControl.ContentClipHost.CacheMode);
+            }
+            finally
+            {
+                Presentation.Controls.TileControl.SetShaderActive(false);
+                window.Close();
+            }
+
         });
     }
 }

@@ -3,7 +3,9 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using CommunityToolkit.Mvvm.Messaging;
 using MetroHub.Core.Services;
+using MetroHub.Presentation.Messaging;
 
 namespace MetroHub.Presentation.Shaders;
 
@@ -281,6 +283,7 @@ public sealed class BackdropShaderDriver : IDisposable
         _clock.Start();
         CompositionTarget.Rendering += OnRendering;
         _isRendering = true;
+        WeakReferenceMessenger.Default.Send(new ShaderActiveChangedMessage(true));
     }
 
     private void StopRendering()
@@ -290,6 +293,7 @@ public sealed class BackdropShaderDriver : IDisposable
         CompositionTarget.Rendering -= OnRendering;
         _clock.Stop();
         _isRendering = false;
+        WeakReferenceMessenger.Default.Send(new ShaderActiveChangedMessage(false));
         _lastRenderTimeSeconds = -1.0;
     }
 

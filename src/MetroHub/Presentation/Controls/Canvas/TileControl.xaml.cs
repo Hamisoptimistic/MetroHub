@@ -53,6 +53,43 @@ public partial class TileControl : UserControl, IShaderInputBlocker
     private static readonly List<TileControl> s_activeTiles = new();
     private static readonly HashSet<TileControl> s_activeTileLookup = new();
     public static IReadOnlyList<TileControl> ActiveTiles => s_activeTiles;
+    private static readonly object s_shaderMessengerToken = new();
+
+    static TileControl()
+    {
+        WeakReferenceMessenger.Default.Register<object, ShaderActiveChangedMessage>(
+            s_shaderMessengerToken,
+            static (_, m) => SetShaderActive(m.IsActive));
+    }
+
+    /// <summary>
+    /// Indicates whether a live background shader effect is actively driving frames.
+    /// </summary>
+    public static bool IsShaderActive { get; private set; }
+
+    /// <summary>
+    /// Dynamically applies or removes DPI-aware BitmapCache on tile content hosts across all active tiles.
+    /// </summary>
+    public static void SetShaderActive(bool active)
+    {
+        if (IsShaderActive == active) return;
+        IsShaderActive = active;
+
+        var app = Application.Current;
+        if (app != null && app.Dispatcher != null && !app.Dispatcher.CheckAccess())
+        {
+            app.Dispatcher.InvokeAsync(() => SetShaderActive(active));
+            return;
+        }
+
+        for (int i = s_activeTiles.Count - 1; i >= 0; i--)
+        {
+            if (i < s_activeTiles.Count)
+            {
+                s_activeTiles[i].ApplyShaderCacheMode(active);
+            }
+        }
+    }
 
     public static void ClearActiveTiles()
     {
@@ -65,6 +102,10 @@ public partial class TileControl : UserControl, IShaderInputBlocker
         if (s_activeTileLookup.Add(tile))
         {
             s_activeTiles.Add(tile);
+            if (IsShaderActive)
+            {
+                tile.ApplyShaderCacheMode(true);
+            }
         }
     }
 
@@ -73,6 +114,43 @@ public partial class TileControl : UserControl, IShaderInputBlocker
         if (s_activeTileLookup.Remove(tile))
         {
             s_activeTiles.Remove(tile);
+            tile.ApplyShaderCacheMode(false);
+        }
+    }
+
+    public void ApplyShaderCacheMode(bool active)
+    {
+        if (ContentClipHost == null) return;
+
+        if (active)
+        {
+            double dpi = 1.0;
+            try
+            {
+                dpi = VisualTreeHelper.GetDpi(this).DpiScaleX;
+                if (dpi <= 0 || double.IsNaN(dpi)) dpi = 1.0;
+            }
+            catch
+            {
+                dpi = 1.0;
+            }
+
+            if (ContentClipHost.CacheMode is not BitmapCache cache || Math.Abs(cache.RenderAtScale - dpi) > 0.001)
+            {
+                ContentClipHost.CacheMode = new BitmapCache
+                {
+                    RenderAtScale = dpi,
+                    EnableClearType = true,
+                    SnapsToDevicePixels = true
+                };
+            }
+        }
+        else
+        {
+            if (ContentClipHost.CacheMode != null)
+            {
+                ContentClipHost.CacheMode = null;
+            }
         }
     }
 
