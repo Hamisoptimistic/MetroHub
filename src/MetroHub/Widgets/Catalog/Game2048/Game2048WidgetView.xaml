@@ -124,29 +124,29 @@
                     <!-- Board Frame -->
                     <Border Width="400" Height="400"
                             CornerRadius="8"
-                            Background="#1E1E24"
+                            Background="Transparent"
                             BorderThickness="0">
                         <!-- Static 4x4 Grid of Empty Cells (384px inner area: 96px step, 84px cell + 12px gap) -->
                         <UniformGrid Rows="4" Columns="4" Margin="8">
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
 
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
 
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
 
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
                         </UniformGrid>
                     </Border>
 
@@ -157,7 +157,7 @@
                     <Border x:Name="GameOverOverlay"
                             Width="400" Height="400"
                             CornerRadius="8"
-                            Background="#CC111116"
+                            Background="#990D0D11"
                             Visibility="{Binding IsGameOver, Converter={StaticResource BoolToVis}}"
                             SnapsToDevicePixels="True">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -181,7 +181,7 @@
                     <Border x:Name="WinOverlay"
                             Width="400" Height="400"
                             CornerRadius="8"
-                            Background="#CC111116"
+                            Background="#990D0D11"
                             Visibility="{Binding HasWon, Converter={StaticResource BoolToVis}}"
                             SnapsToDevicePixels="True">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
