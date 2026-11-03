@@ -40,6 +40,7 @@ namespace MetroHub.Widgets.Serialization;
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Notepad.NotepadTodoItem))]
 [JsonSerializable(typeof(System.Collections.Generic.List<MetroHub.Widgets.Catalog.Notepad.NotepadTodoItem>))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Notepad.NotepadMode))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.Game2048.Game2048WidgetSettings))]
 public partial class WidgetJsonContext : JsonSerializerContext
 {
 }

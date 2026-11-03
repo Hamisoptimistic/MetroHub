@@ -357,6 +357,27 @@ public static class WidgetRegistry
             Category: "Productivity"
         ));
 
+        // Register 2048 Game widget
+        Register(new WidgetDefinition(
+            Id: "game_2048",
+            DisplayName: "2048",
+            Description: "Classic 2048 slide-and-merge puzzle game with smooth Fluent animations",
+            Icon: SymbolRegular.Games24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Canvas,      // 8x8 (Default)
+                WidgetSize.Full,        // 8x10
+                WidgetSize.Huge,        // 8x6
+                WidgetSize.SquareLarge, // 6x6
+                WidgetSize.Large        // 4x4
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.Game2048.Game2048WidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.Game2048.Game2048WidgetView),
+            DefaultSize: WidgetSize.Canvas,
+            Factory: model => new MetroHub.Widgets.Catalog.Game2048.Game2048WidgetViewModel(model),
+            Category: "Lifestyle"
+        ));
+
     }
 
     public static void Register(WidgetDefinition definition)

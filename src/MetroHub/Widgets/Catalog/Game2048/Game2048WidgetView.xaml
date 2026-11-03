@@ -1,0 +1,221 @@
+<UserControl x:Class="MetroHub.Widgets.Catalog.Game2048.Game2048WidgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:widgets="clr-namespace:MetroHub.Widgets"
+             xmlns:local="clr-namespace:MetroHub.Widgets.Catalog.Game2048"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=local:Game2048WidgetViewModel}"
+             Focusable="True"
+             ClipToBounds="True"
+             FontFamily="{DynamicResource AppFontFamily}">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </UserControl.Resources>
+
+    <widgets:WidgetCard Padding="0" Background="Transparent">
+        <Grid x:Name="RootLayout" Background="Transparent" ClipToBounds="True">
+            <Grid.RowDefinitions>
+                <!-- Row 0: Top Header (Title + Scores + Micro Reset) -->
+                <RowDefinition Height="Auto" />
+                <!-- Row 1: Universal 1px Hairline Divider -->
+                <RowDefinition Height="Auto" />
+                <!-- Row 2: Scalable 2048 Game Board Viewbox -->
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Row 0: Top Header (20px symmetrical clearance per docs/WIDGET_LIFECYCLE_STANDARDS.md §6) -->
+            <Grid Grid.Row="0" Margin="20,12,20,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Category Symbol + Title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ui:SymbolIcon Symbol="Games24"
+                                   FontSize="18"
+                                   Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,8,0" />
+                    <TextBlock Text="2048"
+                               FontFamily="{DynamicResource AppDisplayFontFamily}"
+                               FontSize="{DynamicResource TypeHeaderFontSize}"
+                               FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Right: Unified Stats & Micro Action Button -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Score -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="SCORE "
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Score}"
+                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- Vertical Toolbar Divider (Design System §9.1) -->
+                    <Border Width="1"
+                            Height="14"
+                            Background="{DynamicResource WidgetDividerBrush}"
+                            VerticalAlignment="Center"
+                            Margin="10,0"
+                            SnapsToDevicePixels="True" />
+
+                    <!-- Best Score -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="BEST "
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding BestScore}"
+                                   FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                   FontSize="{DynamicResource TypeHeaderFontSize}"
+                                   FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+
+                    <!-- Vertical Toolbar Divider before Action Button -->
+                    <Border Width="1"
+                            Height="14"
+                            Background="{DynamicResource WidgetDividerBrush}"
+                            VerticalAlignment="Center"
+                            Margin="10,0,6,0"
+                            SnapsToDevicePixels="True" />
+
+                    <!-- Universal 28x28 Micro Ghost Button: Reset -->
+                    <Button Style="{StaticResource WidgetMicroButtonStyle}"
+                            Command="{Binding RestartGameCommand}"
+                            ToolTip="New Game (R)"
+                            VerticalAlignment="Center">
+                        <ui:SymbolIcon Symbol="ArrowReset24"
+                                       FontSize="14"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- Row 1: Universal 1px Horizontal Hairline Divider (WidgetHairlineDividerStyle) -->
+            <Border Grid.Row="1"
+                    Style="{StaticResource WidgetHairlineDividerStyle}" />
+
+            <!-- Row 2: Scalable Game Board Area -->
+            <Viewbox Grid.Row="2"
+                     Stretch="Uniform"
+                     Margin="20,12,20,16"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center">
+                <Grid Width="400" Height="400" ClipToBounds="True">
+                    <!-- Board Frame -->
+                    <Border Width="400" Height="400"
+                            CornerRadius="8"
+                            Background="#1E1E24"
+                            BorderBrush="{DynamicResource WidgetDividerBrush}"
+                            BorderThickness="1"
+                            SnapsToDevicePixels="True">
+                        <!-- Static 4x4 Grid of Empty Cells -->
+                        <UniformGrid Rows="4" Columns="4" Margin="14">
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                        </UniformGrid>
+                    </Border>
+
+                    <!-- Active Animated Tiles Canvas Layer -->
+                    <Canvas x:Name="TilesCanvas" Width="400" Height="400" ClipToBounds="True" />
+
+                    <!-- Game Over Overlay -->
+                    <Border x:Name="GameOverOverlay"
+                            Width="400" Height="400"
+                            CornerRadius="8"
+                            Background="#CC111116"
+                            Visibility="{Binding IsGameOver, Converter={StaticResource BoolToVis}}"
+                            SnapsToDevicePixels="True">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="Game Over"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       FontSize="28"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,16" />
+                            <Button Style="{DynamicResource AccentButtonStyle}"
+                                    Command="{Binding RestartGameCommand}"
+                                    Content="Try Again"
+                                    Height="32"
+                                    Padding="16,0"
+                                    HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Win Overlay -->
+                    <Border x:Name="WinOverlay"
+                            Width="400" Height="400"
+                            CornerRadius="8"
+                            Background="#CC111116"
+                            Visibility="{Binding HasWon, Converter={StaticResource BoolToVis}}"
+                            SnapsToDevicePixels="True">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock Text="You Win!"
+                                       FontFamily="{DynamicResource AppDisplayFontFamily}"
+                                       FontSize="30"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,4" />
+                            <TextBlock Text="Reached 2048 Tile"
+                                       FontSize="{DynamicResource TypeBodyFontSize}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,18" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Style="{DynamicResource AccentButtonStyle}"
+                                        Command="{Binding ContinueAfterWinCommand}"
+                                        Content="Keep Playing"
+                                        Height="32"
+                                        Padding="16,0"
+                                        Margin="0,0,10,0" />
+                                <Button Style="{StaticResource DefaultButtonStyle}"
+                                        Command="{Binding RestartGameCommand}"
+                                        Content="New Game"
+                                        Height="32"
+                                        Padding="16,0" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Viewbox>
+        </Grid>
+    </widgets:WidgetCard>
+</UserControl>

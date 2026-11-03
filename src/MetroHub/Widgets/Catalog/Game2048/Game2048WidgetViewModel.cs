@@ -1,0 +1,140 @@
+using System;
+using System.Collections.Generic;
+using System.Windows.Controls;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using MetroHub.Core.Models;
+using MetroHub.Widgets.Serialization;
+using Wpf.Ui.Controls;
+
+namespace MetroHub.Widgets.Catalog.Game2048;
+
+/// <summary>
+/// High-performance ViewModel for the 2048 game widget.
+/// Manages game loop, scoring, high scores, persistence, and input routing.
+/// </summary>
+public sealed partial class Game2048WidgetViewModel : WidgetViewModelBase, IWidgetContextMenuProvider
+{
+    public const string WidgetId = "game_2048";
+
+    private readonly Game2048Engine _engine;
+
+    [ObservableProperty]
+    private int _score;
+
+    [ObservableProperty]
+    private int _bestScore;
+
+    [ObservableProperty]
+    private bool _isGameOver;
+
+    [ObservableProperty]
+    private bool _hasWon;
+
+    [ObservableProperty]
+    private bool _keepPlaying;
+
+    public Game2048Engine Engine => _engine;
+
+    public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
+    {
+        WidgetSize.Canvas,      // 8x8 (508x508 px) Default
+        WidgetSize.Full,        // 8x10 (508x636 px)
+        WidgetSize.Huge,        // 8x6 (508x376 px)
+        WidgetSize.SquareLarge, // 6x6 (380x380 px)
+        WidgetSize.Large        // 4x4 (252x252 px)
+    };
+
+    public event Action? BoardChanged;
+
+    public Game2048WidgetViewModel(TileModel model) : base(model)
+    {
+        _engine = new Game2048Engine();
+
+        LoadSettings(model.SettingsJson);
+        SyncFromEngine();
+    }
+
+    public void Move(MoveDirection direction)
+    {
+        if (_engine.Move(direction))
+        {
+            SyncFromEngine();
+            BoardChanged?.Invoke();
+            SaveSettings();
+        }
+    }
+
+    [RelayCommand]
+    public void RestartGame()
+    {
+        _engine.Reset();
+        SyncFromEngine();
+        BoardChanged?.Invoke();
+        SaveSettings();
+    }
+
+    [RelayCommand]
+    public void ContinueAfterWin()
+    {
+        _engine.KeepPlaying = true;
+        KeepPlaying = true;
+        HasWon = false;
+        SaveSettings();
+    }
+
+    [RelayCommand]
+    public void ResetHighScore()
+    {
+        _engine.BestScore = 0;
+        BestScore = 0;
+        SaveSettings();
+    }
+
+    private void SyncFromEngine()
+    {
+        Score = _engine.Score;
+        BestScore = _engine.BestScore;
+        IsGameOver = _engine.IsGameOver;
+        HasWon = _engine.HasWon && !_engine.KeepPlaying;
+        KeepPlaying = _engine.KeepPlaying;
+    }
+
+    protected override void LoadSettings(string? json)
+    {
+        if (_engine == null) return; // Might be invoked by base ctor before field initializer
+        var settings = WidgetSerializer.Deserialize<Game2048WidgetSettings>(json);
+        if (settings != null)
+        {
+            _engine.LoadState(settings.SavedGrid, settings.CurrentScore, settings.HighScore);
+        }
+    }
+
+    public override void SaveSettings()
+    {
+        if (_engine == null) return;
+        var settings = new Game2048WidgetSettings
+        {
+            HighScore = _engine.BestScore,
+            CurrentScore = _engine.Score,
+            SavedGrid = _engine.ExportGrid()
+        };
+
+        Model.SettingsJson = WidgetSerializer.Serialize(settings);
+    }
+
+    public IEnumerable<Control> GetContextMenuItems()
+    {
+        yield return WidgetMenu.Item("New Game", SymbolRegular.ArrowReset24, RestartGame);
+        yield return WidgetMenu.Item("Reset Best Score", SymbolRegular.Delete24, ResetHighScore);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            SaveSettings();
+        }
+        base.Dispose(disposing);
+    }
+}
