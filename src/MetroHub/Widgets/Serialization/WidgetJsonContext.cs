@@ -34,6 +34,7 @@ namespace MetroHub.Widgets.Serialization;
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Rover.RoverWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Radio.RadioWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Quotes.QuotesWidgetSettings))]
+[JsonSerializable(typeof(System.Collections.Generic.List<int>))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Weather.WeatherWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Notepad.NotepadWidgetSettings))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Notepad.NotepadTodoItem))]

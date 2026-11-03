@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace MetroHub.Widgets.Catalog.Quotes;
 
 /// <summary>
@@ -6,9 +8,7 @@ namespace MetroHub.Widgets.Catalog.Quotes;
 public enum QuoteFontFamilyChoice
 {
     Merriweather,       // Merriweather (Google Font) - Default
-    Quintessential,     // Quintessential (Google Font)
     Georgia,            // Georgia
-    Palatino,           // Palatino Linotype
     SegoeUI             // Segoe UI Variable
 }
 
@@ -31,4 +31,5 @@ public class QuotesWidgetSettings
     public int CurrentQuoteIndex { get; set; } = -1;
     public QuoteFontFamilyChoice Font { get; set; } = QuoteFontFamilyChoice.Merriweather;
     public QuoteFontStyleChoice Style { get; set; } = QuoteFontStyleChoice.Italic;
+    public List<int> History { get; set; } = new();
 }

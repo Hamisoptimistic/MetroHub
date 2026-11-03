@@ -19,12 +19,14 @@ namespace MetroHub.Widgets.Catalog.Quotes;
 /// ViewModel for the 8x3 Quotes Widget.
 /// Loads quotes from embedded resources or %LOCALAPPDATA%\MetroHub\quotes.json.
 /// Displays a deterministic daily quote with manual shuffle and clipboard copy features.
-/// Supports Google Fonts (Merriweather, Quintessential) and system typefaces with real-time font and style switching.
+/// Supports Google Fonts (Merriweather) and system typefaces with real-time font and style switching.
 /// </summary>
 public partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidgetActionHandler, IWidgetContextMenuProvider
 {
     private readonly List<QuoteModel> _quotes = new();
+    private readonly List<int> _history = new();
     private int _currentQuoteIndex = -1;
+    private int _historyDaysBack;
     private DispatcherTimer? _copiedFeedbackTimer;
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
@@ -164,8 +166,21 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidgetActionH
 
         if (settings != null)
         {
-            SelectedFont = settings.Font;
+            SelectedFont = Enum.IsDefined(settings.Font)
+                ? settings.Font
+                : QuoteFontFamilyChoice.Merriweather;
             SelectedStyle = settings.Style;
+
+            if (settings.History != null)
+            {
+                foreach (int idx in settings.History)
+                {
+                    if (idx >= 0 && idx < _quotes.Count)
+                    {
+                        _history.Add(idx);
+                    }
+                }
+            }
         }
 
         var today = DateTime.Today;
@@ -180,6 +195,14 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidgetActionH
         }
         else
         {
+            if (settings != null && settings.CurrentQuoteIndex >= 0 && settings.CurrentQuoteIndex < _quotes.Count)
+            {
+                if (_history.Count == 0 || _history[^1] != settings.CurrentQuoteIndex)
+                {
+                    _history.Add(settings.CurrentQuoteIndex);
+                }
+            }
+
             // Pick deterministic daily quote based on date hash
             _currentQuoteIndex = GetDailyQuoteIndex(today);
             SaveSettings();
@@ -311,9 +334,9 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidgetActionH
         QuoteFontFamily = SelectedFont switch
         {
             QuoteFontFamilyChoice.Merriweather => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather 18pt, pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather, Merriweather 18pt, Merriweather, Georgia",
-            QuoteFontFamilyChoice.Quintessential => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Quintessential, Georgia",
+
             QuoteFontFamilyChoice.Georgia => "Georgia, Times New Roman",
-            QuoteFontFamilyChoice.Palatino => "Palatino Linotype, Georgia",
+
             QuoteFontFamilyChoice.SegoeUI => "Segoe UI Variable Text, Segoe UI",
             _ => "pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather 18pt, pack://application:,,,/MetroHub;component/Assets/Fonts/#Merriweather, Merriweather 18pt, Merriweather, Georgia"
         };
@@ -332,6 +355,20 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidgetActionH
     {
         if (_quotes.Count <= 1) return;
 
+        if (_currentQuoteIndex >= 0 && _currentQuoteIndex < _quotes.Count)
+        {
+            if (_history.Count == 0 || _history[^1] != _currentQuoteIndex)
+            {
+                _history.Add(_currentQuoteIndex);
+                if (_history.Count > 30)
+                {
+                    _history.RemoveAt(0);
+                }
+            }
+        }
+
+        _historyDaysBack = 0;
+
         int nextIdx;
         do
         {
@@ -343,17 +380,47 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidgetActionH
         SaveSettings();
     }
 
+    [RelayCommand]
+    public void PreviousQuote()
+    {
+        if (_quotes.Count <= 1) return;
+
+        int targetIndex = -1;
+
+        if (_history.Count > 0)
+        {
+            targetIndex = _history[^1];
+            _history.RemoveAt(_history.Count - 1);
+        }
+        else
+        {
+            for (int attempt = 0; attempt < 10; attempt++)
+            {
+                _historyDaysBack++;
+                targetIndex = GetDailyQuoteIndex(DateTime.Today.AddDays(-_historyDaysBack));
+                if (targetIndex != _currentQuoteIndex) break;
+            }
+        }
+
+        if (targetIndex >= 0 && targetIndex < _quotes.Count)
+        {
+            _currentQuoteIndex = targetIndex;
+            UpdateCurrentQuote(animate: true);
+            SaveSettings();
+        }
+    }
+
     public void OnPrimaryAction() => NextQuote();
 
     public IEnumerable<Control> GetContextMenuItems()
     {
-        yield return WidgetMenu.Item("Next Quote", SymbolRegular.ArrowRight24, NextQuote);
+        yield return WidgetMenu.Item("Previous Quote", SymbolRegular.ArrowLeft24, PreviousQuote);
         yield return WidgetMenu.Item("Copy Quote", SymbolRegular.Copy24, CopyQuote);
         yield return WidgetMenu.Submenu("Font", SymbolRegular.TextFont24,
             WidgetMenu.Item("Merriweather", () => SetFont(QuoteFontFamilyChoice.Merriweather), isCheckable: true, isChecked: SelectedFont == QuoteFontFamilyChoice.Merriweather),
-            WidgetMenu.Item("Quintessential", () => SetFont(QuoteFontFamilyChoice.Quintessential), isCheckable: true, isChecked: SelectedFont == QuoteFontFamilyChoice.Quintessential),
+
             WidgetMenu.Item("Georgia", () => SetFont(QuoteFontFamilyChoice.Georgia), isCheckable: true, isChecked: SelectedFont == QuoteFontFamilyChoice.Georgia),
-            WidgetMenu.Item("Palatino Linotype", () => SetFont(QuoteFontFamilyChoice.Palatino), isCheckable: true, isChecked: SelectedFont == QuoteFontFamilyChoice.Palatino),
+
             WidgetMenu.Item("Segoe UI", () => SetFont(QuoteFontFamilyChoice.SegoeUI), isCheckable: true, isChecked: SelectedFont == QuoteFontFamilyChoice.SegoeUI),
             WidgetMenu.Divider(),
             WidgetMenu.Submenu("Style", SymbolRegular.TextItalic24,
@@ -414,7 +481,8 @@ public partial class QuotesWidgetViewModel : WidgetViewModelBase, IWidgetActionH
             LastDayOfYear = DateTime.Today.DayOfYear,
             CurrentQuoteIndex = _currentQuoteIndex,
             Font = SelectedFont,
-            Style = SelectedStyle
+            Style = SelectedStyle,
+            History = new List<int>(_history)
         };
 
         Model.SettingsJson = WidgetSerializer.Serialize(settings);
