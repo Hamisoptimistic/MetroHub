@@ -11,8 +11,8 @@ namespace MetroHub.Widgets.Catalog.Game2048;
 
 /// <summary>
 /// Interaction logic for Game2048WidgetView.xaml.
-/// High-performance vector canvas game view with smooth cubic sliding and merge/spawn animations.
-/// Adheres strictly to MetroHub UI and lifecycle standards.
+/// GPU-accelerated RenderTransform canvas game view with smooth cubic sliding and merge/spawn animations.
+/// Adheres strictly to MetroHub UI, performance, and lifecycle standards.
 /// </summary>
 public partial class Game2048WidgetView : UserControl
 {
@@ -20,14 +20,27 @@ public partial class Game2048WidgetView : UserControl
     private const double TileStep = 96.0; // 84px tile + 12px gap
     private const double TileSize = 84.0;
 
+    private static readonly TimeSpan SlideDuration = TimeSpan.FromMilliseconds(95);
+    private static readonly TimeSpan PopDuration = TimeSpan.FromMilliseconds(95);
+    private static readonly TimeSpan SpawnDelay = TimeSpan.FromMilliseconds(55);
+    private static readonly TimeSpan SpawnDuration = TimeSpan.FromMilliseconds(110);
+
     private static readonly CubicEase SlideEasing = new() { EasingMode = EasingMode.EaseOut };
-    private static readonly BackEase SpawnEasing = new() { EasingMode = EasingMode.EaseOut, Amplitude = 0.25 };
+    private static readonly BackEase SpawnEasing = new() { EasingMode = EasingMode.EaseOut, Amplitude = 0.2 };
     private static readonly CubicEase PopEasing = new() { EasingMode = EasingMode.EaseOut };
 
     private Game2048WidgetViewModel? _viewModel;
     private readonly Dictionary<long, Border> _tileViews = new(16);
+    private readonly Dictionary<long, int> _displayedValues = new(16);
     private Point _gestureStartPoint;
     private bool _isTrackingGesture;
+
+    static Game2048WidgetView()
+    {
+        SlideEasing.Freeze();
+        SpawnEasing.Freeze();
+        PopEasing.Freeze();
+    }
 
     public Game2048WidgetView()
     {
@@ -81,113 +94,229 @@ public partial class Game2048WidgetView : UserControl
     {
         if (_viewModel == null) return;
 
-        var tiles = _viewModel.Engine.Tiles;
-        var activeIds = new HashSet<long>(tiles.Count);
-
-        foreach (var piece in tiles)
+        var engineTiles = _viewModel.Engine.Tiles;
+        var currentEngineIds = new HashSet<long>(engineTiles.Count);
+        foreach (var t in engineTiles)
         {
-            activeIds.Add(piece.Id);
+            currentEngineIds.Add(t.Id);
+        }
 
-            double targetLeft = BoardPadding + piece.Col * TileStep;
-            double targetTop = BoardPadding + piece.Row * TileStep;
+        // 1. Pre-clean orphaned visual elements (consumed merged tiles from previous moves or rapid key presses)
+        var orphanedIds = new List<long>();
+        foreach (var id in _tileViews.Keys)
+        {
+            if (!currentEngineIds.Contains(id))
+            {
+                orphanedIds.Add(id);
+            }
+        }
+
+        foreach (var id in orphanedIds)
+        {
+            if (_tileViews.Remove(id, out var orphanedBorder))
+            {
+                TilesCanvas.Children.Remove(orphanedBorder);
+            }
+            _displayedValues.Remove(id);
+        }
+
+        // 2. Rapid input safety: ensure visual state is up-to-date for existing non-merging tiles
+        foreach (var piece in engineTiles)
+        {
+            if (!piece.IsMerged && _tileViews.TryGetValue(piece.Id, out var existingBorder))
+            {
+                if (!_displayedValues.TryGetValue(piece.Id, out int dispVal) || dispVal != piece.Value)
+                {
+                    UpdateTileVisuals(existingBorder, piece.Value);
+                    _displayedValues[piece.Id] = piece.Value;
+                }
+            }
+        }
+
+        // 3. Process each tile in engineTiles
+        foreach (var piece in engineTiles)
+        {
+            double targetX = BoardPadding + piece.Col * TileStep;
+            double targetY = BoardPadding + piece.Row * TileStep;
 
             if (!_tileViews.TryGetValue(piece.Id, out var tileBorder))
             {
-                // New Tile
-                tileBorder = CreateTileElement(piece);
+                // Case A: New Tile
+                tileBorder = CreateTileElement(piece, targetX, targetY);
                 _tileViews[piece.Id] = tileBorder;
+                _displayedValues[piece.Id] = piece.Value;
                 TilesCanvas.Children.Add(tileBorder);
+                Panel.SetZIndex(tileBorder, 1);
 
-                Canvas.SetLeft(tileBorder, targetLeft);
-                Canvas.SetTop(tileBorder, targetTop);
-
-                if (animate)
+                var (scale, _) = GetTransforms(tileBorder);
+                if (animate && piece.IsNew)
                 {
-                    AnimateSpawn(tileBorder);
+                    scale.ScaleX = 0.0;
+                    scale.ScaleY = 0.0;
+
+                    var spawnAnim = new DoubleAnimationUsingKeyFrames();
+                    spawnAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+                    spawnAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(SpawnDelay)));
+                    spawnAnim.KeyFrames.Add(new EasingDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(SpawnDelay + SpawnDuration), SpawnEasing));
+
+                    scale.BeginAnimation(ScaleTransform.ScaleXProperty, spawnAnim);
+                    scale.BeginAnimation(ScaleTransform.ScaleYProperty, spawnAnim);
+                }
+                else
+                {
+                    scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+                    scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+                    scale.ScaleX = 1.0;
+                    scale.ScaleY = 1.0;
                 }
             }
             else
             {
-                // Existing Tile
-                UpdateTileVisuals(tileBorder, piece.Value);
-
-                double currentLeft = Canvas.GetLeft(tileBorder);
-                double currentTop = Canvas.GetTop(tileBorder);
-
-                if (animate && (Math.Abs(currentLeft - targetLeft) > 0.5 || Math.Abs(currentTop - targetTop) > 0.5))
-                {
-                    AnimateSlide(tileBorder, currentLeft, targetLeft, currentTop, targetTop);
-                }
-                else
-                {
-                    Canvas.SetLeft(tileBorder, targetLeft);
-                    Canvas.SetTop(tileBorder, targetTop);
-                }
+                var (scale, translate) = GetTransforms(tileBorder);
 
                 if (piece.MergedInto != null)
                 {
-                    // Merged away: remove from canvas after slide
+                    // Case B: Consumed Merging Tile (slides under destination with soft dissolve, then removed)
+                    Panel.SetZIndex(tileBorder, 2);
+
                     if (animate)
                     {
-                        var borderToRemove = tileBorder;
-                        long idToRemove = piece.Id;
-                        var timer = new System.Windows.Threading.DispatcherTimer
+                        double startX = translate.X;
+                        double startY = translate.Y;
+
+                        var animX = new DoubleAnimation(startX, targetX, SlideDuration) { EasingFunction = SlideEasing };
+                        var animY = new DoubleAnimation(startY, targetY, SlideDuration) { EasingFunction = SlideEasing };
+
+                        // Soft Dissolve: fade out smoothly during the final 40ms of the slide
+                        var fadeAnim = new DoubleAnimationUsingKeyFrames();
+                        fadeAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+                        fadeAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(55))));
+                        fadeAnim.KeyFrames.Add(new EasingDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(SlideDuration), SlideEasing));
+
+                        long capturedId = piece.Id;
+                        Border capturedBorder = tileBorder;
+
+                        animX.Completed += (s, e) =>
                         {
-                            Interval = TimeSpan.FromMilliseconds(110)
+                            if (_tileViews.TryGetValue(capturedId, out var current) && ReferenceEquals(current, capturedBorder))
+                            {
+                                _tileViews.Remove(capturedId);
+                                _displayedValues.Remove(capturedId);
+                                TilesCanvas.Children.Remove(capturedBorder);
+                            }
                         };
-                        timer.Tick += (s, _) =>
-                        {
-                            timer.Stop();
-                            TilesCanvas.Children.Remove(borderToRemove);
-                            _tileViews.Remove(idToRemove);
-                        };
-                        timer.Start();
+
+                        tileBorder.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
+                        translate.BeginAnimation(TranslateTransform.XProperty, animX, HandoffBehavior.SnapshotAndReplace);
+                        translate.BeginAnimation(TranslateTransform.YProperty, animY, HandoffBehavior.SnapshotAndReplace);
                     }
                     else
                     {
-                        TilesCanvas.Children.Remove(tileBorder);
                         _tileViews.Remove(piece.Id);
+                        _displayedValues.Remove(piece.Id);
+                        TilesCanvas.Children.Remove(tileBorder);
                     }
                 }
-                else if (piece.IsMerged && animate)
+                else
                 {
-                    AnimateMergePop(tileBorder);
+                    // Case C: Surviving / Destination Tile
+                    Panel.SetZIndex(tileBorder, piece.IsMerged ? 3 : 2);
+                    tileBorder.BeginAnimation(UIElement.OpacityProperty, null);
+                    tileBorder.Opacity = 1.0;
+
+                    if (animate)
+                    {
+                        double currentX = translate.X;
+                        double currentY = translate.Y;
+
+                        if (Math.Abs(currentX - targetX) > 0.5 || Math.Abs(currentY - targetY) > 0.5)
+                        {
+                            var animX = new DoubleAnimation(currentX, targetX, SlideDuration) { EasingFunction = SlideEasing };
+                            var animY = new DoubleAnimation(currentY, targetY, SlideDuration) { EasingFunction = SlideEasing };
+                            translate.BeginAnimation(TranslateTransform.XProperty, animX, HandoffBehavior.SnapshotAndReplace);
+                            translate.BeginAnimation(TranslateTransform.YProperty, animY, HandoffBehavior.SnapshotAndReplace);
+                        }
+                        else
+                        {
+                            translate.BeginAnimation(TranslateTransform.XProperty, null);
+                            translate.BeginAnimation(TranslateTransform.YProperty, null);
+                            translate.X = targetX;
+                            translate.Y = targetY;
+                        }
+                    }
+                    else
+                    {
+                        translate.BeginAnimation(TranslateTransform.XProperty, null);
+                        translate.BeginAnimation(TranslateTransform.YProperty, null);
+                        translate.X = targetX;
+                        translate.Y = targetY;
+                    }
+
+                    if (piece.IsMerged && animate)
+                    {
+                        // Option 1: Subtle Micro-Pulse (peak 1.05 max) with Soft Dissolve synchronization
+                        long capturedPieceId = piece.Id;
+                        Border capturedDestBorder = tileBorder;
+                        int targetValue = piece.Value;
+
+                        var microPulseAnim = new DoubleAnimationUsingKeyFrames
+                        {
+                            BeginTime = TimeSpan.FromMilliseconds(70)
+                        };
+                        microPulseAnim.KeyFrames.Add(new SplineDoubleKeyFrame(1.05, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(35)), new KeySpline(0.2, 0.8, 0.4, 1.0)));
+                        microPulseAnim.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(PopDuration), new KeySpline(0.2, 0.8, 0.4, 1.0)));
+
+                        var delayTrigger = new DoubleAnimation(1.0, 1.0, TimeSpan.FromMilliseconds(70));
+                        delayTrigger.Completed += (s, e) =>
+                        {
+                            if (_tileViews.TryGetValue(capturedPieceId, out var cur) && ReferenceEquals(cur, capturedDestBorder))
+                            {
+                                UpdateTileVisuals(capturedDestBorder, targetValue);
+                                _displayedValues[capturedPieceId] = targetValue;
+                                capturedDestBorder.BeginAnimation(UIElement.OpacityProperty, null);
+                                capturedDestBorder.Opacity = 1.0;
+                            }
+                        };
+
+                        capturedDestBorder.BeginAnimation(UIElement.OpacityProperty, delayTrigger);
+                        scale.BeginAnimation(ScaleTransform.ScaleXProperty, microPulseAnim);
+                        scale.BeginAnimation(ScaleTransform.ScaleYProperty, microPulseAnim);
+                    }
+                    else
+                    {
+                        UpdateTileVisuals(tileBorder, piece.Value);
+                        _displayedValues[piece.Id] = piece.Value;
+                        scale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+                        scale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+                        scale.ScaleX = 1.0;
+                        scale.ScaleY = 1.0;
+                    }
                 }
-            }
-        }
-
-        // Clean up visual tiles that are no longer in the engine list
-        var toRemove = new List<long>();
-        foreach (var kvp in _tileViews)
-        {
-            if (!activeIds.Contains(kvp.Key))
-            {
-                toRemove.Add(kvp.Key);
-            }
-        }
-
-        foreach (var id in toRemove)
-        {
-            if (_tileViews.TryGetValue(id, out var b))
-            {
-                TilesCanvas.Children.Remove(b);
-                _tileViews.Remove(id);
             }
         }
     }
 
-    private static Border CreateTileElement(TilePiece piece)
+    private static (ScaleTransform scale, TranslateTransform translate) GetTransforms(Border border)
+    {
+        var group = (TransformGroup)border.RenderTransform;
+        return ((ScaleTransform)group.Children[0], (TranslateTransform)group.Children[1]);
+    }
+
+    private static Border CreateTileElement(TilePiece piece, double initialX, double initialY)
     {
         var textBlock = new TextBlock
         {
             FontFamily = new FontFamily("Segoe UI Variable Display, Segoe UI"),
             FontWeight = FontWeights.Bold,
             HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            SnapsToDevicePixels = true
+            VerticalAlignment = VerticalAlignment.Center
         };
 
-        var scaleTransform = new ScaleTransform(1.0, 1.0, TileSize / 2, TileSize / 2);
+        var scaleTransform = new ScaleTransform(1.0, 1.0);
+        var translateTransform = new TranslateTransform(initialX, initialY);
+        var transformGroup = new TransformGroup();
+        transformGroup.Children.Add(scaleTransform);     // Index 0
+        transformGroup.Children.Add(translateTransform); // Index 1
 
         var border = new Border
         {
@@ -195,8 +324,8 @@ public partial class Game2048WidgetView : UserControl
             Height = TileSize,
             CornerRadius = new CornerRadius(4),
             Child = textBlock,
-            RenderTransform = scaleTransform,
-            SnapsToDevicePixels = true
+            RenderTransformOrigin = new Point(0.5, 0.5),
+            RenderTransform = transformGroup
         };
 
         UpdateTileVisuals(border, piece.Value);
@@ -212,50 +341,6 @@ public partial class Game2048WidgetView : UserControl
             border.Background = bgBrush;
             tb.Foreground = fgBrush;
             tb.FontSize = fontSize;
-        }
-    }
-
-    private static void AnimateSlide(Border border, double fromX, double toX, double fromY, double toY)
-    {
-        var animX = new DoubleAnimation(fromX, toX, TimeSpan.FromMilliseconds(100))
-        {
-            EasingFunction = SlideEasing
-        };
-        var animY = new DoubleAnimation(fromY, toY, TimeSpan.FromMilliseconds(100))
-        {
-            EasingFunction = SlideEasing
-        };
-
-        border.BeginAnimation(Canvas.LeftProperty, animX, HandoffBehavior.SnapshotAndReplace);
-        border.BeginAnimation(Canvas.TopProperty, animY, HandoffBehavior.SnapshotAndReplace);
-    }
-
-    private static void AnimateSpawn(Border border)
-    {
-        if (border.RenderTransform is ScaleTransform st)
-        {
-            var anim = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(120))
-            {
-                EasingFunction = SpawnEasing
-            };
-            st.BeginAnimation(ScaleTransform.ScaleXProperty, anim);
-            st.BeginAnimation(ScaleTransform.ScaleYProperty, anim);
-        }
-    }
-
-    private static void AnimateMergePop(Border border)
-    {
-        if (border.RenderTransform is ScaleTransform st)
-        {
-            var keyFrames = new DoubleAnimationUsingKeyFrames
-            {
-                Duration = TimeSpan.FromMilliseconds(140)
-            };
-            keyFrames.KeyFrames.Add(new SplineDoubleKeyFrame(1.18, KeyTime.FromPercent(0.4), new KeySpline(0.2, 0.8, 0.4, 1.0)));
-            keyFrames.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromPercent(1.0), new KeySpline(0.2, 0.8, 0.4, 1.0)));
-
-            st.BeginAnimation(ScaleTransform.ScaleXProperty, keyFrames);
-            st.BeginAnimation(ScaleTransform.ScaleYProperty, keyFrames);
         }
     }
 
@@ -296,7 +381,6 @@ public partial class Game2048WidgetView : UserControl
 
         if (value == 2048)
         {
-            // Accent color for hitting 2048
             var accent = element.TryFindResource("SystemAccentColorPrimaryBrush") as Brush
                          ?? element.TryFindResource("SystemAccentColorSolidBrush") as Brush
                          ?? TileSuperBg;

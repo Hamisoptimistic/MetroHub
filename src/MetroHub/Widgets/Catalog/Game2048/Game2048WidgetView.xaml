@@ -125,30 +125,28 @@
                     <Border Width="400" Height="400"
                             CornerRadius="8"
                             Background="#1E1E24"
-                            BorderBrush="{DynamicResource WidgetDividerBrush}"
-                            BorderThickness="1"
-                            SnapsToDevicePixels="True">
-                        <!-- Static 4x4 Grid of Empty Cells -->
-                        <UniformGrid Rows="4" Columns="4" Margin="14">
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            BorderThickness="0">
+                        <!-- Static 4x4 Grid of Empty Cells (384px inner area: 96px step, 84px cell + 12px gap) -->
+                        <UniformGrid Rows="4" Columns="4" Margin="8">
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
 
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
 
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
 
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
-                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" SnapsToDevicePixels="True" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
+                            <Border Margin="6" CornerRadius="4" Background="#0EFFFFFF" />
                         </UniformGrid>
                     </Border>
 
