@@ -160,5 +160,32 @@ public class WeatherLocationServiceTests
             dlg.Close();
         });
     }
+
+    [Fact]
+    public async System.Threading.Tasks.Task FetchWeatherAsync_MismatchedCoordinatesFallback_ReturnsNull()
+    {
+        var service = new WeatherService();
+        var cachePath = AppPaths.ResolveCacheFile("v1_weather_cache.json");
+        AppPaths.EnsureDirectory(cachePath);
+
+        var cachedEntry = new WeatherCacheEntry
+        {
+            City = "London",
+            Latitude = 51.5074,
+            Longitude = -0.1278,
+            TimestampUtc = DateTime.UtcNow
+        };
+        await System.IO.File.WriteAllTextAsync(cachePath, JsonSerializer.Serialize(cachedEntry));
+
+        using var cts = new System.Threading.CancellationTokenSource();
+        cts.Cancel(); // Force failure into catch block
+
+        var result = await service.FetchWeatherAsync(35.6762, 139.6503, "Tokyo", cts.Token);
+        Assert.Null(result);
+
+        var matchingResult = await service.FetchWeatherAsync(51.5074, -0.1278, "London", cts.Token);
+        Assert.NotNull(matchingResult);
+        Assert.Equal("London", matchingResult.City);
+    }
 }
 

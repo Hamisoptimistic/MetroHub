@@ -15,7 +15,7 @@ public sealed class WeatherService
 
     internal static HttpClient SharedHttpClient => HttpHelper.Client;
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    internal static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
@@ -61,17 +61,15 @@ public sealed class WeatherService
             string latStr = latitude.ToString("F4", System.Globalization.CultureInfo.InvariantCulture);
             string lonStr = longitude.ToString("F4", System.Globalization.CultureInfo.InvariantCulture);
 
-            // 1. Weather Forecast URL
+            // 1. Weather Forecast URL (Current conditions + today's high/low & max precipitation probability)
             string weatherUrl = $"https://api.open-meteo.com/v1/forecast?latitude={latStr}&longitude={lonStr}" +
                                 "&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,uv_index" +
-                                "&hourly=temperature_2m,precipitation_probability,weather_code,is_day,uv_index" +
-                                "&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_probability_max" +
-                                "&timezone=auto&forecast_days=7";
+                                "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
+                                "&timezone=auto&forecast_days=1";
 
-            // 2. Air Quality URL
+            // 2. Air Quality URL (Current US AQI)
             string aqiUrl = $"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={latStr}&longitude={lonStr}" +
-                            "&current=us_aqi,pm2_5,pm10,nitrogen_dioxide,ozone,sulphur_dioxide,carbon_monoxide" +
-                            "&timezone=auto";
+                            "&current=us_aqi&timezone=auto";
 
             // Concurrent pure async fetch without Task.Run
             var weatherTask = FetchJsonAsync<OpenMeteoForecastResponse>(weatherUrl, cancellationToken);
@@ -82,7 +80,7 @@ public sealed class WeatherService
             var forecast = await weatherTask.ConfigureAwait(false);
             var airQuality = await aqiTask.ConfigureAwait(false);
 
-            if (forecast == null) return null;
+            if (forecast == null) return GetMatchingCachedWeather(latitude, longitude);
 
             var entry = new WeatherCacheEntry
             {
@@ -99,16 +97,29 @@ public sealed class WeatherService
         }
         catch
         {
-            // Network failure or cancellation; return cached if available
-            return GetCachedWeather();
+            // Network failure or cancellation; return cached if available and coordinates match
+            return GetMatchingCachedWeather(latitude, longitude);
         }
+    }
+
+    private WeatherCacheEntry? GetMatchingCachedWeather(double latitude, double longitude)
+    {
+        var cached = GetCachedWeather();
+        if (cached != null &&
+            Math.Abs(cached.Latitude - latitude) < 0.05 &&
+            Math.Abs(cached.Longitude - longitude) < 0.05)
+        {
+            return cached;
+        }
+
+        return null;
     }
 
     private static async Task<T?> FetchJsonAsync<T>(string url, CancellationToken cancellationToken) where T : class
     {
         try
         {
-            using var response = await SharedHttpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            using var response = await SharedHttpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode) return null;
 
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);

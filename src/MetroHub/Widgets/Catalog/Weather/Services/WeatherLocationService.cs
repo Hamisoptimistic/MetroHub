@@ -18,13 +18,9 @@ namespace MetroHub.Widgets.Catalog.Weather.Services;
 /// </summary>
 public sealed class WeatherLocationService
 {
-    private static readonly Lazy<WeatherLocationService> s_instance = new(() => new WeatherLocationService());
-    public static WeatherLocationService Instance => s_instance.Value;
+    public static WeatherLocationService Instance { get; } = new();
 
-    private static readonly JsonSerializerOptions s_jsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
+    private static JsonSerializerOptions s_jsonOptions => WeatherService.JsonOptions;
 
     private readonly Dictionary<string, IReadOnlyList<GeoResult>> _queryCache = new(50, StringComparer.OrdinalIgnoreCase);
     private readonly object _cacheLock = new();

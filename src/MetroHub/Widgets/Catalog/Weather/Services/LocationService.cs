@@ -17,10 +17,7 @@ public sealed class LocationService
     private static readonly TimeSpan LocationTtl = TimeSpan.FromDays(7);
     private static LocationCacheEntry? _memoryCachedLocation;
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
+    private static JsonSerializerOptions JsonOptions => WeatherService.JsonOptions;
 
     public LocationService(HttpClient httpClient)
     {
@@ -125,6 +122,7 @@ public sealed class LocationService
         {
             using var response = await _httpClient.GetAsync(
                 "http://ip-api.com/json/?fields=status,message,lat,lon,city,country",
+                HttpCompletionOption.ResponseHeadersRead,
                 cancellationToken
             ).ConfigureAwait(false);
 
@@ -168,7 +166,7 @@ public sealed class LocationService
         try
         {
             string url = $"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(query.Trim())}&count=1&language=en&format=json";
-            using var response = await _httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            using var response = await _httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode) return null;
 
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);

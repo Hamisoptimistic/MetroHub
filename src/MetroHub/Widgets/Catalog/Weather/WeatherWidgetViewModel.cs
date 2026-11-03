@@ -98,9 +98,6 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
     private Brush _ambientGlowBrush = WeatherPalettes.CloudyGlow;
 
     [ObservableProperty]
-    private Brush _horizonAuraBrush = WeatherPalettes.CloudyHorizonAura;
-
-    [ObservableProperty]
     private bool _isLoading;
 
     [ObservableProperty]
@@ -114,7 +111,6 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
     public string? CustomCity => _settings.CustomCity;
     public WeatherBackgroundStyle BackgroundStyle => _settings.BackgroundStyle;
     public bool IsAmbientGlowEnabled => _settings.BackgroundStyle == WeatherBackgroundStyle.AmbientGlow;
-    public bool IsHorizonAuraEnabled => _settings.BackgroundStyle == WeatherBackgroundStyle.HorizonAura;
 
     // Responsive sizing flags
     public bool IsWide => Model.SpanX <= 4 && Model.SpanY <= 2;
@@ -167,30 +163,25 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
             if (parsed != null)
             {
                 _settings = parsed;
-                if (_settings.IsHorizonAuraEnabled == true)
-                {
-                    _settings.BackgroundStyle = WeatherBackgroundStyle.HorizonAura;
-                }
-                else if (_settings.IsAmbientGlowEnabled == true)
+                if (_settings.IsAmbientGlowEnabled == true)
                 {
                     _settings.BackgroundStyle = WeatherBackgroundStyle.AmbientGlow;
                 }
-                else if (_settings.IsAmbientGlowEnabled == false && _settings.IsHorizonAuraEnabled == false)
+                else if (_settings.IsAmbientGlowEnabled == false)
                 {
                     _settings.BackgroundStyle = WeatherBackgroundStyle.None;
+                }
+                else if (!Enum.IsDefined(_settings.BackgroundStyle))
+                {
+                    _settings.BackgroundStyle = WeatherBackgroundStyle.AmbientGlow;
                 }
 
                 OnPropertyChanged(nameof(IsFahrenheit));
                 OnPropertyChanged(nameof(BackgroundStyle));
                 OnPropertyChanged(nameof(IsAmbientGlowEnabled));
-                OnPropertyChanged(nameof(IsHorizonAuraEnabled));
                 if (!IsAmbientGlowEnabled)
                 {
                     AmbientGlowBrush = System.Windows.Media.Brushes.Transparent;
-                }
-                if (!IsHorizonAuraEnabled)
-                {
-                    HorizonAuraBrush = System.Windows.Media.Brushes.Transparent;
                 }
             }
         }
@@ -202,11 +193,9 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
         if (_settings.BackgroundStyle == style) return;
         _settings.BackgroundStyle = style;
         _settings.IsAmbientGlowEnabled = (style == WeatherBackgroundStyle.AmbientGlow);
-        _settings.IsHorizonAuraEnabled = (style == WeatherBackgroundStyle.HorizonAura);
         SaveSettings();
         OnPropertyChanged(nameof(BackgroundStyle));
         OnPropertyChanged(nameof(IsAmbientGlowEnabled));
-        OnPropertyChanged(nameof(IsHorizonAuraEnabled));
 
         if (_latestData != null)
         {
@@ -215,12 +204,10 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
         else
         {
             AmbientGlowBrush = IsAmbientGlowEnabled ? WeatherPalettes.CloudyGlow : System.Windows.Media.Brushes.Transparent;
-            HorizonAuraBrush = IsHorizonAuraEnabled ? WeatherPalettes.CloudyHorizonAura : System.Windows.Media.Brushes.Transparent;
         }
     }
 
     public void SetAmbientGlow(bool enabled) => SetStyle(enabled ? WeatherBackgroundStyle.AmbientGlow : WeatherBackgroundStyle.None);
-    public void SetHorizonAura(bool enabled) => SetStyle(enabled ? WeatherBackgroundStyle.HorizonAura : WeatherBackgroundStyle.None);
 
     public override void SaveSettings()
     {
@@ -259,14 +246,11 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
     {
         yield return WidgetMenu.Item("Change Location...", SymbolRegular.Location24, () =>
             WeakReferenceMessenger.Default.Send(new ShowModalDialogRequestMessage(owner => Presentation.Controls.WeatherLocationDialog.Show(owner, this))));
-        yield return WidgetMenu.Item("Automatic Location", SymbolRegular.MyLocation24, () => _ = UseAutoLocationAsync(),
-            isCheckable: true, isChecked: IsAutoLocation);
         yield return WidgetMenu.Submenu("Temperature Units", SymbolRegular.Temperature24,
             WidgetMenu.Item("Celsius (°C)", () => { if (IsFahrenheit) ToggleUnits(); }, isCheckable: true, isChecked: !IsFahrenheit),
             WidgetMenu.Item("Fahrenheit (°F)", () => { if (!IsFahrenheit) ToggleUnits(); }, isCheckable: true, isChecked: IsFahrenheit));
         yield return WidgetMenu.Submenu("Style", SymbolRegular.Color24,
             WidgetMenu.Item("Ambient Glow", () => SetStyle(WeatherBackgroundStyle.AmbientGlow), isCheckable: true, isChecked: BackgroundStyle == WeatherBackgroundStyle.AmbientGlow),
-            WidgetMenu.Item("Horizon Aura", () => SetStyle(WeatherBackgroundStyle.HorizonAura), isCheckable: true, isChecked: BackgroundStyle == WeatherBackgroundStyle.HorizonAura),
             WidgetMenu.Item("None", () => SetStyle(WeatherBackgroundStyle.None), isCheckable: true, isChecked: BackgroundStyle == WeatherBackgroundStyle.None));
         yield return WidgetMenu.Divider();
         yield return WidgetMenu.Item("Refresh Weather", SymbolRegular.ArrowSync24, () => _ = RefreshAsync());
@@ -345,9 +329,16 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
 
     public override void Pause()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
-        _cts = null;
+        var cts = Interlocked.Exchange(ref _cts, null);
+        if (cts != null)
+        {
+            try
+            {
+                cts.Cancel();
+            }
+            catch (ObjectDisposedException) { }
+            cts.Dispose();
+        }
         _refreshLoopTask = null;
     }
 
@@ -484,12 +475,11 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
 
         if (current != null)
         {
-            // Condition info, Ambient glow & Horizon aura
+            // Condition info & Ambient glow
             var info = WeatherPalettes.GetConditionInfo(current.WeatherCode, current.IsDay == 1, current.Temperature);
             WeatherIconName = info.IconName;
             ConditionText = info.Description;
             AmbientGlowBrush = IsAmbientGlowEnabled ? info.Glow : System.Windows.Media.Brushes.Transparent;
-            HorizonAuraBrush = IsHorizonAuraEnabled ? info.HorizonAura : System.Windows.Media.Brushes.Transparent;
 
             // Temperature & Feels-Like
             TemperatureText = FormatTemp(current.Temperature);
@@ -535,8 +525,14 @@ public sealed partial class WeatherWidgetViewModel : WidgetViewModelBase, IWidge
             AqiText = "--";
         }
 
-        // Precipitation Probability for compact & 4x4 cards
-        if (hourly?.PrecipitationProbability != null && hourly.PrecipitationProbability.Count > 0)
+        // Precipitation Probability for compact & 4x4 cards (Daily max preferred; hourly fallback for legacy cache)
+        if (daily?.PrecipitationProbabilityMax != null && daily.PrecipitationProbabilityMax.Count > 0)
+        {
+            int precipProb = daily.PrecipitationProbabilityMax[0];
+            PrecipitationProbability = precipProb;
+            PrecipitationProbabilityText = $"{precipProb}%";
+        }
+        else if (hourly?.PrecipitationProbability != null && hourly.PrecipitationProbability.Count > 0)
         {
             int precipProb = hourly.PrecipitationProbability[0];
             PrecipitationProbability = precipProb;
