@@ -13,13 +13,13 @@
 
 
 
-    <!-- Transparent WidgetCard with Padding="0" so dividers run border-to-border (like Focus Timer & Media Player) -->
+    <!-- Transparent WidgetCard with Padding="0" so dividers run edge-to-edge -->
     <widgets:WidgetCard Padding="0" Background="Transparent">
         <Grid ClipToBounds="True" Background="Transparent">
             <Grid.RowDefinitions>
                 <!-- Row 0: Top Master Audio Strip (Output Logo + Master Seekbar + Mute Button) -->
                 <RowDefinition Height="50" />
-                <!-- Row 1: Output Device Section with Edge-to-Edge Divider matching Focus Timer -->
+                <!-- Row 1: Output Device Section with Edge-to-Edge Divider -->
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 

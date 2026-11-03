@@ -13,13 +13,13 @@
 
 
 
-    <!-- Transparent WidgetCard with Padding="0" so dividers run border-to-border (matching Volume, Focus Timer, Media Player) -->
+    <!-- Transparent WidgetCard with Padding="0" so dividers run edge-to-edge -->
     <widgets:WidgetCard Padding="0" Background="Transparent">
         <Grid ClipToBounds="True" Background="Transparent">
             <Grid.RowDefinitions>
                 <!-- Row 0: Top Master Brightness Strip (Day/Night Toggle + Master Seekbar + Link Button) -->
                 <RowDefinition Height="50" />
-                <!-- Row 1: Displays Section with Edge-to-Edge Divider matching Volume Widget -->
+                <!-- Row 1: Displays Section with Edge-to-Edge Divider -->
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
@@ -229,7 +229,7 @@
                                             </Border.Style>
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
-                                                    <!-- Col 0: Active Accent Indicator Pill (Width 12 matches Audio controls) -->
+                                                    <!-- Col 0: Active Accent Indicator Pill (Width 12) -->
                                                     <ColumnDefinition Width="12" />
                                                     <!-- Col 1: Hardware Device Glyph (Width 24) -->
                                                     <ColumnDefinition Width="24" />
