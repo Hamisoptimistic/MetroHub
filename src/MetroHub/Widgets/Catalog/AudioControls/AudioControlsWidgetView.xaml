@@ -245,18 +245,9 @@
                 </Grid>
             </Border>
 
-            <!-- 2. Focus Timer-Identical Edge-to-Edge Hairline Divider Track -->
-            <Grid VerticalAlignment="Top"
-                  Height="14"
-                  Margin="0,-7,0,0"
-                  Background="Transparent"
-                  >
-                <Border Height="2"
-                        VerticalAlignment="Center"
-                        Background="{DynamicResource WidgetDividerBrush}"
-                        CornerRadius="1"
-                        />
-            </Grid>
+            <!-- 2. Universal 1px Edge-to-Edge Hairline Divider -->
+            <Border VerticalAlignment="Top"
+                    Style="{StaticResource WidgetHairlineDividerStyle}" />
         </Grid>
         </Grid>
     </widgets:WidgetCard>
