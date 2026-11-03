@@ -25,11 +25,11 @@ $homeCursor  = "$esc[H"
 $clearEol    = "$esc[K"     # Erase to end of line
 $clearEos    = "$esc[J"     # Erase to end of screen
 
-# Unicode box & block characters
-$bTL   = [char]0x250C  # ┌
-$bTR   = [char]0x2510  # ┐
-$bBL   = [char]0x2514  # └
-$bBR   = [char]0x2518  # ┘
+# Unicode box & block characters (Rounded modern corners)
+$bTL   = [char]0x256D  # ╭
+$bTR   = [char]0x256E  # ╮
+$bBL   = [char]0x2570  # ╰
+$bBR   = [char]0x256F  # ╯
 $bH    = "" + [char]0x2500  # ─
 $bV    = "" + [char]0x2502  # │
 $bML   = [char]0x251C  # ├
@@ -55,6 +55,7 @@ $sparkChars = @(
 $cReset       = "$esc[0m"
 $cBold        = "$esc[1m"
 $cDim         = "$esc[2m"
+$cBorder      = "$esc[38;2;60;90;120m"   # Refined dark slate for box borders
 $cCyan        = "$esc[38;2;0;220;255m"
 $cNeonGreen   = "$esc[38;2;0;255;150m"
 $cGreen       = "$esc[38;2;75;215;100m"
@@ -69,8 +70,8 @@ $cDarkGray    = "$esc[38;2;60;68;80m"
 $cWhite       = "$esc[38;2;240;245;250m"
 
 # Layout Constants
-$InnerWidth   = 72
-$minReqWidth  = $InnerWidth + 2  # 74 columns total width with borders
+$InnerWidth   = 74
+$minReqWidth  = $InnerWidth + 2  # 76 columns total width with borders
 
 # Helper: Safely get terminal dimensions without crashing in redirected/headless hosts
 function Get-ConsoleDimensions {
@@ -88,7 +89,25 @@ function Format-TuiRow([string]$text, [string]$leftPad = "") {
     $clean = $text -replace '\x1B\[[0-9;]*[a-zA-Z]', ''
     $padLen = [Math]::Max(0, $InnerWidth - $clean.Length)
     $pad = " " * $padLen
-    return "$leftPad$cCyan$bV$cReset$text$pad$cCyan$bV$cReset$clearEol"
+    return "$leftPad$cBorder$bV$cReset$text$pad$cBorder$bV$cReset$clearEol"
+}
+
+# Helper: Format empty spacer row inside cards
+function Format-TuiBlankRow([string]$leftPad = "") {
+    $pad = " " * $InnerWidth
+    return "$leftPad$cBorder$bV$cReset$pad$cBorder$bV$cReset$clearEol"
+}
+
+# Helper: Format divider with integrated section title (btop style)
+function Format-TuiDivider([string]$title, [string]$titleColor = $cWhite, [string]$leftPad = "") {
+    if (-not $title) {
+        return "$leftPad$cBorder$bML" + ($bH * $InnerWidth) + "$bMR$cReset$clearEol"
+    }
+    $prefix = "$cBorder$bML$bH$cReset $titleColor$title$cReset "
+    $titleClean = $title -replace '\x1B\[[0-9;]*[a-zA-Z]', ''
+    $remLen = [Math]::Max(0, $InnerWidth - (3 + $titleClean.Length))
+    $line = $bH * $remLen
+    return "$leftPad$prefix$cBorder$line$bMR$cReset$clearEol"
 }
 
 # Helper: Colorize based on percentage
@@ -235,9 +254,13 @@ try {
         $leftMargin = [Math]::Max(0, [int](($curW - $minReqWidth) / 2))
         $leftPad = " " * $leftMargin
 
-        $barTop = "$leftPad$cCyan$bTL" + ($bH * $InnerWidth) + "$bTR$cReset$clearEol"
-        $barMid = "$leftPad$cCyan$bML" + ($bH * $InnerWidth) + "$bMR$cReset$clearEol"
-        $barBot = "$leftPad$cCyan$bBL" + ($bH * $InnerWidth) + "$bBR$cReset$clearEol"
+        $topLabel = " METROHUB PERFORMANCE MONITOR "
+        $tickLabel = " [Tick: $($IntervalMs)ms] "
+        $usedTop = 1 + $topLabel.Length + $tickLabel.Length + 1
+        $remTop = [Math]::Max(0, $InnerWidth - $usedTop)
+        $barTop = "$leftPad$cBorder$bTL$bH$cReset$cBold$cWhite$topLabel$cReset$cBorder" + ($bH * $remTop) + "$cReset$cGray$tickLabel$cReset$cBorder$bH$bTR$cReset$clearEol"
+        $barMid = "$leftPad$cBorder$bML" + ($bH * $InnerWidth) + "$bMR$cReset$clearEol"
+        $barBot = "$leftPad$cBorder$bBL" + ($bH * $InnerWidth) + "$bBR$cReset$clearEol"
 
         # Locate MetroHub process
         $proc = Get-Process -Name MetroHub -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -252,10 +275,10 @@ try {
 
             $msg = @(
                 $barTop,
-                (Format-TuiRow "  $cBold$cWhite METROHUB TUI MONITOR$cReset" $leftPad),
-                $barMid,
+                (Format-TuiBlankRow $leftPad),
                 (Format-TuiRow "  $cYellow Waiting for MetroHub.exe to start...$cReset" $leftPad),
                 (Format-TuiRow "  $cGray(Launch MetroHub or press Q to exit)$cReset" $leftPad),
+                (Format-TuiBlankRow $leftPad),
                 $barBot
             ) -join "`n"
 
@@ -403,7 +426,7 @@ try {
         # 1. CPU VISUALIZATION (THEME: GREEN)
         # ---------------------------------------------------------
         $cpuCol   = Get-PercentColor -val $cpuPercent -warn 3.0 -crit 8.0 -themeCol $cNeonGreen
-        $cpuBar   = Get-ProgressBar -val $cpuPercent -maxVal 8.0 -width 24 -themeCol $cNeonGreen
+        $cpuBar   = Get-ProgressBar -val $cpuPercent -maxVal 8.0 -width 26 -themeCol $cNeonGreen
         $cpuSpark = Get-Sparkline -history ($cpuHistory.ToArray()) -maxScale 8.0 -themeCol $cNeonGreen
         $missingCpuSpark = $historyLimit - $cpuHistory.Count
         if ($missingCpuSpark -gt 0) {
@@ -413,78 +436,87 @@ try {
         # ---------------------------------------------------------
         # 2. RAM VISUALIZATION (THEME: BLUE)
         # ---------------------------------------------------------
-        $ramBar = Get-ProgressBar -val $privateWsMb -maxVal 100.0 -width 24 -themeCol $cBlue
+        $ramBar = Get-ProgressBar -val $privateWsMb -maxVal 100.0 -width 26 -themeCol $cBlue
 
         # ---------------------------------------------------------
         # 3. GPU VISUALIZATION (THEME: VIOLET)
         # ---------------------------------------------------------
         $gpuCol   = Get-PercentColor -val $gpuPercent -warn 10.0 -crit 25.0 -themeCol $cViolet
-        $gpuBar   = Get-ProgressBar -val $gpuPercent -maxVal 20.0 -width 24 -themeCol $cViolet
+        $gpuBar   = Get-ProgressBar -val $gpuPercent -maxVal 20.0 -width 26 -themeCol $cViolet
         $gpuSpark = Get-Sparkline -history ($gpuHistory.ToArray()) -maxScale 20.0 -themeCol $cViolet
         $missingGpuSpark = $historyLimit - $gpuHistory.Count
         if ($missingGpuSpark -gt 0) {
             $gpuSpark = ("$cDarkGray.$cReset" * $missingGpuSpark) + $gpuSpark
         }
-        $vramBar = Get-ProgressBar -val $dedicatedMb -maxVal 100.0 -width 24 -themeCol $cViolet
+        $vramBar = Get-ProgressBar -val $dedicatedMb -maxVal 100.0 -width 26 -themeCol $cViolet
+
+        $blank = Format-TuiBlankRow $leftPad
 
         # ---------------------------------------------------------
-        # ROWS FORMATTING: HEADER & GENERAL INFO
+        # GENERAL INFO
         # ---------------------------------------------------------
-        $r1  = Format-TuiRow "  $cBold$cWhite METROHUB PERFORMANCE MONITOR$cReset$cGray                   [Tick: $($IntervalMs)ms]$cReset" $leftPad
-        $r2  = Format-TuiRow "  PID: $cWhite$($proc.Id.ToString().PadRight(6))$cReset Status: $statusStr$cReset   Uptime: $cWhite$($uptimeStr)$cReset   Cores: $cWhite$($cores)$cReset" $leftPad
+        $rStatus = Format-TuiRow "  PID: $cWhite$($proc.Id.ToString().PadRight(6))$cReset Status: $statusStr$cReset     Uptime: $cWhite$($uptimeStr)$cReset    Cores: $cWhite$($cores)$cReset" $leftPad
 
         # ---------------------------------------------------------
         # CARD 1: CPU (GREEN)
         # ---------------------------------------------------------
-        $rcpu1 = Format-TuiRow "  $cBold$cNeonGreen PROCESSOR (CPU)$cReset" $leftPad
-        $rcpu2 = Format-TuiRow "  Usage:    $cpuCol$($cpuPercent.ToString('0.00').PadLeft(6))%$cReset  [$cpuBar]  $cGray(Target: <8%)$cReset" $leftPad
-        $rcpu3 = Format-TuiRow "  Stats:    Avg: $cWhite$($avgCpu.ToString('0.00').PadLeft(5))%$cReset  Peak: $cWhite$($peakCpu.ToString('0.00').PadLeft(5))%$cReset  Samples: $cWhite$($sampleCount.ToString().PadRight(6))$cReset" $leftPad
-        $rcpu4 = Format-TuiRow "  Chart:    [$cpuSpark] $cGray(Last 36s)$cReset" $leftPad
+        $divCpu = Format-TuiDivider "PROCESSOR (CPU)" $cNeonGreen $leftPad
+        $rcpu1  = Format-TuiRow "  Usage    $cpuCol$($cpuPercent.ToString('0.00').PadLeft(5))%$cReset   [$cpuBar]   $cGray(Target: < 8.0%)$cReset" $leftPad
+        $rcpu2  = Format-TuiRow "  Chart    [$cpuSpark]   $cGray(Last 36s)$cReset" $leftPad
+        $rcpu3  = Format-TuiRow "  Stats    Avg:  $cWhite$($avgCpu.ToString('0.00').PadLeft(5))%$cReset       Peak:  $cWhite$($peakCpu.ToString('0.00').PadLeft(5))%$cReset       Samples: $cWhite$($sampleCount)$cReset" $leftPad
 
         # ---------------------------------------------------------
         # CARD 2: RAM (BLUE)
         # ---------------------------------------------------------
-        $rram1 = Format-TuiRow "  $cBold$cBlue MEMORY & SYSTEM (RAM)$cReset" $leftPad
-        $rram2 = Format-TuiRow "  RAM:      $cBlue$($privateWsMb.ToString('0.0').PadLeft(6)) MB$cReset  [$ramBar]  $cGray(Task Mgr Private)$cReset" $leftPad
-        $rram3 = Format-TuiRow "  Total WS: $cWhite$($ramMb.ToString('0.0').PadLeft(6)) MB$cReset  Shared: $cWhite$($sharedMb.ToString('0.0').PadLeft(6)) MB$cReset  Commit: $cWhite$($privateMb.ToString('0.0').PadLeft(6)) MB$cReset" $leftPad
-        $rram4 = Format-TuiRow "  Peak WS:  $cWhite$($peakRamMb.ToString('0.0').PadLeft(6)) MB$cReset  Threads: $cWhite$($threads.ToString().PadLeft(3))$cReset       Handles: $cWhite$($handles.ToString().PadLeft(5))$cReset" $leftPad
+        $divRam = Format-TuiDivider "MEMORY (RAM)" $cBlue $leftPad
+        $rram1  = Format-TuiRow "  Private  $cBlue$($privateWsMb.ToString('0.0').PadLeft(5)) MB$cReset  [$ramBar]   $cGray(Task Manager WS)$cReset" $leftPad
+        $rram2  = Format-TuiRow "  Physical Total: $cWhite$($ramMb.ToString('0.0').PadLeft(5)) MB$cReset   Shared: $cWhite$($sharedMb.ToString('0.0').PadLeft(4)) MB$cReset    Peak WS: $cWhite$($peakRamMb.ToString('0.0').PadLeft(5)) MB$cReset" $leftPad
+        $rram3  = Format-TuiRow "  System   Commit: $cWhite$($privateMb.ToString('0.0').PadLeft(5)) MB$cReset  Threads: $cWhite$($threads.ToString().PadRight(4))$cReset        Handles: $cWhite$($handles.ToString('N0'))$cReset" $leftPad
 
         # ---------------------------------------------------------
         # CARD 3: GPU (VIOLET)
         # ---------------------------------------------------------
-        $rgpu1 = Format-TuiRow "  $cBold$cViolet GRAPHICS (GPU & VRAM)$cReset" $leftPad
-        $rgpu2 = Format-TuiRow "  Usage:    $gpuCol$($gpuPercent.ToString('0.00').PadLeft(6))%$cReset  [$gpuBar]  $cGray(Target: <15%)$cReset" $leftPad
-        $rgpu3 = Format-TuiRow "  Stats:    Avg: $cWhite$($avgGpu.ToString('0.00').PadLeft(5))%$cReset  Peak: $cWhite$($peakGpu.ToString('0.00').PadLeft(5))%$cReset  Engines: $cWhite$($gpuCounters.Count.ToString().PadRight(6))$cReset" $leftPad
-        $rgpu4 = Format-TuiRow "  Chart:    [$gpuSpark] $cGray(Last 36s)$cReset" $leftPad
-        $rgpu5 = Format-TuiRow "  VRAM:     $cViolet$($dedicatedMb.ToString('0.0').PadLeft(6)) MB$cReset  [$vramBar]  $cGray(Dedicated Video RAM)$cReset" $leftPad
-        $rgpu6 = Format-TuiRow "  Memory:   Shared: $cWhite$($sharedGpuMb.ToString('0.0').PadLeft(5)) MB$cReset  Commit: $cWhite$($commitGpuMb.ToString('0.0').PadLeft(5)) MB$cReset  Peak: $cWhite$($peakVramMb.ToString('0.0').PadLeft(5)) MB$cReset" $leftPad
+        $divGpu = Format-TuiDivider "GRAPHICS (GPU & VRAM)" $cViolet $leftPad
+        $rgpu1  = Format-TuiRow "  3D Core  $gpuCol$($gpuPercent.ToString('0.00').PadLeft(5))%$cReset   [$gpuBar]   $cGray(Target: < 15.0%)$cReset" $leftPad
+        $rgpu2  = Format-TuiRow "  Chart    [$gpuSpark]   $cGray(Last 36s)$cReset" $leftPad
+        $rgpu3  = Format-TuiRow "  VRAM     $cViolet$($dedicatedMb.ToString('0.0').PadLeft(5)) MB$cReset  [$vramBar]   $cGray(Dedicated Video RAM)$cReset" $leftPad
+        $rgpu4  = Format-TuiRow "  Pools    Shared: $cWhite$($sharedGpuMb.ToString('0.0').PadLeft(4)) MB$cReset    Commit: $cWhite$($commitGpuMb.ToString('0.0').PadLeft(4)) MB$cReset    Peak: $cWhite$($peakVramMb.ToString('0.0').PadLeft(4)) MB$cReset" $leftPad
 
         # Footer help
-        $help = "$leftPad$cDim  [Q / Esc] Quit    [R] Reset Stats    [T] Toggle 500ms/1000ms$cReset$clearEol"
+        $help = "$leftPad$cDim   [Q / Esc] Quit      [R] Reset Stats      [T] Toggle 500ms/1000ms$cReset$clearEol"
 
         # Output in CPU -> RAM -> GPU arrangement
         $output = @(
             $barTop,
-            $r1,
-            $barMid,
-            $r2,
-            $barMid,
+            $blank,
+            $rStatus,
+            $blank,
+            $divCpu,
+            $blank,
             $rcpu1,
+            $blank,
             $rcpu2,
+            $blank,
             $rcpu3,
-            $rcpu4,
-            $barMid,
+            $blank,
+            $divRam,
+            $blank,
             $rram1,
+            $blank,
             $rram2,
+            $blank,
             $rram3,
-            $rram4,
-            $barMid,
+            $blank,
+            $divGpu,
+            $blank,
             $rgpu1,
+            $blank,
             $rgpu2,
+            $blank,
             $rgpu3,
+            $blank,
             $rgpu4,
-            $rgpu5,
-            $rgpu6,
+            $blank,
             $barBot,
             $help
         ) -join "`n"
