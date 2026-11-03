@@ -152,6 +152,7 @@
             <!-- Active/Selected Pill Indicator: Triggers automatically whenever IsChecked is True -->
             <Trigger Property="IsChecked" Value="True">
                 <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
+                <Setter TargetName="Border" Property="Background" Value="{DynamicResource MenuBarItemBackgroundSelected}" />
             </Trigger>
             <Trigger Property="IsHighlighted" Value="True">
                 <Setter TargetName="Border" Property="Background" Value="{DynamicResource MenuBarItemBackgroundSelected}" />
@@ -249,6 +250,7 @@
             </Trigger>
             <Trigger Property="IsChecked" Value="True">
                 <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
+                <Setter TargetName="Border" Property="Background" Value="{DynamicResource MenuBarItemBackgroundSelected}" />
             </Trigger>
             <Trigger Property="IsHighlighted" Value="True">
                 <Setter TargetName="Border" Property="Background" Value="{DynamicResource MenuBarItemBackgroundSelected}" />

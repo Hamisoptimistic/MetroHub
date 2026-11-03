@@ -510,6 +510,7 @@
                         <!-- Active/Selected Pill Indicator: Triggers automatically when IsSelected is True -->
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="ActiveIndicator" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="Border" Property="Background" Value="{DynamicResource MenuBarItemBackgroundSelected}" />
                             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
                             <Setter Property="FontWeight" Value="{DynamicResource TypeBodyStrongFontWeight}" />
                         </Trigger>
