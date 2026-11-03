@@ -477,30 +477,16 @@
                         <Button.ContextMenu>
                             <ContextMenu Placement="Bottom">
                                 <MenuItem Header="Off"
-                                          Command="{Binding SetPassiveModeCommand}">
-                                    <MenuItem.Icon>
-                                        <Border Width="3" Height="14"
-                                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                                CornerRadius="1.5"
-                                                Visibility="{Binding IsModePassive, Converter={StaticResource BoolToVis}}" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
+                                          IsCheckable="True"
+                                          IsChecked="{Binding IsModePassive, Mode=OneWay}"
+                                          Command="{Binding SetPassiveModeCommand}" />
                                 <MenuItem Header="Keep awake indefinitely"
-                                          Command="{Binding SetIndefiniteModeCommand}">
-                                    <MenuItem.Icon>
-                                        <Border Width="3" Height="14"
-                                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                                CornerRadius="1.5"
-                                                Visibility="{Binding IsModeIndefinite, Converter={StaticResource BoolToVis}}" />
-                                    </MenuItem.Icon>
-                                </MenuItem>
-                                <MenuItem Header="Keep awake for a time interval">
-                                    <MenuItem.Icon>
-                                        <Border Width="3" Height="14"
-                                                Background="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                                CornerRadius="1.5"
-                                                Visibility="{Binding IsModeTimed, Converter={StaticResource BoolToVis}}" />
-                                    </MenuItem.Icon>
+                                          IsCheckable="True"
+                                          IsChecked="{Binding IsModeIndefinite, Mode=OneWay}"
+                                          Command="{Binding SetIndefiniteModeCommand}" />
+                                <MenuItem Header="Keep awake for a time interval"
+                                          IsCheckable="True"
+                                          IsChecked="{Binding IsModeTimed, Mode=OneWay}">
                                     <!-- Standard Presets Submenu (15m, 30m, 1h, 2h, 4h) -->
                                     <MenuItem Header="15 minutes"
                                               Command="{Binding SetTimedModeCommand}"

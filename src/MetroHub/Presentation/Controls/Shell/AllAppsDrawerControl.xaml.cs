@@ -364,7 +364,7 @@ namespace MetroHub.Presentation.Controls
             Resources["DrawerAppIconBoxSize"] = isRelaxed ? 28.0 : 22.0;
             Resources["DrawerAppIconImageSize"] = isRelaxed ? 26.0 : 20.0;
             Resources["DrawerAppIconSymbolSize"] = isRelaxed ? 22.0 : 18.0;
-            Resources["DrawerAccentPillHeight"] = isRelaxed ? 22.0 : 16.0;
+            Resources["DrawerAccentPillHeight"] = 16.0;
             Resources["DrawerRecentTileHeight"] = isRelaxed ? 54.0 : 48.0;
             Resources["DrawerRecentTileImageSize"] = isRelaxed ? 28.0 : 24.0;
             Resources["DrawerRecentTileSymbolSize"] = isRelaxed ? 22.0 : 18.0;

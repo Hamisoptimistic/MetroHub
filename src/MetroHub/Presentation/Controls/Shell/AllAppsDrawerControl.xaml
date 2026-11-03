@@ -36,7 +36,7 @@
         <sys:Double x:Key="DrawerAppIconBoxSize">28</sys:Double>
         <sys:Double x:Key="DrawerAppIconImageSize">26</sys:Double>
         <sys:Double x:Key="DrawerAppIconSymbolSize">22</sys:Double>
-        <sys:Double x:Key="DrawerAccentPillHeight">22</sys:Double>
+        <sys:Double x:Key="DrawerAccentPillHeight">16</sys:Double>
         <sys:Double x:Key="DrawerRecentTileHeight">54</sys:Double>
         <sys:Double x:Key="DrawerRecentTileImageSize">28</sys:Double>
         <sys:Double x:Key="DrawerRecentTileSymbolSize">22</sys:Double>
@@ -187,15 +187,15 @@
                     <Grid>
                         <!-- Selection Accent Pill: docked cleanly to the card's outer left edge with zero overlap -->
                         <Rectangle x:Name="AccentPill"
-                                   Width="3.5"
+                                   Width="3"
                                    Height="{DynamicResource DrawerAccentPillHeight}"
                                    HorizontalAlignment="Left"
                                    VerticalAlignment="Center"
-                                   RadiusX="1.75"
-                                   RadiusY="1.75"
+                                   RadiusX="1.5"
+                                   RadiusY="1.5"
                                    Fill="{DynamicResource SystemAccentColorPrimaryBrush}"
                                    Visibility="Collapsed"
-                                   Margin="0,0,0,0" />
+                                   Margin="2,0,0,0" />
 
                         <!-- Search Result Item Content: cleanly padded from the card boundaries -->
                         <Grid Margin="{DynamicResource DrawerGutterHoverRowPadding}">
