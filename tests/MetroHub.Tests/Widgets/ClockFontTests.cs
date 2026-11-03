@@ -37,8 +37,6 @@ public class ClockFontTests
 
             var tests = new[]
             {
-                (Name: "Now_4x4", Face: ClockFontFace.Now, SpanX: 4, SpanY: 4, W: 248, H: 248),
-                (Name: "Now_Banner8x2", Face: ClockFontFace.Now, SpanX: 8, SpanY: 2, W: 504, H: 120),
                 (Name: "SegoeUI_4x4", Face: ClockFontFace.SegoeUI, SpanX: 4, SpanY: 4, W: 248, H: 248),
                 (Name: "Monoton_4x4", Face: ClockFontFace.Monoton, SpanX: 4, SpanY: 4, W: 248, H: 248),
                 (Name: "Digital7_4x4", Face: ClockFontFace.Digital7, SpanX: 4, SpanY: 4, W: 248, H: 248),
@@ -52,71 +50,35 @@ public class ClockFontTests
                 var vm = new ClockWidgetViewModel(tile);
                 vm.SetFontFace(t.Face);
 
-                FontWeight fw = t.Face == ClockFontFace.Now ? FontWeights.Bold :
-                                (t.Face == ClockFontFace.SegoeUI ? FontWeights.SemiBold : FontWeights.Normal);
+                FontWeight fw = t.Face == ClockFontFace.SegoeUI ? FontWeights.SemiBold : FontWeights.Normal;
 
-                FrameworkElement content;
-                if (vm.IsBanner)
+                var grid = new Grid();
+                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+                var vb = new Viewbox { Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 2, 0, 2) };
+                var sp = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+                sp.Children.Add(new TextBlock { Text = "2", FontSize = 100, FontWeight = fw, FontFamily = vm.ClockFontFamily, Foreground = Brushes.White });
+                sp.Children.Add(new TextBlock { Text = ":", FontSize = 100, FontWeight = fw, FontFamily = vm.ClockFontFamily, Foreground = Brushes.White });
+                sp.Children.Add(new TextBlock { Text = "15", FontSize = 100, FontWeight = fw, FontFamily = vm.ClockFontFamily, Foreground = Brushes.White });
+                vb.Child = sp;
+                Grid.SetRow(vb, 0);
+                grid.Children.Add(vb);
+
+                var date = new TextBlock
                 {
-                    var grid = new Grid { Margin = new Thickness(4, 0, 4, 0) };
-                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                    Text = "Saturday, 26 September",
+                    FontSize = 17,
+                    FontWeight = FontWeights.SemiBold,
+                    FontFamily = new FontFamily("Segoe UI Variable Display, Segoe UI"),
+                    Foreground = new SolidColorBrush(Color.FromArgb(0xE0, 0xFF, 0xFF, 0xFF)),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 4, 0, 4)
+                };
+                Grid.SetRow(date, 1);
+                grid.Children.Add(date);
 
-                    var vb = new Viewbox { Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 2, 12, 2) };
-                    var sp = new StackPanel { Orientation = Orientation.Horizontal };
-                    sp.Children.Add(new TextBlock { Text = "2", FontSize = 100, FontWeight = fw, FontFamily = vm.ClockFontFamily, Foreground = Brushes.White });
-                    sp.Children.Add(new TextBlock { Text = ":", FontSize = 100, FontWeight = fw, FontFamily = vm.ClockFontFamily, Foreground = Brushes.White });
-                    sp.Children.Add(new TextBlock { Text = "15", FontSize = 100, FontWeight = fw, FontFamily = vm.ClockFontFamily, Foreground = Brushes.White });
-                    vb.Child = sp;
-                    Grid.SetColumn(vb, 0);
-                    grid.Children.Add(vb);
-
-                    var date = new TextBlock
-                    {
-                        Text = "Saturday, 26 September",
-                        FontSize = 16,
-                        FontWeight = FontWeights.SemiBold,
-                        FontFamily = new FontFamily("Segoe UI Variable Display, Segoe UI"),
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xE0, 0xFF, 0xFF, 0xFF)),
-                        HorizontalAlignment = HorizontalAlignment.Right,
-                        VerticalAlignment = VerticalAlignment.Center,
-                        Margin = new Thickness(8, 0, 0, 0)
-                    };
-                    Grid.SetColumn(date, 1);
-                    grid.Children.Add(date);
-
-                    content = grid;
-                }
-                else
-                {
-                    var grid = new Grid();
-                    grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                    grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-                    var vb = new Viewbox { Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 2, 0, 2) };
-                    var sp = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
-                    sp.Children.Add(new TextBlock { Text = "2", FontSize = 100, FontWeight = fw, FontFamily = vm.ClockFontFamily, Foreground = Brushes.White });
-                    sp.Children.Add(new TextBlock { Text = ":", FontSize = 100, FontWeight = fw, FontFamily = vm.ClockFontFamily, Foreground = Brushes.White });
-                    sp.Children.Add(new TextBlock { Text = "15", FontSize = 100, FontWeight = fw, FontFamily = vm.ClockFontFamily, Foreground = Brushes.White });
-                    vb.Child = sp;
-                    Grid.SetRow(vb, 0);
-                    grid.Children.Add(vb);
-
-                    var date = new TextBlock
-                    {
-                        Text = "Saturday, 26 September",
-                        FontSize = 17,
-                        FontWeight = FontWeights.SemiBold,
-                        FontFamily = new FontFamily("Segoe UI Variable Display, Segoe UI"),
-                        Foreground = new SolidColorBrush(Color.FromArgb(0xE0, 0xFF, 0xFF, 0xFF)),
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        Margin = new Thickness(0, 4, 0, 4)
-                    };
-                    Grid.SetRow(date, 1);
-                    grid.Children.Add(date);
-
-                    content = grid;
-                }
+                FrameworkElement content = grid;
 
                 var container = new Border
                 {

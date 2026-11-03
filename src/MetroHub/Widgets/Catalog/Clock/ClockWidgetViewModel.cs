@@ -28,7 +28,6 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase, IWidgetA
     private static readonly FontFamily Digital7FontFamily = new(FontBaseUri, "./#Digital-7, Segoe UI");
     private static readonly FontFamily FffForwardFontFamily = new(FontBaseUri, "./#FFF Forward, Segoe UI");
     private static readonly FontFamily KarnivoreDigitFontFamily = new(FontBaseUri, "./#Karnivore Digit, Segoe UI");
-    private static readonly FontFamily NowFontFamily = new(FontBaseUri, "./#Now, Segoe UI");
 
     [ObservableProperty]
     private string _hoursString = string.Empty;
@@ -57,50 +56,26 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase, IWidgetA
     [ObservableProperty]
     private string _clockFontWeight = "SemiBold";
 
-    public bool IsWideOnly => Model.SpanX <= 4 && Model.SpanY <= 2;
-    public bool IsBanner => Model.SpanX > 4 && Model.SpanY <= 2;
-    public bool IsHero => Model.SpanY >= 4;
-
-    /// <summary>
-    /// Canonical reference font size for Time elements inside the responsive Viewbox containers.
-    /// The Viewbox automatically scales these elements uniformly to mathematically fit the available widget card bounds.
-    /// </summary>
-    public double ClockTimeFontSize => 100.0;
-
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new List<WidgetSize>
     {
-        WidgetSize.Wide,      // 4x2
         WidgetSize.Large,     // 4x4
         WidgetSize.LargeWide, // 6x4
-        WidgetSize.Banner,    // 8x2
         WidgetSize.Mega       // 8x4
     };
 
     public ClockWidgetViewModel(TileModel model) : base(model)
     {
-        // If an existing model was saved as 2x2, migrate to Wide 4x2
-        if (model.SpanX <= 2 && model.SpanY <= 2)
+        // Migrate legacy 4x2, 8x2, or smaller models to Large 4x4
+        if (model.SpanY < 4)
         {
             model.SpanX = 4;
-            model.SpanY = 2;
+            model.SpanY = 4;
         }
 
-        Model.PropertyChanged += OnModelPropertyChanged;
         IsActive = true;
 
         LoadSettings(model.SettingsJson);
         UpdateTime();
-    }
-
-    private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName is nameof(TileModel.SpanX) or nameof(TileModel.SpanY))
-        {
-            OnPropertyChanged(nameof(IsWideOnly));
-            OnPropertyChanged(nameof(IsBanner));
-            OnPropertyChanged(nameof(IsHero));
-            OnPropertyChanged(nameof(ClockTimeFontSize));
-        }
     }
 
     private int _lastMinute = -1;
@@ -194,18 +169,14 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase, IWidgetA
             ClockFontFace.Digital7 => Digital7FontFamily,
             ClockFontFace.FffForward => FffForwardFontFamily,
             ClockFontFace.KarnivoreDigit => KarnivoreDigitFontFamily,
-            ClockFontFace.Now => NowFontFamily,
             _ => SegoeUIFontFamily
         };
 
         ClockFontWeight = FontFace switch
         {
-            ClockFontFace.Now => "Bold",
             ClockFontFace.Monoton or ClockFontFace.Digital7 or ClockFontFace.FffForward or ClockFontFace.KarnivoreDigit => "Normal",
             _ => "SemiBold"
         };
-
-        OnPropertyChanged(nameof(ClockTimeFontSize));
     }
 
     [RelayCommand]
@@ -226,17 +197,6 @@ public sealed partial class ClockWidgetViewModel : WidgetViewModelBase, IWidgetA
             WidgetMenu.Item("Monoton", () => SetFontFace(ClockFontFace.Monoton), isCheckable: true, isChecked: FontFace == ClockFontFace.Monoton),
             WidgetMenu.Item("Digital-7", () => SetFontFace(ClockFontFace.Digital7), isCheckable: true, isChecked: FontFace == ClockFontFace.Digital7),
             WidgetMenu.Item("FFF Forward", () => SetFontFace(ClockFontFace.FffForward), isCheckable: true, isChecked: FontFace == ClockFontFace.FffForward),
-            WidgetMenu.Item("Karnivore Digit", () => SetFontFace(ClockFontFace.KarnivoreDigit), isCheckable: true, isChecked: FontFace == ClockFontFace.KarnivoreDigit),
-            WidgetMenu.Item("Now", () => SetFontFace(ClockFontFace.Now), isCheckable: true, isChecked: FontFace == ClockFontFace.Now));
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            Model.PropertyChanged -= OnModelPropertyChanged;
-        }
-
-        base.Dispose(disposing);
+            WidgetMenu.Item("Karnivore Digit", () => SetFontFace(ClockFontFace.KarnivoreDigit), isCheckable: true, isChecked: FontFace == ClockFontFace.KarnivoreDigit));
     }
 }

@@ -47,15 +47,13 @@ public static class WidgetRegistry
             Icon: SymbolRegular.Clock24,
             AllowedSizes: new[]
             {
-                WidgetSize.Wide,      // 4x2
                 WidgetSize.Large,     // 4x4
                 WidgetSize.LargeWide, // 6x4
-                WidgetSize.Banner,    // 8x2
                 WidgetSize.Mega       // 8x4
             },
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Clock.ClockWidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Clock.ClockWidgetView),
-            DefaultSize: WidgetSize.Wide,
+            DefaultSize: WidgetSize.Large,
             Factory: model => new MetroHub.Widgets.Catalog.Clock.ClockWidgetViewModel(model),
             Category: "Productivity"
         ));
