@@ -38,64 +38,51 @@
                 <!-- Left: Title -->
                 <TextBlock Grid.Column="0"
                            Text="2048"
-                           FontFamily="{DynamicResource AppFontFamily}"
                            FontSize="{DynamicResource TypeSubtitleFontSize}"
                            FontWeight="{DynamicResource TypeSubtitleFontWeight}"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            VerticalAlignment="Center" />
 
-                <!-- Right: Unified Stats & Micro Action Button -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Center: Score & Best Readouts -->
+                <StackPanel Grid.Column="0" Grid.ColumnSpan="3"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
                     <!-- Score -->
-                    <TextBlock VerticalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}">
+                    <TextBlock VerticalAlignment="Center">
                         <Run Text="SCORE "
                              FontSize="{DynamicResource TypeCaptionFontSize}"
                              FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                              Foreground="{DynamicResource TextMutedBrush}" /><Run Text="{Binding Score}"
-                             FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                             FontSize="{DynamicResource TypeHeaderFontSize}"
                              FontWeight="{DynamicResource TypeSubtitleFontWeight}"
                              Foreground="{DynamicResource TextPrimaryBrush}"
                              Typography.NumeralAlignment="Tabular" />
                     </TextBlock>
 
-                    <!-- Vertical Toolbar Divider (Design System §9.1) -->
-                    <Border Width="1"
-                            Height="14"
-                            Background="{DynamicResource WidgetDividerBrush}"
-                            VerticalAlignment="Center"
-                            Margin="10,0"
-                            SnapsToDevicePixels="True" />
-
-                    <!-- Best Score -->
-                    <TextBlock VerticalAlignment="Center" FontFamily="{DynamicResource AppFontFamily}">
+                    <!-- Best -->
+                    <TextBlock VerticalAlignment="Center" Margin="20,0,0,0">
                         <Run Text="BEST "
                              FontSize="{DynamicResource TypeCaptionFontSize}"
                              FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                              Foreground="{DynamicResource TextMutedBrush}" /><Run Text="{Binding BestScore}"
-                             FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                             FontSize="{DynamicResource TypeHeaderFontSize}"
                              FontWeight="{DynamicResource TypeSubtitleFontWeight}"
                              Foreground="{DynamicResource TextPrimaryBrush}"
                              Typography.NumeralAlignment="Tabular" />
                     </TextBlock>
-
-                    <!-- Vertical Toolbar Divider before Action Button -->
-                    <Border Width="1"
-                            Height="14"
-                            Background="{DynamicResource WidgetDividerBrush}"
-                            VerticalAlignment="Center"
-                            Margin="10,0,6,0"
-                            SnapsToDevicePixels="True" />
-
-                    <!-- Universal 28x28 Micro Ghost Button: Reset -->
-                    <Button Style="{StaticResource WidgetMicroButtonStyle}"
-                            Command="{Binding RestartGameCommand}"
-                            ToolTip="New Game (R)"
-                            VerticalAlignment="Center">
-                        <ui:SymbolIcon Symbol="ArrowReset24"
-                                       FontSize="14"
-                                       Foreground="{DynamicResource TextSecondaryBrush}" />
-                    </Button>
                 </StackPanel>
+
+                <!-- Right: New Game Reset Button -->
+                <Button Grid.Column="2"
+                        Style="{StaticResource WidgetMicroButtonStyle}"
+                        Command="{Binding RestartGameCommand}"
+                        ToolTip="New Game (R)"
+                        VerticalAlignment="Center">
+                    <ui:SymbolIcon Symbol="ArrowReset24"
+                                   FontSize="14"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                </Button>
             </Grid>
 
             <!-- Row 1: Universal 1px Horizontal Hairline Divider (WidgetHairlineDividerStyle) -->
