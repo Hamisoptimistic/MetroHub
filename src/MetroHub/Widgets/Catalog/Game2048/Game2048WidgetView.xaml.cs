@@ -309,11 +309,11 @@ public partial class Game2048WidgetView : UserControl
     {
         var textBlock = new TextBlock
         {
-            FontFamily = new FontFamily("Segoe UI Variable Display, Segoe UI"),
             FontWeight = FontWeights.Bold,
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
+        textBlock.SetResourceReference(TextBlock.FontFamilyProperty, "AppFontFamily");
 
         var scaleTransform = new ScaleTransform(1.0, 1.0);
         var translateTransform = new TranslateTransform(initialX, initialY);
@@ -325,7 +325,7 @@ public partial class Game2048WidgetView : UserControl
         {
             Width = TileSize,
             Height = TileSize,
-            BorderThickness = new Thickness(1),
+            BorderThickness = new Thickness(0),
             Child = textBlock,
             RenderTransformOrigin = new Point(0.5, 0.5),
             RenderTransform = transformGroup,
@@ -343,9 +343,8 @@ public partial class Game2048WidgetView : UserControl
         if (border.Child is TextBlock tb)
         {
             tb.Text = value.ToString(CultureInfo.InvariantCulture);
-            var (bgBrush, fgBrush, borderBrush, fontSize) = GetTileStyle(value, border);
+            var (bgBrush, fgBrush, fontSize) = GetTileStyle(value, border);
             border.Background = bgBrush;
-            border.BorderBrush = borderBrush;
             tb.Foreground = fgBrush;
             tb.FontSize = fontSize;
         }
@@ -354,7 +353,7 @@ public partial class Game2048WidgetView : UserControl
     #region Palette & Tile Styling
 
     private static readonly SolidColorBrush FgLight = FreezeBrush("#FFFFFFFF");
-    private static readonly Dictionary<int, (Brush Background, Brush Border)> s_glassBrushCache = new();
+    private static readonly Dictionary<int, SolidColorBrush> s_glassBrushCache = new();
     private static readonly object s_brushLock = new();
 
     private static SolidColorBrush FreezeBrush(string hex)
@@ -364,7 +363,7 @@ public partial class Game2048WidgetView : UserControl
         return brush;
     }
 
-    private static (Brush Background, Brush Foreground, Brush Border, double FontSize) GetTileStyle(int value, FrameworkElement element)
+    private static (Brush Background, Brush Foreground, double FontSize) GetTileStyle(int value, FrameworkElement element)
     {
         double fontSize = value switch
         {
@@ -380,15 +379,14 @@ public partial class Game2048WidgetView : UserControl
                          ?? element.TryFindResource("SystemAccentColorSolidBrush") as Brush
                          ?? FreezeBrush("#B04CC2FF");
             var accentFg = element.TryFindResource("SystemAccentColorForegroundBrush") as Brush ?? FgLight;
-            var accentBorder = element.TryFindResource("SurfaceBorderBrush") as Brush ?? FreezeBrush("#60FFFFFF");
-            return (accent, accentFg, accentBorder, fontSize);
+            return (accent, accentFg, fontSize);
         }
 
-        var (bg, border) = GetGlassBrushes(value, element);
-        return (bg, FgLight, border, fontSize);
+        var bg = GetGlassBrush(value, element);
+        return (bg, FgLight, fontSize);
     }
 
-    private static (Brush Background, Brush Border) GetGlassBrushes(int value, FrameworkElement element)
+    private static SolidColorBrush GetGlassBrush(int value, FrameworkElement element)
     {
         lock (s_brushLock)
         {
@@ -397,52 +395,52 @@ public partial class Game2048WidgetView : UserControl
                 return cached;
             }
 
-            var brushes = CreateGlassBrushes(value, element);
-            s_glassBrushCache[value] = brushes;
-            return brushes;
+            var brush = CreateGlassBrush(value, element);
+            s_glassBrushCache[value] = brush;
+            return brush;
         }
     }
 
-    private static (Brush Background, Brush Border) CreateGlassBrushes(int value, FrameworkElement element)
+    private static SolidColorBrush CreateGlassBrush(int value, FrameworkElement element)
     {
         return value switch
         {
             // 2: Cool neutral frosted glass plate matching SurfaceGlassBrush (#18FFFFFF)
-            2 => (FreezeTint(255, 255, 255, 0x18), FreezeTint(255, 255, 255, 0x26)),
+            2 => FreezeTint(255, 255, 255, 0x18),
 
             // 4: Warm champagne/sand translucent glass plate with distinct golden warmth
-            4 => (FreezeTint(245, 210, 160, 0x44), FreezeTint(255, 225, 180, 0x70)),
+            4 => FreezeTint(245, 210, 160, 0x44),
 
             // 8: GroupColorAmber (#FFD700) from Tokens.xaml
-            8 => MakeTintedPair(element, "GroupColorAmber", "#FFD700", fillAlpha: 0x58, borderAlpha: 0x88),
+            8 => MakeTintedBrush(element, "GroupColorAmber", "#FFD700", fillAlpha: 0x58),
 
             // 16: GroupColorOrange (#FF8C00) from Tokens.xaml
-            16 => MakeTintedPair(element, "GroupColorOrange", "#FF8C00", fillAlpha: 0x64, borderAlpha: 0x94),
+            16 => MakeTintedBrush(element, "GroupColorOrange", "#FF8C00", fillAlpha: 0x64),
 
             // 32: GroupColorCrimson (#FF4343) from Tokens.xaml
-            32 => MakeTintedPair(element, "GroupColorCrimson", "#FF4343", fillAlpha: 0x70, borderAlpha: 0xA0),
+            32 => MakeTintedBrush(element, "GroupColorCrimson", "#FF4343", fillAlpha: 0x70),
 
             // 64: GroupColorHotPink (#E3008C) from Tokens.xaml
-            64 => MakeTintedPair(element, "GroupColorHotPink", "#E3008C", fillAlpha: 0x78, borderAlpha: 0xA8),
+            64 => MakeTintedBrush(element, "GroupColorHotPink", "#E3008C", fillAlpha: 0x78),
 
             // 128: GroupColorPurple (#881798) from Tokens.xaml
-            128 => MakeTintedPair(element, "GroupColorPurple", "#881798", fillAlpha: 0x80, borderAlpha: 0xB0),
+            128 => MakeTintedBrush(element, "GroupColorPurple", "#881798", fillAlpha: 0x80),
 
             // 256: GroupColorAzure (#0078D7) from Tokens.xaml
-            256 => MakeTintedPair(element, "GroupColorAzure", "#0078D7", fillAlpha: 0x88, borderAlpha: 0xB8),
+            256 => MakeTintedBrush(element, "GroupColorAzure", "#0078D7", fillAlpha: 0x88),
 
             // 512: GroupColorCyan (#00B7C3) from Tokens.xaml
-            512 => MakeTintedPair(element, "GroupColorCyan", "#00B7C3", fillAlpha: 0x90, borderAlpha: 0xC0),
+            512 => MakeTintedBrush(element, "GroupColorCyan", "#00B7C3", fillAlpha: 0x90),
 
             // 1024: GroupColorEmerald (#107C10) from Tokens.xaml
-            1024 => MakeTintedPair(element, "GroupColorEmerald", "#107C10", fillAlpha: 0x98, borderAlpha: 0xC8),
+            1024 => MakeTintedBrush(element, "GroupColorEmerald", "#107C10", fillAlpha: 0x98),
 
             // Super (>2048): GroupColorSkyBlue (#60CDFF) from Tokens.xaml
-            _ => MakeTintedPair(element, "GroupColorSkyBlue", "#60CDFF", fillAlpha: 0xA0, borderAlpha: 0xD0)
+            _ => MakeTintedBrush(element, "GroupColorSkyBlue", "#60CDFF", fillAlpha: 0xA0)
         };
     }
 
-    private static (Brush Background, Brush Border) MakeTintedPair(FrameworkElement element, string resourceKey, string fallbackHex, byte fillAlpha, byte borderAlpha)
+    private static SolidColorBrush MakeTintedBrush(FrameworkElement element, string resourceKey, string fallbackHex, byte fillAlpha)
     {
         Color baseColor;
         if (element.TryFindResource(resourceKey) is Color c)
@@ -458,9 +456,7 @@ public partial class Game2048WidgetView : UserControl
             baseColor = (Color)ColorConverter.ConvertFromString(fallbackHex);
         }
 
-        var bg = FreezeTint(baseColor.R, baseColor.G, baseColor.B, fillAlpha);
-        var border = FreezeTint(baseColor.R, baseColor.G, baseColor.B, borderAlpha);
-        return (bg, border);
+        return FreezeTint(baseColor.R, baseColor.G, baseColor.B, fillAlpha);
     }
 
     private static SolidColorBrush FreezeTint(byte r, byte g, byte b, byte alpha)
