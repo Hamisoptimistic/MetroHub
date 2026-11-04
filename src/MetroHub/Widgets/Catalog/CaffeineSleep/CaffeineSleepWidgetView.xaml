@@ -14,129 +14,43 @@
              ClipToBounds="True"
              FontFamily="{DynamicResource AppFontFamily}">
 
-    <UserControl.Resources>
-        <!-- Caffeine WidgetTile Style: balanced optical spacing that clears the separator line without over-expanding -->
-        <Style TargetType="{x:Type widgets:WidgetTile}" BasedOn="{StaticResource WidgetTileStyle}">
-            <Setter Property="Height" Value="72" />
-            <Setter Property="IconSize" Value="22" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type widgets:WidgetTile}">
-                        <Border x:Name="TileBorder"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                >
-                            <Grid HorizontalAlignment="Stretch"
-                                  VerticalAlignment="Center"
-                                  Margin="0,0,0,4"
-                                  >
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="24" />
-                                    <RowDefinition Height="4" />
-                                    <RowDefinition Height="16" />
-                                </Grid.RowDefinitions>
+    <!-- Outer Widget Card with Padding="0" so dividing borders run border-to-border -->
+    <widgets:WidgetCard Padding="0" Background="Transparent">
+        <Grid ClipToBounds="True" Background="Transparent">
+            <Grid.RowDefinitions>
+                <!-- ROW 0: Reusable Modular Top Tiles Strip (Standardized 76px Height) -->
+                <RowDefinition Height="76" />
+                <!-- ROW 1: Active Panel Content -->
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-                                <Grid Grid.Row="0"
-                                      HorizontalAlignment="Center"
-                                      VerticalAlignment="Center"
-                                      >
-                                    <ui:SymbolIcon x:Name="PART_SymbolIcon"
-                                                   Symbol="{TemplateBinding Symbol}"
-                                                   FontSize="{TemplateBinding IconSize}"
-                                                   Foreground="{TemplateBinding Foreground}"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center"
-                                                   Visibility="Collapsed" />
-                                    <ContentControl x:Name="PART_IconContent"
-                                                    Content="{TemplateBinding Icon}"
-                                                    FontFamily="{DynamicResource AppIconFontFamily}"
-                                                    FontSize="{TemplateBinding IconSize}"
-                                                    Foreground="{TemplateBinding Foreground}"
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    />
-                                </Grid>
+            <!-- ========================================================================= -->
+            <!-- ROW 0: TOP 2-TILE REGION (WidgetTiles & WidgetTile with sliding indicator) -->
+            <!-- ========================================================================= -->
+            <widgets:WidgetTiles Grid.Row="0"
+                                 SelectedValue="{Binding CurrentPanel, Mode=TwoWay}"
+                                 Height="76">
+                <!-- 0. Screen Off Tile -->
+                <widgets:WidgetTile Value="ScreenOff"
+                                    Symbol="WeatherMoon24"
+                                    Header="Screen Off"
+                                    IndicatorBrush="{Binding ScreenOffTileIndicatorBrush}"
+                                    ToolTip="Instant display standby &amp; wake management" />
 
-                                <TextBlock Grid.Row="2"
-                                           Text="{TemplateBinding Header}"
-                                           FontSize="{DynamicResource TypeCaptionFontSize}"
-                                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                <!-- 1. Caffeine Tile -->
+                <widgets:WidgetTile Value="Caffeine"
+                                    Header="Caffeine"
+                                    IndicatorBrush="{Binding CaffeineTileIndicatorBrush}"
+                                    ToolTip="System sleep prevention &amp; display awake management">
+                    <widgets:WidgetTile.Icon>
+                        <Grid Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <!-- 1. Coffee Mug Base Icon -->
+                            <ui:SymbolIcon Symbol="DrinkCoffee24"
+                                           FontSize="24"
                                            Foreground="{DynamicResource TextPrimaryBrush}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
-                                           TextAlignment="Center"
-                                           />
-                            </Grid>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="HasSymbol" Value="True">
-                                <Setter TargetName="PART_SymbolIcon" Property="Visibility" Value="Visible" />
-                                <Setter TargetName="PART_IconContent" Property="Visibility" Value="Collapsed" />
-                            </Trigger>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#55FFFFFF" />
-                                <Setter Property="Panel.ZIndex" Value="10" />
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="TileBorder" Property="BorderBrush" Value="#75FFFFFF" />
-                                <Setter Property="Panel.ZIndex" Value="10" />
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.3" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </UserControl.Resources>
-
-    <Grid Background="Transparent">
-        <Grid.RowDefinitions>
-            <!-- ROW 0: Reusable Modular Top Tiles Strip (Balanced 72px Height) -->
-            <RowDefinition Height="72" />
-            <!-- ROW 1: Active Panel Content -->
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <!-- ========================================================================= -->
-        <!-- ROW 0: TOP 2-TILE REGION (WidgetTiles & WidgetTile with sliding indicator) -->
-        <!-- ========================================================================= -->
-        <widgets:WidgetTiles Grid.Row="0"
-                             SelectedValue="{Binding CurrentPanel, Mode=TwoWay}"
-                             Height="72">
-            <!-- 0. Screen Off Tile -->
-            <widgets:WidgetTile Value="ScreenOff"
-                                Header="Screen Off"
-                                IndicatorBrush="{Binding ScreenOffTileIndicatorBrush}"
-                                ToolTip="Instant display standby &amp; wake management">
-                <widgets:WidgetTile.Icon>
-                    <Grid Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <ui:SymbolIcon Symbol="WeatherMoon24"
-                                       FontSize="22"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       SnapsToDevicePixels="False" />
-                    </Grid>
-                </widgets:WidgetTile.Icon>
-            </widgets:WidgetTile>
-
-            <!-- 1. Caffeine Tile -->
-            <widgets:WidgetTile Value="Caffeine"
-                                Header="Caffeine"
-                                IndicatorBrush="{Binding CaffeineTileIndicatorBrush}"
-                                ToolTip="System sleep prevention &amp; display awake management">
-                <widgets:WidgetTile.Icon>
-                    <Grid Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <!-- 1. Coffee Mug Base Icon -->
-                        <ui:SymbolIcon Symbol="DrinkCoffee24"
-                                       FontSize="22"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       SnapsToDevicePixels="False" />
+                                           SnapsToDevicePixels="False" />
 
                         <!-- 2. Subtle Animated Steam Wisps (Dormant when inactive or Hub closed) -->
                         <Canvas Width="24" Height="24"
@@ -232,10 +146,10 @@
                                 IndicatorBrush="{Binding NightLightTileIndicatorBrush}"
                                 ToolTip="Display hardware warmth &amp; blue light reduction">
                 <widgets:WidgetTile.Icon>
-                    <Grid Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Grid Width="28" Height="28" HorizontalAlignment="Center" VerticalAlignment="Center">
                         <!-- Warm Sun Breathing Aura (Only active when Night Light is on + Hub visible) -->
-                        <Border Width="18" Height="18"
-                                CornerRadius="9"
+                        <Border Width="20" Height="20"
+                                CornerRadius="10"
                                 Background="{DynamicResource StatusWarningBrush}"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
@@ -268,7 +182,7 @@
 
                         <!-- Night Light Symbol: Shifts to Warm Amber when active -->
                         <ui:SymbolIcon Symbol="Lightbulb24"
-                                       FontSize="22"
+                                       FontSize="24"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
                                        SnapsToDevicePixels="False">
@@ -659,4 +573,5 @@
 
         </Grid>
     </Grid>
+    </widgets:WidgetCard>
 </UserControl>

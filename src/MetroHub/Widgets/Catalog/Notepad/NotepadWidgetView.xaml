@@ -56,7 +56,7 @@
             </Setter>
         </Style>
 
-        <!-- History Todo Checkbox Style using &#xE930; glyph (No blue color, clean theme glyph) -->
+        <!-- History Todo Checkbox Style using native Segoe Fluent Icon glyph &#xE930; (Centered, razor-sharp vector) -->
         <Style x:Key="HistoryTodoCheckBoxStyle" TargetType="{x:Type CheckBox}">
             <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Cursor" Value="Hand" />
@@ -71,7 +71,7 @@
                             <TextBlock x:Name="HistoryGlyph"
                                        Text="&#xE930;"
                                        FontFamily="{DynamicResource AppIconFontFamily}"
-                                       FontSize="16"
+                                       FontSize="20"
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"
@@ -111,10 +111,12 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <!-- Row 0: Top Action Strip -->
-            <RowDefinition Height="Auto" />
+    <!-- Transparent WidgetCard with Padding="0" for edge-to-edge alignment and standard text rendering -->
+    <widgets:WidgetCard Padding="0" Background="Transparent">
+        <Grid ClipToBounds="True" Background="Transparent">
+            <Grid.RowDefinitions>
+                <!-- Row 0: Top Action Strip (Standard 50px height matching Audio/Brightness) -->
+                <RowDefinition Height="50" />
             <!-- Row 1: Hairline Separator -->
             <RowDefinition Height="Auto" />
             <!-- Row 2: Editor / Todo Content Area -->
@@ -123,11 +125,12 @@
             <RowDefinition Height="28" />
         </Grid.RowDefinitions>
 
-        <!-- Row 0: Top Action Strip Centered with Symmetrical Divider -->
+        <!-- Row 0: Top Action Strip Centered Vertically in 50px Row -->
         <StackPanel Grid.Row="0"
                     Orientation="Horizontal"
                     HorizontalAlignment="Center"
-                    Margin="20,6,20,6">
+                    VerticalAlignment="Center"
+                    Margin="20,0,20,0">
             <!-- Numbered List (Clean 1 2 3 glyph sized to match) -->
             <Button Style="{StaticResource WidgetMicroButtonStyle}"
                     Width="34" Height="32"
@@ -333,16 +336,50 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
 
-                        <!-- Subtle empty circular ring matching task checkboxes -->
-                        <Border Grid.Column="0"
-                                Width="20" Height="20"
-                                CornerRadius="10"
-                                BorderThickness="1.5"
-                                BorderBrush="{DynamicResource TextSecondaryBrush}"
-                                Opacity="0.4"
-                                Background="Transparent"
-                                VerticalAlignment="Center"
-                                Margin="0,0,10,0" />
+                        <!-- Leading Action Icon: Default '+' in Accent, switches to circle ring when typing -->
+                        <Grid Grid.Column="0"
+                              Width="20" Height="20"
+                              VerticalAlignment="Center"
+                              Margin="0,0,10,0">
+                            <!-- 1. Default State: '+' Add Symbol in System Accent Color -->
+                            <ui:SymbolIcon Symbol="Add24"
+                                           FontSize="20"
+                                           Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center">
+                                <ui:SymbolIcon.Style>
+                                    <Style TargetType="{x:Type ui:SymbolIcon}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasNewTodoText}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:SymbolIcon.Style>
+                            </ui:SymbolIcon>
+
+                            <!-- 2. Typing State: Circular ring matching task checkboxes -->
+                            <Border Width="20" Height="20"
+                                    CornerRadius="10"
+                                    BorderThickness="1.5"
+                                    BorderBrush="{DynamicResource TextSecondaryBrush}"
+                                    Opacity="0.4"
+                                    Background="Transparent"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasNewTodoText}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                            </Border>
+                        </Grid>
 
                         <!-- Seamless Inline Task Input with matching baseline and centered caret -->
                         <Grid Grid.Column="1" Height="20" VerticalAlignment="Center">
@@ -374,7 +411,7 @@
                                     <KeyBinding Key="Return" Command="{Binding AddTodoCommand}" />
                                 </TextBox.InputBindings>
                             </TextBox>
-                            <TextBlock Text="Add a task (press Enter)..."
+                            <TextBlock Text="Add a task"
                                        FontSize="{DynamicResource TypeBodyFontSize}"
                                        FontFamily="{DynamicResource AppFontFamily}"
                                        Foreground="{DynamicResource TextDisabledBrush}"
@@ -384,10 +421,10 @@
                                        Margin="2,0,0,0">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Setter Property="Visibility" Value="Visible" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Text, ElementName=NewTaskInput}" Value="">
-                                                <Setter Property="Visibility" Value="Visible" />
+                                            <DataTrigger Binding="{Binding HasNewTodoText}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -719,5 +756,6 @@
                 </TextBlock>
             </Grid>
         </Border>
-    </Grid>
+        </Grid>
+    </widgets:WidgetCard>
 </UserControl>

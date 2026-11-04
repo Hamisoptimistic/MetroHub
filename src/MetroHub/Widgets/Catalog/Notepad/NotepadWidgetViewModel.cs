@@ -58,7 +58,10 @@ public sealed partial class NotepadWidgetViewModel : WidgetViewModelBase
     private bool _isSaveStatusVisible;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasNewTodoText))]
     private string _newTodoText = string.Empty;
+
+    public bool HasNewTodoText => !string.IsNullOrWhiteSpace(NewTodoText);
 
     public Action? RequestDocumentSync { get; set; }
 
