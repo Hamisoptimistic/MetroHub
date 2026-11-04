@@ -1071,7 +1071,7 @@ public partial class MainWindow : BorderlessFluentWindow, INotifyPropertyChanged
         if (hwnd == IntPtr.Zero) return;
 
         // 1. Get raw monitor work area in physical pixels anchored to window
-        Rect workAreaPixels = NativeMethods.GetActiveMonitorWorkArea(hwnd);
+        Rect workAreaPixels = NativeMethods.GetActiveMonitorWorkArea(hwnd, _previousForegroundWindow);
 
         // 2. Query active monitor DPI scaling factor for this window
         DpiScale dpi = VisualTreeHelper.GetDpi(this);

@@ -245,6 +245,11 @@ internal static class NativeMethods
         public POINT ptMaxTrackSize;
     }
 
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "SetPropW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetProp(IntPtr hWnd, string lpString, IntPtr hData);
+
     [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "FindWindowW")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     internal static extern IntPtr FindWindow(string? lpClassName, string? lpWindowName);
@@ -253,7 +258,7 @@ internal static class NativeMethods
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     internal static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string? lpszClass, string? lpszWindow);
 
-    public static Rect GetActiveMonitorWorkArea(IntPtr hWnd = default)
+    public static Rect GetActiveMonitorWorkArea(IntPtr hWnd = default, IntPtr foregroundHwnd = default)
     {
         try
         {
@@ -274,7 +279,28 @@ internal static class NativeMethods
 
             if (GetMonitorInfo(hMonitor, ref mi))
             {
-                // When an exclusive fullscreen game closes, Explorer may not have finished restoring the
+                // 1. If an active foreground window (e.g. YouTube in browser, PotPlayer, VLC) was running
+                // fullscreen on this monitor, expand MetroHub to full monitor to cover the gap cleanly.
+                if (foregroundHwnd != IntPtr.Zero && foregroundHwnd != hWnd && IsWindowVisible(foregroundHwnd))
+                {
+                    IntPtr foreMonitor = MonitorFromWindow(foregroundHwnd, MONITOR_DEFAULTTONEAREST);
+                    if (foreMonitor == hMonitor && GetWindowRect(foregroundHwnd, out RECT foreRect))
+                    {
+                        if (foreRect.Left <= mi.rcMonitor.Left + 2 &&
+                            foreRect.Top <= mi.rcMonitor.Top + 2 &&
+                            foreRect.Right >= mi.rcMonitor.Right - 2 &&
+                            foreRect.Bottom >= mi.rcMonitor.Bottom - 2)
+                        {
+                            string className = GetWindowClassName(foregroundHwnd);
+                            if (className != "Progman" && className != "WorkerW" && className != "Shell_TrayWnd" && className != "Shell_SecondaryTrayWnd")
+                            {
+                                return new Rect(mi.rcMonitor.Left, mi.rcMonitor.Top, mi.rcMonitor.Width, mi.rcMonitor.Height);
+                            }
+                        }
+                    }
+                }
+
+                // 2. When an exclusive fullscreen game closes, Explorer may not have finished restoring the
                 // taskbar AppBar yet, causing rcWork to equal rcMonitor (full screen covering taskbar).
                 // If rcWork equals rcMonitor, verify if Shell_TrayWnd or secondary taskbars are visible on this monitor.
                 if (mi.rcWork.Height == mi.rcMonitor.Height && mi.rcWork.Width == mi.rcMonitor.Width)

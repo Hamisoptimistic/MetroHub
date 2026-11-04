@@ -71,6 +71,8 @@ public class BorderlessFluentWindow : FluentWindow
         IntPtr hwnd = new WindowInteropHelper(this).Handle;
         if (hwnd != IntPtr.Zero)
         {
+            _ = NativeMethods.SetProp(hwnd, "NonRudeHWND", new IntPtr(1));
+
             var source = HwndSource.FromHwnd(hwnd);
             if (source?.CompositionTarget != null)
             {
