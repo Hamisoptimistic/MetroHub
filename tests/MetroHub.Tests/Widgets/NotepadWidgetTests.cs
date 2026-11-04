@@ -456,7 +456,7 @@ public class NotepadWidgetTests
                 .FirstOrDefault(s => s.Property == System.Windows.Documents.Block.MarginProperty);
             Assert.NotNull(marginSetter);
             var margin = (System.Windows.Thickness)marginSetter.Value;
-            Assert.True(margin.Left >= 28.0, $"List margin left must be at least 28px, got {margin.Left}");
+            Assert.True(margin.Left >= 20.0, $"List margin left must be at least 20px, got {margin.Left}");
 
             var markerOffsetSetter = listStyle.Setters
                 .OfType<System.Windows.Setter>()

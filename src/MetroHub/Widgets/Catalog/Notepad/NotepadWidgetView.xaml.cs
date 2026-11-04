@@ -164,7 +164,7 @@ public partial class NotepadWidgetView : UserControl
 
         // Tightly calibrated List and ListItem styles for sleek, premium indentation
         var listStyle = new Style(typeof(List));
-        listStyle.Setters.Add(new Setter(Block.MarginProperty, new Thickness(28, 2, 0, 2)));
+        listStyle.Setters.Add(new Setter(Block.MarginProperty, new Thickness(20, 2, 0, 2)));
         listStyle.Setters.Add(new Setter(Block.PaddingProperty, new Thickness(0)));
         listStyle.Setters.Add(new Setter(List.MarkerOffsetProperty, 6.0));
         doc.Resources[typeof(List)] = listStyle;
@@ -197,6 +197,15 @@ public partial class NotepadWidgetView : UserControl
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         HandlePreviewKeyDown(e, Keyboard.Modifiers);
+    }
+
+    private static ListItem? GetParentListItem(TextPointer? pointer)
+    {
+        for (TextElement? cur = pointer?.Paragraph ?? pointer?.Parent as TextElement; cur != null; cur = cur.Parent as TextElement)
+        {
+            if (cur is ListItem li) return li;
+        }
+        return null;
     }
 
     internal void HandlePreviewKeyDown(KeyEventArgs e, ModifierKeys modifiers)
@@ -266,23 +275,10 @@ public partial class NotepadWidgetView : UserControl
             if (isEditorContext)
             {
                 bool isTextSelected = EditorBox.Selection != null && !EditorBox.Selection.IsEmpty;
-                bool isInListItem = false;
-                if (EditorBox.CaretPosition != null)
-                {
-                    TextElement? cur = EditorBox.CaretPosition.Paragraph ?? EditorBox.CaretPosition.Parent as TextElement;
-                    while (cur != null)
-                    {
-                        if (cur is ListItem)
-                        {
-                            isInListItem = true;
-                            break;
-                        }
-                        cur = cur.Parent as TextElement;
-                    }
-                }
+                var listItem = GetParentListItem(EditorBox.CaretPosition);
 
                 bool isShift = (modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
-                if (isInListItem || isTextSelected)
+                if (listItem != null || isTextSelected)
                 {
                     if (isShift)
                     {
@@ -306,6 +302,16 @@ public partial class NotepadWidgetView : UserControl
                     e.Handled = true;
                     return;
                 }
+                else
+                {
+                    // Standard tab behavior: insert 4 spaces instead of raw \t character jump
+                    e.Handled = true;
+                    EditorBox.CaretPosition?.InsertTextInRun("    ");
+                    _isDocumentDirty = true;
+                    _debounceTimer?.Stop();
+                    _debounceTimer?.Start();
+                    return;
+                }
             }
         }
 
@@ -319,59 +325,45 @@ public partial class NotepadWidgetView : UserControl
             }
 
             var caret = EditorBox.CaretPosition;
-            if (caret != null)
+            var listItem = GetParentListItem(caret);
+            if (listItem != null)
             {
-                ListItem? listItem = null;
-                TextElement? cur = caret.Paragraph ?? caret.Parent as TextElement;
-                while (cur != null)
-                {
-                    if (cur is ListItem li)
-                    {
-                        listItem = li;
-                        break;
-                    }
-                    cur = cur.Parent as TextElement;
-                }
-
-                List? parentList = listItem?.Parent as List;
-                var para = caret.Paragraph ?? listItem?.Blocks?.FirstBlock as Paragraph;
+                List? parentList = listItem.Parent as List;
+                var para = caret?.Paragraph ?? listItem.Blocks?.FirstBlock as Paragraph;
                 var rawText = para != null
                     ? new TextRange(para.ContentStart, para.ContentEnd).Text
                     : string.Empty;
                 var text = rawText.Trim(' ', '\t', '\r', '\n', '•', '\u2022', '\u25E6', '\u25AA');
 
-                if (parentList != null)
+                if (parentList != null && string.IsNullOrEmpty(text))
                 {
-                    if (string.IsNullOrEmpty(text))
+                    // Check if in a nested sub-list: outdent cleanly
+                    if (parentList.Parent is ListItem || parentList.Parent is List)
                     {
-                        // Check if in a nested sub-list: outdent cleanly
-                        if (parentList.Parent is ListItem || parentList.Parent is List)
+                        EditingCommands.DecreaseIndentation.Execute(null, EditorBox);
+                    }
+                    else
+                    {
+                        // Top-level list item is blank: toggle list off to exit list cleanly
+                        if (parentList.MarkerStyle is TextMarkerStyle.Decimal
+                            or TextMarkerStyle.LowerLatin
+                            or TextMarkerStyle.UpperLatin
+                            or TextMarkerStyle.LowerRoman
+                            or TextMarkerStyle.UpperRoman)
                         {
-                            EditingCommands.DecreaseIndentation.Execute(null, EditorBox);
+                            EditingCommands.ToggleNumbering.Execute(null, EditorBox);
                         }
                         else
                         {
-                            // Top-level list item is blank: toggle list off to exit list cleanly
-                            if (parentList.MarkerStyle is TextMarkerStyle.Decimal
-                                or TextMarkerStyle.LowerLatin
-                                or TextMarkerStyle.UpperLatin
-                                or TextMarkerStyle.LowerRoman
-                                or TextMarkerStyle.UpperRoman)
-                            {
-                                EditingCommands.ToggleNumbering.Execute(null, EditorBox);
-                            }
-                            else
-                            {
-                                EditingCommands.ToggleBullets.Execute(null, EditorBox);
-                            }
+                            EditingCommands.ToggleBullets.Execute(null, EditorBox);
                         }
-
-                        e.Handled = true;
-                        UpdatePlaceholder();
-                        UpdateFormattingState();
-                        SynchronizeToViewModel();
-                        return;
                     }
+
+                    e.Handled = true;
+                    UpdatePlaceholder();
+                    UpdateFormattingState();
+                    SynchronizeToViewModel();
+                    return;
                 }
             }
         }

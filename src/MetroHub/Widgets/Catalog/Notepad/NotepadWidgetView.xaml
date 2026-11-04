@@ -292,7 +292,7 @@
                                       FontSize="{DynamicResource TypeBodyFontSize}">
                             <FlowDocument.Resources>
                                 <Style TargetType="{x:Type List}">
-                                    <Setter Property="Margin" Value="28,2,0,2" />
+                                    <Setter Property="Margin" Value="20,2,0,2" />
                                     <Setter Property="Padding" Value="0" />
                                     <Setter Property="MarkerOffset" Value="6" />
                                 </Style>
