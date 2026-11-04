@@ -16,9 +16,9 @@ namespace MetroHub.Widgets.Catalog.Game2048;
 /// </summary>
 public partial class Game2048WidgetView : UserControl
 {
-    private const double BoardPadding = 14.0;
-    private const double TileStep = 96.0; // 84px tile + 12px gap
-    private const double TileSize = 84.0;
+    private const double BoardPadding = 8.0;
+    private const double TileStep = 98.0; // 90px tile + 8px gap
+    private const double TileSize = 90.0;
 
     private const double PopPeakScale = 1.08;
     private static readonly TimeSpan SlideDuration = TimeSpan.FromMilliseconds(100);
@@ -325,7 +325,6 @@ public partial class Game2048WidgetView : UserControl
         {
             Width = TileSize,
             Height = TileSize,
-            CornerRadius = new CornerRadius(4),
             BorderThickness = new Thickness(1),
             Child = textBlock,
             RenderTransformOrigin = new Point(0.5, 0.5),
@@ -333,6 +332,7 @@ public partial class Game2048WidgetView : UserControl
             SnapsToDevicePixels = false,
             UseLayoutRounding = false
         };
+        border.SetResourceReference(Border.CornerRadiusProperty, "TileCornerRadius");
 
         UpdateTileVisuals(border, piece.Value);
         return border;
@@ -407,11 +407,11 @@ public partial class Game2048WidgetView : UserControl
     {
         return value switch
         {
-            // 2: Neutral frosted glass plate matching SurfaceGlassBrush (#18FFFFFF ~ #1CFFFFFF)
-            2 => (FreezeTint(255, 255, 255, 0x1C), FreezeTint(255, 255, 255, 0x2A)),
+            // 2: Cool neutral frosted glass plate matching SurfaceGlassBrush (#18FFFFFF)
+            2 => (FreezeTint(255, 255, 255, 0x18), FreezeTint(255, 255, 255, 0x26)),
 
-            // 4: Elevated frosted glass plate with higher specular luminance
-            4 => (FreezeTint(255, 255, 255, 0x2E), FreezeTint(255, 255, 255, 0x3C)),
+            // 4: Warm champagne/sand translucent glass plate with distinct golden warmth
+            4 => (FreezeTint(245, 210, 160, 0x44), FreezeTint(255, 225, 180, 0x70)),
 
             // 8: GroupColorAmber (#FFD700) from Tokens.xaml
             8 => MakeTintedPair(element, "GroupColorAmber", "#FFD700", fillAlpha: 0x58, borderAlpha: 0x88),

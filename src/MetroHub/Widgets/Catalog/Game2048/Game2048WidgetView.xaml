@@ -125,30 +125,30 @@
                 <Grid Width="400" Height="400" ClipToBounds="True">
                     <!-- Board Frame -->
                     <Border Width="400" Height="400"
-                            CornerRadius="8"
+                            CornerRadius="{DynamicResource TileCornerRadius}"
                             Background="Transparent"
                             BorderThickness="0">
-                        <!-- Static 4x4 Grid of Empty Cells (384px inner area: 96px step, 84px cell + 12px gap) -->
-                        <UniformGrid Rows="4" Columns="4" Margin="8">
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                        <!-- Static 4x4 Grid of Empty Cells (384px inner area: 98px step, 90px cell + 8px gap) -->
+                        <UniformGrid Rows="4" Columns="4" Margin="4">
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
 
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
 
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
 
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
-                            <Border Margin="6" CornerRadius="4" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
+                            <Border Margin="4" CornerRadius="{DynamicResource TileCornerRadius}" Background="{DynamicResource SurfaceGlassSubtleBrush}" BorderBrush="{DynamicResource SurfaceBorderSubtleBrush}" BorderThickness="1" />
                         </UniformGrid>
                     </Border>
 
@@ -159,7 +159,7 @@
                     <!-- Game Over Overlay -->
                     <Border x:Name="GameOverOverlay"
                             Width="400" Height="400"
-                            CornerRadius="8"
+                            CornerRadius="{DynamicResource TileCornerRadius}"
                             Background="#990D0D11"
                             Visibility="{Binding IsGameOver, Converter={StaticResource BoolToVis}}"
                             SnapsToDevicePixels="True">
@@ -183,7 +183,7 @@
                     <!-- Win Overlay -->
                     <Border x:Name="WinOverlay"
                             Width="400" Height="400"
-                            CornerRadius="8"
+                            CornerRadius="{DynamicResource TileCornerRadius}"
                             Background="#990D0D11"
                             Visibility="{Binding HasWon, Converter={StaticResource BoolToVis}}"
                             SnapsToDevicePixels="True">

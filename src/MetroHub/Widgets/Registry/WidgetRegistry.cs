@@ -365,11 +365,7 @@ public static class WidgetRegistry
             Icon: SymbolRegular.Games24,
             AllowedSizes: new[]
             {
-                WidgetSize.Canvas,      // 8x8 (Default)
-                WidgetSize.Full,        // 8x10
-                WidgetSize.Huge,        // 8x6
-                WidgetSize.SquareLarge, // 6x6
-                WidgetSize.Large        // 4x4
+                WidgetSize.Canvas       // 8x8 only
             },
             ViewModelType: typeof(MetroHub.Widgets.Catalog.Game2048.Game2048WidgetViewModel),
             ViewType: typeof(MetroHub.Widgets.Catalog.Game2048.Game2048WidgetView),

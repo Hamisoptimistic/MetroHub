@@ -38,11 +38,7 @@ public sealed partial class Game2048WidgetViewModel : WidgetViewModelBase, IWidg
 
     public override IReadOnlyList<WidgetSize> AllowedSizes { get; } = new[]
     {
-        WidgetSize.Canvas,      // 8x8 (508x508 px) Default
-        WidgetSize.Full,        // 8x10 (508x636 px)
-        WidgetSize.Huge,        // 8x6 (508x376 px)
-        WidgetSize.SquareLarge, // 6x6 (380x380 px)
-        WidgetSize.Large        // 4x4 (252x252 px)
+        WidgetSize.Canvas // 8x8 (508x508 px)
     };
 
     public event Action? BoardChanged;

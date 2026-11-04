@@ -176,6 +176,8 @@ public class Game2048WidgetTests
         Assert.Equal(typeof(Game2048WidgetViewModel), def.ViewModelType);
         Assert.Equal(typeof(Game2048WidgetView), def.ViewType);
         Assert.Equal(WidgetSize.Canvas, def.DefaultSize);
+        Assert.Single(def.AllowedSizes);
+        Assert.Equal(WidgetSize.Canvas, def.AllowedSizes[0]);
     }
 
     [Fact]
