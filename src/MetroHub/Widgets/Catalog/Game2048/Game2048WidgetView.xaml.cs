@@ -20,9 +20,9 @@ public partial class Game2048WidgetView : UserControl
     private const double TileStep = 96.0; // 84px tile + 12px gap
     private const double TileSize = 84.0;
 
-    private static readonly TimeSpan SlideDuration = TimeSpan.FromMilliseconds(95);
+    private static readonly TimeSpan SlideDuration = TimeSpan.FromMilliseconds(120);
     private static readonly TimeSpan PopDuration = TimeSpan.FromMilliseconds(95);
-    private static readonly TimeSpan SpawnDelay = TimeSpan.FromMilliseconds(55);
+    private static readonly TimeSpan SpawnDelay = TimeSpan.FromMilliseconds(70);
     private static readonly TimeSpan SpawnDuration = TimeSpan.FromMilliseconds(110);
 
     private static readonly CubicEase SlideEasing = new() { EasingMode = EasingMode.EaseOut };
@@ -190,7 +190,7 @@ public partial class Game2048WidgetView : UserControl
                         // Soft Dissolve: fade out smoothly during the final 40ms of the slide
                         var fadeAnim = new DoubleAnimationUsingKeyFrames();
                         fadeAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-                        fadeAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(55))));
+                        fadeAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(80))));
                         fadeAnim.KeyFrames.Add(new EasingDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(SlideDuration), SlideEasing));
 
                         long capturedId = piece.Id;
@@ -261,12 +261,12 @@ public partial class Game2048WidgetView : UserControl
 
                         var microPulseAnim = new DoubleAnimationUsingKeyFrames
                         {
-                            BeginTime = TimeSpan.FromMilliseconds(70)
+                            BeginTime = TimeSpan.FromMilliseconds(95)
                         };
                         microPulseAnim.KeyFrames.Add(new SplineDoubleKeyFrame(1.05, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(35)), new KeySpline(0.2, 0.8, 0.4, 1.0)));
                         microPulseAnim.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(PopDuration), new KeySpline(0.2, 0.8, 0.4, 1.0)));
 
-                        var delayTrigger = new DoubleAnimation(1.0, 1.0, TimeSpan.FromMilliseconds(70));
+                        var delayTrigger = new DoubleAnimation(1.0, 1.0, TimeSpan.FromMilliseconds(95));
                         delayTrigger.Completed += (s, e) =>
                         {
                             if (_tileViews.TryGetValue(capturedPieceId, out var cur) && ReferenceEquals(cur, capturedDestBorder))
