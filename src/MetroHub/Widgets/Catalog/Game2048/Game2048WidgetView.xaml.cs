@@ -20,14 +20,16 @@ public partial class Game2048WidgetView : UserControl
     private const double TileStep = 96.0; // 84px tile + 12px gap
     private const double TileSize = 84.0;
 
-    private static readonly TimeSpan SlideDuration = TimeSpan.FromMilliseconds(120);
-    private static readonly TimeSpan PopDuration = TimeSpan.FromMilliseconds(95);
-    private static readonly TimeSpan SpawnDelay = TimeSpan.FromMilliseconds(70);
-    private static readonly TimeSpan SpawnDuration = TimeSpan.FromMilliseconds(110);
+    private const double PopPeakScale = 1.08;
+    private static readonly TimeSpan SlideDuration = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan PopDelay = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan PopDuration = TimeSpan.FromMilliseconds(130);
+    private static readonly TimeSpan SpawnDelay = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan SpawnDuration = TimeSpan.FromMilliseconds(200);
 
-    private static readonly CubicEase SlideEasing = new() { EasingMode = EasingMode.EaseOut };
-    private static readonly BackEase SpawnEasing = new() { EasingMode = EasingMode.EaseOut, Amplitude = 0.2 };
-    private static readonly CubicEase PopEasing = new() { EasingMode = EasingMode.EaseOut };
+    private static readonly CubicEase SlideEasing = new() { EasingMode = EasingMode.EaseInOut };
+    private static readonly CubicEase SpawnEasing = new() { EasingMode = EasingMode.EaseOut };
+    private static readonly KeySpline PopSpline = new(0.25, 0.1, 0.25, 1.0);
 
     private Game2048WidgetViewModel? _viewModel;
     private readonly Dictionary<long, Border> _tileViews = new(16);
@@ -39,7 +41,7 @@ public partial class Game2048WidgetView : UserControl
     {
         SlideEasing.Freeze();
         SpawnEasing.Freeze();
-        PopEasing.Freeze();
+        PopSpline.Freeze();
     }
 
     public Game2048WidgetView()
@@ -187,10 +189,10 @@ public partial class Game2048WidgetView : UserControl
                         var animX = new DoubleAnimation(startX, targetX, SlideDuration) { EasingFunction = SlideEasing };
                         var animY = new DoubleAnimation(startY, targetY, SlideDuration) { EasingFunction = SlideEasing };
 
-                        // Soft Dissolve: fade out smoothly during the final 40ms of the slide
+                        // Soft Dissolve: fade out smoothly during the final 30ms of the slide (70ms to 100ms)
                         var fadeAnim = new DoubleAnimationUsingKeyFrames();
                         fadeAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-                        fadeAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(80))));
+                        fadeAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(70))));
                         fadeAnim.KeyFrames.Add(new EasingDoubleKeyFrame(0.0, KeyTime.FromTimeSpan(SlideDuration), SlideEasing));
 
                         long capturedId = piece.Id;
@@ -254,19 +256,20 @@ public partial class Game2048WidgetView : UserControl
 
                     if (piece.IsMerged && animate)
                     {
-                        // Option 1: Subtle Micro-Pulse (peak 1.05 max) with Soft Dissolve synchronization
+                        // Tuned Tactile Pop: 1.0 -> 1.08 -> 1.0 over 130ms (fits inside 12px grid gap without clipping)
                         long capturedPieceId = piece.Id;
                         Border capturedDestBorder = tileBorder;
                         int targetValue = piece.Value;
 
-                        var microPulseAnim = new DoubleAnimationUsingKeyFrames
+                        var popAnim = new DoubleAnimationUsingKeyFrames
                         {
-                            BeginTime = TimeSpan.FromMilliseconds(95)
+                            BeginTime = PopDelay
                         };
-                        microPulseAnim.KeyFrames.Add(new SplineDoubleKeyFrame(1.05, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(35)), new KeySpline(0.2, 0.8, 0.4, 1.0)));
-                        microPulseAnim.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(PopDuration), new KeySpline(0.2, 0.8, 0.4, 1.0)));
+                        popAnim.KeyFrames.Add(new DiscreteDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(TimeSpan.Zero)));
+                        popAnim.KeyFrames.Add(new SplineDoubleKeyFrame(PopPeakScale, KeyTime.FromTimeSpan(TimeSpan.FromMilliseconds(50)), PopSpline));
+                        popAnim.KeyFrames.Add(new SplineDoubleKeyFrame(1.0, KeyTime.FromTimeSpan(PopDuration), PopSpline));
 
-                        var delayTrigger = new DoubleAnimation(1.0, 1.0, TimeSpan.FromMilliseconds(95));
+                        var delayTrigger = new DoubleAnimation(1.0, 1.0, PopDelay);
                         delayTrigger.Completed += (s, e) =>
                         {
                             if (_tileViews.TryGetValue(capturedPieceId, out var cur) && ReferenceEquals(cur, capturedDestBorder))
@@ -279,8 +282,8 @@ public partial class Game2048WidgetView : UserControl
                         };
 
                         capturedDestBorder.BeginAnimation(UIElement.OpacityProperty, delayTrigger);
-                        scale.BeginAnimation(ScaleTransform.ScaleXProperty, microPulseAnim);
-                        scale.BeginAnimation(ScaleTransform.ScaleYProperty, microPulseAnim);
+                        scale.BeginAnimation(ScaleTransform.ScaleXProperty, popAnim);
+                        scale.BeginAnimation(ScaleTransform.ScaleYProperty, popAnim);
                     }
                     else
                     {
@@ -326,7 +329,9 @@ public partial class Game2048WidgetView : UserControl
             BorderThickness = new Thickness(1),
             Child = textBlock,
             RenderTransformOrigin = new Point(0.5, 0.5),
-            RenderTransform = transformGroup
+            RenderTransform = transformGroup,
+            SnapsToDevicePixels = false,
+            UseLayoutRounding = false
         };
 
         UpdateTileVisuals(border, piece.Value);

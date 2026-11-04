@@ -118,6 +118,8 @@
             <Viewbox Grid.Row="2"
                      Stretch="Uniform"
                      Margin="20,12,20,16"
+                     SnapsToDevicePixels="False"
+                     UseLayoutRounding="False"
                      HorizontalAlignment="Center"
                      VerticalAlignment="Center">
                 <Grid Width="400" Height="400" ClipToBounds="True">
@@ -151,7 +153,8 @@
                     </Border>
 
                     <!-- Active Animated Tiles Canvas Layer -->
-                    <Canvas x:Name="TilesCanvas" Width="400" Height="400" ClipToBounds="True" />
+                    <Canvas x:Name="TilesCanvas" Width="400" Height="400" ClipToBounds="True"
+                            SnapsToDevicePixels="False" UseLayoutRounding="False" />
 
                     <!-- Game Over Overlay -->
                     <Border x:Name="GameOverOverlay"
