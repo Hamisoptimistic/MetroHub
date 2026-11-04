@@ -20,15 +20,15 @@
         <Grid x:Name="RootLayout" Background="Transparent" ClipToBounds="True">
             <Grid.RowDefinitions>
                 <!-- Row 0: Top Header (Title + Scores + Micro Reset) -->
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="50" />
                 <!-- Row 1: Universal 1px Hairline Divider -->
                 <RowDefinition Height="Auto" />
                 <!-- Row 2: Scalable 2048 Game Board Viewbox -->
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <!-- Row 0: Top Header (20px symmetrical clearance per docs/WIDGET_LIFECYCLE_STANDARDS.md §6) -->
-            <Grid Grid.Row="0" Margin="20,12,20,12">
+            <!-- Row 0: Top Header (20px symmetrical clearance, centered in 50px row) -->
+            <Grid Grid.Row="0" Margin="20,0,20,0" VerticalAlignment="Center">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
