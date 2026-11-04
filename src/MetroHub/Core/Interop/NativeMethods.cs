@@ -258,6 +258,39 @@ internal static class NativeMethods
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     internal static extern IntPtr FindWindowEx(IntPtr hwndParent, IntPtr hwndChildAfter, string? lpszClass, string? lpszWindow);
 
+    private const uint ABM_GETSTATE = 0x00000004;
+    private const int ABS_AUTOHIDE = 0x00000001;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct APPBARDATA
+    {
+        public int cbSize;
+        public IntPtr hWnd;
+        public uint uCallbackMessage;
+        public uint uEdge;
+        public RECT rc;
+        public IntPtr lParam;
+    }
+
+    [DllImport("shell32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    private static extern UIntPtr SHAppBarMessage(uint dwMessage, ref APPBARDATA pData);
+
+    public static bool IsTaskbarAutoHide()
+    {
+        try
+        {
+            APPBARDATA abd = new APPBARDATA { cbSize = Marshal.SizeOf<APPBARDATA>() };
+            uint state = (uint)SHAppBarMessage(ABM_GETSTATE, ref abd);
+            return (state & ABS_AUTOHIDE) != 0;
+        }
+        catch (Exception ex)
+        {
+            Safe.Log(ex, "NativeMethods.IsTaskbarAutoHide");
+            return false;
+        }
+    }
+
     public static Rect GetActiveMonitorWorkArea(IntPtr hWnd = default, IntPtr foregroundHwnd = default)
     {
         try
@@ -302,8 +335,9 @@ internal static class NativeMethods
 
                 // 2. When an exclusive fullscreen game closes, Explorer may not have finished restoring the
                 // taskbar AppBar yet, causing rcWork to equal rcMonitor (full screen covering taskbar).
-                // If rcWork equals rcMonitor, verify if Shell_TrayWnd or secondary taskbars are visible on this monitor.
-                if (mi.rcWork.Height == mi.rcMonitor.Height && mi.rcWork.Width == mi.rcMonitor.Width)
+                // If rcWork equals rcMonitor, verify if Shell_TrayWnd or secondary taskbars are visible on this monitor
+                // (and ensure Windows 11 Auto-Hide Taskbar is NOT enabled, where rcWork == rcMonitor is intentional).
+                if (mi.rcWork.Height == mi.rcMonitor.Height && mi.rcWork.Width == mi.rcMonitor.Width && !IsTaskbarAutoHide())
                 {
                     List<IntPtr> trayHwnds = new();
                     IntPtr primaryTray = FindWindow("Shell_TrayWnd", null);
