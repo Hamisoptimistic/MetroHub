@@ -1,6 +1,6 @@
 # MetroHub
 
-MetroHub is a Windows desktop launcher: a full-screen, Windows 8/10-style live-tile canvas that appears on a hotkey and disappears when you leave it.
+MetroHub is a Windows desktop launcher: a full-screen, Windows 8/10-style live-tile canvas that appears on a hotkey.
 
 <!-- SCREENSHOT_PLACEHOLDER: Add application screenshot or GIF demonstration here (owner supplies) -->
 
