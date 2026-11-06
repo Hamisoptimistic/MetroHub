@@ -179,8 +179,8 @@ public sealed class TelegramHttpTransport : ITelegramTransport
 
     public async Task<JsonDocument> SendMessageAsync(long chatId, string text, CancellationToken ct)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(text);
         ArgumentOutOfRangeException.ThrowIfZero(chatId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(text);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(text.Length, 4096);
 
         var url = $"{_apiRoot}sendMessage";
@@ -190,6 +190,65 @@ public sealed class TelegramHttpTransport : ITelegramTransport
         content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
 
         return await PostJsonAsync(url, content, ct).ConfigureAwait(false);
+    }
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope",
+        Justification = "Ownership of child HttpContent objects is transferred to MultipartFormDataContent which disposes them.")]
+    public async Task<JsonDocument> SendPhotoAsync(long chatId, Stream imageStream, string? caption, CancellationToken ct)
+    {
+        ArgumentOutOfRangeException.ThrowIfZero(chatId);
+        ArgumentNullException.ThrowIfNull(imageStream);
+
+        const long maxPhotoSizeBytes = 10 * 1024 * 1024; // 10 MB
+        if (imageStream.CanSeek && imageStream.Length > maxPhotoSizeBytes)
+        {
+            throw new FileTooLargeException(maxPhotoSizeBytes);
+        }
+
+        if (caption is not null && caption.Length > 4096)
+        {
+            throw new ArgumentOutOfRangeException(nameof(caption), "Caption exceeds 4,096 characters.");
+        }
+
+        string contentType = "image/jpeg";
+        string fileName = "photo.jpg";
+
+        if (imageStream.CanSeek)
+        {
+            if (imageStream.Position != 0)
+            {
+                imageStream.Position = 0;
+            }
+
+            if (imageStream.Length >= 8)
+            {
+                var header = new byte[8];
+                int read = imageStream.Read(header, 0, 8);
+                imageStream.Position = 0;
+                if (read == 8 && header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47)
+                {
+                    contentType = "image/png";
+                    fileName = "photo.png";
+                }
+            }
+        }
+
+        var url = $"{_apiRoot}sendPhoto";
+
+        using var form = new MultipartFormDataContent();
+        form.Add(new StringContent(chatId.ToString(System.Globalization.CultureInfo.InvariantCulture)), "chat_id");
+
+        if (!string.IsNullOrEmpty(caption))
+        {
+            form.Add(new StringContent(caption), "caption");
+        }
+
+        Stream uploadStream = imageStream.CanSeek ? imageStream : new BoundedReadStream(imageStream, maxPhotoSizeBytes);
+        var streamContent = new StreamContent(uploadStream);
+        streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+        form.Add(streamContent, "photo", fileName);
+
+        return await PostJsonAsync(url, form, ct).ConfigureAwait(false);
     }
 
     private async Task<JsonDocument> PostJsonAsync(string url, HttpContent content, CancellationToken ct)
@@ -293,6 +352,74 @@ public sealed class TelegramHttpTransport : ITelegramTransport
 
             doc.Dispose();
             throw new TelegramApiException(code, description, retryAfter);
+        }
+    }
+
+    private sealed class BoundedReadStream(Stream inner, long maxBytes) : Stream
+    {
+        private long _totalRead;
+
+        public override bool CanRead => inner.CanRead;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override void Flush() => inner.Flush();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            int read = inner.Read(buffer, offset, count);
+            _totalRead += read;
+            if (_totalRead > maxBytes)
+            {
+                throw new FileTooLargeException(maxBytes);
+            }
+            return read;
+        }
+
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            int read = await inner.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
+            _totalRead += read;
+            if (_totalRead > maxBytes)
+            {
+                throw new FileTooLargeException(maxBytes);
+            }
+            return read;
+        }
+
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            int read = await inner.ReadAsync(buffer.AsMemory(offset, count), cancellationToken).ConfigureAwait(false);
+            _totalRead += read;
+            if (_totalRead > maxBytes)
+            {
+                throw new FileTooLargeException(maxBytes);
+            }
+            return read;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                inner.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        public override async ValueTask DisposeAsync()
+        {
+            await inner.DisposeAsync().ConfigureAwait(false);
+            await base.DisposeAsync().ConfigureAwait(false);
         }
     }
 }

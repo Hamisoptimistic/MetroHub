@@ -55,6 +55,8 @@ public sealed class PassthroughNormalizer : IUpdateNormalizer
             Text = "[non-text]"
         };
     }
+
+    public MetroSyncMessageItem? NormalizeOutbound(JsonElement message, DateTimeOffset sentAt) => null;
 }
 
 /// <summary>
@@ -109,6 +111,9 @@ public sealed class ScriptedTransport : ITelegramTransport
 
     public Task<JsonDocument> SendMessageAsync(long chatId, string text, CancellationToken ct) =>
         Task.FromResult(JsonDocument.Parse("{\"ok\":true,\"result\":{\"message_id\":1}}"));
+
+    public Task<JsonDocument> SendPhotoAsync(long chatId, Stream imageStream, string? caption, CancellationToken ct) =>
+        Task.FromResult(JsonDocument.Parse("{\"ok\":true,\"result\":{\"message_id\":2}}"));
 }
 
 /// <summary>Wraps another transport and records every call. Used to prove "no downloads happened".</summary>
@@ -117,10 +122,12 @@ public sealed class RecordingTransport(ITelegramTransport inner) : ITelegramTran
     private int _getFile;
     private int _download;
     private int _sendMessage;
+    private int _sendPhoto;
 
     public int GetFileCalls => Volatile.Read(ref _getFile);
     public int DownloadCalls => Volatile.Read(ref _download);
     public int SendMessageCalls => Volatile.Read(ref _sendMessage);
+    public int SendPhotoCalls => Volatile.Read(ref _sendPhoto);
 
     public Task<TelegramBotUser> GetMeAsync(CancellationToken ct) =>
         inner.GetMeAsync(ct);
@@ -144,6 +151,12 @@ public sealed class RecordingTransport(ITelegramTransport inner) : ITelegramTran
     {
         Interlocked.Increment(ref _sendMessage);
         return inner.SendMessageAsync(chatId, text, ct);
+    }
+
+    public Task<JsonDocument> SendPhotoAsync(long chatId, Stream imageStream, string? caption, CancellationToken ct)
+    {
+        Interlocked.Increment(ref _sendPhoto);
+        return inner.SendPhotoAsync(chatId, imageStream, caption, ct);
     }
 }
 

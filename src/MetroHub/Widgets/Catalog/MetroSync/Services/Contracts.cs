@@ -36,12 +36,17 @@ public interface ITelegramTransport
     Task DownloadAsync(string filePath, Stream destination, long maxBytes, CancellationToken ct);
 
     Task<JsonDocument> SendMessageAsync(long chatId, string text, CancellationToken ct);
+
+    Task<JsonDocument> SendPhotoAsync(long chatId, Stream imageStream, string? caption, CancellationToken ct);
 }
 
 public interface IUpdateNormalizer
 {
     /// <summary>Must never throw for any input; unsupported shapes become text notifications; /start returns null.</summary>
     MetroSyncMessageItem? Normalize(RawUpdate update, DateTimeOffset receivedAt);
+
+    /// <summary>Normalizes an outbound message result from Telegram into a MetroSyncMessageItem with IsOutgoing = true.</summary>
+    MetroSyncMessageItem? NormalizeOutbound(JsonElement message, DateTimeOffset sentAt);
 }
 
 public interface IItemIndex

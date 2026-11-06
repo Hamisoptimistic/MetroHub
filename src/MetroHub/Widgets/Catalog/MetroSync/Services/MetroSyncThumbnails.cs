@@ -254,8 +254,13 @@ public sealed class MetroSyncThumbnails
     /// Ensures that a BitmapSource is frozen and safe to pass across threads.
     /// If unfreezable (e.g. InteropBitmap), copies raw pixels into a newly allocated frozen BitmapSource.
     /// </summary>
-    private static BitmapSource EnsureThreadSafeBitmap(BitmapSource source)
+    internal static BitmapSource EnsureThreadSafeBitmap(BitmapSource source)
     {
+        if (source.Dispatcher is { } dispatcher && !dispatcher.CheckAccess())
+        {
+            return dispatcher.Invoke(() => EnsureThreadSafeBitmap(source));
+        }
+
         if (source.IsFrozen)
         {
             return source;

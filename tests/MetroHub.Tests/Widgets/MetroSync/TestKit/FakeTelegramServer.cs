@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.IO;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -60,6 +61,7 @@ public sealed class FakeTelegramServer : IAsyncDisposable
     private readonly ConcurrentQueue<string> _requestLog = new();
     private TaskCompletionSource _signal = NewSignal();
     private long _nextUpdateId = 1000;
+    private long _nextMessageId = 5000;
     private long _confirmedBelow;
 
     private FakeTelegramServer(WebApplication app, TimeProvider time)
@@ -147,6 +149,7 @@ public sealed class FakeTelegramServer : IAsyncDisposable
                 case "getUpdates": await GetUpdatesAsync(ctx).ConfigureAwait(false); break;
                 case "getFile": await GetFileAsync(ctx).ConfigureAwait(false); break;
                 case "sendMessage": await SendMessageAsync(ctx).ConfigureAwait(false); break;
+                case "sendPhoto": await SendPhotoAsync(ctx).ConfigureAwait(false); break;
                 default: await WriteErrorAsync(ctx, 404, "Not Found").ConfigureAwait(false); break;
             }
         }
@@ -209,7 +212,7 @@ public sealed class FakeTelegramServer : IAsyncDisposable
         await ctx.Response.WriteAsync(JsonSerializer.Serialize(result)).ConfigureAwait(false);
     }
 
-    private static async Task SendMessageAsync(HttpContext ctx)
+    private async Task SendMessageAsync(HttpContext ctx)
     {
         long chatId = 0;
         string text = string.Empty;
@@ -224,15 +227,76 @@ public sealed class FakeTelegramServer : IAsyncDisposable
             // Ignored if body cannot be parsed
         }
 
+        long messageId;
+        lock (_gate)
+        {
+            messageId = _nextMessageId++;
+        }
+
         var result = new
         {
             ok = true,
             result = new
             {
-                message_id = 999999L,
+                message_id = messageId,
                 chat = new { id = chatId, type = "private" },
                 date = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
                 text
+            }
+        };
+
+        ctx.Response.ContentType = "application/json";
+        await ctx.Response.WriteAsync(JsonSerializer.Serialize(result)).ConfigureAwait(false);
+    }
+
+    private async Task SendPhotoAsync(HttpContext ctx)
+    {
+        long chatId = 0;
+        string? caption = null;
+        string fileId = "photo_" + Guid.NewGuid().ToString("N");
+
+        if (ctx.Request.HasFormContentType)
+        {
+            var form = await ctx.Request.ReadFormAsync(ctx.RequestAborted).ConfigureAwait(false);
+            if (form.TryGetValue("chat_id", out var c) && long.TryParse(c.ToString(), out var id))
+            {
+                chatId = id;
+            }
+            if (form.TryGetValue("caption", out var cap))
+            {
+                caption = cap.ToString();
+            }
+
+            if (form.Files.GetFile("photo") is { } photoFile)
+            {
+                using var ms = new MemoryStream();
+                await photoFile.CopyToAsync(ms, ctx.RequestAborted).ConfigureAwait(false);
+                var bytes = ms.ToArray();
+                AddFile(fileId + "_full", bytes);
+                AddFile(fileId + "_thumb", bytes);
+            }
+        }
+
+        long messageId;
+        lock (_gate)
+        {
+            messageId = _nextMessageId++;
+        }
+
+        var result = new
+        {
+            ok = true,
+            result = new
+            {
+                message_id = messageId,
+                chat = new { id = chatId, type = "private" },
+                date = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                photo = new[]
+                {
+                    new { file_id = fileId + "_thumb", file_unique_id = "u_" + fileId + "_thumb", width = 150, height = 150, file_size = 5000 },
+                    new { file_id = fileId + "_full", file_unique_id = "u_" + fileId + "_full", width = 800, height = 800, file_size = 50000 }
+                },
+                caption
             }
         };
 
