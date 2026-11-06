@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using MetroHub.Core.Common;
 
 namespace MetroHub.Widgets.Catalog.MetroSync.Models;
 
@@ -10,6 +11,9 @@ public sealed partial class FilePayloadItem : MetroSyncMessageItem
     public long? FileSize { get; set; }
     public string? MimeType { get; set; }
     public string? Caption { get; set; }
+
+    [JsonIgnore]
+    public string FileSizeDisplay => FormatUtils.FormatBytes(FileSize ?? 0);
 
     private string? _localPath;
     public string? LocalPath
@@ -34,7 +38,11 @@ public sealed partial class FilePayloadItem : MetroSyncMessageItem
 
     [ObservableProperty]
     [property: JsonIgnore]
+    [NotifyPropertyChangedFor(nameof(HasError))]
     private string? _errorMessage;
+
+    [JsonIgnore]
+    public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 
     [JsonIgnore]
     public bool IsDownloaded => !string.IsNullOrEmpty(LocalPath) && System.IO.File.Exists(LocalPath);

@@ -1,0 +1,188 @@
+<UserControl x:Class="MetroHub.Widgets.Catalog.MetroSync.MetroSyncWidgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+             xmlns:widgets="clr-namespace:MetroHub.Widgets"
+             xmlns:metrosync="clr-namespace:MetroHub.Widgets.Catalog.MetroSync"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=metrosync:MetroSyncWidgetViewModel}"
+             Focusable="False"
+             FontFamily="{DynamicResource AppFontFamily}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/MetroHub;component/Widgets/Catalog/MetroSync/MetroSyncTemplates.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <widgets:WidgetCard Padding="0" Background="Transparent">
+        <Grid ClipToBounds="True">
+            <Grid.RowDefinitions>
+                <!-- Row 0: Header (Title + [⋯] Menu) -->
+                <RowDefinition Height="40" />
+                <!-- Row 1: Hairline Divider -->
+                <RowDefinition Height="Auto" />
+                <!-- Row 2: Chat Feed -->
+                <RowDefinition Height="*" />
+                <!-- Row 3: Hairline Divider -->
+                <RowDefinition Height="Auto" />
+                <!-- Row 4: Bottom Docked Input Row -->
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Row 0: Header with Symmetrical 20px Margin -->
+            <Grid Grid.Row="0" Margin="20,0,20,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="MetroSync"
+                           FontSize="{DynamicResource TypeHeaderFontSize}"
+                           FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           VerticalAlignment="Center" />
+
+                <!-- Header Menu Button [⋯] with Disconnect ContextMenu -->
+                <Button Grid.Column="1"
+                        x:Name="HeaderMenuButton"
+                        Style="{DynamicResource WidgetMicroButtonStyle}"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Click="OnHeaderMenuClick"
+                        ToolTip="Menu">
+                    <ui:SymbolIcon Symbol="MoreHorizontal24"
+                                   FontSize="16"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" />
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Disconnect"
+                                      Command="{Binding PlacementTarget.DataContext.DisconnectCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                      IsEnabled="{Binding PlacementTarget.DataContext.IsPaired, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                <MenuItem.Icon>
+                                    <ui:SymbolIcon Symbol="PlugDisconnected24" FontSize="16" />
+                                </MenuItem.Icon>
+                            </MenuItem>
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
+            </Grid>
+
+            <!-- Row 1: Hairline Separator -->
+            <Border Grid.Row="1"
+                    Height="2"
+                    CornerRadius="1"
+                    Background="{DynamicResource WidgetDividerBrush}" />
+
+            <!-- Row 2: Chat Feed with Auto-Hiding Scrollbar & 20px Symmetrical Padding -->
+            <ScrollViewer x:Name="FeedScrollViewer"
+                          Grid.Row="2"
+                          Style="{DynamicResource WidgetFloatingScrollViewerStyle}"
+                          controls:AutoHideScrollBehavior.IsEnabled="True"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="20,8,20,8">
+                <ItemsControl x:Name="FeedItemsControl"
+                              ItemsSource="{Binding Items}" />
+            </ScrollViewer>
+
+            <!-- Row 3: Hairline Separator -->
+            <Border Grid.Row="3"
+                    Height="2"
+                    CornerRadius="1"
+                    Background="{DynamicResource WidgetDividerBrush}" />
+
+            <!-- Row 4: Docked Bottom Input Row -->
+            <Border Grid.Row="4"
+                    Background="{DynamicResource SurfaceInsetWellBrush}"
+                    BorderThickness="0"
+                    CornerRadius="{DynamicResource ControlCornerRadiusBottom}"
+                    SnapsToDevicePixels="True"
+                    Padding="20,8,20,8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Error Text (Inline) -->
+                    <TextBlock Grid.Row="0"
+                               Text="{Binding ErrorMessage}"
+                               Foreground="{DynamicResource StatusErrorBrush}"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Margin="0,0,0,6">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ErrorMessage}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding ErrorMessage}" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <!-- Input Row -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <!-- Column 0: Input Box -->
+                            <ColumnDefinition Width="*" />
+                            <!-- Column 1: Paste Image Button -->
+                            <ColumnDefinition Width="Auto" />
+                            <!-- Column 2: Send Button -->
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Input TextBox with Watermark Placeholder -->
+                        <Grid Grid.Column="0" Margin="0,0,8,0">
+                            <TextBox x:Name="InputTextBox"
+                                     Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="True"
+                                     MaxHeight="80"
+                                     VerticalAlignment="Center"
+                                     PreviewKeyDown="OnInputTextBoxPreviewKeyDown"
+                                     TextChanged="OnInputTextBoxTextChanged" />
+                            <TextBlock x:Name="InputPlaceholder"
+                                       Text="Type a message…"
+                                       FontSize="{DynamicResource TypeBodyFontSize}"
+                                       FontWeight="{DynamicResource TypeBodyFontWeight}"
+                                       Foreground="{DynamicResource TextSubtleBrush}"
+                                       IsHitTestVisible="False"
+                                       VerticalAlignment="Center"
+                                       Margin="12,0,12,0" />
+                        </Grid>
+
+                        <!-- Paste Image Button -->
+                        <Button Grid.Column="1"
+                                Style="{DynamicResource SubtleButtonStyle}"
+                                Content="Paste Image"
+                                Height="36"
+                                Padding="10,0"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center"
+                                Command="{Binding SendClipboardImageCommand}" />
+
+                        <!-- Send Button -->
+                        <Button Grid.Column="2"
+                                Style="{DynamicResource AccentButtonStyle}"
+                                Content="Send"
+                                Height="36"
+                                Padding="16,0"
+                                VerticalAlignment="Center"
+                                Command="{Binding SendCommand}" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </widgets:WidgetCard>
+</UserControl>

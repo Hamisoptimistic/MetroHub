@@ -374,6 +374,23 @@ public static class WidgetRegistry
             Category: "Lifestyle"
         ));
 
+        // Register MetroSync widget (Mobile-to-Desktop Telegram bridge, 8x10 only)
+        Register(new WidgetDefinition(
+            Id: "metrosync",
+            DisplayName: "MetroSync",
+            Description: "Mobile-to-Desktop Telegram bridge",
+            Icon: SymbolRegular.PhoneLaptop24,
+            AllowedSizes: new[]
+            {
+                WidgetSize.Full // 8x10 only
+            },
+            ViewModelType: typeof(MetroHub.Widgets.Catalog.MetroSync.MetroSyncWidgetViewModel),
+            ViewType: typeof(MetroHub.Widgets.Catalog.MetroSync.MetroSyncWidgetView),
+            DefaultSize: WidgetSize.Full,
+            Factory: model => new MetroHub.Widgets.Catalog.MetroSync.MetroSyncWidgetViewModel(model),
+            Category: "Productivity"
+        ));
+
     }
 
     public static void Register(WidgetDefinition definition)

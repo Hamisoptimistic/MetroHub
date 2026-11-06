@@ -100,9 +100,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
 
     public override IReadOnlyList<WidgetSize> AllowedSizes =>
     [
-        WidgetSize.Huge,     // 8x6 (Default)
-        WidgetSize.Canvas,   // 8x8
-        WidgetSize.Full      // 8x10
+        WidgetSize.Full      // 8x10 only
     ];
 
     public Task InitializationTask { get; }
@@ -848,16 +846,18 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
 
     public static string? ExtractFirstUrl(string? text) => TextPayloadItem.ExtractFirstUrl(text);
 
-    public string RedactBotToken(string text)
+    public static string RedactBotToken(string text, string? botToken = null)
     {
         if (string.IsNullOrEmpty(text)) return text;
-        if (_credentials != null && !string.IsNullOrWhiteSpace(_credentials.BotToken))
+        if (!string.IsNullOrWhiteSpace(botToken))
         {
-            text = text.Replace(_credentials.BotToken, "[REDACTED]", StringComparison.OrdinalIgnoreCase);
+            text = text.Replace(botToken, "[REDACTED]", StringComparison.OrdinalIgnoreCase);
         }
         text = BotUrlTokenRegex().Replace(text, "/bot[REDACTED]");
         return text;
     }
+
+    public string RedactBotToken(string text) => RedactBotToken(text, _credentials?.BotToken);
 
     private void RunOnUIThread(Action action)
     {

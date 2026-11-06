@@ -1,0 +1,326 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                    xmlns:models="clr-namespace:MetroHub.Widgets.Catalog.MetroSync.Models">
+
+    <!-- ========================================================================= -->
+    <!-- METROSYNC DATA TEMPLATES (§8.1 & §8.2)                                    -->
+    <!-- Polymorphic templates for Text, Image, and File payloads                  -->
+    <!-- ========================================================================= -->
+
+    <!-- 1. Text & Link Payload Template -->
+    <DataTemplate DataType="{x:Type models:TextPayloadItem}">
+        <Grid HorizontalAlignment="Stretch" Margin="0,3,0,3">
+            <Border CornerRadius="{DynamicResource ControlCornerRadius}"
+                    BorderThickness="1"
+                    Padding="12,8"
+                    MaxWidth="380"
+                    MinHeight="48"
+                    MaxHeight="120">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="HorizontalAlignment" Value="Left" />
+                        <Setter Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderSubtleBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
+                                <Setter Property="HorizontalAlignment" Value="Right" />
+                                <Setter Property="Background" Value="{DynamicResource FluentPressedBrush}" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0"
+                            Command="{Binding DataContext.OpenLinkCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}"
+                            HorizontalAlignment="Left"
+                            HorizontalContentAlignment="Left"
+                            VerticalAlignment="Center"
+                            Padding="0"
+                            Margin="0"
+                            Height="Auto">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource SubtleButtonStyle}">
+                                <Setter Property="Cursor" Value="Arrow" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasUrl}" Value="True">
+                                        <Setter Property="Cursor" Value="Hand" />
+                                        <Setter Property="ToolTip" Value="Open link" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <TextBlock Text="{Binding Text}"
+                                   TextWrapping="Wrap"
+                                   TextTrimming="CharacterEllipsis"
+                                   FontSize="{DynamicResource TypeBodyFontSize}"
+                                   FontWeight="{DynamicResource TypeBodyFontWeight}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasUrl}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource SystemAccentColorSecondaryBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Button>
+
+                    <Button Grid.Column="1"
+                            Style="{DynamicResource SubtleButtonStyle}"
+                            Content="Copy"
+                            Height="28"
+                            Padding="8,0"
+                            Margin="10,0,0,0"
+                            VerticalAlignment="Center"
+                            Command="{Binding DataContext.CopyTextCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            CommandParameter="{Binding}" />
+                </Grid>
+            </Border>
+        </Grid>
+    </DataTemplate>
+
+    <!-- 2. Image Payload Template -->
+    <DataTemplate DataType="{x:Type models:ImagePayloadItem}">
+        <Grid HorizontalAlignment="Stretch" Margin="0,3,0,3">
+            <Border CornerRadius="{DynamicResource ControlCornerRadius}"
+                    BorderThickness="1"
+                    Padding="8"
+                    MaxWidth="380">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="HorizontalAlignment" Value="Left" />
+                        <Setter Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderSubtleBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
+                                <Setter Property="HorizontalAlignment" Value="Right" />
+                                <Setter Property="Background" Value="{DynamicResource FluentPressedBrush}" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <StackPanel>
+                    <!-- Fixed-height thumbnail container (Height="110" per §8.1) -->
+                    <Border Height="110"
+                            Background="{DynamicResource SurfaceGlassSubtleBrush}"
+                            CornerRadius="{DynamicResource ControlCornerRadius}"
+                            ClipToBounds="True">
+                        <Grid>
+                            <Image Source="{Binding ThumbnailImage}"
+                                   Stretch="Uniform"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   RenderOptions.BitmapScalingMode="HighQuality" />
+                            <ui:SymbolIcon Symbol="Image24"
+                                           FontSize="32"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center">
+                                <ui:SymbolIcon.Style>
+                                    <Style TargetType="ui:SymbolIcon">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ThumbnailImage}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ui:SymbolIcon.Style>
+                            </ui:SymbolIcon>
+                        </Grid>
+                    </Border>
+
+                    <!-- Caption text beneath thumbnail (if present) -->
+                    <TextBlock Text="{Binding Caption}"
+                               TextWrapping="Wrap"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,6,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Caption}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Caption}" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </DataTemplate>
+
+    <!-- 3. File, Audio, & Video Payload Template -->
+    <DataTemplate DataType="{x:Type models:FilePayloadItem}">
+        <Grid HorizontalAlignment="Stretch" Margin="0,3,0,3">
+            <Border CornerRadius="{DynamicResource ControlCornerRadius}"
+                    BorderThickness="1"
+                    Padding="12,10"
+                    MaxWidth="380">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="HorizontalAlignment" Value="Left" />
+                        <Setter Property="Background" Value="{DynamicResource SurfaceGlassBrush}" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderSubtleBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsOutgoing}" Value="True">
+                                <Setter Property="HorizontalAlignment" Value="Right" />
+                                <Setter Property="Background" Value="{DynamicResource FluentPressedBrush}" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Document / File Icon -->
+                    <ui:SymbolIcon Grid.Column="0"
+                                   Symbol="Document24"
+                                   FontSize="22"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,0,10,0"
+                                   VerticalAlignment="Center" />
+
+                    <!-- File Details: Name & Formatted Size via FileSizeDisplay -->
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
+                        <TextBlock Text="{Binding FileName}"
+                                   FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                                   FontSize="{DynamicResource TypeBodyFontSize}"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding FileSizeDisplay}"
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,2,0,0" />
+                    </StackPanel>
+
+                    <!-- State-Driven Action Column -->
+                    <Grid Grid.Column="2" VerticalAlignment="Center">
+                        <!-- State 1: Download Button -->
+                        <Button x:Name="DownloadBtn"
+                                Content="Download"
+                                Height="28"
+                                MinWidth="0"
+                                Padding="10,0"
+                                Command="{Binding DataContext.DownloadFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                CommandParameter="{Binding}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDownloading}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsDownloaded}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding HasError}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <!-- State 2: Downloading Progress Indicator -->
+                        <ProgressBar x:Name="DownloadProg"
+                                     Minimum="0"
+                                     Maximum="1"
+                                     Value="{Binding DownloadProgress}"
+                                     Height="4"
+                                     Width="80"
+                                     VerticalAlignment="Center">
+                            <ProgressBar.Style>
+                                <Style TargetType="ProgressBar">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDownloading}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ProgressBar.Style>
+                        </ProgressBar>
+
+                        <!-- State 3: Download Complete (Open + Show in folder) -->
+                        <StackPanel x:Name="DownloadedActions" Orientation="Horizontal">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDownloaded}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsDownloading}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <Button Style="{DynamicResource DefaultButtonStyle}"
+                                    Content="Open"
+                                    Height="28"
+                                    MinWidth="0"
+                                    Padding="8,0"
+                                    Margin="0,0,4,0"
+                                    Command="{Binding DataContext.OpenFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}" />
+                            <Button Style="{DynamicResource SubtleButtonStyle}"
+                                    Content="Show in folder"
+                                    Height="28"
+                                    MinWidth="0"
+                                    Padding="8,0"
+                                    Command="{Binding DataContext.ShowInFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}" />
+                        </StackPanel>
+
+                        <!-- State 4: Error Text / Badge -->
+                        <TextBlock x:Name="ErrorMsg"
+                                   Text="{Binding ErrorMessage}"
+                                   Foreground="{DynamicResource StatusErrorBrush}"
+                                   FontSize="{DynamicResource TypeCaptionFontSize}"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   MaxWidth="140">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasError}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsDownloading}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </DataTemplate>
+
+</ResourceDictionary>

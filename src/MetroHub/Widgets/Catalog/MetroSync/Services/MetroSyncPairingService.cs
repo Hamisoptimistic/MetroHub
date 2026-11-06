@@ -101,6 +101,20 @@ public sealed record PairingStepResult(
         new(PairingStepKind.Ignored);
 }
 
+public sealed record CandidateSender(
+    long UserId,
+    long ChatId,
+    string? Username,
+    string? FirstName)
+{
+    public string DisplayName =>
+        !string.IsNullOrWhiteSpace(FirstName)
+            ? FirstName
+            : !string.IsNullOrWhiteSpace(Username)
+                ? "@" + Username
+                : UserId.ToString(CultureInfo.InvariantCulture);
+}
+
 public sealed record MetroSyncPairingOptions
 {
     public TimeSpan ExpiryTimeout { get; init; } = TimeSpan.FromMinutes(10);
@@ -418,6 +432,71 @@ public sealed class MetroSyncPairingService
         }
 
         return PairingResult.CancelledResult();
+    }
+
+    /// <summary>
+    /// Long-polls getUpdates in pairing mode (offset = 0, never acknowledges updates)
+    /// looking for any private message from a sender not present in <paramref name="ignoredUserIds"/>.
+    /// Returns the discovered candidate sender.
+    /// </summary>
+    public async Task<CandidateSender?> WaitForCandidateSenderAsync(
+        ITelegramTransport transport,
+        HashSet<long>? ignoredUserIds = null,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(transport);
+
+        while (!ct.IsCancellationRequested)
+        {
+            IReadOnlyList<RawUpdate> updates;
+            try
+            {
+                // Pairing mode never acknowledges updates (offset = 0)
+                updates = await transport.GetUpdatesAsync(0, _options.PollTimeoutSeconds, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                return null;
+            }
+            catch (TelegramApiException ex) when (ex.ErrorCode == 429)
+            {
+                var delaySeconds = ex.RetryAfterSeconds ?? 1;
+                await Task.Delay(TimeSpan.FromSeconds(delaySeconds), _timeProvider, ct).ConfigureAwait(false);
+                continue;
+            }
+            catch (TelegramApiException ex) when (ex.ErrorCode >= 500)
+            {
+                var delay = _options.PollDelay > TimeSpan.Zero ? _options.PollDelay : TimeSpan.FromMilliseconds(50);
+                await Task.Delay(delay, _timeProvider, ct).ConfigureAwait(false);
+                continue;
+            }
+            catch (Exception ex) when (IsTransient(ex))
+            {
+                var delay = _options.PollDelay > TimeSpan.Zero ? _options.PollDelay : TimeSpan.FromMilliseconds(50);
+                await Task.Delay(delay, _timeProvider, ct).ConfigureAwait(false);
+                continue;
+            }
+
+            foreach (var update in updates)
+            {
+                if (TryExtractPrivateMessage(update, out var fromId, out var chatId, out var username, out var firstName, out _))
+                {
+                    if (ignoredUserIds != null && ignoredUserIds.Contains(fromId))
+                    {
+                        continue;
+                    }
+
+                    return new CandidateSender(fromId, chatId, username, firstName);
+                }
+            }
+
+            if (_options.PollDelay > TimeSpan.Zero)
+            {
+                await Task.Delay(_options.PollDelay, _timeProvider, ct).ConfigureAwait(false);
+            }
+        }
+
+        return null;
     }
 
     private static bool IsTransient(Exception e) =>

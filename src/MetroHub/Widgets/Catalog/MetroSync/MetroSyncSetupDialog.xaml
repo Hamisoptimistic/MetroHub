@@ -1,0 +1,163 @@
+<dialogs:MetroDialog x:Class="MetroHub.Widgets.Catalog.MetroSync.MetroSyncSetupDialog"
+                     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                     xmlns:controls="clr-namespace:MetroHub.Presentation.Controls"
+                     xmlns:dialogs="clr-namespace:MetroHub.Presentation.Dialogs"
+                     Title="Connect MetroSync"
+                     Width="580"
+                     Height="360">
+
+    <dialogs:MetroDialog.SidebarContent>
+        <ui:SymbolIcon Symbol="PhoneLaptop24"
+                       FontSize="48"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
+    </dialogs:MetroDialog.SidebarContent>
+
+    <Grid Margin="0,4,0,0">
+        <Grid.RowDefinitions>
+            <!-- Row 0: Bot Token Input Tier -->
+            <RowDefinition Height="Auto" />
+            <!-- Row 1: State Specific Content Slot -->
+            <RowDefinition Height="*" />
+            <!-- Row 2: Bottom Status & Manual Switch Link Slot -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Row 0: Bot Token Input -->
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="Bot token"
+                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                       FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                       Foreground="{DynamicResource TextSecondaryBrush}"
+                       Margin="0,0,0,6" />
+            <TextBox x:Name="BotTokenInput"
+                     Height="36"
+                     TextChanged="OnBotTokenInputTextChanged"
+                     KeyDown="OnBotTokenInputKeyDown" />
+        </StackPanel>
+
+        <!-- Row 1: The 4 Visual States -->
+        <Grid Grid.Row="1" Margin="0,16,0,0">
+            <!-- State 1: Token Entry -->
+            <Grid x:Name="State1Panel">
+                <Button x:Name="ContinueButton"
+                        Style="{DynamicResource AccentButtonStyle}"
+                        Content="Continue"
+                        Height="34"
+                        Padding="20,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Click="OnContinueClick" />
+            </Grid>
+
+            <!-- State 2: Polling Wait -->
+            <Grid x:Name="State2Panel" Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock x:Name="PollingInstructionText"
+                               Text="Open @bot in Telegram and send /start."
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               TextWrapping="Wrap" />
+                    <ui:ProgressRing x:Name="PollingProgressRing"
+                                     Width="20" Height="20"
+                                     IsIndeterminate="False"
+                                     HorizontalAlignment="Left"
+                                     Margin="0,12,0,0" />
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Style="{DynamicResource DefaultButtonStyle}"
+                        Content="Cancel"
+                        Height="34"
+                        Padding="20,0"
+                        VerticalAlignment="Center"
+                        Click="OnPollingCancelClick" />
+            </Grid>
+
+            <!-- State 3: Confirmation -->
+            <Grid x:Name="State3Panel" Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           x:Name="ConfirmationPromptText"
+                           Text="Connect as {name}?"
+                           FontSize="{DynamicResource TypeBodyStrongFontSize}"
+                           FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           VerticalAlignment="Center"
+                           TextWrapping="Wrap" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{DynamicResource DefaultButtonStyle}"
+                            Content="Not me"
+                            Height="34"
+                            Padding="16,0"
+                            Margin="0,0,8,0"
+                            Click="OnNotMeClick" />
+                    <Button Style="{DynamicResource AccentButtonStyle}"
+                            Content="Connect"
+                            Height="34"
+                            Padding="20,0"
+                            Click="OnConfirmConnectClick" />
+                </StackPanel>
+            </Grid>
+
+            <!-- State 4: Manual User ID Entry -->
+            <Grid x:Name="State4Panel" Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock Text="User ID"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               Margin="0,0,0,6" />
+                    <TextBox x:Name="ManualUserIdInput"
+                             Height="36"
+                             KeyDown="OnManualUserIdInputKeyDown" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+                        <Button Style="{DynamicResource DefaultButtonStyle}"
+                                Content="Cancel"
+                                Height="34"
+                                Padding="16,0"
+                                Margin="0,0,8,0"
+                                Click="OnManualCancelClick" />
+                        <Button Style="{DynamicResource AccentButtonStyle}"
+                                Content="Connect"
+                                Height="34"
+                                Padding="20,0"
+                                Click="OnManualConnectClick" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- Row 2: Bottom Inline Error & Manual Link -->
+        <StackPanel Grid.Row="2" Margin="0,12,0,0">
+            <!-- Inline Error -->
+            <TextBlock x:Name="InlineErrorText"
+                       Foreground="{DynamicResource StatusErrorBrush}"
+                       FontSize="{DynamicResource TypeCaptionFontSize}"
+                       Margin="0,0,0,10"
+                       TextWrapping="Wrap"
+                       Visibility="Collapsed" />
+
+            <!-- Manual User ID Link -->
+            <Button x:Name="ManualIdToggleButton"
+                    Style="{DynamicResource SubtleButtonStyle}"
+                    Content="Enter user ID manually"
+                    HorizontalAlignment="Left"
+                    Padding="0"
+                    Height="Auto"
+                    Cursor="Hand"
+                    Foreground="{DynamicResource TextSubtleBrush}"
+                    FontSize="{DynamicResource TypeCaptionFontSize}"
+                    Click="OnManualIdToggleClick" />
+        </StackPanel>
+    </Grid>
+</dialogs:MetroDialog>

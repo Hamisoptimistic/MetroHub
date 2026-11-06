@@ -12,6 +12,9 @@ public sealed partial class TextPayloadItem : MetroSyncMessageItem
     [JsonIgnore]
     public string? FirstUrl => ExtractFirstUrl(Text);
 
+    [JsonIgnore]
+    public bool HasUrl => !string.IsNullOrEmpty(FirstUrl);
+
     public static string? ExtractFirstUrl(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
