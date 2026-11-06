@@ -4,6 +4,7 @@ using Xunit;
 
 namespace MetroHub.Tests.Widgets.MetroSync;
 
+[Collection("MetroSyncTests")]
 public sealed class SenderGateTests
 {
     private const long AllowedUserId = 4242;

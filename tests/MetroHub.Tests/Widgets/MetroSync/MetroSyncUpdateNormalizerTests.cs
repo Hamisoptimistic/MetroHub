@@ -6,6 +6,7 @@ using Xunit;
 
 namespace MetroHub.Tests.Widgets.MetroSync;
 
+[Collection("MetroSyncTests")]
 public sealed class MetroSyncUpdateNormalizerTests
 {
     private readonly MetroSyncUpdateNormalizer _normalizer = new();

@@ -8,6 +8,7 @@ using Xunit;
 
 namespace MetroHub.Tests.Widgets.MetroSync;
 
+[Collection("MetroSyncTests")]
 public sealed class EngineReliabilityTests
 {
     private const long Allowed = 4242;

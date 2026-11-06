@@ -41,6 +41,11 @@ namespace MetroHub.Widgets.Serialization;
 [JsonSerializable(typeof(System.Collections.Generic.List<MetroHub.Widgets.Catalog.Notepad.NotepadTodoItem>))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Notepad.NotepadMode))]
 [JsonSerializable(typeof(MetroHub.Widgets.Catalog.Game2048.Game2048WidgetSettings))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.MetroSync.MetroSyncWidgetSettings))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.MetroSync.Models.MetroSyncMessageItem))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.MetroSync.Models.TextPayloadItem))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.MetroSync.Models.ImagePayloadItem))]
+[JsonSerializable(typeof(MetroHub.Widgets.Catalog.MetroSync.Models.FilePayloadItem))]
 public partial class WidgetJsonContext : JsonSerializerContext
 {
 }
