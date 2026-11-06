@@ -15,7 +15,13 @@ public sealed partial class FilePayloadItem : MetroSyncMessageItem
     public string? LocalPath
     {
         get => _localPath;
-        set => SetProperty(ref _localPath, value);
+        set
+        {
+            if (SetProperty(ref _localPath, value))
+            {
+                OnPropertyChanged(nameof(IsDownloaded));
+            }
+        }
     }
 
     [ObservableProperty]
@@ -25,4 +31,11 @@ public sealed partial class FilePayloadItem : MetroSyncMessageItem
     [ObservableProperty]
     [property: JsonIgnore]
     private bool _isDownloading;
+
+    [ObservableProperty]
+    [property: JsonIgnore]
+    private string? _errorMessage;
+
+    [JsonIgnore]
+    public bool IsDownloaded => !string.IsNullOrEmpty(LocalPath) && System.IO.File.Exists(LocalPath);
 }
