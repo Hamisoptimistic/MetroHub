@@ -146,6 +146,7 @@ public sealed class FakeTelegramServer : IAsyncDisposable
                 case "getMe": await GetMeAsync(ctx).ConfigureAwait(false); break;
                 case "getUpdates": await GetUpdatesAsync(ctx).ConfigureAwait(false); break;
                 case "getFile": await GetFileAsync(ctx).ConfigureAwait(false); break;
+                case "sendMessage": await SendMessageAsync(ctx).ConfigureAwait(false); break;
                 default: await WriteErrorAsync(ctx, 404, "Not Found").ConfigureAwait(false); break;
             }
         }
@@ -201,6 +202,37 @@ public sealed class FakeTelegramServer : IAsyncDisposable
                 is_bot = true,
                 first_name = "MetroSyncBot",
                 username = "metrosync_test_bot"
+            }
+        };
+
+        ctx.Response.ContentType = "application/json";
+        await ctx.Response.WriteAsync(JsonSerializer.Serialize(result)).ConfigureAwait(false);
+    }
+
+    private static async Task SendMessageAsync(HttpContext ctx)
+    {
+        long chatId = 0;
+        string text = string.Empty;
+        try
+        {
+            using var doc = await JsonDocument.ParseAsync(ctx.Request.Body, cancellationToken: ctx.RequestAborted).ConfigureAwait(false);
+            if (doc.RootElement.TryGetProperty("chat_id", out var c) && c.TryGetInt64(out var id)) chatId = id;
+            if (doc.RootElement.TryGetProperty("text", out var t) && t.ValueKind == JsonValueKind.String) text = t.GetString() ?? string.Empty;
+        }
+        catch
+        {
+            // Ignored if body cannot be parsed
+        }
+
+        var result = new
+        {
+            ok = true,
+            result = new
+            {
+                message_id = 999999L,
+                chat = new { id = chatId, type = "private" },
+                date = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                text
             }
         };
 

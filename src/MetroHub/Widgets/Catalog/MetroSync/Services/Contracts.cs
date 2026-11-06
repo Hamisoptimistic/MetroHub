@@ -34,6 +34,8 @@ public interface ITelegramTransport
 
     /// <summary>Streams to destination; throws <see cref="FileTooLargeException"/> past maxBytes.</summary>
     Task DownloadAsync(string filePath, Stream destination, long maxBytes, CancellationToken ct);
+
+    Task<JsonDocument> SendMessageAsync(long chatId, string text, CancellationToken ct);
 }
 
 public interface IUpdateNormalizer

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.Json;
 using MetroHub.Widgets.Catalog.MetroSync.Models;
 using MetroHub.Widgets.Catalog.MetroSync.Services;
 
@@ -62,6 +63,14 @@ public sealed class CrashingTransport(ITelegramTransport inner, CrashPlan plan) 
 
     public Task DownloadAsync(string filePath, Stream destination, long maxBytes, CancellationToken ct) =>
         inner.DownloadAsync(filePath, destination, maxBytes, ct);
+
+    public async Task<JsonDocument> SendMessageAsync(long chatId, string text, CancellationToken ct)
+    {
+        plan.Point("send.before");
+        var res = await inner.SendMessageAsync(chatId, text, ct).ConfigureAwait(false);
+        plan.Point("send.after");
+        return res;
+    }
 }
 
 public static class CrashSweep

@@ -177,6 +177,73 @@ public sealed class TelegramHttpTransport : ITelegramTransport
         }
     }
 
+    public async Task<JsonDocument> SendMessageAsync(long chatId, string text, CancellationToken ct)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(text);
+        ArgumentOutOfRangeException.ThrowIfZero(chatId);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(text.Length, 4096);
+
+        var url = $"{_apiRoot}sendMessage";
+        var payload = new { chat_id = chatId, text };
+        var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(payload);
+        using var content = new ByteArrayContent(jsonBytes);
+        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+
+        return await PostJsonAsync(url, content, ct).ConfigureAwait(false);
+    }
+
+    private async Task<JsonDocument> PostJsonAsync(string url, HttpContent content, CancellationToken ct)
+    {
+        HttpResponseMessage response;
+        try
+        {
+            response = await _http
+                .PostAsync(url, content, ct)
+                .ConfigureAwait(false);
+        }
+        catch (HttpRequestException ex)
+        {
+            // Redact URI to guarantee token never leaks in logs or messages
+            throw new HttpRequestException("HTTP request to Telegram API failed.", ex.InnerException, ex.StatusCode);
+        }
+
+        using (response)
+        {
+            await using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+
+            JsonDocument doc;
+            try
+            {
+                doc = await JsonDocument.ParseAsync(stream, cancellationToken: ct).ConfigureAwait(false);
+            }
+            catch (JsonException) when (!response.IsSuccessStatusCode)
+            {
+                // e.g. an HTML 502 from a proxy. Keep the status, drop the body.
+                throw new TelegramApiException((int)response.StatusCode, "Non-JSON error response");
+            }
+
+            var root = doc.RootElement;
+            if (root.ValueKind == JsonValueKind.Object &&
+                root.TryGetProperty("ok", out var ok) && ok.ValueKind == JsonValueKind.True)
+                return doc;
+
+            var code = (int)response.StatusCode;
+            var description = "unknown";
+            int? retryAfter = null;
+            if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (root.TryGetProperty("error_code", out var ec) && ec.TryGetInt32(out var c)) code = c;
+                if (root.TryGetProperty("description", out var d) && d.ValueKind == JsonValueKind.String)
+                    description = d.GetString() ?? description;
+                if (root.TryGetProperty("parameters", out var p) && p.ValueKind == JsonValueKind.Object &&
+                    p.TryGetProperty("retry_after", out var ra) && ra.TryGetInt32(out var r)) retryAfter = r;
+            }
+
+            doc.Dispose();
+            throw new TelegramApiException(code, description, retryAfter);
+        }
+    }
+
     private async Task<JsonDocument> GetJsonAsync(string url, CancellationToken ct)
     {
         HttpResponseMessage response;

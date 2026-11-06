@@ -106,6 +106,9 @@ public sealed class ScriptedTransport : ITelegramTransport
 
     public Task DownloadAsync(string filePath, Stream destination, long maxBytes, CancellationToken ct) =>
         throw new NotSupportedException();
+
+    public Task<JsonDocument> SendMessageAsync(long chatId, string text, CancellationToken ct) =>
+        Task.FromResult(JsonDocument.Parse("{\"ok\":true,\"result\":{\"message_id\":1}}"));
 }
 
 /// <summary>Wraps another transport and records every call. Used to prove "no downloads happened".</summary>
@@ -113,9 +116,11 @@ public sealed class RecordingTransport(ITelegramTransport inner) : ITelegramTran
 {
     private int _getFile;
     private int _download;
+    private int _sendMessage;
 
     public int GetFileCalls => Volatile.Read(ref _getFile);
     public int DownloadCalls => Volatile.Read(ref _download);
+    public int SendMessageCalls => Volatile.Read(ref _sendMessage);
 
     public Task<TelegramBotUser> GetMeAsync(CancellationToken ct) =>
         inner.GetMeAsync(ct);
@@ -133,6 +138,12 @@ public sealed class RecordingTransport(ITelegramTransport inner) : ITelegramTran
     {
         Interlocked.Increment(ref _download);
         return inner.DownloadAsync(filePath, destination, maxBytes, ct);
+    }
+
+    public Task<JsonDocument> SendMessageAsync(long chatId, string text, CancellationToken ct)
+    {
+        Interlocked.Increment(ref _sendMessage);
+        return inner.SendMessageAsync(chatId, text, ct);
     }
 }
 
