@@ -42,44 +42,73 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- 24x24 Header Avatar (Visible when paired & avatar exists) -->
+                <TextBlock Grid.Column="0"
+                           Text="MetroSync"
+                           FontSize="{DynamicResource TypeSubtitleFontSize}"
+                           FontWeight="{DynamicResource TypeSubtitleFontWeight}"
+                           Foreground="{DynamicResource TextPrimaryBrush}"
+                           VerticalAlignment="Center" />
+
+                <!-- Header Action Button (Bot Avatar Badge when paired, opens Disconnect menu) -->
+                <Button Grid.Column="1"
+                        x:Name="HeaderMenuButton"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Cursor="Hand"
+                        Click="OnHeaderMenuClick"
+                        ToolTip="Options">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="Transparent" />
+                            <Setter Property="BorderThickness" Value="0" />
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <ContentPresenter HorizontalAlignment="Center"
+                                                          VerticalAlignment="Center" />
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Opacity" Value="0.85" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Opacity" Value="0.65" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
                     <Border x:Name="HeaderAvatarBorder"
-                            Width="24" Height="24"
-                            CornerRadius="12"
+                            Width="26" Height="26"
+                            CornerRadius="13"
                             Background="{DynamicResource SurfaceGlassSubtleBrush}"
                             BorderBrush="{DynamicResource SurfaceBorderBrush}"
                             BorderThickness="1"
-                            Margin="0,0,10,0"
-                            Visibility="Collapsed">
-                        <Image x:Name="HeaderAvatarImage"
-                               Width="22" Height="22"
-                               Stretch="UniformToFill"
-                               RenderOptions.BitmapScalingMode="HighQuality">
-                            <Image.Clip>
-                                <EllipseGeometry Center="11,11" RadiusX="11" RadiusY="11" />
-                            </Image.Clip>
-                        </Image>
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                        <Grid>
+                            <!-- Fallback Symbol when unpaired or no photo -->
+                            <ui:SymbolIcon x:Name="HeaderAvatarFallback"
+                                           Symbol="MoreHorizontal24"
+                                           FontSize="14"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+
+                            <!-- 24x24 Circular Bot Avatar Image -->
+                            <Image x:Name="HeaderAvatarImage"
+                                   Width="24" Height="24"
+                                   Stretch="UniformToFill"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                   Visibility="Collapsed">
+                                <Image.Clip>
+                                    <EllipseGeometry Center="12,12" RadiusX="12" RadiusY="12" />
+                                </Image.Clip>
+                            </Image>
+                        </Grid>
                     </Border>
-
-                    <TextBlock Text="MetroSync"
-                               FontSize="{DynamicResource TypeSubtitleFontSize}"
-                               FontWeight="{DynamicResource TypeSubtitleFontWeight}"
-                               Foreground="{DynamicResource TextPrimaryBrush}"
-                               VerticalAlignment="Center" />
-                </StackPanel>
-
-                <!-- Header Menu Button [⋯] with Connect/Disconnect ContextMenu -->
-                <Button Grid.Column="1"
-                        x:Name="HeaderMenuButton"
-                        Style="{DynamicResource WidgetMicroButtonStyle}"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
-                        Click="OnHeaderMenuClick"
-                        ToolTip="Menu">
-                    <ui:SymbolIcon Symbol="MoreHorizontal24"
-                                   FontSize="16"
-                                   Foreground="{DynamicResource TextSecondaryBrush}" />
                     <Button.ContextMenu>
                         <ContextMenu>
                             <MenuItem Header="Connect..."

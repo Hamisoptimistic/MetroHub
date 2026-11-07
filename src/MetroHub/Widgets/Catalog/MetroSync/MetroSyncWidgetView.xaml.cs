@@ -91,8 +91,12 @@ public partial class MetroSyncWidgetView : UserControl
 
         if (_viewModel == null || !_viewModel.IsPaired)
         {
-            HeaderAvatarBorder.Visibility = Visibility.Collapsed;
             HeaderAvatarImage.Source = null;
+            HeaderAvatarImage.Visibility = Visibility.Collapsed;
+            if (HeaderAvatarFallback != null)
+            {
+                HeaderAvatarFallback.Visibility = Visibility.Visible;
+            }
             return;
         }
 
@@ -103,13 +107,21 @@ public partial class MetroSyncWidgetView : UserControl
             if (bmp != null)
             {
                 HeaderAvatarImage.Source = bmp;
-                HeaderAvatarBorder.Visibility = Visibility.Visible;
+                HeaderAvatarImage.Visibility = Visibility.Visible;
+                if (HeaderAvatarFallback != null)
+                {
+                    HeaderAvatarFallback.Visibility = Visibility.Collapsed;
+                }
                 return;
             }
         }
 
-        HeaderAvatarBorder.Visibility = Visibility.Collapsed;
         HeaderAvatarImage.Source = null;
+        HeaderAvatarImage.Visibility = Visibility.Collapsed;
+        if (HeaderAvatarFallback != null)
+        {
+            HeaderAvatarFallback.Visibility = Visibility.Visible;
+        }
     }
 
     private void OnItemsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

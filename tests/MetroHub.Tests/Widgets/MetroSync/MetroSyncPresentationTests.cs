@@ -324,8 +324,8 @@ public sealed class MetroSyncPresentationTests
             Assert.NotNull(headerBorder);
             Assert.NotNull(headerImage);
 
-            // 1. Initially unpaired -> collapsed
-            Assert.Equal(Visibility.Collapsed, headerBorder.Visibility);
+            // 1. Initially unpaired -> avatar image collapsed
+            Assert.Equal(Visibility.Collapsed, headerImage.Visibility);
 
             // 2. Create profile.jpg in sandbox
             Directory.CreateDirectory(Path.GetDirectoryName(vm.ProfilePhotoPath)!);
@@ -340,15 +340,15 @@ public sealed class MetroSyncPresentationTests
             // 3. Mark VM as paired
             vm.IsPaired = true;
 
-            // Now header avatar must be visible automatically via property changed notification
-            Assert.Equal(Visibility.Visible, headerBorder.Visibility);
+            // Now header avatar image must be visible automatically via property changed notification
+            Assert.Equal(Visibility.Visible, headerImage.Visibility);
             Assert.NotNull(headerImage.Source);
 
             // 4. Mark VM as unpaired
             vm.IsPaired = false;
 
-            // Header avatar must be collapsed and cleared automatically
-            Assert.Equal(Visibility.Collapsed, headerBorder.Visibility);
+            // Header avatar image must be collapsed and cleared automatically
+            Assert.Equal(Visibility.Collapsed, headerImage.Visibility);
             Assert.Null(headerImage.Source);
         });
     }
