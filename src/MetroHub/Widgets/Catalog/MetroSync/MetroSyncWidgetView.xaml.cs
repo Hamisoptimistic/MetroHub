@@ -51,11 +51,6 @@ public partial class MetroSyncWidgetView : UserControl
         _viewModel = vm;
         ((INotifyCollectionChanged)_viewModel.Items).CollectionChanged += OnItemsCollectionChanged;
         _viewModel.SetupRequested += OnSetupRequested;
-
-        if (!_viewModel.IsPaired)
-        {
-            Dispatcher.InvokeAsync(OpenSetupDialog, DispatcherPriority.Background);
-        }
     }
 
     private void UnhookViewModel()

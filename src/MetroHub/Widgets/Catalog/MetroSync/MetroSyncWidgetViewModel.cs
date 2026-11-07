@@ -82,6 +82,7 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
     [NotifyCanExecuteChangedFor(nameof(SendCommand))]
     [NotifyCanExecuteChangedFor(nameof(SendClipboardImageCommand))]
     [NotifyPropertyChangedFor(nameof(IsConnected))]
+    [NotifyPropertyChangedFor(nameof(CanConnect))]
     private bool _isPaired;
 
     [ObservableProperty]
@@ -89,6 +90,8 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
     private EngineState _engineState = EngineState.Stopped;
 
     public bool IsConnected => IsPaired && EngineState is EngineState.Online or EngineState.Connecting or EngineState.Backoff;
+
+    public bool CanConnect => !IsPaired;
 
     public bool CanSend => !IsSending && IsPaired && !string.IsNullOrWhiteSpace(InputText);
 
@@ -184,8 +187,6 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
                 {
                     IsPaired = false;
                     EngineState = EngineState.Stopped;
-                    RequestSetupDialog?.Invoke();
-                    SetupRequested?.Invoke(this, EventArgs.Empty);
                 });
             }
         }
@@ -806,8 +807,6 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
                     IsPaired = false;
                     EngineState = EngineState.Stopped;
                     ErrorMessage = null;
-                    RequestSetupDialog?.Invoke();
-                    SetupRequested?.Invoke(this, EventArgs.Empty);
                 });
             }
             finally
@@ -841,6 +840,10 @@ public sealed partial class MetroSyncWidgetViewModel : WidgetViewModelBase, IWid
         if (IsPaired)
         {
             yield return WidgetMenu.Item("Disconnect", SymbolRegular.PlugDisconnected24, () => DisconnectCommand.Execute(null), isDestructive: true);
+        }
+        else
+        {
+            yield return WidgetMenu.Item("Connect...", SymbolRegular.PlugConnected24, () => OpenSetup());
         }
     }
 

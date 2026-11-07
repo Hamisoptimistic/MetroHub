@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using MetroHub.Core.Models;
@@ -99,7 +100,7 @@ public sealed class MetroSyncWidgetViewModelTests
     }
 
     [Fact]
-    public async Task Initialization_WithoutCredentials_TransitionsToUnpaired_AndRequestsSetup()
+    public async Task Initialization_WithoutCredentials_TransitionsToUnpaired_WithoutAutoSetupRequest()
     {
         using var sandbox = new WidgetTestSandbox();
         var security = new MetroSyncSecurity(sandbox.Root);
@@ -120,9 +121,14 @@ public sealed class MetroSyncWidgetViewModelTests
         await vm.InitializationTask;
 
         Assert.False(vm.IsPaired);
+        Assert.True(vm.CanConnect);
         Assert.False(vm.IsConnected);
         Assert.Equal(EngineState.Stopped, vm.EngineState);
         Assert.Empty(vm.Items);
+        Assert.False(setupRequested);
+
+        // Explicit user action opens setup
+        vm.OpenSetupCommand.Execute(null);
         Assert.True(setupRequested);
     }
 
@@ -582,9 +588,41 @@ public sealed class MetroSyncWidgetViewModelTests
         Assert.Equal(0, await historyStore.LoadLastAcknowledgedUpdateIdAsync());
         Assert.Empty(vm.Items);
         Assert.False(vm.IsPaired);
+        Assert.True(vm.CanConnect);
         Assert.False(vm.IsConnected);
         Assert.Equal(EngineState.Stopped, vm.EngineState);
+        Assert.False(setupRequested);
+
+        // Explicit user action opens setup
+        vm.OpenSetupCommand.Execute(null);
         Assert.True(setupRequested);
+    }
+
+    [Fact]
+    public void ContextMenuItems_ReflectsPairedAndUnpairedStates()
+    {
+        WpfTestHost.RunSta(() =>
+        {
+            var tile = CreateTestTile();
+            using var vm = new MetroSyncWidgetViewModel(tile);
+
+            // Unpaired: offers Connect...
+            var unpairedItems = new List<Control>(vm.GetContextMenuItems());
+            Assert.Single(unpairedItems);
+            var connectItem = Assert.IsAssignableFrom<MenuItem>(unpairedItems[0]);
+            Assert.Equal("Connect...", connectItem.Header);
+
+            // Simulate paired state
+            typeof(MetroSyncWidgetViewModel)
+                .GetProperty(nameof(MetroSyncWidgetViewModel.IsPaired))!
+                .SetValue(vm, true);
+
+            // Paired: offers Disconnect
+            var pairedItems = new List<Control>(vm.GetContextMenuItems());
+            Assert.Single(pairedItems);
+            var disconnectItem = Assert.IsAssignableFrom<MenuItem>(pairedItems[0]);
+            Assert.Equal("Disconnect", disconnectItem.Header);
+        });
     }
 
     [Fact]

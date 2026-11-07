@@ -136,6 +136,7 @@ public sealed class MetroSyncPresentationTests
             Assert.IsAssignableFrom<FrameworkElement>(view);
             Assert.NotNull(view.FindName("FeedScrollViewer"));
             Assert.NotNull(view.FindName("HeaderMenuButton"));
+            Assert.NotNull(view.FindName("UnpairedPanel"));
         });
     }
 

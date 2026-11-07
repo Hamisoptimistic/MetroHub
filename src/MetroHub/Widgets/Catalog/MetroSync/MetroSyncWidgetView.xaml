@@ -49,7 +49,7 @@
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            VerticalAlignment="Center" />
 
-                <!-- Header Menu Button [⋯] with Disconnect ContextMenu -->
+                <!-- Header Menu Button [⋯] with Connect/Disconnect ContextMenu -->
                 <Button Grid.Column="1"
                         x:Name="HeaderMenuButton"
                         Style="{DynamicResource WidgetMicroButtonStyle}"
@@ -62,9 +62,16 @@
                                    Foreground="{DynamicResource TextSecondaryBrush}" />
                     <Button.ContextMenu>
                         <ContextMenu>
+                            <MenuItem Header="Connect..."
+                                      Command="{Binding PlacementTarget.DataContext.OpenSetupCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                      Visibility="{Binding PlacementTarget.DataContext.CanConnect, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}">
+                                <MenuItem.Icon>
+                                    <ui:SymbolIcon Symbol="PlugConnected24" FontSize="16" />
+                                </MenuItem.Icon>
+                            </MenuItem>
                             <MenuItem Header="Disconnect"
                                       Command="{Binding PlacementTarget.DataContext.DisconnectCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                      IsEnabled="{Binding PlacementTarget.DataContext.IsPaired, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                      Visibility="{Binding PlacementTarget.DataContext.IsPaired, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BoolToVis}}">
                                 <MenuItem.Icon>
                                     <ui:SymbolIcon Symbol="PlugDisconnected24" FontSize="16" />
                                 </MenuItem.Icon>
@@ -80,31 +87,66 @@
                     CornerRadius="1"
                     Background="{DynamicResource WidgetDividerBrush}" />
 
-            <!-- Row 2: Chat Feed with Auto-Hiding Scrollbar & 20px Symmetrical Padding -->
+            <!-- Row 2: Chat Feed (Active When Paired) -->
             <ScrollViewer x:Name="FeedScrollViewer"
                           Grid.Row="2"
                           Style="{DynamicResource WidgetFloatingScrollViewerStyle}"
                           controls:AutoHideScrollBehavior.IsEnabled="True"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
-                          Padding="20,8,20,8">
+                          Padding="20,8,20,8"
+                          Visibility="{Binding IsPaired, Converter={StaticResource BoolToVis}}">
                 <ItemsControl x:Name="FeedItemsControl"
                               ItemsSource="{Binding Items}" />
             </ScrollViewer>
 
-            <!-- Row 3: Hairline Separator -->
+            <!-- Row 2: Unpaired Setup State -->
+            <Grid x:Name="UnpairedPanel"
+                  Grid.Row="2"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  Margin="24,0,24,0"
+                  MaxWidth="340"
+                  Visibility="{Binding CanConnect, Converter={StaticResource BoolToVis}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="MetroSync"
+                               FontSize="{DynamicResource TypeDisplayFontSize}"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               TextAlignment="Center"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,12" />
+                    <TextBlock Text="Send messages, files, and photos between your phone and PC instantly using Telegram."
+                               FontSize="{DynamicResource TypeBodyFontSize}"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,24" />
+                    <Button Style="{DynamicResource AccentButtonStyle}"
+                            Content="Connect"
+                            Height="36"
+                            Padding="28,0"
+                            HorizontalAlignment="Center"
+                            Command="{Binding OpenSetupCommand}" />
+                </StackPanel>
+            </Grid>
+
+            <!-- Row 3: Hairline Separator (Active When Paired) -->
             <Border Grid.Row="3"
                     Height="2"
                     CornerRadius="1"
-                    Background="{DynamicResource WidgetDividerBrush}" />
+                    Background="{DynamicResource WidgetDividerBrush}"
+                    Visibility="{Binding IsPaired, Converter={StaticResource BoolToVis}}" />
 
-            <!-- Row 4: Docked Bottom Input Row -->
+            <!-- Row 4: Docked Bottom Input Row (Active When Paired) -->
             <Border Grid.Row="4"
                     Background="{DynamicResource SurfaceInsetWellBrush}"
                     BorderThickness="0"
                     CornerRadius="{DynamicResource ControlCornerRadiusBottom}"
                     SnapsToDevicePixels="True"
-                    Padding="20,8,20,8">
+                    Padding="20,8,20,8"
+                    Visibility="{Binding IsPaired, Converter={StaticResource BoolToVis}}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
