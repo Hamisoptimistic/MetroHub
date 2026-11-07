@@ -55,6 +55,16 @@ public partial class MetroSyncSetupDialog : MetroDialog
         _viewModel = viewModel;
         _security = security ?? MetroSyncSecurity.Default;
         _pairingService = pairingService ?? new MetroSyncPairingService(_security);
+
+        PollingProgressRing.IsVisibleChanged += (s, e) =>
+        {
+            if (PollingProgressRing.IsVisible && _currentState == SetupVisualState.PollingWait)
+            {
+                PollingProgressRing.IsIndeterminate = false;
+                PollingProgressRing.IsIndeterminate = true;
+            }
+        };
+
         SetVisualState(SetupVisualState.Intro);
     }
 
@@ -95,17 +105,29 @@ public partial class MetroSyncSetupDialog : MetroDialog
         }
 
         State1Panel.Visibility = state == SetupVisualState.TokenEntry ? Visibility.Visible : Visibility.Collapsed;
-        if (State1Actions != null)
-        {
-            State1Actions.Visibility = state == SetupVisualState.TokenEntry ? Visibility.Visible : Visibility.Collapsed;
-        }
         State2Panel.Visibility = state == SetupVisualState.PollingWait ? Visibility.Visible : Visibility.Collapsed;
         State3Panel.Visibility = state == SetupVisualState.Confirmation ? Visibility.Visible : Visibility.Collapsed;
         State4Panel.Visibility = state == SetupVisualState.ManualEntry ? Visibility.Visible : Visibility.Collapsed;
 
+        if (State1Actions != null) State1Actions.Visibility = state == SetupVisualState.TokenEntry ? Visibility.Visible : Visibility.Collapsed;
+        if (State2Actions != null) State2Actions.Visibility = state == SetupVisualState.PollingWait ? Visibility.Visible : Visibility.Collapsed;
+        if (State3Actions != null) State3Actions.Visibility = state == SetupVisualState.Confirmation ? Visibility.Visible : Visibility.Collapsed;
+        if (State4Actions != null) State4Actions.Visibility = state == SetupVisualState.ManualEntry ? Visibility.Visible : Visibility.Collapsed;
+
         if (PollingProgressRing != null)
         {
-            PollingProgressRing.IsIndeterminate = state == SetupVisualState.PollingWait;
+            if (state == SetupVisualState.PollingWait)
+            {
+                _ = Dispatcher.InvokeAsync(() =>
+                {
+                    PollingProgressRing.IsIndeterminate = false;
+                    PollingProgressRing.IsIndeterminate = true;
+                }, System.Windows.Threading.DispatcherPriority.Loaded);
+            }
+            else
+            {
+                PollingProgressRing.IsIndeterminate = false;
+            }
         }
 
         BotTokenInput.IsEnabled = state is SetupVisualState.TokenEntry or SetupVisualState.ManualEntry;
@@ -205,9 +227,21 @@ public partial class MetroSyncSetupDialog : MetroDialog
 
             _botUser = await _transport.GetMeAsync(CancellationToken.None).ConfigureAwait(true);
 
-            PollingInstructionText.Text = !string.IsNullOrWhiteSpace(_botUser.Username)
-                ? $"Open @{_botUser.Username} in Telegram and send /start."
-                : "Open your bot in Telegram and send /start.";
+            var botHandle = !string.IsNullOrWhiteSpace(_botUser.Username)
+                ? $"@{_botUser.Username}"
+                : (!string.IsNullOrWhiteSpace(_botUser.FirstName) ? _botUser.FirstName : "your bot");
+
+            if (PollingBotNameRun != null)
+            {
+                PollingBotNameRun.Text = botHandle;
+            }
+
+            if (OpenTelegramButton != null)
+            {
+                OpenTelegramButton.Visibility = !string.IsNullOrWhiteSpace(_botUser.Username)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
 
             SetVisualState(SetupVisualState.PollingWait);
             StartPolling();
@@ -290,6 +324,25 @@ public partial class MetroSyncSetupDialog : MetroDialog
         CancelPolling();
         ShowError(null);
         SetVisualState(SetupVisualState.TokenEntry);
+    }
+
+    private void OnOpenTelegramClick(object sender, RoutedEventArgs e)
+    {
+        var username = _botUser?.Username;
+        if (string.IsNullOrWhiteSpace(username)) return;
+
+        try
+        {
+            var uri = new Uri($"https://t.me/{username}");
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(uri.AbsoluteUri)
+            {
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            // Ignore shell launch failures
+        }
     }
 
     private void OnNotMeClick(object sender, RoutedEventArgs e)

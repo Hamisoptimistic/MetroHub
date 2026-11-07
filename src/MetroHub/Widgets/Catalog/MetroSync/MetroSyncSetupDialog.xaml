@@ -199,64 +199,88 @@
                 <!-- State 1: Token Entry -->
                 <Grid x:Name="State1Panel" />
 
-                <!-- State 2: Polling Wait -->
-                <Grid x:Name="State2Panel" Visibility="Collapsed">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                <!-- State 2: Polling Wait (Card layout) -->
+                <Border x:Name="State2Panel"
+                        Visibility="Collapsed"
+                        Background="{DynamicResource SurfaceGlassBrush}"
+                        BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{DynamicResource ControlCornerRadius}"
+                        Padding="18,14"
+                        VerticalAlignment="Center">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <!-- Row 0: Instruction -->
+                            <RowDefinition Height="Auto" />
+                            <!-- Row 1: Action + Live Status -->
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Instruction: Send /start in [botname] to connect. -->
                         <TextBlock x:Name="PollingInstructionText"
-                                   Text="Open @bot in Telegram and send /start."
+                                   Grid.Row="0"
                                    FontSize="{DynamicResource TypeBodyFontSize}"
                                    Foreground="{DynamicResource TextPrimaryBrush}"
-                                   TextWrapping="Wrap" />
-                        <ui:ProgressRing x:Name="PollingProgressRing"
-                                         Width="20" Height="20"
-                                         IsIndeterminate="False"
-                                         HorizontalAlignment="Left"
-                                         Margin="0,12,0,0" />
-                    </StackPanel>
-                    <Button Grid.Column="1"
-                            Style="{DynamicResource DefaultButtonStyle}"
-                            Content="Cancel"
-                            Height="34"
-                            Padding="20,0"
-                            VerticalAlignment="Center"
-                            Click="OnPollingCancelClick" />
-                </Grid>
+                                   TextWrapping="Wrap">
+                            <Run Text="Send " /><Run Text="/start" FontWeight="SemiBold" Foreground="{DynamicResource SystemAccentColorPrimaryBrush}" /><Run Text=" in " /><Run x:Name="PollingBotNameRun" Text="@bot" FontWeight="SemiBold" /><Run Text=" to connect." />
+                        </TextBlock>
+
+                        <!-- Row 1: Open in Telegram + Active Progress Indicator -->
+                        <Grid Grid.Row="1" Margin="0,14,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Button x:Name="OpenTelegramButton"
+                                    Grid.Column="0"
+                                    Style="{DynamicResource DefaultButtonStyle}"
+                                    Height="32"
+                                    Padding="14,0"
+                                    Click="OnOpenTelegramClick">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <ui:SymbolIcon Symbol="Open24"
+                                                   FontSize="14"
+                                                   Margin="0,0,8,0"
+                                                   VerticalAlignment="Center" />
+                                    <TextBlock Text="Open in Telegram"
+                                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                                               FontWeight="{DynamicResource TypeCaptionFontWeight}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <StackPanel Grid.Column="1"
+                                        Orientation="Horizontal"
+                                        VerticalAlignment="Center"
+                                        Margin="16,0,0,0">
+                                <ui:ProgressRing x:Name="PollingProgressRing"
+                                                 Width="16" Height="16"
+                                                 IsIndeterminate="False"
+                                                 VerticalAlignment="Center"
+                                                 Margin="0,0,8,0" />
+                                <TextBlock Text="Waiting for connection..."
+                                           FontSize="{DynamicResource TypeCaptionFontSize}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
 
                 <!-- State 3: Confirmation -->
-                <Grid x:Name="State3Panel" Visibility="Collapsed">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0"
-                               x:Name="ConfirmationPromptText"
+                <Grid x:Name="State3Panel" Visibility="Collapsed" VerticalAlignment="Center">
+                    <TextBlock x:Name="ConfirmationPromptText"
                                Text="Connect as {name}?"
-                               FontSize="{DynamicResource TypeBodyStrongFontSize}"
-                               FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
+                               FontSize="{DynamicResource TypeHeaderFontSize}"
+                               FontWeight="{DynamicResource TypeHeaderFontWeight}"
                                Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center"
                                TextWrapping="Wrap" />
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Style="{DynamicResource DefaultButtonStyle}"
-                                Content="Not me"
-                                Height="34"
-                                Padding="16,0"
-                                Margin="0,0,8,0"
-                                Click="OnNotMeClick" />
-                        <Button Style="{DynamicResource AccentButtonStyle}"
-                                Content="Connect"
-                                Height="34"
-                                Padding="20,0"
-                                Click="OnConfirmConnectClick" />
-                    </StackPanel>
                 </Grid>
 
                 <!-- State 4: Manual User ID Entry -->
-                <Grid x:Name="State4Panel" Visibility="Collapsed">
+                <Grid x:Name="State4Panel" Visibility="Collapsed" VerticalAlignment="Center">
                     <StackPanel>
                         <TextBlock Text="User ID"
                                    FontSize="{DynamicResource TypeCaptionFontSize}"
@@ -266,19 +290,6 @@
                         <TextBox x:Name="ManualUserIdInput"
                                  Height="36"
                                  KeyDown="OnManualUserIdInputKeyDown" />
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-                            <Button Style="{DynamicResource DefaultButtonStyle}"
-                                    Content="Cancel"
-                                    Height="34"
-                                    Padding="16,0"
-                                    Margin="0,0,8,0"
-                                    Click="OnManualCancelClick" />
-                            <Button Style="{DynamicResource AccentButtonStyle}"
-                                    Content="Connect"
-                                    Height="34"
-                                    Padding="20,0"
-                                    Click="OnManualConnectClick" />
-                        </StackPanel>
                     </StackPanel>
                 </Grid>
             </Grid>
@@ -313,27 +324,80 @@
                             Click="OnManualIdToggleClick" />
                 </StackPanel>
 
-                <!-- Right: State 1 Actions (Instructions + Continue) -->
-                <StackPanel x:Name="State1Actions"
-                            Grid.Column="1"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center">
-                    <Button x:Name="InstructionsButton"
-                            Content="Instructions"
-                            Style="{DynamicResource DefaultButtonStyle}"
-                            Height="34"
-                            Padding="16,0"
-                            Margin="0,0,10,0"
-                            Click="OnInstructionsClick" />
-                    <Button x:Name="ContinueButton"
-                            Content="Continue"
-                            Style="{DynamicResource AccentButtonStyle}"
-                            Height="34"
-                            Padding="20,0"
-                            IsDefault="True"
-                            Click="OnContinueClick" />
-                </StackPanel>
+                <!-- Right: Unified Footer Actions per State -->
+                <Grid Grid.Column="1" VerticalAlignment="Center">
+                    <!-- State 1 Actions: Instructions + Continue -->
+                    <StackPanel x:Name="State1Actions"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Visibility="Collapsed">
+                        <Button x:Name="InstructionsButton"
+                                Content="Instructions"
+                                Style="{DynamicResource DefaultButtonStyle}"
+                                Height="34"
+                                Padding="16,0"
+                                Margin="0,0,10,0"
+                                Click="OnInstructionsClick" />
+                        <Button x:Name="ContinueButton"
+                                Content="Continue"
+                                Style="{DynamicResource AccentButtonStyle}"
+                                Height="34"
+                                Padding="20,0"
+                                IsDefault="True"
+                                Click="OnContinueClick" />
+                    </StackPanel>
+
+                    <!-- State 2 Actions: Cancel -->
+                    <StackPanel x:Name="State2Actions"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Visibility="Collapsed">
+                        <Button x:Name="PollingCancelButton"
+                                Content="Cancel"
+                                Style="{DynamicResource DefaultButtonStyle}"
+                                Height="34"
+                                Padding="20,0"
+                                Click="OnPollingCancelClick" />
+                    </StackPanel>
+
+                    <!-- State 3 Actions: Not me + Connect -->
+                    <StackPanel x:Name="State3Actions"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Visibility="Collapsed">
+                        <Button Style="{DynamicResource DefaultButtonStyle}"
+                                Content="Not me"
+                                Height="34"
+                                Padding="16,0"
+                                Margin="0,0,8,0"
+                                Click="OnNotMeClick" />
+                        <Button Style="{DynamicResource AccentButtonStyle}"
+                                Content="Connect"
+                                Height="34"
+                                Padding="20,0"
+                                IsDefault="True"
+                                Click="OnConfirmConnectClick" />
+                    </StackPanel>
+
+                    <!-- State 4 Actions: Cancel + Connect -->
+                    <StackPanel x:Name="State4Actions"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Visibility="Collapsed">
+                        <Button Style="{DynamicResource DefaultButtonStyle}"
+                                Content="Cancel"
+                                Height="34"
+                                Padding="16,0"
+                                Margin="0,0,8,0"
+                                Click="OnManualCancelClick" />
+                        <Button Style="{DynamicResource AccentButtonStyle}"
+                                Content="Connect"
+                                Height="34"
+                                Padding="20,0"
+                                IsDefault="True"
+                                Click="OnManualConnectClick" />
+                    </StackPanel>
+                </Grid>
             </Grid>
         </Grid>
     </Grid>
