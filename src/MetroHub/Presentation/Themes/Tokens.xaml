@@ -28,9 +28,9 @@
     <sys:Double x:Key="TypeHeaderFontSize">16</sys:Double>
     <x:Static Member="FontWeights.SemiBold" x:Key="TypeHeaderFontWeight" />
 
-    <!-- Subtitle: Group headers, drawer alphabet letters, categories (18px Bold) -->
+    <!-- Subtitle: Group headers, drawer alphabet letters, categories (18px SemiBold) -->
     <sys:Double x:Key="TypeSubtitleFontSize">18</sys:Double>
-    <x:Static Member="FontWeights.Bold" x:Key="TypeSubtitleFontWeight" />
+    <x:Static Member="FontWeights.SemiBold" x:Key="TypeSubtitleFontWeight" />
 
     <!-- Display: Card readouts, Pomodoro countdown, Speed test number (28px SemiBold) -->
     <sys:Double x:Key="TypeDisplayFontSize">28</sys:Double>

@@ -23,8 +23,8 @@
     <widgets:WidgetCard Padding="0" Background="Transparent">
         <Grid ClipToBounds="True">
             <Grid.RowDefinitions>
-                <!-- Row 0: Header (Title + [⋯] Menu) -->
-                <RowDefinition Height="40" />
+                <!-- Row 0: Header (Standard 50px height matching Audio/Brightness/2048) -->
+                <RowDefinition Height="50" />
                 <!-- Row 1: Hairline Divider -->
                 <RowDefinition Height="Auto" />
                 <!-- Row 2: Chat Feed -->
@@ -44,8 +44,8 @@
 
                 <TextBlock Grid.Column="0"
                            Text="MetroSync"
-                           FontSize="{DynamicResource TypeHeaderFontSize}"
-                           FontWeight="{DynamicResource TypeHeaderFontWeight}"
+                           FontSize="{DynamicResource TypeSubtitleFontSize}"
+                           FontWeight="{DynamicResource TypeSubtitleFontWeight}"
                            Foreground="{DynamicResource TextPrimaryBrush}"
                            VerticalAlignment="Center" />
 
@@ -83,9 +83,7 @@
 
             <!-- Row 1: Hairline Separator -->
             <Border Grid.Row="1"
-                    Height="2"
-                    CornerRadius="1"
-                    Background="{DynamicResource WidgetDividerBrush}" />
+                    Style="{StaticResource WidgetHairlineDividerStyle}" />
 
             <!-- Row 2: Chat Feed (Active When Paired) -->
             <ScrollViewer x:Name="FeedScrollViewer"
@@ -121,16 +119,16 @@
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                TextAlignment="Center"
                                HorizontalAlignment="Center"
-                               Margin="0,0,0,20" />
+                               Margin="0,0,0,24" />
 
                     <!-- Card 1: Two-Way Sharing -->
                     <Border Background="{DynamicResource SurfaceGlassSubtleBrush}"
                             BorderBrush="{DynamicResource SurfaceBorderBrush}"
                             BorderThickness="1"
                             CornerRadius="{DynamicResource ControlCornerRadius}"
-                            Padding="14,10"
+                            Padding="12"
                             MinHeight="72"
-                            Margin="0,0,0,8">
+                            Margin="0,0,0,12">
                         <Grid VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="32" />
@@ -142,12 +140,12 @@
                                          FontSize="18"
                                          Foreground="{DynamicResource TextSecondaryBrush}"
                                          VerticalAlignment="Center" />
-                            <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                 <TextBlock Text="Two-Way Sharing"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                            Foreground="{DynamicResource TextPrimaryBrush}"
-                                           Margin="0,0,0,2" />
+                                           Margin="0,0,0,4" />
                                 <TextBlock Text="Share files and messages between your desktop and phone through your Telegram."
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
@@ -161,9 +159,9 @@
                             BorderBrush="{DynamicResource SurfaceBorderBrush}"
                             BorderThickness="1"
                             CornerRadius="{DynamicResource ControlCornerRadius}"
-                            Padding="14,10"
+                            Padding="12"
                             MinHeight="72"
-                            Margin="0,0,0,8">
+                            Margin="0,0,0,12">
                         <Grid VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="32" />
@@ -175,12 +173,12 @@
                                          FontSize="18"
                                          Foreground="{DynamicResource TextSecondaryBrush}"
                                          VerticalAlignment="Center" />
-                            <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                 <TextBlock Text="Your Personal Bot"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                            Foreground="{DynamicResource TextPrimaryBrush}"
-                                           Margin="0,0,0,2" />
+                                           Margin="0,0,0,4" />
                                 <TextBlock Text="Powered by your own Telegram bot. Only you have access."
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
@@ -194,9 +192,9 @@
                             BorderBrush="{DynamicResource SurfaceBorderBrush}"
                             BorderThickness="1"
                             CornerRadius="{DynamicResource ControlCornerRadius}"
-                            Padding="14,10"
+                            Padding="12"
                             MinHeight="72"
-                            Margin="0,0,0,20">
+                            Margin="0,0,0,28">
                         <Grid VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="32" />
@@ -208,12 +206,12 @@
                                          FontSize="18"
                                          Foreground="{DynamicResource TextSecondaryBrush}"
                                          VerticalAlignment="Center" />
-                            <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                            <StackPanel Grid.Column="1" Margin="8,0,0,0">
                                 <TextBlock Text="No Companion App Needed"
                                            FontSize="{DynamicResource TypeBodyStrongFontSize}"
                                            FontWeight="{DynamicResource TypeBodyStrongFontWeight}"
                                            Foreground="{DynamicResource TextPrimaryBrush}"
-                                           Margin="0,0,0,2" />
+                                           Margin="0,0,0,4" />
                                 <TextBlock Text="Use the Telegram app you already have. Nothing extra to install on your phone."
                                            FontSize="{DynamicResource TypeCaptionFontSize}"
                                            Foreground="{DynamicResource TextSecondaryBrush}"
@@ -234,9 +232,7 @@
 
             <!-- Row 3: Hairline Separator (Active When Paired) -->
             <Border Grid.Row="3"
-                    Height="2"
-                    CornerRadius="1"
-                    Background="{DynamicResource WidgetDividerBrush}"
+                    Style="{StaticResource WidgetHairlineDividerStyle}"
                     Visibility="{Binding IsPaired, Converter={StaticResource BoolToVis}}" />
 
             <!-- Row 4: Docked Bottom Input Row (Active When Paired) -->
