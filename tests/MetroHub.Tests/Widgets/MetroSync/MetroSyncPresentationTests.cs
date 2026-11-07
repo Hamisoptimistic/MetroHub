@@ -149,7 +149,7 @@ public sealed class MetroSyncPresentationTests
             Assert.NotNull(dialog);
             Assert.IsAssignableFrom<Window>(dialog);
             Assert.IsAssignableFrom<MetroDialog>(dialog);
-            Assert.Equal("Connect MetroSync", dialog.Title);
+            Assert.Equal("Follow these steps to connect your device", dialog.Title);
 
             // Verify ProgressRing IsIndeterminate is false by default (never hardcoded to true)
             var ring = dialog.FindName("PollingProgressRing") as Wpf.Ui.Controls.ProgressRing;

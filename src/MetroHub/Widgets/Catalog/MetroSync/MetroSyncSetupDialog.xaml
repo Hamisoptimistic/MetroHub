@@ -197,16 +197,7 @@
             <!-- Row 1: The 4 Visual States -->
             <Grid Grid.Row="1" Margin="0,16,0,0">
                 <!-- State 1: Token Entry -->
-                <Grid x:Name="State1Panel">
-                    <Button x:Name="ContinueButton"
-                            Style="{DynamicResource AccentButtonStyle}"
-                            Content="Continue"
-                            Height="34"
-                            Padding="20,0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Top"
-                            Click="OnContinueClick" />
-                </Grid>
+                <Grid x:Name="State1Panel" />
 
                 <!-- State 2: Polling Wait -->
                 <Grid x:Name="State2Panel" Visibility="Collapsed">
@@ -292,28 +283,58 @@
                 </Grid>
             </Grid>
 
-            <!-- Row 2: Bottom Inline Error & Manual Link -->
-            <StackPanel Grid.Row="2" Margin="0,12,0,0">
-                <!-- Inline Error -->
-                <TextBlock x:Name="InlineErrorText"
-                           Foreground="{DynamicResource StatusErrorBrush}"
-                           FontSize="{DynamicResource TypeCaptionFontSize}"
-                           Margin="0,0,0,10"
-                           TextWrapping="Wrap"
-                           Visibility="Collapsed" />
+            <!-- Row 2: Bottom Status, Manual Link & Footer Actions -->
+            <Grid Grid.Row="2" Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-                <!-- Manual User ID Link -->
-                <Button x:Name="ManualIdToggleButton"
-                        Style="{DynamicResource SubtleButtonStyle}"
-                        Content="Enter user ID manually"
-                        HorizontalAlignment="Left"
-                        Padding="0"
-                        Height="Auto"
-                        Cursor="Hand"
-                        Foreground="{DynamicResource TextSubtleBrush}"
-                        FontSize="{DynamicResource TypeCaptionFontSize}"
-                        Click="OnManualIdToggleClick" />
-            </StackPanel>
+                <!-- Left: Inline Error & Manual User ID Link -->
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <!-- Inline Error -->
+                    <TextBlock x:Name="InlineErrorText"
+                               Foreground="{DynamicResource StatusErrorBrush}"
+                               FontSize="{DynamicResource TypeCaptionFontSize}"
+                               Margin="0,0,0,8"
+                               TextWrapping="Wrap"
+                               Visibility="Collapsed" />
+
+                    <!-- Manual User ID Link -->
+                    <Button x:Name="ManualIdToggleButton"
+                            Style="{DynamicResource SubtleButtonStyle}"
+                            Content="Enter user ID manually"
+                            HorizontalAlignment="Left"
+                            Padding="0"
+                            Height="Auto"
+                            Cursor="Hand"
+                            Foreground="{DynamicResource TextSubtleBrush}"
+                            FontSize="{DynamicResource TypeCaptionFontSize}"
+                            Click="OnManualIdToggleClick" />
+                </StackPanel>
+
+                <!-- Right: State 1 Actions (Instructions + Continue) -->
+                <StackPanel x:Name="State1Actions"
+                            Grid.Column="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+                    <Button x:Name="InstructionsButton"
+                            Content="Instructions"
+                            Style="{DynamicResource DefaultButtonStyle}"
+                            Height="34"
+                            Padding="16,0"
+                            Margin="0,0,10,0"
+                            Click="OnInstructionsClick" />
+                    <Button x:Name="ContinueButton"
+                            Content="Continue"
+                            Style="{DynamicResource AccentButtonStyle}"
+                            Height="34"
+                            Padding="20,0"
+                            IsDefault="True"
+                            Click="OnContinueClick" />
+                </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </dialogs:MetroDialog>

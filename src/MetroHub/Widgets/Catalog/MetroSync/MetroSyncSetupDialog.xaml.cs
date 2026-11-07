@@ -95,6 +95,10 @@ public partial class MetroSyncSetupDialog : MetroDialog
         }
 
         State1Panel.Visibility = state == SetupVisualState.TokenEntry ? Visibility.Visible : Visibility.Collapsed;
+        if (State1Actions != null)
+        {
+            State1Actions.Visibility = state == SetupVisualState.TokenEntry ? Visibility.Visible : Visibility.Collapsed;
+        }
         State2Panel.Visibility = state == SetupVisualState.PollingWait ? Visibility.Visible : Visibility.Collapsed;
         State3Panel.Visibility = state == SetupVisualState.Confirmation ? Visibility.Visible : Visibility.Collapsed;
         State4Panel.Visibility = state == SetupVisualState.ManualEntry ? Visibility.Visible : Visibility.Collapsed;
@@ -151,6 +155,12 @@ public partial class MetroSyncSetupDialog : MetroDialog
     private void OnIntroNextClick(object sender, RoutedEventArgs e)
     {
         SetVisualState(SetupVisualState.TokenEntry);
+    }
+
+    private void OnInstructionsClick(object sender, RoutedEventArgs e)
+    {
+        ShowError(null);
+        SetVisualState(SetupVisualState.Intro);
     }
 
     private async void OnContinueClick(object sender, RoutedEventArgs e)
